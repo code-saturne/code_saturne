@@ -82,16 +82,16 @@ double precision, allocatable, dimension(:,:) :: ttmet
 !> meteo specific humidity profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: qvmet
 
-!> meteo specific drplet number profile (read in the input meteo file)
+!> meteo specific droplet number profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ncmet
 
 !> Sea level pressure (read in the input meteo file)
 double precision, allocatable, dimension(:) :: pmer
 
-!> X axis cooordinates of the meteo profile (read in the input meteo file)
+!> X axis coordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: xmet
 
-!> Y axis cooordinates of the meteo profile (read in the input meteo file)
+!> Y axis coordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ymet
 
 !   Arrays specific to values calculated from the meteo file (cf atlecm.f90):
@@ -422,6 +422,26 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
+    !> \brief Initialize meteo profiles if no meteo file is given
+
+    subroutine cs_atmo_init_meteo_profiles() &
+        bind(C, name='cs_atmo_init_meteo_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_init_meteo_profiles
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute meteo profiles if no meteo file is given
+
+    subroutine cs_atmo_compute_meteo_profiles() &
+        bind(C, name='cs_atmo_compute_meteo_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_compute_meteo_profiles
+
+    !---------------------------------------------------------------------------
+
     !> \brief Calculation of the specific enthalpy of liquid water
 
     !> \return specific enthalpy of liquid water
@@ -631,6 +651,9 @@ integer(c_int),   dimension(2) :: dim_hyd_p_met
 if (imeteo.gt.0) then
   call atlecm(0)
 endif
+if (imeteo.eq.2) then
+  call cs_atmo_init_meteo_profiles()
+endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_temp_met, c_time_met,     &
                                    c_hyd_p_met, dim_hyd_p_met,   &
@@ -792,7 +815,7 @@ subroutine mo_phih_s (z,dlmo,coef)
   b=1.1d0
   x=z * dlmo
 
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
 
 end subroutine mo_phih_s
 
@@ -975,11 +998,14 @@ end subroutine mo_psih_n
 
 ! Derivative function
 
-subroutine mo_phim (z,dlmo,coef)
+function cs_mo_phim(z,dlmo) result(coef) &
+    bind(C, name='cs_mo_phim')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,dlmo,coef
+  real(c_double), value :: z,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -990,13 +1016,16 @@ subroutine mo_phim (z,dlmo,coef)
     call mo_phim_u(z,dlmo,coef)
   endif
 
-end subroutine mo_phim
+end function cs_mo_phim
 
-subroutine mo_phih (z,dlmo,coef)
+function cs_mo_phih(z,dlmo) result(coef) &
+    bind(C, name='cs_mo_phih')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,dlmo,coef
+  real(c_double), value :: z,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1007,15 +1036,18 @@ subroutine mo_phih (z,dlmo,coef)
     call mo_phih_u(z,dlmo,coef)
   endif
 
-end subroutine mo_phih
+end function cs_mo_phih
 
 ! Integrated version from z0 to z
 
-subroutine mo_psim (z,z0,dlmo,coef)
-
+function cs_mo_psim(z,z0,dlmo) result(coef) &
+    bind(C, name='cs_mo_psim')
+  use, intrinsic :: iso_c_binding
   implicit none
+  real(c_double), value :: z,z0,dlmo
+  real(c_double) :: coef
 
-  double precision z,z0,dlmo,coef
+  ! Local variable
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1026,13 +1058,16 @@ subroutine mo_psim (z,z0,dlmo,coef)
     call mo_psim_u(z,z0,dlmo,coef)
   endif
 
-end subroutine mo_psim
+end function cs_mo_psim
 
-subroutine mo_psih (z,z0,dlmo,coef)
+function cs_mo_psih (z,z0,dlmo) result(coef) &
+    bind(C, name='cs_mo_psih')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,z0,dlmo,coef
+  real(c_double), value :: z,z0,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1043,7 +1078,7 @@ subroutine mo_psih (z,z0,dlmo,coef)
     call mo_psih_u(z,z0,dlmo,coef)
   endif
 
-end subroutine mo_psih
+end function cs_mo_psih
 
 !---------------------------------------------------------------------------
 
@@ -1095,7 +1130,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   endif
 
   ! Call universal functions
-  call mo_psim(z+z0,z0,dlmo,coef_mom)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
 
   ! Initial ustar and tstar
   ustar = xkappa * du / coef_mom
@@ -1126,7 +1161,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   endif
 
   ! Evaluate universal functions
-  call mo_psim (z+z0,z0,dlmo,coef_mom)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
 
   ! Update ustar,tstar
   ustar = xkappa*du/coef_mom
@@ -1179,6 +1214,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   double precision coef_mom,coef_moh
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
+  real(c_double) :: zref
   double precision :: dlmoclip = 0.05d0
   integer icompt
 
@@ -1198,8 +1234,9 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   endif
 
   ! Call universal functions
-  call mo_psim(z+z0,z0,dlmo,coef_mom)
-  call mo_psih(z+z0,z0,dlmo,coef_moh)
+  zref = z+z0
+  coef_mom = cs_mo_psim(zref,z0,dlmo)
+  coef_moh = cs_mo_psih(zref,z0,dlmo)
 
   ! Initial ustar and tstar
   ustar = xkappa * du / coef_mom
@@ -1235,8 +1272,8 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   endif
 
   ! Evaluate universal functions
-  call mo_psim (z+z0,z0,dlmo,coef_mom)
-  call mo_psih (z+z0,z0,dlmo,coef_moh)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
+  coef_moh = cs_mo_psih(z+z0,z0,dlmo)
 
   ! Update ustar,tstar
   ustar = xkappa*du/coef_mom

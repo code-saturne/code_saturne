@@ -935,7 +935,7 @@ do ifac = 1, nfabor
       ypup = yk / max(uplus, epzero)
 
       ! Take stability into account for the turbulent velocity scale
-      call mo_phim (distbf+rough_d,dlmo,coef_mom)
+      coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
       one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
       if (one_minus_ri.gt.0) then
         uk = uk / one_minus_ri**0.25d0

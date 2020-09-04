@@ -26,8 +26,8 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   imode       IMODE = 0 : READING FOR DIMENSIONS ONLY
-!>                          IMODE = 1 : READING ACTUAL METEO DATA
+!> \param[in]   imode        0: reading for dimensions only
+!>                           1: reading actual meteo data
 !-------------------------------------------------------------------------------
 subroutine atlecm ( imode )
 
@@ -455,7 +455,7 @@ endif
 ! 9. Printings
 !===============================================================================
 
-if (imode.eq.1) then
+if (imode.eq.1.and.imeteo.eq.1) then
   if (itp.eq.1) then
     write(nfecra, *)
     write(nfecra, *) '==================================================='

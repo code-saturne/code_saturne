@@ -137,6 +137,9 @@ _log_global_model_options(void)
   /* Stokes model*/
   cs_stokes_model_log_setup();
 
+  /* Atmospheric */
+  cs_atmo_log_setup();
+
   /* Atmospheric chemistry */
   cs_atmo_chemistry_log_setup();
 

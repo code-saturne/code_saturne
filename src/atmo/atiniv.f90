@@ -71,7 +71,7 @@ double precision dt(ncelet)
 
 integer          imode, iel
 double precision d2s3
-double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
+double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 
 integer k,ii, isc
 double precision xcent
@@ -84,6 +84,10 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, dimension(:), pointer :: cpro_met_potemp
+double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
+double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 
 !===============================================================================
 
@@ -123,6 +127,17 @@ elseif (iturb.eq.70) then
   call field_get_val_s(ivarfl(inusa), cvar_nusa)
 endif
 
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
+  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
+    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
+  endif
+endif
+
 !===============================================================================
 ! 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
 !===============================================================================
@@ -134,6 +149,9 @@ if (imeteo.gt.0) then
   !==========
   ( imode )
 
+endif
+if (imeteo.eq.2) then
+  call cs_atmo_compute_meteo_profiles()
 endif
 
 if (iatra1.gt.0) then
@@ -285,27 +303,38 @@ if (isuite.eq.0) then
 
         zent = xyzcen(3,iel)
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, umet , zent  , ttcabs, xuent )
+        ! Meteo file
+        if (imeteo.eq.1) then
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+
+          xwent = 0.d0
+        else
+          xuent = cpro_met_vel(1, iel)
+          xvent = cpro_met_vel(2, iel)
+          xwent = cpro_met_vel(3, iel)
+          xkent = cpro_met_k(iel)
+          xeent = cpro_met_eps(iel)
+        endif
 
         vel(1,iel) = xuent
         vel(2,iel) = xvent
-        vel(3,iel) = 0.d0
+        vel(3,iel) = xwent
 
-    !     ITYTUR est un indicateur qui vaut ITURB/10
+        ! ITYTUR est un indicateur qui vaut ITURB/10
         if    (itytur.eq.2) then
 
           cvar_k(iel)  = xkent
@@ -349,30 +378,41 @@ if (isuite.eq.0) then
         endif
 
         if (ippmod(iatmos).eq.1) then
-          ! The thermal scalar is potential temperature
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+          if (imeteo.eq.1) then
+            ! The thermal scalar is potential temperature
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+          else
+            tpent = cpro_met_potemp(iel)
+          endif
 
-            cvar_scalt(iel) = tpent
+          cvar_scalt(iel) = tpent
         endif
 
         if (ippmod(iatmos).eq.2) then
-          ! The thermal scalar is liquid potential temperature
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-            cvar_scalt(iel) = tpent
 
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
-            cvar_totwt(iel) = qvent
+          if (imeteo.eq.1) then
+            ! The thermal scalar is liquid potential temperature
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
 
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
-            cvar_ntdrp(iel) = ncent
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+          else
+            tpent = cpro_met_potemp(iel)
+            qvent = cpro_met_qv(iel)
+            ncent = cpro_met_nc(iel)
+          endif
+          cvar_scalt(iel) = tpent
+          cvar_totwt(iel) = qvent
+          cvar_ntdrp(iel) = ncent
         endif
 
       enddo
@@ -531,7 +571,7 @@ double precision dt(ncelet)
 
 integer          imode, iel
 double precision d2s3
-double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
+double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 
 integer k,ii, isc
 double precision xcent
@@ -544,6 +584,10 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, dimension(:), pointer :: cpro_met_potemp
+double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
+double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 
 !===============================================================================
 
@@ -581,6 +625,17 @@ elseif (iturb.eq.60) then
   call field_get_val_s(ivarfl(iomg), cvar_omg)
 elseif (iturb.eq.70) then
   call field_get_val_s(ivarfl(inusa), cvar_nusa)
+endif
+
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
+  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
+    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
+  endif
 endif
 
 !===============================================================================
@@ -627,7 +682,7 @@ endif
 if (isuite.eq.0) then
 
   !Note: if no meteo profile: done by user or previously
-  if (initmeteo.eq.1.and.imeteo.eq.1) then
+  if (initmeteo.eq.1.and.imeteo.ge.1) then
 
     if (ippmod(iatmos).eq.1) then
       call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
@@ -641,25 +696,35 @@ if (isuite.eq.0) then
 
       zent = xyzcen(3,iel)
 
-      call intprf                                                   &
-        (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, umet , zent  , ttcabs, xuent )
+      ! Meteo file
+      if (imeteo.eq.1) then
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
-      call intprf                                                   &
-        (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
-      call intprf                                                   &
-        (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
 
-      call intprf                                                   &
-        (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+        xwent = 0.d0
+      else
+        xuent = cpro_met_vel(1, iel)
+        xvent = cpro_met_vel(2, iel)
+        xwent = cpro_met_vel(3, iel)
+        xkent = cpro_met_k(iel)
+        xeent = cpro_met_eps(iel)
+      endif
 
       vel(1,iel) = xuent
       vel(2,iel) = xvent
-      vel(3,iel) = 0.d0
+      vel(3,iel) = xwent
 
       !     ITYTUR est un indicateur qui vaut ITURB/10
       if    (itytur.eq.2) then
@@ -706,29 +771,42 @@ if (isuite.eq.0) then
 
 
       if (ippmod(iatmos).eq.1) then
-        ! The thermal scalar is potential temperature
-        call intprf                                                 &
-          (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+        if (imeteo.eq.1) then
+          ! The thermal scalar is potential temperature
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+        else
+          tpent = cpro_met_potemp(iel)
+        endif
 
         cvar_scalt(iel) = tpent
       endif
 
       if (ippmod(iatmos).eq.2) then
-        ! The thermal scalar is liquid potential temperature
-        call intprf                                                 &
-          (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+        if (imeteo.eq.1) then
+          ! The thermal scalar is liquid potential temperature
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+
+        else
+          tpent = cpro_met_potemp(iel)
+          qvent = cpro_met_qv(iel)
+          ncent = cpro_met_nc(iel)
+        endif
         cvar_scalt(iel) = tpent
-
-        call intprf                                                 &
-          (nbmett, nbmetm,                                               &
-          ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
         cvar_totwt(iel) = qvent
-
-        call intprf                                                 &
-          (nbmett, nbmetm,                                               &
-          ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
         cvar_ntdrp(iel) = ncent
       endif
 

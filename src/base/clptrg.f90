@@ -912,7 +912,7 @@ do ifac = 1, nfabor
       endif
 
       ! Take stability into account for the turbulent velocity scale
-      call mo_phim (distbf+rough_d,dlmo,coef_mom)
+      coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
       ! Ri = z/L / Phim
       one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
       if (one_minus_ri.gt.0) then
@@ -1006,8 +1006,8 @@ do ifac = 1, nfabor
         else
           ! Boundary condition on the velocity to have approximately the good
           ! turbulence production
-          call mo_phim(distbf+rough_d,dlmo,coef_mom)
-          call mo_phim(2.d0*distbf+rough_d,dlmo,coef_momm)
+          coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
+          coef_momm = cs_mo_phim(2.d0*distbf+rough_d,dlmo)
           rcprod = 2.d0*distbf*sqrt(xkappa*uk*romc*coef_mom/visctc/distb0) &
             - coef_momm/(2.d0+rough_d/distbf)
 
@@ -2182,7 +2182,7 @@ do ifac = 1, nfabor
       tplus = log((distbf+rough_t)/rough_t)/ (xkappa * bcfnns(ifac))
     else
       ! Dry atmosphere, Monin Obukhov
-      call mo_psih(distbf+rough_t,rough_t,dlmo,coef_moh)
+      coef_moh = cs_mo_psih(distbf+rough_t,rough_t,dlmo)
       ! T+
       tplus = coef_moh / xkappa
     endif
@@ -2223,8 +2223,8 @@ do ifac = 1, nfabor
       else
 
         ! To approximately respect thermal turbulent production with 2 hypothesis
-        call mo_phim (distbf+rough_t,dlmo,coef_mom)
-        call mo_phih (2.0*distbf+rough_t,dlmo,coef_mohh)
+        coef_mom = cs_mo_phim(distbf+rough_t,dlmo)
+        coef_mohh = cs_mo_phih (2.0*distbf+rough_t,dlmo)
         ! Gradient BCs
         coefap(ifac) = 0.d0
 

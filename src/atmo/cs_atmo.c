@@ -76,11 +76,13 @@
 #include "cs_parall.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
 #include "cs_thermal_model.h"
+#include "cs_turbulence_model.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -121,11 +123,29 @@ static cs_atmo_option_t  _atmo_option = {
   .nucleation_model = 0,
   .subgrid_model = 0,
   .meteo_profile = 0, /* no meteo profile */
+  .meteo_dlmo = 0.,
+  .meteo_z0 = -1.,
+  .meteo_zref = -1.,
+  .meteo_zi = -1.,
+  .meteo_zu1 = -1.,
+  .meteo_zu2 = -1.,
+  .meteo_zt1 = -1.,
+  .meteo_zt2 = -1.,
+  .meteo_uref = -1.,
+  .meteo_u1 = -1.,
+  .meteo_u2 = -1.,
+  .meteo_ustar0 = -1.,
+  .meteo_wstar0 = -1.,
+  .meteo_angle = -1.,
+  .meteo_t0 = 0.,
+  .meteo_t1 = 0.,
+  .meteo_t2 = 0.,
+  .meteo_tstar = 0.,
+  .meteo_psea = -1.,
   .nbmetd = 0,
   .nbmett = 0,
   .nbmetm = 0,
   .nbmaxt = 0,
-
   .z_temp_met = NULL,
   .time_met   = NULL,
   .hyd_p_met  = NULL,
@@ -173,6 +193,26 @@ static const char *cs_atmo_aerosol_type_name[]
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
+
+cs_real_t
+cs_mo_phim(cs_real_t              z,
+           cs_real_t              dlmo);
+
+cs_real_t
+cs_mo_psim(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo);
+
+cs_real_t
+cs_mo_psih(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo);
+
+void
+cs_atmo_init_meteo_profiles(void);
+
+void
+cs_atmo_compute_meteo_profiles(void);
 
 void
 cs_f_atmo_get_pointers(int                    **syear,
@@ -406,6 +446,165 @@ _strtolower(char        *dest,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize meteo profiles if no meteo file is given
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_meteo_profiles(void)
+{
+  /* Some turbulence constants */
+  cs_real_t kappa = cs_turb_xkappa;
+  cs_real_t cmu = cs_turb_cmu;
+
+  cs_atmo_option_t *aopt = &_atmo_option;
+  cs_real_t z0 = aopt->meteo_z0;
+  cs_real_t zref = aopt->meteo_zref;
+  if (aopt->meteo_ustar0 < 0. && aopt->meteo_uref < 0.)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Atmo meteo profiles: meteo_ustar0 or meteo_uref.\n"));
+
+  /* Recompute LMO inverse */
+  if (aopt->meteo_ustar0 >= 0. && aopt->meteo_uref >= 0.) {
+    //TODO iterative process
+  }
+
+  /* Compute ground friction velocity from dlmo and uref */
+  if (aopt->meteo_ustar0 < 0.)
+    aopt->meteo_ustar0 =
+      aopt->meteo_uref * kappa
+      / cs_mo_psim(zref + z0,
+                   z0,
+                   aopt->meteo_dlmo);
+
+  /* Compute uref from ground friction velocity and dlmo */
+  if (aopt->meteo_uref < 0.)
+    aopt->meteo_uref =
+      aopt->meteo_ustar0 / kappa
+      * cs_mo_psim(zref + z0,
+                   z0,
+                   aopt->meteo_dlmo);
+
+  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  /* potential temp at ref */
+  cs_real_t pref = 1.e5;
+  cs_real_t rair = phys_pro->r_pg_cnst;
+  cs_real_t cp0 = phys_pro->cp0;
+  cs_real_t rscp = rair/cp0;
+  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  /* LMO inverse, ustar at ground */
+  cs_real_t dlmo = aopt->meteo_dlmo;
+  cs_real_t ustar0 = aopt->meteo_ustar0;
+  cs_real_t angle = aopt->meteo_angle;
+
+  /* Friction temperature */
+  aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g);
+  cs_real_t tstar = aopt->meteo_tstar;
+
+  /* BL height according to Marht 1982 formula */
+  /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
+  cs_real_t zi_coef = 0.2;
+  cs_real_t corio_f = 4. * cs_math_pi / 86164.
+    * sin(aopt->latitude * cs_math_pi / 180.);
+  aopt->meteo_zi = zi_coef * ustar0 / corio_f;
+
+  bft_printf("\n"
+             " Meteo profile information\n"
+             "  roughness = %f\n"
+             "  ground ustar = %f\n"
+             "  uref = %f\n"
+             "  zref = %f\n"
+             "  tstar = %f\n"
+             "  1/LMO = %f\n"
+             "  zi = %f\n",
+             z0, ustar0, aopt->meteo_uref, zref, tstar, dlmo, aopt->meteo_zi);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute meteo profiles if no meteo file is given
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_meteo_profiles(void)
+{
+  cs_domain_t *domain = cs_glob_domain;
+  cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)mq->cell_cen;
+  /* Get fields */
+  cs_real_t *cpro_met_potemp = cs_field_by_name("meteo_pot_temperature")->val;
+  cs_real_3_t *cpro_met_vel =
+    (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
+  cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
+  cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
+
+  /* Some turbulence constants */
+  cs_real_t kappa = cs_turb_xkappa;
+  cs_real_t cmu = cs_turb_cmu;
+
+  cs_atmo_option_t *aopt = &_atmo_option;
+  cs_real_t z0 = aopt->meteo_z0;
+  cs_real_t zref = aopt->meteo_zref;
+
+  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  /* potential temp at ref */
+  cs_real_t pref = 1.e5;
+  cs_real_t rair = phys_pro->r_pg_cnst;
+  cs_real_t cp0 = phys_pro->cp0;
+  cs_real_t rscp = rair/cp0;
+  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  /* LMO inverse, ustar at ground */
+  cs_real_t dlmo = aopt->meteo_dlmo;
+  cs_real_t ustar0 = aopt->meteo_ustar0;
+  cs_real_t angle = aopt->meteo_angle;
+
+  /* Friction temperature */
+  cs_real_t tstar = aopt->meteo_tstar;
+
+  /* Profiles */
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+
+    cs_real_t z = cell_cen[cell_id][2];
+
+    /* Velocity profile */
+    cs_real_t u_norm = ustar0 / kappa * cs_mo_psim(z+z0, z0, dlmo);
+
+    cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
+    cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
+
+    /* Potential temperature profile
+     * Note: same roughness as dynamics */
+    cpro_met_potemp[cell_id] = theta0 + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
+
+    /* Richardson flux number profile */
+    // FIXME Arya 4.37 : z/L * phih/phim^2
+    cs_real_t ri_f = (z+z0) * dlmo / cs_mo_phim(z+z0, dlmo);
+
+    /* TKE profile */
+    cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
+      * sqrt(1. - CS_MIN(ri_f, 1.));
+
+    /* epsilon profile */
+    cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
+      * cs_mo_phim(z+z0, dlmo)*(1.-ri_f); //FIXME min (1, ri_f) ?
+
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -858,6 +1057,109 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print the atmospheric module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_log_setup(void)
+{
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+    return;
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Atmospheric module options\n"
+                  "--------------------------\n\n"));
+
+  switch(cs_glob_physical_model_flag[CS_ATMOSPHERIC]) {
+    case 0:
+      /* Constant density */
+      cs_log_printf(CS_LOG_SETUP,
+                  _("  Constant density\n\n"));
+      break;
+    case 1:
+      /* Dry */
+      cs_log_printf(CS_LOG_SETUP,
+                  _("  Dry atmosphere\n\n"));
+      break;
+    case 2:
+      /* Humid */
+      cs_log_printf(CS_LOG_SETUP,
+                  _("  Humid atmosphere\n\n"));
+      break;
+    default:
+      break;
+  }
+
+  if (cs_glob_atmo_option->compute_z_ground > 0)
+    cs_log_printf(CS_LOG_SETUP,
+        _("  Compute ground elevation\n\n"));
+
+  if (cs_glob_atmo_option->open_bcs_treatment > 0)
+    cs_log_printf(CS_LOG_SETUP,
+        _("  Impose open BCs with momentum source terms\n"));
+
+  if (cs_glob_atmo_option->open_bcs_treatment == 2)
+    cs_log_printf(CS_LOG_SETUP,
+        _("  and impose profiles at ingoing faces\n\n"));
+
+  /* CUT */
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "  Starting Coordinated Universal Time (CUT):\n"
+       "    Year:      %4d\n"
+       "    Quant:     %4d\n"
+       "    Hour:      %4d\n"
+       "    Min:       %4d\n"
+       "    Sec:       %4f\n\n"),
+     cs_glob_atmo_option->syear,
+     cs_glob_atmo_option->squant,
+     cs_glob_atmo_option->shour,
+     cs_glob_atmo_option->smin,
+     cs_glob_atmo_option->ssec);
+
+  /* Centre of the domain latitude */
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("  Domain center:\n"
+       "    latitude:  %6f\n"
+       "    longitude: %6f\n\n"),
+     cs_glob_atmo_option->latitude,
+     cs_glob_atmo_option->longitude);
+
+  if (cs_glob_atmo_option->meteo_profile == 2) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Large scale Meteo profile info:\n"
+         "    roughness: %12f [m]\n"
+         "    LMO inv:   %12f [m^-1]\n"
+         "    ustar0:    %12f [m/s]\n"
+         "    uref:      %12f [m/s]\n"
+         "    zref:      %12f [m]\n"
+         "    angle:     %12f [°]\n"
+         "    P sea:     %12f [Pa]\n"
+         "    T0:        %12f [K]\n"
+         "    Tstar:     %12f [K]\n"
+         "    BL height: %12f [m]\n\n"),
+       cs_glob_atmo_option->meteo_z0,
+       cs_glob_atmo_option->meteo_dlmo,
+       cs_glob_atmo_option->meteo_ustar0,
+       cs_glob_atmo_option->meteo_uref,
+       cs_glob_atmo_option->meteo_zref,
+       cs_glob_atmo_option->meteo_angle,
+       cs_glob_atmo_option->meteo_psea,
+       cs_glob_atmo_option->meteo_t0,
+       cs_glob_atmo_option->meteo_tstar,
+       cs_glob_atmo_option->meteo_zi);
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the atmospheric chemistry options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -930,7 +1232,7 @@ cs_atmo_aerosol_log_setup(void)
   cs_log_printf
     (CS_LOG_SETUP,
      _("\nAtmospheric aerosols options\n"
-       "---------------------\n\n"));
+       "----------------------------\n\n"));
 
   cs_atmo_aerosol_type_t atm_aer_type = cs_glob_atmo_chemistry->aerosol_model;
 

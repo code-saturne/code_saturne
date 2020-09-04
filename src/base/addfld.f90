@@ -49,7 +49,7 @@ subroutine addfld
 ! Module files
 !===============================================================================
 
-use atincl, only: compute_z_ground
+use atincl, only: compute_z_ground, imeteo
 use paramx
 use dimens
 use optcal
@@ -500,6 +500,49 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
 
   call field_set_key_int(iflid, keydri, iscdri)
+endif
+
+if (imeteo.eq.2) then
+  f_name  = 'meteo_temperature'
+  f_label = 'Meteo Temperature'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+
+  f_name  = 'meteo_pot_temperature'
+  f_label = 'Meteo pot Temperature'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  if (ippmod(iatmos).eq.2) then
+    f_name  = 'meteo_humidity'
+    f_label = 'Meteo humidity'
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+
+    f_name  = 'meteo_drop_nb'
+    f_label = 'Meteo drop. nb'
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+  endif
+  f_name  = 'meteo_velocity'
+  f_label = 'Meteo velocity'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 3, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'meteo_tke'
+  f_label = 'Meteo TKE'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'meteo_eps'
+  f_label = 'Meteo epsilon'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
 endif
 
 

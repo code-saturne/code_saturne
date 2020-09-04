@@ -62,7 +62,7 @@ implicit none
 integer          ivart, iel
 
 double precision xvart, rhum, rscp, pp, zent
-double precision lrhum, lrscp
+double precision lrhum
 double precision qsl, deltaq
 double precision yw_liq, qwt, tliq, dum
 
@@ -128,8 +128,6 @@ endif
 
 rhum = rair
 rscp = rair/cp0
-
-lrscp = rair/cp0
 
 do iel = 1, ncel
 
