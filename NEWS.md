@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix use of cs_field_gradient_* operators with fields which are not
+  solved variables (such as with property or post-processing fields).
+
 - Fix non-wall radiative conditions for combustion (non-atmospheric) cases.
 
 Release 6.1.2 (August 28 2020)
