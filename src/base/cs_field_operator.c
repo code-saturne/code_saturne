@@ -580,9 +580,21 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     }
   }
 
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
   cs_gradient_perio_init_rij(f, &tr_dim, grad);
+
+  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  if (f->bc_coeffs != NULL) {
+    bc_coeff_a = f->bc_coeffs->a;
+    bc_coeff_b = f->bc_coeffs->b;
+  }
 
   cs_gradient_scalar(f->name,
                      gradient_type,
@@ -599,8 +611,8 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      var_cal_opt.extrag,
                      var_cal_opt.climgr,
                      NULL, /* f_ext */
-                     f->bc_coeffs->a,
-                     f->bc_coeffs->b,
+                     bc_coeff_a,
+                     bc_coeff_b,
                      var,
                      c_weight,
                      cpl, /* internal coupling */
@@ -652,6 +664,12 @@ cs_field_gradient_potential(const cs_field_t          *f,
                              &gradient_type,
                              &halo_type);
 
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
   int w_stride = 1;
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
@@ -682,6 +700,11 @@ cs_field_gradient_potential(const cs_field_t          *f,
     }
   }
 
+  const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
+  if (f->bc_coeffs != NULL) {
+    bc_coeff_a = f->bc_coeffs->a;
+    bc_coeff_b = f->bc_coeffs->b;
+  }
 
   cs_gradient_scalar(f->name,
                      gradient_type,
@@ -698,8 +721,8 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      var_cal_opt.extrag,
                      var_cal_opt.climgr,
                      f_ext,
-                     f->bc_coeffs->a,
-                     f->bc_coeffs->b,
+                     bc_coeff_a,
+                     bc_coeff_b,
                      var,
                      c_weight,
                      cpl, /* internal coupling */
@@ -768,8 +791,21 @@ cs_field_gradient_vector(const cs_field_t          *f,
     }
   }
 
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
                                       : (cs_real_3_t *)(f->val);
+
+  const cs_real_3_t *bc_coeff_a = NULL;
+  const cs_real_33_t *bc_coeff_b = NULL;
+  if (f->bc_coeffs != NULL) {
+    bc_coeff_a = (const cs_real_3_t *)f->bc_coeffs->a;
+    bc_coeff_b = (const cs_real_33_t *)f->bc_coeffs->b;
+  }
 
   cs_gradient_vector(f->name,
                      gradient_type,
@@ -780,8 +816,8 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.climgr,
-                     (const cs_real_3_t *)(f->bc_coeffs->a),
-                     (const cs_real_33_t *)(f->bc_coeffs->b),
+                     bc_coeff_a,
+                     bc_coeff_b,
                      var,
                      c_weight,
                      cpl,
@@ -824,8 +860,21 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                              &gradient_type,
                              &halo_type);
 
+  if (f->n_time_vals < 2 && use_previous_t)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: field %s does not maintain previous time step values\n"
+                "so \"use_previous_t\" can not be handled."),
+              __func__, f->name);
+
   cs_real_6_t *var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
                                       : (cs_real_6_t *)(f->val);
+
+  const cs_real_6_t *bc_coeff_a = NULL;
+  const cs_real_66_t *bc_coeff_b = NULL;
+  if (f->bc_coeffs != NULL) {
+    bc_coeff_a = (const cs_real_6_t *)f->bc_coeffs->a;
+    bc_coeff_b = (const cs_real_66_t *)f->bc_coeffs->b;
+  }
 
   cs_gradient_tensor(f->name,
                      gradient_type,
@@ -836,8 +885,8 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.climgr,
-                     (const cs_real_6_t *)(f->bc_coeffs->a),
-                     (const cs_real_66_t *)(f->bc_coeffs->b),
+                     bc_coeff_a,
+                     bc_coeff_b,
                      var,
                      grad);
 }
