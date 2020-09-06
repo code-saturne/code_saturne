@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix convective outlet operator setting boundary coefficients for vectors
+  (with or without anisotropic diffusion) and tensors.
+
 - Fix use of cs_field_gradient_* operators with fields which are not
   solved variables (such as with property or post-processing fields).
 
