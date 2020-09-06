@@ -4205,7 +4205,7 @@ do isou = 1, 3
   ! Gradient BCs
   do jsou = 1, 3
     if (jsou.eq.isou) then
-      coefb(isou,jsou) = cflv(isou)*(1.d0+cflv(isou))
+      coefb(isou,jsou) = cflv(isou)/(1.d0+cflv(isou))
     else
       coefb(isou,jsou) = 0.d0
     endif
@@ -4272,7 +4272,7 @@ do isou = 1, 6
   ! Gradient BCs
   do jsou = 1, 6
     if (jsou.eq.isou) then
-      coefb(isou,jsou) = cflts(isou)*(1.d0+cflts(isou))
+      coefb(isou,jsou) = cflts(isou)/(1.d0+cflts(isou))
     else
       coefb(isou,jsou) = 0.d0
     endif
@@ -4340,7 +4340,7 @@ do isou = 1, 3
   ! Gradient BCs
   do jsou = 1, 3
     if (jsou.eq.isou) then
-      coefb(isou,jsou) = cflv(isou)*(1.d0+cflv(isou))
+      coefb(isou,jsou) = cflv(isou)/(1.d0+cflv(isou))
     else
       coefb(isou,jsou) = 0.d0
     endif
