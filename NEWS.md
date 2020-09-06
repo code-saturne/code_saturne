@@ -150,6 +150,9 @@ Architectural changes:
 
 Bug fixes:
 
+- Fix convective outlet operator setting boundary coefficients for vectors
+  (with or without anisotropic diffusion) and tensors.
+
 - Major fix in hydrostatic pressure algorithm in the Rhie and Chow filter.
   It only impact cases where external force is not colinear to boundary
   faces where pressure Dirichlets are imposed (e.g. in atmospheric flows
