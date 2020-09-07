@@ -473,6 +473,37 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
                      cs_datatype_t              datatype,
                      void                      *var);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the maximum of values for elements associated with an
+ * interface set, allowing control over periodicity.
+ *
+ * On input, the variable array should contain local contributions. On output,
+ * contributions from matching elements on parallel or periodic boundaries
+ * have been added.
+ *
+ * Only the values of elements belonging to the interfaces are modified.
+ *
+ * \param[in]       ifs        pointer to a fvm_interface_set_t structure
+ * \param[in]       n_elts     number of elements in var buffer
+ * \param[in]       stride     number of values (non interlaced) by entity
+ * \param[in]       interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]       datatype   type of data considered
+ * \param[in]       tr_ignore  if > 0, ignore periodicity with rotation;
+ *                             if > 1, ignore all periodic transforms
+ * \param[in, out]  var        variable buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
+                        cs_lnum_t                  n_elts,
+                        cs_lnum_t                  stride,
+                        bool                       interlace,
+                        cs_datatype_t              datatype,
+                        int                        tr_ignore,
+                        void                      *var);
+
 /*----------------------------------------------------------------------------
  * Dump printout of an interface list.
  *

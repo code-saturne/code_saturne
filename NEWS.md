@@ -3,6 +3,10 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix construction of cs_range_t in the presence of periodicity.
+  * This fixes an issue when logging vertex-based fields,
+    such as the mesh displacement on periodic meshes.
+
 - Fix convective outlet operator setting boundary coefficients for vectors
   (with or without anisotropic diffusion) and tensors.
 

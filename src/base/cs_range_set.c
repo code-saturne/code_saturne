@@ -209,16 +209,17 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
   /* For balancing option, elements belonging to 2 ranks
      should have a final value, but those belonging to 3
      might have inconsistant values between ranks, so
-     toke highest rank for those (should cause only a
+     take highest rank for those (should cause only a
      slight imbalance) */
 
   if (balance)
-    cs_interface_set_max(ifs,
-                         n_elts,
-                         1,
-                         true,
-                         CS_GNUM_TYPE,
-                         g_id);
+    cs_interface_set_max_tr(ifs,
+                            n_elts,
+                            1,
+                            true,
+                            CS_GNUM_TYPE,
+                            2,
+                            g_id);
 
   /* Now count and mark fo global elements */
 
@@ -253,12 +254,13 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
       g_id[i] = 0;
   }
 
-  cs_interface_set_max(ifs,
-                       n_elts,
-                       1,
-                       true,
-                       CS_GNUM_TYPE,
-                       g_id);
+  cs_interface_set_max_tr(ifs,
+                          n_elts,
+                          1,
+                          true,
+                          CS_GNUM_TYPE,
+                          2,
+                          g_id);
 
   /* Now assign to correct base */
 
