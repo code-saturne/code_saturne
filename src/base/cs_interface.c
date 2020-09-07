@@ -5233,6 +5233,308 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the maximum of values for elements associated with an
+ * interface set, allowing control over periodicity.
+ *
+ * On input, the variable array should contain local contributions. On output,
+ * contributions from matching elements on parallel or periodic boundaries
+ * have been added.
+ *
+ * Only the values of elements belonging to the interfaces are modified.
+ *
+ * \param[in]       ifs        pointer to a fvm_interface_set_t structure
+ * \param[in]       n_elts     number of elements in var buffer
+ * \param[in]       stride     number of values (non interlaced) by entity
+ * \param[in]       interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]       datatype   type of data considered
+ * \param[in]       tr_ignore  if > 0, ignore periodicity with rotation;
+ *                             if > 1, ignore all periodic transforms
+ * \param[in, out]  var        variable buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
+                        cs_lnum_t                  n_elts,
+                        cs_lnum_t                  stride,
+                        bool                       interlace,
+                        cs_datatype_t              datatype,
+                        int                        tr_ignore,
+                        void                      *var)
+{
+  cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
+  unsigned char *buf = NULL;
+
+  int n_tr = 0;
+
+  if (tr_ignore > 0 && ifs->periodicity != NULL) {
+    if (tr_ignore < 2) {
+      int n_tr_max = fvm_periodicity_get_n_transforms(ifs->periodicity);
+      for (int tr_id = 0; tr_id < n_tr_max; tr_id++) {
+        if (fvm_periodicity_get_type(ifs->periodicity, tr_id)
+            < FVM_PERIODICITY_ROTATION)
+          n_tr = tr_id + 1;
+      }
+    }
+    n_tr += 1; /* add base "identity" transform_id */
+  }
+
+  if (n_tr < 1) {
+    cs_interface_set_max(ifs,
+                         n_elts,
+                         stride,
+                         interlace,
+                         datatype,
+                         var);
+    return;
+  }
+
+  /* We can use a fixed max periodicity type here based on translation,
+     because when even translation is ignored, n_tr has been set to 1 above,
+     and the first transform is "no transform", so tests should always
+     return a correct value */
+
+  fvm_periodicity_type_t tr_threshold = FVM_PERIODICITY_ROTATION;
+
+  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+
+  if (stride < 2 || interlace)
+    cs_interface_set_copy_array(ifs,
+                                datatype,
+                                stride,
+                                true, /* src_on_parent */
+                                var,
+                                buf);
+
+  else
+    _interface_set_copy_array_ni(ifs,
+                                 datatype,
+                                 n_elts,
+                                 stride,
+                                 var,
+                                 buf);
+
+  /* Now increment values */
+
+  cs_lnum_t j = 0;
+
+  for (int i = 0; i < ifs->size; i++) {
+
+    cs_interface_t *itf = ifs->interfaces[i];
+
+    for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+
+      cs_lnum_t s_id = itf->tr_index[tr_id];
+      cs_lnum_t e_id = itf->tr_index[tr_id+1];
+      if (e_id > s_id && tr_id > 0) {
+        if (  fvm_periodicity_get_type(ifs->periodicity, tr_id-1)
+            >= tr_threshold)
+          continue;
+      }
+
+      switch (datatype) {
+
+      case CS_CHAR:
+        {
+          char *v = var;
+          const char *p = (const char *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_FLOAT:
+        {
+          float *v = var;
+          const float *p = (const float *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_DOUBLE:
+        {
+          double *v = var;
+          const double *p = (const double *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_INT32:
+        {
+          int32_t *v = var;
+          const int32_t *p = (const int32_t *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_INT64:
+        {
+          int64_t *v = var;
+          const int64_t *p = (const int64_t *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_UINT16:
+        {
+          uint16_t *v = var;
+          const uint16_t *p = (const uint16_t *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_UINT32:
+        {
+          uint32_t *v = var;
+          const uint32_t *p = (const uint32_t *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      case CS_UINT64:
+        {
+          uint64_t *v = var;
+          const uint64_t *p = (const uint64_t *)buf + j*stride;
+          if (stride < 2 || interlace) {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                              p[k*stride + l]);
+            }
+          }
+          else {
+            for (cs_lnum_t k = s_id; k < e_id; k++) {
+              cs_lnum_t elt_id = itf->elt_id[k];
+              for (cs_lnum_t l = 0; l < stride; l++)
+                v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                              p[k*stride + l]);
+            }
+          }
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Called %s with unhandled datatype (%d)."),
+                  __func__, (int)datatype);
+      }
+
+    } /* End of loop on transformations */
+
+    j += itf->size;
+
+  }
+
+  BFT_FREE(buf);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add matching element id information to an interface set.
  *
  * This information is required by calls to cs_interface_get_dist_ids(),
