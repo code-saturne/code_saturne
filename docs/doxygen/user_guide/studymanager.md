@@ -1006,7 +1006,7 @@ The less-than < and greater-than > symbols are among the five predefined
 entities of the XML specification that represent special characters.
 
 In order to have one of the five predefined entities rendered in any legend, title or axis label,
-use the ring `&name;`. Refer to the following table for the name of the character to be rendered:
+use the string `&name;`. Refer to the following table for the name of the character to be rendered:
 
 <table>
 <caption id="smgr_table_xml_spe_sym">Special symbols of the XML specification</caption>

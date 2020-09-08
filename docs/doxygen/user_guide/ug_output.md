@@ -79,7 +79,7 @@ faces (-2) associated with a user writer.
 For safety, the output frequency and the possibility to modify the
 post-processing meshes are associated with the writers rather than
 with the meshes. This logic avoids unwanted generation of
-inconsistent post-processing outputs. For instance, \ParaView or EnSight would not
+inconsistent post-processing outputs. For instance, ParaView or EnSight would not
 be able to correctly read a case in which one field is output to a given part
 every 10 time steps, while another field is output to the same part
 every 200 time steps. If some fields should be output using different
@@ -181,7 +181,7 @@ For the main computed values defined as *fields*, the GUI allows  defining
 whether a given field with be associated using the default output meshes,
 the default probe set, and the main log.
 
-This can also be handled using the \ref post_vis and \log field key values.
+This can also be handled using the \ref post_vis and \ref log field key values.
 
 Also, the "auto variables" flag may be assigned to additional post-processing meshes
 so that output of fields behaves in a manner similar to that of the
@@ -190,7 +190,7 @@ mesh for a volume extract).
 
 To output additional values, whether simply restricting output to a small subset of field
 or adding values based on specific computations or formulas, see the
-\cs_user_postprocess_values user function and associated examples
+\ref cs_user_postprocess_values user function and associated examples
 (in [Definition of the variables to post-process](@ref cs_user_postprocess_h_var_p)).
 
 Analyzing the output
