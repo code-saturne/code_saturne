@@ -1,14 +1,20 @@
 Master (not on release branches yet)
 ------------------------------------
 
-Release 6.2.0 (unreleased)
---------------------------
-
 User changes:
 
 - GUI: present volume and boundary conditions using sub-nodes in the
   left-hand tree for the appropriate zones. This is a first step in
   a change of zone setup presentation.
+
+Bug fixes:
+
+- GUI : Fix backward compatibility update function for NCFD for v6.1 and later
+
+Release 6.2.0 (August 27 2020)
+--------------------------
+
+User changes:
 
 - Volume mass injections can now be defined using zone and
   equation parameter based cs_equation_add_volume_mass_injection_*
