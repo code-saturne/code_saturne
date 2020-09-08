@@ -165,18 +165,23 @@ class XMLinitNeptune(BaseXmlInit):
         Change XML in order to ensure backward compatibility for old version
         there is nothing to do for 2.1 to 2.2
         """
-        if from_vers == "-1":
+        if from_vers <= "-1.0":
             self.__backwardCompatibilityFrom_2_0()
             self.__backwardCompatibilityFrom_2_2()
-        elif from_vers == "2.0":
+
+        if from_vers[:3] < "3.0.0":
             self.__backwardCompatibilityFrom_2_0()
             self.__backwardCompatibilityFrom_2_2()
-        elif from_vers == "2.2":
-            self.__backwardCompatibilityFrom_2_2()
-        elif from_vers == "4.2":
-            self.__backwardCompatibilityFrom_4_2()
-        elif from_vers == "4.4":
+
+        if from_vers[:3] < "5.0.0":
+            if from_vers[:3] < "4.3.0":
+                self.__backwardCompatibilityFrom_4_2()
+
             self.__backwardCompatibilityFrom_4_4()
+
+        if from_vers[:3] < "7.0.0":
+            if from_vers[:3] < "6.1.0":
+                self.__backwardCompatibilityFrom_6_0()
 
 
     def __backwardCompatibilityFrom_2_0(self):
@@ -538,9 +543,9 @@ class XMLinitNeptune(BaseXmlInit):
 
 
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_6_0(self):
         """
-        Change XML in order to ensure backward compatibility.
+        Change XML in order to ensure backward compatibility from v6.0 to v6.1.
         """
 
         # Retrocompatibility: the use of probes in neptune is now the same as for code_saturne
@@ -620,10 +625,12 @@ class XMLinitNeptune(BaseXmlInit):
                 for n in self.case.xmlGetNodeList('wall'):
                     n.xmlInitChildNode('wall_model', field_id = fieldId, model = mdl)
 
-        # ------------------------------------------------------------
-        # FIXME: TO REMOVE ONCE NCFD 5.0 is out!
-        # For versions prior to 5.0,renaming of wall_temperature as boundary_temperature
-        self.__backwardCompatibilityFrom_4_4()
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

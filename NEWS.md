@@ -3,6 +3,8 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix GUI backward compatibility update function for NCFD (v6.0->v6.1)
+
 - Fix construction of cs_range_t in the presence of periodicity.
   * This fixes an issue when logging vertex-based fields,
     such as the mesh displacement on periodic meshes.
