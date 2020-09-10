@@ -9,7 +9,7 @@ User changes:
 
 Bug fixes:
 
-- GUI : Fix backward compatibility update function for NCFD for v6.1 and later
+- GUI: Fix backward compatibility update function for NCFD v6.1 and later.
 
 Release 6.2.0 (August 27 2020)
 --------------------------

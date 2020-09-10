@@ -347,27 +347,21 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   iinvpe = 0;
 
   if (cs_glob_mesh->n_init_perio > 0) {
-    /*    Par defaut, toutes les periodicites seront traitees,
-          les variables etant assimilees a des scalaires (meme si ce sont
-          des composantes de vecteurs ou de tenseur) */
-    iinvpe = 1;
+
+    iinvpe = 1; /* By default, all periodicity types are handled */
 
     if (f_id > -1) {
       f = cs_field_by_id(f_id);
 
+      /* For Reynolds stress component solved separately, only translation
+         periodicity information is exchanged.
+         When solving by increments, the increment will be cancelled for
+         faces with rotation periodicity. */
+
       if (   f == CS_F_(r11) || f == CS_F_(r12)
           || f == CS_F_(r13) || f == CS_F_(r22)
           || f == CS_F_(r23) || f == CS_F_(r33)) {
-        /*    Pour les tensions de Reynolds, et les tpucou
-              seules seront echangees les informations sur les faces periodiques
-              de translation ; on ne touche pas aux informations
-              relatives aux faces de periodicite de rotation. */
         itenso = 1;
-
-        /*    Lors de la resolution par increments, on echangera egalement les
-              informations relatives aux faces de periodicite de translation.
-              Pour les faces de periodicite de rotation, l'increment sera
-              annule en appelant syncmp au lieu de synsca (iinvpe=2). */
         iinvpe = 2;
       }
     }
@@ -429,7 +423,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *    second iteration).
    *==========================================================================*/
 
-  /* Application du theta schema */
+  /* Application of the theta-scheme */
 
   /* On calcule le bilan explicite total */
   thetex = 1. - thetap;
@@ -440,7 +434,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (f_id > -1)
     cs_beta_limiter_building(f_id, inc, rovsdt);
 
-  /* Si THETEX=0, ce n'est pas la peine d'en rajouter */
+  /* If thetex = 0, no need to do more */
   if (fabs(thetex) > cs_math_epzero) {
     inc    = 1;
     iccocg = 1;
