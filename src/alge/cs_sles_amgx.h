@@ -47,7 +47,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Iterative linear solver context (opaque) */
+/* AMGX linear solver context (opaque) */
 
 typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
 
@@ -70,7 +70,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  * This is a utility function: if finer control is needed, see
  * cs_sles_define() and cs_sles_amgx_create().
  *
- * Note that this function returns a pointer directly to the iterative solver
+ * Note that this function returns a pointer directly to the AMGX solver
  * management structure. This may be used to set further options.
  * If needed, cs_sles_find() may be used to obtain a pointer to the matching
  * cs_sles_t container.
@@ -82,7 +82,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  *                    for setup_hook, or NULL
  *
  * returns:
- *   pointer to newly created iterative solver info object.
+ *   pointer to newly created AMGX solver info object.
  *----------------------------------------------------------------------------*/
 
 cs_sles_amgx_t *
@@ -171,7 +171,7 @@ cs_sles_amgx_set_config_resources(const char  *config);
  *
  * Check the AMGX docummentation for configuration strings syntax.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *
  * \return  configuration string
  */
@@ -188,7 +188,7 @@ cs_sles_amgx_get_config(void  *context);
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  * \param[in]       config   string defining configuration to use
  */
 /*----------------------------------------------------------------------------*/
@@ -203,7 +203,7 @@ cs_sles_amgx_set_config(void        *context,
  *
  * Check the AMGX docummentation for configuration file syntax.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *
  * \return  configuration file name, or NULL
  */
@@ -220,7 +220,7 @@ cs_sles_amgx_get_config_file(void  *context);
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  * \param[in]       path     path to configuration file
  */
 /*----------------------------------------------------------------------------*/
@@ -236,7 +236,7 @@ cs_sles_amgx_set_config_file(void        *context,
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to iterative solver info and context
+ * \param[in]  context  pointer to AMGX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -252,7 +252,7 @@ cs_sles_amgx_get_pin_memory(void  *context);
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "pin_memory = false", thie may be deactivated.
  *
- * \param[in, out]  context       pointer to iterative solver info and context
+ * \param[in, out]  context       pointer to AMGX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -268,7 +268,7 @@ cs_sles_amgx_set_pin_memory(void  *context,
  * By default, the device will be used, but by callingg this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to iterative solver info and context
+ * \param[in]  context  pointer to AMGX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -284,7 +284,7 @@ cs_sles_amgx_get_use_device(void  *context);
  * By default, the device will be used, but by callingg this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in, out]  context       pointer to iterative solver info and context
+ * \param[in, out]  context       pointer to AMGX solver info and context
  * \param[in]       use_device   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/

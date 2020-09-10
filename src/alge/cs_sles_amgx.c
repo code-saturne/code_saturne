@@ -299,6 +299,42 @@ _amgx_finalize(void)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Load AMGX solver configuration.
+ *
+ * \param[in, out]  c   pointer to AMGX solver info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_load_solver_config(cs_sles_amgx_t  *c)
+{
+  char err_str[4096];
+  const char error_fmt[] = N_("%s returned %d.\n"
+                              "%s");
+  AMGX_RC retval = AMGX_RC_OK;
+
+  if (c->solver_config_file == NULL) {
+    retval = AMGX_config_create(&(c->solver_config),
+                                cs_sles_amgx_get_config(c));
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_config_create", retval, err_str);
+    }
+  }
+  else {
+    retval = AMGX_config_create_from_file(&(c->solver_config),
+                                          c->solver_config_file);
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_config_create_from_file", retval, err_str);
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -321,7 +357,7 @@ _amgx_finalize(void)
  * the matrix type will be forced to MATSHELL ("shell") regardless
  * of the option used.
  *
- * Note that this function returns a pointer directly to the iterative solver
+ * Note that this function returns a pointer directly to the solver
  * management structure. This may be used to set further options.
  * If needed, \ref cs_sles_find may be used to obtain a pointer to the matching
  * \ref cs_sles_t container.
@@ -331,7 +367,7 @@ _amgx_finalize(void)
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
  *
- * \return  pointer to newly created iterative solver info object.
+ * \return  pointer to newly created AMGX solver info object.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -443,7 +479,7 @@ cs_sles_amgx_copy(const void  *context)
 /*!
  * \brief Destroy AMGX linear system solver info and context.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *                           (actual type: cs_sles_amgx_t  **)
  */
 /*----------------------------------------------------------------------------*/
@@ -533,7 +569,7 @@ cs_sles_amgx_set_config_resources(const char  *config)
  *
  * Check the AMGX docummentation for configuration strings syntax.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *
  * \return  configuration string
  */
@@ -580,7 +616,7 @@ cs_sles_amgx_get_config(void  *context)
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  * \param[in]       config   string defining configuration to use
  */
 /*----------------------------------------------------------------------------*/
@@ -593,7 +629,7 @@ cs_sles_amgx_set_config(void        *context,
 
   size_t l = strlen(config);
 
-  BFT_REALLOC(c->solver_config_string, l, char);
+  BFT_REALLOC(c->solver_config_string, l+1, char);
   strncpy(c->solver_config_string, config, l);
   c->solver_config_string[l] = '\0';
 }
@@ -604,7 +640,7 @@ cs_sles_amgx_set_config(void        *context,
  *
  * Check the AMGX docummentation for configuration file syntax.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *
  * \return  configuration file name, or NULL
  */
@@ -626,7 +662,7 @@ cs_sles_amgx_get_config_file(void  *context)
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  * \param[in]       path     path to configuration file
  */
 /*----------------------------------------------------------------------------*/
@@ -639,7 +675,7 @@ cs_sles_amgx_set_config_file(void        *context,
 
   size_t l = strlen(path);
 
-  BFT_REALLOC(c->solver_config_file, l, char);
+  BFT_REALLOC(c->solver_config_file, l+1, char);
   strncpy(c->solver_config_file, path, l);
   c->solver_config_file[l] = '\0';
 }
@@ -651,7 +687,7 @@ cs_sles_amgx_set_config_file(void        *context,
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to iterative solver info and context
+ * \param[in]  context  pointer to AMGX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -672,7 +708,7 @@ cs_sles_amgx_get_pin_memory(void  *context)
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "pin_memory = false", thie may be deactivated.
  *
- * \param[in, out]  context       pointer to iterative solver info and context
+ * \param[in, out]  context       pointer to AMGX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -690,7 +726,7 @@ cs_sles_amgx_set_pin_memory(void  *context,
 /*!
  * \brief Query whether an AMGX solver should use the device or host.
  *
- * \param[in]  context  pointer to iterative solver info and context
+ * \param[in]  context  pointer to AMGX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -717,7 +753,7 @@ cs_sles_amgx_get_use_device(void  *context)
  * By default, the device will be used, but by calling this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in, out]  context       pointer to iterative solver info and context
+ * \param[in, out]  context       pointer to AMGX solver info and context
  * \param[in]       use_device   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -747,7 +783,7 @@ cs_sles_amgx_set_use_device(void  *context,
 /*!
  * \brief Setup AMGX linear equation solver.
  *
- * \param[in, out]  context    pointer to iterative solver info and context
+ * \param[in, out]  context    pointer to AMGX solver info and context
  *                             (actual type: cs_sles_amgx_t  *)
  * \param[in]       name       pointer to system name
  * \param[in]       a          associated matrix
@@ -777,6 +813,9 @@ cs_sles_amgx_setup(void               *context,
     BFT_MALLOC(c->setup_data, 1, cs_sles_amgx_setup_t);
     sd = c->setup_data;
   }
+
+  if (c->n_setups < 1)
+    _load_solver_config(c);
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const int n_rows = cs_matrix_get_n_rows(a);
@@ -948,27 +987,6 @@ cs_sles_amgx_setup(void               *context,
 
   /* Solver */
 
-  if (c->n_setups < 1) {
-    if (c->solver_config_file == NULL) {
-      retval = AMGX_config_create(&(c->solver_config),
-                                  cs_sles_amgx_get_config(c));
-      if (retval != AMGX_RC_OK) {
-        AMGX_get_error_string(retval, err_str, 4096);
-        bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-                  "AMGX_config_create", retval, err_str);
-      }
-    }
-    else {
-      retval = AMGX_config_create_from_file(&(c->solver_config),
-                                            c->solver_config_file);
-      if (retval != AMGX_RC_OK) {
-        AMGX_get_error_string(retval, err_str, 4096);
-        bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-                  "AMGX_config_create_from_file", retval, err_str);
-      }
-    }
-  }
-
   retval = AMGX_solver_create(&(sd->solver),
                               _amgx_resources,
                               c->amgx_mode,
@@ -1005,7 +1023,7 @@ cs_sles_amgx_setup(void               *context,
  *          the matching configuration options should be set earlier, using
  *          the \ref cs_sles_amgx_set_config function
  *
- * \param[in, out]  context        pointer to iterative solver info and context
+ * \param[in, out]  context        pointer to AMGX solver info and context
  *                                 (actual type: cs_sles_amgx_t  *)
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
@@ -1083,8 +1101,10 @@ cs_sles_amgx_solve(void                *context,
   AMGX_vector_create(&x, _amgx_resources, c->amgx_mode);
   AMGX_vector_create(&b, _amgx_resources, c->amgx_mode);
 
-  AMGX_vector_bind(x, c->setup_data->matrix);
-  AMGX_vector_bind(b, c->setup_data->matrix);
+  if (cs_glob_n_ranks > 1) {
+    AMGX_vector_bind(x, c->setup_data->matrix);
+    AMGX_vector_bind(b, c->setup_data->matrix);
+  }
 
   unsigned int n_bytes = n_rows*db_size;
 
@@ -1116,15 +1136,20 @@ cs_sles_amgx_solve(void                *context,
   AMGX_vector_destroy(x);
   AMGX_vector_destroy(b);
 
+  AMGX_solver_get_iterations_number(sd->solver, &its);
+  // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
+
+  retval = AMGX_vector_download(x, vx);
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_vector_download", retval, err_str);
+  }
+
   if (c->pin_memory) {
     AMGX_unpin_memory(vx);
     AMGX_unpin_memory(rhs);
   }
-
-  cs_fp_exception_restore_trap();
-
-  AMGX_solver_get_iterations_number(sd->solver, &its);
-  // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
 
   AMGX_SOLVE_STATUS  solve_status;
   AMGX_solver_get_status(sd->solver, &solve_status);
@@ -1142,6 +1167,8 @@ cs_sles_amgx_solve(void                *context,
     else
       cvg = CS_SLES_DIVERGED;
   }
+
+  cs_fp_exception_restore_trap();
 
   *residue = _residue;
   *n_iter = its;
@@ -1172,7 +1199,7 @@ cs_sles_amgx_solve(void                *context,
  * buffers and preconditioning but does not free the whole context,
  * as info used for logging (especially performance data) is maintained.
  *
- * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  context  pointer to AMGX solver info and context
  *                           (actual type: cs_sles_amgx_t  *)
  */
 /*----------------------------------------------------------------------------*/
@@ -1203,7 +1230,7 @@ cs_sles_amgx_free(void  *context)
 /*!
  * \brief Log sparse linear equation solver info.
  *
- * \param[in]  context   pointer to iterative solver info and context
+ * \param[in]  context   pointer to AMGX solver info and context
  *                       (actual type: cs_sles_amgx_t  *)
  * \param[in]  log_type  log type
  */
@@ -1215,15 +1242,14 @@ cs_sles_amgx_log(const void  *context,
 {
   const cs_sles_amgx_t  *c = context;
 
-  const char s_type[] = "";
   const char m_type[] = "CSR";
 
   if (log_type == CS_LOG_SETUP) {
 
     cs_log_printf(log_type,
-                  _("  Solver type:                       AMGX%s\n"
+                  _("  Solver type:                       AMGX\n"
                     "    Matrix format:                     %s\n"),
-                    s_type, m_type);
+                  m_type);
 
   }
   else if (log_type == CS_LOG_PERFORMANCE) {
@@ -1239,7 +1265,7 @@ cs_sles_amgx_log(const void  *context,
 
     cs_log_printf(log_type,
                   _("\n"
-                    "  Solver type:                   AMGX (%s)\n"
+                    "  Solver type:                   AMGX\n"
                     "    Matrix format:               %s\n"
                     "  Number of setups:              %12d\n"
                     "  Number of calls:               %12d\n"
@@ -1248,7 +1274,7 @@ cs_sles_amgx_log(const void  *context,
                     "  Mean number of iterations:     %12d\n"
                     "  Total setup time:              %12.3f\n"
                     "  Total solution time:           %12.3f\n"),
-                  s_type, m_type,
+                  m_type,
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
                   c->t_setup.wall_nsec*1e-9,
                   c->t_solve.wall_nsec*1e-9);
