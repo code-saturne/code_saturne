@@ -70,6 +70,13 @@ libcsalge_amgx_la_CPPFLAGS =\
 -I$(top_srcdir)/src/mesh \
 $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
+libcsalge_hypre_la_CPPFLAGS =\
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+$(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
+
 libcsalge_extension_la_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
@@ -116,6 +123,10 @@ endif
 
 if HAVE_MUMPS
 pkginclude_HEADERS += cs_sles_mumps.h
+endif
+
+if HAVE_HYPRE
+pkginclude_HEADERS += cs_matrix_hypre.h
 endif
 
 if HAVE_AMGX
@@ -181,6 +192,12 @@ cs_sles_mumps.c
 libcsalge_mumps_la_LIBADD = \
 $(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
 libcsalge_mumps_la_LDFLAGS = -no-undefined
+endif
+
+if HAVE_HYPRE
+noinst_LTLIBRARIES += libcsalge_hypre.la
+libcsalge_la_LIBADD += libcsalge_hypre.la
+libcsalge_hypre_la_SOURCES = cs_matrix_hypre.c
 endif
 
 if HAVE_AMGX

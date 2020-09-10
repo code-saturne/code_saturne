@@ -660,14 +660,10 @@ _needs_solving(const  char        *name,
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * _diag_block_size;
 
-  double r[2] = {cs_dot_xx(n_rows, rhs), 0};
-  double r1 = 0;
-
-# pragma omp parallel for reduction(+:r1) if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_rows; i++)
-    r1 += vx[i]*vx[i];
-  r[1] = CS_MIN(r1, 1);
-
+  double r[2] = {
+    cs_dot_xx(n_rows, rhs),
+    cs_dot_xx(n_rows, vx)
+  };
   cs_parall_sum(2, CS_DOUBLE, r);
 
   /* If the initial solution is "true" zero (increment mode), we can determine

@@ -975,7 +975,7 @@ cs_sles_petsc_setup(void               *context,
       bft_error(__FILE__, __LINE__, 0,
                 _("Matrix type %s with block size %d for system \"%s\"\n"
                   "is not usable by PETSc."),
-                cs_matrix_type_name[cs_matrix_get_type(a)], db_size,
+                cs_matrix_get_type_name(a), db_size,
                 name);
 
     /* Now preallocate matrix */

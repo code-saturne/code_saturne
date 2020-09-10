@@ -155,6 +155,55 @@ cs_matrix_native(bool              symmetric,
                  const cs_lnum_t  *diag_block_size,
                  const cs_lnum_t  *extra_diag_block_size);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix wrapper for external library for a given fill type.
+ *
+ * \param[in]  type_name              Matrix type name
+ * \param[in]  symmetric              Indicates if coefficients are symmetric
+ * \param[in]  diag_block_size        Nlock sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ *
+ * \return  Pointer to matrix matching requested type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_external(const char       *type_name,
+                   bool              symmetric,
+                   const cs_lnum_t  *diag_block_size,
+                   const cs_lnum_t  *extra_diag_block_size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy base matrix to external library matrix type for given fill type.
+ *
+ * Note that the matrix containers share the same assigned structure,
+ * so they must be both destroyed before that structure.
+ *
+ * Coefficients and matching structures are not copied or created.
+ *
+ * This function is intended to allow sharing of a base structure or assembler
+ * with an external library matrix wrapper, so as to allow efficient
+ * coefficient assignment, but with external coefficient handling.
+ *
+ * The matrix shoud be converted to the desired external type after calling
+ * this function, so that it can the be accessed using \ref cs_matrix_external.
+ *
+ * \param[in]  symmetric              Indicates if matrix coefficients are symmetric
+ * \param[in]  diag_block_size        Block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ *
+ * \return  pointer to native matrix adapted to fill type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_copy_to_external(cs_matrix_t      *src,
+                           bool              symmetric,
+                           const cs_lnum_t  *diag_block_size,
+                           const cs_lnum_t  *extra_diag_block_size);
+
 /*----------------------------------------------------------------------------
  * Determine or apply default tuning for a given matrix type
  *

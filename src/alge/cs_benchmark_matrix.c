@@ -63,6 +63,10 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
+#if defined(HAVE_HYPRE)
+#include "cs_matrix_hypre.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -96,6 +100,7 @@ typedef struct {
 
   char                   name[32];            /* Variant name */
 
+  char                   external_type[32];   /* External matrix type, or NULL */
   cs_matrix_type_t       type;                /* Matrix type */
 
   /* Function names, with variants:
@@ -180,6 +185,7 @@ _variant_init(cs_matrix_timing_variant_t  *v)
  *
  * parameters:
  *   name                 <-- matrix variant name
+ *   external_type        <-- matrix external type name if applicable, or NULL
  *   type                 <-- matrix type
  *   n_fill_types         <-- number of fill types tuned for
  *   fill_types           <-- array of fill types tuned for
@@ -195,6 +201,7 @@ _variant_init(cs_matrix_timing_variant_t  *v)
 
 static void
 _variant_add(const char                        *name,
+             const char                        *external_type,
              cs_matrix_type_t                   type,
              int                                n_fill_types,
              cs_matrix_fill_type_t              fill_types[],
@@ -223,6 +230,10 @@ _variant_add(const char                        *name,
   _variant_init(v);
 
   strcpy(v->name, name);
+  memset(v->external_type, 0, 32);
+  if (external_type != NULL)
+    strncpy(v->external_type, external_type, 31);
+
   v->vector_multiply_name[0][0][0] = '\0';
   v->vector_multiply_name[0][1][0] = '\0';
   v->type = type;
@@ -307,6 +318,7 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_NATIVE]) {
 
     _variant_add("Native, baseline",
+                 NULL,
                  CS_MATRIX_NATIVE,
                  n_fill_types,
                  fill_types,
@@ -324,6 +336,7 @@ _variant_build_list(int                             n_fill_types,
 
       if (numbering->type == CS_NUMBERING_THREADS)
         _variant_add("Native, OpenMP",
+                     NULL,
                      CS_MATRIX_NATIVE,
                      n_fill_types,
                      fill_types,
@@ -336,6 +349,7 @@ _variant_build_list(int                             n_fill_types,
                      m_variant);
 
       _variant_add("Native, OpenMP atomic",
+                   NULL,
                    CS_MATRIX_NATIVE,
                    n_fill_types,
                    fill_types,
@@ -351,6 +365,7 @@ _variant_build_list(int                             n_fill_types,
 
       if (numbering->type == CS_NUMBERING_VECTORIZE)
         _variant_add("Native, vectorized",
+                     NULL,
                      CS_MATRIX_NATIVE,
                      n_fill_types,
                      fill_types,
@@ -369,6 +384,7 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_CSR]) {
 
     _variant_add("CSR",
+                 NULL,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
@@ -383,6 +399,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL)
 
     _variant_add("CSR, with MKL",
+                 NULL,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
@@ -409,6 +426,7 @@ _variant_build_list(int                             n_fill_types,
     if (_n_fill_types > 0) {
 
       _variant_add("CSR_SYM",
+                   NULL,
                    CS_MATRIX_CSR_SYM,
                    _n_fill_types,
                    _fill_types,
@@ -423,6 +441,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL)
 
       _variant_add("CSR_SYM, with MKL",
+                   NULL,
                    CS_MATRIX_CSR_SYM,
                    _n_fill_types,
                    _fill_types,
@@ -443,13 +462,14 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_MSR]) {
 
     _variant_add("MSR",
+                 NULL,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
                  2, /* ed_flag */
                  "standard",
                  "standard",
-                 NULL,
+                 "standard",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -457,6 +477,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL)
 
     _variant_add("MSR, with MKL",
+                 NULL,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
@@ -471,6 +492,7 @@ _variant_build_list(int                             n_fill_types,
 #endif /* defined(HAVE_MKL) */
 
     _variant_add("MSR, OpenMP scheduling",
+                 NULL,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
@@ -481,6 +503,23 @@ _variant_build_list(int                             n_fill_types,
                  n_variants,
                  &n_variants_max,
                  m_variant);
+
+#if defined(HAVE_HYPRE)
+
+    _variant_add("HYPRE (PARCSR)",
+                 "HYPRE",
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 0, /* ed_flag */
+                 "external",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_MKL) */
 
   }
 
@@ -642,6 +681,13 @@ _matrix_check(int                          n_variants,
 
         m = cs_matrix_create(ms);
 
+        if (v->external_type != NULL) {
+#if defined(HAVE_HYPRE)
+          if (strcmp(v->external_type, "HYPRE") == 0)
+            cs_matrix_set_type_hypre(m);
+#endif
+        }
+
         cs_matrix_set_coefficients(m,
                                    sym_coeffs,
                                    _d_block_size,
@@ -651,27 +697,30 @@ _matrix_check(int                          n_variants,
                                    da,
                                    xa);
 
-        cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+        cs_matrix_vector_product_t  *vector_multiply = NULL;
 
-        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0)
-          cs_matrix_variant_set_func(mv,
-                                     numbering,
-                                     f_id,
-                                     ed_flag,
-                                     v->vector_multiply_name[f_id][ed_flag]);
+        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0) {
 
-        cs_matrix_variant_apply(m, mv);
+          if (strlen(v->external_type) == 0) {
+            cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+            cs_matrix_variant_set_func(mv,
+                                       numbering,
+                                       f_id,
+                                       ed_flag,
+                                       v->vector_multiply_name[f_id][ed_flag]);
+            cs_matrix_variant_apply(m, mv);
+            cs_matrix_variant_destroy(&mv);
+          }
 
-        cs_matrix_variant_destroy(&mv);
+          vector_multiply = m->vector_multiply[f_id][ed_flag];
 
-        cs_matrix_vector_product_t
-          *vector_multiply = m->vector_multiply[f_id][ed_flag];
+        }
 
         if (vector_multiply != NULL) {
 
           /* Check multiplication */
 
-          vector_multiply(ed_flag, m, x, y);
+          vector_multiply(m, ed_flag, false, x, y);
           if (v_id == 0)
             memcpy(yr0, y, n_rows*_block_mult*sizeof(cs_real_t));
           else {
@@ -884,90 +933,90 @@ _matrix_time_test(double                       t_measure,
 
       for (ed_flag = 0; ed_flag < 2; ed_flag++) {
 
-        cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+        cs_matrix_vector_product_t  *vector_multiply = NULL;
 
-        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0)
-          cs_matrix_variant_set_func(mv,
-                                     numbering,
-                                     f_id,
-                                     ed_flag,
-                                     v->vector_multiply_name[f_id][ed_flag]);
+        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0) {
 
-        cs_matrix_variant_apply(m, mv);
-        cs_matrix_variant_destroy(&mv);
+          if (strlen(v->external_type) == 0) {
+            cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+            cs_matrix_variant_set_func(mv,
+                                       numbering,
+                                       f_id,
+                                       ed_flag,
+                                       v->vector_multiply_name[f_id][ed_flag]);
+            cs_matrix_variant_apply(m, mv);
+            cs_matrix_variant_destroy(&mv);
+          }
 
-        cs_matrix_vector_product_t
-          *vector_multiply = m->vector_multiply[f_id][ed_flag];
+          vector_multiply = m->vector_multiply[f_id][ed_flag];
+
+        }
 
         if (vector_multiply == NULL)
           continue;
 
-        if (vector_multiply != NULL) {
+        cs_lnum_t n_rows = cs_matrix_get_n_rows(m);
+        cs_lnum_t nnz = cs_matrix_get_n_entries(m);
+        const cs_lnum_t db_size = cs_matrix_get_diag_block_size(m)[1];
+        const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(m)[1];
 
-          cs_lnum_t n_rows = cs_matrix_get_n_rows(m);
-          cs_lnum_t nnz = cs_matrix_get_n_entries(m);
-          const cs_lnum_t db_size = cs_matrix_get_diag_block_size(m)[1];
-          const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(m)[1];
+        v->matrix_vector_n_ops[f_id][ed_flag] = n_rows*db_size*db_size;
+        if (eb_size == 1)
+          v->matrix_vector_n_ops[f_id][ed_flag] +=   (nnz-n_rows)
+                                                    *db_size;
+        else
+          v->matrix_vector_n_ops[f_id][ed_flag] +=  (nnz-n_rows)
+                                                   *(eb_size*eb_size);
 
-          v->matrix_vector_n_ops[f_id][ed_flag] = n_rows*db_size*db_size;
-          if (eb_size == 1)
-            v->matrix_vector_n_ops[f_id][ed_flag] +=   (nnz-n_rows)
-                                                      *db_size;
-          else
-            v->matrix_vector_n_ops[f_id][ed_flag] +=  (nnz-n_rows)
-                                                     *(eb_size*eb_size);
+        int mpi_flag_max = (cs_glob_n_ranks > 1) ? 2 : 1;
 
-          int mpi_flag_max = (cs_glob_n_ranks > 1) ? 2 : 1;
+        for (int mpi_flag = 0; mpi_flag < mpi_flag_max; mpi_flag++) {
 
-          for (int mpi_flag = 0; mpi_flag < mpi_flag_max; mpi_flag++) {
+          wt0 = cs_timer_wtime(), wt1 = wt0;
+          run_id = 0, n_runs = (t_measure > 0) ? 16 : 1;
 
-            wt0 = cs_timer_wtime(), wt1 = wt0;
-            run_id = 0, n_runs = (t_measure > 0) ? 16 : 1;
+          double mean = 0.0;
+          double m2 = 0.0;
 
-            double mean = 0.0;
-            double m2 = 0.0;
-
+          while (run_id < n_runs) {
             while (run_id < n_runs) {
-              while (run_id < n_runs) {
-                if (run_id % 16)
-                  test_sum = 0;
-                wti = cs_timer_wtime(), wtf = wti;
-                if (mpi_flag > 0)
-                  vector_multiply(ed_flag, m, x, y);
-                else {
-                  if (ed_flag == 0)
-                    cs_matrix_vector_multiply(m, x, y);
-                  else
-                    cs_matrix_exdiag_vector_multiply(m, x, y);
-                }
-                wtf = cs_timer_wtime();
-                test_sum += y[n_cells-1];
-                run_id++;
-                double t = (wtf - wti);
-                double delta = t - mean;
-                double r = delta / run_id;
-                double m_n = mean + r;
-                m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
-                mean += r;
+              if (run_id % 16)
+                test_sum = 0;
+              wti = cs_timer_wtime(), wtf = wti;
+              if (mpi_flag > 0)
+                vector_multiply(m, ed_flag, false, x, y);
+              else {
+                if (ed_flag == 0)
+                  cs_matrix_vector_multiply(m, x, y);
+                else
+                  cs_matrix_exdiag_vector_multiply(m, x, y);
               }
-              wt1 = cs_timer_wtime();
-              double wt_r0 = wt1 - wt0;
-              cs_parall_max(1, CS_DOUBLE, &wt_r0);
-              if (wt_r0 < t_measure)
-                n_runs *= 2;
+              wtf = cs_timer_wtime();
+              test_sum += y[n_cells-1];
+              run_id++;
+              double t = (wtf - wti);
+              double delta = t - mean;
+              double r = delta / run_id;
+              double m_n = mean + r;
+              m2 = (m2*(run_id-1) + delta*(t-m_n)) / run_id;
+              mean += r;
             }
-
-            wtu = (wt1 - wt0) / n_runs;
-            if (n_runs > 1)
-              m2 = sqrt(m2 / (n_runs - 1));
-            else
-              m2 = 0;
-            v->matrix_vector_cost[f_id][ed_flag][0][mpi_flag] = wtu;
-            v->matrix_vector_cost[f_id][ed_flag][1][mpi_flag] = m2;
-
+            wt1 = cs_timer_wtime();
+            double wt_r0 = wt1 - wt0;
+            cs_parall_max(1, CS_DOUBLE, &wt_r0);
+            if (wt_r0 < t_measure)
+              n_runs *= 2;
           }
 
-        }
+          wtu = (wt1 - wt0) / n_runs;
+          if (n_runs > 1)
+            m2 = sqrt(m2 / (n_runs - 1));
+          else
+            m2 = 0;
+          v->matrix_vector_cost[f_id][ed_flag][0][mpi_flag] = wtu;
+          v->matrix_vector_cost[f_id][ed_flag][1][mpi_flag] = m2;
+
+        } /* End of loop on mpi_flag */
 
       } /* end of loop on ed_flag */
 
@@ -1421,10 +1470,11 @@ cs_benchmark_matrix(double                 t_measure,
                                                                    true,
                                                                    true};
 
-  int                    _n_fill_types_default = 3;
+  int                    _n_fill_types_default = 4;
   cs_matrix_fill_type_t  _fill_types_default[] = {CS_MATRIX_SCALAR,
                                                   CS_MATRIX_SCALAR_SYM,
-                                                  CS_MATRIX_BLOCK_D};
+                                                  CS_MATRIX_BLOCK_D,
+                                                  CS_MATRIX_BLOCK};
 
   int                    _n_types = n_types;
   int                    _n_fill_types = n_fill_types;
@@ -1433,7 +1483,7 @@ cs_benchmark_matrix(double                 t_measure,
   int  n_variants = 0;
   cs_matrix_timing_variant_t  *m_variant = NULL;
 
-  cs_timer_t           t0, t1;
+  cs_timer_t  t0, t1;
 
   t0 = cs_timer_time();
 

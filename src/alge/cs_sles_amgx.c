@@ -1239,7 +1239,7 @@ cs_sles_amgx_setup(void               *context,
            "is not usable by AmgX.\n"
            "Only block size 1 with CSR or MSR format "
            "is currently supported by AmgX."),
-         cs_matrix_type_name[cs_matrix_get_type(a)], db_size,
+         cs_matrix_get_type_name(a), db_size,
          name);
 
     /* Number of ghost cell layers depends on solver configuration

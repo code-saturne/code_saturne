@@ -301,7 +301,7 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
                     "Selected SpMV variant for matrix of type %s and fill %s:\n"
                     "  %32s for y <= A.x       (speedup: %6.2f)\n"
                     "  %32s for y <= (A-D).x   (speedup: %6.2f)\n"),
-                  _(cs_matrix_type_name[m->type]),
+                  _(cs_matrix_get_type_name(m)),
                   _(cs_matrix_fill_type_name[m->fill_type]),
                   m_variant[0].name[0], spmv_cost[0]/spmv_cost[min_c[0]*2],
                   m_variant[0].name[1], spmv_cost[1]/spmv_cost[min_c[1]*2+1]);
@@ -347,7 +347,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                     _("\n"
                       "Tuning for matrices of type %s and fill %s\n"
                       "===========================\n"),
-                    cs_matrix_type_name[m->type],
+                    cs_matrix_get_type_name(m),
                     cs_matrix_fill_type_name[m->fill_type]);
 
     double *spmv_cost;

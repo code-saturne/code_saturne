@@ -114,14 +114,6 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-/* Short names for matrix types */
-
-extern const char  *cs_matrix_type_name[];
-
-/* Full names for matrix types */
-
-extern const char  *cs_matrix_type_fullname[];
-
 /* Fill type names for matrices */
 
 extern const char  *cs_matrix_fill_type_name[];
@@ -358,6 +350,26 @@ cs_matrix_destroy(cs_matrix_t **matrix);
 
 cs_matrix_type_t
 cs_matrix_get_type(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Return matrix type name.
+ *
+ * parameters:
+ *   matrix --> pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_matrix_get_type_name(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Return matrix type full name.
+ *
+ * parameters:
+ *   matrix --> pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_matrix_get_type_fullname(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
  * Return number of columns in matrix.
@@ -849,12 +861,12 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
  * parameters:
  *   matrix --> pointer to matrix structure
  *   x      --> multipliying vector values
- *   y      --> resulting vector
+ *   y      <-- resulting vector
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
-                                 const cs_real_t    *x,
+                                 cs_real_t          *restrict x,
                                  cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------

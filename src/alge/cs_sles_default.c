@@ -766,7 +766,6 @@ cs_sles_solve_native(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
-
     /* Check if we need to used a matrix assembler */
 
     bool need_matrix_assembler = false;

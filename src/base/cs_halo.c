@@ -754,9 +754,10 @@ cs_halo_state_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * brief Destroy a halo structure.
+ * \brief Destroy a halo state structure.
  *
- * \param[in, out]  halo  pointer to pointer to cs_halo structure to destroy.
+ * \param[in, out]  halo_state  pointer to pointer to cs_halo_state
+ *                              structure to destroy.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -775,6 +776,20 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 
     BFT_FREE(*halo_state);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to default halo state structure.
+ *
+ * \return]  halo  pointer to pointer to cs_halo structure to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_state_t *
+cs_halo_state_get_default(void)
+{
+  return _halo_state;
 }
 
 /*----------------------------------------------------------------------------

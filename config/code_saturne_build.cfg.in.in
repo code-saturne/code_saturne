@@ -247,6 +247,12 @@ cppflags: @AMGX_CPPFLAGS@
 ldflags: @AMGX_LDFLAGS@
 libs: @AMGX_LIBS@
 
+[hypre]
+have: @cs_have_hypre@
+cppflags: @HYPRE_CPPFLAGS@
+ldflags: @HYPRE_LDFLAGS@
+libs: @HYPRE_LIBS@
+
 [mumps]
 have: @cs_have_mumps@
 cppflags: @MUMPS_CPPFLAGS@

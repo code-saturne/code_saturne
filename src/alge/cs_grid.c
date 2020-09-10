@@ -5645,7 +5645,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
                 _("%s: selected coarsening type (%s)\n"
                   "not available for %s structured matrices."),
                 __func__, cs_grid_coarsening_type_name[coarsening_type],
-                _(cs_matrix_type_name[fine_matrix_type]));
+                _(cs_matrix_get_type_name(f->matrix)));
     }
   }
   else if (coarsening_type == CS_GRID_COARSENING_SPD_PW) {
@@ -5660,7 +5660,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
                 _("%s: selected coarsening type (%s)\n"
                   "not available for %s structured matrices."),
                 __func__, cs_grid_coarsening_type_name[coarsening_type],
-                _(cs_matrix_type_name[fine_matrix_type]));
+                _(cs_matrix_get_type_name(f->matrix)));
     }
   }
 

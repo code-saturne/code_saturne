@@ -1381,7 +1381,7 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
     bft_error(__FILE__, __LINE__, 0,
               _("Dump of matrixes in %s format\n"
                 "is not operational yet."),
-              _(cs_matrix_type_name[m->type]));
+              _(cs_matrix_get_type_name(m)));
     break;
   }
 
@@ -1939,7 +1939,7 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
     bft_error(__FILE__, __LINE__, 0,
               _("Extraction of diagonal dominance of matrixes in %s format\n"
                 "is not operational yet."),
-              _(cs_matrix_type_name[matrix->type]));
+              _(cs_matrix_get_type_name(matrix)));
     break;
   }
 
@@ -2030,7 +2030,7 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
                 _("\n"
                   " Matrix info:\n"
                   "   type: %s\n"),
-                cs_matrix_type_fullname[matrix->type]);
+                cs_matrix_get_type_fullname(matrix));
 
   if (matrix->fill_type == CS_MATRIX_N_FILL_TYPES)
     return;

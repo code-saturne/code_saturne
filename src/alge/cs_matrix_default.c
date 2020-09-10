@@ -114,6 +114,10 @@ static cs_matrix_variant_t
 static cs_matrix_structure_t  *_matrix_struct[CS_MATRIX_N_TYPES];
 static cs_matrix_t            *_matrix[CS_MATRIX_N_TYPES];
 
+static int                     _n_ext_matrices = 0;
+static cs_matrix_t           **_ext_matrix = NULL;
+static cs_matrix_fill_type_t  *_ext_fill_type = NULL;
+
 /* Tuning options */
 
 static int    _n_min_products = 50;
@@ -460,6 +464,15 @@ cs_matrix_finalize(void)
       cs_matrix_structure_destroy(&(_matrix_struct[t]));
   }
 
+  for (int t = 0; t < _n_ext_matrices; t++) {
+    if (_ext_matrix[t] != NULL)
+      cs_matrix_destroy(&(_ext_matrix[t]));
+  }
+
+  _n_ext_matrices = 0;
+  BFT_FREE(_ext_matrix);
+  BFT_FREE(_ext_fill_type);
+
   cs_matrix_assembler_destroy(&_matrix_assembler);
 
   /* Matrices for internal couplings */
@@ -602,6 +615,95 @@ cs_matrix_native(bool              symmetric,
   CS_UNUSED(extra_diag_block_size);
 
   return _get_matrix(CS_MATRIX_NATIVE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix wrapper for external library for a given fill type.
+ *
+ * \param[in]  type_name              Matrix type name
+ * \param[in]  symmetric              Indicates if coefficients are symmetric
+ * \param[in]  diag_block_size        Nlock sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ *
+ * \return  Pointer to matrix matching requested type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_external(const char       *type_name,
+                   bool              symmetric,
+                   const cs_lnum_t  *diag_block_size,
+                   const cs_lnum_t  *extra_diag_block_size)
+{
+  cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
+                                                      diag_block_size,
+                                                      extra_diag_block_size);
+
+  for (int i = 0; i < _n_ext_matrices; i++) {
+    cs_matrix_t  *m = _ext_matrix[i];
+    if (m != NULL && _ext_fill_type[i] == mft) {
+      if (strcmp(type_name, cs_matrix_get_type_name(m)) == 0)
+        return m;
+    }
+  }
+
+  bft_error(__FILE__, __LINE__, 0,
+            "%s:\n"
+            "  no matrix of type \"%s\" and fill type \"%s\" defined.",
+            __func__, type_name, cs_matrix_fill_type_name[mft]);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy base matrix to external library matrix type for given fill type.
+ *
+ * Note that the matrix containers share the same assigned structure,
+ * so they must be both destroyed before that structure.
+ *
+ * Coefficients and matching structures are not copied or created..
+ *
+ * This function is intended to allow sharing of a base structure or assembler
+ * with an external library matrix wrapper, so as to allow efficient
+ * coefficient assignment, but with external coefficient handling.
+ *
+ * The matrix shoud be converted to the desired external type after calling
+ * this function, so that it can the be accessed using \ref cs_matrix_external.
+ *
+ * \param[in]  symmetric              Indicates if matrix coefficients are symmetric
+ * \param[in]  diag_block_size        Block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ *
+ * \return  pointer to native matrix adapted to fill type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_copy_to_external(cs_matrix_t      *src,
+                           bool              symmetric,
+                           const cs_lnum_t  *diag_block_size,
+                           const cs_lnum_t  *extra_diag_block_size)
+{
+  int m_id = _n_ext_matrices;
+  _n_ext_matrices += 1;
+  BFT_REALLOC(_ext_matrix, _n_ext_matrices, cs_matrix_t *);
+  BFT_REALLOC(_ext_fill_type, _n_ext_matrices, cs_matrix_fill_type_t);
+
+  _ext_fill_type[m_id] = cs_matrix_get_fill_type(symmetric,
+                                                 diag_block_size,
+                                                 extra_diag_block_size);
+
+
+  cs_matrix_t *m;
+  BFT_MALLOC(m, 1, cs_matrix_t);
+  memcpy(m, src, sizeof(cs_matrix_t));
+  m->coeffs = NULL;
+
+  _ext_matrix[m_id] = m;
+
+  return m;
 }
 
 /*----------------------------------------------------------------------------

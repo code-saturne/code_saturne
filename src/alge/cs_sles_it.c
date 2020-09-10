@@ -3312,9 +3312,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     bft_error
       (__FILE__, __LINE__, 0,
        _("Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-         "matrix using %s (%s) storage."),
-       cs_matrix_type_name[CS_MATRIX_MSR],
-       _(cs_matrix_type_fullname[CS_MATRIX_MSR]));
+         "matrix using %s storage."),
+       "MSR");
 
   unsigned n_iter = 0;
 
@@ -3543,9 +3542,8 @@ _p_gauss_seidel(cs_sles_it_t              *c,
     bft_error
       (__FILE__, __LINE__, 0,
        _("Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-         "matrix using %s (%s) storage."),
-       cs_matrix_type_name[CS_MATRIX_MSR],
-       _(cs_matrix_type_fullname[CS_MATRIX_MSR]));
+         "matrix using %s storage."),
+       "MSR");
 
   /* Allocate or map work arrays */
   /*-----------------------------*/
