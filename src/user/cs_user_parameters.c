@@ -139,7 +139,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
  * an algebraic multigrid solver is available (and recommended).
  *
  * External solvers may also be setup using this function, the cs_sles_t
- * mechanism alowing such through user-define functions.
+ * mechanism allowing such through user-define functions.
  */
 /*----------------------------------------------------------------------------*/
 
