@@ -2181,7 +2181,7 @@ void
 cs_equation_param_clear(cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
-    return NULL;
+    return;
 
   /* Information related to the definition of the boundary conditions */
   if (eqp->n_bc_defs > 0) {
