@@ -298,8 +298,8 @@ _lages1(cs_real_t           dtp,
 
         // Compute rotation angle
         cs_real_t rot_angle = acos(orient_loc[0]*axe_singularity[0]
-                                + orient_loc[1]*axe_singularity[1]
-                                + orient_loc[2]*axe_singularity[2]);
+                                 + orient_loc[1]*axe_singularity[1]
+                                 + orient_loc[2]*axe_singularity[2]);
 
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
@@ -320,22 +320,26 @@ _lages1(cs_real_t           dtp,
 
         // Rotate the frame of reference with respect to the
         // relative particle direction
-        cs_real_t new_dir[3];
+        cs_real_t orient_loc[3];
         for (cs_lnum_t i = 0; i < 3; i++)
-          new_dir[i] = mean_part_vel[i] - fluid_vel[i];
+          orient_loc[i] = mean_part_vel[i] - fluid_vel[i];
 
-        cs_math_3_normalise(new_dir, new_dir);
-
-        // Compute the rotation angle between the x-axis and
-        // the new direction
-        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
-        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
+        cs_math_3_normalise(orient_loc, orient_loc);
 
         // The rotation axis is the result of the cross product between
         // the new direction vector and the x-axis
         cs_real_t n_rot[3];
-        cs_math_3_cross_product(new_dir, x_axis, n_rot);
+        const cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+        n_rot[0] = orient_loc[1]*x_axis[2] - orient_loc[2]*x_axis[1];
+        n_rot[1] = orient_loc[2]*x_axis[0] - orient_loc[0]*x_axis[2];
+        n_rot[2] = orient_loc[0]*x_axis[1] - orient_loc[1]*x_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
+
+        // Compute the rotation angle between the x-axis and
+        // the new direction
+        cs_real_t rot_angle = acos(orient_loc[0]*x_axis[0] 
+                                 + orient_loc[1]*x_axis[1] 
+                                 + orient_loc[2]*x_axis[2]);
 
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
@@ -607,24 +611,28 @@ _lages1(cs_real_t           dtp,
           cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
-        // relative particle direction, if possible
-        cs_real_t new_dir[3];
+        // relative particle direction
+        cs_real_t orient_loc[3];
         for (cs_lnum_t i = 0; i < 3; i++)
-          new_dir[i] = mean_part_vel[i] - fluid_vel[i];
+          orient_loc[i] = mean_part_vel[i] - fluid_vel[i];
 
-        cs_math_3_normalise(new_dir, new_dir);
-
-        // Compute the rotation angle between the x-axis and
-        // the new direction
-        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
-        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
+        cs_math_3_normalise(orient_loc, orient_loc);
 
         // The rotation axis is the result of the cross product between
         // the new direction vector and the x-axis
         cs_real_t n_rot[3];
-        cs_math_3_cross_product(new_dir, x_axis, n_rot);
+        const cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+        n_rot[0] = orient_loc[1]*x_axis[2] - orient_loc[2]*x_axis[1];
+        n_rot[1] = orient_loc[2]*x_axis[0] - orient_loc[0]*x_axis[2];
+        n_rot[2] = orient_loc[0]*x_axis[1] - orient_loc[1]*x_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
 
+        // Compute the rotation angle between the x-axis and
+        // the new direction
+        cs_real_t rot_angle = acos(orient_loc[0]*x_axis[0] 
+                                 + orient_loc[1]*x_axis[1]
+                                 + orient_loc[2]*x_axis[2]);
+ 
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
         trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
@@ -670,9 +678,9 @@ _lages1(cs_real_t           dtp,
         cs_math_3_normalise(n_rot, n_rot);
 
         // Compute rotation angle
-        cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
-                                   + orient_loc[1]*axe_singularity[1]
-                                   + orient_loc[2]*axe_singularity[2]);
+        cs_real_t rot_angle = acos(orient_loc[0]*axe_singularity[0]
+                                 + orient_loc[1]*axe_singularity[1]
+                                 + orient_loc[2]*axe_singularity[2]);
           
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
