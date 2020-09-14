@@ -257,11 +257,11 @@ z = 0.42;</formula>
       </time_average>
     </time_averages>
     <time_parameters>
-      <iterations>14000</iterations>
+      <iterations>7000</iterations>
       <property label="CourantNb" name="courant_number"/>
       <property label="FourierNb" name="fourier_number"/>
       <time_passing>0</time_passing>
-      <time_step_ref>0.005</time_step_ref>
+      <time_step_ref>0.001</time_step_ref>
     </time_parameters>
   </analysis_control>
   <boundary_conditions>
@@ -346,7 +346,7 @@ z = 0.42;</formula>
       <restart_with_auxiliary status="on"/>
     </start_restart>
   </calculation_management>
-  <lagrangian model="two_way">
+  <lagrangian model="frozen">
     <carrier_field_stationary status="off"/>
     <deposition_submodel status="off"/>
     <fluid_particles_turbulent_diffusion status="on"/>
@@ -392,12 +392,6 @@ z = 0.42;</formula>
       </volume>
     </statistics>
     <turbulent_dispersion status="off"/>
-    <two_way_coupling>
-      <dynamic status="on"/>
-      <iteration_start>1</iteration_start>
-      <mass status="off"/>
-      <thermal status="off"/>
-    </two_way_coupling>
   </lagrangian>
   <numerical_parameters>
     <gradient_reconstruction choice="green_iter"/>

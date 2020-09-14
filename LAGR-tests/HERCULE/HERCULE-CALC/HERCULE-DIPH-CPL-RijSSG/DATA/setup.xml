@@ -257,11 +257,11 @@ z = 0.42;</formula>
       </time_average>
     </time_averages>
     <time_parameters>
-      <iterations>28000</iterations>
+      <iterations>3500</iterations>
       <property label="CourantNb" name="courant_number"/>
       <property label="FourierNb" name="fourier_number"/>
       <time_passing>0</time_passing>
-      <time_step_ref>0.0025</time_step_ref>
+      <time_step_ref>0.002</time_step_ref>
     </time_parameters>
   </analysis_control>
   <boundary_conditions>
@@ -292,7 +292,7 @@ z = 0.42;</formula>
           <fouling_index>1</fouling_index>
           <frequency>1</frequency>
           <mass_flow_rate>3.85e-06</mass_flow_rate>
-          <number>10</number>
+          <number>20</number>
           <statistical_groups>0</statistical_groups>
           <statistical_weight choice="rate">1</statistical_weight>
           <velocity choice="components">
@@ -359,7 +359,10 @@ z = 0.42;</formula>
       <velocity_fluid_seen status="on"/>
       <velocity_particles status="on"/>
     </output>
-    <particles_models model="off"/>
+    <particles_models model="off">
+      <coal_fouling status="off"/>
+      <thermal status="off"/>
+    </particles_models>
     <regular_particles>1</regular_particles>
     <restart status="off"/>
     <scheme_order choice="1"/>

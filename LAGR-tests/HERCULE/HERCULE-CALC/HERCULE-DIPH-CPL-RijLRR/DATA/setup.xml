@@ -257,11 +257,11 @@ z = 0.42;</formula>
       </time_average>
     </time_averages>
     <time_parameters>
-      <iterations>14000</iterations>
+      <iterations>7000</iterations>
       <property label="CourantNb" name="courant_number"/>
       <property label="FourierNb" name="fourier_number"/>
       <time_passing>0</time_passing>
-      <time_step_ref>0.005</time_step_ref>
+      <time_step_ref>0.001</time_step_ref>
     </time_parameters>
   </analysis_control>
   <boundary_conditions>
@@ -391,7 +391,7 @@ z = 0.42;</formula>
         <property name="var_particle_volume_fraction"/>
       </volume>
     </statistics>
-    <turbulent_dispersion status="off"/>
+    <turbulent_dispersion status="on"/>
     <two_way_coupling>
       <dynamic status="on"/>
       <iteration_start>1</iteration_start>
