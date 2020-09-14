@@ -217,6 +217,37 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
   }  /* Switch */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         momentum equation according to the type of coupling
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ *
+ * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_propagate_qtype(cs_navsto_param_t    *nsp)
+{
+  /* Loop on velocity ICs */
+  for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
+    cs_xdef_set_quadrature(nsp->velocity_ic_defs[i], nsp->qtype);
+
+  /* Loop on pressure ICs */
+  for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
+    cs_xdef_set_quadrature(nsp->pressure_ic_defs[i], nsp->qtype);
+
+  /* Loop on velocity BCs */
+  for (int i = 0; i < nsp->n_velocity_bc_defs; i++)
+    cs_xdef_set_quadrature(nsp->velocity_bc_defs[i], nsp->qtype);
+
+  /* Loop on pressure BCs */
+  for (int i = 0; i < nsp->n_pressure_bc_defs; i++)
+    cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], nsp->qtype);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -672,6 +703,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                     " and \"highest\"."), __func__, _val);
       }
 
+      _propagate_qtype(nsp);
     }
     break; /* Quadrature */
 
@@ -1027,6 +1059,10 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
       bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
 
   }
+
+  /* Default quadrature type */
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Default quadrature: %s\n",
+                cs_quadrature_get_type_name(nsp->qtype));
 
   /* Initial conditions for the velocity */
   char  prefix[256];
