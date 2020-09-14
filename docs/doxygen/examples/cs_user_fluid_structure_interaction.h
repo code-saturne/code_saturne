@@ -52,7 +52,7 @@
   (as shown in following examples).
 
   The number of "internal" structures is automatically defined with the
-  maximum value of \ref idfstr table, meaning that internal structure numbers must
+  maximum value of \c idfstr, meaning that internal structure numbers must
   be defined sequentially with positive values, beginning with integer value 1.
 
   In the following example, boundary faces with color 4 belong to internal structure 1.
@@ -66,30 +66,30 @@
   - an initial velocity \c vstr0
   - an initial displacement \c xstr0 (i.e. \c xstr0 is the value of the
     displacement \ref xstr compared to the initial mesh at time t=0)
-  - a displacement compared to equilibrium \c \ref xstreq.  \c \ref xstreq is the
+  - a displacement compared to equilibrium \c xstreq.  \c xstreq is the
     initial displacement of the internal structure compared to its position
-    at equilibrium; at each time step t and for a displacement \ref xstr(t),
+    at equilibrium; at each time step t and for a displacement \c xstr(t),
     the associated internal structure will be subjected to a force due to the spring:
     \f[
        -k (xstr(t)+xstreq).
     \f]
 
-  Note that \c xstr0, \c \ref xstreq and \c vstr0 arrays are initialized at the beginning
+  Note that \c xstr0, \c xstreq and \c vstr0 arrays are initialized at the beginning
   of the calculations to the value of 0.
 
   When starting a calculation using ALE, or re-starting a calculation with
   ALE basing on a first calculation without ALE, an initial iteration 0 is
   automatically calculated in order to take initial arrays \c xstr0, \c vstr0 and
-  \c \ref xstreq into account. In another case, set the following option
+  \c xstreq into account. In another case, set the following option
   \code{.f90}
   italin=1
   \endcode
   in subroutine \ref usipsu, so that the code can deal with arrays
-  \c xstr0, \c vstr0 or \c \ref xstreq.
+  \c xstr0, \c vstr0 or \c xstreq.
 
   In the following example :
   - internal structure 1 has got an initial displacement \c xstr0 of 2 meters in
-    the y direction and a displacement compared to equilibrium \c \ref xstreq of
+    the y direction and a displacement compared to equilibrium \c xstreq of
     1 meter in the y direction.
   - Initial velocity \c vstr0 in the z direction of structure 2 equals -0.5 m/s.
 
@@ -120,7 +120,7 @@
   velocity, structural acceleration and fluid force)
   (\c ihistr=0, disabled ; \c ihistr=1, enabled)
   The value of structural history output step is the same as the one for
-  standard variables (\ref nthist).
+  standard variables (\ref entsor::nthist "nthist").
 
   \snippet cs_user_fluid_structure_interaction.f90 usstr1_example_d
 
@@ -137,15 +137,15 @@
   Moreover it's possible to take external forces (gravity for example) into
   account, too.
 
-  \c \ref xstr array indicates the displacement of the structure compared to its
+  \c xstr array indicates the displacement of the structure compared to its
   position in the initial mesh.
 
   \c xstr0 array gives the displacement of the structures in initial mesh
   compared to structural equilibrium.
 
-  \c \ref vstr array stands for structural velocity.
+  \c vstr array stands for structural velocity.
 
-  \c \ref xstr, \c xstr0, and \c \ref vstr arrays are data tables that can be used to define
+  \c xstr, \c xstr0, and \c vstr arrays are data tables that can be used to define
   arrays mass, friction and stiffness. THOSE ARE NOT TO BE MODIFIED.
 
   The 3D structural equation that is solved is the following one :
@@ -153,7 +153,7 @@
     \tens{M} \vect{X^{\prime\prime}} + \tens{C} \vect{X^{\prime}} + \tens{K} (\vect{X}+\vect{X_0}) = \vect{F}
   \f]
   where \f$\vect{X}\f$ stands for the structural displacement compared to initial mesh
-      position (\c \ref xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in initial mesh compared to equilibrium.
+      position (\c xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in initial mesh compared to equilibrium.
 
     Note that \f$\tens{M}\f$, \f$\tens{C}\f$ and \f$\tens{K}\f$ are 3x3 matrices.
 
@@ -161,7 +161,7 @@
     Note that the time step used to solve this equation (\c dtstr) can be
     different from the one of fluid calculations. user is free to define
     \c dtstr array. At the beginning of the calculation \c dtstr is
-    initialized to the value of \c \ref dt (fluid time step).
+    initialized to the value of \c dt (fluid time step).
 
   \subsection cs_user_fluid_structure_interaction_h_usstr2_init Initialization
 

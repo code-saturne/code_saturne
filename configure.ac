@@ -695,6 +695,7 @@ CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
 CS_AC_TEST_MUMPS
 CS_AC_TEST_PETSC
+CS_AC_TEST_AMGX
 
 CS_AC_TEST_DOCS
 
@@ -1218,6 +1219,9 @@ if test x$cs_have_frontend = xno ; then
   echo " use frontend: no"
 else
   echo " use graphical user interface: "$cs_have_gui""
+  if test x$cs_have_gui_qt4 = xyes ; then
+    echo "    Warning: using PyQt4 is deprecated"
+  fi
 fi
 if test x$cs_have_backend = xno ; then
   echo " use backend: no"
@@ -1271,6 +1275,7 @@ echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
 echo " MUMPS support: "$cs_have_mumps""
+echo " AMGX support: "$cs_have_amgx""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""

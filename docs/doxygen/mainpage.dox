@@ -75,23 +75,72 @@
 
   \section additional_doc Additional documentation
 
-  In addition to the Doxygen documentation, code_saturne is provided with six
+  In addition to the Doxygen documentation, code_saturne is provided with several
   pdf documents:
     - a <a href="../../user.pdf"><b>user guide</b></a>,
     - a <a href="../../theory.pdf"><b>theory guide</b></a>,
-    - a <a href="../../developer.pdf"><b>developer guide</b></a>,
-    - a <a href="../../studymanager.pdf"><b>guide of studymanager</b></a>,
     - a <a href="../../refcard.pdf"><b>refcard</b></a>.
 
   \section main_components Base architecture
 
-  code_saturne is composed of three main elements,
-  as shown on the following figure:
+  code_saturne is composed of several elements, managed through
+  a global \c code_saturne script. The three main elements
+  are shown on the following figure:
 
-  - the (optional) GUI allows defining computation settings
-  - the Solver module is the numerical solver
-  - the Preprocessor module is in charge of mesh import
+  - The \b GUI allows defining the main computation settings\n
+    (which can be completed with more detailed settings in user-defined code).
+  - The \b Solver module is the numerical solver and main program.
+  - the \b Preprocessor module is in charge of mesh import.
 
    \image html cs_components.svg "code_saturne elements"
+
+  \section main_script_commands Top-level commands
+
+  The \c code_saturne script allows multiple commands, usable
+  through a <b><tt>code_saturne <command> [options]</tt></b> syntax.
+
+  To obtain the list of commands, in a terminal, type:
+  \code{.sh}
+  code_saturne --help
+  \endcode
+
+  To obtain the list of options for a given command, in a terminal, type:
+  \code{.sh}
+  code_saturne [command] --help
+  \endcode
+
+  The main commands are:
+
+  - \b info \n
+    Get information on code_saturne. Open the documentation (refcard, theory, ...).\n\n
+
+  - \b config \n
+    Get information on the configuration and installation of code_saturne.\n\n
+
+  - \b create \n
+    Create a new code_saturne study or case structure.\n\n
+
+  - \b gui \n
+    Launch the main graphical user interface.\n\n
+
+  - \b run \n
+    Run a single case.\n\n
+
+  - \b submit \n
+    Submit a single case to a batch system.\n\n
+
+  - \b trackcvg \n
+    Launch the code_saturne convergence tracking and plotting graphical interface.\n\n
+
+  - \b studymanager or \b smgr \n
+    Launch the code_saturne study manager to run multiple related cases and
+    generate reports.\n\n
+
+  - \b studymanagergui or \b smgrgui \n
+    Launch the code_saturne study manager setup graphical interface;
+    must be run from the top-level study directory.\n\n
+
+  - \b compile \n
+    Build a specific solver executable when some user-defined source are present;
 
 */

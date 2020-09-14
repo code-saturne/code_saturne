@@ -8,3 +8,7 @@ table.doxtable th {
 	padding-top: 5px;
 }
 
+.navpath ul
+{
+	background-image:none;
+}

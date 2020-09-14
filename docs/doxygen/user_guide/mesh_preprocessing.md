@@ -216,7 +216,7 @@ When using the Preprocessor for mesh verification, data for the Solver
 is not always needed. In this case, the `--no-write` option may
 avoid creating a Preprocessor output file.
 
-Mesh preprocessing {#sec_prepro}}
+Mesh preprocessing {#sec_prepro}
 ==================
 
 Meshing remarks {#sec_prg_meshes}
@@ -508,9 +508,9 @@ versions are not):
 <tr><td> or              <td>  `or    |    ||    ,    ;`
 <tr><td> xor             <td>  `xor    ^`
 <tr><th> General functions <th>
-<tr><td> select all:                         <td> `all[]`
-<tr><td> entities having no group or color:  <td> `no_group[]`
-<tr><td> select a range of groups or colors: <td> `range[` *first*, *last*`]` <br/>
+<tr><td> select all                          <td> `all[]`
+<tr><td> entities having no group or color   <td> `no_group[]`
+<tr><td> select a range of groups or colors  <td> `range[` *first*, *last*`]` <br/>
                                                   `range[` *first*, *last*`, group]` <br/>
                                                   `range[` *first*, *last*`, attribute]`
 </table>
@@ -609,9 +609,9 @@ Fortran user subroutines, a collection of utility subroutines is provided.
 for example:
 
 * boundary conditions (c.f. `cs_user_boundary_conditions.f90`},
-* volume initialization (cf. `cs_user_initialization}, ...),
+* volume initialization (c.f. \ref cs_user_initialization, ...),
 * [zone](@ref sec_zones) definitions (cf. \ref cs_user_zones}),
-* advanced post-processing (cf. \ref cs_user_postprocess.c,
+* advanced post-processing (c.f. \ref cs_user_postprocess.c,
   \ref cs_user_extra_operations, ...),
 
 ### Selection criteria in Fortran
@@ -627,20 +627,35 @@ For each type of element, the user calls the appropriate Fortran subroutine:
 
 Several examples of possible selections are given here:
 
-*  `call getfbr('Face_1, Face_2', nlelt, lstelt)` selects
+*  `call getfbr("Face_1, Face_2", nlelt, lstelt)` selects
     boundary faces in groups *Face_1* or *Face_2*,
-*  `call getfac('4', nlelt, lstelt)` selects internal
+
+*  `call getfac("4", nlelt, lstelt)` selects internal
     faces of color *4*,
-*  `call getfac('not(4)', nlelt, lstelt)` selects internal
+
+*  `call getfac("not(4)", nlelt, lstelt)` selects internal
     faces which have a different color than 4,
-*  `call getfac('range[in_04, in08, nlelt, lstelt)` selects internal faces
+
+*  `call getfac("range[in_04, in_08]", nlelt, lstelt)` selects internal faces
     with group names between *in_04* and *in_08* (in lexicographical order),
-*  `call getcel('1 or 2', nlelt, lstelt)` selects cells with colors 1 or 2,
-*  `call getfbr('wall and y > 0', nlelt, lstelt)` selects boundary
+
+*  `call getcel("1 or 2", nlelt, lstelt)` selects cells with colors 1 or 2,
+
+*  `call getfbr("wall and y > 0", nlelt, lstelt)` selects boundary
     faces of group *wall* which have the coordinate *Y > 0*,
-*  `call getfac('normal[1, 0, 0, 0.0001]', nlelt, lstelt)` selects
+
+*  `call getfac("normal[1, 0, 0, 0.0001]", nlelt, lstelt)` selects
     internal faces which have a normal direction to the vector (1,0,0),
-*  `call getcel('all[]', nlelt, lstelt)` selects all cells.
+
+*  `call getcel("all[]", nlelt, lstelt)` selects all cells.
+
+The user may then use a loop on the selected elements.
+For instance, in the subroutine `cs_user_boundary_y_conditions` used to impose
+boundary  conditions, let us consider the boundary faces of color
+number 2 and which have the coordinate *X <= 0.01*
+(so that `call getfbr('2 and x <= 0.01', nlelt,lstelt)`);
+we can do a loop (`do ilelt = 1, nlelt`) and
+obtain `ifac = lstelt(ilelt)`.
 
 ### Selection criteria in C
 
@@ -650,14 +665,6 @@ In C, the equivalent functions are:
 * \ref cs_selector_get_i_face_list for internal faces
 * \ref cs_selector_get_cell_list for cells.
 
-
-The user may then use a loop on the selected elements.
-For instance, in the subroutine `cs_user_boundary_y_conditions` used to impose
-boundary  conditions, let us consider the boundary faces of color
-number 2 and which have the coordinate *X <= 0.01*
-(so that `call getfbr('2 and x <= 0.01', nlelt,lstelt)`);
-we can do a loop (`do ilelt = 1, nlelt`) and
-obtain `ifac = lstelt(ilelt)`.
 
 More examples are available in the [User examples](@ref cs_user_examples) section.
 

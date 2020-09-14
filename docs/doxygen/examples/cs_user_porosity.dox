@@ -137,7 +137,7 @@
 
   \section user_poro_cad_init Local variables and initialization
 
-  A few local varibles may allow a more concise syntax, and
+  A few local variables may allow a more concise syntax, and
   optional face porosity arrays may be declared as temporary work arrays
   if face factors are required::
 

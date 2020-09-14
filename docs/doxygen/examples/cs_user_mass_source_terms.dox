@@ -1,0 +1,119 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2020 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+
+\page cs_user_volume_mass_injection Examples of data settings for volume mass injection
+
+Injection of mass directly in the volume (based on mass source terms)
+can be defined for selected volume zones.
+Appropriate zones may be defined in the usual manner, using the GUI, or in
+the \ref cs_user_zones user-defined function (see \ref cs_user_zones "examples").
+
+The equation for mass conservation becomes: \f$ \der{\rho}{t}+\divs{(\rho \vect{u})}=\Gamma \f$
+
+The equation for a variable \f$ \varia \f$ becomes:\f$ \frac{\Delta(\rho\varia)}{\Delta t} = ... + \Gamma(\varia^{in} - \varia) \f$  discretized as \f$ \rho \dfrac{\varia^{(n+1)} - \varia^{(n)}}{\Delta t} = ... + \Gamma(\varia^{in} - \varia^{(n+1)}) \f$
+
+\f$ \varia^{in} \f$ is the value of \f$ \varia \f$ associated to the injected mass.
+
+Two options are available:
+  - the mass flux is injected with the local value of variable \f$ \varia \f$: \f$ \varia^{in} = \varia^{(n+1)} \f$ (the equation for \f$ \varia \f$ is therefore not modified)
+  - the mass flux is injected with a specific value for \f$ \varia \f$: \f$ \varia^{in} \f$ is specified by the user
+
+\section var_user Variables to be specified by the user
+
+\remark
+ - if no value is specified for a given variable, the local value is used
+   in that zone.
+
+ - if the specified mass source term value is < 0, mass is removed from the
+     system, therefore \c code_saturne automatically considers
+     \f$ \varia^{in}=\varia^{(n+1)}\f$ for variables other than pressure,
+     whatever the values of \c itypsm or \c smacel specified by the user
+
+ - if a scalar doesn't evolve following the standard equation
+     \f$ \dfrac{\partial{(\rho \varia)}}{\partial{dt}} + \divs{(\rho \vect{u} \varia)} = ...\f$
+     (alternate convective field for instance), the source term
+     set by this routine will not be correct (except in case of
+     injection at the local value of the variable). The proper source
+     term should be added directly in \ref cs_user_source_terms.
+
+\section user_vol_inj_inlet Simulation of an inlet condition by mass source terms
+
+When using constant values per zone, an inlet condition can easily be
+defined adding code similar to the following snipped in the
+\ref cs_user_finalize_setup function (in \ref cs_user_parameters.c):
+
+\snippet cs_user_parameters-volume_mass_injection.c inlet_cal
+
+The value assigned to the pressure is the mass injection rate.
+For other variables, it is the injected value itself.
+Note that turbulence variable values based on a hydraulic diameter can
+and reference velocity easily be set using the
+\ref function cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam.
+
+\subsection user_vol_inj_inlet_ana Advanced definitions
+
+It is also possible to define more complex injection mass flows using
+an analytical function. This first requires defining a function
+matching the \ref cs_analytic_func_t template, such as the one below:
+
+\snippet cs_user_parameters-volume_mass_injection.c inlet_cal_analytic_func
+
+Note that this function injects mass uniformly, but also computes
+and logs the mass rate generated in the domain.
+
+To use this function for a given volume injection, we define
+the injection as follows:
+
+\snippet cs_user_parameters-volume_mass_injection.c inlet_cal_analytic
+
+In this example, we have assigned the field pointer to the function
+input, so the function can query the field used for a given call, and
+could be adapted to handle different variables (which avoids requiring a
+different function for each variable).
+
+Note that in an actual application, the mass balance can be checked
+using the \ref balance_by_zone_compute or \ref balance_by_zone_compute
+functions, so using a more complex injection function is useful
+only when trying to replicate the mass source terms user function
+behavior used in previous versions of code_saturne.
+
+\section user_vol_inj_suction Simulation of suction by a pump
+
+In the following example, we simulate the suction (by a pump for
+instance) with a total rate of 80 000 kg/s.
+The suction rate is supposed to be uniformly distributed
+on all the cells in the "suction_pump" zone.
+
+\snippet cs_user_parameters-volume_mass_injection.c suction_pump
+
+As mass is removed, there is no need to define the values for variables
+other than pressure. Using \ref cs_equation_add_volume_mass_injection_by_qov,
+("quantity over a volume"), the prescribed value is automatically
+distributed over the associated zone.
+
+*/

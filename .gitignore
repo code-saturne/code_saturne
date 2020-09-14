@@ -216,8 +216,9 @@ Makefile.in
 # /tests/
 /patches/*.patch
 /src/TAGS
-/vsc-config.sh
-/vsc-make.sh
-.vscode
-build
-*.in~
+
+/.vscode/
+/build/
+vsc-make.sh
+vsc-config.sh
+*.*~

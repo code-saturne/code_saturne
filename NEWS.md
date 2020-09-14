@@ -3,8 +3,36 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: present volume and boundary conditions using sub-nodes in the
+  left-hand tree for the appropriate zones. This is a first step in
+  a change of zone setup presentation.
+
+Bug fixes:
+
+- GUI: Fix backward compatibility update function for NCFD v6.1 and later.
+
+Release 6.2.0 (August 27 2020)
+--------------------------
+
+User changes:
+
+- Volume mass injections can now be defined using zone and
+  equation parameter based cs_equation_add_volume_mass_injection_*
+  functions.
+  * Previous definitions remain compatible but are deprecated.
+  * Using the legacy mathod, if at least one zone is defined using
+    the CS_VOLUME_ZONE_MASS_SOURCE_TERM flag, these zones will be used
+    and the first 2 calls to cs_user_mass_source_terms are not needed.
+
+- Add possibility to edit coupling parameters in the GUI using an editor.
+  * Editor can be launched from the GUI of any Code_Saturne coupled case
+    (CASE/DATA/code_saturne).
+  * Editor can be launched from the top-level directory by launching the
+    top-level 'code_saturne' launcher using the following command:
+    code_saturne [gui|cplgui] run.cfg
+
 - Thermal model:
-  * the iscacp(iscal) array is replaced by the field key-word "is_temperature".
+  * The iscacp(iscal) array is replaced by the field key-word "is_temperature".
     This allows using it also from C code.
 
 - Various improvments to CGNS output:
@@ -51,6 +79,14 @@ User changes:
 
 Numerics and physical modelling:
 
+- Convection-diffusion multigrid: restore original aggregation criteria.
+  * This criteria seemed to strangely limit the grid hierarchy depth
+    on a provided test case, but seems to provide much better performance
+    on Rij-epsilon-EBRSM test cases during the initial iterations (with
+    no purely diffusive zone, but we assume a solver adapted to both
+    convection and diffusion should behave well in convective zones).
+  * This solver may now also be selected in the GUI for non-scalar variables.
+
 - Turbulence: remove the vortex method for LES.
 
 - CDO: Add the treatment of the non-linear advection term in
@@ -71,6 +107,12 @@ Numerics and physical modelling:
   direct solvers without the PETSc library (experimental).
 
 Architectural changes:
+
+- Add cs_array.c/cs_array.h for array utility functions.
+
+- For coupled cases, replace `coupling_parameters.py` file by settings
+  in the top-level `run.cfg` (see Doxygen documentation for details).
+  Cases must be updated manually.
 
 - Documentation: add optional MathJax support for Doxygen. Currently
   uses an external MathJax server, so works on-line only.
@@ -113,6 +155,14 @@ Architectural changes:
   the GUI.
 
 Bug fixes:
+
+- Fix convective outlet operator setting boundary coefficients for vectors
+  (with or without anisotropic diffusion) and tensors.
+
+- Major fix in hydrostatic pressure algorithm in the Rhie and Chow filter.
+  It only impact cases where external force is not colinear to boundary
+  faces where pressure Dirichlets are imposed (e.g. in atmospheric flows
+  at the top of the domain with automatic BCs).
 
 - Fix field output numbering on polyhedra or polygons when writer
   subdivision is activated in serial mode.
@@ -164,6 +214,12 @@ User changes:
 - Add the possibility to compute each term of the balance equations of
   the Reynolds tensor and/or the turbulent flux of an additional transported
   variable when performing an LES simulation.
+
+- Merge rough and smooth wall functions.
+  User setting of roughness is now using the dedicated fields
+  ("boundary_roughness" and "boundary_thermal_roughness").
+  Buoyancy modification for atmospheric flows (Louis) are also available for
+  dry and humid atmosphere for rough-smooth wall functions.
 
 Numerics and physical modelling:
 

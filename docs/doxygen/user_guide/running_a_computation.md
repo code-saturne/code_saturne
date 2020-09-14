@@ -247,7 +247,7 @@ sources to be detected immediately, before the job is submitted, and
 also modifying the base setup without impacting an already submitted job.
 On some HPC systems, the compilers may also be available only on the front-end nodes,
 so this also avoids possible issues related to trying to compile user-defined
-functions and re-link the code from a a compute node.
+functions and re-link the code from a compute node.
 
 Interactive modification of selected parameters {#sec_prg_control_file}
 ===============================================
@@ -361,10 +361,136 @@ Note that in general, if a given behavior is modifiable through an environment
 variable rather than by a command-line option, it has little interest for a
 non-developer, or is expected to be needed only in exceptional cases.
 
-Variable             | Role
----------------------|------------------------------------------------------------
+Variable                                 | Role
+-----------------------------------------|----------------------------------
 `CS_PREPROCESS_MEM_LOG`                  | Allows defining a file name in which memory allocation, reallocation, and freeing is logged.
 `CS_PREPROCESS_MIN_EDGE_LEN`             | Under the indicated length ( *10<sup>-15</sup>* by default), an edge is considered to be degenerate and its vertices will be merged after the transformation to descending connectivity. Degenerate edges and faces will thus be removed. Hence, the post-processed element does not change, but the Solver may handle a prism where the preprocessor input contained a hexahedron with two identical vertex couples (and thus a face of zero surface). If the Preprocessor does not print any information relative to this type of correction, it means that it has not been necessary. To completely deactivate this automatic correction, a negative value may be assigned to this environment variable.
 `CS_PREPROCESS_MEM_IGNORE_IDEAS_COO_SYS` | If this variable is defined and is a strictly positive integer, coordinate systems in [I-deas universal](@ref sec_fmtdesc_unv) format files will be ignored. The behavior of the Preprocessor will thus be the same as that of versions 1.0 and 1.1. Note that in any case, non Cartesian coordinate systems are not handled yet.
 
+
+Running the solver directly {#sec_ug_cs_solver_direct}
+===========================
+
+In the standard cases, the compilation of code_saturne main program (`cs_solver`)
+nd its execution are entirely controlled by the launch script (using the `code_saturne run`
+or `code_saturne submit` command). The command line options for (`cs_solver`) are passed
+through user modifiable variables at the beginning of the `cs_user_scripts.py` file,
+if present (if needed, it may be copied from a case's `DATA/REFERENCE` subdirectory to its
+`DATA` directory; it may also be copied from the `${install_prefix}/share/code_saturne`
+directory). This way, the user only has to fill these variables and does not need
+to search deeply in the script for the solver command line. For more advanced
+usage, the main options are described below.
+
+Solver executable program {#sec_ug_opt_cs_solver_exe}
+-------------------------
+
+The executable of the main solver is named `cs_solver`. This program may usually
+be found under `${install_prefix}/libexec/code_saturne` on most Linux systems
+(or `${install_prefix}/lib/` on some systems such as OpenSUSE).
+
+Whenever user-defined functions are used, a modified version of this program
+is generated, including the user-defined functions. This is usually handled
+by the run script, but can be done direclty using the `code_saturne compile`
+command, and generates a `cs_solver` executable program directly in the
+current directory.
+
+The list of Command-line options for the `code_saturne compile` command
+may be obtained by calling `code_saturne compile --help`. The most useful
+options are `-t` or `--test` (test compilation only, without generating the program)
+and `-s <source_path>` or `--source <source_path>`.
+
+The `code_saturne compile` command always compiles all C, Fortran, and C++ files
+from the specified directory (or current directory if not specified)
+and links them with the installed library so as to produce a new `cs_solver`
+with the compiled files. Unless forced, when no such files are present, no program
+is generated, unless the `-f` or `--force` option is used.
+
+Additional options allow adding additional compile or link flags.
+
+Solver command line options {#sec_ug_opt_cs_solver}
+---------------------------
+
+It may be practical (especially when debugging) to run the `cs_solver`
+directly. A complete and up-to-date list of command-line options
+may be obtained by running `./cs_solver --help` (or
+`${install_prefix}/libexec/code_saturne --help`).
+
+The various command-line options are detailed here:
+
+* `--app-name`
+
+  Specifies the application name. This is useful only in the case of code coupling,
+  where the application name is used to distinguish between different code instances
+  launched together.
+
+* `-wdir`, `--wdir`
+
+  Specifies the working directory that should be used (used for code coupling, where
+  each computational domain is assigned a specific sub-directory).
+
+* `--mpi`
+
+  Specifies that the calculation is running with MPI communications. The number of processes
+  used will be determined automatically by the solver. With most MPI implementations, the
+  code will detect the presence of an MPI environment automatically, and this option
+  is redundant. It is only kept for the rare case in which the MPI environment might
+  not be detected.
+
+* `--sig-defaults`
+
+  Use default runtime behavior when signals are received rather than code_saturne's
+  own signal handlers.
+
+* `--preprocess`
+
+  Triggers the preprocessing-only mode.
+  The code may run without any additional setup (parameter file or user function),
+  though the user-defined setup may modify its default behavior.
+  Only the initial operations such as mesh joining and modification are
+  executed.
+
+* `--quality`
+
+  Triggers the mesh verification mode.
+
+  This mode is similar to the preprocessing-only mode, and includes the preprocessing
+  stages, adding elementary tests:
+  - Quality criteria of the mesh are calculated (non-orthogonality angles,
+    internal faces off-set, ... and corresponding visualizable post-processing output
+    is generated.
+  - A few additional mesh consistency tests are run.
+
+* `--benchmark`
+
+  Triggers the benchmark mode, for a timing of elementary operations on the machine.
+
+  A secondary `--mpitrace` can be added. It is to be activated when the benchmark mode
+  is used in association with an MPI trace utility. It restricts the elementary
+  operations to those implying MPI communications and does only one of each
+  elementary operation, to avoid overfilling the MPI trace report.
+  This command can also be placed in the `domain.solver_args` variable
+  in the `cs_user_scripts.py` when using this mode with the high-level run script is
+  desired.
+
+* `--logp`
+
+  Activates the output for the processors of rank 1 to *n-1* in a calculation in
+  parallel on *N* processors to files `run_solver_rxxxx.log` where `xxxx` is the
+  rank id.
+
+* `--trace`
+
+  Activates the tracing of the output to the standard output.
+
+* `--system-info`
+
+  Print system information and exit.
+
+* `--version`
+
+  Print version number and exit.
+
+* `-h`, `--help`
+
+  Displays a summary of the different command line options.
 

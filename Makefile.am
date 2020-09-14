@@ -45,12 +45,7 @@ endif
 
 SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
 
-AUX_DIST = \
-m4/libtool.m4 \
-m4/lt~obsolete.m4 \
-m4/ltoptions.m4 \
-m4/ltsugar.m4 \
-m4/ltversion.m4
+AUX_DIST =
 
 MAINTAINERCLEANFILES = \
 $(AUX_DIST) \
@@ -74,7 +69,6 @@ install_saturne.py \
 INSTALL.md \
 NEWS.md \
 README.md \
-extras/FMI/README.md \
 QUALITY_ASSURANCE \
 build-aux/catalyst \
 build-aux/catalyst-5.6 \
@@ -90,33 +84,12 @@ sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 config/cs_auto_flags.sh \
-config/code_saturne_build.cfg.in.in \
-m4/cs_blas.m4 \
-m4/cs_catalyst.m4 \
-m4/cs_ccm.m4 \
-m4/cs_cgns.m4 \
-m4/cs_coolprop.m4 \
-m4/cs_docs.m4 \
-m4/cs_eos.m4 \
-m4/cs_fortran.m4 \
-m4/cs_freesteam.m4 \
-m4/cs_hdf5.m4 \
-m4/cs_med.m4 \
-m4/cs_medcoupling.m4 \
-m4/cs_melissa.m4 \
-m4/cs_metis.m4 \
-m4/cs_modules.m4 \
-m4/cs_mpi.m4 \
-m4/cs_petsc.m4 \
-m4/cs_ple.m4 \
-m4/cs_salome.m4 \
-m4/cs_scotch.m4 \
-m4/cs_zlib.m4
+config/code_saturne_build.cfg.in.in
 
 # One adds several sub-directories with a dist-hook.
 # The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
-EXTRA_DIST += examples extras patches
+EXTRA_DIST += examples extras m4 patches
 
 nodist_pkginclude_HEADERS = \
 cs_config.h \

@@ -20,7 +20,7 @@ for f in `ls ./build-aux` ; do
   esac
 done
 
-rm -rf m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 \
+rm -rf m4/codeset.m4 m4/extern-inline.m4 m4/fcntl-o.m4 m4/gettext.m4 \
        m4/glibc2.m4 m4/glibc21.m4 m4/iconv.m4 m4/intdiv0.m4 \
        m4/intl.m4 m4/intldir.m4 m4/intlmacosx.m4 m4/intmax.m4 \
        m4/inttypes-pri.m4 m4/inttypes_h.m4 m4/lcmessage.m4 \

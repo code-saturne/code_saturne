@@ -124,7 +124,7 @@ loaded, several hooks are available:
     .. image:: images/CFDSTUDY_context_menu_draft.png
       :align: center
 
-    - Script of *runcase* file:
+    - Run configuration *run.cfg* file:
 
     .. image:: images/CFDSTUDY_context_menu_runcase.png
       :align: center

@@ -54,7 +54,7 @@ the document for easier reference.
 In addition to the present user guide, a complete
 \texttt{Doxygen} documentation is available with \CS. It can provide
 information about the implementation such as details on variables used
-throughout the code kernel and the user subroutines. It also provides an easily
+throughout the solver and the user subroutines. It also provides an easily
 explorable set of user subroutine examples and Fortran-C naming references for
 quantities linked to the mesh or the physical fields.
 
@@ -72,7 +72,7 @@ On the left panel, several leaves are available :
 \item \textbf{Files}: list of all the source files with a brief description of their purpose,
 \item \textbf{User examples}: provides various examples of how to use user subroutines,
 \item \textbf{Variables and structures references}: helps users implementing user C functions,
-Fortran subroutines or developing inside the code kernel.
+Fortran subroutines or developing inside the main solver.
 \end{list}
 
 In any case, the \textbf{search bar} can be used to look for a specific keyword which can
@@ -83,231 +83,6 @@ be a function, a variable, a structure, a type, etc.
 \section{Practical information about \CS}
 %==================================
 %==================================
-
-%==================================
-\subsection{Solver command line options}
-%==================================
-\label{sec:prg_optappelnoy}%
-In the standard cases, the compilation of \CS and its execution are entirely
-controlled by the launch script. The potential command line options are passed
-through user modifiable variables at the beginning of the \texttt{cs\_user\_scripts.py} file
-(this file may be copied from the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited).
-This way, the user only has to fill these variables and doesn't need
-to search deeply in the script for the solver command line. For more advanced
-usage, the main options are described below:
-
-\begin{list}{$\bullet$}{}
-\item \texttt{--app-name}: specifies the application name. This is
-useful only in the case of code coupling, where the application name
-is used to distinguish between different code instances launched together.
-
-\item \texttt{--mpi}: specifies that the calculation is running
-with MPI communications. The number of processors used will be determined
-automatically by the solver. With most MPI implementations, the
-code will detect the presence of an MPI environment automatically, and
-this option is redundant. It is only kept for the rare case in which the
-MPI environment might not be detected.
-
-\item \texttt{--preprocess}: triggers the preprocessing-only mode.
-The code may run without any Interface parameter file or any user subroutine.
-Only the initial operations such as mesh joining and modification are
-executed.
-
-\item \texttt{-q} or \texttt{--quality}: triggers the verification mode.
-The code may run without any Interface parameter file or any user subroutine.
-This mode includes the preprocessing stages, and adds elementary tests:\\
-\begin{list}{-}{}
-\item the quality criteria of the mesh are calculated (non-orthogonality angles,
-internal faces off-set, \ldots) and corresponding
-visualizable post-processing output is generated.\\
-\item a few additional mesh consistency tests are run.\\
-\end{list}
-
-\item \texttt{--benchmark}: triggers the benchmark mode, for a timing
-of elementary operations on the machine. A secondary option
-\texttt{--mpitrace} can be added. It is to be activated when the benchmark mode
-is used in association with an MPI trace utility. It restricts the elementary
-operations to those implying MPI communications and does only one of each
-elementary operation, to avoid overfilling the MPI trace report.\\
-This command is to be placed in the \texttt{domain.solver\_args} variable
-in the \texttt{cs\_user\_scripts.py} file to be added automatically to the
-solver command line.
-
-\item \texttt{--trace}: activates the tracing of the output to the standard output.
-This option can be specified in the \texttt{domain.logging\_args} field
-of the user script.
-
-\item \texttt{--logp}: activates the output for the
-processors of rank 1 to $N-1$ in a calculation in parallel on $N$ processors.
-in files \texttt{run\_solver\_r0001.log} to \texttt{run\_solver\_r$N-1$.log}.
-This option can be specified in the \texttt{domain.logging\_args} field
-of the user script.
-
-\item \texttt{-h} or \texttt{--help}: displays a summary of the different
-command line options.
-\end{list}
-
-%==================================
-\subsection{Launch scripts}
-%==================================
-\label{sec:prg_runcase}%
-
-The case generator command \texttt{code\_saturne~create} places an example of launch script,
-\texttt{runcase}, in the \texttt{SCRIPTS} directory. This script is quite minimalist and is known to work on every architecture \CS has been tested on.
-If a batch system is available, this script will contain options
-for batch submission.
-The script will then contain a line setting the proper \texttt{PYTHONPATH}
-variable for \CS to run.
-Finally, it simply contains the \texttt{code\_saturne run}  command,
-possible with a \texttt{--param} option when a parameters file
-defined by the GUI is used. Other options recognized by
-\texttt{code\_saturne run} may be added.
-
-In the case of a coupled calculation, this script also exists, and
-may be used for preprocessing stages, but an additional
-\texttt{runcase} and accompanying \texttt{coupling\_parameters.py } file
-is added in the directory above the coupled case
-directories, and may be used to define the list of coupled cases,
-as well as global options, such as MPI options of the temporary
-execution directory.
-
-When not using the GUI, or if additional options must be accessed,
-the \texttt{cs\_user\_scripts.py} file may be copied from
-the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited.
-This file contains several Python functions.
-
-The main function, \texttt{define\_domain\_parameters}, allows defining
-most parameters relative to case execution for the current
-domain, including advanced options not accessible
-through the GUI, or overriding options set through the GUI.
-
-%==================================
-\subsection{Graphical User Interface}
-%==================================
-\label{sec:prg_gui}%
-A Graphical User Interface (GUI) is available with \CS.  This GUI creates or
-reads an XML file according to a specific \CS schema which is then interpreted
-by the code.
-
-In version \verscs, the GUI manages calculation parameters, standard
-initialisation values and boundary conditions for standard physics, pulverised
-fuel combustion, gas combustion, atmospheric flows, Lagrangian module,
-electrical model, compressible model and radiative transfers (user subroutines
-can still be completed though).
-
-The GUI is optional. Each setting or definition that can be specified through
-the GUI can also be specified in the user subroutines. In case of conflict, all
-calculation parameters, initialisation value or boundary condition set directly
-in the user subroutines will prevail over what is defined by the GUI. However,
-it is no longer necessary to redefine everything in the user subroutines. Only
-what was not set or could not be set using the GUI should be specified.
-
-{\em WARNING: }
-There are some limitations to the changes that can be made between the GUI and
-the user routines. In particular, it is not possible to specify a certain number
-of solved variables in the GUI and change it in the user routines (for example,
-it is not possible to specify the use of a $k-\varepsilon$ model in the GUI and
-change it to $R_{ij}-\varepsilon$ in \texttt{cs\_user\_parameters.f90}, or to
-define additional scalars in \texttt{cs\_user\_parameters.f90} with respect to
-the GUI). Also, all boundaries should be referenced in the GUI, even if the
-associated conditions are intended to be modified in
-\texttt{cs\_user\_boundary\_conditions}, and their nature (entry, outlet,
-wall\footnote{Smooth and rough walls are considered to have the same nature},
-symmetry) should not be changed.
-
-For example, in order to set the boundary conditions of a calculation
-corresponding to a channel flow with a given inlet velocity profile, one
-should:\\
-- set the boundary conditions corresponding to the wall and the output
-using the GUI\\
-- set a dummy boundary condition for the inlet (uniform velocity for instance)
-- set the proper velocity profile at inlet in \texttt{cs\_user\_boundary\_conditions}. The wall and
-output areas must not appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
-entered in the GUI will not be taken into account.
-
-The GUI is launched with the \texttt{./SaturneGUI} command in the directory
-\texttt{DATA}. The first step is then to load an existing parameter file (in
-order to modify it) or to open a new one. The settings to be given or checked
-for a standard calculation are the following:
-
-\begin{list}{-}{}
-\item Calculation environment: definition of the mesh file(s),
-      stand-alone execution of the Preprocessor module
-      (used by the GUI to get the groups of the boundary faces).
-
-\item Thermophysical models: physical model, ALE mobile mesh features,
-      turbulence model, thermal model, coupling with \syrthes.
-
-\item Additional scalars: definition, initialisation of the scalars,
-      and physical characteristics.
-
-\item Physical properties: reference pressure, fluid characteristics, gravity.
-      It is also possible to write user laws for the density, the viscosity,
-      the specific heat and the thermal conductivity in the interface through
-      the use of a formulae interpreter.
-
-\item Volume conditions: initialisation of the variables, and definition of
-      the zones where to apply head losses or source terms.
-
-\item Boundary conditions: definition of the boundary conditions for
-      each variable. The colors of the boundary faces may be read
-      directly from a ``preprocessor.log*'' files created by the Preprocessor
-      or a ``run\_solver.log'' file from a previous solver run.
-
-\item Numerical parameters: number and type of time step, advanced parameters
-      for the numerical solution of the equations.
-
-\item Calculation control: parameters concerning the time averages, time step,
-      location of
-      the probes where some variables will be monitored over time,
-      definition of the frequency of the outputs in the calculation
-      log and in the chronological records and of the EnSight outputs.
-      The item {\itshape Profiles} allows to save, with a  given frequency,
-      1D profiles on an axis defined from two points provided by the user.
-
-\item Calculation management: management of the calculation restarts,
-      updating of the launch script (temporary execution directory, parallel
-      computing, user data or result files, ...) and interactive launch of the
-      calculation.
-
-\end{list}
-
-The \CS tutorial~\cite{tutorial} offers a step-by-step guidance to the setting
-up of some simple calculations with the \CS GUI.
-
-To launch \CS using an XML parameter file, the name of the file must be given
-using the \texttt{--param} option of \texttt{code\_saturne run} in the launch
-script (see \S\ref{sec:prg_runcase}). When the launch script is edited from the
-GUI (Calculation management $\rightarrow$ Prepare batch analysis), this option
-is set automatically.
-
-%==================================
-\subsection{User subroutines}
-%==================================
-%==================================
-\label{sec:prg_ssprgutilis}
-%==================================
-\subsubsection{Preliminary comments}
-%==================================
-
-As a reminder, it is generally preferable to use the GUI for as many settings
-as possible, and resort to user-defined functions only for more complex
-settings which cannot be done through the GUI. This may also include
-settings with many elements that can be better defined using programmatic
-loops. As a general rule, the most concise and easily verifiable approach
-should be used.
-
-Note that when upgrading to a new \CS version, the GUI can
-automatically update the XML file (and in case a few elements cannot be
-updated, a warning will be issued). Whereas although an effort is made
-so as not to break user-defined functions too often, user-defined functions
-are guaranteed to be "stable" only within a same release series
-(i.e. 6.1.*).
-
-In general, user functions and subroutines are called after GUI-defined
-settings are loaded, so that when a same parameter is specified both
-in the interface and in a user-defined function or subroutine,
-the value in the user function has priority, or rather has the last word.
 
 %==================================
 \subsubsection{User source files needed without the GUI}
@@ -452,7 +227,7 @@ The user is encouraged to check what examples are available, and to study
 those that are relevant to a given setup.
 
 Template user subroutines contain three sections the user may define,
-marked by the following strings:
+sometimes marked by the following strings:
 
 \begin{itemize}
 \item \texttt{INSERT\_VARIABLE\_DEFINITIONS\_HERE}
@@ -461,7 +236,7 @@ marked by the following strings:
 \end{itemize}
 
 Comparing template and example files with a graphical file comparison tool
-should help the user highlights the matching sections from the examples,
+should help the user highlight the matching sections from the examples,
 so it is recommended as good practice for those not already very familiar
 with those user subroutines.
 
@@ -1069,46 +844,6 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 \end{center}
 \end{figure}
 
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_time_averages}
-\caption{Management of time averaged variables}
-\label{fig:gui_time_averages}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_output_log}
-\caption{Parameters of chronological logging options}
-\label{fig:gui_output_log}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_output_writers}
-\caption{Management of postprocessing writers}
-\label{fig:gui_output_writers}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_output_meshes}
-\caption{Management of postprocessing meshes}
-\label{fig:gui_output_meshes}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_output_profiles}
-\caption{Management of 1D profiles of the solution}
-\label{fig:gui_output_profiles}
-\end{center}
-\end{figure}
-
 With the GUI, the subroutine \texttt{cs\_user\_parameters.f90} is only
 used to modify high-level parameters which can not be managed by the
 interface. Without the GUI, this
@@ -1153,30 +888,6 @@ should appear in \texttt{cs\_user\_parameters.f90}. The user
 needs then only to activate examples which are useful for his
 case (replacing \texttt{if (.false.)} with \texttt{if (.true.)},
 or removing such tests).
-
-\subsection{Selection of mesh inputs: \textmd{\texttt{cs\_user\_mesh\_input}}}
-%==================================
-
-\noindent
-\textit{Subroutine called only during the calculation initialisation.}
-
-This C function may be used to select which mesh input files
-are read, and apply optional coordinate transformations or group renumberings
-to them. By default, the input read is a file or directory named
-\texttt{mesh\_input}, but if this function is used, any file can be selected,
-and the same file can be read multiple times (applying a different
-coordinate transformation each time).
-All inputs read through this function are automatically concatenated, and
-may be later joined using the mesh joining options.
-
-Geometric transformations are defined using a homogeneous coordinates
-transformation matrix. Such a matrix has 3 lines and 4 columns, with the
-first 3 columns describing a rotation/scaling factor, and the last column
-describing a translation. A 4th line is implicit, containing zeroes
-off-diagonal, and 1 on the diagonal. The advantages of this representation
-is that any rotation/translation/scaling combination may be expressed
-by matrix multiplication, while simple rotations or translations
-may still be defined easily.
 
 %==================================
 %==================================
@@ -3467,29 +3178,16 @@ them in \figurename~\ref{fig:7_ray}.
 \end{center}
 \end{figure}
 
-When the GUI is not used, \texttt{cs\_user\_radiative\_transfer\_bcs.f90} is the second subroutine necessary for
+When the GUI is not used, \texttt{cs\_user\_radiative\_transfer\_bcs.c} is needed for
 every calculation which includes radiative thermal transfers. It is used to give all the
 necessary parameters concerning, in the one case, the wall temperature
 calculation, and in the other, the coupling between the thermal
 scalar (temperature or enthalpy), and the radiation module at the
 calculation domain boundaries. It must be noted that the boundary conditions
 concerning the thermal scalar which may have been defined in the
-subroutine \texttt{cs\_user\_boundary\_conditions} will be modified by the radiation module
-according to the data given in \texttt{cs\_user\_radiative\_transfer\_bcs.f90} (cf. \S\ref{sec:fvm_selector}).\\
-A zone number must be given to each boundary face \footnote{This must be less
- than the maximum allowable by the code, \texttt{nozrdm}. This is fixed at 2000
- in \texttt{radiat} and cannot be modified.} and, specifically for
-the walls, a boundary condition type and an initialisation temperature
-(in Kelvin). The initialisation temperature is only used to make the
-solving implicit at the first time step. The zone number allows assigning
-an arbitrary integer to a set of boundary faces having the same
-radiation boundary condition type. This gathering is used by the
-calculation, and in the log to print some physical values (mean
-temperature, net radiative flux ...). An independent graphic output in
-{\em EnSight} format is associated with each zone and allows the display on
-the boundary faces of the variables selected in the third heading of the
-subroutine \texttt{cs\_user\_radiative\_transfer\_param}.\\
-A boundary condition type stored in the array ISOTHP is associated with
+GUI or in subroutine \texttt{cs\_user\_boundary\_conditions} will be modified by
+the radiation module according to the data given in \texttt{cs\_user\_radiative\_transfer\_bcs} (cf. \S\ref{sec:fvm_selector}).\\
+A boundary condition type stored in the array \texttt{isothp} is associated with
 each boundary face. There are five different types:
 
 \begin{list}{$\bullet$}{}
@@ -3554,13 +3252,6 @@ the code needs to be given some additional information:
       the fluid.
 
 \end{list}
-
-\noindent
-{\em WARNING: it is mandatory to set a zone number to every boundary
-face, even those which are not wall faces. These zones will be used during the
-printing in the log. It is recommended to gather together the
-boundary faces of the same type, in order to ease the reading of
-run\_solver.log.}\\
 
 %==================================
 \subsubsection{Absorption coefficient of the medium, boundary conditions
@@ -3702,7 +3393,7 @@ thermal scalar associated with the continuous phase is the temperature in Kelvin
 
 
 %==================================
-\subsubsection{Prescribing the main modelling parameters (GUI and/or \texttt{cs\_user\_lagr\_model})}\label{sec:Ini-lag}
+\subsubsection{Prescribing the main modelling parameters}\label{sec:Ini-lag}
 %==================================
 
 \minititre{Use of the GUI}
@@ -3769,7 +3460,7 @@ keyword list (\S~\ref{sec:prg_motscles_lagr}).%FIXME
 
 
 %==================================
-\subsubsection{Prescribing particle boundary conditions (GUI and/or \texttt{cs\_user\_lagr\_boundary\_conditions.c})}
+\subsubsection{Prescribing particle boundary conditions}
 %==================================
 In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{sec:fvm_selector}), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the \texttt{cs\_user\_lagr\_boundary\_conditions.c} file. More advanced user-defined boundary conditions can be prescribed in the \texttt{cs\_user\_lagr\_in function} from \texttt{cs\_user\_lagr\_particle.c}.
 
@@ -4439,7 +4130,7 @@ The use of \texttt{usstr2} is mandatory to run a calculation using the ALE
 For each structure, the system that will be solved is:
 
 \begin{equation}
-M.x^{''}+C.x^{''}+K.(x-x_{0} = 0
+M.x^{''}+C.x^{'}+K.(x-x_{0}) = 0
 \end{equation}
 
 where

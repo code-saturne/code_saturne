@@ -103,9 +103,9 @@ if test "x$with_catalyst" != "xno" ; then
     if test $cs_have_catalyst != yes ; then
 
       if test $detection_variant = catalyst ; then
-        cs_catalyst_vers_check="above 5.6"
+        cs_catalyst_vers_check="(more recent than 5.6)"
       else
-        cs_catalyst_vers_check="5.6 or older"
+        cs_catalyst_vers_check="(5.6 or older)"
       fi
 
       AC_MSG_CHECKING([ParaView/Catalyst version $cs_catalyst_vers_check])
@@ -180,6 +180,11 @@ if test "x$with_catalyst" != "xno" ; then
 
   if test "x$cs_have_catalyst" = "xno"; then
     CATALYST_LIBS=""
+  else
+    AC_LANG_PUSH([C++])
+    CPPFLAGS="${saved_CPPFLAGS} ${CATALYST_CPPFLAGS}"
+    AC_CHECK_HEADERS([vtkCPPythonScriptV2Pipeline.h])
+    AC_LANG_POP([C++])
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"

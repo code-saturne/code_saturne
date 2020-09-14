@@ -384,6 +384,7 @@ provided directly in the command line, as follows:
 `code_saturne studymanager -f sample.xml -c -d /scratch/***/reference_destination_directory`
 
 Run external preprocessing scripts with options {#sec_smgr_prepro}
+-----------------------------------------------
 
 The markup `<prepro>` can be added as a child of the considered case.
 
@@ -607,8 +608,8 @@ Define curves
 The plots of computational data are built from data files. These data must be
 ordered as column and the files should be in results directory in the
 `RESU` directory (either in the **repository** or in the
-**destination**). Commentaries are allowed in the file, the head of every
-commentary line must start with character `\#`.
+**destination**). Lines starting with character `\#` are treated as
+as comments.
 
 In the parameters file, curves are defined with two markups:
 `<data>` and `<plot>`:
@@ -761,7 +762,7 @@ markup should be used with the markup `<plot>` as illustrated below:
 <figure name="MyFigure" idlist="1 2"  figsize="(4,4)" />
 ```
 
-### Curves with error bars {#sec_sec_smgr_err}
+### Curves with error bars {#sec_smgr_err}
 
 In order to draw horizontal and vertical error bars, it is possible to
 specify in the markup `<plot>` the attributes `xerr` and
@@ -831,7 +832,7 @@ should be used as a child of a markup `<case>` as illustrated below:
 <figure title="Grid1: probes for velocity"  name="MyProbes" idlist="2"/>
 ```
 
-### Matplotlib raw commands {#sec_sec_smgr_raw}
+### Matplotlib raw commands {#sec_smgr_raw}
 
 The parameters file allows executing additional Matplotlib commands (i.e
 Python commands), for curves (2D lines), or subplot, or figures. For every object
@@ -913,7 +914,7 @@ The attributes of `<input>` are:
 The `file` attribute is mandatory, and either `repo` or
 `dest` must be present (but not the both) even if it is empty.
 
-Output and restart {#sec_sec_smgr_restart}
+Output and restart {#sec_smgr_restart}
 ==================
 
 STUDYMANAGER produces several files in the **destination** directory:
@@ -937,9 +938,11 @@ are completed in the updated parameters file.
 Tricks {#sec_smgr_tricks}
 ======
 
-### How to comment markups in the parameters file?
+## Syntax and additional markup
 
-The opening and closing signs for commentaries are `<!--` and
+### How to comment markup in the parameters file?
+
+The opening and closing markup for comments in XML are `<!--` and
 `-->`. In the following example, nothing from the study
 `MyStudy2` will be read:
 ```{.xml}
@@ -1003,7 +1006,7 @@ The less-than < and greater-than > symbols are among the five predefined
 entities of the XML specification that represent special characters.
 
 In order to have one of the five predefined entities rendered in any legend, title or axis label,
-use the ring `&name;`. Refer to the following table for the name of the character to be rendered:
+use the string `&name;`. Refer to the following table for the name of the character to be rendered:
 
 <table>
 <caption id="smgr_table_xml_spe_sym">Special symbols of the XML specification</caption>
@@ -1026,7 +1029,7 @@ For example, in order to write \f$ \lambda<1 \f$ in a legend, the following attr
 
 ### How to set a logarithmic scale?
 
-The following raw commands have to be used:
+The following raw commands can be used:
 
 ```{.xml}
 <subplot id="2" title="Grid convergence" xlabel="Number of cells" ylabel="Error (\%)">
@@ -1058,7 +1061,7 @@ source /home/salome//Salome-V9_3_0-x86_64-univ/salome_modules.sh
 ```
 and the script of SALOME commands `my_mesh.py`:
 ```{.py}
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import geompy
@@ -1087,7 +1090,7 @@ tetra.Compute()
 tetra.ExportMED("./my_mesh.med")
 ```
 
-### How to carry out a grid convergence study?
+## How to carry out a grid convergence study?
 
 The following example shows how to carry out a grid convergence study by running
 the same case three times and changing the parameters between each run with the
@@ -1134,7 +1137,7 @@ The preprocessing script is shown below. Note that it can be called inside
 the parameters file without specifying a value for each option:
 
 ```{.py}
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 #

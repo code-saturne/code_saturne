@@ -128,7 +128,7 @@ if test "x$with_hdf5" != "xno" ; then
     fi
     for n in $cs_hdf5_libnames ; do
       if test "x$cs_hdf5_libname" = "x" ; then
-        ls "$cs_hdf5_libpath"/"$n".* > /dev/null 2>&1
+        ls "$cs_hdf5_libpath"/lib"$n".* > /dev/null 2>&1
         if test $? == "0"; then
           cs_hdf5_libname=$n
           cs_hdf5_libnames="$cs_hdf5_libname"

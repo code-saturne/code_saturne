@@ -28,7 +28,7 @@ Introduction {#cs_case_structure_intro}
 This page describes the directory structure used by code_saturne to
 handle case data, model and numerical parameters, and run options.
 
-To create a case, either the GUI or the```code_saturne create``` command
+To create a case, either the GUI or the ```code_saturne create``` command
 can be used. As usual for all code_saturne commands,
 the ```code_saturne create --help```
 will list the available options. More details are provided in the
@@ -166,7 +166,7 @@ summary          | output file           | global execution and environment summ
 
 In special cases, it is possible to define a separate *scratch* execution directory,
 by setting a 'CS_SCRATCHDIR` environment variable or defining such a directory in the
-general configuration ([code_saturne.cfg](@ref #cs_user_configuration_file})) settings.
+general configuration ([code_saturne.cfg](@ref cs_user_configuration_file})) settings.
 
 In this case, results are copied from the scratch directory to
 the run output directory during the `finalize` stage of a computation.
@@ -218,7 +218,7 @@ examples of thermochemical data files used for pulverized coal combustion,
 gas combustion, electric arcs, or a meteorological profile.
 The files to be actually used for the calculation must be copied directly in
 the `DATA` directory and its name may either be unchanged, or be referenced using
-the GUI or using the [usppmo](@ref usppmo) user subroutine.
+the GUI or using the [cs_user_model](@ref cs_user_model) user function.
 In same manner, under the `SRC` directory, a sub-directory named `REFERENCE`
 containing all the available user-defined function templates and a
 the sub-directory named `EXAMPLES`  containing multiple examples are copied.
@@ -226,6 +226,139 @@ the sub-directory named `EXAMPLES`  containing multiple examples are copied.
 As a rule of thumb, all files in `DATA` or `SRC` except for the
 `code_saturne` script are copied for use during code execution,
 but subdirectories are not.
+
+Using the GUI and user-defined functions {#sec_prg_run_gui_udf}
+----------------------------------------
+
+A Graphical User Interface (GUI) is available with code_saturne.  This tool
+creates or reads an XML file according to a specific code_saturne schema which
+is then interpreted by the main script and by the Solver.
+
+The GUI manages calculation parameters, standard initialization values and
+boundary conditions, most available specific physical models (coal and gas combustion,
+atmospheric flows, Lagrangian module, electrical model, compressible model and radiative
+transfers).
+
+Using the GUI is optional, but highly recommended. Each setting or definition
+that can be specified through the GUI can also be specified in the user-defined sources.
+
+The GUI and user-defined functions are designed to be used in combination:
+it is generally preferable to use the GUI for as many settings
+as possible, and resort to user-defined functions only for more complex
+settings which cannot be done through the GUI. This may also include
+settings with many elements that can be better defined using programmatic
+loops. As a general rule, the most concise and easily verifiable approach
+should be used.
+
+In general, user functions and subroutines are called after the GUI-defined
+settings for the relevant settings are loaded, so that when a given parameter
+is specified both in the interface and in a user-defined function or subroutine,
+the value in the user function has priority, or rather has the last word.
+
+\warning
+There are a few limitations to the changes that can be made between the GUI and
+the user routines, related to which variables are solved. In particular, it is
+not possible to activate a specific physical or turbulence model in the GUI and
+activate a conflicting one in use functions (for example, specifying the use
+of a <em>k-ε</em> model in the GUI and change it to
+<em>R<sub>ij</sub>-ε</em> \ref cs_user_model.
+
+For example, in order to set the boundary conditions of a calculation
+corresponding to a channel flow with a given inlet velocity profile, the recommended
+practice is to:
+
+- Using the GUI:
+  - Set the boundary conditions corresponding to the wall and the output.
+  - Set a dummy boundary condition for the inlet (uniform velocity for instance)
+    so as to define the appropriate zone.
+- With user-defined functions:
+  - set the proper velocity profile at inlet in \ref cs_user_boundary_conditions.f90.
+    The dummy velocity entered in the GUI will not be taken into account as it is
+    superceded by this definition (but should appear as the initial value
+    in the corresponding arrays).
+
+The GUI is launched with the `./code_saturne` command in a case's
+`DATA` directory. The first step is then to load an existing parameter file (in
+order to modify it) or to create a new one. By default, the assumed file name
+is `setup.xml`, and changing it is not recommended (though many setting files
+from older versions using various names may be encountered).
+
+The settings available for a typical calculation are the following:
+
+- Calculation environment: case path info,
+  definition of notebook (parametric) variables.
+
+- Mesh: definition of the mesh file(s),
+  mesh preprocessing options, and mesh checking mode.
+
+- Calculation features: choice of physical model, ALE mobile mesh features,
+      turbulence model, thermal model, coupling with SYRTHES...
+
+- Fluid properties: reference pressure, fluid characteristics, gravity.
+  It is also possible to write user laws for the density, the viscosity,
+  the specific heat and the thermal conductivity in the interface through
+  the use of a formulae generator.
+
+- Volume zones: variables initialization, and definition of
+  the zones where to apply head losses or source terms.
+
+- Boundary zones: definition of the boundary conditions for
+  each variable. The colors of the boundary faces may be read
+  directly from a `preprocessor.log*` files created by the Preprocessor
+  or a `run_solver.log` file from a previous solver run.
+
+- Time settings: time stepping scheme, number of time steps,
+   management of calculation restart from a previous run.
+
+- Numerical parameters: advanced parameters
+  for the numerical solution of the equations.
+
+- Postprocessing: visualizable output settings, time averages,
+  probe sets and 1-d profile definitions.
+
+- Performance settings: advanced parallel computing settings
+  (such as partitioning and, IO options).
+
+### User-defined function templates and examples
+
+Reference user-defined functions and subroutines may be found in
+the `SRC\REFERENCE subdirectory of a given case, unless it was created
+with the `--noref` option. In this case, they may always be found
+in the code's installation directory, usually under
+`${install_prefix}/share/code_saturne/user`.
+
+In a similar manners, examples may be found in
+the `SRC\EXAMPLES subdirectory of a given case, unless it was created
+with the `--noref` option, and may always be found
+in the code's installation directory, usually under
+`${install_prefix}/share/code_saturne/user_examples`.
+
+Note that all C, C++, and Fortran files present directly under a case's
+`SRC` directory will be used when running, while those in subdirectories
+will be ignored. To use a given user-defined function, it should be
+copied from the reference to `SRC` and adapted, possibly using code snippets
+from the examples. To temporarily deactivate a given source file,
+a recommended practice is to create a `SRC/STASH` subdirectory
+nd move them to that subdirectory (rather than renaming them).
+
+The GUI also includes a tool which can help manage and edit user-defined
+functions, and check their validity (i.e. correct compilation).
+
+### Upgrading to a newer code_saturne version
+
+Note that when upgrading to a new code_saturne version, the GUI can
+automatically update the XML file (and in the rare case where somelements cannot
+be updated, a warning will be issued). Whereas although an effort is made
+not to break user-defined functions too often, those functions
+are guaranteed to be "stable" only within a same release series.
+
+So for example functions written for v6.0.0 need not be changed in
+bug-fix release 6.0.4, but should be at least verified and possibly updated
+when moving to a release from the 6.1.* series for example.
+
+The easier upgrade mechanism using the GUI is one of the main reasons for which
+defining as many settings as possible using the GUI and keeping user-defined functions
+to the minimum required is so strongly encouraged.
 
 Run configuration file (run.cfg) {#sec_prg_run_cfg}
 ----------------------
@@ -272,10 +405,12 @@ Optional section relative to associated setup. Allowed keywords are:
 
   Name of the parameters file (default: setup.xml).
 
-* `coupling`
+* `coupled_domains`
 
-  Name of the coupling_parameters file if present
-  (default: coupling_parameters.py).
+  List of domains that should be coupled, separated by colons (_:_).
+  When present (for a coupled run's top-level configuration file),
+  a section named after each domain's (transformed to lowercase)
+  may also be present to define additional options for that case.
 
 As the recommended `setup.xml` and coupling_parameters.py are used by default
 if not specified here but present in the directory structure, this section is
@@ -460,3 +595,81 @@ additional environment variables. The associated key names are:
   environment; it is thus usually preferred to `run_epilogue` when both
   could be used.
 
+### [${coupled_case_name}] {#case_structure_coupling_options}
+<!-- -->
+
+In case of code coupling, for each domain, a section whose name is
+based on the domain name may be present.
+The section name should always be in lowercase (per file formmat
+specifications) even if the domain name is not.
+
+* `solver`
+
+  Defines the solver type; currently allowed names (case-independent) are:
+  `code_saturne`, `neptune_cfd`, `SYRTHES`, `CATHARE`, `python_code`.
+  Additional allowed or required keywords may depend on the solver
+  type.
+
+* `domain`
+
+  Directory name (with exact capitalization) associated to the given
+  domain. By default, this should be the same as the domain name.
+
+* `n_procs_weight`
+
+  How many MPI ranks will be assigned to this domain will be based
+  on the ratio of this weight relative to the total `n_procs_weight`
+  of all coupled domains and the total number of ranks assigned
+  to the coupled computation.
+
+  The weight to assign to each domain may be estimated based on the
+  relative domain sizes and associated computational cost, so
+  as to balance the load as well as possible. Checking performance log
+  coupling timings may help improving the load balance based on previous
+  runs (when the coupling communication time represents the largest part
+  of the coupling exchange cost, this can usually be interpreted as including
+  time waiting for other domains, so more resources should be allocated
+  to domains with lower communication time, and less to those with higher
+  communication time.
+
+* `n_procs_min`
+
+  Minimum number of MPI ranks assigned to this domain. By default,
+  this value is 1. This setting may be useful if the weight-based computation
+  could lead to an insufficient number of assigned ranks for some resource
+  configurations, for example due to rounding.
+
+* `n_procs_max`
+
+  Maximmum number of MPI ranks assigned to this domain. This may
+  be useful if the computational tool associated to a given domain
+  is not parallel or is expected not to scale well beyond a given number
+  of MPI ranks.
+
+* `opt`
+
+  For Syrthes domains, additional options (for example, postprocessing with
+  `-v ens` or `-v med`).
+
+* `param`
+
+  For Syrthes domains, name of associated parameters file.
+
+* `cathare_case_file`
+
+  For CATHARE domains, name of the associated dataset file.
+
+* `neptune_cfd_domain`
+
+  For CATHARE domains, name of the computational domain assigned
+  to the false neptune_cfd instance which actually wraps CATHARE.
+
+* `script`
+
+  For Python-based solver domains, name of the main matching
+  Python script.
+
+* `command_line`
+
+  For Python-based solver domains, name of the associated
+  command-line arguments.

@@ -114,7 +114,7 @@ Min and Max values for the wall temperatures (clipping otherwise)
 
 \subsection assign2 Assign boundary conditions to boundary wall
 
-\section cs_user_radiative_transfer_bcs_zones  Zone definitions
+\subsubsection cs_user_radiative_transfer_bcs_zones  Zone definitions
 
 For each boundary face face_id, a specific output (logging and
 postprocessing) zone id may be assigned. This allows realizing balance
@@ -122,12 +122,9 @@ sheets by treating them separately for each zone. By default, the
 output zone id is set to the general (input) zone id associated to a face.
 
 To access output zone ids (both for reading and modifying), use the
-\ref cs_rad_transfer_get_output_b_face_zone_ids function.
-The zone id values are arbitrarily chosen by the user, but must be
-positive integers; very high numbers may also lead to higher memory
-consumption.
+\ref cs_boundary_zone_face_zone_id function.
 
-\paragraph wall_carac Wall characteristics
+\subsubsection wall_carac Wall characteristics
 
 \warning The unit of the temperature is the Kelvin
 
@@ -144,7 +141,7 @@ consumption.
                    initialize thwall at the first time step.
                    If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
                    In the other case, \c tintp is only for initialization.
-\paragraph data Other data (depending of the isothp)
+\subsubsection data Other data (depending of the isothp)
 
   - \c rcodcl = conduction flux
   - \c epsp   = emissivity
@@ -220,23 +217,6 @@ If the conduction flux is zero then the wall is adiabatic.
 
 \snippet  cs_user_radiative_transfer_bcs.c example_5
 
-\subsubsection w Warning
-
-For all boundary faces that are not wall it is MANDATORY to impose a number of
-zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
-
-\snippet cs_user_radiative_transfer_bcs.c w
-
-Verification that all boundary faces have been treated
-
-\snippet  cs_user_radiative_transfer_bcs.c check
-
-\subsection end_loop End of the loop on the boundary faces
-
-\snippet  cs_user_radiative_transfer_bcs.c end_radiative
-\subsection format_radiative_trans Format
-\snippet cs_user_radiative_transfer_bcs.c format_radiative
-
 \section abso_flux Absorption coefficient and net radiation flux
 
 The absorption coefficient and the net radiation flux for the radiative module
@@ -248,29 +228,13 @@ and \ref cs_user_rad_transfer_net_flux subroutines.
 
 The absorption coefficient is defined in \ref cs_user_rad_transfer_absorption.
 
-\subsubsection arg Arguments of cs_user_rad_transfer_absorption
-
-\snippet cs_user_radiative_transfer.c arg_1
-
-\subsubsection var Local variables to be added
-
-\snippet cs_user_radiative_transfer.c loc_var_dec_1
-
 \subsubsection abso_coeff_computation Computation of the absorption coefficient
 
 \snippet cs_user_radiative_transfer.c abso_coeff
 
-\subsubsection format_1 Format
-
-\snippet cs_user_radiative_transfer.c format_1
-
 \subsection cs_user_rad_transfer_net_flux Net radiation flux
 
 The net radiation flux is computed in \ref cs_user_rad_transfer_net_flux.
-
-\subsubsection arg2 Arguments of cs_user_rad_transfer_net_flux
-
-\snippet cs_user_radiative_transfer.c arg_2
 
 \subsubsection var2 Local variables to be added
 
@@ -286,9 +250,5 @@ have been forgotten and the calculation stops.
 \subsubsection net_flux_computation Computation of the net radiation flux
 
 \snippet cs_user_radiative_transfer.c net_flux
-
-\subsubsection format_2 Format
-
-\snippet cs_user_radiative_transfer.c format_2
 
 */
