@@ -272,19 +272,20 @@ cs_lagr_car(int              iprev,
     else if (extra->itytur == 3) {
 
       if (extra->cvar_rij == NULL) {
-        /* Deprecated irijco = 0 */
 
+        /* Deprecated irijco = 0 */
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
           energi[cell_id] = 0.5 * (  extra->cvar_r11->vals[iprev][cell_id]
                                    + extra->cvar_r22->vals[iprev][cell_id]
                                    + extra->cvar_r33->vals[iprev][cell_id]);
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+
         }
 
       } else {
+
         /* irijco = 1 */
-        
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
           energi[cell_id] = 0.5 * ( extra->cvar_rij->vals[iprev][6*cell_id]
@@ -292,6 +293,7 @@ cs_lagr_car(int              iprev,
                                   + extra->cvar_rij->vals[iprev][6*cell_id + 2]
                                   );
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+
         }
 
       }
@@ -329,6 +331,7 @@ cs_lagr_car(int              iprev,
           tlag[ip][id]      = cs_math_epzero;
           bx[ip][id][nor-1] = 0.0;
         }
+        
       }
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;

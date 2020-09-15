@@ -287,7 +287,7 @@ _lages1(cs_real_t           dtp,
 
         // Use rotation matrix for stochastic model
         cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
-        cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+        cs_real_t axe_singularity[3] = {1.0, 0.0, 0.0};
 
         // Get vector for rotation
         cs_real_t n_rot[3];
@@ -704,6 +704,7 @@ _lages1(cs_real_t           dtp,
           cs_real_t displ[3];
 
           cs_math_33t_3_product(trans_m, displ_r, displ);
+          
           for (cs_lnum_t id = 0; id < 3; id++)
             part_coords[id] = old_part_coords[id] + displ[id];
 
