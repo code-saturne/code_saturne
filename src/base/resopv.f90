@@ -529,7 +529,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
 
         ! Diffusive flux BCs
         if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
-          hint = dt(iel)/distb(ifac)
+          hint = viscap(iel)/distb(ifac)
 
         ! Symmetric tensor diffusivity
         elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -806,32 +806,30 @@ else
   enddo
 endif
 
-! --- Weakly compressible algorithm: semi analytic scheme
+! --- Weakly compressible algorithm and VOF
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
-if (idilat.ge.4) then
+if (idilat.ge.4.or.ivofmt.gt.0) then
   if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
-      ardtsr  = arak*(dt(iel)/crom(iel))
+      ardtsr  = arak * viscap(iel)
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
   else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
-      arsr  = arak/crom(iel)
-
-      rc1(1) = arsr*(                                &
+      rc1(1) = arak*(                                &
                       vitenp(1,iel)*trav(1,iel)      &
                     + vitenp(4,iel)*trav(2,iel)      &
                     + vitenp(6,iel)*trav(3,iel)      &
                     )
-      rc1(2) = arsr*(                                &
+      rc1(2) = arak*(                                &
                       vitenp(4,iel)*trav(1,iel)      &
                     + vitenp(2,iel)*trav(2,iel)      &
                     + vitenp(5,iel)*trav(3,iel)      &
                     )
-      rc1(3) = arsr*(                                &
+      rc1(3) = arak*(                                &
                       vitenp(6,iel)*trav(1,iel)      &
                     + vitenp(5,iel)*trav(2,iel)      &
                     + vitenp(3,iel)*trav(3,iel)      &
@@ -847,6 +845,16 @@ if (idilat.ge.4) then
     do iel = 1, ncel
       do isou = 1, 3
         trav(isou,iel) = 0.d0
+      enddo
+    enddo
+  endif
+
+  ! For VOF, add vel
+  if (ivofmt.gt.0) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      do isou = 1, 3
+        trav(isou,iel) = trav(isou,iel) + vel(isou, iel)
       enddo
     enddo
   endif
