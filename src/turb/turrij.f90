@@ -141,6 +141,7 @@ double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 double precision, dimension(:,:), pointer :: lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_produc
+double precision, dimension(:,:), pointer :: cpro_press_correl
 double precision, dimension(:), pointer :: cpro_beta
 
 type(var_cal_opt) :: vcopt
@@ -173,6 +174,16 @@ else
   allocate(produc(6,ncelet))
   cpro_produc => produc
 endif
+
+f_id = -1
+call field_get_id_try("rij_pressure_strain_correlation", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, cpro_press_correl)
+else
+  allocate(press_correl(6,ncelet))
+  cpro_press_correl => press_correl
+endif
+call field_get_val_s(ivarfl(iep), cvar_ep)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
