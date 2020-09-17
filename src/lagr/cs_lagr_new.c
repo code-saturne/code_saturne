@@ -747,10 +747,10 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
         cs_real_t w = 0.;
 
         if (cvar_k != NULL)
-          w = d2s3 * cvar_k[iel];
+          w = d2s3 * cvar_k[cell_id];
         /* Deprecated irijco = 0 */
         else if (cvar_r11 != NULL)
-          w = (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]) / 3.;
+          w = (cvar_r11[cell_id] + cvar_r22[cell_id] + cvar_r33[cell_id]) / 3.;
 
         sym_rij[cell_id][0][0] = w;
         sym_rij[cell_id][1][1] = w;
@@ -799,17 +799,17 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
     unsigned char *particle = pset->p_buffer + p_am->extents * p_id;
 
-    cs_lnum_t iel  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+    cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 
     cs_real_t  *vel_seen
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
 
     for (cs_lnum_t i = 0; i < 3; i++) {
-      vel_seen[i] = vel[iel][i]
-                  + vagaus[l_id][0] * sqrt(eig_val[iel][0]) * eig_vec[iel][0][i]
-                  + vagaus[l_id][1] * sqrt(eig_val[iel][1]) * eig_vec[iel][1][i]
-                  + vagaus[l_id][2] * sqrt(eig_val[iel][2]) * eig_vec[iel][2][i];
+      vel_seen[i] = vel[cell_id][i]
+                  + vagaus[l_id][0] * sqrt(eig_val[cell_id][0]) * eig_vec[cell_id][0][i]
+                  + vagaus[l_id][1] * sqrt(eig_val[cell_id][1]) * eig_vec[cell_id][1][i]
+                  + vagaus[l_id][2] * sqrt(eig_val[cell_id][2]) * eig_vec[cell_id][2][i];
     }
 
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);

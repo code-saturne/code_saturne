@@ -127,6 +127,7 @@ double precision, allocatable, dimension(:,:) :: gradro
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: smbrts
 double precision, allocatable, dimension(:,:,:) ::rovsdtts
+double precision, allocatable, dimension(:,:), target :: press_correl
 
 double precision, pointer, dimension(:) :: tslagi
 double precision, dimension(:,:), pointer :: coefau
