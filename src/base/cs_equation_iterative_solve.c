@@ -1201,7 +1201,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const cs_real_33_t    fimp[],
+                                   cs_real_33_t          fimp[],
                                    cs_real_3_t           smbrp[],
                                    cs_real_3_t           pvar[],
                                    cs_real_3_t           eswork[])
@@ -1908,6 +1908,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *============================================================================*/
 
   cs_sles_free_native(f_id, var_name);
+
+  /* Save diagonal in case we want to use it */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+        fimp[cell_id][i][j] = dam[cell_id][i][j];
+  }
 
   /* Free memory */
   BFT_FREE(dam);

@@ -70,6 +70,7 @@
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
+!> \param[in,out] da_u          inverse of diagonal part of velocity matrix
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
@@ -98,7 +99,7 @@
 subroutine resopv &
  ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                   &
    icetsm , ifbpcd , ltmast , isostd ,                            &
-   dt     , vel    ,                                              &
+   dt     , vel    , da_u   ,                                     &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou ,                                     &
@@ -158,6 +159,7 @@ double precision tslagr(ncelet,*)
 double precision coefav(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision vel   (3  ,ncelet)
+double precision, dimension (1:ncelet), target :: da_u
 double precision coefa_dp(nfabor)
 double precision coefb_dp(nfabor)
 
@@ -286,9 +288,9 @@ call field_get_coefaf_s(f_iddp, coefaf_dp)
 call field_get_coefbf_s(f_iddp, coefbf_dp)
 
 ! Associate pointers to pressure diffusion coefficient
-viscap => dt(:)
+viscap => da_u(:)
 if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-  vitenp => tpucou(:,:)
+  vitenp => tpucou(:,:)!TODO FIXME
 endif
 
 ! Index of the field
@@ -402,13 +404,13 @@ endif
 
 i_vof_mass_transfer = iand(ivofmt,VOF_MERKLE_MASS_TRANSFER)
 
-! Calculation of dt/rho
+! Calculation of dt/rho (or 1/(rho a_u))
 if (ivofmt.gt.0.or.idilat.eq.4) then
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     allocate(xdtsro(ncelet))
     do iel = 1, ncel
-      xdtsro(iel) = dt(iel)/crom(iel)
+      xdtsro(iel) = da_u(iel)/crom(iel)
     enddo
     call synsca(xdtsro)
   elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
@@ -606,7 +608,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
             ! the entrance
             kpdc = b_head_loss(ifac)
             rho = brom(ifac)
-            cfl = -(bmasfl(ifac)/surfbn(ifac)*dt(iel))    &
+            cfl = -(bmasfl(ifac)/surfbn(ifac)*dt(iel))    & !FIXME dt or viscap for VOF?
                 / (2.d0*rho*distb(ifac))*(1.d0 + kpdc)
 
             pimp = - cvar_pr(iel)                                              &
@@ -863,7 +865,7 @@ if (idilat.ge.4.or.ivofmt.gt.0) then
 else
   if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
-      ardtsr  = arak*(dt(iel)/crom(iel))
+      ardtsr  = arak * da_u(iel) / crom(iel)
       do isou = 1, 3
         trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
       enddo
@@ -1019,7 +1021,7 @@ if (arak.gt.0.d0) then
     allocate(cpro_visc(ncelet))
 
     do iel = 1, ncel
-      cpro_visc(iel) = arak*viscap(iel)
+      cpro_visc(iel) = arak * viscap(iel)
     enddo
 
     imrgrp = vcopt_p%imrgra
@@ -1327,13 +1329,15 @@ sinfo%rnsmbr = residu
 
 ! --- Norm resiudal
 ! Historical norm for the pressure step:
-!       div(rho u* + dt gradP^(n))-Gamma
-!       i.e.  RHS of the pressure + div(dt gradP^n) (otherwise there is a risk
+!       div(rho u* + 1/a_u gradP^(n))-Gamma
+!       or
+!       i.e.  RHS of the pressure + div(1/a_u gradP^n) (otherwise there is a risk
 !       a 0 norm at steady states...). Represents terms that pressure has to
 !       balance.
+!       Note 1/a_u is dt in the algorithm by default
 
 do iel = 1, ncel
-  dtsrom = dt(iel) / crom(iel)
+  dtsrom = da_u(iel) / crom(iel)
   do isou = 1, 3
     trav(isou, iel) = dtsrom * gradp(isou,iel)
   enddo
@@ -1383,8 +1387,8 @@ if (idilat.ge.4) then
   enddo
 endif
 
-! It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
-! NB: if iphydr=1, div(rho u*) contains div(dt d fext).
+! It is: div( 1/(a_u rho)*rho grad P) + div(rho u*) - Gamma
+! NB: if iphydr=1, div(rho u*) contains div(1/a_u d fext).
 do iel = 1, ncel
   res(iel) = res(iel) + cpro_divu(iel)
 enddo
@@ -1650,7 +1654,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   endif
 
   ! --- Update the right hand side and update the residual
-  !      rhs^{k+1} = - div(rho u^n) - D(dt, delta delta p^{k+1})
+  !      rhs^{k+1} = - div(rho u^n) - D(1/a_u, delta delta p^{k+1})
   !-------------------------------------------------------------
 
   iccocg = 1

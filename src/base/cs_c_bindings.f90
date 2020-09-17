@@ -1979,7 +1979,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
       integer(c_int), dimension(*), intent(in) :: icvfli
-      real(kind=c_double), dimension(*), intent(in) :: fimp
+      real(kind=c_double), dimension(*), intent(inout) :: fimp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
     end subroutine cs_equation_iterative_solve_vector
 
@@ -5435,7 +5435,7 @@ contains
     real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
     integer, intent(in) :: icvflb
     integer(c_int), dimension(*), intent(in) :: icvfli
-    real(kind=c_double), dimension(*), intent(in) :: fimp
+    real(kind=c_double), dimension(*), intent(inout) :: fimp
     real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
 
     ! Local variables

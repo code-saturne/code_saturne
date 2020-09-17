@@ -59,6 +59,7 @@
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
 !> \param[in]     velk          velocity at the previous sub iteration (or vela)
+!> \param[in,out] da_u          inverse of diagonal part of velocity matrix
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -94,7 +95,7 @@ subroutine predvv &
    nvar   , nscal  , iterns ,                                     &
    ncepdp , ncesmp ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vela   , velk   ,                            &
+   dt     , vel    , vela   , velk   , da_u   ,                   &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
@@ -164,6 +165,7 @@ double precision cofbfv(3,3,nfabor)
 double precision vel   (3, ncelet)
 double precision velk  (3, ncelet)
 double precision vela  (3, ncelet)
+double precision da_u  (ncelet)
 
 ! Local variables
 
@@ -1674,6 +1676,23 @@ if (iappel.eq.1) then
    smbr   ,                                                       &
    vel    ,                                                       &
    eswork )
+
+
+ ! Store inverse of the diagonal velocity matrix for the
+ ! correction step if needed (otherwise dt is used)
+ if (mass_preconditioner.eq.0) then
+   do iel = 1, ncel
+     da_u(iel) = dt(iel)
+   enddo
+
+ else
+   do iel = 1, ncel
+     da_u(iel) = (3.d0* crom(iel)*cell_f_vol(iel)) &
+       / (fimp(1,1,iel) + fimp(2,2,iel) + fimp(3,3,iel))
+   enddo
+ endif
+
+ call synsca(da_u)
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized

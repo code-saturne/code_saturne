@@ -308,7 +308,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const cs_real_33_t    fimp[],
+                                   cs_real_33_t          fimp[],
                                    cs_real_3_t           smbrp[],
                                    cs_real_3_t           pvar[],
                                    cs_real_3_t           eswork[]);

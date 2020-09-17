@@ -107,6 +107,11 @@ BEGIN_C_DECLS
         Please refer to the
         <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
         of the theory guide for more informations.
+  \var  cs_stokes_model_t::mass_preconditioner
+        <a name="mass_preconditioner"></a>
+        Preconditioner for mass:\n
+         - 0: dt (by default).\n
+         - 1: 1/A_u\n
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -239,6 +244,7 @@ static cs_stokes_model_t  _stokes_model = {
   .irevmc = 0,
   .iprco  = 1,
   .arak   = 1.0,
+  .mass_preconditioner = 0,
   .ipucou = 0,
   .iccvfg = 0,
   .idilat = 1,
@@ -264,6 +270,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
+                                 int     **mass_preconditioner,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -292,6 +299,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
  *   arak    --> pointer to cs_glob_stokes_model->arak
+ *   mass_preconditioner --> pointer to cs_glob_stokes_model->mass_preconditioner
  *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
  *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
  *   idilat  --> pointer to cs_glob_stokes_model->idilat
@@ -311,6 +319,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
+                                 int     **mass_preconditioner,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -328,6 +337,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);
   *arak   = &(_stokes_model.arak);
+  *mass_preconditioner = &(_stokes_model.mass_preconditioner);
   *ipucou = &(_stokes_model.ipucou);
   *iccvfg = &(_stokes_model.iccvfg);
   *idilat = &(_stokes_model.idilat);
@@ -546,6 +556,11 @@ cs_stokes_model_log_setup(void)
        _("    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv * stokes_model->arak);
   }
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    mass_preconditioner %d\n"),
+     stokes_model->mass_preconditioner);
+
   if (stokes_model->fluid_solid)
     cs_log_printf
       (CS_LOG_SETUP,

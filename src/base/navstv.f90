@@ -150,6 +150,7 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
+double precision, dimension(:), pointer :: da_u
 double precision, dimension(:), allocatable :: xinvro
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
@@ -185,7 +186,7 @@ interface
   subroutine resopv &
    ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                 &
      icetsm , ifbpcd , ltmast , isostd ,                          &
-     dt     , vel    ,                                            &
+     dt     , vel    , da_u   ,                                   &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou ,                                   &
@@ -215,6 +216,7 @@ interface
     double precision coefav(3  ,ndimfb)
     double precision coefbv(3,3,ndimfb)
     double precision vel   (3  ,ncelet)
+    double precision da_u  (ncelet)
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
@@ -470,17 +472,20 @@ endif
 
 iappel = 1
 
+allocate(da_u(ncelet))
+
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , vel    , vela   , velk   ,                            &
+  dt     , vel    , vela   , velk   , da_u   ,                   &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , frcxt  ,                                     &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     )
+
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -855,7 +860,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
   call resopv &
 ( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
   icetsm , ifbpcd , ltmast , isostd ,                            &
-  dt     , vel    ,                                              &
+  dt     , vel    , da_u   ,                                     &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens ,                                     &
@@ -1474,7 +1479,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vel    , velk   ,                            &
+   dt     , vel    , vel    , velk   , da_u   ,                   &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , dttens , trav   ,          &
@@ -1708,6 +1713,7 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(trav)
+deallocate(da_u)
 deallocate(dfrcxt)
 deallocate(w1)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)

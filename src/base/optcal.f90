@@ -785,6 +785,11 @@ module optcal
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   real(c_double), pointer, save :: arak
 
+  !> Preconditioner for mass:
+  !>    - 0: dt (default)
+  !>    - 1: 1/A_u
+  integer(c_int), pointer, save :: mass_preconditioner
+
   !> indicates the algorithm for velocity/pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
@@ -1382,14 +1387,15 @@ module optcal
     ! Stokes options structure
 
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
-                                                arak  ,ipucou, iccvfg,         &
+                                                arak  , mass_preconditioner,   &
+                                                ipucou, iccvfg,         &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
                                                 iifren, icalhy, irecmf, fluid_solid)&
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
+      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak, mass_preconditioner
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
       type(c_ptr), intent(out) :: fluid_solid
@@ -1693,13 +1699,15 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
+    type(c_ptr) :: c_mass_preconditioner
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
 
     call cs_f_porous_model_get_pointers(c_iporos)
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_ipucou, c_iccvfg,  &
+                                          c_arak  , c_mass_preconditioner, &
+                                          c_ipucou, c_iccvfg,  &
                                           c_idilat, c_epsdp , c_itbrrb,  &
                                           c_iphydr, c_igprij, c_igpust,  &
                                           c_iifren, c_icalhy, c_irecmf,  &
@@ -1710,6 +1718,7 @@ contains
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )
     call c_f_pointer(c_arak  , arak  )
+    call c_f_pointer(c_mass_preconditioner, mass_preconditioner)
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_iccvfg, iccvfg)
     call c_f_pointer(c_idilat, idilat)
