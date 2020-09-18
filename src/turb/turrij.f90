@@ -115,10 +115,13 @@ integer          iprev
 integer          key_t_ext_id
 integer          iroext
 integer          f_id_phij
+integer          dij
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
 double precision xnoral, xnal(3)
+double precision k,P
+double precision d1s3,d2s3
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
