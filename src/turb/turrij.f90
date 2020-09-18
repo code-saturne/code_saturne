@@ -114,6 +114,7 @@ integer          f_id0 , f_id
 integer          iprev
 integer          key_t_ext_id
 integer          iroext
+integer          f_id_phij
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
@@ -127,7 +128,6 @@ double precision, allocatable, dimension(:,:) :: gradro
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: smbrts
 double precision, allocatable, dimension(:,:,:) ::rovsdtts
-double precision, allocatable, dimension(:,:), target :: press_correl
 
 double precision, pointer, dimension(:) :: tslagi
 double precision, dimension(:,:), pointer :: coefau
@@ -176,13 +176,9 @@ else
   cpro_produc => produc
 endif
 
-f_id = -1
-call field_get_id_try("rij_pressure_strain_correlation", f_id)
-if (f_id.ge.0) then
-  call field_get_val_v(f_id, cpro_press_correl)
-else
-  allocate(press_correl(6,ncelet))
-  cpro_press_correl => press_correl
+call field_get_id_try("rij_pressure_strain_correlation", f_id_phij)
+if (f_id_phij.ge.0) then
+  call field_get_val_v(f_id_phij, cpro_press_correl)
 endif
 call field_get_val_s(ivarfl(iep), cvar_ep)
 
@@ -470,6 +466,56 @@ else
                            cvara_r33(iel)*gradv(3, 3, iel) )
 
   enddo
+endif
+
+!===============================================================================
+! 2.3 Compute the pressure correlation  term for Rij
+!===============================================================================
+! Phi,ij = Phi1,ij+Phi2,ij
+! Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
+! Phi,ij is stored as (Phi11, Phi22, Phi33, Phi12, Phi23, Phi13)
+
+! TODO : coherent with the model
+if (f_id_phij.ge.0) then
+  d1s3 = 1.0d0/3.0d0
+  d2s3 = 2.0d0/3.0d0
+  if (irijco.eq.1) then
+    do iel = 1, ncel
+      k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+      dij=1
+      do isou=1,6
+        if(isou>3) then
+          dij=0
+        endif
+        cpro_press_correl(isou, iel)= -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*dij*k)       &
+                                      -crij2*(cpro_produc(isou,iel)-d2s3*P*dij)
+      enddo
+    enddo
+  else
+    do iel = 1, ncel
+      k=0.5*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+
+        cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(1,iel)-d2s3*P*dij)
+
+        cpro_press_correl(2, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(2,iel)-d2s3*P*dij)
+
+        cpro_press_correl(3, iel)= -crij1*cvar_ep(iel)/k*(cvara_r33(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(3,iel)-d2s3*P*dij)
+
+        cpro_press_correl(4, iel)= -crij1*cvar_ep(iel)/k*(cvara_r12(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(4,iel)-d2s3*P*dij)
+
+        cpro_press_correl(5, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(5,iel)-d2s3*P*dij)
+
+        cpro_press_correl(6, iel)= -crij1*cvar_ep(iel)/k*(cvara_r13(iel)-d2s3*dij*k)  &
+                                   -crij2*(cpro_produc(6,iel)-d2s3*P*dij)
+    enddo
+  endif
 endif
 
 !===============================================================================
