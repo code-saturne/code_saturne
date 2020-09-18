@@ -620,7 +620,7 @@ subroutine cs_user_turbulence_source_terms2 &
    f_id   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
-   crvexp , crvimp, gradv)
+   crvexp , crvimp )
 
 !===============================================================================
 
@@ -656,7 +656,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision crvexp(6,ncelet), crvimp(6,6,ncelet)
-double precision gradv(3, 3, ncelet)
 
 ! Local variables
 

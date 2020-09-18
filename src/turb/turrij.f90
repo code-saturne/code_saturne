@@ -216,6 +216,24 @@ endif
 call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
+! 1.1 Call source terms for Rij
+!===============================================================================
+
+if (irijco.eq.1) then
+
+  call cs_user_turbulence_source_terms2 &
+   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+     ivarfl(irij)    ,                                              &
+     icepdc , icetsm , itypsm ,                                     &
+     ckupdc , smacel ,                                              &
+     smbrts , rovsdtts)
+
+  ! C version
+  call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
+
+endif
+
+!===============================================================================
 ! 1.1 Advanced init for EBRSM
 !===============================================================================
 
@@ -358,20 +376,6 @@ inc = 1
 iprev = 1
 
 call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
-
-!===============================================================================
-! 1.2 Call source terms for Rij
-!===============================================================================
-
-call cs_user_turbulence_source_terms2 &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(ivar)    ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   smbrts , rovsdtts, gradv)
-
-! C version
-call user_source_terms(ivarfl(ivar), smbrts, rovsdtts)
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij
@@ -599,7 +603,7 @@ if (irijco.eq.1) then
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
-   smbrts   , rovsdtts )
+   smbrts , rovsdtts )
 
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then

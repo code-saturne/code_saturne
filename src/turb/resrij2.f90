@@ -71,7 +71,7 @@ subroutine resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   gradv, produc , gradro ,                                              &
+   gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
