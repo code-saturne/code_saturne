@@ -48,8 +48,6 @@
 ### Syntax is <batch_system>_<cluster url or name>=<path>
 ### distant installation paths
 
-### End of section.
-
 ### Section for Code_Saturne run customizations.
 ### --------------------------------------------
 
