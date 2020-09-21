@@ -561,7 +561,6 @@ class case:
         if os.path.isdir(r):
             self.result_dir = os.path.join(r, self.run_id)
         else:
-            r = os.path.join(self.case_dir, 'RESU')
             err_str = \
                     '\nResults directory: ' + r + '\n' \
                     + 'does not exist.\n' \
