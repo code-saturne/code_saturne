@@ -77,15 +77,18 @@ def update_run_steps(s_c, run_conf, final=False):
     # Default if nothing provided, ensure range is filled otherwise
 
     if filter_stages:
+
+        stages = ('stage', 'initialize', 'compute', 'finalize')
+
         stage_ini = s_c['stage']
         i_s = -1
         i_f = -1
-        for i, k in enumerate(s_c):
+        for i, k in enumerate(stages):
             if s_c[k] == True:
                 if i_s < 0:
                     i_s = i
                 i_f = i + 1
-        for i, k in enumerate(s_c):
+        for i, k in enumerate(stages):
             if i < i_s:
                 s_c[k] = False
             elif i < i_f:

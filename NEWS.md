@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Scripts: fix occasional run stage setting handling issue.
+
 - Fix construction of cs_range_t in the presence of periodicity.
   * This fixes an issue when logging the vertex-based fields,
     such as the mesh displacement on periodic meshes.
