@@ -578,7 +578,7 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
       }
 
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
-        /* Always weakly enforce the symmetric constraint on the
+        /* Always weakly enforce the symmetry constraint on the
            velocity-block */
         sc->apply_symmetry(f, mom_eqp, cm, diff_pty, cb, csys);
       }

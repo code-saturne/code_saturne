@@ -1497,7 +1497,7 @@ cs_cdofb_symmetry(short int                       f,
   /* Compute \int_f du/dn v and update the matrix */
   _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
 
-  /* 2) Update the bc_op matrix and nothing done to the RHS since a sliding
+  /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
      means homogeneous Dirichlet values on the normal component and hommogeneous
      Neumann on the tangential flux */
 
