@@ -3,6 +3,9 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix handling of alternate compute versions with relocatable builds
+  (i.e. fix access to debug builds in salome_cfd distribution).
+
 - GUI: ALE BCs must be given for all fluid BC types.
   This fixes GitHub issue #51.
 
