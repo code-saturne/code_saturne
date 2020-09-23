@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Ensure the correct command is found:
+#export PATH="/home/H81256/Code_Saturne/arch/git/release/bin":$PATH
+
+# Insert default command
+cs_cmd=""
+if test $# = 1; then
+  if test -f $1; then
+    cs_cmd=gui
+  fi
+elif test $# = 0; then
+  cs_cmd=gui
+fi
+
+# Run command
+\code_saturne $cs_cmd $@
