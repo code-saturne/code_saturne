@@ -3,6 +3,9 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix handling of alternate compute versions with relocatable builds
+  (i.e. fix access to debug builds in salome_cfd package).
+
 - Scripts: fix occasional run stage setting handling issue.
 
 - Fix construction of cs_range_t in the presence of periodicity.
