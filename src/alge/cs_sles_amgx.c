@@ -1106,7 +1106,7 @@ cs_sles_amgx_solve(void                *context,
     AMGX_vector_bind(b, c->setup_data->matrix);
   }
 
-  unsigned int n_bytes = n_rows*db_size;
+  unsigned int n_bytes = n_rows*db_size*sizeof(cs_real_t);
 
   if (c->pin_memory) {
     AMGX_pin_memory(vx, n_bytes);
@@ -1133,18 +1133,18 @@ cs_sles_amgx_solve(void                *context,
 
   AMGX_solver_solve(sd->solver, b, x);
 
-  AMGX_vector_destroy(x);
-  AMGX_vector_destroy(b);
-
-  AMGX_solver_get_iterations_number(sd->solver, &its);
-  // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
-
   retval = AMGX_vector_download(x, vx);
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
     bft_error(__FILE__, __LINE__, 0, _(error_fmt),
               "AMGX_vector_download", retval, err_str);
   }
+
+  AMGX_vector_destroy(x);
+  AMGX_vector_destroy(b);
+
+  AMGX_solver_get_iterations_number(sd->solver, &its);
+  // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
 
   if (c->pin_memory) {
     AMGX_unpin_memory(vx);
