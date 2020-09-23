@@ -2223,7 +2223,6 @@ cs_cdofb_vecteq_extra_post(const cs_equation_param_t  *eqp,
                     bface_values,          // values at border faces
                     cs_shared_time_step);  // time step management structure
 
-
   BFT_FREE(postlabel);
 
   cs_timer_t  t1 = cs_timer_time();

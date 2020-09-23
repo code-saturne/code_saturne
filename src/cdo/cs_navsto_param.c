@@ -169,6 +169,7 @@ _check_petsc_strategy(const char         *val,
 {
 #if defined(HAVE_PETSC)
 #if PETSC_VERSION_GE(3,11,0)
+  CS_UNUSED(val);
   return sles_type;
 #else
   if (sles_type == CS_NAVSTO_SLES_GKB_GMRES ||

@@ -1586,7 +1586,7 @@ cs_cdofb_fixed_wall(short int                       f,
   const cs_real_t  *ni = pfq.unitv;
   const cs_real_t  ni_ni[9] = { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
                                 ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
-                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
+                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2] };
 
   /* chi * \meas{f} / h_f  */
   const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
