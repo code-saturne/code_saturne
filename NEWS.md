@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix handling of alternate compute versions with relocatable builds
+  (i.e. fix access to debug builds in salome_cfd package).
+
 - Fix GUI backward compatibility update function for NCFD (v6.0->v6.1)
 
 - Fix construction of cs_range_t in the presence of periodicity.
