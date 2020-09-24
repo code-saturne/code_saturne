@@ -327,7 +327,7 @@ _lages1(cs_real_t           dtp,
         cs_math_3_normalise(orient_loc, orient_loc);
 
         // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
+        // the new direction vector and the main axis
         cs_real_t n_rot[3];
         const cs_real_t main_axis[3] = {1.0, 0.0, 0.0};
         n_rot[0] = orient_loc[1]*main_axis[2] - orient_loc[2]*main_axis[1];
@@ -335,7 +335,7 @@ _lages1(cs_real_t           dtp,
         n_rot[2] = orient_loc[0]*main_axis[1] - orient_loc[1]*main_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
 
-        // Compute the rotation angle between the x-axis and
+        // Compute the rotation angle between the main axis and
         // the new direction
         cs_real_t rot_angle = acos(orient_loc[0]*main_axis[0] 
                                  + orient_loc[1]*main_axis[1] 
@@ -619,7 +619,7 @@ _lages1(cs_real_t           dtp,
         cs_math_3_normalise(orient_loc, orient_loc);
 
         // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
+        // the new direction vector and the main axis
         cs_real_t n_rot[3];
         const cs_real_t main_axis[3] = {1.0, 0.0, 0.0};
         n_rot[0] = orient_loc[1]*main_axis[2] - orient_loc[2]*main_axis[1];
@@ -627,7 +627,7 @@ _lages1(cs_real_t           dtp,
         n_rot[2] = orient_loc[0]*main_axis[1] - orient_loc[1]*main_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
 
-        // Compute the rotation angle between the x-axis and
+        // Compute the rotation angle between the main axis and
         // the new direction
         cs_real_t rot_angle = acos(orient_loc[0]*main_axis[0] 
                                  + orient_loc[1]*main_axis[1]
