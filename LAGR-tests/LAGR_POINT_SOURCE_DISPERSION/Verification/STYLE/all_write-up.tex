@@ -1,0 +1,38 @@
+\documentclass{./STYLE/edf}                % Type de document
+\usepackage{./STYLE/csmacros}
+\usepackage{graphicx}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsfonts,amsmath,amssymb,mathrsfs,amsthm}                % Package Maths
+\usepackage[numbers]{natbib}
+\usepackage[sectionbib]{chapterbib}
+\usepackage{lmodern}
+%\usepackage{algorithm,algorithmic}
+\usepackage{titlesec}
+\usepackage{systeme}
+
+\titleformat{\chapter}[display]{\bfseries}{}{-50pt}{\LARGE \thechapter \qquad}
+
+% set the title, reference and version in the header
+\header{Validation of \CS{} 6.0.2 \\ (Appendix 3)}{6125-1724-2019-02325-FR}{1.0}
+% set accessibility and copyright year in the footer
+\footer{Internal: EDF SA}{2019}
+
+
+%\AtEndDocument{\label{lastpage}}
+
+\begin{document}
+\sloppy
+%\renewcommand{\thepage}{\roman}
+\pagenumbering{roman}
+\renewcommand{\pageend}{x} %pageend by hand....
+\newcommand{\stpref}{.} % making pdf a level above STYLE directory
+\tableofcontents
+\newpage
+\renewcommand{\pageend}{\pageref*{LastPage}}
+\renewcommand{\bibsection}{}
+\pagenumbering{arabic}
+\input{infiles}
+\fussy
+\end{document}
