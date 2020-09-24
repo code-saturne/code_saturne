@@ -322,7 +322,7 @@ cs_lagr_car(int              iprev,
 
     }
 
-    /* -> Calcul de TL et BX     */
+    /* -> Calculation of TL and BX     */
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
@@ -331,7 +331,7 @@ cs_lagr_car(int              iprev,
           tlag[ip][id]      = cs_math_epzero;
           bx[ip][id][nor-1] = 0.0;
         }
-        
+
       }
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
@@ -402,7 +402,6 @@ cs_lagr_car(int              iprev,
 
           /* We take (only) the diagonal part of
            *  an. n(x)n + at (1 - n(x)n) */
-
           for (cs_lnum_t id = 0; id < 3; id++)
             bbi[id] = sqrt(an * cs_math_pow2(n_dir[id]) +
                            at * (1. - cs_math_pow2(n_dir[id])));
@@ -431,8 +430,11 @@ cs_lagr_car(int              iprev,
 
           }
           else if (   extra->itytur == 2
-                   || extra->iturb == 50 || extra->iturb == 60)
+                   || extra->iturb == 50 || extra->iturb == 60) {
+
             ktil = energi[cell_id];
+          
+          }
 
           for (cs_lnum_t id = 0; id < 3; id++) {
 
