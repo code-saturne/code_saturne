@@ -222,7 +222,7 @@ class cs_math_parser:
                 # (transform to '#' for easier testing)
 
                 elif in_multiline_comment:
-                    j = find_c_comment_close(l, c_id, quotes)
+                    j = self.find_c_comment_close(l, c_id, quotes)
                     if j >= 0: # on same line
                         j += 2
                         in_multiline_comment = False
@@ -262,7 +262,7 @@ class cs_math_parser:
                         c_id = w
                         s_id = c_id
                     else:
-                        j = find_c_comment_close(l, c_id+2, quotes)
+                        j = self.find_c_comment_close(l, c_id+2, quotes)
                         if j >= 0: # on same line
                             segments.append(('# ' + l[c_id+2:j].strip(),
                                              l_id, c_id))
