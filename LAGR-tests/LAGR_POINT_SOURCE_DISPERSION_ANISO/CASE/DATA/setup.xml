@@ -156,6 +156,7 @@
       <var description="Lagrangian time" editable="Yes" id="2" name="tlag_x" oturns="No" value="0.2"/>
       <var description="Lagrangian time" editable="Yes" id="3" name="tlag_y" oturns="No" value="0.2"/>
       <var description="Lagrangian time" editable="Yes" id="4" name="tlag_z" oturns="No" value="0.2"/>
+      <var editable="Yes" id="5" name="direction" oturns="No" value="0.0"/>
     </notebook>
     <omega>
       <omega_x>0</omega_x>
