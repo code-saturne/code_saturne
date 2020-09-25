@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Ensure the correct command is found:
-#export PATH=/home/yohann-ws2/Code_Saturne/6.0.2/code_saturne-6.0.2/arch/Linux_x86_64/bin:$PATH
-
-# Run command:
-\code_saturne run --param setup.xml --threads-per-task=8
