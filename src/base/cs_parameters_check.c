@@ -1183,25 +1183,6 @@ cs_parameters_check(void)
                                       var_cal_opt.climgr,
                                       1.);
 
-      /* Extrag can be different from zero only for the pressure
-         and in that case equal to 1 */
-      if (f_id == f_pot->id) {
-        const cs_real_t extrag_vals[2] = {0., 1.};
-        cs_parameters_is_in_list_double(CS_ABORT_DELAYED,
-                                        _(f_desc),
-                                        "var_cal_opt.extrag",
-                                        var_cal_opt.extrag,
-                                        2,
-                                        extrag_vals,
-                                        NULL);
-      } else {
-        cs_parameters_is_equal_double(CS_ABORT_DELAYED,
-                                      _(f_desc),
-                                      "var_cal_opt.extrag",
-                                      var_cal_opt.extrag,
-                                      0.);
-      }
-
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
                                     "var_cal_opt.ircflu (fluxes "

@@ -10767,7 +10767,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -11117,7 +11117,7 @@ cs_face_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
@@ -11612,7 +11612,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -11994,7 +11994,7 @@ cs_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
+ * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable

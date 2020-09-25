@@ -338,17 +338,10 @@ recours a une boucle portant sur les \var{NCELBR} cellules
 dont au moins une face est une face de bord du domaine. Le num\'ero de ces
 cellules est donn\'e par \var{IEL = ICELBR(II)} (\var{II} variant de 1 \`a
 \var{NCELBR}). Les op\'erations r\'ealis\'ees dans cette
-boucle sont du type \var{COCGB(II,1,1) = COCG(IEL,1,1)}. La structure
-(injective) de \var{ICELBR} permet de forcer la vectorisation de la boucle.
-
+boucle sont du type \var{COCGB(II,1,1) = COCG(IEL,1,1)}.
 
 \etape{Inversion de la matrice}
 On calcule les coefficients de la comatrice, puis l'inverse.
-Pour des questions de vectorisation, la boucle sur les \var{NCEL} \'el\'ements
-est remplac\'ee par une
-s\'erie de boucles en vectorisation forc\'ee sur des blocs de \var{NBLOC=1024}
-\'el\'ements. Le reliquat ($\var{NCEL}-E(\var{NCEL}/1024)\times 1024$) est
-trait\'e apr\`es les boucles.
 La matrice inverse est ensuite stock\'ee dans \var{COCG}
 (toujours en utilisant sa propri\'et\'e de sym\'etrie).
 
@@ -390,22 +383,11 @@ P_{b,ik}
 \end{array}\right.
 \end{equation}
 
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Vectorisation forc\'ee}
-Il est peut-\^etre possible de s'affranchir du d\'ecoupage en boucles de 1024 si
-les compilateurs sont capables
-d'effectuer la vectorisation sans cette aide. On note cependant que ce
-d\'ecoupage en boucles de 1024 n'a pas de co\^ut CPU suppl\'ementaire, et que
-le co\^ut m\'emoire associ\'e est n\'egligeable.
-Le seul inconv\'enient r\'eside dans la relative complexit\'e  de l'\'ecriture.
-
 \etape{Choix du vecteur $d$}
 Le choix $\vect{d}_{ij}= \frac{\vect{IJ}}{||\vect{IJ}||}$ permet de calculer
 simplement une composante du gradient \`a la face en ne faisant intervenir que

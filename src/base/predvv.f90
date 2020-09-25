@@ -186,7 +186,7 @@ double precision rnorm , vitnor
 double precision romvom, drom  , rom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
-double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
+double precision vit1  , vit2  , vit3, xkb, pip, pfac
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
@@ -578,14 +578,8 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
           + diipbx*cpro_gradp(1,iel)            &
           + diipby*cpro_gradp(2,iel)            &
           + diipbz*cpro_gradp(3,iel)
-    pfac = coefa_p(ifac) +coefb_p(ifac)*pip
-    pfac1= cvar_pr(iel)                                              &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)           &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)           &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*cpro_gradp(3,iel)
-    pfac = coefb_p(ifac)*(vcopt_p%extrag*pfac1                       &
-         +(1.d0-vcopt_p%extrag)*pfac)                                &
-         +(1.d0-coefb_p(ifac))*pfac                               &
+    pfac = coefa_p(ifac) + coefb_p(ifac)*pip
+    pfac = pfac                                                   &
          + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))                      &
          + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
          + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                         &

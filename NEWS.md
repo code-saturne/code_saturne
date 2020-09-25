@@ -11,6 +11,12 @@ Bug fixes:
 
 - GUI: Fix backward compatibility update function for NCFD v6.1 and later.
 
+Numerics and physical modelling:
+
+- Remove "extrag" option for the pressure gradient, as its use was
+  limited to orthogonal meshes and was long superceded by the
+  "iphydr=1" option.
+
 Release 6.2.0 (August 27 2020)
 --------------------------
 

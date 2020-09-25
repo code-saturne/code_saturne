@@ -5104,7 +5104,7 @@ contains
   !>                               reconstruction
   !> \param[in]     climgp        clipping coefficient for the computation of
   !>                               the gradient
-  !> \param[in]     extrap        coefficient for extrapolation of the gradient
+  !> \param[in]     extrap        ignored
   !> \param[in]     relaxp        coefficient of relaxation
   !> \param[in]     thetap        weighting coefficient for the theta-schema,
   !>                               - thetap = 0: explicit scheme
@@ -5796,7 +5796,7 @@ contains
   !>                               reconstruction
   !> \param[in]     climgp        clipping coefficient for the computation of
   !>                               the gradient
-  !> \param[in]     extrap        coefficient for extrapolation of the gradient
+  !> \param[in]     extrap        ignored
   !> \param[in]     relaxp        coefficient of relaxation
   !> \param[in]     thetap        weighting coefficient for the theta-schema,
   !>                               - thetap = 0: explicit scheme

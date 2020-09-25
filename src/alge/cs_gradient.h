@@ -173,7 +173,7 @@ cs_gradient_free_quantities(void);
  * \param[in]       verbosity      verbosity level
  * \param[in]       clip_mode      clipping mode
  * \param[in]       epsilon        precision for iterative gradient calculation
- * \param[in]       extrap         boundary gradient extrapolation coefficient
+ * \param[in]       extrap         ignored
  * \param[in]       clip_coeff     clipping coefficient
  * \param[in]       f_ext          exterior force generating the
  *                                 hydrostatic pressure
@@ -310,7 +310,7 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   verbosity       verbosity level
  * \param[in]   clip_mode       clipping mode
  * \param[in]   epsilon         precision for iterative gradient calculation
- * \param[in]   extrap          boundary gradient extrapolation coefficient
+ * \param[in]   extrap          ignored
  * \param[in]   clip_coeff      clipping coefficient
  * \param[in]   f_ext           exterior force generating the
  *                              hydrostatic pressure

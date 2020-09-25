@@ -164,9 +164,7 @@ BEGIN_C_DECLS
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
         non-physical velocities which may appear in highly stratified areas
-        or near horizontal walls (thus avoiding the use of
-        \ref cs_var_cal_opt_t::extrag "extrag"
-        if the non-physical velocities are due only to gravity effects).\n
+        or near horizontal walls.\n
         The improved algorithm also allows eradicating the velocity oscillations
         which tend to appear at the frontiers of areas with high head losses.\n
         In the case of a stratified flow, the calculation cost is higher when

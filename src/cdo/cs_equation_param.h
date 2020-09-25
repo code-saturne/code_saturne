@@ -429,18 +429,7 @@ typedef struct {
    * \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
    * \var extrag
-   * For the pressure variable, extrapolation  coefficient of the gradients at
-   * the boundaries. It applies only to the Neumann condition areas.
-   * The only possible values of \ref extrag are:
-   * - 0: homogeneous Neumann calculated at first-order
-   * - 1: gradient extrapolation (gradient at the boundary equal to the gradient
-   *      in the neighbor cell), calculated to the second-order in the case of an
-   *      orthogonal mesh and to the first-order otherwise.
-   * \c extrag may allow to correct the spurious velocities that appear on
-   * horizontal walls when density is variable and there is gravity. It is
-   * strongly advised to keep \ref extrag = 0 for the variables apart from
-   * pressure. See also \ref cs_stokes_model_t::iphydr "iphydr". In practice,
-   * only values 0 and 1 are allowed.
+   * Removed option, has no effect.
 
    * \var relaxv
    * Relaxation coefficient for the associated variable. This relaxation

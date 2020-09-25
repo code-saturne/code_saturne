@@ -541,7 +541,6 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
-  cs_log_printf(CS_LOG_SETUP, fmt_r, "extrag", _t->extrag);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 }
 
@@ -593,8 +592,6 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Number of sweeps gradient reconstruction"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr,
                 _("Gradient reconstruction precision"));
-  cs_log_printf(CS_LOG_SETUP, fmt_r, "extrag", _t->extrag,
-                _("[0.;1.] (gradients extrapolation)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "imligr", _t->imligr,
                 _("< 0, 0 or 1 (gradient limitation method)"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr,
