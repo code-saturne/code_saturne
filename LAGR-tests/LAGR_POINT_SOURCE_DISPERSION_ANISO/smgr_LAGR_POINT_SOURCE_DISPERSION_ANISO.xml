@@ -14,7 +14,7 @@
     <case compute="on" label="CASE" post="on" run_id="ANISO_X" status="on">
       <prepro args="-p setup.xml --nb direction:0 --nb tlag_x:0.4 --nb tlag_y:0.2 --nb tlag_z:0.2 --nb taup:0.1 --nb bx:10.0" label="prepro.py" status="on"/>
       <data dest="ANISO_X" file="results_to_plot">
-    <!-- X-dir -->
+    <!-- X -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="1" xcol="1" ycol="2"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="1" xcol="1" ycol="14"/>
@@ -27,7 +27,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="4" xcol="1" ycol="11"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="4" xcol="1" ycol="23"/>
-    <!-- Y-dir -->
+    <!-- Y -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="101" xcol="1" ycol="3"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="101" xcol="1" ycol="15"/>
@@ -40,7 +40,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="104" xcol="1" ycol="12"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="104" xcol="1" ycol="24"/>
-    <!-- Z-dir -->
+    <!-- Z -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="201" xcol="1" ycol="4"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="201" xcol="1" ycol="16"/>
@@ -59,7 +59,7 @@
     <case compute="on" label="CASE" post="on" run_id="ANISO_Y" status="on">
       <prepro args="-p setup.xml --nb direction:1 --nb tlag_x:0.2 --nb tlag_y:0.4 --nb tlag_z:0.2 --nb taup:0.1 --nb bx:10.0" label="prepro.py" status="on"/>
       <data dest="ANISO_Y" file="results_to_plot">
-    <!-- X-dir -->
+    <!-- X -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="11" xcol="1" ycol="2"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="11" xcol="1" ycol="14"/>
@@ -72,7 +72,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="14" xcol="1" ycol="11"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="14" xcol="1" ycol="23"/>
-    <!-- Y-dir -->
+    <!-- Y -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="1011" xcol="1" ycol="3"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="1011" xcol="1" ycol="15"/>
@@ -85,7 +85,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="1014" xcol="1" ycol="12"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="1014" xcol="1" ycol="24"/>
-    <!-- Z-dir -->
+    <!-- Z -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="2011" xcol="1" ycol="4"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="2011" xcol="1" ycol="16"/>
@@ -104,7 +104,7 @@
     <case compute="on" label="CASE" post="on" run_id="ANISO_Z" status="on">
       <prepro args="-p setup.xml --nb direction:2 --nb tlag_x:0.2 --nb tlag_y:0.2 --nb tlag_z:0.4 --nb taup:0.1 --nb bx:10.0" label="prepro.py" status="on"/>
       <data dest="ANISO_Z" file="results_to_plot">
-    <!-- X-dir -->
+    <!-- X -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="21" xcol="1" ycol="2"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="21" xcol="1" ycol="14"/>
@@ -117,7 +117,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="24" xcol="1" ycol="11"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="24" xcol="1" ycol="23"/>
-    <!-- Y-dir -->
+    <!-- Y -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="1021" xcol="1" ycol="3"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="1021" xcol="1" ycol="15"/>
@@ -130,7 +130,7 @@
     <!-- Velocity covariance -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="1024" xcol="1" ycol="12"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="1024" xcol="1" ycol="24"/>
-    <!-- Z-dir -->
+    <!-- Z -->
     <!-- Particle position -->
         <plot fmt="k-" legend="Analytical solution" markersize="1" markevery="1" spids="2021" xcol="1" ycol="4"/>
         <plot color="gedf" fmt="." legend="Numerical solution" markersize="1" markevery="1" spids="2021" xcol="1" ycol="16"/>
@@ -150,11 +150,11 @@
          *  Figures declaration *
          ************************ -->
 
-    <!-- X-dir -->
+    <!-- ANISO-X -->
 
     <!-- Particle position -->
     <subplot id="1" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -164,7 +164,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="2" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -174,7 +174,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="3" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -184,7 +184,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="4" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -194,7 +194,7 @@
     
     <!-- Particle position -->
     <subplot id="11" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -204,7 +204,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="12" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -214,7 +214,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="13" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -224,7 +224,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="14" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -234,7 +234,7 @@
     
     <!-- Particle position -->
     <subplot id="21" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -244,7 +244,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="22" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -254,7 +254,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="23" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -264,7 +264,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="24" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - X dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -272,11 +272,11 @@
       <plt_command>plt.setp(ax.get_yticklabels(), fontsize=8)</plt_command>
     </subplot>
 
-    <!-- Y-dir -->
+    <!-- ANISO-Y -->
 
     <!-- Particle position -->
     <subplot id="101" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -286,7 +286,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="102" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -296,7 +296,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="103" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -306,7 +306,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="104" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -316,7 +316,7 @@
 
     <!-- Particle position -->
     <subplot id="1011" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -326,7 +326,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="1012" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -336,7 +336,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="1013" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -346,7 +346,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="1014" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -356,7 +356,7 @@
     
     <!-- Particle position -->
     <subplot id="1021" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -366,7 +366,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="1022" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -376,7 +376,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="1023" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -386,7 +386,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="1024" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Y dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -394,11 +394,11 @@
       <plt_command>plt.setp(ax.get_yticklabels(), fontsize=8)</plt_command>
     </subplot>
 
-    <!-- Z-dir -->
+    <!-- ANISO-Z -->
 
     <!-- Particle position -->
     <subplot id="201" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -408,7 +408,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="202" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -418,7 +418,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="203" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -428,7 +428,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="204" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - X&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -438,7 +438,7 @@
 
     <!-- Particle position -->
     <subplot id="2011" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -448,7 +448,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="2012" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -458,7 +458,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="2013" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -468,7 +468,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="2014" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Y&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -478,7 +478,7 @@
     
     <!-- Particle position -->
     <subplot id="2021" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle position - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle position - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$X_p^2$ $(m^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -488,7 +488,7 @@
 
     <!-- Fluid velocity -->
     <subplot id="2022" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Particle velocity - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Particle velocity - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -498,7 +498,7 @@
 
     <!-- Fluid velocity seen -->
     <subplot id="2023" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Fluid velocity seen - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Fluid velocity seen - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_s^2$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -508,7 +508,7 @@
 
     <!-- Velocity covariance -->
     <subplot id="2024" legstatus="on" xlim="0. 4.0">
-      <plt_command>plt.title(&quot;Velocity covariance - Z dir&quot;,fontsize = 12)</plt_command>
+      <plt_command>plt.title(&quot;Velocity covariance - Z&quot;,fontsize = 12)</plt_command>
       <plt_command>plt.legend(loc='lower right', bbox_to_anchor=(1, 0),prop={'size':6})</plt_command>
       <plt_command>plt.ylabel(&quot;$U_p U_s$ $(m^2/s^2)$&quot;, fontsize=8)</plt_command>
       <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=8)</plt_command>
@@ -520,19 +520,19 @@
          *  Save figures *
          **************-->
     
-    <!-- X-dir -->
+    <!-- ANISO-X -->
     <figure figsize="(5,6)" idlist=" 1 2 3 4 " name="Fig_Num_Scheme_ANISO_X_X_dir" nbcol="2" nbrow="2"/>
-    <figure figsize="(5,6)" idlist=" 11 12 13 14 " name="Fig_Num_Scheme_ANISO_Y_X_dir" nbcol="2" nbrow="2"/>
-    <figure figsize="(5,6)" idlist=" 21 22 23 24 " name="Fig_Num_Scheme_ANISO_Z_X_dir" nbcol="2" nbrow="2"/>
+    <figure figsize="(5,6)" idlist=" 11 12 13 14 " name="Fig_Num_Scheme_ANISO_X_Y_dir" nbcol="2" nbrow="2"/>
+    <figure figsize="(5,6)" idlist=" 21 22 23 24 " name="Fig_Num_Scheme_ANISO_X_Z_dir" nbcol="2" nbrow="2"/>
     
-    <!-- Y-dir -->
-    <figure figsize="(5,6)" idlist=" 101 102 103 104 " name="Fig_Num_Scheme_ANISO_X_Y_dir" nbcol="2" nbrow="2"/>
+    <!-- ANISO-Y -->
+    <figure figsize="(5,6)" idlist=" 101 102 103 104 " name="Fig_Num_Scheme_ANISO_Y_X_dir" nbcol="2" nbrow="2"/>
     <figure figsize="(5,6)" idlist=" 1011 1012 1013 1014 " name="Fig_Num_Scheme_ANISO_Y_Y_dir" nbcol="2" nbrow="2"/>
-    <figure figsize="(5,6)" idlist=" 1021 1022 1023 1024 " name="Fig_Num_Scheme_ANISO_Z_Y_dir" nbcol="2" nbrow="2"/>
+    <figure figsize="(5,6)" idlist=" 1021 1022 1023 1024 " name="Fig_Num_Scheme_ANISO_Y_Z_dir" nbcol="2" nbrow="2"/>
     
-    <!-- Z-dir -->
-    <figure figsize="(5,6)" idlist=" 201 202 203 204 " name="Fig_Num_Scheme_ANISO_X_Z_dir" nbcol="2" nbrow="2"/>
-    <figure figsize="(5,6)" idlist=" 2011 2012 2013 2014 " name="Fig_Num_Scheme_ANISO_Y_Z_dir" nbcol="2" nbrow="2"/>
+    <!-- ANISO-Z -->
+    <figure figsize="(5,6)" idlist=" 201 202 203 204 " name="Fig_Num_Scheme_ANISO_Z_X_dir" nbcol="2" nbrow="2"/>
+    <figure figsize="(5,6)" idlist=" 2011 2012 2013 2014 " name="Fig_Num_Scheme_ANISO_Z_Y_dir" nbcol="2" nbrow="2"/>
     <figure figsize="(5,6)" idlist=" 2021 2022 2023 2024 " name="Fig_Num_Scheme_ANISO_Z_Z_dir" nbcol="2" nbrow="2"/>
 
   </study>
