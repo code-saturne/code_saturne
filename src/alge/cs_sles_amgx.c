@@ -296,7 +296,6 @@ _amgx_finalize(void)
     _amgx_comm = MPI_COMM_NULL;
   }
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -588,7 +587,7 @@ cs_sles_amgx_get_config(void  *context)
       "solver=PCGF, "
       "max_iters=100, "
       "norm=L2, "
-      "convergence=RELATIVE_INI_CORE, "
+      "convergence=ABSOLUTE, "
       "monitor_residual=1, "
       "tolerance=1e-8, "
       "preconditioner(amg_solver)=AMG, "
@@ -857,7 +856,6 @@ cs_sles_amgx_setup(void               *context,
 
   const cs_lnum_t *a_row_index, *a_col_id;
 
-  int *col_gid = NULL;
   const cs_real_t *a_val = NULL, *a_d_val = NULL;
 
   if (cs_mat_type == CS_MATRIX_CSR)
@@ -865,21 +863,21 @@ cs_sles_amgx_setup(void               *context,
   else if (cs_mat_type == CS_MATRIX_MSR)
     cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
 
-  BFT_MALLOC(col_gid, a_row_index[n_rows], int);
-
-  for (cs_lnum_t j = 0; j < n_rows; j++) {
-    for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
-      col_gid[i] = grow_id[a_col_id[i]];
-  }
-
   const int   *row_index = a_row_index;
   int         *_row_index = NULL;
+  const int   *col_id = a_col_id;
+  int         *_col_id = NULL;
 
   if (sizeof(int) != sizeof(cs_lnum_t)) {
     BFT_MALLOC(_row_index, n_rows, int);
     for (cs_lnum_t i = 0; i < n_rows; i++)
       _row_index[i] = a_row_index[i];
-    row_index = row_index;
+    row_index = _row_index;
+    int nnz = row_index[n_rows];
+    BFT_MALLOC(_col_id, nnz, int);
+    for (cs_lnum_t i = 0; i < nnz; i++)
+      _col_id[i] = a_col_id[i];
+    col_id = _col_id;
   }
 
   /* Matrix */
@@ -921,7 +919,7 @@ cs_sles_amgx_setup(void               *context,
       BFT_MALLOC(recv_maps[i], recv_sizes[i], int);
       int *_recv_map = recv_maps[i];
       for (int j = 0; j < recv_sizes[i]; j++)
-        _recv_map[j] = halo->index[2*i] + j;
+        _recv_map[j] = halo->n_local_elts + halo->index[2*i] + j;
     }
 
     retval = AMGX_matrix_comm_from_maps_one_ring(sd->matrix,
@@ -952,7 +950,7 @@ cs_sles_amgx_setup(void               *context,
 
   if (c->pin_memory) {
     AMGX_pin_memory(row_index, (n_rows+1)*sizeof(int));
-    AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(int));
+    AMGX_pin_memory(col_id, a_row_index[n_rows]*sizeof(int));
     AMGX_pin_memory(a_val, a_row_index[n_rows]*b_mem_size);
     if (a_d_val != NULL)
       AMGX_pin_memory(a_d_val, n_rows*b_mem_size);
@@ -964,7 +962,7 @@ cs_sles_amgx_setup(void               *context,
                                   db_size,
                                   db_size,
                                   row_index,
-                                  col_gid,
+                                  col_id,
                                   a_val,
                                   a_d_val);
 
@@ -978,12 +976,12 @@ cs_sles_amgx_setup(void               *context,
     if (a_d_val != NULL)
       AMGX_unpin_memory(a_d_val);
     AMGX_unpin_memory(a_val);
-    AMGX_unpin_memory(col_gid);
+    AMGX_unpin_memory(col_id);
     AMGX_unpin_memory(row_index);
   }
 
   BFT_FREE(_row_index);
-  BFT_FREE(col_gid);
+  BFT_FREE(_col_id);
 
   /* Solver */
 
@@ -1085,7 +1083,6 @@ cs_sles_amgx_solve(void                *context,
   int       its = -1;
   double    _residue = -1;
   const int n_rows = cs_matrix_get_n_rows(a);
-  const int n_cols = cs_matrix_get_n_columns(a);
   const int  db_size = cs_matrix_get_diag_block_size(a)[0];
 
   if (rotation_mode != CS_HALO_ROTATION_COPY) {
@@ -1094,6 +1091,17 @@ cs_sles_amgx_solve(void                *context,
         _("Rotation mode %d with block size %d for system \"%s\"\n"
           "is not usable by AMGX."),
           rotation_mode, db_size, name);
+  }
+
+  char options[64];
+  snprintf(options, 63, "tolerance=%e", precision*r_norm);
+  options[63] = '\0';
+
+  AMGX_RC retval = AMGX_config_add_parameters(&(c->solver_config), options);
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_config_add_parameters", retval, err_str);
   }
 
   /* Vector */
@@ -1113,7 +1121,7 @@ cs_sles_amgx_solve(void                *context,
     AMGX_pin_memory(rhs, n_bytes);
   }
 
-  AMGX_RC retval = AMGX_vector_upload(x, n_rows, db_size, vx);
+  retval = AMGX_vector_upload(x, n_rows, db_size, vx);
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
     bft_error(__FILE__, __LINE__, 0, _(error_fmt),
