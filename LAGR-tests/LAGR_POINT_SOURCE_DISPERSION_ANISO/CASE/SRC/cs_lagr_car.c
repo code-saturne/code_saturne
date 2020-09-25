@@ -391,12 +391,25 @@ cs_lagr_car(int              iprev,
 
           //** START MOD: paspro
 
-          tlag[ip][0] = cs_notebook_parameter_value_by_name("tlag_x");
-          tlag[ip][1] = cs_notebook_parameter_value_by_name("tlag_y");
-          tlag[ip][2] = cs_notebook_parameter_value_by_name("tlag_z");
+          cs_real_t tlag_x = cs_notebook_parameter_value_by_name("tlag_x");
+          cs_real_t tlag_y = cs_notebook_parameter_value_by_name("tlag_y");
+          cs_real_t tlag_z = cs_notebook_parameter_value_by_name("tlag_z");
 
-          cs_real_3_t n_dir;
-          cs_math_3_normalise(tlag[ip], n_dir);
+          int direction = cs_notebook_parameter_value_by_name("direction");
+
+          if (direction == 0) {
+               tlag[ip][0] = tlag_x;
+               tlag[ip][1] = tlag_y;
+               tlag[ip][2] = tlag_z;        
+          } else if (direction == 1) {
+               tlag[ip][0] = tlag_y;
+               tlag[ip][1] = tlag_x;
+               tlag[ip][2] = tlag_z;                  
+          } else {
+               tlag[ip][0] = tlag_z;
+               tlag[ip][1] = tlag_y;
+               tlag[ip][2] = tlag_z;                          
+          }
 
           /* relative main direction */
 //          cs_real_3_t vrn, n_dir;
@@ -404,6 +417,9 @@ cs_lagr_car(int              iprev,
 //            vrn[i] = vpart[i] - vflui[i];
 
 //          cs_math_3_normalise(vrn, n_dir);
+
+          cs_real_3_t n_dir;
+          cs_math_3_normalise(tlag[ip], n_dir);
 
           /* crossing trajectory in the n_dir direction */
           cs_real_t an, at;

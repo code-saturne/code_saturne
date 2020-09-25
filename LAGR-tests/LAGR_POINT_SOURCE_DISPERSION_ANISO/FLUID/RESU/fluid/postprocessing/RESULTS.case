@@ -1,0 +1,25 @@
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: results.geo
+
+VARIABLE
+vector per element: 1                         Velocity       results.velocity.*****
+scalar per element: 1                         Pressure       results.pressure.*****
+scalar per element: 1                                k       results.k.*****
+scalar per element: 1                          epsilon       results.epsilon.*****
+scalar per element: 1                         TurbVisc       results.turbvisc.*****
+scalar per element: 1                        CourantNb       results.courantnb.*****
+scalar per element: 1                        FourierNb       results.fouriernb.*****
+scalar per element: 1                   total_pressure       results.total_pressure.*****
+scalar per element: 1                            Yplus       results.yplus.*****
+vector per element: 1                           Stress       results.stress.*****
+
+TIME
+time set:              1
+number of steps:       1
+filename start number: 1
+filename increment:    1
+time values:
+            0.

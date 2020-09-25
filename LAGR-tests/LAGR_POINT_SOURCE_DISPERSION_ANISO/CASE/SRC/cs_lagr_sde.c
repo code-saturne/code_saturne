@@ -327,34 +327,31 @@ _lages1(cs_real_t           dtp,
         int direction = cs_notebook_parameter_value_by_name("direction");
 
         cs_real_t orient_loc[3] = {0.0, 0.0, 0.0};
-        cs_real_t x_axis[3]     = {0.0, 0.0, 0.0};
+        cs_real_t main_axis[3]  = {1.0, 0.0, 0.0};
 
         if (direction == 0) {
           orient_loc[0] = 1.0;
-          x_axis[0] = 1.0;
         } else if (direction == 1) {
           orient_loc[1] = 1.0;
-          x_axis[1] = 1.0;
         } else {
           orient_loc[2] = 1.0;
-          x_axis[2] = 1.0;
         }
         
         //** END MOD: paspro
         
         // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
+        // the new direction vector and the main axis
         cs_real_t n_rot[3];
-        n_rot[0] = orient_loc[1]*x_axis[2] - orient_loc[2]*x_axis[1];
-        n_rot[1] = orient_loc[2]*x_axis[0] - orient_loc[0]*x_axis[2];
-        n_rot[2] = orient_loc[0]*x_axis[1] - orient_loc[1]*x_axis[0];
+        n_rot[0] = orient_loc[1]*main_axis[2] - orient_loc[2]*main_axis[1];
+        n_rot[1] = orient_loc[2]*main_axis[0] - orient_loc[0]*main_axis[2];
+        n_rot[2] = orient_loc[0]*main_axis[1] - orient_loc[1]*main_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
 
         // Compute the rotation angle between the x-axis and
         // the new direction
-        cs_real_t rot_angle = acos(orient_loc[0]*x_axis[0] 
-                                 + orient_loc[1]*x_axis[1] 
-                                 + orient_loc[2]*x_axis[2]);
+        cs_real_t rot_angle = acos(orient_loc[0]*main_axis[0] 
+                                 + orient_loc[1]*main_axis[1] 
+                                 + orient_loc[2]*main_axis[2]);
 
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
@@ -630,34 +627,31 @@ _lages1(cs_real_t           dtp,
         int direction = cs_notebook_parameter_value_by_name("direction");
 
         cs_real_t orient_loc[3] = {0.0, 0.0, 0.0};
-        cs_real_t x_axis[3]     = {0.0, 0.0, 0.0};
+        cs_real_t main_axis[3]  = {1.0, 0.0, 0.0};
 
         if (direction == 0) {
           orient_loc[0] = 1.0;
-          x_axis[0] = 1.0;
         } else if (direction == 1) {
           orient_loc[1] = 1.0;
-          x_axis[1] = 1.0;
         } else {
           orient_loc[2] = 1.0;
-          x_axis[2] = 1.0;
         }
         
         //** END MOD: paspro
 
         // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
+        // the new direction vector and the main axis
         cs_real_t n_rot[3];
-        n_rot[0] = orient_loc[1]*x_axis[2] - orient_loc[2]*x_axis[1];
-        n_rot[1] = orient_loc[2]*x_axis[0] - orient_loc[0]*x_axis[2];
-        n_rot[2] = orient_loc[0]*x_axis[1] - orient_loc[1]*x_axis[0];
+        n_rot[0] = orient_loc[1]*main_axis[2] - orient_loc[2]*main_axis[1];
+        n_rot[1] = orient_loc[2]*main_axis[0] - orient_loc[0]*main_axis[2];
+        n_rot[2] = orient_loc[0]*main_axis[1] - orient_loc[1]*main_axis[0];
         cs_math_3_normalise(n_rot, n_rot);
 
-        // Compute the rotation angle between the x-axis and
+        // Compute the rotation angle between the main axis and
         // the new direction
-        cs_real_t rot_angle = acos(orient_loc[0]*x_axis[0] 
-                                 + orient_loc[1]*x_axis[1]
-                                 + orient_loc[2]*x_axis[2]);
+        cs_real_t rot_angle = acos(orient_loc[0]*main_axis[0] 
+                                 + orient_loc[1]*main_axis[1]
+                                 + orient_loc[2]*main_axis[2]);
  
         // Compute the rotation matrix
         trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]

@@ -1,0 +1,178 @@
+
+/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/libexec/code_saturne/cs_preprocess 
+--log --out mesh_input.csm 
+/home/panos/Runs/LAGR/RUN_LAGR_POINT_SOURCE_DISPERSION_ANISO/LAGR_POINT_SOURCE_DISPERSION_ANISO/MESH/single_cell.unv 
+
+  .------------------------------.
+  |                              |
+  |   Code_Saturne Preprocessor  |
+  |                              |
+  `------------------------------'
+
+  code_saturne version 6.3-alpha   (built Wed Sep 23 09:29:22 2020)
+
+  CGNS 4.0.0 file format support
+  MED 4.0.0 (HDF5 1.10.5) file format support
+  Reading of compressed files ('.gz') with Zlib 1.2.11
+
+
+
+Case configuration
+------------------
+
+  Date                : Wed Sep 23 13:11:13 2020
+  System              : Linux 5.4.0-48-generic
+  Machine             : Riemann
+  Processor           : Intel(R) Core(TM) i7-7700T CPU @ 2.90GHz
+  Memory              : 16185948
+  User                : panos (Panos Asproulis)
+  Directory           : /home/panos/Runs/LAGR/RUN_LAGR_POINT_SOURCE_DISPERSION_ANISO/LAGR_POINT_SOURCE_DISPERSION_ANISO/FLUID/RESU/fluid
+
+  Case name           : preprocess
+  Mesh file           : /home/panos/Runs/LAGR/RUN_LAGR_POINT_SOURCE_DISPERSION_ANISO/LAGR_POINT_SOURCE_DISPERSION_ANISO/MESH/single_cell.unv
+
+
+
+Reading mesh from file in I-deas universal format
+----------------------
+  Mesh file: /home/panos/Runs/LAGR/RUN_LAGR_POINT_SOURCE_DISPERSION_ANISO/LAGR_POINT_SOURCE_DISPERSION_ANISO/MESH/single_cell.unv
+
+
+  Number of vertices                          :        8
+  Number of faces                             :        6
+                                    Color 7   :        6
+  Number of cells                             :        1
+                                    Color 7   :        1
+  Group 1 "inlet"
+    Number of faces    :        1
+  Group 2 "outlet"
+    Number of faces    :        1
+  Group 3 "bottom"
+    Number of faces    :        1
+  Group 4 "top"
+    Number of faces    :        1
+  Group 5 "sym"
+    Number of faces    :        2
+
+  Wall-clock time: 0.000121 s; CPU time: 0.000116 s
+
+
+Done reading mesh
+-----------------
+  Theoretical mesh size:               815.000  b
+  Theoretical current memory:            1.000 Kb
+  Theoretical peak memory:             250.000 Kb
+  Total memory used:                    13.875 Mb
+
+  Domain coordinate extents:
+
+  [ 0.00000e+00,  0.00000e+00,  0.00000e+00]
+  [ 1.00000e+01,  1.00000e+01,  1.00000e+01]
+  Number of elements                    quad4 :        6
+  Number of elements                    hexa8 :        1
+
+
+
+Defining families
+-----------------
+
+
+  Element orientation check.
+
+
+End of conversion to descending connectivity
+--------------------------------------------
+  Theoretical mesh size:               887.000  b
+  Theoretical current memory:            1.000 Kb
+  Theoretical peak memory:             250.000 Kb
+  Total memory used:                    13.875 Mb
+
+
+Main mesh properties
+--------------------
+
+  Number of cells:                                     1
+  Number of internal faces:                            0
+  Number of boundary faces:                            6
+  Number of vertices:                                  8
+
+
+Definition of face and cell families
+------------------------------------
+
+  Family 1
+         Group "7"
+  Number of cells          :        1
+  Family 2
+         Group "7"
+         Group "bottom"
+  Number of boundary faces :        1
+  Family 3
+         Group "7"
+         Group "inlet"
+  Number of boundary faces :        1
+  Family 4
+         Group "7"
+         Group "outlet"
+  Number of boundary faces :        1
+  Family 5
+         Group "7"
+         Group "sym"
+  Number of boundary faces :        2
+  Family 6
+         Group "7"
+         Group "top"
+  Number of boundary faces :        1
+
+
+Write output for Kernel
+-----------------------
+
+  Opening file: mesh_input.csm
+
+  Wrote: "start_block:dimensions"
+  Wrote: "n_cells"                         ; Type: "u8"; Size: 1
+  Wrote: "n_faces"                         ; Type: "u8"; Size: 1
+  Wrote: "n_vertices"                      ; Type: "u8"; Size: 1
+  Wrote: "face_vertices_size"              ; Type: "u8"; Size: 1
+  Wrote: "n_group_classes"                 ; Type: "i8"; Size: 1
+  Wrote: "n_group_class_props_max"         ; Type: "i8"; Size: 1
+  Wrote: "n_groups"                        ; Type: "u8"; Size: 1
+  Wrote: "group_name_index"                ; Type: "i8"; Size: 7
+  Wrote: "group_name"                      ; Type: "c "; Size: 30
+  Wrote: "group_class_properties"          ; Type: "i8"; Size: 12
+  Wrote: "end_block:dimensions"
+  Wrote: "start_block:data"
+  Wrote: "face_cells"                      ; Type: "i8"; Size: 12
+  Wrote: "cell_group_class_id"             ; Type: "i8"; Size: 1
+  Wrote: "face_group_class_id"             ; Type: "i8"; Size: 6
+  Wrote: "face_vertices_index"             ; Type: "u8"; Size: 7
+  Wrote: "face_vertices"                   ; Type: "i8"; Size: 24
+  Wrote: "vertex_coords"                   ; Type: "r8"; Size: 24
+  Wrote: "end_block:data"
+  Wrote: "EOF"
+
+  Closing file: mesh_input.csm
+
+
+Time and memory summary
+-----------------------
+
+  User CPU time                       (sec)   :        0.00
+  System CPU time                     (sec)   :        0.00
+  Total time                          (sec)   :        0.00
+  Total CPU time / Total time                 :       14.09
+
+Memory use summary:
+
+  Total memory used:                                  13.875 Mb
+  Theoretical instrumented dynamic memory:           250.000 Kb
+
+
+  .-----------------------.
+  |                       |
+  |  Preprocessor finish  |
+  |                       |
+  `-----------------------'
+
+

@@ -1,0 +1,123 @@
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c: In function ‘cs_user_lagr_extra_operations’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:86:34: warning: unused variable ‘p_am’ [-Wunused-variable]
+   86 |   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+      |                                  ^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:82:48: warning: unused parameter ‘dt’ [-Wunused-parameter]
+   82 | cs_user_lagr_extra_operations(const cs_real_t  dt[])
+      |                               ~~~~~~~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c: In function ‘cs_user_lagr_in’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:302:25: warning: unused variable ‘lagr_bdy_conditions’ [-Wunused-variable]
+  302 |   cs_lagr_zone_data_t  *lagr_bdy_conditions
+      |                         ^~~~~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:300:13: warning: unused variable ‘ntcabs’ [-Wunused-variable]
+  300 |   const int ntcabs = cs_glob_time_step->nt_cur;
+      |             ^~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:294:49: warning: unused parameter ‘zis’ [-Wunused-parameter]
+  294 |                 const cs_lagr_injection_set_t  *zis,
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:296:49: warning: unused parameter ‘particle_face_id’ [-Wunused-parameter]
+  296 |                 const cs_lnum_t                 particle_face_id[],
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:297:49: warning: unused parameter ‘visc_length’ [-Wunused-parameter]
+  297 |                 const cs_real_t                 visc_length[])
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c: In function ‘cs_user_lagr_rt’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:392:18: warning: unused variable ‘particle’ [-Wunused-variable]
+  392 |   unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+      |                  ^~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:380:34: warning: unused parameter ‘re_p’ [-Wunused-parameter]
+  380 |                 cs_real_t        re_p,
+      |                 ~~~~~~~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:381:34: warning: unused parameter ‘uvwr’ [-Wunused-parameter]
+  381 |                 cs_real_t        uvwr,
+      |                 ~~~~~~~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:382:34: warning: unused parameter ‘rho_f’ [-Wunused-parameter]
+  382 |                 cs_real_t        rho_f,
+      |                 ~~~~~~~~~~~~~~~~~^~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:383:34: warning: unused parameter ‘rho_p’ [-Wunused-parameter]
+  383 |                 cs_real_t        rho_p,
+      |                 ~~~~~~~~~~~~~~~~~^~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:384:34: warning: unused parameter ‘nu_f’ [-Wunused-parameter]
+  384 |                 cs_real_t        nu_f,
+      |                 ~~~~~~~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:386:34: warning: unused parameter ‘dt’ [-Wunused-parameter]
+  386 |                 const cs_real_t  dt[])
+      |                 ~~~~~~~~~~~~~~~~~^~~~
+At top level:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c:59:18: warning: ‘_m_flow’ defined but not used [-Wunused-variable]
+   59 | static cs_real_t _m_flow[4];
+      |                  ^~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_initialization.c: In function ‘cs_user_initialization’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_initialization.c:94:15: warning: unused variable ‘f’ [-Wunused-variable]
+   94 |   cs_field_t *f = CS_F_(k);
+      |               ^
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c: In function ‘_lages1’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:327:19: warning: declaration of ‘tlag’ shadows a parameter [-Wshadow]
+  327 |         cs_real_t tlag[3];
+      |                   ^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:168:29: note: shadowed declaration is here
+  168 |         const cs_real_3_t   tlag[],
+      |         ~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:628:19: warning: declaration of ‘tlag’ shadows a parameter [-Wshadow]
+  628 |         cs_real_t tlag[3];
+      |                   ^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:168:29: note: shadowed declaration is here
+  168 |         const cs_real_3_t   tlag[],
+      |         ~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:256:17: warning: variable ‘mean_part_vel’ set but not used [-Wunused-but-set-variable]
+  256 |       cs_real_t mean_part_vel[3];
+      |                 ^~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:252:23: warning: unused variable ‘fluid_vel’ [-Wunused-variable]
+  252 |       const cs_real_t fluid_vel[3] = {cvar_vel[cell_id][0],
+      |                       ^~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c: In function ‘_lages2’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:852:15: warning: declaration of ‘n_particles_prev’ shadows a previous local [-Wshadow]
+  852 |     cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+      |               ^~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:822:13: note: shadowed declaration is here
+  822 |   cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+      |             ^~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:944:15: warning: declaration of ‘n_particles_prev’ shadows a previous local [-Wshadow]
+  944 |     cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+      |               ^~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:822:13: note: shadowed declaration is here
+  822 |   cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+      |             ^~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c: In function ‘cs_lagr_sde’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:1977:38: warning: ‘grav_force[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 1977 |         if ((adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
+      |                            ~~~~~~~~~~^~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:2135:46: warning: ‘adhes_torque[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2135 |               cond_resusp[id] = (adhes_torque[id] + grav_torque[id] + lift_torque[id]
+      |                                  ~~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:2135:64: warning: ‘grav_torque[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2135 |               cond_resusp[id] = (adhes_torque[id] + grav_torque[id] + lift_torque[id]
+      |                                                     ~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:2135:82: warning: ‘lift_torque[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2135 |               cond_resusp[id] = (adhes_torque[id] + grav_torque[id] + lift_torque[id]
+      |                                                                       ~~~~~~~~~~~^~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:2017:38: warning: ‘lift_force[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2017 |                             * CS_ABS(-lift_force[0] - drag_force[0]
+      |                                      ^
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:1103:13: note: ‘lift_force[0]’ was declared here
+ 1103 |   cs_real_t lift_force[1];
+      |             ^~~~~~~~~~
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:2017:53: warning: ‘drag_force[0]’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2017 |                             * CS_ABS(-lift_force[0] - drag_force[0]
+      |                                                     ^
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c:1099:13: note: ‘drag_force[0]’ was declared here
+ 1099 |   cs_real_t drag_force[3];
+      |             ^~~~~~~~~~
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_mesh-modify.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_volume_conditions.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_lagr_particle.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_car.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_user_initialization.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_lagr_sde.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_meg_volume_function.c
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_meg_initialization.c: In function ‘cs_meg_initialization’:
+/home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_meg_initialization.c:48:17: warning: unused variable ‘c_id’ [-Wunused-variable]
+   48 |       cs_lnum_t c_id = zone->elt_ids[e_id];
+      |                 ^~~~
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/src/cs_meg_initialization.c
+/usr/bin/mpicc -o /home/panos/Runs/LAGR/LAGR_POINT_SOURCE_DISPERSION_ANISO/CASE/RESU/master/cs_solver cs_user_mesh-modify.o cs_user_lagr_volume_conditions.o cs_user_lagr_particle.o cs_lagr_car.o cs_user_initialization.o cs_lagr_sde.o cs_meg_volume_function.o cs_meg_initialization.o -lcs_solver -L/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/lib -L/home/panos/Development/Code_Saturne/Libraries/CGNS/lib -L/home/panos/Development/Code_Saturne/Libraries/MED/lib -L/home/panos/Development/Code_Saturne/Libraries/HDF5/lib -L/home/panos/Development/Code_Saturne/Libraries/PARMETIS/lib -L/home/panos/Development/Code_Saturne/Libraries/SCOTCH/lib -fPIC -O -Wl,-export-dynamic -fopenmp -lsaturne -lple -lfreesteam -lcgns -lmedC -lhdf5 -lparmetis -lmetis -lptscotch -lscotch -lz -ldl -L/usr/lib/x86_64-linux-gnu/openmpi/lib -L/usr/lib/gcc/x86_64-linux-gnu/10 -L/usr/lib/x86_64-linux-gnu -L/usr/lib -L/lib/x86_64-linux-gnu -L/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -lgfortran -lquadmath -lpthread -lm -Wl,-rpath -Wl,:/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/lib
