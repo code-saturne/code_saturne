@@ -408,7 +408,7 @@ cs_lagr_car(int              iprev,
           } else {
                tlag[ip][0] = tlag_z;
                tlag[ip][1] = tlag_y;
-               tlag[ip][2] = tlag_z;                          
+               tlag[ip][2] = tlag_x;                          
           }
 
           /* relative main direction */
