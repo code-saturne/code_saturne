@@ -46,6 +46,7 @@ rank_id = -1
 
 debuggers = {"gdb": "GNU gdb debugger",
              "cgdb": "Console front-end to gdb",
+             "cuda-gdb": "CUDA debugger",
              "gdbgui": "gdbgui gdb web browser interface",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
@@ -766,7 +767,7 @@ def run_debug(cmds):
     if 'debugger' in cmds.keys():
         debugger = cmds['debugger'][0]
         dbg_name = os.path.basename(debugger)
-        if dbg_name in debuggers.keys() and dbg_name != 'gdb':
+        if dbg_name in debuggers.keys() and dbg_name not in ('gdb', 'cuda-gdb'):
             debugger_ui = dbg_name
         elif dbg_name.find("emacs23") > -1:
             debugger_ui = 'emacs23'
