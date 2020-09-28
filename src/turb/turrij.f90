@@ -500,23 +500,25 @@ if (f_id_phij.ge.0) then
       k=0.5*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
       P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
 
-        cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(1,iel)-d2s3*P*dij)
+      
 
-        cpro_press_correl(2, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(2,iel)-d2s3*P*dij)
+      cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(1,iel)-d2s3*P)
 
-        cpro_press_correl(3, iel)= -crij1*cvar_ep(iel)/k*(cvara_r33(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(3,iel)-d2s3*P*dij)
+      cpro_press_correl(2, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(2,iel)-d2s3*P)
 
-        cpro_press_correl(4, iel)= -crij1*cvar_ep(iel)/k*(cvara_r12(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(4,iel)-d2s3*P*dij)
+      cpro_press_correl(3, iel)= -crij1*cvar_ep(iel)/k*(cvara_r33(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(3,iel)-d2s3*P)
 
-        cpro_press_correl(5, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(5,iel)-d2s3*P*dij)
+      cpro_press_correl(4, iel)= -crij1*cvar_ep(iel)/k*cvara_r12(iel)  &
+                                 -crij2*cpro_produc(4,iel)
 
-        cpro_press_correl(6, iel)= -crij1*cvar_ep(iel)/k*(cvara_r13(iel)-d2s3*dij*k)  &
-                                   -crij2*(cpro_produc(6,iel)-d2s3*P*dij)
+      cpro_press_correl(5, iel)= -crij1*cvar_ep(iel)/k*cvara_r22(iel)  &
+                                 -crij2*cpro_produc(5,iel)
+
+      cpro_press_correl(6, iel)= -crij1*cvar_ep(iel)/k*cvara_r13(iel)  &
+                                 -crij2*cpro_produc(6,iel)
     enddo
   endif
 endif
