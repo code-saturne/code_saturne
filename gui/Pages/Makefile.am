@@ -122,7 +122,8 @@ OutputFieldsView.py \
 OpenTurnsDialogView.py \
 SolidView.py \
 ThermodynamicsView.py \
-TimeStepViewNeptune.py
+TimeStepViewNeptune.py \
+VolumicConditionsView.py
 
 # PyQt User Interface files
 UIFILES = \
@@ -230,7 +231,8 @@ BoundaryConditionsNonCondensable.ui \
 BoundaryConditionsScalar.ui \
 BoundaryConditionsWall.ui \
 BoundaryConditionsInterfacialArea.ui \
-TimeStep.ui
+TimeStep.ui \
+VolumicConditionsForm.ui
 
 # PyQt Resources files
 

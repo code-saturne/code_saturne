@@ -71,33 +71,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
                 import code_saturne.Pages.BoundaryConditionsView as Page
                 thisPage = Page.BoundaryConditionsView(root, case, zone_name)
 
-        elif item.parentItem.itemData[0] == tr("Initialization"):
-            if case.xmlRootNode().tagName == tr("NEPTUNE_CFD_GUI"):
-                import code_saturne.Pages.MainFieldsInitializationView as Page
-                thisPage = Page.MainFieldsInitializationView(root, case, zone_name)
-            else:
-                import code_saturne.Pages.InitializationView as Page
-                thisPage = Page.InitializationView(root, case, zone_name, stbar)
-
-        elif item.parentItem.itemData[0] == tr("Head losses"):
-            import code_saturne.Pages.HeadLossesView as Page
-            thisPage = Page.HeadLossesView(root, case, zone_name)
-
-        elif item.parentItem.itemData[0] == tr("Porosity"):
-            import code_saturne.Pages.PorosityView as Page
-            thisPage = Page.PorosityView(root, case, zone_name)
-
-        elif item.parentItem.itemData[0] == tr("Source terms"):
-            if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-                import code_saturne.Pages.MainFieldsSourceTermsView as Page
-                thisPage = Page.MainFieldsSourceTermsView(root, case, zone_name, stbar)
-            else:
-                import code_saturne.Pages.SourceTermsView as Page
-                thisPage = Page.SourceTermsView(root, case, zone_name, stbar)
-
-        elif item.parentItem.itemData[0] == tr("Groundwater laws"):
-            import code_saturne.Pages.GroundwaterLawView as Page
-            thisPage = Page.GroundwaterLawView(root, case, zone_name)
+        elif item.parentItem.itemData[0] == tr("Volume zones"):
+            import code_saturne.Pages.VolumicConditionsView as Page
+            thisPage = Page.VolumicConditionsView(root, case, zone_name)
 
         elif item.parentItem.itemData[0] in (tr("Boundary zones"), tr("Volume zones")):
             import code_saturne.Pages.LocalizationView as Page

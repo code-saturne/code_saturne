@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module defines the Porosity model data management.
@@ -30,23 +30,23 @@ This module contains the following classes:
 - PorosityView
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import sys, logging
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Third-party modules
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-from code_saturne.Base.QtCore    import *
-from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtCore import *
+from code_saturne.Base.QtGui import *
 from code_saturne.Base.QtWidgets import *
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
@@ -57,21 +57,22 @@ from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.PorosityModel import PorosityModel
 from code_saturne.model.NotebookModel import NotebookModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("PorosityView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 # Main view class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class PorosityView(QWidget, Ui_PorosityForm):
 
-    def __init__(self, parent, case, zone_name):
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -80,20 +81,32 @@ class PorosityView(QWidget, Ui_PorosityForm):
         Ui_PorosityForm.__init__(self)
         self.setupUi(self)
 
+        self.case = None
+        self.model = None
+        self.notebook = None
+        self.zone = None
+
+    def setup(self, case, zone_name):
         self.case = case
         self.case.undoStopGlobal()
-
         self.model = PorosityModel(self.case)
         self.notebook = NotebookModel(self.case)
-
         self.zoneLabel.setText(zone_name)
-        self.zone = None
         localization_model = LocalizationModel("VolumicZone", self.case)
         for zone in localization_model.getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone
 
-        # Combo model
+        if self.zone.isNatureActivated("porosity"):
+            self.setViewFromCase()
+        else:
+            self.displayDefaultView()
+            self.setEnabled(False)
+
+        self.case.undoStartGlobal()
+
+    def setViewFromCase(self):
+        # TODO should method be renamed ?
         if self.case.module_name() == 'code_saturne':
             self.modelPorosityType = ComboModel(self.comboBoxType, 3, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
@@ -103,15 +116,9 @@ class PorosityView(QWidget, Ui_PorosityForm):
             self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
             self.modelPorosityType.disableItem(index=0)
-
-        # Connections
         self.comboBoxType.activated[str].connect(self.slotPorosity)
         self.pushButtonPorosity.clicked.connect(self.slotFormulaPorosity)
-
-        # Initialize Widgets
         self.selectPorosityZones()
-
-        self.case.undoStartGlobal()
 
     def selectPorosityZones(self):
         zone_label = self.zone.getLabel()
@@ -141,7 +148,6 @@ class PorosityView(QWidget, Ui_PorosityForm):
         choice = self.modelPorosityType.dicoV2M[str(text)]
 
         self.model.setPorosityModel(zone_id, choice)
-
 
     @pyqtSlot()
     def slotFormulaPorosity(self):
@@ -180,16 +186,22 @@ class PorosityView(QWidget, Ui_PorosityForm):
             self.pushButtonPorosity.setToolTip(result)
             self.pushButtonPorosity.setStyleSheet("background-color: green")
 
+    def displayDefaultView(self):
+        self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
+        self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
+        self.modelPorosityType.setItem(str_model="isotropic")
+        self.groupBoxType.show()
+        self.groupBoxDef.show()
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 # Testing part
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
     pass
 
-
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

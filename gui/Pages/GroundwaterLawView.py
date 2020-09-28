@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module defines the GroundwaterLaw model data management.
@@ -29,50 +29,49 @@ This module contains the following classes:
 - GroundwaterLawView
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import sys, logging
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Third-party modules
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-from code_saturne.Base.QtCore    import *
-from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtCore import *
+from code_saturne.Base.QtGui import *
 from code_saturne.Base.QtWidgets import *
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
-from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.GroundwaterLawForm import Ui_GroundwaterLawForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.model.NotebookModel import NotebookModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("GroundwaterLawView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 # Main view class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
-    def __init__(self, parent, case, zone_name):
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -80,33 +79,96 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
         Ui_GroundwaterLawForm.__init__(self)
         self.setupUi(self)
+        self.case = None
+        self.mdl = None
+        self.scalar = ""
+        self.list_scalars = []
+        self.zone = None
+        self.modelGroundwaterLawType = None
+        self.modelNameDiff = None
 
+    def setup(self, case, zone_name):
         self.case = case
         self.case.undoStopGlobal()
 
-        self.mdl = GroundwaterLawModel(self.case)
-        self.notebook = NotebookModel(self.case)
-
-        self.list_scalars = []
-        self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarNameList():
-            self.list_scalars.append((s, self.tr("Additional scalar")))
-
         self.zoneLabel.setText(zone_name)
-        self.zone = None
         for zone in LocalizationModel("VolumicZone", self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone
 
-        # Combo model
-        self.modelGroundwaterLawType = ComboModel(self.comboBoxType, 2, 1)
-        self.modelGroundwaterLawType.addItem(self.tr("User law"), 'user')
-        self.modelGroundwaterLawType.addItem(self.tr("Van Genuchten law"), 'VanGenuchten')
+        if self.zone.isNatureActivated("groundwater_law"):
+            self.mdl = GroundwaterLawModel(self.case)
 
-        self.modelNameDiff = ComboModel(self.comboBoxNameDiff, 1, 1)
+            # Combo model
+            self.modelGroundwaterLawType = ComboModel(self.comboBoxType, 2, 1)
+            self.modelGroundwaterLawType.addItem(self.tr("User law"), 'user')
+            self.modelGroundwaterLawType.addItem(self.tr("Van Genuchten law"), 'VanGenuchten')
+            self.modelNameDiff = ComboModel(self.comboBoxNameDiff, 1, 1)
+            scalar_model = DefineUserScalarsModel(self.case)
+            for s in scalar_model.getUserScalarNameList():
+                self.list_scalars.append((s, self.tr("Additional scalar")))
+            scalar_list = scalar_model.getUserScalarNameList()
+            for s in scalar_model.getScalarsVarianceList():
+                if s in scalar_list: scalar_list.remove(s)
+            if scalar_list != []:
+                self.scalar = scalar_list[0]
+                for scalar in scalar_list:
+                    self.modelNameDiff.addItem(scalar)
+            self.setValidators()
+            self.setConnections()
+            self.forgetStandardWindows()
+            self.selectGroundwaterLawZones()
+        else:
+            self.displayDefaultView()
+            self.setEnabled(False)
+        self.case.undoStartGlobal()
 
-        # Set up validators
+    def displayDefaultView(self):
+        self.forgetStandardWindows()
+        self.groupBoxGroundProperties.show()
+        self.groupBoxSoilDensity.show()
+        self.groupBoxType.show()
+        self.groupBoxVanGenuchten.show()
+        self.groupBoxUser.hide()
+        self.groupBoxSoluteProperties.hide()
+        self.groupBoxIsotropicDispersion.show()
+        self.groupBoxAnisotropicDispersion.hide()
 
+    def setConnections(self):
+        self.comboBoxType.activated[str].connect(self.slotGroundwaterLaw)
+        self.lineEditKs.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
+        self.lineEditKsXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
+        self.lineEditKsYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
+        self.lineEditKsZZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
+        self.lineEditKsXY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
+        self.lineEditKsXZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
+        self.lineEditKsYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
+        self.lineEditThetas.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
+        self.lineEditKsSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
+        self.lineEditKsSaturatedXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
+        self.lineEditKsSaturatedYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
+        self.lineEditKsSaturatedZZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
+        self.lineEditKsSaturatedXY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
+        self.lineEditKsSaturatedXZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
+        self.lineEditKsSaturatedYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
+        self.lineEditThetasSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
+        self.lineEditThetar.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetar"))
+        self.lineEditN.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "n"))
+        self.lineEditL.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "l"))
+        self.lineEditAlpha.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "alpha"))
+        self.lineEditSoilDensity.textChanged[str].connect(self.slotSetSoilDensity)
+        self.pushButtonUserLaw.clicked.connect(self.slotFormula)
+        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.lineEditDiffusivity.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "diffusivity"))
+        self.lineEditKd.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kd"))
+        self.lineEditkplus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kplus"))
+        self.lineEditkminus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kminus"))
+        self.lineEditLongitudinal.textChanged[str].connect(
+            lambda x: self.slotSetDispersionCoefficient(x, "longitudinal"))
+        self.lineEditTransverse.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "transverse"))
+        self.lineEditDispersion.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "isotropic"))
+
+    def setValidators(self):
         self.lineEditKs.setValidator(DoubleValidator(self.lineEditKs))
         self.lineEditKsXX.setValidator(DoubleValidator(self.lineEditKsXX))
         self.lineEditKsYY.setValidator(DoubleValidator(self.lineEditKsYY))
@@ -135,61 +197,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
         self.lineEditkplus.setValidator(DoubleValidator(self.lineEditkplus))
         self.lineEditkminus.setValidator(DoubleValidator(self.lineEditkminus))
-
-        self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarNameList()
-        for s in self.m_sca.getScalarsVarianceList():
-            if s in scalar_list: scalar_list.remove(s)
-
-        if scalar_list != []:
-            self.scalar = scalar_list[0]
-            for scalar in scalar_list:
-                self.modelNameDiff.addItem(scalar)
-
-        # Connections
-        self.comboBoxType.activated[str].connect(self.slotGroundwaterLaw)
-        self.lineEditKs.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
-        self.lineEditKsXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
-        self.lineEditKsYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
-        self.lineEditKsZZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
-        self.lineEditKsXY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
-        self.lineEditKsXZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
-        self.lineEditKsYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
-        self.lineEditThetas.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
-
-        self.lineEditKsSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
-        self.lineEditKsSaturatedXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
-        self.lineEditKsSaturatedYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
-        self.lineEditKsSaturatedZZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
-        self.lineEditKsSaturatedXY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
-        self.lineEditKsSaturatedXZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
-        self.lineEditKsSaturatedYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
-        self.lineEditThetasSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
-
-        self.lineEditThetar.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetar"))
-        self.lineEditN.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "n"))
-        self.lineEditL.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "l"))
-        self.lineEditAlpha.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "alpha"))
-
-        self.lineEditSoilDensity.textChanged[str].connect(self.slotSetSoilDensity)
-
-        self.pushButtonUserLaw.clicked.connect(self.slotFormula)
-        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-
-        self.lineEditDiffusivity.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "diffusivity"))
-        self.lineEditKd.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kd"))
-        self.lineEditkplus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kplus"))
-        self.lineEditkminus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kminus"))
-
-        self.lineEditLongitudinal.textChanged[str].connect(
-            lambda x: self.slotSetDispersionCoefficient(x, "longitudinal"))
-        self.lineEditTransverse.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "transverse"))
-        self.lineEditDispersion.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "isotropic"))
-
-        self.forgetStandardWindows()
-        self.selectGroundwaterLawZones()
-
-        self.case.undoStartGlobal()
 
     @pyqtSlot("QModelIndex")
     def selectGroundwaterLawZones(self):
@@ -264,7 +271,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         scal = self.scalar
         if scal == "":
             self.groupBoxSoluteProperties.hide()
-        else :
+        else:
             self.groupBoxSoluteProperties.show()
 
             self.modelNameDiff.setItem(str_model=str(scal))
@@ -346,7 +353,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             value = self.mdl.getValue(name, "ks")
             self.lineEditKs.setText(str(value))
 
-
     def forgetStandardWindows(self):
         """
         For forget standard windows
@@ -357,7 +363,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxVanGenuchten.hide()
         self.groupBoxSaturated.hide()
         self.groupBoxSoluteProperties.hide()
-
 
     @pyqtSlot(str)
     def slotGroundwaterLaw(self, text):
@@ -424,9 +429,9 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                                 zone_name=label,
                                 variable_name='capacity+saturation+permeability',
                                 expression=exp,
-                                required      = req,
-                                symbols       = sym,
-                                examples      = exa)
+                                required=req,
+                                symbols=sym,
+                                examples=exa)
 
         if dialog.exec_():
             result = dialog.get_result()
@@ -464,16 +469,14 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.label_kminus.hide()
 
 
-
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Testing part
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
     pass
 
-
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

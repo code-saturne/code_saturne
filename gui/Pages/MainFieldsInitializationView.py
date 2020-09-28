@@ -76,7 +76,8 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
     """
     Main fields layout.
     """
-    def __init__(self, parent, case, zone_name):
+
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -85,6 +86,41 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         Ui_MainFieldsInitialization.__init__(self)
         self.setupUi(self)
 
+        self.case = None
+        self.mdl = None
+        self.volzone = None
+        self.NonCondensable = None
+        self.SpeciesModel = None
+        self.zone = None
+        self.zone_id = None
+
+        self.hideAllWidgets()
+        self.defineConnections()
+
+    def defineConnections(self):
+        self.comboBoxField.activated[str].connect(self.slotField)
+        self.comboBoxEnergy.activated[str].connect(self.slotEnergyModel)
+        self.comboBoxNonCondensable.activated[str].connect(self.slotNonCondensableType)
+        self.comboBoxScalar.activated[str].connect(self.slotScalarName)
+        self.pushButtonPressure.clicked.connect(self.slotPressure)
+        self.pushButtonVelocity.clicked.connect(self.slotVelocity)
+        self.pushButtonFraction.clicked.connect(self.slotFraction)
+        self.pushButtonEnergy.clicked.connect(self.slotEnergy)
+        self.pushButtonNonCondensable.clicked.connect(self.slotNonCondensable)
+        self.pushButtonScalar.clicked.connect(self.slotScalar)
+
+    def hideAllWidgets(self):
+        self.labelEnergy.hide()
+        self.comboBoxEnergy.hide()
+        self.pushButtonEnergy.hide()
+        self.labelNonCondensable.hide()
+        self.comboBoxNonCondensable.hide()
+        self.pushButtonNonCondensable.hide()
+        self.labelScalar.hide()
+        self.comboBoxScalar.hide()
+        self.pushButtonScalar.hide()
+
+    def setup(self, case, zone_name):
         self.case = case
         self.case.undoStopGlobal()
 
@@ -94,8 +130,6 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.SpeciesModel = SpeciesModel(self.case)
 
         self.zoneLabel.setText(zone_name)
-        self.zone = None
-        self.zone_id = None
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone
@@ -111,7 +145,6 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if len(self.mdl.getFieldIdList()) > 0:
             self.currentid = self.mdl.getFieldIdList()[0]
             self.modelField.setItem(str_model = self.currentid)
-
         self.modelEnergy = ComboModel(self.comboBoxEnergy, 3, 1)
         self.modelEnergy.addItem(self.tr("Enthalpy"), "enthalpy")
         self.modelEnergy.addItem(self.tr("Temperature"), "temperature")
@@ -130,36 +163,19 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.currentScalar = ""
         self.currentScalarLabel = ""
 
-        # hide groupBoxEnergy, groupBoxNonCondensable
-        self.labelEnergy.hide()
-        self.comboBoxEnergy.hide()
-        self.pushButtonEnergy.hide()
-        self.labelNonCondensable.hide()
-        self.comboBoxNonCondensable.hide()
-        self.pushButtonNonCondensable.hide()
-        self.labelScalar.hide()
-        self.comboBoxScalar.hide()
-        self.pushButtonScalar.hide()
+        if self.zone.isNatureActivated("initialization"):
+            self.setViewFromCase()
+        else:
+            self.setEnabled(False)
+        self.case.undoStartGlobal()
 
-        # Connect signals to slots
-        self.comboBoxField.activated[str].connect(self.slotField)
-        self.comboBoxEnergy.activated[str].connect(self.slotEnergyModel)
-        self.comboBoxNonCondensable.activated[str].connect(self.slotNonCondensableType)
-        self.comboBoxScalar.activated[str].connect(self.slotScalarName)
-        self.pushButtonPressure.clicked.connect(self.slotPressure)
-        self.pushButtonVelocity.clicked.connect(self.slotVelocity)
-        self.pushButtonFraction.clicked.connect(self.slotFraction)
-        self.pushButtonEnergy.clicked.connect(self.slotEnergy)
-        self.pushButtonNonCondensable.clicked.connect(self.slotNonCondensable)
-        self.pushButtonScalar.clicked.connect(self.slotScalar)
-
+    def setViewFromCase(self):
         exp = self.mdl.getFormulaPressure(self.zone_id)
         if exp:
             self.pushButtonPressure.setStyleSheet("background-color: green")
             self.pushButtonPressure.setToolTip(exp)
         else:
             self.pushButtonPressure.setStyleSheet("background-color: red")
-
         if (len(self.mdl.getFieldIdList()) > 0):
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone_id, self.currentid)
@@ -186,7 +202,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                     self.pushButtonEnergy.setStyleSheet("background-color: red")
 
             lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
-            if len(lst) > 0 :
+            if len(lst) > 0:
                 exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
                 if exp:
                     self.pushButtonNonCondensable.setStyleSheet("background-color: green")
@@ -195,17 +211,15 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                     self.pushButtonNonCondensable.setStyleSheet("background-color: red")
 
             lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
-            if len(lst) > 0 :
+            if len(lst) > 0:
                 exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
                 if exp:
                     self.pushButtonScalar.setStyleSheet("background-color: green")
                     self.pushButtonScalar.setToolTip(exp)
                 else:
                     self.pushButtonScalar.setStyleSheet("background-color: red")
-        else :
+        else:
             self.groupBoxDefinition.hide()
-
-        self.case.undoStartGlobal()
 
     @pyqtSlot(str)
     def slotField(self, text):

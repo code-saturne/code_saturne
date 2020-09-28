@@ -74,7 +74,8 @@ log.setLevel(GuiParam.DEBUG)
 class InitializationView(QWidget, Ui_InitializationForm):
     """
     """
-    def __init__(self, parent, case, zone_name, stbar):
+
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -83,17 +84,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         Ui_InitializationForm.__init__(self)
         self.setupUi(self)
 
-        self.case = case
+        self.case = None
+        self.zone = None
         self.parent = parent
-        self.case.undoStopGlobal()
-
-        self.init    = InitializationModel(self.case)
-        self.turb    = TurbulenceModel(self.case)
-        self.therm   = ThermalScalarModel(self.case)
-        self.th_sca  = DefineUserScalarsModel(self.case)
-        self.comp    = CompressibleModel(self.case)
-        self.volzone = LocalizationModel('VolumicZone', self.case)
-        self.notebook = NotebookModel(self.case)
 
         # create group to control hide/show options
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
@@ -104,20 +97,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.meteo_group = [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
         self.thermodynamic_list = ['Pressure', 'Density', 'Temperature', 'Energy']
 
-        # 1/ Combo box models
-
-        if self.comp.getCompressibleModel() != 'off':
-            self.groupBoxThermodynamic.show()
-        else:
-            self.groupBoxThermodynamic.hide()
-
-        # Identify selected zone_id
-        self.zoneLabel.setText(zone_name)
-        self.zone_name = zone_name
-        for zone in self.volzone.getZones():
-            if zone.getLabel() == zone_name:
-                self.zone_id = str(zone.getCodeNumber())  # FIXME : using str() conversion is not great
-
         self.modelThermal = ComboModel(self.comboBoxThermal, 2, 1)
         self.modelThermal.addItem(self.tr("Automatic initialization"), 'automatic')
         self.modelThermal.addItem(self.tr("Initialization by formula"), 'formula')
@@ -126,8 +105,123 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.modelTurbulence.addItem(self.tr("Initialization by formula"), 'formula')
         self.modelTurbulence.addItem(self.tr("Initialization by reference value(s)"), 'reference_value')
 
-        # 2/ Connections
+    def setup(self, case, zone_name):
+        self.case = case
+        self.case.undoStopGlobal()
+        self.comp = CompressibleModel(self.case)
+        self.th_sca = DefineUserScalarsModel(self.case)
+        self.init = InitializationModel(self.case)
+        self.turb = TurbulenceModel(self.case)
+        self.therm = ThermalScalarModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
+        # Identify selected zone_id
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+
+        if self.zone.isNatureActivated("initialization"):
+            self.setViewFromCase()
+        else:  # TODO ask Chai and Yvan if the content of a disabled tab should remain visible or not
+            self.displayDefaultView()
+            self.setEnabled(False)
+        self.case.undoStartGlobal()
+
+    def displayDefaultView(self):
+        # Thermodynamic for compressible flows
+        if self.comp.getCompressibleModel() != 'off':
+            self.groupBoxThermodynamic.show()
+        else:
+            self.groupBoxThermodynamic.hide()
+        # Scalars
+        scalar_list = self.th_sca.getUserScalarNameList()
+        for s in self.th_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+        if scalar_list != []:
+            for item in self.species_group:
+                item.show()
+        else:
+            for item in self.species_group:
+                item.hide()
+        # Atmospheric
+        scalar_meteo_list = DefineUserScalarsModel(self.case).getMeteoScalarsNameList()
+        if scalar_meteo_list != None and scalar_meteo_list != []:
+            for item in self.meteo_group:
+                item.show()
+        else:
+            for item in self.meteo_group:
+                item.hide()
+        if GroundwaterModel(self.case).getGroundwaterModel() == "off":
+            self.labelHydraulicHead.hide()
+            self.pushButtonHydraulicHead.hide()
+
+    def setViewFromCase(self):
+
+        # 1/ Combo box models
+        if self.comp.getCompressibleModel() != 'off':
+            self.groupBoxThermodynamic.show()
+        else:
+            self.groupBoxThermodynamic.hide()
+        zone_id = str(self.zone.getCodeNumber())
+        choice = self.init.getInitialTurbulenceChoice(zone_id)
+        self.modelTurbulence.setItem(str_model=choice)
+        # species treatment
+        self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
+        self.scalar = ""
+        scalar_list = self.th_sca.getUserScalarNameList()
+        for s in self.th_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+        if scalar_list != []:
+            self.scalar = scalar_list[0]
+            for item in self.species_group:
+                item.show()
+            for scalar in scalar_list:
+                self.modelSpecies.addItem(self.tr(scalar), scalar)
+            self.modelSpecies.setItem(str_model=self.scalar)
+            exp = self.init.getSpeciesFormula(zone_id, self.scalar)
+            if exp:
+                self.pushButtonSpecies.setStyleSheet("background-color: green")
+                self.pushButtonSpecies.setToolTip(exp)
+            else:
+                self.pushButtonSpecies.setStyleSheet("background-color: red")
+        else:
+            for item in self.species_group:
+                item.hide()
+        # meteo
+        self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
+        self.scalar_meteo = ""
+        scalar_meteo_list = DefineUserScalarsModel(self.case).getMeteoScalarsNameList()
+        if scalar_meteo_list != None and scalar_meteo_list != []:
+            self.scalar_meteo = scalar_meteo_list[0]
+            for item in self.meteo_group:
+                item.show()
+            for scalar in scalar_meteo_list:
+                self.modelMeteo.addItem(self.tr(scalar), scalar)
+            self.modelMeteo.setItem(str_model=self.scalar_meteo)
+            exp = self.init.getMeteoFormula(zone_id, self.scalar_meteo)
+            if exp:
+                self.pushButtonMeteo.setStyleSheet("background-color: green")
+                self.pushButtonMeteo.setToolTip(exp)
+            else:
+                self.pushButtonMeteo.setStyleSheet("background-color: red")
+        else:
+            for item in self.meteo_group:
+                item.hide()
+        if GroundwaterModel(self.case).getGroundwaterModel() == "off":
+            self.labelHydraulicHead.hide()
+            self.pushButtonHydraulicHead.hide()
+        else:
+            exp = self.init.getHydraulicHeadFormula(zone_id)
+            if exp:
+                self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
+                self.pushButtonHydraulicHead.setToolTip(exp)
+            else:
+                self.pushButtonHydraulicHead.setStyleSheet("background-color: red")
+        # Initialize widget
+        self.initializeVariables()
+        self.defineConnections()
+
+    def defineConnections(self):
         self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
         self.comboBoxTurbulence.activated[str].connect(self.slotChoice)
         self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
@@ -147,79 +241,27 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.pushButtonEnergy.clicked.connect(self.slotEnergyFormula)
         self.pushButtonHydraulicHead.clicked.connect(self.slotHydraulicHeadFormula)
 
-        choice = self.init.getInitialTurbulenceChoice(self.zone_id)
-        self.modelTurbulence.setItem(str_model = choice)
-
-        # species treatment
-        self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
-        self.scalar = ""
-        scalar_list = self.th_sca.getUserScalarNameList()
-        for s in self.th_sca.getScalarsVarianceList():
-            if s in scalar_list: scalar_list.remove(s)
-
-        if scalar_list != []:
-            self.scalar = scalar_list[0]
-            for item in self.species_group:
-                item.show()
-            for scalar in scalar_list:
-                self.modelSpecies.addItem(self.tr(scalar), scalar)
-            self.modelSpecies.setItem(str_model = self.scalar)
-            exp = self.init.getSpeciesFormula(self.zone_id, self.scalar)
-            if exp:
-                self.pushButtonSpecies.setStyleSheet("background-color: green")
-                self.pushButtonSpecies.setToolTip(exp)
-            else:
-                self.pushButtonSpecies.setStyleSheet("background-color: red")
-        else:
-            for item in self.species_group:
-                item.hide()
-
-        # meteo
-        self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
-        self.scalar_meteo = ""
-        scalar_meteo_list = DefineUserScalarsModel( self.case).getMeteoScalarsNameList()
-        if scalar_meteo_list != None and scalar_meteo_list != []:
-            self.scalar_meteo = scalar_meteo_list[0]
-            for item in self.meteo_group:
-                item.show()
-            for scalar in scalar_meteo_list:
-                self.modelMeteo.addItem(self.tr(scalar), scalar)
-            self.modelMeteo.setItem(str_model = self.scalar_meteo)
-            exp = self.init.getMeteoFormula(self.zone_id, self.scalar_meteo)
-            if exp:
-                self.pushButtonMeteo.setStyleSheet("background-color: green")
-                self.pushButtonMeteo.setToolTip(exp)
-            else:
-                self.pushButtonMeteo.setStyleSheet("background-color: red")
-        else:
-            for item in self.meteo_group:
-                item.hide()
-
-        if GroundwaterModel(self.case).getGroundwaterModel() == "off":
-            self.labelHydraulicHead.hide()
-            self.pushButtonHydraulicHead.hide()
-        else:
-            exp = self.init.getHydraulicHeadFormula(self.zone_id)
-            if exp:
-                self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
-                self.pushButtonHydraulicHead.setToolTip(exp)
-            else:
-                self.pushButtonHydraulicHead.setStyleSheet("background-color: red")
-
-        # Initialize widget
-        self.initializeVariables()
-
-        self.case.undoStartGlobal()
-
 
     @pyqtSlot(str)
-    def slotZone(self, text):
+    def slotThermalChoice(self, text):
         """
-        INPUT label for choice of zone_id
+        INPUT choice of method of initialization
         """
-        self.zone_id = self.modelZone.dicoV2M[str(text)]
-        self.initializeVariables()
-
+        zone_id = str(self.zone.getCodeNumber())
+        choice = self.modelThermal.dicoV2M[str(text)]
+        log.debug("slotThermalChoice choice =  %s " % str(choice))
+        if choice == 'formula':
+            th_formula = self.init.getThermalFormula(zone_id)
+            if not th_formula:
+                th_formula = self.init.getDefaultThermalFormula()
+                self.pushButtonThermal.setStyleSheet("background-color: red")
+            else:
+                self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.init.setThermalFormula(zone_id, th_formula)
+            self.pushButtonThermal.show()
+        else:
+            self.init.setThermalFormula(zone_id, None)
+            self.pushButtonThermal.hide()
 
     @pyqtSlot(str)
     def slotChoice(self, text):
@@ -228,32 +270,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         choice = self.modelTurbulence.dicoV2M[str(text)]
         log.debug("slotChoice choice =  %s " % str(choice))
-        self.init.setInitialTurbulenceChoice(self.zone_id, choice)
+        zone_id = str(self.zone.getCodeNumber())
+        self.init.setInitialTurbulenceChoice(zone_id, choice)
         turb_model = self.turb.getTurbulenceModel()
 
         self.initializeVariables()
-
-
-    @pyqtSlot(str)
-    def slotThermalChoice(self, text):
-        """
-        INPUT choice of method of initialization
-        """
-        choice = self.modelThermal.dicoV2M[str(text)]
-        log.debug("slotThermalChoice choice =  %s " % str(choice))
-        if choice == 'formula':
-            th_formula = self.init.getThermalFormula(self.zone_id)
-            if not th_formula:
-                th_formula = self.init.getDefaultThermalFormula()
-                self.pushButtonThermal.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.init.setThermalFormula(self.zone_id, th_formula)
-            self.pushButtonThermal.show()
-        else:
-            self.init.setThermalFormula(self.zone_id, None)
-            self.pushButtonThermal.hide()
-
 
     @pyqtSlot(str)
     def slotMeteoChoice(self, text):
@@ -262,13 +283,13 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         self.scalar_meteo = self.modelMeteo.dicoV2M[str(text)]
         self.initializeVariables()
-        exp = self.init.getMeteoFormula(self.zone_id, self.scalar_meteo)
+        zone_id = str(self.zone.getCodeNumber())
+        exp = self.init.getMeteoFormula(zone_id, self.scalar_meteo)
         if exp:
             self.pushButtonMeteo.setStyleSheet("background-color: green")
             self.pushButtonMeteo.setToolTip(exp)
         else:
             self.pushButtonMeteo.setStyleSheet("background-color: red")
-
 
     @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
@@ -277,13 +298,13 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         self.scalar = self.modelSpecies.dicoV2M[str(text)]
         self.initializeVariables()
-        exp = self.init.getSpeciesFormula(self.zone_id, self.scalar)
+        zone_id = str(self.zone.getCodeNumber())
+        exp = self.init.getSpeciesFormula(zone_id, self.scalar)
         if exp:
             self.pushButtonSpecies.setStyleSheet("background-color: green")
             self.pushButtonSpecies.setToolTip(exp)
         else:
             self.pushButtonSpecies.setStyleSheet("background-color: red")
-
 
     @pyqtSlot()
     def slotVelocityFormula(self):
@@ -291,11 +312,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: \n""" + self.init.getDefaultVelocityFormula()
 
-        exp, req, sym = self.init.getVelocityFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getVelocityFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="velocity",
                                 expression=exp,
                                 required=req,
@@ -305,10 +327,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
-            self.init.setVelocityFormula(self.zone_id, str(result))
+            self.init.setVelocityFormula(zone_id, str(result))
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(result)
-
 
     @pyqtSlot()
     def slotTurbulenceFormula(self):
@@ -318,7 +339,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         turb_model = self.turb.getTurbulenceModel()
         exa = """#example \n""" + self.init.getDefaultTurbFormula(turb_model)
 
-        exp, req, sym = self.init.getTurbFormulaComponents(self.zone_id, turb_model)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getTurbFormulaComponents(zone_id, turb_model)
 
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             turb_vname = 'turbulence_ke'
@@ -335,7 +357,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name=turb_vname,
                                 expression=exp,
                                 required=req,
@@ -345,10 +367,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
-            self.init.setTurbFormula(self.zone_id, str(result))
+            self.init.setTurbFormula(zone_id, str(result))
             self.pushButtonTurbulence.setStyleSheet("background-color: green")
             self.pushButtonTurbulence.setToolTip(result)
-
 
     @pyqtSlot()
     def slotThermalFormula(self):
@@ -357,11 +378,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
 
-        exp, req, sym = self.init.getThermalFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getThermalFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="thermal",
                                 expression=exp,
                                 required=req,
@@ -371,24 +393,24 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.init.setThermalFormula(self.zone_id, str(result))
+            self.init.setThermalFormula(zone_id, str(result))
             self.pushButtonThermal.setStyleSheet("background-color: green")
             self.pushButtonThermal.setToolTip(result)
-
 
     @pyqtSlot()
     def slotSpeciesFormula(self):
         """
         Input the initial formula of species
         """
-        exp, req, sym = self.init.getSpeciesFormulaComponents(self.zone_id, self.scalar)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getSpeciesFormulaComponents(zone_id, self.scalar)
 
         name = DefineUserScalarsModel(self.case).getScalarName(self.scalar)
         exa = """#example: \n""" + str(name) + """ = 0;\n"""
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name=name,
                                 expression=exp,
                                 required=req,
@@ -398,10 +420,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
-            self.init.setSpeciesFormula(self.zone_id, self.scalar, str(result))
+            self.init.setSpeciesFormula(zone_id, self.scalar, str(result))
             self.pushButtonSpecies.setStyleSheet("background-color: green")
             self.pushButtonSpecies.setToolTip(result)
-
 
     @pyqtSlot()
     def slotMeteoFormula(self):
@@ -410,11 +431,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         name = self.scalar_meteo
         exa = """#example: \n""" + str(name) + """ = 0;\n"""
 
-        exp, req, sym = self.init.getMeteoFormulaComponents(self.zone_id, self.scalar_meteo)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getMeteoFormulaComponents(zone_id, self.scalar_meteo)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name=name,
                                 expression=exp,
                                 required=req,
@@ -424,7 +446,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
-            self.init.setMeteoFormula(self.zone_id, self.scalar_meteo, str(result))
+            self.init.setMeteoFormula(zone_id, self.scalar_meteo, str(result))
             self.pushButtonMeteo.setStyleSheet("background-color: green")
             self.pushButtonMeteo.setToolTip(result)
 
@@ -434,11 +456,13 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Pressure selected or not for the initialisation.
         """
+        zone_id = str(self.zone.getCodeNumber())
+
         if self.checkBoxPressure.isChecked():
-            self.init.setPressureStatus(self.zone_id, "on")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setPressureStatus(zone_id, "on")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonPressure.setEnabled(True)
-            exp = self.init.getPressureFormula(self.zone_id)
+            exp = self.init.getPressureFormula(zone_id)
             if exp:
                 self.pushButtonPressure.setStyleSheet("background-color: green")
                 self.pushButtonPressure.setToolTip(exp)
@@ -450,8 +474,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __checkBox = getattr(self, "checkBox" + name)
                         __checkBox.setEnabled(False)
         else:
-            self.init.setPressureStatus(self.zone_id, "off")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setPressureStatus(zone_id, "off")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonPressure.setEnabled(False)
             self.pushButtonPressure.setStyleSheet("background-color: None")
             if len(box_list) == 1:
@@ -464,17 +488,18 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 if box_list[0] == 'Temperature':
                     self.checkBoxEnergy.setEnabled(False)
 
-
     @pyqtSlot()
     def slotDensity(self):
         """
         Density selected or not for the initialisation.
         """
+        zone_id = str(self.zone.getCodeNumber())
+
         if self.checkBoxDensity.isChecked():
-            self.init.setDensityStatus(self.zone_id, "on")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setDensityStatus(zone_id, "on")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonDensity.setEnabled(True)
-            exp = self.init.getDensityFormula(self.zone_id)
+            exp = self.init.getDensityFormula(zone_id)
             if exp:
                 self.pushButtonDensity.setStyleSheet("background-color: green")
                 self.pushButtonDensity.setToolTip(exp)
@@ -486,8 +511,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __checkBox = getattr(self, "checkBox" + name)
                         __checkBox.setEnabled(False)
         else:
-            self.init.setDensityStatus(self.zone_id, "off")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setDensityStatus(zone_id, "off")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonDensity.setEnabled(False)
             self.pushButtonDensity.setStyleSheet("background-color: None")
             if len(box_list) == 1:
@@ -500,17 +525,18 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 if box_list[0] == 'Temperature':
                     self.checkBoxEnergy.setEnabled(False)
 
-
     @pyqtSlot()
     def slotTemperature(self):
         """
         Temperature selected or not for the initialisation.
         """
+        zone_id = str(self.zone.getCodeNumber())
+
         if self.checkBoxTemperature.isChecked():
-            self.init.setTemperatureStatus(self.zone_id, "on")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setTemperatureStatus(zone_id, "on")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonTemperature.setEnabled(True)
-            exp = self.init.getTemperatureFormula(self.zone_id)
+            exp = self.init.getTemperatureFormula(zone_id)
             if exp:
                 self.pushButtonTemperature.setStyleSheet("background-color: green")
                 self.pushButtonTemperature.setToolTip(exp)
@@ -523,8 +549,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __checkBox.setEnabled(False)
             self.checkBoxEnergy.setEnabled(False)
         else:
-            self.init.setTemperatureStatus(self.zone_id, "off")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setTemperatureStatus(zone_id, "off")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonTemperature.setEnabled(False)
             self.pushButtonTemperature.setStyleSheet("background-color: None")
             if len(box_list) == 1:
@@ -534,17 +560,18 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __checkBox.setEnabled(True)
             self.checkBoxEnergy.setEnabled(True)
 
-
     @pyqtSlot()
     def slotEnergy(self):
         """
         Energy selected or not for the initialisation.
         """
+        zone_id = str(self.zone.getCodeNumber())
+
         if self.checkBoxEnergy.isChecked():
-            self.init.setEnergyStatus(self.zone_id, "on")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setEnergyStatus(zone_id, "on")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonEnergy.setEnabled(True)
-            exp = self.init.getEnergyFormula(self.zone_id)
+            exp = self.init.getEnergyFormula(zone_id)
             if exp:
                 self.pushButtonEnergy.setStyleSheet("background-color: green")
                 self.pushButtonEnergy.setToolTip(exp)
@@ -561,8 +588,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
             if len(box_list) == 1:
                 self.checkBoxTemperature.setEnabled(False)
         else:
-            self.init.setEnergyStatus(self.zone_id, "off")
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            self.init.setEnergyStatus(zone_id, "off")
+            box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonEnergy.setEnabled(False)
             self.pushButtonEnergy.setStyleSheet("background-color: None")
             if len(box_list) == 1:
@@ -575,8 +602,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __Button.setStyleSheet("background-color: None")
             self.checkBoxTemperature.setEnabled(True)
 
-
-
     @pyqtSlot()
     def slotPressureFormula(self):
         """
@@ -584,11 +609,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: """
 
-        exp, req, sym = self.init.getPressureFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getPressureFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="pressure",
                                 expression=exp,
                                 required=req,
@@ -598,11 +624,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
-            self.init.setPressureFormula(self.zone_id, str(result))
+            self.init.setPressureFormula(zone_id, str(result))
             self.pushButtonPressure.setStyleSheet("background-color: green")
             self.pushButtonPressure.setToolTip(result)
-
-
 
     @pyqtSlot()
     def slotHydraulicHeadFormula(self):
@@ -611,11 +635,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: """
 
-        exp, req, sym = self.init.getHydraulicHeadFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getHydraulicHeadFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="hydraulic_head",
                                 expression=exp,
                                 required=req,
@@ -625,11 +650,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
-            self.init.setHydraulicHeadFormula(self.zone_id, str(result))
+            self.init.setHydraulicHeadFormula(zone_id, str(result))
             self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
             self.pushButtonHydraulicHead.setToolTip(result)
-
-
 
     @pyqtSlot()
     def slotDensityFormula(self):
@@ -638,11 +661,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: """
 
-        exp, req, sym = self.init.getDensityFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getDensityFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="density",
                                 expression=exp,
                                 required=req,
@@ -652,11 +676,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
-            self.init.setDensityFormula(self.zone_id, str(result))
+            self.init.setDensityFormula(zone_id, str(result))
             self.pushButtonDensity.setStyleSheet("background-color: green")
             self.pushButtonDensity.setToolTip(result)
-
-
 
     @pyqtSlot()
     def slotTemperatureFormula(self):
@@ -665,11 +687,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: """
 
-        exp, req, sym = self.init.getTemperatureFormulaComponents(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getTemperatureFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="temperature",
                                 expression=exp,
                                 required=req,
@@ -679,11 +702,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
-            self.init.setTemperatureFormula(self.zone_id, str(result))
+            self.init.setTemperatureFormula(zone_id, str(result))
             self.pushButtonTemperature.setStyleSheet("background-color: green")
             self.pushButtonTemperature.setToolTip(result)
-
-
 
     @pyqtSlot()
     def slotEnergyFormula(self):
@@ -692,11 +713,13 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example: """
 
-        exp, req, sym = self.init.getEnergyFormulaComponenets(self.zone_id)
+        zone_id = str(self.zone.getCodeNumber())
+        exp, req, sym = self.init.getEnergyFormulaComponenets(zone_id)
+        exp, req, sym = self.init.getEnergyFormulaComponenets(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
-                                zone_name=self.zone_name,
+                                zone_name=self.zone.getLabel(),
                                 variable_name="energy",
                                 expression=exp,
                                 required=req,
@@ -706,7 +729,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))
-            self.init.setEnergyFormula(self.zone_id, str(result))
+            self.init.setEnergyFormula(zone_id, str(result))
             self.pushButtonEnergy.setStyleSheet("background-color: green")
             self.pushButtonEnergy.setToolTip(result)
 
@@ -717,6 +740,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         # Initialisation of Turbulence
 
         turb_model = self.turb.getTurbulenceModel()
+        zone_id = str(self.zone.getCodeNumber())
 
         if turb_model not in ('k-epsilon',
                               'k-epsilon-PL',
@@ -732,35 +756,35 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.turb_group:
                 item.show()
 
-            turb_init = self.init.getInitialTurbulenceChoice(self.zone_id)
-            self.modelTurbulence.setItem(str_model = turb_init)
+            turb_init = self.init.getInitialTurbulenceChoice(zone_id)
+            self.modelTurbulence.setItem(str_model=turb_init)
 
             if turb_init == 'formula':
                 self.pushButtonTurbulence.setEnabled(True)
-                turb_formula = self.init.getTurbFormula(self.zone_id, turb_model)
+                turb_formula = self.init.getTurbFormula(zone_id, turb_model)
                 if not turb_formula:
                     turb_formula = self.init.getDefaultTurbFormula(turb_model)
                     self.pushButtonTurbulence.setStyleSheet("background-color: red")
                 else:
                     self.pushButtonTurbulence.setStyleSheet("background-color: green")
-                self.init.setTurbFormula(self.zone_id, turb_formula)
+                self.init.setTurbFormula(zone_id, turb_formula)
                 self.pushButtonTurbulence.setToolTip(turb_formula)
             else:
                 self.pushButtonTurbulence.setEnabled(False)
                 self.pushButtonTurbulence.setStyleSheet("background-color: None")
 
-        #velocity
+        # velocity
         if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
             for item in self.velocity_group:
                 item.hide()
         else:
-            velocity_formula = self.init.getVelocityFormula(self.zone_id)
+            velocity_formula = self.init.getVelocityFormula(zone_id)
             if not velocity_formula:
                 velocity_formula = self.init.getDefaultVelocityFormula()
                 self.pushButtonVelocity.setStyleSheet("background-color: red")
             else:
                 self.pushButtonVelocity.setStyleSheet("background-color: green")
-            self.init.setVelocityFormula(self.zone_id, velocity_formula)
+            self.init.setVelocityFormula(zone_id, velocity_formula)
             self.pushButtonVelocity.setToolTip(velocity_formula)
 
         # Initialisation of Model Variables if thermal model is selectionned
@@ -772,17 +796,19 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if model != "off" and self.comp.getCompressibleModel() == 'off':
             for item in self.thermal_group:
                 item.show()
-            th_formula = self.init.getThermalFormula(self.zone_id)
-            str_model = 'automatic'
-            if th_formula:
-                str_model = 'formula'
-            self.modelThermal.setItem(str_model = str_model)
-            self.slotThermalChoice(self.modelThermal.dicoM2V[str_model])
+            th_formula = self.init.getThermalFormula(zone_id)
+            if not th_formula:
+                th_formula = self.init.getDefaultThermalFormula()
+                self.pushButtonThermal.setStyleSheet("background-color: red")
+            else:
+                self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.init.setThermalFormula(zone_id, th_formula)
+            self.pushButtonThermal.setToolTip(th_formula)
 
         # Initialisation of the termodynamics values for the compressible model
         if self.comp.getCompressibleModel() != 'off':
             nb_box = 0
-            box_list = self.init.getCheckedBoxList(self.zone_id)
+            box_list = self.init.getCheckedBoxList(zone_id)
             if box_list == []:
                 for name in self.thermodynamic_list:
                     __checkBox = getattr(self, "checkBox" + name)

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>VolumicConditionsForm</class>
+    <widget class="QWidget" name="VolumicConditionsForm">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>400</width>
+                <height>300</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Form</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+                <widget class="QTabWidget" name="tabWidget">
+                    <property name="currentIndex">
+                        <number>0</number>
+                    </property>
+                    <widget class="QWidget" name="initializationPage">
+                        <attribute name="title">
+                            <string>Initialization</string>
+                        </attribute>
+                        <layout class="QVBoxLayout" name="verticalLayout">
+                            <item>
+                                <widget class="InitializationView" name="saturneInitializationWidget" native="true"/>
+                            </item>
+                            <item>
+                                <widget class="MainFieldsInitializationView" name="neptuneInitializationWidget"
+                                        native="true"/>
+                            </item>
+                        </layout>
+                    </widget>
+                    <widget class="PorosityView" name="porosityPage">
+                        <attribute name="title">
+                            <string>Porosity</string>
+                        </attribute>
+                    </widget>
+                    <widget class="HeadLossesView" name="headLossesPage">
+                        <attribute name="title">
+                            <string>Head losses</string>
+                        </attribute>
+                    </widget>
+                    <widget class="QWidget" name="sourceTermsPage">
+                        <attribute name="title">
+                            <string>Source terms</string>
+                        </attribute>
+                        <layout class="QVBoxLayout" name="verticalLayout_3">
+                            <item>
+                                <widget class="SourceTermsView" name="saturneSourceTermsWidget" native="true"/>
+                            </item>
+                            <item>
+                                <widget class="MainFieldsSourceTermsView" name="neptuneSourceTermsWidget"
+                                        native="true"/>
+                            </item>
+                        </layout>
+                    </widget>
+                    <widget class="GroundwaterLawView" name="groundwaterLawPage">
+                        <attribute name="title">
+                            <string>Groundwater laws</string>
+                        </attribute>
+                    </widget>
+                </widget>
+            </item>
+            <item>
+                <spacer name="verticalSpacer">
+                    <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                        <size>
+                            <width>20</width>
+                            <height>40</height>
+                        </size>
+                    </property>
+                </spacer>
+            </item>
+        </layout>
+    </widget>
+    <customwidgets>
+        <customwidget>
+            <class>InitializationView</class>
+            <extends>QWidget</extends>
+            <header>InitializationView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>PorosityView</class>
+            <extends>QWidget</extends>
+            <header>PorosityView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>HeadLossesView</class>
+            <extends>QWidget</extends>
+            <header>HeadLossesView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>SourceTermsView</class>
+            <extends>QWidget</extends>
+            <header>SourceTermsView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>GroundwaterLawView</class>
+            <extends>QWidget</extends>
+            <header>GroundwaterLawView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>MainFieldsInitializationView</class>
+            <extends>QWidget</extends>
+            <header>MainFieldsInitializationView</header>
+            <container>1</container>
+        </customwidget>
+        <customwidget>
+            <class>MainFieldsSourceTermsView</class>
+            <extends>QWidget</extends>
+            <header>MainFieldsSourceTermsView</header>
+            <container>1</container>
+        </customwidget>
+    </customwidgets>
+    <resources/>
+    <connections/>
+</ui>

@@ -498,8 +498,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         elif section == 'Particles and droplets tracking':
             return ['Statistics']
         elif section == 'Volume zones':
-            return ['Initialization', 'Head losses', 'Porosity',
-                    'Source terms', 'Groundwater laws']
+            return []
         elif section == 'Boundary zones':
             return ['Boundary conditions', 'Particle boundary conditions',
                     'Fluid structure interaction', 'Cathare Coupling',
@@ -1017,33 +1016,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Volume zones'), True)
 
         node_domain = case.xmlGetNode('solution_domain')
-        node_vol = node_domain.xmlGetNode('volumic_conditions')
-        init = False
-        z_st = False
-        z_head_loss = False
-        z_porosity = False
-        z_groundwater = False
-
-        for node in node_vol.xmlGetChildNodeList('zone'):
-            if (node['initialization'] == 'on'):
-                init = True
-            if (node['momentum_source_term'] == 'on'
-                or node['mass_source_term'] == 'on'
-                or node['thermal_source_term'] == 'on'
-                or node['scalar_source_term'] == 'on'):
-                z_st = True
-            if node['head_losses'] == 'on':
-                z_head_loss = True
-            if node['porosity'] == 'on':
-                z_porosity = True
-            if node['groundwater_law'] == 'on':
-                z_groundwater = True
-
-        self.setRowShow(self.tr('Initialization'), init)
-        self.setRowShow(self.tr('Head losses'), z_head_loss)
-        self.setRowShow(self.tr('Porosity'), z_porosity)
-        self.setRowShow(self.tr('Source terms'), z_st)
-        self.setRowShow(self.tr('Groundwater laws'), z_groundwater)
 
         # Boundary zones
 
@@ -1086,43 +1058,18 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.updateBrowserZones(boundary_zone_labels, "Boundary conditions")
 
         # Update volume zones display
-        # TODO split code into smaller methods
-        volume_zones = LocalizationModel("VolumicZone", case).getZones()
-        if volume_zones:
-
-            model2ViewDictionary = volume_zones[0].getModel2ViewDictionary()
-            zonelist_per_treatment = {}
-            for nature, page_name in model2ViewDictionary.items():
-                # TODO remove unelegant fixes for page_name
-                if "source_term" in nature:
-                    page_name = "Source terms"
-                if "groundwater" in nature:
-                    page_name = "Groundwater laws"
-                # Initialize dictionary the first time
-                if page_name not in zonelist_per_treatment:
-                    zonelist_per_treatment[page_name] = []
-
-                # Loop over zones and match them to the corresponding page name
-                zone_labels = []
-                for zone in volume_zones:
-                    zone_info = zone.getNature()
-                    if zone_info[nature] != "off":
-                        zone_labels.append(zone.getLabel())
-                zonelist_per_treatment[page_name] += zone_labels
-
-            # Add zones to browser
-            for page_name, zonelist in zonelist_per_treatment.items():
-                self.updateBrowserZones(set(zonelist), page_name)
+        volume_zone_labels = self._getSortedZoneLabels(case, "VolumicZone")
+        self.updateBrowserZones(volume_zone_labels, "Volume zones")
 
         self.__hideRow()
 
     def _getSortedZoneLabels(self, case, zone_type):
-        boundary_labels = LocalizationModel(zone_type, case).getLabelsZonesList()
-        boundary_ids = LocalizationModel(zone_type, case).getCodeNumbersList()
-        boundary_ids = map(int, boundary_ids)
-        sorted_labels = [None for i in range(len(boundary_labels))]
-        for unsorted_id, sorted_id in enumerate(boundary_ids):
-            sorted_labels[sorted_id - 1] = boundary_labels[unsorted_id]
+        zone_labels = LocalizationModel(zone_type, case).getLabelsZonesList()
+        zone_ids = LocalizationModel(zone_type, case).getCodeNumbersList()
+        zone_ids = map(int, zone_ids)
+        sorted_labels = [None for i in range(len(zone_labels))]
+        for unsorted_id, sorted_id in enumerate(zone_ids):
+            sorted_labels[sorted_id - 1] = zone_labels[unsorted_id]
         return sorted_labels
 
     def __hideRow(self):
