@@ -178,7 +178,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
 
     def defaultValues(self, fieldaId, fieldbId):
-        default = self.thermo_m.defaultValues(self)
+        default = self.thermo_m.defaultValues()
 
         # Drag model
         default['gasdisperseddragmodel']         = 'ishii'
@@ -201,7 +201,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
 
     def defaultValuesContinuous(self):
-        default = self.thermo_m.defaultValues(self)
+        default = self.thermo_m.defaultValues()
         # Drag model
         default['continuousdragmodel']           = 'Large_Interface_Model'
 
