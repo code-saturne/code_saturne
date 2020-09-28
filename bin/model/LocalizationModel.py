@@ -74,7 +74,6 @@ class Zone(object):
         else:
             raise ValueError("Unknown type zone")
 
-
     def __init__(self, typeZone, case = None, label = None, codeNumber = None,
                  localization = None, nature = None):
         """
@@ -103,56 +102,50 @@ class Zone(object):
         else:
             self._nature = self.defaultValues()['nature']
 
-
     def _initNatureList(self, case):
         self._natureList = []
         self._natureDict = {}
         self.case = case
 
-
     def setLabel(self, text):
         if Model().isStr(text):
             self._label = text
 
-
     def getLabel(self):
         return self._label
-
 
     def setLocalization(self, text):
         if Model().isStr(text):
             self._localization = text
 
-
     def getLocalization(self):
         return self._localization
-
 
     def setCodeNumber(self, number):
         if Model().isPositiveInt(number):
             self._codeNumber = number
 
-
     def getCodeNumber(self):
         return self._codeNumber
-
 
     def setNature(self, text):
         if Model().isInList(text, self._natureList):
             self._nature = text
 
-
     def getNature(self):
         return self._nature
-
 
     def getNatureList(self):
         return self._natureList
 
+    def isNatureActivated(self, text):
+        if text in self._nature.keys():
+            return {"on": True, "off": False}[self._nature[text]]
+        else:
+            return False
 
     def getModel2ViewDictionary(self):
         return self._natureDict
-
 
     def defaultValues(self):
         dico = {}
@@ -299,16 +292,24 @@ class VolumicZone(Zone):
         dico = Zone.defaultValues(self)
         dico['label'] = 'Zone_'
         dico['nature'] = {}
-        dico['nature']['initialization']       = "off"
-        dico['nature']['head_losses']          = "off"
-        dico['nature']['porosity']             = "off"
+        dico['nature']['initialization'] = "off"
+        dico['nature']['head_losses'] = "off"
+        dico['nature']['porosity'] = "off"
         dico['nature']['momentum_source_term'] = "off"
-        dico['nature']['mass_source_term']     = "off"
-        dico['nature']['thermal_source_term']  = "off"
-        dico['nature']['scalar_source_term']   = "off"
-        dico['nature']['groundwater_law']      = "off"
+        dico['nature']['mass_source_term'] = "off"
+        dico['nature']['thermal_source_term'] = "off"
+        dico['nature']['scalar_source_term'] = "off"
+        dico['nature']['groundwater_law'] = "off"
         return dico
 
+    def isNatureActivated(self, text):
+        if text == "source_term":
+            status = False
+            for source_term_type in ["momentum", "mass", "thermal", "scalar"]:
+                status = status or super().isNatureActivated(source_term_type + "_source_term")
+            return status
+        else:
+            return super().isNatureActivated(text)
 
     def tr(self, text):
         """

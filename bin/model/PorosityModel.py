@@ -90,7 +90,7 @@ class PorosityModel(Variables, Model):
         zoneDico = {}
         zonesList = LocalizationModel('VolumicZone', self.case).getZones()
         for zone in zonesList:
-            if zone.getNature()['porosity'] == 'on':
+            if zone.isNatureActivated("porosity"):
                 label = zone.getLabel()
                 zoneid = zone.getCodeNumber()
                 localization = zone.getLocalization()
@@ -106,7 +106,8 @@ class PorosityModel(Variables, Model):
         Set name and label zone for porosity markups.
         """
         self.node_porosit.xmlInitChildNode('porosity', zone_id=zoneid)
-        self.getPorosityModel(zoneid)
+        mdl = self.__defaultValues()['choice']
+        self.setPorosityModel(zoneid, mdl)
 
 
     @Variables.noUndo
@@ -117,12 +118,11 @@ class PorosityModel(Variables, Model):
         self.isInt(int(zoneid))
         node = self.node_porosit.xmlGetNode('porosity', zone_id=zoneid)
 
-        mdl = node['model']
-        if mdl == None:
-            mdl = self.__defaultValues()['choice']
-            self.setPorosityModel(zoneid, mdl)
-        return mdl
-
+        try:
+            return node["model"]
+        except TypeError as e:
+            message = "Porosity not activated for zone : {0}".format(zoneid)
+            raise Exception(message).with_traceback(e.__traceback__)
 
     @Variables.undoLocal
     def setPorosityModel(self, zoneid, choice):

@@ -112,7 +112,7 @@ class GroundwaterLawModel(Variables, Model):
         zoneDico = {}
         zonesList = LocalizationModel('VolumicZone', self.case).getZones()
         for zone in zonesList:
-            if zone.getNature()['groundwater_law'] == 'on':
+            if zone.isNatureActivated("groundwater_law"):
                 label = zone.getLabel()
                 zoneid = zone.getCodeNumber()
                 localization = zone.getLocalization()
