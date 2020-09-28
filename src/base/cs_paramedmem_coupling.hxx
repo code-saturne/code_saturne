@@ -72,11 +72,9 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_interpkernel_create(const char  *name,
-                                  int         *grp1_global_ranks,
-                                  int          grp1_size,
-                                  int         *grp2_global_ranks,
-                                  int          grp2_size);
+cs_paramedmem_coupling_create(const char *app1_name,
+                              const char *app2_name,
+                              const char *cpl_name);
 
 
 /*----------------------------------------------------------------------------
@@ -117,9 +115,7 @@ int
 cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
                           const char                *name,
                           const char                *select_criteria,
-                          int                        elt_dim,
-                          bool                       is_source,
-                          bool                       is_dest);
+                          int                        elt_dim);
 
 /*----------------------------------------------------------------------------
  * Initialize nodal coupled meshes.
@@ -129,24 +125,7 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_paramedmem_init_meshes(cs_paramedmem_coupling_t  *coupling);
-
-/*----------------------------------------------------------------------------
- * Return the ParaMEDMEM mesh id associated with a given mesh name,
- * or -1 if no association found.
- *
- * parameters:
- *   coupling  <-- coupling structure
- *   mesh_name <-- mesh name
- *
- * returns:
- *    mesh id for this coupling, or -1 if mesh name is not associated
- *    with this coupling.
- *----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_mesh_id(cs_paramedmem_coupling_t  *coupling,
-                      const char                *mesh_name);
+cs_paramedmem_init_mesh(cs_paramedmem_coupling_t  *coupling);
 
 /*----------------------------------------------------------------------------
  * Get number of associated coupled elements in coupled mesh
@@ -160,8 +139,7 @@ cs_paramedmem_mesh_id(cs_paramedmem_coupling_t  *coupling,
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
-cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t *coupling,
-                              int                             mesh_id);
+cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t *coupling);
 
 /*----------------------------------------------------------------------------
  * Get local list of coupled elements (0 to n-1 numbering) for a coupled mesh
@@ -172,8 +150,7 @@ cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t *coupling,
  *----------------------------------------------------------------------------*/
 
 const cs_lnum_t *
-cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t *coupling,
-                                int                             mesh_id);
+cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t *coupling);
 
 /*----------------------------------------------------------------------------
  * Create a MEDCoupling field structure.
@@ -194,7 +171,6 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t *coupling,
 int
 cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         const char                *name,
-                        int                        mesh_id,
                         int                        dim,
                         int                        medcpl_field_type,
                         int                        medcpl_time_discr,
@@ -215,7 +191,6 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
 
 int
 cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
-                           int                        mesh_id,
                            const char                *name);
 
 /*----------------------------------------------------------------------------
@@ -303,23 +278,8 @@ cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *coupling);
 
 void
 cs_paramedmem_reattach_field(cs_paramedmem_coupling_t  *coupling,
-                             int                        field_id);
-
-/*============================================================================
- * Public C++ function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Map MPI ranks within cs_glob_mpi_comm to their values in MPI_COMM_WORLD.
- *
- * The caller is responsible for freeing the returned array
- *
- * return:
- *   list of ranks in MPI_COMM_WORLD
- *----------------------------------------------------------------------------*/
-
-int *
-cs_paramedmem_get_mpi_comm_world_ranks(void);
+                             int                        field_id,
+                             int                        dec_id);
 
 /*----------------------------------------------------------------------------*/
 
