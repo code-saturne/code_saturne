@@ -566,16 +566,6 @@ do ifac = 1, nfabor
   itrifb(ifac) = 0
 enddo
 
-! Type symetrie : on en a besoin dans le cas du calcul des gradients
-!     par moindres carres etendu avec extrapolation du gradient au bord
-!     La valeur 0 permet de ne pas extrapoler le gradient sur les faces.
-!     Habituellement, on evite l'extrapolation sur les faces de symetries
-!     pour ne pas tomber sur une indetermination et une matrice 3*3 non
-!     inversible dans les configurations 2D).
-do ifac = 1, nfabor
-  isympa(ifac) = 0
-enddo
-
 ! Old mass flux. We try not to do the same operation multiple times
 ! (for shared mass fluxes), without doing too complex tests.
 

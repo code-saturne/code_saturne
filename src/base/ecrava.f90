@@ -458,14 +458,6 @@ if (iecaux.eq.1) then
   call restart_write_linked_fields(rp, "inner_mass_flux_id", iecr)
   call restart_write_linked_fields(rp, "boundary_mass_flux_id", iecr)
 
-  ! Symmetry flag (used for least-squares gradients,
-  ! with extrapolation at boundary).
-
-  rubriq = 'isympa_fb_phase01'
-  itysup = 3
-  nbval  = 1
-  call restart_write_section_int_t(rp,rubriq,itysup,nbval,isympa)
-
   ! Boundary condition coefficients
 
   call restart_write_bc_coeffs(rp)

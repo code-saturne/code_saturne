@@ -605,22 +605,13 @@ if (nfabok.eqv..true.) then
 
   call restart_read_bc_coeffs(rp)
 
-  ! Symmetry type (used for least squares gradients on extended
-  ! neighborhood, with extrapolation of gradient at boundary).
-
-  rubriq = 'isympa_fb_phase01'
-  itysup = 3
-  nbval  = 1
-  call restart_read_section_int_t(rp,rubriq,itysup,nbval,isympa,ierror)
-  nberro = nberro+ierror
-
 endif
 !     fin du test "si les supports des faces de bord sont identiques"
 
 if (ilu.eq.1) then
 
 !     Si erreur, on previent mais pas stop :
-!       (on n'a pas forcement les coefs 2, on n'a pas forcement isympa
+!       (on n'a pas forcement les coefs 2
 !        si on prend les fichiers d'une version anterieure)
   if (nberro.ne.0) then
     car54 = 'Lecture des conditions aux limites                    '
