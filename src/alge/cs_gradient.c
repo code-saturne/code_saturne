@@ -2399,7 +2399,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-  const int *isympa = fvq->b_sym_flag;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_real_33_t   *restrict cocgb = NULL;
@@ -2413,10 +2412,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      &cocgb);
 
   int        g_id, t_id;
-  cs_real_t  pfac;
-  cs_real_t  extrab, unddij, umcbdd, udbfs;
-  cs_real_3_t  dc, dddij, dsij;
-  cs_real_4_t  fctb;
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
@@ -2461,7 +2456,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(extrab, umcbdd, udbfs, dddij)
+#     pragma omp parallel for
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2472,9 +2467,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
             cs_lnum_t ii = b_face_cells[f_id];
 
-            umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
-            udbfs = 1. / b_face_surf[f_id];
+            cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
+            cs_real_t udbfs = 1. / b_face_surf[f_id];
 
+            cs_real_t dddij[3];
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               dddij[ll] =   udbfs * b_face_normal[f_id][ll]
                           + umcbdd * diipb[f_id][ll];
@@ -2523,7 +2519,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(pfac, dc, fctb)
+#     pragma omp parallel for
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2534,6 +2530,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
           cs_lnum_t jj = i_face_cells[f_id][1];
 
           cs_real_t pond = weight[f_id];
+
+          cs_real_t pfac, dc[3], fctb[4];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2580,13 +2578,15 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     if (halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL) {
 
-#     pragma omp parallel for private(dc, fctb, pfac)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
         for (cs_lnum_t cidx = cell_cells_idx[ii];
              cidx < cell_cells_idx[ii+1];
              cidx++) {
 
           cs_lnum_t jj = cell_cells_lst[cidx];
+
+          cs_real_t pfac, dc[3], fctb[4];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2615,7 +2615,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(unddij, udbfs, umcbdd, pfac, dsij)
+#     pragma omp parallel for
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2626,16 +2626,17 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
             cs_lnum_t ii = b_face_cells[f_id];
 
-            unddij = 1. / b_dist[f_id];
-            udbfs = 1. / b_face_surf[f_id];
-            umcbdd = (1. - coefbp[f_id]) * unddij;
+            cs_real_t unddij = 1. / b_dist[f_id];
+            cs_real_t udbfs = 1. / b_face_surf[f_id];
+            cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
 
+            cs_real_t dsij[3];
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               dsij[ll] =   udbfs * b_face_normal[f_id][ll]
                          + umcbdd*diipb[f_id][ll];
 
-            pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
-                   * unddij;
+            cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)
+                             * rhsv[ii][3]) * unddij;
 
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhsv[ii][ll] += dsij[ll] * pfac;
@@ -2659,7 +2660,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(dc, pfac, fctb)
+#     pragma omp parallel for
       for (t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -2675,6 +2676,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
           };
 
           cs_real_t pond = weight[f_id];
+
+          cs_real_t pfac, dc[3], fctb[4];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2722,7 +2725,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     if (halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL) {
 
-#     pragma omp parallel for private(dc, fctb, pfac)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
         for (cs_lnum_t cidx = cell_cells_idx[ii];
              cidx < cell_cells_idx[ii+1];
@@ -2739,6 +2742,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
            *  b) - 0.5 * dc * f_ext[ii]
            *  c) - 0.5 * dc * f_ext[jj]
            */
+
+          cs_real_t pfac, dc[3], fctb[4];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2767,7 +2772,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(unddij, udbfs, umcbdd, pfac, dsij)
+#     pragma omp parallel for
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -2778,15 +2783,16 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
           cs_real_t poro = b_poro_duq[is_porous*f_id];
 
-          unddij = 1. / b_dist[f_id];
-          udbfs = 1. / b_face_surf[f_id];
-          umcbdd = (1. - coefbp[f_id]) * unddij;
+          cs_real_t unddij = 1. / b_dist[f_id];
+          cs_real_t udbfs = 1. / b_face_surf[f_id];
+          cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
 
+          cs_real_t dsij[3];
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             dsij[ll] =   udbfs * b_face_normal[f_id][ll]
                        + umcbdd*diipb[f_id][ll];
 
-          pfac
+          cs_real_t pfac
             =   (coefap[f_id]*inc
               + (  (coefbp[f_id] -1.)
                  * (  rhsv[ii][3]
@@ -6184,8 +6190,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   cs_lnum_t  c_id1, c_id2, i, j, k;
   cs_real_t  pfac, ddc;
-  cs_real_3_t  dc;
-  cs_real_3_t  fctb;
+  cs_real_t  dc[3], fctb[3];
 
   cs_real_33_t *rhs;
 
