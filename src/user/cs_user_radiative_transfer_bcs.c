@@ -56,10 +56,6 @@ BEGIN_C_DECLS
 
 /*! \file cs_user_radiative_transfer_bcs.c */
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
