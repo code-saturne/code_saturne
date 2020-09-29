@@ -33,8 +33,6 @@
 !------------------------------------------------------------------------------
 !> \param[out]    indhyd        indicateur de mise a jour de phydr
 !> \param[in]     iterns        Navier-Stokes iteration number
-!> \param[in]     isostd        indicator of standard outlet and index
-!>                               of the reference outlet face
 !> \param[in]     fext          external force generating hydrostatic pressure
 !> \param[in]     dfext         external force increment
 !>                              generating hydrostatic pressure
@@ -51,7 +49,6 @@
 
 subroutine calhyd &
  ( indhyd , iterns ,                                              &
-   isostd ,                                                       &
    fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
    viscf  , viscb  ,                                              &
@@ -63,7 +60,6 @@ subroutine calhyd &
 !===============================================================================
 
 use atincl, only: iatmst
-use dimens, only: ndimfb
 use paramx
 use numvar
 use entsor
@@ -83,8 +79,6 @@ implicit none
 ! Arguments
 
 integer          indhyd, iterns
-
-integer          isostd(nfabor+1)
 
 double precision fext(3,ncelet)
 double precision dfext(3,ncelet)

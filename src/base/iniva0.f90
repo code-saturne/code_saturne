@@ -87,7 +87,7 @@ integer          f_id, kdflim
 
 logical          have_previous
 
-double precision xxk, xcmu, trii, clvfmn
+double precision xxk, xcmu, trii, clvfmn, visls_0
 
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom
@@ -230,23 +230,27 @@ if (ippmod(icompf).ge.0) then
   call cs_cf_thermo_default_init
 
   ! Default diffusivity for total energy
-  visls0(ienerg) = visls0(itempk)/cv0
+
+  call field_get_key_double(ivarfl(isca(itempk)), kvisl0, visls_0)
+  visls_0 = visls_0 / cv0
+  call field_set_key_double(ivarfl(isca(ienerg)), kvisl0, visls_0)
 endif
 
 ! Diffusivite des scalaires
 do iscal = 1, nscal
   call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+  call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
   ! Diffusivite aux cellules (et au pdt precedent si ordre2)
   if (ifcvsl.ge.0) then
     call field_get_val_s(ifcvsl, cpro_viscls)
     do iel = 1, ncel
-      cpro_viscls(iel) = visls0(iscal)
+      cpro_viscls(iel) = visls_0
     enddo
     call field_have_previous(ifcvsl, have_previous)
     if (have_previous) then
       call field_get_val_prev_s(ifcvsl, cproa_viscls)
       do iel = 1, ncel
-        cproa_viscls(iel) = visls0(iscal)
+        cproa_viscls(iel) = visls_0
       enddo
     endif
   endif

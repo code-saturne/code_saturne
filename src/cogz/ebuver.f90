@@ -60,6 +60,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -72,14 +73,13 @@ integer          iok
 ! Local variables
 
 !===============================================================================
-!===============================================================================
 ! 1. OPTIONS DU CALCUL : TABLEAUX DE ppincl.h : formats 2000
 !===============================================================================
 
 ! --> Coefficient de relaxation de la masse volumique
 
-if( srrom.lt.0d0 .or. srrom.ge.1d0) then
-  WRITE(NFECRA,2000)'SRROM ', SRROM
+if (srrom.lt.0d0 .or. srrom.ge.1d0) then
+  write(nfecra,2000) 'srrom ', srrom
   iok = iok + 1
 endif
 
@@ -89,24 +89,24 @@ endif
 
 ! --> Masse volumique
 
-if( ro0.lt.0d0) then
-  WRITE(NFECRA,3000)'RO0   ', RO0
+if (ro0.lt.0d0) then
+  write(nfecra,3000)'ro0   ', ro0
   iok = iok + 1
 endif
 
 ! --> Diffusivite dynamique en kg/(m s) : DIFTL0
 
-if( diftl0.lt.0d0) then
-  WRITE(NFECRA,3010)'DIFTL0', DIFTL0
+if (diftl0.lt.0d0) then
+  write(nfecra,3010) 'diftl0', diftl0
   iok = iok + 1
 else
-  visls0(iscalt) = diftl0
+  call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
 endif
 
 ! --> Constante du modele EBU
 
-if( cebu.lt.0d0) then
-  WRITE(NFECRA,3020)'CEBU', CEBU
+if (cebu.lt.0d0) then
+  write(nfecra,3020) 'cebu', cebu
   iok = iok + 1
 endif
 

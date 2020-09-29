@@ -2232,12 +2232,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       int iwall = CS_SMOOTHWALL;
 
       if (boundaries->rough[izone] >= 0.0) {
-        const cs_field_t  *fv = cs_field_by_name_try("velocity");
-        const int var_key_id = cs_field_key_id("variable_id");
 
         iwall = CS_ROUGHWALL;
         cs_field_t *f_roughness = cs_field_by_name_try("boundary_roughness");
-        cs_field_t *f_roughness_t = cs_field_by_name_try("boundary_thermal_roughness");
+        cs_field_t *f_roughness_t
+          = cs_field_by_name_try("boundary_thermal_roughness");
 
         /* Roughness value (z0) */
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {

@@ -459,7 +459,6 @@ cs_atmo_init_meteo_profiles(void)
 {
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
-  cs_real_t cmu = cs_turb_cmu;
 
   cs_atmo_option_t *aopt = &_atmo_option;
   cs_real_t z0 = aopt->meteo_z0;
@@ -501,7 +500,6 @@ cs_atmo_init_meteo_profiles(void)
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
-  cs_real_t angle = aopt->meteo_angle;
 
   /* Friction temperature */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g);
@@ -556,7 +554,6 @@ cs_atmo_compute_meteo_profiles(void)
 
   cs_atmo_option_t *aopt = &_atmo_option;
   cs_real_t z0 = aopt->meteo_z0;
-  cs_real_t zref = aopt->meteo_zref;
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* potential temp at ref */
@@ -564,7 +561,6 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
-  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
   cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   /* LMO inverse, ustar at ground */

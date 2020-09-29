@@ -297,7 +297,7 @@ integer ::         ifcvsl, itplus, itstar
 
 double precision :: xvsl  , srfbn , heq
 double precision :: diipbx, diipby, diipbz
-double precision :: numer, denom
+double precision :: numer, denom, visls_0
 
 double precision, allocatable, dimension(:) :: theipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -389,6 +389,9 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
   if (ifcvsl .ge. 0) then
     call field_get_val_s(ifcvsl, cviscl)
+    visls_0 = -1
+  else
+    call field_get_key_double(ivarfl(ivar), kvisl0, visls_0)
   endif
 
   ! Boundary condition pointers for gradients and advection
@@ -406,7 +409,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     if (ifcvsl.ge.0) then
       xvsl = cviscl(iel)
     else
-      xvsl = visls0(iscalt)
+      xvsl = visls_0
     endif
 
     srfbn = surfbn(ifac)

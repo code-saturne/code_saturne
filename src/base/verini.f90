@@ -86,7 +86,7 @@ integer          iviext, iscacp
 integer          iroext
 integer          ivisext
 double precision scmaxp, scminp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -817,8 +817,9 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8000)t0,p0
     iok = iok + 1
   endif
-  if (visls0(itempk).le.0.d0) then
-    write(nfecra,8010) visls0(itempk)
+  call field_get_key_double(ivarfl(isca(itempk)), kvisl0, visls_0)
+  if (visls_0.le.0.d0) then
+    write(nfecra,8010) visls_0
     iok = iok + 1
   endif
   if (viscv0.lt.0.d0) then

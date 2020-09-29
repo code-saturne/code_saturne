@@ -144,6 +144,28 @@ cs_solving_info_t *solving_info;
 */
 char *restart_file;
 
+/*!
+  \var diffusivity_ref
+  Reference molecular diffusivity for a scalar (\f$kg.m^{-1}.s^{-1}\f$).
+  Negative value if not initialized or used.
+
+  \warning: for a temperature, the diffusivity is defined as
+  \f$\lambda/C_p\f$ where \f$\lambda\f$ and \f$C_p\f$ are the conductivity
+  and specific heat. When using the Graphical Interface, \f$\lambda\f$ and
+  \f$C_p\f$ are specified separately, and the matching molecular diffusivity
+  is computed automatically.\n
+  With the compressible module, \ref diffusivity_ref (given in \ref uscfx2)
+  is irectly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n
+  With gas or coal combustion, the molecular diffusivity of the enthalpy
+  (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
+  ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
+  With the electric module, for the Joule effect, the diffusivity is
+  specified by the user in \ref cs_user_physical_properties.c (even if
+  it is constant). For the electric arcs, it is calculated from the
+  thermochemical data file.
+*/
+double diffusivity_ref;
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/

@@ -345,6 +345,12 @@ end subroutine usppmo
 
 !> \brief User subroutine for the input of additional user parameters.
 !
+!>  This subroutine allows setting parameters
+!>  which do not already appear in the other subroutines of this file.
+!>
+!>  It is possible to add or remove parameters.
+!>  The number of physical properties and variables is known here.
+!>
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -396,14 +402,6 @@ integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 type(var_cal_opt) :: vcopt
-
-!===============================================================================
-
-!>  This subroutine allows setting parameters
-!>  which do not already appear in the other subroutines of this file.
-!>
-!>  It is possible to add or remove parameters.
-!>  The number of physical properties and variables is known here.
 
 !===============================================================================
 
@@ -1112,12 +1110,12 @@ implicit none
 ivivar = 0
 
 ! --> Reference molecular thermal conductivity
-!       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
+!       visls0 = lambda0 (molecular thermal conductivity, W/(m K))
 
-!       WARNING: visls0 must be strictly positive
-!         (set a realistic value here even if conductivity is variable)
+!     Reference conductivity must be strictly positive
+!      (set a realistic value here even if conductivity is variable)
 
-visls0(itempk) = 3.d-2
+call field_set_key_double(ivarfl(isca(itempk)), kvisl0, 3.d-2)
 
 !       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'cs_user_physical_properties'

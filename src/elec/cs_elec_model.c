@@ -468,10 +468,9 @@ _field_pointer_properties_map_electric_arcs(void)
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
-                           cs_real_t *diftl0)
+CS_PROCF (elini1, ELINI1) (cs_real_t *diftl0)
 {
-  cs_electrical_model_specific_initialization(visls0, diftl0);
+  cs_electrical_model_specific_initialization(diftl0);
 }
 
 void
@@ -648,19 +647,18 @@ cs_electrical_model_finalize(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(cs_real_t  *visls0,
-                                            cs_real_t  *diftl0)
+cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int keysca = cs_field_key_id("scalar_id");
+  const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   cs_var_cal_opt_t var_cal_opt;
 
   /* specific initialization for field */
   f = CS_F_(potr);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  int id = cs_field_get_key_int(f, keysca) - 1;
   var_cal_opt.iconv  = 0;
   var_cal_opt.istat  = 0;
   var_cal_opt.idiff  = 1;
@@ -674,7 +672,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(f, keysca) - 1;
     var_cal_opt.iconv  = 0;
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
@@ -685,26 +682,23 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   if (ielarc > 1) {
     cs_field_t  *fp = cs_field_by_name_try("vec_potential");
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp, keysca) - 1;
     var_cal_opt.iconv  = 0;
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
-    visls0[id  ] = 1.;
     cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
+    cs_field_set_key_double(fp, kvisls0, 1.0);
   }
 
   /* for all specific field */
   f = CS_F_(h);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  id = cs_field_get_key_int(f, keysca) - 1;
   var_cal_opt.blencv = 1.;
   cs_field_set_key_double(f, ksigmas, 0.7);
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   f = CS_F_(potr);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  id = cs_field_get_key_int(f, keysca) - 1;
   var_cal_opt.blencv = 1.;
   cs_field_set_key_double(f, ksigmas, 0.7);
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -712,7 +706,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(f, keysca) - 1;
     var_cal_opt.blencv = 1.;
     cs_field_set_key_double(f, ksigmas, 0.7);
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -721,7 +714,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   if (ielarc > 1) {
     cs_field_t  *fp = cs_field_by_name_try("vec_potential");
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp, keysca) - 1;
     var_cal_opt.blencv = 1.;
     cs_field_set_key_double(f, ksigmas, 0.7);
     cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
@@ -731,7 +723,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     for (int igaz = 0; igaz < cs_glob_elec_properties->ngaz - 1; igaz++) {
       f = CS_FI_(ycoel, igaz);
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      id = cs_field_get_key_int(f, keysca) - 1;
       var_cal_opt.blencv = 1.;
       cs_field_set_key_double(f, ksigmas, 0.7);
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -743,8 +734,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   _elec_option.pot_diff = 1000.;//FIXME
 
   _cs_electrical_model_verify();
-
-  return;
 }
 
 /*----------------------------------------------------------------------------

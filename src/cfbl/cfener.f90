@@ -110,7 +110,7 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
@@ -395,8 +395,9 @@ if (vcopt_e%idiff.ge. 1) then
   endif
 !     (CP/CV)*MUT/TURB_SCHMIDT+LAMBDA/CV
   if(ifcvsl.lt.0)then
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
     do iel = 1, ncel
-      w1(iel) = w1(iel) + visls0(iscal)
+      w1(iel) = w1(iel) + visls_0
     enddo
   else
     do iel = 1, ncel

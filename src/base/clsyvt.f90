@@ -785,7 +785,7 @@ integer          ivar, f_id
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl
 
-double precision cpp, rkl, visclc
+double precision cpp, rkl, visclc, visls_0
 double precision distbf, srfbnf
 double precision rnx, rny, rnz
 double precision hintt(6)
@@ -841,6 +841,9 @@ call field_get_name(ivarfl(ivar), fname)
 ! Index of the corresponding turbulent flux
 call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
+! Reference diffusivity
+call field_get_key_double(f_id, kvisl0, visls_0)
+
 call field_get_coefa_v(f_id,coefaut)
 call field_get_coefb_v(f_id,coefbut)
 call field_get_coefaf_v(f_id,cofafut)
@@ -890,7 +893,7 @@ do ifac = 1, nfabor
     rnz = surfbo(3,ifac)/srfbnf
 
     if (ifcvsl .lt. 0) then
-      rkl = visls0(iscal)/cpp
+      rkl = visls_0/cpp
     else
       rkl = viscls(iel)/cpp
     endif
@@ -1040,7 +1043,7 @@ integer          ivar, f_id
 integer          ifac, iel
 integer          ifcvsl
 
-double precision rkl, visclc
+double precision rkl, visclc, visls_0
 double precision distbf, srfbnf
 double precision rnx, rny, rnz, temp
 double precision hintt(6)
@@ -1088,6 +1091,9 @@ endif
 ! retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(ivarfl(ivar), ksigmas, turb_schmidt)
 
+! Reference diffusivity
+call field_get_key_double(f_id, kvisl0, visls_0)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -1107,7 +1113,7 @@ do ifac = 1, nfabor
     rnz = surfbo(3,ifac)/srfbnf
 
     if (ifcvsl .lt. 0) then
-      rkl = visls0(iscal)
+      rkl = visls_0
     else
       rkl = viscls(iel)
     endif

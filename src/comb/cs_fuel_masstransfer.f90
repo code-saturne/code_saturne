@@ -35,12 +35,11 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !______________________________________________________________________________!
 
 subroutine cs_fuel_masstransfer &
- ( ncelet , ncel )
+ ( ncel )
 
 !===============================================================================
 ! Module files
@@ -67,7 +66,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          ncel
 
 ! Local variables
 
@@ -77,7 +76,7 @@ integer          ifcvsl
 double precision xng,xnuss
 double precision pparo2 , xdffli , xdfext , xdftot0 , xdftot1
 double precision diacka
-double precision dcoke , surf , lambda
+double precision dcoke , surf , lambda, visls_0
 !
 double precision  pref
 
@@ -144,6 +143,8 @@ do icla = 1, nclafu
   call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
   if ( icp.ge.0 ) call field_get_val_s(icp, cpro_cp)
 
+  call field_get_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
+
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
       if (icp.ge.0) then
@@ -153,9 +154,9 @@ do icla = 1, nclafu
       endif
     else
       if (icp.ge.0) then
-        lambda = visls0(iscalt) * cpro_cp(iel)
+        lambda = visls_0 * cpro_cp(iel)
       else
-        lambda = visls0(iscalt) * cp0
+        lambda = visls_0 * cp0
       endif
     endif
 

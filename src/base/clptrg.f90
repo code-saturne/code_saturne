@@ -196,7 +196,7 @@ double precision cpp
 double precision sigmak, sigmae
 double precision coef_mom,coef_momm
 double precision one_minus_ri
-double precision dlmo,dt,tm,dist2,flux
+double precision dlmo,dt,tm,flux
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
@@ -1861,8 +1861,7 @@ double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
 double precision yplus, phit, pimp, temp, tet, uk
 double precision viscis, visctc, cofimp
-double precision dtplus, rough_t
-double precision yplus_t
+double precision dtplus, rough_t, visls_0
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef
@@ -2030,8 +2029,11 @@ endif
 ! Does the scalar behave as a temperature ?
 call field_get_key_int(f_id, kscacp, iscacp)
 
-! retrieve turbulent Schmidt value for current scalar
+! Retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(f_id, ksigmas, turb_schmidt)
+
+! Reference diffusivity
+call field_get_key_double(f_id, kvisl0, visls_0)
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -2064,7 +2066,7 @@ do ifac = 1, nfabor
     endif
 
     if (ifcvsl.lt.0) then
-      rkl = visls0(iscal)
+      rkl = visls_0
       prdtl = cpp*visclc/rkl
     else
       rkl = viscls(iel)

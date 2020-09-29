@@ -102,6 +102,7 @@ integer          ivoid(1)
 integer          ielup, id_x1, id_vdp_i, imasac, id_pro, id_drift
 
 double precision epsrgp, climgp, extrap, blencp
+double precision visls_0
 double precision thetap
 double precision rhovdt
 double precision omegaa
@@ -380,8 +381,10 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     else
 
+      call field_get_key_double(ivarfl(ivar), kvisl0, visls_0)
+
       do iel = 1, ncel
-        viscce(iel) = viscce(iel) + visls0(iscal)/crom(iel)
+        viscce(iel) = viscce(iel) + visls_0/crom(iel)
       enddo
 
     endif

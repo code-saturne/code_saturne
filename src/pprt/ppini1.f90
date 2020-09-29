@@ -131,7 +131,7 @@ endif
 ! ---> Physique particuliere : Versions electriques
 
 if (ippmod(ieljou).ge.1.or.ippmod(ielarc).ge.1) then
-  call elini1 (visls0, diftl0)
+  call elini1(diftl0)
 endif
 
 ! ---> Physique particuliere : Ecoulements atmospheriques

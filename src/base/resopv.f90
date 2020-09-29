@@ -191,7 +191,7 @@ double precision residu, phydr0, rnormp
 double precision ardtsr, arsr  , thetap
 double precision dtsrom
 double precision epsrgp, climgp, extrap, epsilp
-double precision drom  , dronm1, relaxp
+double precision drom  , relaxp
 double precision hint, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
@@ -469,9 +469,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
   else
 
     call calhyd &
-    !==========
     ( indhyd , iterns ,                       &
-      isostd ,                                &
       frcxt  , dfrcxt ,                       &
       cvar_hydro_pres, iflux  , bflux ,       &
       viscf  , viscb  ,                       &

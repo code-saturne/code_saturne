@@ -32,12 +32,9 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine atiniv0( nvar, nscal, dt )
+subroutine atiniv0
 
 !===============================================================================
 ! Module files
@@ -534,10 +531,9 @@ end subroutine atiniv0
 !______________________________________________________________________________!
 !> \param[in]   nvar        total number of variables
 !> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine atiniv1( nvar, nscal, dt )
+subroutine atiniv1( nvar, nscal )
 
 !===============================================================================
 ! Module files
@@ -582,7 +578,6 @@ double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
 double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp

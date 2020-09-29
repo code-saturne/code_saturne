@@ -155,7 +155,7 @@ module ppthch
   !> \anchor diftl0
   !> molecular diffusivity for the enthalpy (\f$kg.m^{-1}.s^{-1}\f$)
   !> for gas or coal combustion (the code then automatically sets
-  !> \ref optcal::visls0 "visls0" to \ref diftl0 for the scalar
+  !> \ref diffusivity_ref to \ref diftl0 for the scalar
   !> representing the enthalpy).
   !>
   !> Always useful for gas or coal combustion.

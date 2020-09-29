@@ -171,14 +171,14 @@ double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, nusury, yplus, dplus, yk
 double precision gredu, temp
-double precision cfnnu, cfnns, cfnnk, cfnne
+double precision cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
 double precision xnuii, xnuit, xmutlm, mut_lm_dmut
 double precision rcprod
 double precision hflui, hint, pimp, qimp
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
-double precision visclc, visctc, romc  , distbf, srfbnf, efvisc
+double precision visclc, visctc, romc  , distbf, srfbnf
 double precision cofimp, ypup
 double precision bldr12
 double precision xkip
@@ -256,8 +256,7 @@ type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 interface
 
   subroutine clptur_scalar(iscal  , isvhb   , icodcl  , rcodcl  ,     &
-                           byplus , bdplus  , buk     , buet    ,     &
-                           ustar  , bcfnns  ,                         &
+                           byplus , bdplus  , buk     , bcfnns  ,     &
                            hbord  , theipb  ,                         &
                            tetmax , tetmin  , tplumx  , tplumn  )
 
@@ -265,8 +264,7 @@ interface
     integer          iscal, isvhb
     integer, pointer, dimension(:,:) :: icodcl
     double precision, pointer, dimension(:,:,:) :: rcodcl
-    double precision, dimension(:) :: byplus, bdplus, buk
-    double precision, dimension(:) :: buet, ustar, bcfnns
+    double precision, dimension(:) :: byplus, bdplus, buk, bcfnns
     double precision, pointer, dimension(:) :: hbord, theipb
     double precision tetmax, tetmin, tplumx, tplumn
 
@@ -1933,8 +1931,7 @@ do iscal = 1, nscal
     if (f_dim.eq.1) then
 
       call clptur_scalar(iscal  , isvhb , icodcl  , rcodcl  ,       &
-                         byplus , bdplus, buk     , buet    ,       &
-                         ustar  , bcfnns          ,                 &
+                         byplus , bdplus, buk     , bcfnns  ,       &
                          hbord  , theipb          ,                 &
                          tetmax , tetmin, tplumx  , tplumn  )
 
@@ -2212,8 +2209,7 @@ end subroutine
 
 subroutine clptur_scalar &
  ( iscal  , isvhb  , icodcl , rcodcl  ,                           &
-   byplus , bdplus , buk    , buet    ,                           &
-   ustar  , bcfnns ,                                              &
+   byplus , bdplus , buk    , bcfnns  ,                           &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
 
@@ -2251,8 +2247,7 @@ integer          iscal, isvhb
 integer, pointer, dimension(:,:) :: icodcl
 
 double precision, pointer, dimension(:,:,:) :: rcodcl
-double precision, dimension(:) :: byplus, bdplus, buk, buet
-double precision, dimension(:) :: ustar , bcfnns
+double precision, dimension(:) :: byplus, bdplus, buk, bcfnns
 double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
@@ -2270,10 +2265,9 @@ double precision yplus, dplus, phit, pimp, pimp_al, rcprod, temp, tet, uk
 double precision viscis, visctc, xmutlm, ypth, xnuii
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
-double precision turb_schmidt, exchange_coef
+double precision turb_schmidt, exchange_coef, visls_0
 double precision mut_lm_dmut
 double precision rough_t
-double precision efvisc
 
 character(len=80) :: fname
 
@@ -2473,8 +2467,11 @@ endif
 ! Does the scalar behave as a temperature ?
 call field_get_key_int(f_id, kscacp, iscacp)
 
-! retrieve turbulent Schmidt value for current scalar
+! Retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(f_id, ksigmas, turb_schmidt)
+
+! Reference diffusivity
+call field_get_key_double(f_id, kvisl0, visls_0)
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -2509,7 +2506,7 @@ do ifac = 1, nfabor
     endif
 
     if (ifcvsl.lt.0) then
-      rkl = visls0(iscal)
+      rkl = visls_0
       prdtl = cpp*visclc/rkl
     else
       rkl = viscls(iel)
@@ -2694,7 +2691,7 @@ do ifac = 1, nfabor
     endif
 
     if (ifcvsl.lt.0) then
-      rkl = visls0(iscal)
+      rkl = visls_0
     else
       rkl = viscls(iel)
     endif
@@ -3040,7 +3037,7 @@ double precision distbf, heq, yptp, hflui, hext
 double precision yplus, dplus, rcprod, uk
 double precision visctc, xmutlm, ypth, xnuii, srfbnf
 double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 double precision rough_t
 
 double precision, dimension(:), pointer :: bpro_rough_t
@@ -3091,6 +3088,9 @@ call field_get_key_int(f_id, kscacp, iscacp)
 ! retrieve turbulent Schmidt value for current vector
 call field_get_key_double(f_id, ksigmas, turb_schmidt)
 
+! Reference diffusivity
+call field_get_key_double(f_id, kvisl0, visls_0)
+
 isvhbl = 0
 if (iscal.eq.isvhb) then
   isvhbl = isvhb
@@ -3110,7 +3110,6 @@ call field_get_id_try("boundary_thermal_roughness", f_id_rough)
 if (f_id_rough.ge.0) then
   call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
-
 
 if (vcopt%icoupl.gt.0) then
   call field_get_coupled_faces(f_id, cpl_faces)
@@ -3151,7 +3150,7 @@ do ifac = 1, nfabor
     endif
 
     if (ifcvsl.lt.0) then
-      rkl = visls0(iscal)
+      rkl = visls_0
       prdtl = cpp*visclc/rkl
     else
       rkl = viscls(iel)

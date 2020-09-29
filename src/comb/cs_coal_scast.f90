@@ -130,7 +130,7 @@ double precision err1mx,err2mx
 double precision errch,xden
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
-double precision xcom,xo2m,xkcequ,xkpequ
+double precision xcom,xo2m,xkcequ,xkpequ,visls_0
 
 double precision xw1,char_formation,exp_st,imp_st
 double precision xo2,wmel,wmhcn,wmno,wmo2,wmnh3
@@ -621,6 +621,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
     call field_get_val_s(ifcvsl, cpro_viscls)
   endif
 
+  call field_get_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
+
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
       if (icp.ge.0) then
@@ -630,9 +632,9 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
       endif
     else
       if (icp.ge.0) then
-        w1(iel) = visls0(iscalt) * cpro_cp(iel)
+        w1(iel) = visls_0 * cpro_cp(iel)
       else
-        w1(iel) = visls0(iscalt) * cp0
+        w1(iel) = visls_0 * cp0
       endif
     endif
   enddo

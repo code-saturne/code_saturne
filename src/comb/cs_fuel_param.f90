@@ -98,12 +98,12 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if ( iscavr(jj) .le. 0 ) then
+  if (iscavr(jj) .le. 0) then
 
-!        En combustion on considere que la viscosite turbulente domine
-!        ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
+    ! En combustion on considere que la viscosite turbulente domine
+    ! ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0
+    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
 
   endif
 
@@ -178,7 +178,7 @@ srrom = 0.90d0
 !       recherche des informations sur les flux thermiques aux parois)
 
 diftl0      = 4.25d-5
-visls0(iscalt) = diftl0
+call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
 irovar = 1

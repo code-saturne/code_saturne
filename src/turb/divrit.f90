@@ -97,7 +97,7 @@ double precision xnal(3), xnoral
 double precision alpha_theta, xR_h, xR, prdtl
 double precision xpk, xgk
 double precision eta_ebafm, gamma_ebafm, xi_ebafm, gamma_ebggdh
-double precision xxc1, xxc2, xxc3
+double precision xxc1, xxc2, xxc3, visls_0
 double precision coeff_imp
 
 character(len=80) :: fname
@@ -148,10 +148,11 @@ endif
 
 call field_get_val_s(iviscl, viscl)
 
-call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, viscls)
 end if
+call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
 
 ! Compute scalar gradient
 ivar = isca(iscal)
@@ -297,7 +298,7 @@ if (ityturt(iscal).ne.3) then
        if (ifcvsl.ge.0) then
          prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
        else
-         prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+         prdtl = viscl(iel)*xcpp(iel)/visls_0
        endif
        xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * xR_h
 

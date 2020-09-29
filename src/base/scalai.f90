@@ -166,10 +166,7 @@ if (nscapp.gt.0) then
 !      GMDEV1, GMDEV2, GMHET, GMDCH
   if (ippmod(iccoal).ne.-1) then
 
-    call cs_coal_masstransfer &
-    !=======================
-   ( ncelet , ncel   ,        &
-     volume )
+    call cs_coal_masstransfer(ncelet, ncel, volume)
 
   endif
 
@@ -178,7 +175,7 @@ if (nscapp.gt.0) then
 
   if (ippmod(icfuel).ne.-1) then
 
-    call cs_fuel_masstransfer(ncelet, ncel)
+    call cs_fuel_masstransfer(ncel)
 
   endif
 

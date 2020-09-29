@@ -62,6 +62,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -102,7 +103,7 @@ if( diftl0.lt.0d0) then
   WRITE(NFECRA,3010)'DIFTL0', DIFTL0
   iok = iok + 1
 else
-  visls0(iscalt) = diftl0
+  call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
 endif
 
 ! --> Constante du modele LWC

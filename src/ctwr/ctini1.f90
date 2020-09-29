@@ -82,8 +82,9 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if (iscavr(jj).le.0) then  ! iscavr = 0 for scalars which are not mean square errors of other scalars
-    visls0(jj) = viscl0
+  ! iscavr = 0 for scalars which are not mean square errors of other scalars
+  if (iscavr(jj).le.0) then
+    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
   endif
 
   call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)

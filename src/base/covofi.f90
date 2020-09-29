@@ -174,7 +174,7 @@ double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod
 double precision temp, idifftp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork
@@ -338,6 +338,8 @@ if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
+call field_get_key_double(iflid, kvisl0, visls_0)
+
 if (idilat.ge.4) then
   call field_get_val_s(iustdy(iscal), cpro_tsscal)
 endif
@@ -366,14 +368,11 @@ endif
 imucpp = 0
 if (iscavr(iscal).gt.0) then
   call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
-  if (iscacp.eq.1) then
-    imucpp = 1
-  endif
 else
   call field_get_key_int(iflid, kscacp, iscacp)
-  if (iscacp.eq.1) then
-    imucpp = 1
-  endif
+endif
+if (iscacp.eq.1) then
+  imucpp = 1
 endif
 
 allocate(xcpp(ncelet))
@@ -795,7 +794,8 @@ if (itspdv.eq.1) then
 
     ! Production Term
 
-    ! NB: diffusivity is clipped to 0 because in LES, it might be negative. Problematic
+    ! NB: diffusivity is clipped to 0 because in LES, it might be negative.
+    ! Problematic
     ! for the variance even if it is strange to use variance and LES ...
 
     ! Time extrapolation (2nd order)
@@ -853,7 +853,6 @@ if (itspdv.eq.1) then
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
       if (ityturt(iiscav).ge.1) then
-
 
         ! Name of the scalar ivarsc associated to the variance iscal
         call field_get_name(ivarfl(ivarsc), fname)
@@ -989,7 +988,7 @@ if (itspdv.eq.1) then
       if (ifcvsl.ge.0) then
         prdtl = viscl(iel)*xcpp(iel)/cpro_viscls(iel)
       else
-        prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+        prdtl = viscl(iel)*xcpp(iel)/visls_0
       endif
       xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl(iscal)
 
@@ -1078,7 +1077,7 @@ if (vcopt%idiff.ge.1) then
 
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
-        w1(iel) = visls0(iscal)
+        w1(iel) = visls_0
       enddo
     else
       do iel = 1, ncel
@@ -1136,9 +1135,9 @@ if (vcopt%idiff.ge.1) then
         do iel = 1, ncel
 
           temp = vcopt%idifft*xcpp(iel)
-          viscce(1,iel) = temp*vistet(1,iel) + visls0(iscal)
-          viscce(2,iel) = temp*vistet(2,iel) + visls0(iscal)
-          viscce(3,iel) = temp*vistet(3,iel) + visls0(iscal)
+          viscce(1,iel) = temp*vistet(1,iel) + visls_0
+          viscce(2,iel) = temp*vistet(2,iel) + visls_0
+          viscce(3,iel) = temp*vistet(3,iel) + visls_0
           viscce(4,iel) = temp*vistet(4,iel)
           viscce(5,iel) = temp*vistet(5,iel)
           viscce(6,iel) = temp*vistet(6,iel)
@@ -1162,9 +1161,9 @@ if (vcopt%idiff.ge.1) then
         do iel = 1, ncel
 
           temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
-          viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
-          viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
-          viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
+          viscce(1,iel) = temp*visten(1,iel) + visls_0
+          viscce(2,iel) = temp*visten(2,iel) + visls_0
+          viscce(3,iel) = temp*visten(3,iel) + visls_0
           viscce(4,iel) = temp*visten(4,iel)
           viscce(5,iel) = temp*visten(5,iel)
           viscce(6,iel) = temp*visten(6,iel)

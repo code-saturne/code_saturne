@@ -63,6 +63,7 @@ use coincl
 use cpincl
 use ppincl
 use radiat
+use field
 use cs_c_bindings
 
 !===============================================================================
@@ -111,12 +112,12 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if ( iscavr(jj).le.0 ) then
+  if (iscavr(jj).le.0) then
 
 ! ---- En combustion on considere que la viscosite turbulente domine
 !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0
+    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
 
   endif
 

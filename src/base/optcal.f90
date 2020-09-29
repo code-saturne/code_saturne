@@ -1113,29 +1113,6 @@ module optcal
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
 
-  !> reference molecular diffusivity related to the scalar J (\f$kg.m^{-1}.s^{-1}\f$).\n
-  !>
-  !> Negative value: not initialised\n
-  !> Useful if 1\f$\leqslant\f$J\f$\leqslant\f$ \ref dimens::nscal "nscal",
-  !> unless the user specifies the molecular diffusivity in the appropriate
-  !> user subroutine (\ref cs_user_physical_properties for the standard
-  !> physics) (field_get_key_id (ivarfl(isca(iscal)),kivisl,...)
-  !> \f$>\f$ -1)\n Warning: \ref visls0 corresponds to the diffusivity.
-  !> For the temperature, it is therefore defined as \f$\lambda/C_p\f$
-  !> where \f$\lambda\f$ and \f$C_p\f$ are the conductivity and specific
-  !> heat. When using the Graphical Interface, \f$\lambda\f$ and \f$C_p\f$
-  !> are specified separately, and \ref visls0 is calculated automatically.\n
-  !> With the compressible module, \ref visls0 (given in \ref uscfx2) is
-  !> directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n With gas or
-  !> coal combustion, the molecular diffusivity of the enthalpy
-  !> (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
-  !> \ref ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
-  !> With the electric module, for the Joule effect, the diffusivity is
-  !> specified by the user in \ref cs_user_physical_properties.c (even if
-  !> it is constant). For the electric arcs, it is calculated from the
-  !> thermochemical data file.
-  double precision, save :: visls0(nscamx)
-
   !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
   !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$
   !> of the equation concerning the scalar,
@@ -1494,6 +1471,25 @@ contains
     endif
 
   end function iscavr
+
+  !> \brief If scalar iscal represents the mean of the square of a scalar
+  !> k, return k; otherwise, return 0.
+
+  function visls0(iscal) result(visls_0)
+
+    use field
+    use numvar
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: iscal
+    double precision    :: visls_0
+
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+
+  end function visls0
 
   !> \brief Initialize Fortran time step API.
   !> This maps Fortran pointers to global C structure members.

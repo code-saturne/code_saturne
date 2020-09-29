@@ -20,9 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_varini &
- ( nvar   , nscal  ,                                            &
-   dt     )
+subroutine cs_fuel_varini
 
 !===============================================================================
 ! FONCTION :
@@ -54,15 +52,8 @@ subroutine cs_fuel_varini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -88,10 +79,6 @@ use field
 !===============================================================================
 
 implicit none
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 

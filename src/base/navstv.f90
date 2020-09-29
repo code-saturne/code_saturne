@@ -124,7 +124,7 @@ integer          numcpl
 integer          f_dim , iflwgr
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
-double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
+double precision epsrgp, climgp, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision rhofac, dtfac
 double precision xnrdis, xnrtmp
@@ -151,7 +151,6 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
 double precision, dimension(:), pointer :: da_u
-double precision, dimension(:), allocatable :: xinvro
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
 double precision, dimension(:), pointer :: viscbi
@@ -173,7 +172,7 @@ double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cpro_rho_mass
 double precision, dimension(:), pointer :: bpro_rho_mass
 double precision, dimension(:), pointer :: brom_eos, crom_eos
-double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom
+double precision, dimension(:), pointer :: cpro_wgrec_s
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 

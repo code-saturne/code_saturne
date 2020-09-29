@@ -1014,7 +1014,7 @@ cs_parameters_define_field_keys(void)
                              -1.e12*10., CS_FIELD_VARIABLE);
   cs_field_define_key_int("diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("diffusivity_ref",
-                             -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
+                             -1.e12*10., CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_diffusivity_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("density_id", -1, CS_FIELD_VARIABLE);

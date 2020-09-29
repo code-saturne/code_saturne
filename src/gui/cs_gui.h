@@ -212,14 +212,6 @@ void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
                                 int     *imrgra);
 
 /*----------------------------------------------------------------------------
- * Treatment of gravity and fluid physical properties
- * Initialize reference pressure and temperature if present
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csphys, CSPHYS) (double       *visls0,
-                                const    int *itempk);
-
-/*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.
  *
  * Fortran Interface:
@@ -232,7 +224,11 @@ void CS_PROCF (csphys, CSPHYS) (double       *visls0,
 
 void CS_PROCF (cssca2, CSSCA2) (int        *iturt);
 
-void CS_PROCF (cssca3, CSSCA3) (double     *visls0);
+/*----------------------------------------------------------------------------
+ * Read reference dynamic and user scalar viscosity
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cssca3, CSSCA3) (void);
 
 /*----------------------------------------------------------------------------
  * Turbulence initialization parameters.
@@ -340,15 +336,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
  * *****************
  *
  * integer          iviscv   <--  pointer for volumic viscosity viscv
- * integer          itempk   <--  pointer for temperature (in K)
- * double precision visls0   <--  diffusion coefficient of the scalars
- * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv,
-                              const int       *itempk,
-                              const cs_real_t *visls0,
-                              const cs_real_t *viscv0);
+void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv);
 
 /*----------------------------------------------------------------------------
  * extra operations
@@ -477,6 +467,14 @@ cs_gui_partition(void);
 
 void
 cs_gui_mpi_algorithms(void);
+
+/*----------------------------------------------------------------------------
+ * Treatment of gravity and fluid physical properties
+ * Initialize reference pressure and temperature if present
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_properties(void);
 
 /*----------------------------------------------------------------------------
  * Determine porosity model type

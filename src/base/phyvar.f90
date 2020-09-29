@@ -103,7 +103,7 @@ double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
 double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
-double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
+double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
@@ -160,7 +160,7 @@ endif
 ! - Interface Code_Saturne
 !   ======================
 
-call uiphyv(iviscv, itempk, visls0, viscv0)
+call uiphyv(iviscv)
 
 if (ippmod(idarcy).ge.0) then
   call uidapp                                                           &
@@ -902,12 +902,13 @@ if (nscal.ge.1) then
         vismin(iscal) = min(vismin(iscal),cpro_vis(iel))
       enddo
       if (irangp.ge.0) then
-        call parmax (vismax(iscal))
-        call parmin (vismin(iscal))
+        call parmax(vismax(iscal))
+        call parmin(vismin(iscal))
       endif
     else
-      vismax(iscal) = visls0(iscal)
-      vismin(iscal) = visls0(iscal)
+      call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+      vismax(iscal) = visls_0
+      vismin(iscal) = visls_0
     endif
 
     ivar = isca(iscal)

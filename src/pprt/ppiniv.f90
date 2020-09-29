@@ -73,27 +73,27 @@ double precision dt(ncelet)
 ! ---> Combustion gaz
 !      Flamme de diffusion : chimie 3 points
 if (ippmod(icod3p).ge.0) then
-  call d3pini(nvar, nscal, dt)
+  call d3pini
 endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
 if (ippmod(icoebu).ge.0) then
-  call ebuini(nvar, nscal, dt)
+  call ebuini
 endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwcini(nvar, nscal, dt)
+  call lwcini
 endif
 
 ! ---> Combustion charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_varini(nvar, nscal, dt)
+  call cs_coal_varini
 endif
 
 ! ---> Combustion charbon pulverise couples Lagrangien
@@ -105,12 +105,12 @@ endif
 ! ---> Combustion fuel
 
 if (ippmod(icfuel).ge.0) then
-  call cs_fuel_varini(nvar, nscal, dt)
+  call cs_fuel_varini
 endif
 
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
-  call atiniv0(nvar, nscal, dt)
+  call atiniv0
 endif
 
 ! ---> Cooling towers
@@ -191,7 +191,7 @@ endif
 
 ! Atmospheric flows, second stage
 if (ippmod(iatmos).ge.0) then
-  call atiniv1(nvar, nscal, dt)
+  call atiniv1(nvar, nscal)
 endif
 
 ! ---> Cooling towers

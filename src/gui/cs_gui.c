@@ -1911,8 +1911,8 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
  * Initialize reference pressure and temperature if present
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csphys, CSPHYS) (double     *visls0,
-                                const int  *itempk)
+void
+cs_gui_physical_properties(void)
 {
   int choice;
   const char *material = NULL;
@@ -2033,7 +2033,11 @@ void CS_PROCF (csphys, CSPHYS) (double     *visls0,
 
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
     cs_gui_properties_value("volume_viscosity", &phys_pp->viscv0);
-    cs_gui_properties_value("thermal_conductivity", &visls0[*itempk -1]);
+    double visls_0 = -1;
+    cs_gui_properties_value("thermal_conductivity", &visls_0);
+    cs_field_set_key_double(cs_field_by_name("temperature"),
+                            cs_field_key_id("diffusiity_ref"),
+                            visls_0);
   }
 
 #if _XML_DEBUG_
@@ -2126,25 +2130,23 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
+void CS_PROCF (cssca3, CSSCA3) (void)
 {
-  double result, coeff, density;
+  double result, density;
 
   cs_var_t  *vars = cs_glob_var;
 
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
+  const int kvisls0 = cs_field_key_id("diffusivity_ref");
 
   const int itherm = cs_glob_thermal_model->itherm;
-  const int iscalt = cs_glob_thermal_model->iscalt;
 
-  cs_fluid_properties_t *fprops
-    = cs_get_glob_fluid_properties();
+  cs_fluid_properties_t *fprops = cs_get_glob_fluid_properties();
 
   if (vars->model != NULL) {
 
     if (itherm != CS_THERMAL_MODEL_NONE) {
-      int i = iscalt-1;
 
       if (_thermal_table_needed("thermal_conductivity") == 0)
         cs_gui_properties_value("thermal_conductivity", &(fprops->lambda0));
@@ -2157,11 +2159,15 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
                              &(cs_glob_fluid_properties->t0),
                              &(fprops->lambda0));
 
-      visls0[i] = fprops->lambda0;
+      double visls_0 = fprops->lambda0;
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
       if (itherm != CS_THERMAL_MODEL_TEMPERATURE)
-        visls0[i] = visls0[i] / cs_glob_fluid_properties->cp0;
+        visls_0 /= cs_glob_fluid_properties->cp0;
+
+      cs_field_t *tf = cs_thermal_model_field();
+      cs_field_set_key_double(tf, kvisls0, visls_0);
+
     }
   }
 
@@ -2173,7 +2179,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
   if (!cs_gui_strcmp(vars->model, "groundwater_model")) {
     int n_fields = cs_field_n_fields();
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field_by_id(f_id);
       if (   (f->type & CS_FIELD_VARIABLE)
           && (f->type & CS_FIELD_USER)) {
         int i = cs_field_get_key_int(f, keysca) - 1;
@@ -2192,13 +2198,13 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
           else
             density = cs_glob_fluid_properties->ro0;
 
-          coeff = visls0[i] / density ;
+          double visls_0 = cs_field_get_key_double(f, kvisls0);
+          double coeff = visls_0 / density;
           _scalar_diffusion_value(i+1, &coeff);
-          visls0[i] = coeff * density;
+          visls_0 = coeff * density;
+
+          cs_field_set_key_double(f, kvisls0, visls_0);
         }
-#if _XML_DEBUG_
-        bft_printf("--visls0[%i] = %f\n", i, visls0[i]);
-#endif
       }
     }
   }
@@ -2991,20 +2997,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
  * *****************
  *
  * integer          iviscv   <--  pointer for volumic viscosity viscv
- * integer          itempk   <--  pointer for temperature (in K)
- * double precision visls0   <--  diffusion coefficient of the scalars
- * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv,
-                              const int       *itempk,
-                              const cs_real_t *visls0,
-                              const cs_real_t *viscv0)
+void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 {
-  CS_UNUSED(itempk);
-  CS_UNUSED(visls0);
-  CS_UNUSED(viscv0);
-
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const char *law = NULL;
   double time0 = cs_timer_wtime();

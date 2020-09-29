@@ -1924,7 +1924,7 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_real_t visls0 = cs_field_get_key_double(f, kvisls0);
+      cs_real_t visls_0 = cs_field_get_key_double(f, kvisls0);
       f_desc = _field_section_desc(f, "reference diffusivity value for "
                                       "variable ");
 
@@ -1936,7 +1936,7 @@ cs_parameters_check(void)
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                         _(f_desc),
                                         "key diffusivity_ref",
-                                        visls0,
+                                        visls_0,
                                         0.);
       }
 

@@ -80,7 +80,6 @@ integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
 double precision scmaxp, scminp
-double precision turb_schmidt
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -519,9 +518,7 @@ if (nscal.ge.1) then
   do ii = 1, nscal
     f_id = ivarfl(isca(ii))
     call field_get_label(f_id, chaine)
-    call field_get_key_double(f_id, ksigmas, turb_schmidt)
-    write(nfecra,6021) chaine(1:16),ii, &
-                       iturt(ii),visls0(ii),turb_schmidt
+    write(nfecra,6021) chaine(1:16), ii, iturt(ii)
   enddo
   write(nfecra,6031)
   write(nfecra,6012)
@@ -562,10 +559,10 @@ endif
 '       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                     &
 '-----------------------------------------------------',/,&
-' Variable         Number ITURT     VISLS0      SIGMAS',/,&
+' Variable         Number ITURT',                       /,&
 '-----------------------------------------------------'  )
  6021 format( &
- 1x,    a16,    i7,    i7,     e12.4,      e12.4  )
+ 1x,    a16,    i7,    i7 )
  6031 format( &
 '-------------------------------------------------------------',/)
  6012 format( &

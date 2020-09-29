@@ -20,9 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ebuini &
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine ebuini
 
 !===============================================================================
 ! FONCTION :
@@ -54,9 +52,6 @@ subroutine ebuini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -88,10 +83,6 @@ use field
 !===============================================================================
 
 implicit none
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 

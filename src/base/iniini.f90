@@ -831,7 +831,6 @@ uref    = -grand*10.d0
   xlomlg    = -grand*10.d0
 
 ! --- Scalaires
-!       L'utilisateur devra remplir VISLS0
 !       On remplira plus tard, selon les modifs utilisateur,
 !         ISCSTH
 !       On donne la valeur par defaut pour les autres
@@ -842,7 +841,6 @@ uref    = -grand*10.d0
 
 do iscal = 1, nscamx
   iclvfl(iscal) = -1
-  visls0(iscal) =-grand*10.d0
   rvarfl(iscal) = 0.8d0
 enddo
 

@@ -38,7 +38,7 @@
 !>     - the density             (set to ro0)
 !>     - the molecular viscosity (set to viscl0)
 !>     - the volumetric molecular viscosity (set to viscv0)
-!>     - the molecular thermal conductivity (set to visls0(itempk))
+!>     - the molecular thermal conductivity (set to diffusivity_ref of itempk)
 !>   - in the user subroutine \ref cs_user_initialization; ex.:
 !>     - the unknown variables (null by default)
 !>
@@ -283,8 +283,8 @@ call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
 if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
-! --- Stop if the isobaric or isochoric specific heat (cpro_cp or cpro_cv) has not
-!     been defined as variable
+! --- Stop if the isobaric or isochoric specific heat (cpro_cp or cpro_cv)
+!     has not been defined as variable
 
 if (icp.lt.0) then
   write(nfecra,1000) icp

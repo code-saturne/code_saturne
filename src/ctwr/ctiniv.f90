@@ -110,8 +110,9 @@ if (isuite.eq.0) then
   ! Diffusivities of the dry air and the injected liquid
   ! Note: this comes after 'cs_user_cooling_towers' so it will overwrite
   !       what users may have specified there
-  visls0(iymw) = 1.d-12
-  visls0(iyml) = 1.d-12
+
+  call field_set_key_double(ivarfl(isca(iymw)), kvisl0, 1.d-12)
+  call field_set_key_double(ivarfl(isca(iyml)), kvisl0, 1.d-12)
 
   ! initialise:
   !   - the enthalpies, which are the solution variables
@@ -126,27 +127,23 @@ if (isuite.eq.0) then
   if (cp_l.le.0.0 .or. lambda_l.le.0.0) then
     !!FIXME - stop the code and publish an error message
   else
-    visls0(ihml) = lambda_l/cp_l
+    call field_set_key_double(ivarfl(isca(ihml)), kvisl0, lambda_l/cp_l)
   endif
 
 else
 
-   !! TODO Add restarts
+  !! TODO Add restarts
 
-   ! Diffusivities of the dry air and the injected liquid
-   visls0(iymw) = 1.d-12
-   visls0(iyml) = 1.d-12
+  ! Diffusivities of the dry air and the injected liquid
+  call field_set_key_double(ivarfl(isca(iymw)), kvisl0, 1.d-12)
+  call field_set_key_double(ivarfl(isca(iyml)), kvisl0, 1.d-12)
 
-   !! Restarts - recompute the required properties based on the
-   !! saved solution variables: for example, the humidty, liquid
-   !! vertical velocity, etc.
-   call cs_ctwr_restart_field_vars(ro0,t0,p0,humidity0,molmass_rat)
+  !! Restarts - recompute the required properties based on the
+  !! saved solution variables: for example, the humidty, liquid
+  !! vertical velocity, etc.
+  call cs_ctwr_restart_field_vars(ro0,t0,p0,humidity0,molmass_rat)
 
 endif
-
-!--------
-! Formats
-!--------
 
 !----
 ! End

@@ -214,7 +214,7 @@ integer          kbfid, b_f_id
 integer          keyvar
 integer          dimrij, f_dim
 
-double precision sigma , cpp   , rkl
+double precision sigma , cpp   , rkl   , visls_0
 double precision hint  , hext  , pimp  , dimp, cfl
 double precision pinf  , ratio
 double precision hintt(6)
@@ -666,10 +666,7 @@ call typecl &
 ! 3. check the consistency of the bcs
 !===============================================================================
 
-call vericl                                                       &
- ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
-   rcodcl )
+call vericl(nvar, nscal, itypfb, icodcl)
 
 !===============================================================================
 ! 4. variables
@@ -2622,6 +2619,9 @@ if (nscal.ge.1) then
       iscal = iscavr(ii)
     endif
 
+    ! Reference diffusivity
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+
     if (iscacp.eq.1) then
       if(icp.ge.0) then
         ihcp = 2
@@ -2679,7 +2679,7 @@ if (nscal.ge.1) then
 
         ! --- Viscosite variable ou non
         if (ifcvsl.lt.0) then
-          rkl = visls0(ii)
+          rkl = visls_0
         else
           rkl = viscls(iel)
         endif
@@ -2901,7 +2901,7 @@ if (nscal.ge.1) then
           distbf = distb(ifac)
 
           if (ifcvsl.lt.0) then
-            rkl = visls0(iscal)/cpp
+            rkl = visls_0/cpp
           else
             rkl = viscls(iel)/cpp
           endif
@@ -3032,7 +3032,7 @@ if (nscal.ge.1) then
 
         ! --- Viscosite variable ou non
         if (ifcvsl.lt.0) then
-          rkl = visls0(ii)
+          rkl = visls_0
         else
           rkl = viscls(iel)
         endif
@@ -5279,10 +5279,7 @@ call typecl &
 ! When called before time loop, some values are not yet available.
 if (ntcabs .eq. ntpabs) return
 
-call vericl                                                       &
- ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
-   rcodcl )
+call vericl(nvar, nscal, itypfb, icodcl)
 
 !----
 ! End
