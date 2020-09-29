@@ -48,7 +48,6 @@
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
@@ -58,7 +57,6 @@
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate
 !>                               (see \ref cs_user_mass_source_terms)
@@ -72,10 +70,10 @@
 subroutine resssg2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
    smbr   , rovsdt )
@@ -113,14 +111,13 @@ integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          ivar
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
 double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslagi(ncelet)
 double precision smbr(6,ncelet)

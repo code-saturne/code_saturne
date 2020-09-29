@@ -32,13 +32,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step
 !______________________________________________________________________________
 
-subroutine cs_gas_mix_initialization &
- ( nvar   , nscal  , dt )
+subroutine cs_gas_mix_initialization
 
 !===============================================================================
 ! Module files
@@ -65,10 +61,6 @@ use cs_c_bindings
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 

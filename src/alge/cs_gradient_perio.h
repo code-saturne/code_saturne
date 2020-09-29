@@ -71,9 +71,8 @@ void CS_PROCF (perinr, PERINR)
 (
  const int        *const imrgra,  /* <-- gradient computation mode            */
  const int        *const iwarnp,  /* <-- verbosity level                      */
- const cs_real_t  *const epsrgp,  /* <-- precision for iterative gradient
+ const cs_real_t  *const epsrgp   /* <-- precision for iterative gradient
                                          calculation                          */
- const cs_real_t  *const extrap   /* <-- extrapolate gradient at boundary     */
 );
 
 /*=============================================================================

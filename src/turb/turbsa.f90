@@ -567,7 +567,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    cvara_nusa      , cvara_nusa      ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

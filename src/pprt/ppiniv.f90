@@ -31,14 +31,9 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine ppiniv0 &
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine ppiniv0
 
 !===============================================================================
 ! Module files
@@ -61,10 +56,6 @@ use mesh
 !===============================================================================
 
 implicit none
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 
@@ -116,7 +107,7 @@ endif
 ! ---> Cooling towers
 
 if (ippmod(iaeros).ge.0) then
-  call ctiniv0(nvar, nscal, dt)
+  call ctiniv0
 endif
 
 !----
@@ -141,15 +132,10 @@ end subroutine
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
 
-subroutine ppiniv1 &
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine ppiniv1
 
 !===============================================================================
 
@@ -175,10 +161,6 @@ use mesh
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
 !===============================================================================
@@ -191,18 +173,18 @@ endif
 
 ! Atmospheric flows, second stage
 if (ippmod(iatmos).ge.0) then
-  call atiniv1(nvar, nscal)
+  call atiniv1
 endif
 
 ! ---> Cooling towers
 if (ippmod(iaeros).ge.0) then
-  call ctiniv1(nvar, nscal, dt)
+  call ctiniv1
 endif
 
 ! Gas mixture modelling in presence of noncondensable gases and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
-  call cs_gas_mix_initialization(nvar, nscal, dt)
+  call cs_gas_mix_initialization
 endif
 
 ! Compressible
@@ -210,7 +192,7 @@ endif
 ! mixture composition is taken into account in the thermodynamic
 ! law, if gas mix specific physics is enabled.
 if (ippmod(icompf).ge.0) then
-  call cfiniv(nvar, nscal, dt)
+  call cfiniv
 endif
 
 !----

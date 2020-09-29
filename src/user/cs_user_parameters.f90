@@ -168,7 +168,6 @@ integer iturb, itherm, iale
 return
 end subroutine usipph
 
-
 !===============================================================================
 
 !> \brief User subroutine for the input of additional user parameters.

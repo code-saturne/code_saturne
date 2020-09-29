@@ -168,7 +168,7 @@ integer          t_scd_id
 
 integer          ivoid(1)
 
-double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
+double precision epsrgp, climgp, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
@@ -782,11 +782,10 @@ if (itspdv.eq.1) then
     iwarnp = vcopt_varsc%iwarni
     epsrgp = vcopt_varsc%epsrgr
     climgp = vcopt_varsc%climgr
-    extrap = vcopt_varsc%extrag
 
     call gradient_s                                                          &
      ( ivarfl(ivarsc)  , imrgrp , inc    , iccocg , nswrgp , imligp ,        &
-       iwarnp          , epsrgp , climgp , extrap ,                          &
+       iwarnp          , epsrgp , climgp ,                                   &
        cvara_varsca    , coefa_p, coefb_p,                                   &
        grad )
 
@@ -1340,7 +1339,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -1352,12 +1350,11 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
-!==========
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvark_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

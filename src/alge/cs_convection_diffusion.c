@@ -633,7 +633,6 @@ void CS_PROCF (itrmas, ITRMAS)
                               *iwarnp,
                               *epsrgp,
                               *climgp,
-                              *extrap,
                               frcxt,
                               pvar,
                               coefap,
@@ -700,7 +699,6 @@ void CS_PROCF (itrmav, ITRMAV)
                                           *iwarnp,
                                           *epsrgp,
                                           *climgp,
-                                          *extrap,
                                           frcxt,
                                           pvar,
                                           coefap,
@@ -764,7 +762,6 @@ void CS_PROCF (itrgrp, ITRGRP)
                          *iwarnp,
                          *epsrgp,
                          *climgp,
-                         *extrap,
                          frcxt,
                          pvar,
                          coefap,
@@ -829,7 +826,6 @@ void CS_PROCF (itrgrv, ITRGRV)
                                      *iwarnp,
                                      *epsrgp,
                                      *climgp,
-                                     *extrap,
                                      frcxt,
                                      pvar,
                                      coefap,
@@ -1633,7 +1629,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
-  const double extrap = var_cal_opt.extrag;
   const double relaxp = var_cal_opt.relaxv;
   const double thetap = var_cal_opt.thetav;
 
@@ -1853,7 +1848,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     NULL, /* f_ext exterior force */
                                     coefap,
@@ -3070,7 +3064,6 @@ cs_face_convection_scalar(int                       idtvar,
   const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
-  const double extrap = var_cal_opt.extrag;
   const double relaxp = var_cal_opt.relaxv;
   const double thetap = var_cal_opt.thetav;
 
@@ -3275,7 +3268,6 @@ cs_face_convection_scalar(int                       idtvar,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     NULL, /* f_ext exterior force */
                                     coefap,
@@ -6846,7 +6838,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
-  const double extrap = var_cal_opt.extrag;
   const double relaxp = var_cal_opt.relaxv;
   const double thetap = var_cal_opt.thetav;
 
@@ -7056,7 +7047,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     NULL, /* f_ext exterior force */
                                     coefap,
@@ -8179,7 +8169,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
-  const double extrap = var_cal_opt.extrag;
   const double relaxp = var_cal_opt.relaxv;
   const double thetap = var_cal_opt.thetav;
 
@@ -8377,7 +8366,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     NULL, /* f_ext exterior force */
                                     coefap,
@@ -10767,7 +10755,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -10803,7 +10790,6 @@ cs_face_diffusion_potential(const int                 f_id,
                             int                       iwarnp,
                             double                    epsrgp,
                             double                    climgp,
-                            double                    extrap,
                             cs_real_3_t     *restrict frcxt,
                             cs_real_t       *restrict pvar,
                             const cs_real_t           coefap[],
@@ -10990,7 +10976,6 @@ cs_face_diffusion_potential(const int                 f_id,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     frcxt,
                                     coefap,
@@ -11117,7 +11102,6 @@ cs_face_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
@@ -11158,7 +11142,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                         int                       iwarnp,
                                         double                    epsrgp,
                                         double                    climgp,
-                                        double                    extrap,
                                         cs_real_3_t     *restrict frcxt,
                                         cs_real_t       *restrict pvar,
                                         const cs_real_t           coefap[],
@@ -11413,7 +11396,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     frcxt,
                                     coefap,
@@ -11612,7 +11594,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -11647,7 +11628,6 @@ cs_diffusion_potential(const int                 f_id,
                        int                       iwarnp,
                        double                    epsrgp,
                        double                    climgp,
-                       double                    extrap,
                        cs_real_3_t     *restrict frcxt,
                        cs_real_t       *restrict pvar,
                        const cs_real_t           coefap[],
@@ -11850,7 +11830,6 @@ cs_diffusion_potential(const int                 f_id,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     frcxt,
                                     coefap,
@@ -11994,7 +11973,6 @@ cs_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        ignored
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
@@ -12034,7 +12012,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    int                       iwarnp,
                                    double                    epsrgp,
                                    double                    climgp,
-                                   double                    extrap,
                                    cs_real_3_t     *restrict frcxt,
                                    cs_real_t       *restrict pvar,
                                    const cs_real_t           coefap[],
@@ -12293,7 +12270,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                     iwarnp,
                                     imligp,
                                     epsrgp,
-                                    extrap,
                                     climgp,
                                     frcxt,
                                     coefap,

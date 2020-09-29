@@ -651,7 +651,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *diftl0)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  const int keysca = cs_field_key_id("scalar_id");
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   cs_var_cal_opt_t var_cal_opt;

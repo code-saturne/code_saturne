@@ -90,7 +90,7 @@ integer           inc    , iccocg , imrgrp , nswrgp , imligp , iwarnp
 integer           iold
 
 double precision xk     , xe     , rhovst
-double precision epsrgp , climgp , extrap
+double precision epsrgp , climgp
 double precision aux
 double precision gdev1 , gdev2
 double precision fsd   , fdev  , diamdv , gdev
@@ -166,7 +166,6 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  extrap = vcopt%extrag
 
 ! --> calcul de X1
 
@@ -226,7 +225,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   f_id0  = -1
   call gradient_s                                                 &
  ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
+   iwarnp , epsrgp , climgp ,                                     &
    f1f2   , coefap , coefbp ,                                     &
    grad   )
 

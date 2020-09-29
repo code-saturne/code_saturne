@@ -87,7 +87,7 @@ void
 cs_user_1d_wall_thermal(int iappel,
                         int isuit1)
 {
-/*! [loc_var_dec] */
+  /*! [loc_var_dec] */
   int izone, ifbt1d;
   cs_lnum_t nlelt;
   cs_lnum_t *lstelt;

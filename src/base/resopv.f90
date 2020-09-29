@@ -256,6 +256,8 @@ double precision, dimension(:), pointer :: phi
 ! 1. Initialisations
 !===============================================================================
 
+extrap = 0
+
 ! Initializations to avoid compiler warnings
 rnorm2 = 0.d0
 niterf = 0
@@ -1029,7 +1031,6 @@ if (arak.gt.0.d0) then
     iwarnp = vcopt_p%iwarni
     epsrgp = vcopt_p%epsrgr
     climgp = vcopt_p%climgr
-    extrap = vcopt_p%extrag
 
     call itrmas &
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
@@ -1092,7 +1093,6 @@ if (arak.gt.0.d0) then
     ircflp = vcopt_p%ircflu
 
     call itrmav &
-    !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
@@ -1440,13 +1440,11 @@ if (iswdyp.ge.1) then
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
   ircflp = vcopt_p%ircflu
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrp &
-    !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
@@ -1461,7 +1459,6 @@ if (iswdyp.ge.1) then
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrv &
-    !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
@@ -1529,12 +1526,10 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
     iwarnp = vcopt_p%iwarni
     epsrgp = vcopt_p%epsrgr
     climgp = vcopt_p%climgr
-    extrap = vcopt_p%extrag
 
     if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
       call itrgrp &
-      !==========
    ( f_id0           , init   , inc    , imrgrp ,              &
      iccocg , nswrgp , imligp , iphydr ,                       &
      iwgrp  , iwarnp ,                                         &
@@ -1553,7 +1548,6 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
       ircflp = vcopt_p%ircflu
 
       call itrgrv &
-      !==========
    ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
      iphydr , iwgrp  , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
@@ -1666,12 +1660,10 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     call itrgrp &
-    !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
@@ -1688,7 +1680,6 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
     ircflp = vcopt_p%ircflu
 
     call itrgrv &
-    !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
@@ -1786,7 +1777,6 @@ iwgrp  = vcopt_p%iwgrec
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-extrap = vcopt_p%extrag
 
 if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
@@ -1825,7 +1815,6 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
   ircflp = vcopt_p%ircflu
 
   call itrmav &
-  !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
@@ -1846,7 +1835,6 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
   ircflp = 0
 
   call itrmav &
-  !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
@@ -1899,7 +1887,6 @@ if (idilat.eq.5) then
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
-  extrap = vcopt_u%extrag
 
   ! Dirichlet Boundary Condition on rho
   !------------------------------------
@@ -1913,7 +1900,7 @@ if (idilat.eq.5) then
 
   call gradient_s                                                 &
   (f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp , iwarnp , &
-   epsrgp , climgp , extrap ,                                     &
+   epsrgp , climgp ,                                              &
    crom   ,                                                       &
    coefa_rho       , coefb_rho       ,                            &
    gradp  )
@@ -1939,7 +1926,6 @@ if (idilat.eq.5) then
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
-  extrap = vcopt_u%extrag
 
   itypfl = 0
 
@@ -2061,14 +2047,12 @@ if (idilat.eq.5) then
   blencp = vcopt_p%blencv
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
   relaxp = vcopt_p%relaxv
   thetap = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
 
   call bilsca &
-  !==========
  ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
    iwarnp , imucpp , idftnp , imasac ,                            &
@@ -2110,7 +2094,6 @@ if (idilat.eq.5) then
   epsrsp = vcopt_p%epsrsm
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
   relaxp = vcopt_p%relaxv
   thetap = vcopt_p%thetav
   ! all boundary convective flux with upwind
@@ -2124,12 +2107,11 @@ if (idilat.eq.5) then
   call sles_push(ivarfl(ipr), "Pr compress")
 
   call codits &
-  !==========
    ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
      imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      iwarnp , normp  ,                                              &
-     blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+     blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
      relaxp , thetap ,                                              &
      dphi   , dphi   ,                                              &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
@@ -2162,7 +2144,6 @@ if (idilat.eq.5) then
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
-  extrap = vcopt_p%extrag
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call itrmas &

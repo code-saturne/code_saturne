@@ -78,7 +78,7 @@ integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          init
 integer          ivoid(1)
-double precision blencp, epsilp, epsrsp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrsp, epsrgp, climgp, relaxp
 double precision thetv , thetap
 double precision d1s4, d3s2, d1s2
 double precision xk, xnu, l2
@@ -244,7 +244,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 
 ! all boundary convective flux with upwind
@@ -258,7 +257,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_al        , cvara_al        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

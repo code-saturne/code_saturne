@@ -89,7 +89,7 @@ integer           icla
 integer           inc    , iccocg , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk     , xe     , rhovst
-double precision epsrgp , climgp , extrap
+double precision epsrgp , climgp
 double precision aux
 double precision gvap , t2mt1
 double precision turb_schmidt
@@ -165,7 +165,6 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  extrap = vcopt%extrag
   call field_set_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
 
 ! --> calcul de X1
@@ -209,7 +208,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   f_id0  = -1
   call gradient_s                                                 &
  ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
+   iwarnp , epsrgp , climgp ,                                     &
    f1f2   , coefap , coefbp ,                                     &
    grad   )
 

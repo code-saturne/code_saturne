@@ -114,7 +114,7 @@ integer          f_id
 integer          nbrval, nclptr
 integer          ntcam1
 
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 double precision cfmax,cfmin, w1min, w2min, w3min
 double precision unpvdt, dtloc
 double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
@@ -298,7 +298,6 @@ if (idtvar.ge.0) then
     iwarnp = vcopt_p%iwarni
     epsrgp = vcopt_p%epsrgr
     climgp = vcopt_p%climgr
-    extrap = 0.d0
 
     f_id = -1
     inc   = 1
@@ -306,7 +305,7 @@ if (idtvar.ge.0) then
 
     call gradient_s &
  ( f_id   , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
+   iwarnp , epsrgp , climgp ,                                     &
    crom, brom, coefbr ,                                           &
    grad )
 

@@ -464,7 +464,6 @@ cs_lagr_poisson(const int  itypfb[])
                      2,               /* iwarnp */
                      -1,              /* imligp */
                      1e-8,            /* epsrgp */
-                     0.,              /* extrap */
                      1.5,             /* climgp */
                      NULL,            /* f_ext */
                      coefap,

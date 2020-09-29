@@ -115,7 +115,6 @@ integer          iprev
 integer          key_t_ext_id
 integer          iroext
 integer          f_id_phij
-integer          dij
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
@@ -486,21 +485,19 @@ if (f_id_phij.ge.0) then
     do iel = 1, ncel
       k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
       P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
-      dij=1
-      do isou=1,6
-        if(isou>3) then
-          dij=0
-        endif
-        cpro_press_correl(isou, iel)= -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*dij*k)       &
-                                      -crij2*(cpro_produc(isou,iel)-d2s3*P*dij)
+      do isou=1,3
+        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*k)  &
+                                       -crij2*(cpro_produc(isou,iel)-d2s3*P)
+      enddo
+      do isou=4,6
+        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
+                                       -crij2*(cpro_produc(isou,iel))
       enddo
     enddo
   else
     do iel = 1, ncel
       k=0.5*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
       P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
-
-      
 
       cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*k)  &
                                  -crij2*(cpro_produc(1,iel)-d2s3*P)
@@ -616,7 +613,7 @@ else if (igrari.eq.1) then
 
     call gradient_s                                                 &
       ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,       &
-      iwarnp , epsrgp , climgp , extrap ,                           &
+      iwarnp , epsrgp , climgp ,                                    &
       cromo  , bromo  , viscb           ,                           &
       gradro )
 
@@ -662,10 +659,10 @@ if (irijco.eq.1) then
     call resssg2 &
   ( nvar    , nscal  , ncepdp , ncesmp ,                            &
     ivar    ,                                                       &
-    icepdc  , icetsm , itypsm ,                                     &
+    icetsm , itypsm ,                                               &
     dt      ,                                                       &
     gradv   , cpro_produc, gradro ,                                 &
-    ckupdc  , smacel ,                                              &
+    smacel ,                                                        &
     viscf   , viscb  ,                                              &
     tslagi ,                                                        &
     smbrts  , rovsdtts )

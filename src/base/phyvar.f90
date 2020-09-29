@@ -140,7 +140,7 @@ ipass = ipass + 1
 
 if (iperot.gt.0 .and. itytur.eq.3) then
   call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
-  call perinr(vcopt%imrgra, vcopt%iwarni, vcopt%epsrgr, vcopt%extrag)
+  call perinr(vcopt%imrgra, vcopt%iwarni, vcopt%epsrgr)
 endif
 
 !===============================================================================

@@ -268,7 +268,6 @@ cs_rad_transfer_pun(int              iband,
   int iwarnp = cs_glob_rad_transfer_params->verbosity;
   cs_real_t epsrgp = 1e-08;
   cs_real_t climgp = 1.5;
-  cs_real_t extrap = 0.0;
   int nswrgp = 100;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -293,7 +292,6 @@ cs_rad_transfer_pun(int              iband,
                      iwarnp,
                      imligp,
                      epsrgp,
-                     extrap,
                      climgp,
                      NULL,
                      coefap,

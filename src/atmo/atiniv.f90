@@ -60,10 +60,6 @@ use cs_c_bindings
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
 integer          imode, iel
@@ -529,11 +525,9 @@ end subroutine atiniv0
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
 !-------------------------------------------------------------------------------
 
-subroutine atiniv1( nvar, nscal )
+subroutine atiniv1
 
 !===============================================================================
 ! Module files
@@ -559,18 +553,11 @@ use cs_c_bindings
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
-integer          imode, iel
+integer          iel
 double precision d2s3
 double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
-
-integer k,ii, isc
-double precision xcent
 
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi

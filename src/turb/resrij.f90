@@ -136,7 +136,7 @@ integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
 
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrgp, climgp, relaxp
 double precision epsrsp
 double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
@@ -650,7 +650,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -662,7 +661,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

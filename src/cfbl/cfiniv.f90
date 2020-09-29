@@ -48,13 +48,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step (per cell)
 !______________________________________________________________________________
 
-subroutine cfiniv &
- ( nvar   , nscal  , dt     )
+subroutine cfiniv
 
 !===============================================================================
 ! Module files
@@ -78,10 +74,6 @@ use cs_cf_bindings
 !===============================================================================
 
 implicit none
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 

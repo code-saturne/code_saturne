@@ -192,9 +192,8 @@ void CS_PROCF (perinr, PERINR)
 (
  const int        *const imrgra,  /* <-- gradient computation mode            */
  const int        *const iwarnp,  /* <-- verbosity level                      */
- const cs_real_t  *const epsrgp,  /* <-- precision for iterative gradient
+ const cs_real_t  *const epsrgp   /* <-- precision for iterative gradient
                                          calculation                          */
- const cs_real_t  *const extrap   /* <-- extrapolate gradient at boundary     */
 )
 {
   int i;
@@ -251,7 +250,6 @@ void CS_PROCF (perinr, PERINR)
                        *iwarnp,
                        -1,              /* clip_mode */
                        *epsrgp,
-                       *extrap,
                        1.5,             /* clip_coeff (ignored here) */
                        NULL,            /* f_ext */
                        f->bc_coeffs->a,

@@ -174,7 +174,7 @@ enddo
 ! First pre-initialization for specific physic modules
 ! before the GUI
 if (ippmod(iphpar).gt.0) then
-  call ppiniv0(nvar, nscal, dt)
+  call ppiniv0
 endif
 
 ! - Interface Code_Saturne
@@ -192,7 +192,7 @@ call user_initialization()
 ! Second stage of initialization for specific physic modules
 ! after the user
 if (ippmod(iphpar).gt.0) then
-  call ppiniv1(nvar, nscal, dt)
+  call ppiniv1
 endif
 
 ! VoF algorithm

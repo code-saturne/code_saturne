@@ -2960,14 +2960,14 @@ module cs_c_bindings
 
     subroutine cs_f_gradient_s(f_id, imrgra, inc, iccocg, n_r_sweeps,          &
                                idimtr, iwarnp, imligp,                         &
-                               epsrgp, extrap, climgp,                         &
+                               epsrgp, climgp,                                 &
                                coefap, coefbp, pvar, grad)                     &
       bind(C, name='cs_f_gradient_s')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: idimtr, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
@@ -2978,15 +2978,15 @@ module cs_c_bindings
     ! Interface to C function for scalar potential gradient
 
     subroutine cs_f_gradient_potential(f_id, imrgra, inc, iccocg, n_r_sweeps,  &
-                                       iphydp,  iwarnp, imligp,                &
-                                       epsrgp, extrap, climgp,                 &
+                                       iphydp, iwarnp, imligp,                 &
+                                       epsrgp, climgp,                         &
                                        f_ext, coefap, coefbp, pvar, grad)      &
       bind(C, name='cs_f_gradient_potential')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
@@ -2998,7 +2998,7 @@ module cs_c_bindings
 
     subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, iccocg, n_r_sweeps, &
                                         iphydp,  iwarnp, imligp,               &
-                                        epsrgp, extrap, climgp,                &
+                                        epsrgp, climgp,                        &
                                         f_ext, coefap, coefbp, pvar, c_weight, &
                                         grad)                                  &
       bind(C, name='cs_f_gradient_weighted_s')
@@ -3006,7 +3006,7 @@ module cs_c_bindings
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
       real(kind=c_double), dimension(*), intent(inout) :: c_weight, grad
@@ -3791,14 +3791,13 @@ contains
   !> \param[in]       iwarnp           verbosity
   !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in, out]  pvar             cell values whose gradient is computed
   !> \param[in]       coefap           boundary coefap coefficients
   !> \param[in]       coefbp           boundary coefap coefficients
   !> \param[out]      grad             resulting gradient
 
   subroutine gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,             &
-                        imligp, iwarnp, epsrgp, climgp, extrap,                &
+                        imligp, iwarnp, epsrgp, climgp,                        &
                         pvar, coefap, coefbp, grad)
 
     use, intrinsic :: iso_c_binding
@@ -3813,7 +3812,7 @@ contains
 
     integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
     integer, intent(in) :: imligp, iwarnp
-    double precision, intent(in) :: epsrgp, climgp, extrap
+    double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
@@ -3852,7 +3851,7 @@ contains
 
     call cs_f_gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,            &
                          idimtr, iwarnp, imligp,                               &
-                         epsrgp, extrap, climgp, coefap, coefbp, pvar, grad)
+                         epsrgp, climgp, coefap, coefbp, pvar, grad)
 
   end subroutine gradient_s
 
@@ -3873,7 +3872,6 @@ contains
   !> \param[in]       iwarnp           verbosity
   !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in]       f_ext            exterior force generating
   !>                                   the hydrostatic pressure
   !> \param[in, out]  pvar             cell values whose gradient is computed
@@ -3884,7 +3882,7 @@ contains
 
   subroutine gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
                                  imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
-                                 extrap, f_ext, pvar, c_weight, coefap,       &
+                                 f_ext, pvar, c_weight, coefap,               &
                                  coefbp, grad)
 
     use, intrinsic :: iso_c_binding
@@ -3898,7 +3896,7 @@ contains
 
     integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
     integer, intent(in) :: imligp, hyd_p_flag, iwarnp
-    double precision, intent(in) :: epsrgp, climgp, extrap
+    double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(:), intent(inout) :: c_weight
@@ -3906,7 +3904,7 @@ contains
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     call cs_f_gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
-                                  hyd_p_flag, iwarnp, imligp, epsrgp, extrap,  &
+                                  hyd_p_flag, iwarnp, imligp, epsrgp,          &
                                   climgp, f_ext, coefap, coefbp,               &
                                   pvar, c_weight, grad)
 
@@ -5104,7 +5102,6 @@ contains
   !>                               reconstruction
   !> \param[in]     climgp        clipping coefficient for the computation of
   !>                               the gradient
-  !> \param[in]     extrap        ignored
   !> \param[in]     relaxp        coefficient of relaxation
   !> \param[in]     thetap        weighting coefficient for the theta-schema,
   !>                               - thetap = 0: explicit scheme
@@ -5163,7 +5160,7 @@ contains
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
                      idftnp, iswdyp, iwarnp, normp,                            &
                      blencp, epsilp, epsrsp, epsrgp,                           &
-                     climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
+                     climgp, relaxp, thetap, pvara, pvark, coefap,             &
                      coefbp, cofafp, cofbfp, i_massflux, b_massflux, i_viscm,  &
                      b_viscm, i_visc, b_visc, viscel, weighf, weighb, icvflb,  &
                      icvfli, rovsdt, smbrp, pvar, dpvar, xcpp, eswork)
@@ -5182,7 +5179,7 @@ contains
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: normp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
-    double precision, intent(in) :: extrap, relaxp, thetap
+    double precision, intent(in) :: relaxp, thetap
     real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
     real(kind=c_double), dimension(*), intent(in) :: coefbp, cofafp, cofbfp
     real(kind=c_double), dimension(*), intent(in) :: i_massflux, b_massflux
@@ -5227,7 +5224,6 @@ contains
     vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
     vcopt%climgr = climgp
-    vcopt%extrag = extrap
     vcopt%relaxv = relaxp
 
     p_k_value => vcopt

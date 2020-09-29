@@ -1045,7 +1045,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
                                      NULL, /* weighb */
                                      0,    /* icvflv */
                                      NULL, /* icvfli */
-                                     (const cs_real_33_t *)fimp,
+                                     (cs_real_33_t *)fimp,
                                      smbr,
                                      mshvel,
                                      NULL); /* eswork */

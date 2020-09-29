@@ -34,12 +34,9 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine ctiniv0(nvar   , nscal  , dt)
+subroutine ctiniv0
 
 !===============================================================================
 ! Module files
@@ -64,18 +61,12 @@ use atincl, only : iymw
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
-integer          iel, ifac, f_id
-integer          iflmas, iflmab
+integer          iel
 
 double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
 double precision, dimension(:), pointer :: cvar_ymw
-double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 ! 1. Initialization
@@ -99,7 +90,6 @@ if (isuite.eq.0) then
     ! using 'cs_user_f_initialization'
     cvar_templ(iel) = cvar_temp(iel)
     cvar_yml(iel) = 0.0
-
   enddo
 
   call synsca(cvar_temp)
@@ -165,12 +155,9 @@ end subroutine
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine ctiniv1(nvar   , nscal  , dt)
+subroutine ctiniv1
 
 !===============================================================================
 ! Module files
@@ -195,18 +182,14 @@ use atincl, only : iymw
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
-integer          iel, ifac, f_id
+integer          ifac, f_id
 integer          iflmas, iflmab
 
 double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
 double precision, dimension(:), pointer :: cvar_ymw
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: bmasfl, imasfl
 
 !===============================================================================
 ! 1. Initialization
