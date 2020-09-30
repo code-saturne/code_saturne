@@ -1109,90 +1109,6 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [change_nsave_checkpoint_files] */
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define internal coupling options.
- *
- * Options are usually defined using cs_internal_coupling_add_entity.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_internal_coupling(void)
-{
-  /* Example: define coupling between one volume zone and the rest of the
-     mesh; this will automatically transform the selection boundaries
-     to actual mesh boundaries.
-     --------------------------------------------------------------------*/
-
-  /*! [param_internal_coupling_add_volume] */
-
-  cs_internal_coupling_add_volume(NULL,
-                                  "x<.5"); /* Solid volume criterion */
-
-  /* Activate fluid-solid mode to kill dynamic in the solid */
-  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-  stokes->fluid_solid = true;
-
-  /*! [param_internal_coupling_add_volume] */
-
-  /* Example: define coupling along an existing mesh boundary.
-     ---------------------------------------------------------*/
-
-  /*! [param_internal_coupling_add] */
-
-  cs_internal_coupling_add(NULL,
-                           "solid_volume_criterion",
-                           "interface_criterion");
-
-  /*! [param_internal_coupling_add] */
-
-  /* Example: couple field whose name is "scalar1"
-     ---------------------------------------------*/
-
-  /*! [param_internal_coupling] */
-
-  int f_id = cs_field_id_by_name("scalar1");
-
-  cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
-
-  /*! [param_internal_coupling] */
-
-  /* Example: compute porosity from a scan of points
-   * ------------------------------------------------*/
-
-  cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
-
-  /* Apply a transformation to the scanned points */
-  /* Translation part */
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][3] = 1.98;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[2][3] = 37.5477;
-  /* Rotation part arround z axis */
-  cs_real_t angle = 15. /180. * cs_math_pi;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][0] =  cos(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][1] =  sin(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
-
-  /* Add some sources to fill fluid space */
-  {
-    cs_real_3_t source = {4.295, 1.15326, 0.5};
-    /* If a transformation matrix has been applied
-     * chose if if has to be applied to the source */
-    bool transform = true ;
-    cs_porosity_from_scan_add_source(source, transform);
-  }
-  {
-    cs_real_3_t source = {4.295, 3.2, 0.5};
-    /* If a transformation matrix has been applied
-     * chose if if has to be applied to the source */
-    bool transform = true ;
-    cs_porosity_from_scan_add_source(source, transform);
-  }
 
   /*--------------------------------------------------------------------------*/
 
@@ -1290,6 +1206,91 @@ cs_user_internal_coupling(void)
    cs_glob_atmo_chemistry->frozen_gas_chem = false;
 
   /*! [atmo_module] */
+
+  /* Example: compute porosity from a scan of points
+   * ------------------------------------------------*/
+
+  cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
+
+  /* Apply a transformation to the scanned points */
+  /* Translation part */
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][3] = 1.98;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][3] = 37.5477;
+  /* Rotation part arround z axis */
+  cs_real_t angle = 15. /180. * cs_math_pi;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][0] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][1] =  sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
+
+  /* Add some sources to fill fluid space */
+  {
+    cs_real_3_t source = {4.295, 1.15326, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
+  {
+    cs_real_3_t source = {4.295, 3.2, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define internal coupling options.
+ *
+ * Options are usually defined using cs_internal_coupling_add_entity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling(void)
+{
+  /* Example: define coupling between one volume zone and the rest of the
+     mesh; this will automatically transform the selection boundaries
+     to actual mesh boundaries.
+     --------------------------------------------------------------------*/
+
+  /*! [param_internal_coupling_add_volume] */
+
+  cs_internal_coupling_add_volume(NULL,
+                                  "x<.5"); /* Solid volume criterion */
+
+  /* Activate fluid-solid mode to kill dynamic in the solid */
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  stokes->fluid_solid = true;
+
+  /*! [param_internal_coupling_add_volume] */
+
+  /* Example: define coupling along an existing mesh boundary.
+     ---------------------------------------------------------*/
+
+  /*! [param_internal_coupling_add] */
+
+  cs_internal_coupling_add(NULL,
+                           "solid_volume_criterion",
+                           "interface_criterion");
+
+  /*! [param_internal_coupling_add] */
+
+  /* Example: couple field whose name is "scalar1"
+     ---------------------------------------------*/
+
+  /*! [param_internal_coupling] */
+
+  int f_id = cs_field_id_by_name("scalar1");
+
+  cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
+
+  /*! [param_internal_coupling] */
 
 
 }
