@@ -454,7 +454,7 @@ double cs_turb_cmu025;
  * Useful if and only if \ref iturb= 20, 21, 30 or 31 (\f$k-\varepsilon\f$
  * or \f$R_{ij}-\varepsilon\f$).
  */
-const double cs_turb_ce1 = 1.44;
+double cs_turb_ce1 = 1.44;
 
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
@@ -462,7 +462,7 @@ const double cs_turb_ce1 = 1.44;
  * Useful if and only if \ref iturb = 20, 21 or 30
  * (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR).
  */
-const double cs_turb_ce2 = 1.92;
+double cs_turb_ce2 = 1.92;
 
 /*!
  * Coefficient of interfacial coefficient in k-eps, used in Lagrange treatment.
@@ -471,7 +471,7 @@ const double cs_turb_ce2 = 1.92;
  * in case of two-way coupling. Useful in case of Lagrangian modelling,
  * in \f$k-\varepsilon\f$ and \f$R_{ij}-\varepsilon\f$ with two-way coupling.
  */
-const double cs_turb_ce4 = 1.20;
+double cs_turb_ce4 = 1.20;
 
 /*!
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
