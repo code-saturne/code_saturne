@@ -2036,7 +2036,7 @@ cs_gui_physical_properties(void)
     double visls_0 = -1;
     cs_gui_properties_value("thermal_conductivity", &visls_0);
     cs_field_set_key_double(cs_field_by_name("temperature"),
-                            cs_field_key_id("diffusiity_ref"),
+                            cs_field_key_id("diffusivity_ref"),
                             visls_0);
   }
 

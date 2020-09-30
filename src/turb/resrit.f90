@@ -222,6 +222,8 @@ endif
 call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
+else
+  call field_get_key_double(ivarfl(ivar), kvisl0, visls_0)
 endif
 
 do iel = 1, ncelet
