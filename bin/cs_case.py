@@ -1557,6 +1557,11 @@ class case:
 
         os.chdir(self.exec_dir)
 
+        if self.package_compute.config.env_modules != "no":
+            for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%'):
+                if ev in os.environ:
+                    del os.environ[ev]
+
         # Indicate status using temporary file for SALOME.
 
         self.update_scripts_tmp('ready', 'running')
