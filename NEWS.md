@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix GUI handling of batch job name.
+
 - Fix GUI crash when inserting a comment in formula
 
 - Fix handling of alternate compute versions with relocatable builds

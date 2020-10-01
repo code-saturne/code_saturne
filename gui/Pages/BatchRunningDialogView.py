@@ -393,7 +393,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.have_mpi = self.jmdl.have_mpi
         self.have_openmp = self.jmdl.have_openmp
 
-        self.job_name = self.jmdl.batch.params['job_nodes']
+        self.job_name = self.jmdl.batch.params['job_name']
         self.job_nodes = self.jmdl.batch.params['job_nodes']
         self.job_ppn  = self.jmdl.batch.params['job_ppn']
         self.job_procs = self.jmdl.batch.params['job_procs']
@@ -718,7 +718,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         for k in self.jmdl.job_dict:
             self.jmdl.job_dict[k] = self.job_dict[k]
 
-        self.jmdl.batch.params['job_nodes'] = self.job_name
+        self.jmdl.batch.params['job_name'] = self.job_name
         self.jmdl.batch.params['job_nodes'] = self.job_nodes
         self.jmdl.batch.params['job_ppn'] = self.job_ppn
         self.jmdl.batch.params['job_procs'] = self.job_procs
