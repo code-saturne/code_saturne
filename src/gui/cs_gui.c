@@ -49,6 +49,7 @@
 #include "fvm_selector.h"
 
 #include "cs_all_to_all.h"
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
@@ -2228,19 +2229,12 @@ void CS_PROCF(uiporo, UIPORO)(void)
   cs_field_t *fporo = CS_F_(poro);
   cs_field_t *ftporo = CS_F_(t_poro);
 
-  cs_real_t   *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  if (fporo != NULL)
+    cs_array_set_value_real(n_cells_ext, 1, 1., fporo->val);
 
-  if (fporo != NULL) {
-    porosi = fporo->val;
-    if (ftporo != NULL) {
-      porosf = (cs_real_6_t *)ftporo->val;
-    }
-  }
-
-  for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++) {
-    porosi[iel] = 1.;
-    if (ftporo != NULL) {
+  if (ftporo != NULL) {
+    cs_real_6_t *porosf = (cs_real_6_t *)ftporo->val;
+    for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++) {
       porosf[iel][0] = 1.;
       porosf[iel][1] = 1.;
       porosf[iel][2] = 1.;
@@ -2275,6 +2269,8 @@ void CS_PROCF(uiporo, UIPORO)(void)
       }
     }
   }
+
+  cs_porous_model_auto_face_porosity();
 }
 
 /*----------------------------------------------------------------------------
@@ -4060,6 +4056,8 @@ cs_gui_porous_model(void)
       if (mdl) {
         if (cs_gui_strcmp(mdl, "anisotropic"))
           cs_glob_porous_model = 2;
+        else if (cs_gui_strcmp(mdl, "integral"))
+          cs_glob_porous_model = 3;
       }
     }
   }

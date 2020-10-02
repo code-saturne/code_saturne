@@ -99,6 +99,17 @@ void
 cs_porous_model_init_fluid_quantities(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic computation of the face porosity and factors.
+ *
+ * This is useful for the integral porous model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_auto_face_porosity(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

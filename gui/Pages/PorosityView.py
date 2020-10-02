@@ -95,9 +95,10 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         # Combo model
         if self.case.module_name() == 'code_saturne':
-            self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
+            self.modelPorosityType = ComboModel(self.comboBoxType, 3, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
             self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
+            self.modelPorosityType.addItem(self.tr("integral model"), 'integral')
         else:
             self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
