@@ -71,7 +71,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
                 import code_saturne.Pages.BoundaryConditionsView as Page
                 thisPage = Page.BoundaryConditionsView(root, case, zone_name)
 
-        elif item.parentItem.itemData[0] == tr("Volume zones"):
+        elif item.parentItem.itemData[0] == tr("Volumic terms"):
             import code_saturne.Pages.VolumicConditionsView as Page
             thisPage = Page.VolumicConditionsView(root, case, zone_name)
 
@@ -102,13 +102,17 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.PreprocessingView as Page
         thisPage = Page.PreprocessingView(root, case, stbar)
 
+    elif page_name == tr("Volume zones"):
+        import code_saturne.Pages.LocalizationView as Page
+        thisPage = Page.VolumeLocalizationView(root, case, tree)
+
     elif page_name == tr("Notebook"):
         import code_saturne.Pages.NotebookView as Page
         thisPage = Page.NotebookView(root, case)
 
-    elif page_name == tr("Volume zones"):
-        import code_saturne.Pages.LocalizationView as Page
-        thisPage = Page.VolumeLocalizationView(root, case, tree)
+    elif page_name == tr("Volumic terms"):
+        import code_saturne.Pages.VolumicTermsView as Page
+        thisPage = Page.VolumicTermsView(root, case)
 
     elif page_name == tr("Calculation features"):
         import code_saturne.Pages.AnalysisFeaturesView as Page

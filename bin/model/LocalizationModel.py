@@ -296,7 +296,6 @@ class VolumicZone(Zone):
         dico['nature']['head_losses'] = "off"
         dico['nature']['porosity'] = "off"
         dico['nature']['momentum_source_term'] = "off"
-        dico['nature']['mass_source_term'] = "off"
         dico['nature']['thermal_source_term'] = "off"
         dico['nature']['scalar_source_term'] = "off"
         dico['nature']['groundwater_law'] = "off"
@@ -305,7 +304,7 @@ class VolumicZone(Zone):
     def isNatureActivated(self, text):
         if text == "source_term":
             status = False
-            for source_term_type in ["momentum", "mass", "thermal", "scalar"]:
+            for source_term_type in ["momentum", "thermal", "scalar"]:
                 status = status or super().isNatureActivated(source_term_type + "_source_term")
             return status
         else:
@@ -355,6 +354,14 @@ class LocalizationModel(object):
 
         return locals
 
+    def getSortedZoneLabels(self):
+        zone_labels = self.getLabelsZonesList()
+        zone_ids = self.getCodeNumbersList()
+        zone_ids = map(int, zone_ids)
+        sorted_labels = [None for i in range(len(zone_labels))]
+        for unsorted_id, sorted_id in enumerate(zone_ids):
+            sorted_labels[sorted_id - 1] = zone_labels[unsorted_id]
+        return sorted_labels
 
     def getLabelsZonesList(self):
         """
@@ -366,7 +373,6 @@ class LocalizationModel(object):
             labels.append(zone.getLabel())
 
         return labels
-
 
     def getCodeNumbersList(self):
         """
@@ -600,14 +606,28 @@ class VolumicLocalizationModel(LocalizationModel):
             localization = str(node.xmlGetTextNode())
             nature = self.getNature(label)
             zone = Zone('VolumicZone',
-                        case = self.case,
-                        label = label,
-                        codeNumber = codeNumber,
-                        localization = localization,
-                        nature = nature)
+                        case=self.case,
+                        label=label,
+                        codeNumber=codeNumber,
+                        localization=localization,
+                        nature=nature)
             zones.append(zone)
         return zones
 
+    def selectZone(self, value, criterium="label"):
+        """ Return first zone satisfying criterium """
+        zones = self.getZones()
+        for zone in zones:
+            print(zone)
+            if criterium == "label":
+                print(zone.getLabel(), value)
+                if zone.getLabel() == value:
+                    return zone
+            elif criterium == "codeNumber":
+                if zone.getCodeNumber() == value:
+                    return zone
+            else:
+                raise ValueError
 
     @Variables.noUndo
     def getCodeNumberOfZoneLabel(self, label):

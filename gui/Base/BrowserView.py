@@ -216,6 +216,9 @@ class TreeModel(QAbstractItemModel):
                 elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == self.tr('Volumic terms'):
+                    img_path = ":/icons/22x22/volume_zones.png"
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary zones'):
                     img_path = ":/icons/22x22/boundary_conditions.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -468,7 +471,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
               'Closure modeling', 'Fluid properties',
-              'Particles and droplets tracking', 'Volume zones',
+              'Particles and droplets tracking', 'Volumic terms',
               'Boundary zones', 'Time settings', 'Numerical parameters',
               'Postprocessing', 'Performance settings']
 
@@ -479,7 +482,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if section == 'Calculation environment':
             return ['Notebook']
         elif section == 'Mesh':
-            return ['Preprocessing']
+            return ['Preprocessing', "Volume zones"]
         elif section == 'Calculation features':
             return ['Main fields', 'Deformable mesh', 'Turbulence models',
                     'Thermal model', 'Body forces', 'Gas combustion',
@@ -497,7 +500,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return []
         elif section == 'Particles and droplets tracking':
             return ['Statistics']
-        elif section == 'Volume zones':
+        elif section == 'Volumic terms':
             return []
         elif section == 'Boundary zones':
             return ['Boundary conditions', 'Particle boundary conditions',
@@ -786,7 +789,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Statistics'))
         """
 
-        self.setRowShow(self.tr('Volume zones'), False)
+        self.setRowShow(self.tr('Volumic terms'), False)
         """
         self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Head losses'))
@@ -1014,6 +1017,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Volume zones
 
         self.setRowShow(self.tr('Volume zones'), True)
+        self.setRowShow(self.tr('Volumic terms'), True)
 
         node_domain = case.xmlGetNode('solution_domain')
 
@@ -1054,23 +1058,14 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Prepare batch calculation'), True)
 
         # Update boundary zones display
-        boundary_zone_labels = self._getSortedZoneLabels(case, "BoundaryZone")
+        boundary_zone_labels = LocalizationModel("BoundaryZone", case).getSortedZoneLabels()
         self.updateBrowserZones(boundary_zone_labels, "Boundary conditions")
 
         # Update volume zones display
-        volume_zone_labels = self._getSortedZoneLabels(case, "VolumicZone")
-        self.updateBrowserZones(volume_zone_labels, "Volume zones")
+        volume_zone_labels = LocalizationModel("VolumicZone", case).getSortedZoneLabels()
+        self.updateBrowserZones(volume_zone_labels, "Volumic terms")
 
         self.__hideRow()
-
-    def _getSortedZoneLabels(self, case, zone_type):
-        zone_labels = LocalizationModel(zone_type, case).getLabelsZonesList()
-        zone_ids = LocalizationModel(zone_type, case).getCodeNumbersList()
-        zone_ids = map(int, zone_ids)
-        sorted_labels = [None for i in range(len(zone_labels))]
-        for unsorted_id, sorted_id in enumerate(zone_ids):
-            sorted_labels[sorted_id - 1] = zone_labels[unsorted_id]
-        return sorted_labels
 
     def __hideRow(self):
         """Only for developement purpose"""
