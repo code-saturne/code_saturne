@@ -538,9 +538,12 @@ class study:
             shutil.copytree(user_examples_distpath, user_examples)
 
             add_datadirs = []
-            if self.package.name == 'neptune_cfd' :
-                add_datadirs.append(os.path.join(self.package.get_dir("datadir"),
-                                                 self.package.name))
+
+            # If neptune_cfd is present, copy user functions to EXAMPLES folder
+            ncfd_user_examples = os.path.join(self.package.get_dir("datadir"),
+                                              "neptune_cfd")
+            if os.path.isdir(ncfd_user_examples):
+                add_datadirs.append(ncfd_user_examples)
 
             for d in add_datadirs:
                 user_distpath = os.path.join(d, 'user')

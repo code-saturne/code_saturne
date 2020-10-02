@@ -179,9 +179,12 @@ def update_case(options, pkg):
         copy_directory(user_examples_distpath, user_examples, True)
 
         add_datadirs = []
-        if pkg.name == 'neptune_cfd' :
-            add_datadirs.append(os.path.join(pkg.get_dir("datadir"),
-                                             pkg.name))
+
+        # If neptune_cfd is present, copy user functions to EXAMPLES folder
+        ncfd_user_examples = os.path.join(self.package.get_dir("datadir"),
+                                          "neptune_cfd")
+        if os.path.isdir(ncfd_user_examples):
+            add_datadirs.append(ncfd_user_examples)
 
         for d in add_datadirs:
             user_ref_distpath = os.path.join(d, 'user')
