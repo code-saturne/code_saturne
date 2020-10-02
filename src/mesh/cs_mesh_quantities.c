@@ -2610,8 +2610,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   if (mq->djjpf == NULL)
     BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
 
-  if (mq->b_sym_flag == NULL)
+  if (mq->b_sym_flag == NULL) {
     BFT_MALLOC(mq->b_sym_flag, n_b_faces, int);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      mq->b_sym_flag[i] = 1;
+  }
 
   /* Compute some distances relative to faces and associated weighting */
 
