@@ -419,7 +419,6 @@ _ac_update_pr(const cs_real_t               t_eval,
  *
  * \param[in]      sc          pointer to a cs_cdofb_ac_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary faces
  * \param[in]      diff_pty    pointer to \ref cs_property_data_t for diffusion
@@ -431,7 +430,6 @@ _ac_update_pr(const cs_real_t               t_eval,
 static void
 _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
                     const cs_equation_param_t     *eqp,
-                    const cs_cdofb_vecteq_t       *eqc,
                     const cs_cell_mesh_t          *cm,
                     const cs_boundary_type_t       bf_type[],
                     const cs_property_data_t      *diff_pty,
@@ -495,9 +493,6 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
       /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop on boundary faces */
-
-    if (cs_equation_param_has_convection(eqp)) /* Always weakly enforced */
-      eqc->adv_func_bc(eqp, cm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -757,7 +752,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _ac_apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
+      _ac_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type,
                           diff_hodge->pty_data, csys, cb);
 
       /* 4- TIME CONTRIBUTION */

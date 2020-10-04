@@ -521,7 +521,6 @@ _build_shared_structures(void)
  *
  * \param[in]      sc        pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      mom_eqp   pointer to a cs_equation_param_t structure
- * \param[in]      mom_eqc   context structure for the momentum equation
  * \param[in]      cm        pointer to a cellwise view of the mesh
  * \param[in]      bf_type   type of boundary for the boundary face
  * \param[in]      diff_pty  pointer to a \cs_property_data_t struct. for diff.
@@ -533,7 +532,6 @@ _build_shared_structures(void)
 static void
 _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
                       const cs_equation_param_t     *mom_eqp,
-                      const cs_cdofb_vecteq_t       *mom_eqc,
                       const cs_cell_mesh_t          *cm,
                       const cs_boundary_type_t      *bf_type,
                       const cs_property_data_t      *diff_pty,
@@ -551,9 +549,6 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
     if (csys->has_nhmg_neumann)
       for (short int f  = 0; f < 3*cm->n_fc; f++)
         csys->rhs[f] += csys->neu_values[f];
-
-    if (cs_equation_param_has_convection(mom_eqp)) /* Always weakly enforced */
-      mom_eqc->adv_func_bc(mom_eqp, cm, cb, csys);
 
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1237,8 +1232,8 @@ _steady_build(const cs_navsto_param_t      *nsp,
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
-                            diff_hodge->pty_data, csys, cb);
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
+                            csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1434,8 +1429,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc,
-                            cm, nsb.bf_type, diff_hodge->pty_data,
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
                             csys, cb);
 
       /* 4- TIME CONTRIBUTION (mass lumping or voronoï) */
@@ -1688,8 +1682,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc,
-                            cm, nsb.bf_type, diff_hodge->pty_data,
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
                             csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME

@@ -150,6 +150,7 @@ cs_cdofb_monolithic.c \
 cs_cdofb_navsto.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_vecteq.c \
+cs_cdofb_priv.c \
 cs_cdovb_scaleq.c \
 cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \

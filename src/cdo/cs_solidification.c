@@ -2227,7 +2227,7 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
 
   /* Define the local advection matrix */
-  cs_cdofb_advection_build(eqp, cm, eqc->adv_func, cb);
+  cs_cdofb_advection_build(eqp, cm, csys, eqc->adv_func, cb);
 
   /* Build the cellwise array: c - c_l
      One should have c_l >= c. Therefore, one takes fmin(...,0) */
