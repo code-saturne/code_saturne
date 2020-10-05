@@ -732,7 +732,14 @@ cs_xdef_log(const char          *prefix,
 
   case CS_XDEF_BY_FIELD:
     {
-      cs_field_t  *f = (cs_field_t *)d->input;
+      cs_field_t  *f = NULL;
+      if (d->support == CS_XDEF_SUPPORT_BOUNDARY)
+        f = cs_field_by_id(*((int *)d->input));
+      else if (d->support == CS_XDEF_SUPPORT_VOLUME)
+        f = (cs_field_t *)d->input;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid support.\n", __func__);
 
       cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field %s\n",
                     _p, f->name);
