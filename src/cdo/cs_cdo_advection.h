@@ -73,6 +73,30 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build the cellwise advection operator for CDO-Fb schemes
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ *          This pointer of function manages how is build the advection term
+ *          in a cell and it relies on the lower-level function
+ *          \ref cs_cdofb_advection_t
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys        pointer to a cs_cell_sys_t structure
+ * \param[in]      build_func  pointer to the function building the system
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdofb_advection_build_t)(const cs_equation_param_t   *eqp,
+                             const cs_cell_mesh_t        *cm,
+                             const cs_cell_sys_t         *csys,
+                             cs_cdofb_advection_t        *build_func,
+                             cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme.
  *          The local matrix related to this operator is stored in cb->loc
@@ -148,6 +172,34 @@ cs_cdo_advection_get_cip_coef(void);
 /*!
  * \brief   Build the cellwise advection operator for CDO-Fb schemes
  *          The local matrix related to this operator is stored in cb->loc
+ *
+ *          Case of an advection term without a diffusion operator. In this
+ *          situation, a numerical issue may arise if an internal or a border
+ *          face is such that there is no advective flux. A specil treatment
+ *          is performed to tackle this issue.
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys        pointer to a cs_cell_sys_t structure
+ * \param[in]      build_func  pointer to the function building the system
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
+                                      const cs_cell_mesh_t        *cm,
+                                      const cs_cell_sys_t         *csys,
+                                      cs_cdofb_advection_t        *build_func,
+                                      cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build the cellwise advection operator for CDO-Fb schemes
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ *          A diffusion term is present so that there is no need to perform
+ *          additional checkings.
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure

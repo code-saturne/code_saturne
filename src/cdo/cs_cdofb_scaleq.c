@@ -363,7 +363,7 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
     /* Define the local advection matrix and store the advection fluxes across
        primal faces (Boundary conditions are treated at this stage since there
        are always weakly enforced) */
-    cs_cdofb_advection_build(eqp, cm, csys, eqc->adv_func, cb);
+    eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
 
     /* Add it to the local system */
     if (eqp->adv_scaling_property == NULL)
@@ -2524,7 +2524,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
            since there are always weakly enforced) */
 
         /* TODO: Boundary condition and csys --> set to NULL up to now */
-        cs_cdofb_advection_build(eqp, cm, NULL, eqc->adv_func, cb);
+        eqc->advection_build(eqp, cm, NULL, eqc->advection_func, cb);
 
         cs_real_t  *res = cb->values;
         memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));

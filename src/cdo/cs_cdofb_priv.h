@@ -85,7 +85,8 @@ struct  _cs_cdofb_t {
   cs_cdo_enforce_bc_t       *enforce_sliding;
 
   /* Pointer of function to build the advection term */
-  cs_cdofb_advection_t      *adv_func;
+  cs_cdofb_advection_build_t      *advection_build;
+  cs_cdofb_advection_t            *advection_func;
 
   /* If one needs to build a local hodge op. for time and reaction */
   cs_hodge_param_t           mass_hodgep;

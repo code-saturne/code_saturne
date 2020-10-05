@@ -573,7 +573,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Define the local advection matrix and store the advection
        fluxes across primal faces */
-    cs_cdofb_advection_build(eqp, cm, csys, eqc->adv_func, cb);
+    eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
 
     /* Add the local advection operator to the local system */
     const cs_real_t  *sval = cb->loc->val;
