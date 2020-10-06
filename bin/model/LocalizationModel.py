@@ -614,13 +614,11 @@ class VolumicLocalizationModel(LocalizationModel):
             zones.append(zone)
         return zones
 
-    def selectZone(self, value, criterium="label"):
+    def selectZone(self, value, criterium):
         """ Return first zone satisfying criterium """
         zones = self.getZones()
         for zone in zones:
-            print(zone)
             if criterium == "label":
-                print(zone.getLabel(), value)
                 if zone.getLabel() == value:
                     return zone
             elif criterium == "codeNumber":

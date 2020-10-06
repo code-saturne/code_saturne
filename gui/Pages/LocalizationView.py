@@ -726,14 +726,12 @@ class StandardItemModelLocalization(QStandardItemModel):
                 zone.getLocalization()]
         self._data.append(line)
         row = self.rowCount()
-        self.setRowCount(row+1)
+        self.setRowCount(row + 1)
 
         # Warning: the Volume region 'all_cells' is mandatory, and can not be removed.
-        if self.zoneType == "VolumicZone":
-            if zone.getLabel() == "all_cells":
-                for c in [0, 3]:
-                    self._disable.append((row, c))
-            # self._disable.append((row, 2))
+        if zone.getLabel() == "all_cells":
+            for c in [0, 2]:
+                self._disable.append((row, c))
         self._disable.append((row, 1))
         self.browser.configureTree(self.case)
         return zone
@@ -757,24 +755,153 @@ class StandardItemModelLocalization(QStandardItemModel):
     def deleteItem(self, irow):
         del self._data[irow]
         nb_rows = self.rowCount()
-        self.setRowCount(nb_rows-1)
+        self.setRowCount(nb_rows - 1)
         self.updateItem()
         if irow < nb_rows:
             self.browser.configureTree(self.case)
-
 
     def deleteItems(self):
         for row in range(self.rowCount()):
             del self._data[0]
         self.setRowCount(0)
 
+    def getData(self, row, column):
+        return self._data[row][column]
+
+
+class VolumeZonesTableModel(QStandardItemModel):
+    def __init__(self, mdl, zoneType, tree=None, case=None):
+        """
+        """
+        QStandardItemModel.__init__(self)
+        self.headers = [self.tr("Label"),
+                        self.tr("Zone"),
+                        self.tr("Selection criteria")]
+        self.setColumnCount(len(self.headers))
+
+        self.mdl = mdl
+        self.zoneType = zoneType
+        self.browser = tree
+        self.case = case
+
+        self._data = []
+        self._disable = []
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        if role == Qt.DisplayRole:
+            row = index.row()
+            col = index.column()
+            return self._data[row][col]
+
+        return None
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        if (index.row(), index.column()) in self._disable:
+            return Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.headers[section]
+        return None
+
+    def setData(self, index, value, role):
+        row = index.row()
+        col = index.column()
+
+        [old_label, old_code, old_local] = self._data[row]
+        old_zone = self.mdl.selectZone(old_code, criterium="codeNumber")
+
+        new_label = old_label
+        new_code = old_code
+        new_nature = old_zone.getNature()
+        new_local = old_local
+
+        if col == 0:
+            new_label = from_qvariant(value, to_text_string)
+            self._data[row][col] = new_label
+
+        elif col == 1:
+            new_code = from_qvariant(value, int)
+            self._data[row][col] = new_code
+
+        elif col == 2:
+            new_local = str(from_qvariant(value, to_text_string))
+            self._data[row][col] = new_local
+
+        new_zone = Zone(self.zoneType,
+                        case=self.case,
+                        label=new_label,
+                        codeNumber=new_code,
+                        localization=new_local,
+                        nature=new_nature)
+
+        self.mdl.replaceZone(old_zone, new_zone)
+
+        self.dataChanged.emit(index, index)
+        self.browser.configureTree(self.case)
+        return True
+
+    def addItem(self, zone=None):
+        """
+        Add an element in the table view.
+        """
+        if not zone:
+            zone = self.mdl.addZone(Zone(self.zoneType, case=self.case))
+
+        line = [zone.getLabel(),
+                zone.getCodeNumber(),
+                zone.getLocalization()]
+        self._data.append(line)
+        row = self.rowCount()
+        self.setRowCount(row + 1)
+
+        # Warning: the Volume region 'all_cells' is mandatory, and can not be removed.
+        if zone.getLabel() == "all_cells":
+            for c in [0, 2]:
+                self._disable.append((row, c))
+            # self._disable.append((row, 2))
+        self._disable.append((row, 1))
+        self.browser.configureTree(self.case)
+        return zone
+
+    def getItem(self, row):
+        return self._data[row]
+
+    def updateItem(self):
+        # update zone Id
+        for id in range(0, len(self.mdl.getCodeNumbersList())):
+            self._data[id][1] = id + 1
+
+    def updateZone(self, index, nature):
+        return
+
+    def deleteItem(self, irow):
+        del self._data[irow]
+        nb_rows = self.rowCount()
+        self.setRowCount(nb_rows - 1)
+        self.updateItem()
+        if irow < nb_rows:
+            self.browser.configureTree(self.case)
+
+    def deleteItems(self):
+        for row in range(self.rowCount()):
+            del self._data[0]
+        self.setRowCount(0)
 
     def getData(self, row, column):
         return self._data[row][column]
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 # Main class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class LocalizationView(QWidget, Ui_LocalizationForm):
     """
@@ -799,18 +926,26 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         self.browser = tree
 
-        # Model for table View
-        self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V, tree, case)
-        self.tableView.setModel(self.modelLocalization)
-
         # Delegates
         delegateLabel = LabelDelegate(self.tableView, self.mdl)
         delegateCode = CodeNumberDelegate(self.tableView, self.mdl)
         delegateLocal = LocalizationSelectorDelegate(self.tableView, self.mdl)
 
-        self.tableView.setItemDelegateForColumn(0, delegateLabel)
-        self.tableView.setItemDelegateForColumn(1, delegateCode)
-        self.tableView.setItemDelegateForColumn(3, delegateLocal)
+        # Model for table View
+        if zoneType == "BoundaryZone":
+            self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V, tree, case)
+            self.tableView.setModel(self.modelLocalization)
+            self.tableView.setItemDelegateForColumn(0, delegateLabel)
+            self.tableView.setItemDelegateForColumn(1, delegateCode)
+            self.tableView.setItemDelegateForColumn(3, delegateLocal)
+            last_section = 3
+        else:
+            self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
+            self.tableView.setModel(self.modelLocalization)
+            last_section = 2
+            self.tableView.setItemDelegateForColumn(0, delegateLabel)
+            self.tableView.setItemDelegateForColumn(1, delegateCode)
+            self.tableView.setItemDelegateForColumn(2, delegateLocal)
 
         # Populate QTableView model
         for zone in self.mdl.getZones():
@@ -819,22 +954,20 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         if QT_API == "PYQT4":
             self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+            self.tableView.horizontalHeader().setResizeMode(last_section, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+            self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
 
         # Connections
         self.pushButtonNew.clicked.connect(self.slotAddZone)
         self.pushButtonDelete.clicked.connect(self.slotDeleteZone)
-        self.pushButtonModify.clicked.connect(self.slotModifyZone)
         self.toolButtonCreation.clicked.connect(self.slotAddFromPrePro)
         self.modelLocalization.dataChanged.connect(self.dataChanged)
         self.tableView.clicked.connect(self.slotChangeSelection)
 
         self.pushButtonSalome.hide()
-        self.pushButtonModify.setEnabled(False)
         if case['salome']:
             self.pushButtonSalome.show()
             self.pushButtonSalome.clicked.connect(self.slotAddFromSalome)
@@ -848,10 +981,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     def slotChangeSelection(self):
         """
         """
-        self.pushButtonModify.setEnabled(False)
         current = self.tableView.currentIndex()
-        if current != self.tableView.rootIndex():
-            self.pushButtonModify.setEnabled(True)
 
     @pyqtSlot()
     def slotAddZone(self):
@@ -859,74 +989,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         Insert a new item in the table view.
         """
         zone = self.modelLocalization.addItem()
-
-        if self.zoneType == 'VolumicZone':
-            label  = zone.getLabel()
-            code   = zone.getCodeNumber()
-            nature = zone.getNature()
-            local  = zone.getLocalization()
-
-            self.keys = Zone('VolumicZone', case = self.case).getNatureList()
-
-            log.debug("slotAddZone -> %s" % str(nature))
-
-            dialog = VolumicZoneAdvancedView(self, self.case, self.keys, nature)
-
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotAddZone -> %s" % str(result))
-
-                new_zone = Zone(self.zoneType,
-                                case         = self.case,
-                                label        = label,
-                                codeNumber   = code,
-                                localization = local,
-                                nature       = result)
-
-                self.mdl.replaceZone(zone, new_zone)
-                index = self.tableView.model().index(code - 1, 2)
-                self.modelLocalization.updateZone(index, result)
-            self.browser.configureTree(self.case)
-        self.slotChangeSelection()
-
-
-    @pyqtSlot()
-    def slotModifyZone(self):
-        """
-        Modify volumic zone nature
-        """
-        index = self.tableView.selectionModel().selectedRows()[0]
-
-        [label, code, nature, local] = self.modelLocalization.getItem(index.row())
-
-        self.keys = Zone('VolumicZone', case = self.case).getNatureList()
-
-        zone = Zone(self.zoneType,
-                    case         = self.case,
-                    label        = label,
-                    codeNumber   = code,
-                    localization = local,
-                    nature       = nature)
-
-        log.debug("slotAddZone -> %s" % str(nature))
-
-        dialog = VolumicZoneAdvancedView(self, self.case, self.keys, nature)
-
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotAddZone -> %s" % str(result))
-
-            new_zone = Zone(self.zoneType,
-                            case         = self.case,
-                            label        = label,
-                            codeNumber   = code,
-                            localization = local,
-                            nature       = result)
-
-            self.mdl.replaceZone(zone, new_zone)
-            index = self.tableView.model().index(code - 1, 2)
-            self.modelLocalization.updateZone(index, result)
-        self.browser.configureTree(self.case)
         self.slotChangeSelection()
 
 
@@ -945,7 +1007,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         lst.reverse()
 
         for row in lst:
-            [label, codeNumber, nature, localization] = self.modelLocalization.getItem(row)
+            label = self.modelLocalization.getItem(row)[0]
             if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
                 # We also need to delete postprocessing meshes based on the zone
                 OutputControlModel(self.case).deleteZone(label, self.zoneType)
@@ -1094,9 +1156,6 @@ class VolumeLocalizationView(LocalizationView):
         if hide_all:
             self.groupBoxLocalization.hide()
 
-        # Delegates
-        delegateNature = VolumeNatureDelegate(self.tableView, self.case)
-        self.tableView.setItemDelegateForColumn(2, delegateNature)
         self.browser.configureTree(self.case)
 
 #-------------------------------------------------------------------------------
@@ -1123,36 +1182,6 @@ class BoundaryLocalizationView(LocalizationView):
         # Delegates
         delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
         self.tableView.setItemDelegateForColumn(2, delegateNature)
-
-        self.pushButtonModify.hide()
-
-
-    @pyqtSlot()
-    def slotSelectBoudaries(self):
-        """
-        Public slot.
-
-        Warning: works only if the selection mode of the view is set to MultiSelection.
-        """
-        previous_selecion_mode = self.tableView.selectionMode()
-        self.tableView.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.tableView.clearSelection()
-
-        if self.sender() == self.actionInlet:
-            select  = "inlet"
-        elif self.sender() == self.actionOutlet:
-            select  = "outlet"
-        elif self.sender() == self.actionWall:
-            select  = "wall"
-        elif self.sender() == self.actionSymmetry:
-            select  = "symmetry"
-
-        for row in range(self.modelLocalization.rowCount()):
-            [label, code, nature, localization] = self.modelLocalization.getItem(row)
-            if nature == select:
-                self.tableView.selectRow(row)
-
-        self.tableView.setSelectionMode(previous_selecion_mode)
 
 #-------------------------------------------------------------------------------
 # End

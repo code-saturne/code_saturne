@@ -118,8 +118,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         # TODO : move the creation of a new zone to LocalizationModel.replaceZone, but need to check impact on LocalizationView first.
         for row in self._data:
             old_label = row[0]
-            old_zone = self._zoneModel.selectZone(old_label)
-            print(old_zone)
+            old_zone = self._zoneModel.selectZone(old_label, criterium="label")
             new_nature = {}
             for i, header in enumerate(self._headers[1:]):
                 nature = self._view2Model[header]
@@ -152,7 +151,9 @@ class VolumicZoneNatureModel(QAbstractTableModel):
     def flags(self, index):
         base_flags = Qt.ItemIsEnabled
         if index.column() == 0:
-            return base_flags
+            return base_flags  # lock first column
+        if index.row() == 0 and index.column() == 1:
+            return base_flags  # always activate initialization for zone "all_cells"
         else:
             return base_flags | Qt.ItemIsUserCheckable
 
