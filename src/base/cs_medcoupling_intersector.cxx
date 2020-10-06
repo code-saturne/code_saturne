@@ -242,8 +242,13 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     /* Matrix for the source mesh, based on the bbox of the target mesh */
     const cs_real_t *bbox = mi->local_mesh->bbox;
 
-    const DataArrayInt *subcells =
-      mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
+#if defined(MEDCOUPLING_USE_64BIT_IDS)
+    const DataArrayInt64 *subcells
+#else
+    const DataArrayInt *subcells
+#endif
+      = mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
+
 
     MEDCouplingNormalizedUnstructuredMesh<3,3>
       sMesh_wrapper(mi->source_mesh->buildPartOfMySelf(subcells->begin(),
@@ -251,7 +256,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
                                                        true));
 
     /* Compute the intersection matrix between source and target meshes */
-    std::vector<std::map<int,double> > mat;
+    std::vector<std::map<mcIdType, double> > mat;
     INTERP_KERNEL::Interpolation3D interpolator;
 
     interpolator.interpolateMeshes(sMesh_wrapper,
@@ -269,7 +274,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     const cs_lnum_t *connec = mi->local_mesh->new_to_old;
     for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
       cs_lnum_t c_id = connec[e_id];
-      for (std::map<int, double>::iterator it = mat[e_id].begin();
+      for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
            it != mat[e_id].end();
            ++it)
         mi->vol_intersect[c_id] += it->second;

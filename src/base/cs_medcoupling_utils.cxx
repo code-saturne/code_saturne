@@ -204,7 +204,6 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 
   cs_lnum_t vtx_count = -1;
   cs_lnum_t elt_buf_size = 4;
-  cs_lnum_t *elt_buf = NULL;
   cs_lnum_t *vtx_id = NULL;
 
   /* Mark and renumber vertices */
@@ -251,7 +250,8 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 
   /* Assign faces */
 
-  BFT_MALLOC(elt_buf, elt_buf_size, cs_lnum_t);
+  mcIdType *elt_buf = NULL;
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
   med_mesh->allocateCells(n_elts);
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -260,13 +260,13 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 
     assert(eid >= 0 && eid < mesh->n_b_faces);
 
-    cs_lnum_t n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
+    mcIdType n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
 
     cs_lnum_t connect_start = mesh->b_face_vtx_idx[eid];
 
     if (n_vtx > elt_buf_size) { /* reallocate buffer if required */
       elt_buf_size *= 2;
-      BFT_REALLOC(elt_buf, elt_buf_size, cs_lnum_t);
+      BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
     }
 
     const cs_lnum_t *_perm_face = _get_face_vertices_permutation(n_vtx);
@@ -325,7 +325,6 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   cs_lnum_t vtx_count = 0, cell_count = 0;
 
   cs_lnum_t  elt_buf_size = 8;
-  cs_lnum_t *elt_buf = NULL;
   cs_lnum_t *vtx_id = NULL;
   cs_lnum_t *cell_id = NULL;
   cs_lnum_t *cell_faces_idx = NULL, *cell_faces_num = NULL;
@@ -403,7 +402,8 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   const cs_lnum_t  *face_vertices_num[2] = {mesh->b_face_vtx_lst,
                                             mesh->i_face_vtx_lst};
 
-  BFT_MALLOC(elt_buf, elt_buf_size, cs_lnum_t);
+  mcIdType *elt_buf = NULL;
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
   for (cs_lnum_t  ii = 0; ii < elt_buf_size; ii++)
     elt_buf[ii] = -1;
 
@@ -412,7 +412,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
   for (cs_lnum_t ic = 0; ic < n_elts; ic++) {
 
-    cs_lnum_t n_vtx;
+    mcIdType  n_vtx;
     cs_lnum_t cell_vtx[8];
 
     cs_lnum_t i = ic;
@@ -502,7 +502,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
         while (n_vtx + n_face_vertices + 1 > elt_buf_size) {
           elt_buf_size *= 2;
-          BFT_REALLOC(elt_buf, elt_buf_size, cs_lnum_t);
+          BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
         }
 
         /* Add separator after first face */

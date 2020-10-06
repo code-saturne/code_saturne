@@ -418,7 +418,11 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
+#if defined(MEDCOUPLING_USE_64BIT_IDS)
+    const DataArrayInt64 *subcells
+#else
     const DataArrayInt *subcells
+#endif
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,  1.1);
 
     // Construct the subfields based on the subcells list
@@ -519,7 +523,11 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
+#if defined(MEDCOUPLING_USE_64BIT_IDS)
+    const DataArrayInt64 *subcells
+#else
     const DataArrayInt *subcells
+#endif
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox, 1.1);
 
     // Construction of a subfield and the submesh associated with it.
