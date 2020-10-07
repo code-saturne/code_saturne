@@ -2357,7 +2357,7 @@ cs_solidification_activate(cs_solidification_model_t      model,
   /* ---------------------------------------------------- */
 
   cs_flag_t  thm_num = 0, thm_post = 0;
-  cs_flag_t  thm_model = CS_THERMAL_MODEL_NAVSTO_VELOCITY;
+  cs_flag_t  thm_model = CS_THERMAL_MODEL_NAVSTO_ADVECTION;
 
   if (model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE)
     thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;

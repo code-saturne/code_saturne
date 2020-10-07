@@ -390,7 +390,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   thm->thermal_eq = eq;
 
   /* Add an advection term  */
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY) {
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION) {
 
     cs_equation_add_advection(eqp,
                               cs_advection_field_by_name("mass_flux"));
@@ -837,7 +837,7 @@ cs_thermal_system_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "  * Thermal | Model:");
   if (thm->model & CS_THERMAL_MODEL_STEADY)
     cs_log_printf(CS_LOG_SETUP, " Steady-state");
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY)
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
     cs_log_printf(CS_LOG_SETUP, " + Navsto advection");
   if (thm->model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     cs_log_printf(CS_LOG_SETUP, " + Anistropic conductivity");

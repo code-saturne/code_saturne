@@ -292,8 +292,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
       cs_flag_t  thm_num = 0, thm_post = 0;
       cs_flag_t  thm_model =
-        CS_THERMAL_MODEL_USE_TEMPERATURE |
-        CS_THERMAL_MODEL_NAVSTO_VELOCITY;
+        CS_THERMAL_MODEL_USE_TEMPERATURE | CS_THERMAL_MODEL_NAVSTO_ADVECTION;
 
       if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
         thm_model |= CS_THERMAL_MODEL_STEADY;
