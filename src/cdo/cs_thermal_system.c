@@ -325,7 +325,9 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, CS_PROPERTY_ISO);
 
   /* Thermal capacity */
-  thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
+  thm->cp = cs_property_by_name(CS_THERMAL_CP_NAME);
+  if (thm->cp == NULL)
+    thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
 
   /* Thermal conductivity */
   cs_property_type_t  pty_type = CS_PROPERTY_ISO;

@@ -123,19 +123,24 @@ typedef cs_flag_t  cs_navsto_param_model_t;
  * Take into account the Coriolis effects (add a source term)
  *
  * \var CS_NAVSTO_MODEL_BOUSSINESQ
- * Gravity effects are taken into account as well as the effect of small
- * variation of temperatures.
- * The gradient of temperature is assumed to have a small norm and the mass
- * density variates in a small range. In this case, an additional equation
- * related to the temperature is considered and momentum source term is added.
+ * An additional equation is created involving the thermal equation. The
+ * advection field is automatically set as the mass flux. By default, the
+ * temperature is solved in Celsius and homogeneous Neumann boundary conditions
+ * (no flux) are set.  The variation of mass density around a reference value is
+ * related to the variation of temperature w.r.t. a reference temperature and it
+ * plays a role in the gravity effects (rho.vect(g)) The gradient of temperature
+ * is assumed to have a small norm and the mass density variates in a small
+ * range. In this case, an additional momentum source term is added.
  *
  * \var CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ
- * Gravity effects are taken into account as well as the effect of small
- * variation of temperatures and that of alloy concentrations. The gradient of
- * temperature/alloy concentrations is assumed to have a small norm and the mass
- * density variates in a small range. In this case, additional equations related
- * to the temperature/alloy concetrations are considered.
- * A momentum source term is added wich is managed by the solidification module.
+ * This option is similar to \ref CS_NAVSTO_MODEL_BOUSSINESQ. The difference is
+ * that the variation of mass density relies not only on the temperature but
+ * also the alloy concentration(s). The gradient of temperature/alloy
+ * concentrations is assumed to have a small norm and the mass density variates
+ * in a small range. In this case, additional equations related to the
+ * temperature/alloy concetrations are considered. A momentum source term is
+ * added wich is managed by the solidification module.
+ *
  */
 
 typedef enum {

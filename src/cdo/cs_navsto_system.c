@@ -280,28 +280,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   }
 
-  /* Create associated equation(s) */
-  if (navsto->param->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
-
-    if (navsto->param->model & CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Two kinds of Boussinesq approximations are switched on.\n"
-                " Please check your settings.", __func__);
-
-    if (!cs_thermal_system_is_activated()) { /* Not already activated */
-
-      cs_flag_t  thm_num = 0, thm_post = 0;
-      cs_flag_t  thm_model =
-        CS_THERMAL_MODEL_USE_TEMPERATURE | CS_THERMAL_MODEL_NAVSTO_ADVECTION;
-
-      if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
-        thm_model |= CS_THERMAL_MODEL_STEADY;
-
-      cs_thermal_system_activate(thm_model, thm_num, thm_post);
-
-    }
-  }
-
   if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
 
     navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
@@ -800,6 +778,27 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   cs_navsto_param_t  *nsp = ns->param;
   assert(connect != NULL && quant != NULL && nsp != NULL);
+
+  /* Setup checkings */
+  if (navsto->param->model & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
+                              CS_NAVSTO_MODEL_BOUSSINESQ) > 0)
+    if (cs_thermal_system_is_activated() == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: The Navier-Stokes module is activated with options"
+                " that imply a thermal module.\n"
+                " Please check that cs_thermal_system_activate() has been"
+                " called.\n", __func__);
+
+    /* Check that an advection term has been set */
+    cs_equation_param_t  *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+    if (cs_equation_param_has_convection(eqp) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: No advection field is associated with the thermal"
+                " equation\n whereas the Navier-Stokes is associated with"
+                " the thermal equation.\n"
+                " Please check your settings.", __func__);
+
+  }
 
   /* Remaining boundary conditions:
    * 1. Walls
