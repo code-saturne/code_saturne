@@ -329,8 +329,21 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
   case CS_XDEF_BY_FIELD:
     {
       cs_field_t  *f = (cs_field_t *)input;
+      assert(f != NULL);
+      d->input = f;
 
-      d->input = &(f->id);
+      const cs_mesh_location_type_t  loc_type =
+        cs_mesh_location_get_type(f->location_id);
+
+      /* Update flags */
+      if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
+        d->meta |= CS_FLAG_FULL_LOC;
+        d->state |= CS_FLAG_STATE_FACEWISE;
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Definition by field on the boundary rely on a mesh"
+                  " location defined at boundary faces.", __func__);
     }
     break;
 
@@ -732,14 +745,11 @@ cs_xdef_log(const char          *prefix,
 
   case CS_XDEF_BY_FIELD:
     {
-      cs_field_t  *f = NULL;
-      if (d->support == CS_XDEF_SUPPORT_BOUNDARY)
-        f = cs_field_by_id(*((int *)d->input));
-      else if (d->support == CS_XDEF_SUPPORT_VOLUME)
-        f = (cs_field_t *)d->input;
-      else
+      cs_field_t  *f = (cs_field_t *)d->input;
+
+      if (f == NULL)
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid support.\n", __func__);
+                  " Field pointer is set to NULL in a definition by field");
 
       cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field %s\n",
                     _p, f->name);
