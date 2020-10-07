@@ -1903,11 +1903,11 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforce_by_cell_selection(cs_equation_param_t    *eqp,
-                                      cs_lnum_t               n_elts,
-                                      const cs_lnum_t         elt_ids[],
-                                      const cs_real_t         ref_value[],
-                                      const cs_real_t         elt_values[]);
+cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
+                                            cs_lnum_t             n_elts,
+                                            const cs_lnum_t       elt_ids[],
+                                            const cs_real_t       ref_value[],
+                                            const cs_real_t       elt_values[]);
 
 /*----------------------------------------------------------------------------*/
 
