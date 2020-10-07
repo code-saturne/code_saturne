@@ -99,6 +99,60 @@ cs_f_cdo_solve_unsteady_state_domain(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ *  \brief Check if one needs to solve the steady-state thermal equation
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_needs_solving_steady_state_thermal(void)
+{
+  if (cs_thermal_system_is_activated() == false)
+    return false;
+
+  cs_flag_t  thm_model = cs_thermal_system_get_model();
+  cs_equation_param_t  *thm_eqp =
+    cs_equation_get_param(cs_equation_by_name(CS_THERMAL_EQNAME));
+
+  /* Is there an advection term arising from the Navier--Stokes ? */
+  if (thm_model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
+    return false; /* This is managed inside the function
+                     cs_navsto_system_compute_steady_state() */
+
+  else if (cs_equation_param_has_time(thm_eqp))
+    return false;
+
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Check if one needs to solve the thermal equation
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_needs_solving_thermal(void)
+{
+  if (cs_thermal_system_is_activated() == false)
+    return false;
+
+  cs_flag_t  thm_model = cs_thermal_system_get_model();
+
+  /* Is there an advection term arising from the Navier--Stokes ? */
+  if (thm_model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
+    return false; /* This is managed inside the function
+                     cs_navsto_system_compute_steady_state() */
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute equations which user-defined and steady-state
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
@@ -250,7 +304,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
      solved */
 
   /* 1. Thermal module */
-  if (cs_thermal_system_is_activated())
+  if (_needs_solving_steady_state_thermal())
     cs_thermal_system_compute_steady_state(domain->mesh,
                                            domain->time_step,
                                            domain->connect,
@@ -331,7 +385,7 @@ _solve_domain(cs_domain_t  *domain)
   else {
 
     /* 1. Thermal module */
-    if (cs_thermal_system_is_activated())
+    if (_needs_solving_thermal())
       cs_thermal_system_compute(true, /* current to previous */
                                 domain->mesh,
                                 domain->time_step,

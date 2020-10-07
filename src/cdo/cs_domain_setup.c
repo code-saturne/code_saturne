@@ -508,8 +508,18 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
     cs_maxwell_init_setup();
 
   /* Navier-Stokes system */
-  if (cs_navsto_system_is_activated())
+  if (cs_navsto_system_is_activated()) {
+
+    /* To make more easy the settings for the end-user, one may have to
+     * ensure that the Navier-Stokes system has the sufficient knowledge of
+     * what is requested */
+    if (cs_thermal_system_needs_navsto())
+      cs_navsto_system_update_model(true);
+
     cs_navsto_system_init_setup();
+
+
+  }
   else {
 
     cs_domain_cdo_context_t  *cdo = domain->cdo_context;

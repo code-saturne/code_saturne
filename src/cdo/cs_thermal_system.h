@@ -193,6 +193,41 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the value of the reference temperature associated to a
+ *        thermal system.
+ *
+ * \return the value of the reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_thermal_system_get_reference_temperature(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the model flag related to a thermal system
+ *
+ * \return a flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_thermal_system_get_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Does the thermal system rely on the advection field associated to
+ *        the Navier-Stokes equations ?
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_thermal_system_needs_navsto(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if the resolution of the thermal system has been activated
  *
  * \return true or false

@@ -331,6 +331,17 @@ cs_navsto_system_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the flag associated to the modelling options
+ *
+ * \param[in]   with_thermal     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_update_model(bool   with_thermal);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize the Navier-Stokes (NS) system
  *
  * \param[in] boundaries     pointer to the domain boundaries

@@ -208,6 +208,42 @@ cs_navsto_system_is_activated(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the flag associated to the modelling options
+ *
+ * \param[in]   with_thermal     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_update_model(bool   with_thermal)
+{
+  if (cs_navsto_system == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The main structure for the Navier-Stokes equations is not"
+              " allocated.\n"
+              " Please check your settings", __func__);
+
+  cs_navsto_param_t  *nsp = cs_navsto_system->param;
+
+  if (with_thermal) { /* Thermal system is switch on and relies on the mass flux
+                         for the advection */
+
+    if ((nsp->model & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
+                       CS_NAVSTO_MODEL_BOUSSINESQ |
+                       CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
+
+      /* Thermal system is linked the Navier-Stokes one but nothing has been
+       * set. Add a flag. */
+      nsp->model |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize the Navier-Stokes (NS) system
  *
  * \param[in] boundaries     pointer to the domain boundaries
@@ -780,8 +816,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Setup checkings */
-  if (navsto->param->model & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
-                              CS_NAVSTO_MODEL_BOUSSINESQ) > 0)
+  if ((nsp->model & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
+                     CS_NAVSTO_MODEL_BOUSSINESQ |
+                     CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
+
     if (cs_thermal_system_is_activated() == false)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: The Navier-Stokes module is activated with options"
@@ -1124,7 +1162,7 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
   cs_real_t  zero_velocity[3] = {0, 0, 0};
 
-  cs_equation_enforce_by_cell_selection(mom_eqp,
+  cs_equation_enforce_value_on_cell_selection(mom_eqp,
                                         n_solid_cells,
                                         solid_cell_ids,
                                         zero_velocity,
@@ -1188,8 +1226,91 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   if (!cs_navsto_param_is_steady(nsp))
     return;
 
-  /* Build and solve the Navier-Stokes system */
-  ns->compute_steady(mesh, nsp, ns->scheme_context);
+  /* First resolve the thermal system if needed */
+  cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+
+  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+
+    assert(th_eq != NULL);
+
+    /* Build and solve the Navier-Stokes system */
+    ns->compute_steady(mesh, nsp, ns->scheme_context);
+
+    /* Solve the thermal equation */
+    if (cs_equation_param_has_time(cs_equation_get_param(th_eq)) == false)
+      cs_thermal_system_compute_steady_state(mesh, time_step, connect, cdoq);
+
+  }
+  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+
+    /* Remark: The "solidification" case is handled in a dedicated module */
+
+    assert(th_eq != NULL);
+    if (cs_equation_param_has_time(cs_equation_get_param(th_eq)))
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Steady-state computation for Navier-Stokes with a"
+                " Boussinesq approximation\n"
+                " whereas an unsteady thermal equation is set.\n"
+                " Please check your settings.", __func__);
+
+    cs_real_t  *th_var = cs_equation_get_cell_values(th_eq, false);
+
+    cs_real_t  *th_var_iter_prev = NULL;
+    BFT_MALLOC(th_var_iter_prev, cdoq->n_cells, cs_real_t);
+    memcpy(th_var_iter_prev, th_var, cdoq->n_cells*sizeof(cs_real_t));
+
+    cs_real_t  inv_tref = cs_thermal_system_get_reference_temperature();
+    if (fabs(inv_tref) > cs_math_zero_threshold)
+      inv_tref = 1/inv_tref;
+    else
+      inv_tref = 1.;
+
+    cs_real_t  delta_th_tolerance = 1 + nsp->delta_thermal_tolerance;
+    int  iter = 0;
+
+    do {
+
+      /* Build and solve the thermal system */
+      cs_thermal_system_compute_steady_state(mesh, time_step, connect, cdoq);
+
+      /* Build and solve the Navier-Stokes system */
+      ns->compute_steady(mesh, nsp, ns->scheme_context);
+
+      /* Check convergence */
+      cs_real_t  delta = -1;
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+        cs_real_t  _delta = fabs(th_var[c_id] - th_var_iter_prev[c_id]);
+        th_var_iter_prev[c_id] = th_var[c_id];
+        if (_delta > delta)
+          delta = _delta;
+      }
+
+      /* Update the stopping criteria */
+      delta_th_tolerance = delta * inv_tref;
+      iter++;
+
+      if (nsp->verbosity > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "### Boussinesq.Iteration: %2d | delta_th_var= %5.3e\n",
+                      iter, delta_th_tolerance);
+
+    }
+    while ( (delta_th_tolerance > nsp->delta_thermal_tolerance) &&
+            (iter < nsp->n_max_outer_iter) );
+
+    cs_log_printf(CS_LOG_DEFAULT, " Steady algorithm exits.\n"
+                  " Number of iterations: %d\n"
+                  " Tolerance on the thermal variable: %5.3e\n",
+                  iter, delta_th_tolerance);
+
+    BFT_FREE(th_var_iter_prev);
+  }
+  else {
+
+    /* Build and solve the Navier-Stokes system */
+    ns->compute_steady(mesh, nsp, ns->scheme_context);
+
+  }
 
   /* Update variable, properties according to the new computed variables */
   cs_navsto_system_update(mesh, time_step, connect, cdoq);
@@ -1217,11 +1338,62 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   const cs_navsto_param_t  *nsp = ns->param;
-  if (cs_navsto_param_is_steady(nsp))
-    return;
 
-  /* Build and solve the Navier-Stokes system */
-  ns->compute(mesh, nsp, ns->scheme_context);
+  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+
+    /* First resolve the thermal system if needed */
+    cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+
+    assert(th_eq != NULL);
+
+    /* Build and solve the Navier-Stokes system */
+    if (cs_navsto_param_is_steady(nsp) == false)
+      ns->compute(mesh, nsp, ns->scheme_context);
+
+    /* Solve the thermal equation */
+    if (cs_equation_param_has_time(cs_equation_get_param(th_eq)))
+      cs_thermal_system_compute(true, mesh, time_step, connect, cdoq);
+
+  }
+  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+
+    /* Remark: The "solidification" case is handled in a dedicated module */
+
+    if (cs_navsto_param_is_steady(nsp))
+      return;
+
+    /* First resolve the thermal system if needed */
+    cs_equation_t  *th_eq = cs_thermal_system_get_equation();
+
+    assert(th_eq != NULL);
+
+    if (cs_equation_param_has_time(cs_equation_get_param(th_eq))) {
+
+      /* Build and solve the thermal system */
+      cs_thermal_system_compute(true, mesh, time_step, connect, cdoq);
+
+      /* Build and solve the Navier-Stokes system */
+      ns->compute(mesh, nsp, ns->scheme_context);
+
+    }
+    else { /* Thermal system is declared as steady. So, this is equivalent to a
+              standard Navier-Stokes iteration */
+
+      /* Build and solve the Navier-Stokes system */
+      ns->compute(mesh, nsp, ns->scheme_context);
+
+    }
+
+  }
+  else {
+
+    if (cs_navsto_param_is_steady(nsp))
+      return;
+
+    /* Build and solve the Navier-Stokes system */
+    ns->compute(mesh, nsp, ns->scheme_context);
+
+  }
 
   /* Update variable, properties according to the new computed variables */
   cs_navsto_system_update(mesh, time_step, connect, cdoq);

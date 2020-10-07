@@ -307,6 +307,11 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->sles_param.nl_algo_dtol = 1e3;
   param->sles_param.nl_algo_verbosity = 1;
 
+  /* Management of the outer resolution steps (i.e. the full system including
+     the turbulence modelling or the the thermal system) */
+  param->n_max_outer_iter = 5;
+  param->delta_thermal_tolerance = 1e-2;
+
   /* Physical boundaries specific to the problem at stake */
   param->boundaries = boundaries; /* shared structure */
 
@@ -592,6 +597,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     nsp->sles_param.n_max_nl_algo_iter = atoi(val);
     break;
 
+  case CS_NSKEY_MAX_OUTER_ITER:
+    nsp->n_max_outer_iter = atoi(val);
+    break;
+
   case CS_NSKEY_NL_ALGO:
     {
       if (strcmp(val, "picard") == 0)
@@ -748,6 +757,12 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                   " Choice between hho_{p0, p1, p2} or cdo_fb"),
                 __func__, _val);
     }
+    break;
+
+  case CS_NSKEY_THERMAL_TOLERANCE:
+    nsp->delta_thermal_tolerance = atof(val);
+    /* If tolerance is set to a negative value then it stops the outer
+       iteration process after the first iteration */
     break;
 
   case CS_NSKEY_TIME_SCHEME:

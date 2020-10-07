@@ -115,12 +115,20 @@ typedef cs_flag_t  cs_navsto_param_model_t;
  * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
  * Navier-Stokes equations: mass and momentum with a constant mass density
  *
+ * ----------------------------------------------------------------------------
+ *
  * \var CS_NAVSTO_MODEL_GRAVITY_EFFECTS
  * Take into account the gravity effects (add a constant source term equal to
  * rho*vect(g))
  *
  * \var CS_NAVSTO_MODEL_CORIOLIS_EFFECTS
  * Take into account the Coriolis effects (add a source term)
+ *
+ * \var CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER
+ * An additional equation is created involving the thermal equation.
+ * The advection field is automatically set as the mass flux. By default,
+ * the temperature is solved in Celsius and homogeneous Neumann boundary
+ * conditions (no flux) are set.
  *
  * \var CS_NAVSTO_MODEL_BOUSSINESQ
  * An additional equation is created involving the thermal equation. The
@@ -157,8 +165,9 @@ typedef enum {
 
   CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<3, /* =   8 */
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<4, /* =  16 */
-  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<5, /* =  32 */
-  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<6, /* =  64 */
+  CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER          = 1<<5, /* =  32 */
+  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<6, /* =  64 */
+  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<7, /* = 128 */
 
 } cs_navsto_param_model_bit_t;
 
@@ -596,11 +605,24 @@ typedef struct {
    */
   cs_quadrature_type_t          qtype;
 
-
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
    */
   cs_navsto_param_sles_t        sles_param;
+
+  /*! \var delta_thermal_tolerance
+   * Value under which one considers that the thermal equation is converged
+   * max_{c \in Cells} |T_c - T_{ref}|/|T_{ref}| < eps => stop iteration
+   */
+  cs_real_t                     delta_thermal_tolerance;
+
+  /*! \var n_max_outer_iter
+   * Stopping crierion related to the maximum number of outer iterations
+   * allowed. This outer iteration encompasses the Navier-Stokes system,
+   * and (according to the case settings) the turbulence system and/or
+   * the thermal system.
+   */
+  int                           n_max_outer_iter;
 
   /*!
    * @}
@@ -767,6 +789,10 @@ typedef struct {
  * Set the maximal number of Picard iterations for solving the non-linearity
  * arising from the advection form
  *
+ * \var CS_NSKEY_MAX_OUTER_ITER
+ * Set the maximal number of outer iterations for solving the full system
+ * including the turbulence modelling or the thermal system for instance
+ *
  * \var CS_NSKEY_NL_ALGO
  * Type of algorithm to consider to solve the non-linearity arising from the
  * Navier-Stokes system
@@ -798,6 +824,10 @@ typedef struct {
  * Numerical scheme for the space discretization. Available choices are:
  * - "cdo_fb"  for CDO face-based scheme
  *
+ * \var CS_NSKEY_THERMAL_TOLERANCE
+ * Value of the tolerance criterion under which one stops iterating on
+ * the Navier-Stokes and thermal systems
+ *
  * \var CS_NSKEY_TIME_SCHEME
  * Numerical scheme for the time discretization
  *
@@ -823,6 +853,7 @@ typedef enum {
   CS_NSKEY_IL_ALGO_VERBOSITY,
   CS_NSKEY_MAX_IL_ALGO_ITER,
   CS_NSKEY_MAX_NL_ALGO_ITER,
+  CS_NSKEY_MAX_OUTER_ITER,
   CS_NSKEY_NL_ALGO,
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
@@ -831,6 +862,7 @@ typedef enum {
   CS_NSKEY_QUADRATURE,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
+  CS_NSKEY_THERMAL_TOLERANCE,
   CS_NSKEY_TIME_SCHEME,
   CS_NSKEY_TIME_THETA,
   CS_NSKEY_VERBOSITY,
