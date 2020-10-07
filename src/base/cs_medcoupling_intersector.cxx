@@ -242,13 +242,8 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     /* Matrix for the source mesh, based on the bbox of the target mesh */
     const cs_real_t *bbox = mi->local_mesh->bbox;
 
-#if defined(MEDCOUPLING_USE_64BIT_IDS)
-    const DataArrayInt64 *subcells
-#else
-    const DataArrayInt *subcells
-#endif
+    const DataArrayIdType *subcells
       = mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
-
 
     MEDCouplingNormalizedUnstructuredMesh<3,3>
       sMesh_wrapper(mi->source_mesh->buildPartOfMySelf(subcells->begin(),
