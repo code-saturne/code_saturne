@@ -174,7 +174,17 @@ endif
 call usphyv(nvar, nscal, mbrom, dt)
 
 ! C version
+
+if (mbrom.eq.0 .and. nfabor.gt.0) then
+  call field_get_val_s(ibrom, brom)
+  brom(1) = -grand
+endif
+
 call user_physical_properties()
+
+if (mbrom.eq.0 .and. nfabor.gt.0) then
+  if (brom(1) .gt. -grand) mbrom = 1
+endif
 
 ! Finalization of physical properties for specific physics
 ! AFTER the user
@@ -186,7 +196,6 @@ endif
 
 if (mbrom.eq.0) then
   call field_get_val_s(icrom, crom)
-  call field_get_val_s(ibrom, brom)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     brom(ifac) = crom(iel)
