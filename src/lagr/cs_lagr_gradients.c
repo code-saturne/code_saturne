@@ -122,16 +122,21 @@ cs_lagr_gradients(int            time_id,
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
-    cs_real_33_t *cpro_vgradlagr
-      = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
+    if (  (   cs_glob_lagr_model->modcpl > 0
+           && cs_glob_time_step->nt_cur >= cs_glob_lagr_model->modcpl)
+        || cs_glob_lagr_model->shape > 0) {
 
-    if (cpro_vgradlagr != NULL && grad_vel != NULL) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++)
-            grad_vel[c_id][i][j] = cpro_vgradlagr[c_id][i][j];
-       }
-     }
+      cs_real_33_t *cpro_vgradlagr
+        = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
+
+      if (cpro_vgradlagr != NULL && grad_vel != NULL) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++)
+              grad_vel[c_id][i][j] = cpro_vgradlagr[c_id][i][j];
+          }
+        }
+      }
     }
 
     return;
