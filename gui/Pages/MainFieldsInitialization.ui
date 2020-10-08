@@ -48,7 +48,7 @@
                                       <string/>
                                   </property>
                                   <property name="icon">
-                                      <iconset>
+                                      <iconset resource="resources_pages.qrc">
                                           <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                           :/new/prefix1/icons/22x22/edit-find-replace.png
                                       </iconset>
@@ -159,7 +159,7 @@
                                                   <string/>
                                               </property>
                                               <property name="icon">
-                                                  <iconset>
+                                                  <iconset resource="resources_pages.qrc">
                                                       <normaloff>
                                                           :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                                       :/new/prefix1/icons/22x22/edit-find-replace.png
@@ -199,7 +199,7 @@
                                                   <string/>
                                               </property>
                                               <property name="icon">
-                                                  <iconset>
+                                                  <iconset resource="resources_pages.qrc">
                                                       <normaloff>
                                                           :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                                       :/new/prefix1/icons/22x22/edit-find-replace.png
@@ -255,7 +255,7 @@
                                                   <string/>
                                               </property>
                                               <property name="icon">
-                                                  <iconset>
+                                                  <iconset resource="resources_pages.qrc">
                                                       <normaloff>
                                                           :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                                       :/new/prefix1/icons/22x22/edit-find-replace.png
@@ -298,7 +298,7 @@
                                                   <string/>
                                               </property>
                                               <property name="icon">
-                                                  <iconset>
+                                                  <iconset resource="resources_pages.qrc">
                                                       <normaloff>
                                                           :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                                       :/new/prefix1/icons/22x22/edit-find-replace.png
@@ -354,7 +354,7 @@
                                                   <string/>
                                               </property>
                                               <property name="icon">
-                                                  <iconset>
+                                                  <iconset resource="resources_pages.qrc">
                                                       <normaloff>
                                                           :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
                                                       :/new/prefix1/icons/22x22/edit-find-replace.png
@@ -404,6 +404,8 @@
       </item>
   </layout>
  </widget>
- <resources/>
- <connections/>
+    <resources>
+        <include location="resources_pages.qrc"/>
+    </resources>
+    <connections/>
 </ui>
