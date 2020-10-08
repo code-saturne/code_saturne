@@ -75,13 +75,12 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             import code_saturne.Pages.VolumicConditionsView as Page
             thisPage = Page.VolumicConditionsView(root, case, zone_name)
 
-        elif item.parentItem.itemData[0] in (tr("Boundary zones"), tr("Volume zones")):
+        elif item.parentItem.itemData[0] == tr("Volume zones"):
             import code_saturne.Pages.LocalizationView as Page
             thisPage = Page.VolumeLocalizationView(root, case, tree, hide_all=True)
 
         else:
             import code_saturne.Pages.WelcomeView as Page
-            print(item.parentItem.itemData[0])
             thisPage = Page.WelcomeView()
 
     case['current_page'] = str(page_name)
@@ -198,7 +197,7 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.ImmersedBoundariesViewNeptune as Page
         thisPage = Page.ImmersedBoundariesViewNeptune(root, case)
 
-    elif page_name == tr("Boundary zones"):
+    elif page_name == tr("Boundary conditions"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)
 
