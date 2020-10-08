@@ -147,9 +147,10 @@ cs_stl_mesh_add(const char  *name)
   if (stl_mesh != NULL) {
     // The STL mesh already exists
     bft_error(__FILE__, __LINE__, 0,
-              _("Error creating stl mesh: mesh %s already exists."),name);
+              _("Error creating stl mesh: mesh %s already exists."), name);
 
-  } else {
+  }
+  else {
     // If it does not exists create it
     _stl_meshes.n_meshes++;
     BFT_REALLOC(_stl_meshes.mesh_list, _stl_meshes.n_meshes, cs_stl_mesh_t *);
@@ -250,7 +251,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
 {
   uint8_t buf[128];
   FILE *fp;
-  float *loc_coords = NULL ;
+  float *loc_coords = NULL;
 
   cs_lnum_t n_tria = 0;
   cs_lnum_t n_tria_new = 0;
@@ -301,13 +302,13 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
       }
 
       // Check if the current triangle has a null area
-       
+
       cs_real_t a[3], b[3], c[3], n[3];
 
       for (int dir = 0; dir < 3; dir ++) {
-        a[dir] = (cs_real_t)loc_coords[3*0 + dir] ;
-        b[dir] = (cs_real_t)loc_coords[3*1 + dir] ;
-        c[dir] = (cs_real_t)loc_coords[3*2 + dir] ;
+        a[dir] = (cs_real_t)loc_coords[3*0 + dir];
+        b[dir] = (cs_real_t)loc_coords[3*1 + dir];
+        c[dir] = (cs_real_t)loc_coords[3*2 + dir];
       }
 
       n[0] = (b[1]-a[1])*(c[2]-a[2]) - (b[2]-a[2])*(c[1]-a[1]);
@@ -326,15 +327,15 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
       }
 
     }
-   
-    /* Some log information */
-    bft_printf(_("\n"));
-    bft_printf(_(" ** Reading of STL mesh \"%s\"\n"), stl_mesh->name);
-    bft_printf(_("    Number of triangles : %d \n"), n_tria_new);
-    bft_printf(_("    Number of removed triangles : %d \n"), n_tria-n_tria_new);
-    bft_printf(_("\n"));
 
-    n_tria = n_tria_new ;
+    /* Some log information */
+    bft_printf(_("\n"
+                 " ** Reading of STL mesh \"%s\"\n"
+                 "    Number of triangles: %d\n"
+                 "    Number of removed triangles: %d\n\n"),
+               stl_mesh->name, n_tria_new, n_tria-n_tria_new);
+
+    n_tria = n_tria_new;
     stl_mesh->n_faces = n_tria;
 
     /* Re-allocation*/
@@ -343,37 +344,37 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     BFT_FREE(loc_coords);
     fclose(fp);
 
-    /* Apply tranformations 
+    /* Apply tranformations
        -------------------- */
-    
+
     if (matrix != NULL) {
 
-      cs_real_t a[4], b[4], c[4] ;
-      cs_real_t ar[4], br[4], cr[4] ;
+      cs_real_t a[4], b[4], c[4];
+      cs_real_t ar[4], br[4], cr[4];
 
-      a[3] = 1.0 ;
-      b[3] = 1.0 ;
-      c[3] = 1.0 ;
+      a[3] = 1.0;
+      b[3] = 1.0;
+      c[3] = 1.0;
 
       for (cs_lnum_t i = 0; i < n_tria; i++) {
- 
+
         for (int dir = 0; dir < 4; dir ++) {
-          ar[dir] = 0.0 ;
-          br[dir] = 0.0 ;
-          cr[dir] = 0.0 ;
+          ar[dir] = 0.0;
+          br[dir] = 0.0;
+          cr[dir] = 0.0;
         }
 
         for (int dir = 0; dir < 3; dir ++) {
-          a[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*0 + dir] ;
-          b[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*1 + dir] ;
-          c[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*2 + dir] ;
+          a[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*0 + dir];
+          b[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*1 + dir];
+          c[dir] = (cs_real_t)stl_mesh->coords[9*i + 3*2 + dir];
         }
 
         for (int dir = 0; dir < 3; dir ++) {
           for (int k = 0; k < 4; k++) {
-            ar[dir] += matrix[dir][k]*a[k] ;
-            br[dir] += matrix[dir][k]*b[k] ;
-            cr[dir] += matrix[dir][k]*c[k] ;
+            ar[dir] += matrix[dir][k]*a[k];
+            br[dir] += matrix[dir][k]*b[k];
+            cr[dir] += matrix[dir][k]*c[k];
           }
         }
 
@@ -515,8 +516,8 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
 
     /* Compute and Write the face normal coordinates */
     float normals[3];
-    float a[3],b[3],c[3];
-    
+    float a[3], b[3], c[3];
+
     for (int dir = 0; dir < 3; dir ++) {
       a[dir] = stl_mesh->coords[9*i + 3*0 + dir];
       b[dir] = stl_mesh->coords[9*i + 3*1 + dir];
@@ -528,15 +529,15 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
     normals[1] = (b[2]-a[2])*(c[0]-a[0]) - (b[0]-a[0])*(c[2]-a[2]);
     normals[2] = (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]);
 
-    float norm = sqrt(normals[0]*normals[0] 
-                    + normals[1]*normals[1] 
-                    + normals[2]*normals[2]);
+    float norm = sqrt(  normals[0]*normals[0]
+                      + normals[1]*normals[1]
+                      + normals[2]*normals[2]);
 
     for (int dir = 0; dir < 3; dir ++)
-      normals[dir] /= norm ;
+      normals[dir] /= norm;
 
     uint32_t n_temp[3];
-    for(int dir = 0; dir < 3; dir ++) {
+    for (int dir = 0; dir < 3; dir ++) {
       memcpy(&n_temp[dir],
              &normals[dir],
              sizeof n_temp[dir]);
@@ -545,10 +546,10 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
     }
 
     /* Write the 3 vertices for the current triangle */
-    for(int vi = 0; vi < 3; vi ++) {
+    for (int vi = 0; vi < 3; vi ++) {
 
       uint32_t v_temp[3];
-      for(int dir = 0; dir < 3; dir ++) {
+      for (int dir = 0; dir < 3; dir ++) {
 
         memcpy(&v_temp[dir],
                &stl_mesh->coords[9*i + 3*vi + dir],
@@ -558,7 +559,6 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
     }
 
     fwrite(buf, 50, 1, fp);
-
   }
 
   fclose(fp);
