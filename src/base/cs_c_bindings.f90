@@ -977,6 +977,23 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute molar and mass fractions of elementary species Ye, Xe
+    !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
+
+    !> \param[in]     yg            global mass fraction
+    !> \param[out]    ye            elementary mass fraction
+    !> \param[out]    xe            elementary molar fraction
+
+    subroutine yg2xye(yg, ye, xe)  &
+      bind(C, name='cs_combustion_gas_yg2xye')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: yg
+      real(kind=c_double), dimension(*), intent(out) :: ye, xe
+    end subroutine yg2xye
+
+    !---------------------------------------------------------------------------
+
     !> \brief  General user parameters
 
     subroutine user_parameters()  &

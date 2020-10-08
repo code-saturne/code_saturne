@@ -61,8 +61,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_physical_model.c
-        Specific physical models selection.
+  \file cs_combustion_model.c
+        Combustion  model selection parameters.
 */
 
 /*----------------------------------------------------------------------------*/

@@ -33,17 +33,18 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/darc \
+-I$(top_srcdir)/src/cogz \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \

@@ -24,6 +24,22 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/cogz \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/lagr \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
+$(CPPFLAGS_PLE) \
+$(MPI_CPPFLAGS)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
@@ -45,12 +61,15 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_combustion_gas.h \
+cs_cogz_headers.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcscogz.la
 libcscogz_la_SOURCES = \
+cs_combustion_gas.c \
 coini1.f90 \
 colecd.f90 \
 coprop.f90 \
@@ -78,8 +97,7 @@ lwcver.f90 \
 pdflwc.f90 \
 pdfpp3.f90 \
 pdfpp4.f90 \
-sootsc.f90 \
-yg2xye.f90
+sootsc.f90
 libcscogz_la_LDFLAGS = -no-undefined
 
 clean-local:
