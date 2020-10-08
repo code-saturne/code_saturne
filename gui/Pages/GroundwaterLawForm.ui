@@ -7,27 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>882</width>
-    <height>1969</height>
+    <height>2069</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
-   <item>
-    <widget class="QLabel" name="zoneLabel">
-     <property name="text">
-      <string>ZoneLabel</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
    <item>
     <widget class="QGroupBox" name="darcyLawGroupBox">
      <property name="title">
@@ -928,10 +914,10 @@
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="resources_pages.qrc">
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                    :/new/prefix1/icons/22x22/edit-find-replace.png
-                   </iconset>
+                      <iconset resource="resources_pages.qrc">
+                          <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                          :/new/prefix1/icons/22x22/edit-find-replace.png
+                      </iconset>
                   </property>
                   <property name="iconSize">
                    <size>

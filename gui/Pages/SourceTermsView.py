@@ -114,7 +114,6 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.therm = ThermalScalarModel(self.case)
         self.th_sca = DefineUserScalarsModel(self.case)
         self.case.undoStopGlobal()
-        self.zoneLabel.setText(zone_name)
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone

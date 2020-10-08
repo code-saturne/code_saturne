@@ -91,7 +91,6 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.case.undoStopGlobal()
         self.model = PorosityModel(self.case)
         self.notebook = NotebookModel(self.case)
-        self.zoneLabel.setText(zone_name)
         localization_model = LocalizationModel("VolumicZone", self.case)
         for zone in localization_model.getZones():
             if zone.getLabel() == zone_name:

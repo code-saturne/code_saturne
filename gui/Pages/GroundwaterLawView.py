@@ -91,7 +91,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.case = case
         self.case.undoStopGlobal()
 
-        self.zoneLabel.setText(zone_name)
         for zone in LocalizationModel("VolumicZone", self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone

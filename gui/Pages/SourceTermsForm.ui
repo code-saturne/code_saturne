@@ -3,415 +3,400 @@
  <class>SourceTermsForm</class>
  <widget class="QWidget" name="SourceTermsForm">
   <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>311</width>
-    <height>412</height>
-   </rect>
+      <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>311</width>
+          <height>412</height>
+      </rect>
   </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
-  <layout class="QGridLayout" name="gridLayout_5">
-   <item row="0" column="0">
-    <widget class="QLabel" name="zoneLabel">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ZoneLabel&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <property name="windowTitle">
+         <string>Form</string>
      </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QGroupBox" name="groupBoxSourceTerms">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define
-         source terms on a volume zone.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
-        </string>
-       </property>
-       <property name="title">
-        <string>Source Terms</string>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_4">
-        <item row="1" column="1">
-         <widget class="Line" name="line">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QGroupBox" name="groupBoxStandard">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>230</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="title">
-           <string/>
-          </property>
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="0">
-            <layout class="QVBoxLayout">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <property name="sizeConstraint">
-              <enum>QLayout::SetDefaultConstraint</enum>
-             </property>
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item>
-              <layout class="QHBoxLayout">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="labelMomentum">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define momentum source terms using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string>Momentum</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>16</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QPushButton" name="pushButtonMomentum">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define momentum source terms using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QHBoxLayout">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="labelThermal">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define thermal source terms using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string>Thermal</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>16</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QPushButton" name="pushButtonThermal">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define thermal source terms using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QHBoxLayout">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="labelSpecies">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define scalar source terms by selecting the user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string>Species</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="comboBoxSpecies">
+     <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+             <widget class="QGroupBox" name="groupBoxStandard">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                     </sizepolicy>
                  </property>
                  <property name="minimumSize">
-                  <size>
-                   <width>80</width>
-                   <height>0</height>
-                  </size>
+                     <size>
+                         <width>230</width>
+                         <height>0</height>
+                     </size>
                  </property>
+                 <property name="title">
+                     <string/>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_8">
+                     <item row="0" column="0">
+                         <layout class="QVBoxLayout" name="_15">
+                             <property name="spacing">
+                                 <number>0</number>
+                             </property>
+                             <property name="sizeConstraint">
+                                 <enum>QLayout::SetDefaultConstraint</enum>
+                             </property>
+                             <property name="margin">
+                                 <number>0</number>
+                             </property>
+                             <item>
+                                 <layout class="QHBoxLayout" name="_16">
+                                     <property name="spacing">
+                                         <number>6</number>
+                                     </property>
+                                     <property name="margin">
+                                         <number>0</number>
+                                     </property>
+                                     <item>
+                                         <widget class="QLabel" name="labelMomentum">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define momentum source terms using the
+                                                     formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string>Momentum</string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <spacer>
+                                             <property name="orientation">
+                                                 <enum>Qt::Horizontal</enum>
+                                             </property>
+                                             <property name="sizeHint" stdset="0">
+                                                 <size>
+                                                     <width>16</width>
+                                                     <height>20</height>
+                                                 </size>
+                                             </property>
+                                         </spacer>
+                                     </item>
+                                     <item>
+                                         <widget class="QPushButton" name="pushButtonMomentum">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define momentum source terms using the
+                                                     formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string/>
+                                             </property>
+                                             <property name="icon">
+                                                 <iconset resource="resources_pages.qrc">
+                                                     <normaloff>
+                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
+                                                 </iconset>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                 </layout>
+                             </item>
+                             <item>
+                                 <layout class="QHBoxLayout" name="_17">
+                                     <property name="spacing">
+                                         <number>6</number>
+                                     </property>
+                                     <property name="margin">
+                                         <number>0</number>
+                                     </property>
+                                     <item>
+                                         <widget class="QLabel" name="labelThermal">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define thermal source terms using the
+                                                     formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string>Thermal</string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <spacer>
+                                             <property name="orientation">
+                                                 <enum>Qt::Horizontal</enum>
+                                             </property>
+                                             <property name="sizeHint" stdset="0">
+                                                 <size>
+                                                     <width>16</width>
+                                                     <height>20</height>
+                                                 </size>
+                                             </property>
+                                         </spacer>
+                                     </item>
+                                     <item>
+                                         <widget class="QPushButton" name="pushButtonThermal">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define thermal source terms using the
+                                                     formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string/>
+                                             </property>
+                                             <property name="icon">
+                                                 <iconset resource="resources_pages.qrc">
+                                                     <normaloff>
+                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
+                                                 </iconset>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                 </layout>
+                             </item>
+                             <item>
+                                 <layout class="QHBoxLayout" name="_18">
+                                     <property name="spacing">
+                                         <number>6</number>
+                                     </property>
+                                     <property name="margin">
+                                         <number>0</number>
+                                     </property>
+                                     <item>
+                                         <widget class="QLabel" name="labelSpecies">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define scalar source terms by selecting the
+                                                     user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string>Species</string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <widget class="QComboBox" name="comboBoxSpecies">
+                                             <property name="sizePolicy">
+                                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                                     <horstretch>0</horstretch>
+                                                     <verstretch>0</verstretch>
+                                                 </sizepolicy>
+                                             </property>
+                                             <property name="minimumSize">
+                                                 <size>
+                                                     <width>80</width>
+                                                     <height>0</height>
+                                                 </size>
+                                             </property>
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define scalar source terms by selecting the
+                                                     user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                     <item>
+                                         <spacer>
+                                             <property name="orientation">
+                                                 <enum>Qt::Horizontal</enum>
+                                             </property>
+                                             <property name="sizeHint" stdset="0">
+                                                 <size>
+                                                     <width>16</width>
+                                                     <height>20</height>
+                                                 </size>
+                                             </property>
+                                         </spacer>
+                                     </item>
+                                     <item>
+                                         <widget class="QPushButton" name="pushButtonSpecies">
+                                             <property name="toolTip">
+                                                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                                     font-size:9pt;&quot;&gt;Define scalar source terms by selecting the
+                                                     user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                                 </string>
+                                             </property>
+                                             <property name="text">
+                                                 <string/>
+                                             </property>
+                                             <property name="icon">
+                                                 <iconset resource="resources_pages.qrc">
+                                                     <normaloff>
+                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
+                                                 </iconset>
+                                             </property>
+                                         </widget>
+                                     </item>
+                                 </layout>
+                             </item>
+                         </layout>
+                     </item>
+                 </layout>
+             </widget>
+         </item>
+         <item>
+             <widget class="QGroupBox" name="groupBoxRichards">
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define scalar source terms by selecting the user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define
+                         a volumetric source term for the Richards equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                     </string>
                  </property>
-                </widget>
-               </item>
-               <item>
-                <spacer>
+                 <property name="title">
+                     <string>Richards equation</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_9">
+                     <item row="0" column="0">
+                         <layout class="QHBoxLayout" name="_19">
+                             <property name="spacing">
+                                 <number>6</number>
+                             </property>
+                             <property name="margin">
+                                 <number>0</number>
+                             </property>
+                             <item>
+                                 <widget class="QLabel" name="labelRichards">
+                                     <property name="toolTip">
+                                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                             font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards
+                                             equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                         </string>
+                                     </property>
+                                     <property name="text">
+                                         <string>Volumic source term</string>
+                                     </property>
+                                 </widget>
+                             </item>
+                             <item>
+                                 <spacer>
+                                     <property name="orientation">
+                                         <enum>Qt::Horizontal</enum>
+                                     </property>
+                                     <property name="sizeHint" stdset="0">
+                                         <size>
+                                             <width>16</width>
+                                             <height>20</height>
+                                         </size>
+                                     </property>
+                                 </spacer>
+                             </item>
+                             <item>
+                                 <widget class="QPushButton" name="pushButtonRichards">
+                                     <property name="toolTip">
+                                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                             font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards
+                                             equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                         </string>
+                                     </property>
+                                     <property name="text">
+                                         <string/>
+                                     </property>
+                                     <property name="icon">
+                                         <iconset resource="resources_pages.qrc">
+                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                                             :/new/prefix1/icons/22x22/edit-find-replace.png
+                                         </iconset>
+                                     </property>
+                                 </widget>
+                             </item>
+                         </layout>
+                     </item>
+                 </layout>
+             </widget>
+         </item>
+         <item>
+             <widget class="QGroupBox" name="groupBoxTransport">
+                 <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define
+                         a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                     </string>
+                 </property>
+                 <property name="title">
+                     <string>Transport equation</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_7">
+                     <item row="0" column="0">
+                         <layout class="QHBoxLayout" name="_14">
+                             <property name="spacing">
+                                 <number>6</number>
+                             </property>
+                             <property name="margin">
+                                 <number>0</number>
+                             </property>
+                             <item>
+                                 <widget class="QLabel" name="labelSpecies2">
+                                     <property name="toolTip">
+                                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                             font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                         </string>
+                                     </property>
+                                     <property name="text">
+                                         <string>Species</string>
+                                     </property>
+                                 </widget>
+                             </item>
+                             <item>
+                                 <widget class="QComboBox" name="comboBoxSpecies2">
+                                     <property name="toolTip">
+                                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                             font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                         </string>
+                                     </property>
+                                 </widget>
+                             </item>
+                             <item>
+                                 <spacer>
+                                     <property name="orientation">
+                                         <enum>Qt::Horizontal</enum>
+                                     </property>
+                                     <property name="sizeHint" stdset="0">
+                                         <size>
+                                             <width>16</width>
+                                             <height>20</height>
+                                         </size>
+                                     </property>
+                                 </spacer>
+                             </item>
+                             <item>
+                                 <widget class="QPushButton" name="pushButtonSpecies2">
+                                     <property name="toolTip">
+                                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
+                                             font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+                                         </string>
+                                     </property>
+                                     <property name="text">
+                                         <string/>
+                                     </property>
+                                     <property name="icon">
+                                         <iconset resource="resources_pages.qrc">
+                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
+                                             :/new/prefix1/icons/22x22/edit-find-replace.png
+                                         </iconset>
+                                     </property>
+                                 </widget>
+                             </item>
+                         </layout>
+                     </item>
+                 </layout>
+             </widget>
+         </item>
+         <item>
+             <spacer name="verticalSpacer">
                  <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
+                     <enum>Qt::Vertical</enum>
                  </property>
                  <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>16</width>
-                   <height>20</height>
-                  </size>
+                     <size>
+                         <width>20</width>
+                         <height>89</height>
+                     </size>
                  </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QPushButton" name="pushButtonSpecies">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define scalar source terms by selecting the user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QGroupBox" name="groupBoxRichards">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="title">
-           <string>Richards equation</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="0" column="0">
-            <layout class="QHBoxLayout" name="_3">
-             <property name="spacing">
-              <number>6</number>
-             </property>
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QLabel" name="labelRichards">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Volumic source term</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>16</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButtonRichards">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="resources_pages.qrc">
-                 <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QGroupBox" name="groupBoxTransport">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="title">
-           <string>Transport equation</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
-            <layout class="QHBoxLayout" name="_9">
-             <property name="spacing">
-              <number>6</number>
-             </property>
-             <property name="margin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QLabel" name="labelSpecies2">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Species</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="comboBoxSpecies2">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>16</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButtonSpecies2">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="resources_pages.qrc">
-                 <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="0" rowspan="5">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="2" rowspan="5">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <spacer>
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-  </layout>
+             </spacer>
+         </item>
+     </layout>
  </widget>
  <resources>
   <include location="resources_pages.qrc"/>

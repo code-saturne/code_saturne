@@ -86,7 +86,6 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def setup(self, case, zone_name):
         self.case = case
         self.case.undoStopGlobal()
-        self.zoneLabel.setText(zone_name)
         localization_model = LocalizationModel("VolumicZone", self.case)
         for zone in localization_model.getZones():
             if zone.getLabel() == zone_name:

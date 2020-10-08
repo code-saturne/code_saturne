@@ -200,4 +200,16 @@ class VolumicTermsView(QWidget, Ui_VolumicTermsForm):
         self.zoneModel = LocalizationModel("VolumicZone", self.case)
         self.tableModel = VolumicZoneNatureModel(self.zoneModel)
         self.volumicZoneNatureTableView.setModel(self.tableModel)
+
+        # Tune Qt Display parameters
+        last_section = self.tableModel.columnCount(None) - 1
+        if QT_API == "PYQT4":
+            self.volumicZoneNatureTableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.volumicZoneNatureTableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.volumicZoneNatureTableView.horizontalHeader().setResizeMode(last_section, QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.volumicZoneNatureTableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
+
         self.case.undoStopGlobal()

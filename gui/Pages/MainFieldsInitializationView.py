@@ -129,7 +129,6 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.NonCondensable = NonCondensableModel(self.case)
         self.SpeciesModel = SpeciesModel(self.case)
 
-        self.zoneLabel.setText(zone_name)
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone

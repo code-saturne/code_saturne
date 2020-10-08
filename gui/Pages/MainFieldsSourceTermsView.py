@@ -101,7 +101,6 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         self.mdl = MainFieldsSourceTermsModel(self.case)
         self.mfm = MainFieldsModel(self.case)
         self.notebook = NotebookModel(self.case)
-        self.zoneLabel.setText(zone_name)
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone
