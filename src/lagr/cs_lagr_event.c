@@ -418,6 +418,7 @@ cs_lagr_event_initialize(void)
        CS_LAGR_DIAMETER,
        CS_LAGR_SHAPE,
        CS_LAGR_ORIENTATION,
+       CS_LAGR_QUATERNION,
        CS_LAGR_RADII,
        CS_LAGR_ANGULAR_VEL,
        CS_LAGR_EULER,

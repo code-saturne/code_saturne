@@ -727,12 +727,15 @@ cs_lagr_particle_attr_initialize(void)
 
   /* Non-sphere model
    * TODO activate only required arrays */
-  if (lagr_model->shape != 0) {
+  if (lagr_model->shape != CS_LAGR_SHAPE_SPHERE_MODEL) {
     attr_keys[CS_LAGR_SHAPE][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_SHAPE][1] = ++loc_count;
 
     attr_keys[CS_LAGR_ORIENTATION][1] = ++loc_count;
     attr_keys[CS_LAGR_ORIENTATION][2] = 3;
+
+    attr_keys[CS_LAGR_QUATERNION][1] = ++loc_count;
+    attr_keys[CS_LAGR_QUATERNION][2] = 4;
 
     attr_keys[CS_LAGR_RADII][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_RADII][1] = ++loc_count;

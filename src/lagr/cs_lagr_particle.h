@@ -113,6 +113,7 @@ typedef enum {
 
   CS_LAGR_SHAPE,               /*!< Shape of spheroids */
   CS_LAGR_ORIENTATION,         /*!< Orientation of spheroids */
+  CS_LAGR_QUATERNION,          /*!< Quaternion for spheroids */
   CS_LAGR_RADII,               /*!< Radii a, b, c for ellispoids */
   CS_LAGR_ANGULAR_VEL,         /*!< Angular velocity */
   CS_LAGR_EULER,               /*!< Euler four parameters */

@@ -441,7 +441,8 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
               (double)zis->diameter_variance);
 
   /* Ellipsoidal particle properties: radii */
-  if (cs_glob_lagr_model->shape == 2) {
+  const int shape = cs_glob_lagr_model->shape;
+  if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
     if (   zis->radii[0] < 0.0
         || zis->radii[1] < 0.0
         || zis->radii[2] < 0.0)
@@ -456,7 +457,6 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
          (double)zis->radii[1],
          (double)zis->radii[2]);
   }
-
 
   /* temperature and Cp */
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
@@ -666,6 +666,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   }
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
+  const int shape = cs_glob_lagr_model->shape;
 
   /* Loop on zone elements where particles are injected */
 
@@ -745,12 +746,12 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                 zis->diameter);
 
       /* Shape for spheroids without inertia */
-      if (cs_glob_lagr_model->shape == 1 ||
-          cs_glob_lagr_model->shape == 2 ) {
+      if (   shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
+          || shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         /* Spherical radii a b c */
         cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_RADII);
+                                                 CS_LAGR_RADII);
 
         for (cs_lnum_t i = 0; i < 3; i++) {
           radii[i] = zis->radii[i];
@@ -758,14 +759,14 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
         /* Shape parameters */
         cs_real_t *shape_param = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_SHAPE_PARAM);
+                                                       CS_LAGR_SHAPE_PARAM);
 
         /* Compute shape parameters from radii */
-        // FIXME valid for all spheroids only (a = b, c > a,b )
-        cs_real_t lamb = radii[2] / radii[1];//FIXME do note divide by 0...
+        /* FIXME valid for all spheroids only (a = b, c > a,b ) */
+        cs_real_t lamb = radii[2] / radii[1];  /* FIXME do not divide by 0... */
         cs_real_t lamb_m1 = (radii[2] - radii[1]) / radii[1];
         cs_real_t _a2 = radii[0] * radii[0];
-        //TODO MF shape_param check development in series
+        /* TODO MF shape_param check development in series */
         cs_real_t aux1 = lamb * lamb;
         cs_real_t aux2 = aux1 -1;
         if (lamb_m1 > 1e-10) {
@@ -791,28 +792,35 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           shape_param[3] = 2. * _a2;
         }
 
-        if (cs_glob_lagr_model->shape ==1) {
+        if (shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
           /* Orientation */
           cs_real_t *orientation = cs_lagr_particle_attr(particle, p_am,
                                                           CS_LAGR_ORIENTATION);
+          cs_real_t *quaternion = cs_lagr_particle_attr(particle, p_am,
+                                                          CS_LAGR_QUATERNION);
           for (cs_lnum_t i = 0; i < 3; i++) {
             orientation[i] = zis->orientation[i];
           }
 
           /* Compute orientation from uniform orientation on a unit-sphere */
-          cs_real_t theta0 ;
-          cs_real_t phi0 ;
-          cs_random_uniform(1, &theta0) ;
-          cs_random_uniform(1, &phi0) ;
-          theta0   = acos(2.0*theta0-1.0) ;
-          phi0     = phi0*2.0*cs_math_pi ;
-          orientation[0] = sin(theta0)*cos(phi0) ;
-          orientation[1] = sin(theta0)*sin(phi0) ;
-          orientation[2] = cos(theta0) ;
+          cs_real_t theta0;
+          cs_real_t phi0;
+          cs_random_uniform(1, &theta0);
+          cs_random_uniform(1, &phi0);
+          theta0   = acos(2.0*theta0-1.0);
+          phi0     = phi0*2.0*cs_math_pi;
+          orientation[0] = sin(theta0)*cos(phi0);
+          orientation[1] = sin(theta0)*sin(phi0);
+          orientation[2] = cos(theta0);
+          /* Initialize quaternions */
+          quaternion[0] = 1.;
+          quaternion[1] = 0.;
+          quaternion[2] = 0.;
+          quaternion[3] = 0.;
           /* TODO initialize other things */
         }
 
-        if (cs_glob_lagr_model->shape == 2) {
+        if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
           /* Euler parameters */
           cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
@@ -824,7 +832,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           /* Compute Euler angles
              (random orientation with a uniform distribution in [-1;1]) */
           cs_real_t trans_m[3][3];
-          // Generate the first two vectors
+          /* Generate the first two vectors */
           for (cs_lnum_t id = 0; id < 3; id++) {
             cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
             cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
@@ -846,7 +854,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
             for (cs_lnum_t id1 = 0; id1 < 3; id1++)
               trans_m[id][id1] = (-1.+2*trans_m[id][id1]) / norm_trans_m;
           }
-          // Correct 2nd vector (for perpendicularity to the 1st)
+          /* Correct 2nd vector (for perpendicularity to the 1st) */
           cs_real_3_t loc_vector0 =  {trans_m[0][0],
             trans_m[0][1],
             trans_m[0][2]};
@@ -856,7 +864,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           cs_real_t scal_prod = cs_math_3_dot_product(loc_vector0, loc_vector1);
           for (cs_lnum_t id = 0; id < 3; id++)
             trans_m[1][id] -= scal_prod * trans_m[0][id];
-          // Re-normalize
+          /* Re-normalize */
           loc_vector1[0] = trans_m[1][0];
           loc_vector1[1] = trans_m[1][1];
           loc_vector1[2] = trans_m[1][2];
@@ -864,7 +872,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           for (cs_lnum_t id = 0; id < 3; id++)
             trans_m[1][id] /= norm_trans_m;
 
-          // Compute last vector (cross product of the two others)
+          /* Compute last vector (cross product of the two others) */
           loc_vector1[0] = trans_m[1][0];
           loc_vector1[1] = trans_m[1][1];
           loc_vector1[2] = trans_m[1][2];
@@ -875,7 +883,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           for (cs_lnum_t id = 0; id < 3; id++)
             trans_m[2][id] = loc_vector2[id];
 
-          // Write Euler angles
+          /* Write Euler angles */
           cs_real_t random;
           cs_random_uniform(1, &random);
           if (random >= 0.5)
@@ -889,9 +897,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
 
           /* Compute initial angular velocity */
-          // Get velocity gradient
+          /* Get velocity gradient */
           cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
-          // Local reference frame
+
+          /* Local reference frame */
           cs_real_t grad_vf_r[3][3];
           cs_math_33_transform_a_to_r(extra->grad_vel[cell_id],
                                       trans_m,
@@ -1613,9 +1622,9 @@ cs_lagr_injection(int        time_id,
             if (res_time < 0) {
 
               cs_real_t *p_coords
-                = cs_lagr_particles_attr_const(p_set,
-                                               p_id,
-                                               CS_LAGR_COORDS);
+                = cs_lagr_particles_attr(p_set,
+                                         p_id,
+                                         CS_LAGR_COORDS);
               cs_real_t *p_vel =
                 cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
               cs_real_t t_fraction = (cs_glob_lagr_time_step->dtp + res_time);

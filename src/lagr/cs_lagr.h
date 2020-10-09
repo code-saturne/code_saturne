@@ -126,6 +126,22 @@ typedef enum {
   CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
 } cs_lagr_module_status_t;
 
+/*! Particle shape condition types */
+/*---------------------------------*/
+
+typedef enum {
+
+  /*! Impose spherical particles */
+  CS_LAGR_SHAPE_SPHERE_MODEL = 0,
+
+  /*! Impose spheroids (stochastic model for transport) */
+  CS_LAGR_SHAPE_SPHEROID_STOC_MODEL = 1,
+
+  /*< Impose spheroids (Jeffery equations for transport) */
+  CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL = 2,
+
+} cs_lagr_module_shape_t;
+
 /*! Lagrangian additional physical model */
 /*---------------------------------------*/
 
@@ -239,14 +255,14 @@ typedef struct {
 
   /*! activates (>0) or deactivates (=0) the physical models associated to the
     particles:
-    - CS_LAGR_PHYS_HEAT: allows to associate with the particles evolution equations on
-         their temperature (in degrees Celsius), their diameter and
-         their mass
+    - CS_LAGR_PHYS_HEAT: allows to associate with the particles evolution
+      equations on  their temperature (in degrees Celsius), their diameter and
+      their mass
     - CS_LAGR_PHYS_COAL: the particles are pulverised coal particles.
-    Evolution equations on temperature (in degree Celsius), mass of
-    reactive coal, mass of char and diameter of the shrinking core are
-    associated with the particles. This option is available only if the
-    continuous phase represents a pulverised coal flame. */
+      Evolution equations on temperature (in degree Celsius), mass of
+      reactive coal, mass of char and diameter of the shrinking core are
+      associated with the particles. This option is available only if the
+      continuous phase represents a pulverised coal flame. */
   int  physical_model;
   int  n_temperature_layers;
 
