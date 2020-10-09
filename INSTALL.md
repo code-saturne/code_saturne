@@ -679,14 +679,19 @@ The list of third-party software usable with code_saturne is provided here:
   Use of BLAS libraries is thus useful as a unit benchmarking feature,
   but has no influence on full calculations.
 
-* [PETSc](http://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit
-  for Scientific Computation, consists  of a variety of libraries,
+* [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit
+  for Scientific Computation), consists  of a variety of libraries,
   which may be used by code_saturne for the resolution of linear equation systems.
   In addition to providing many solver options, it may be used as a bridge
   to other major solver libraries.
   Currently, only PETSc using install structures based using the
   `--prefix` configure option are correctly detected by the
   code_saturne build scripts.
+
+* [AmgX](https://developer.nvidia.com/amgx/) is a high performance
+  multigrid and preconditioned iterative method library for NVIDIA GPUs.
+  It includes a flexible solver composition system that allows
+  a user to easily construct complex nested solvers and preconditioners.
 
 * The [SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
   code may be used for conjugate heat transfer.

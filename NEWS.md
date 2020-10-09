@@ -15,7 +15,16 @@ Numerics and physical modelling:
 
 - Remove "extrag" option for the pressure gradient, as its use was
   limited to orthogonal meshes and was long superceded by the
-  "iphydr=1" option.
+  `iphydr=1` option.
+
+Architectural changes:
+
+- Add AmgX library support for linear system resolution on NVIDIA GPU's.
+  * Associated matrices should be forced in CSR format.
+  * In parallel, the support is currently compatible only with AmgX
+    solver configurations involving only one communication "ring"
+    (i.e. a single halo layer), and mesh renumbering must be
+    set to `CS_RENUMBER_ADJACENT_LOW`.
 
 Release 6.2.0 (August 27 2020)
 --------------------------
@@ -27,7 +36,7 @@ User changes:
   functions.
   * Previous definitions remain compatible but are deprecated.
   * Using the legacy mathod, if at least one zone is defined using
-    the CS_VOLUME_ZONE_MASS_SOURCE_TERM flag, these zones will be used
+    the `CS_VOLUME_ZONE_MASS_SOURCE_TERM` flag, these zones will be used
     and the first 2 calls to cs_user_mass_source_terms are not needed.
 
 - Add possibility to edit coupling parameters in the GUI using an editor.

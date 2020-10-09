@@ -1,5 +1,5 @@
 /*============================================================================
- * Sparse Linear Equation Solvers using AMGX
+ * Sparse Linear Equation Solvers using AmgX
  *============================================================================*/
 
 /*
@@ -42,7 +42,7 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * AMGX headers
+ * AmgX headers
  *----------------------------------------------------------------------------*/
 
 #include <amgx_c.h>
@@ -81,9 +81,9 @@ BEGIN_C_DECLS
 /*!
   \file cs_sles_amgx.c
 
-  \brief handling of AMGX-based linear solvers
+  \brief handling of AmgX-based linear solvers
 
-  \page sles_amgx AMGX-based linear solvers.
+  \page sles_amgx AmgX-based linear solvers.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -134,13 +134,14 @@ struct _cs_sles_amgx_t {
 
   /* Setup data */
 
-  char                   *solver_config_file;
-  char                   *solver_config_string;
+  char                   *amgx_config_file;
+  char                   *amgx_config_string;
 
   AMGX_Mode               amgx_mode;
   bool                    pin_memory;
 
-  AMGX_config_handle      solver_config;       /* Solver configuration */
+  AMGX_config_handle      amgx_config;        /* Solver configuration */
+  AMGX_resources_handle   amgx_resources;     /* Associated resources */
 
   cs_sles_amgx_setup_t   *setup_data;
 
@@ -152,13 +153,14 @@ struct _cs_sles_amgx_t {
 
 static int  _n_amgx_systems = 0;
 
-static char                   *_resource_config_string = NULL;
-static AMGX_config_handle     _amgx_config;
-static AMGX_resources_handle  _amgx_resources;
-
 #if defined(HAVE_MPI)
 static MPI_Comm _amgx_comm = MPI_COMM_NULL;
 #endif
+
+/* TODO: for mult-device configurations, this will need to be adapted */
+
+static int _n_devices = 1;
+static int _devices[] = {0};
 
 /*============================================================================
  * Private function definitions
@@ -166,7 +168,7 @@ static MPI_Comm _amgx_comm = MPI_COMM_NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print function for AMGX.
+ * \brief Print function for AmgX.
  *
  * \param[in]  msg     message to print
  * \param[in]  length  length of message to print
@@ -184,7 +186,7 @@ _print_callback(const char  *msg,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize AMGX.
+ * \brief Initialize AmgX.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -223,39 +225,18 @@ _amgx_initialize(void)
   AMGX_get_api_version(&major, &minor);
   bft_printf(_("\nAMGX API version %d.%d\n"), major, minor);
 
-  /* TODO: for mult-device configurations, this will need to be adapted */
-
-  int device_num = 1;
-  const int devices[] = {0};
-
-  AMGX_config_create(&_amgx_config,
-                     "communicator=MPI, min_rows_latency_hiding=10000");
-
   /* Note: if MPI supports GPUDirect, MPI_DIRECT is also allowed */
-
-  void*comm_ptr = NULL;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     MPI_Comm_dup(cs_glob_mpi_comm, &_amgx_comm);
-    comm_ptr = &_amgx_comm;
   }
 #endif
-
-  retval = AMGX_resources_create(&_amgx_resources, _amgx_config,
-                                 comm_ptr,
-                                 device_num, devices);
-
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_resources_create", retval, err_str);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Finalize AMGX.
+ * \brief Finalize AmgX.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -266,22 +247,10 @@ _amgx_finalize(void)
   const char warning_fmt[] = N_("\nwarning: %s returned %d.\n"
                                 "%s\n");
 
-  AMGX_RC retval = AMGX_resources_destroy(_amgx_resources);
+  AMGX_RC retval = AMGX_finalize_plugins();
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
-    bft_printf(_(warning_fmt), "AMGX_resources_destroy", (int)retval, err_str);
-  }
-
-  retval = AMGX_config_destroy(_amgx_config);
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_printf(_(warning_fmt), "AMGX_config_destroy", (int)retval, err_str);
-  }
-
-  retval = AMGX_finalize_plugins();
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_printf(_(warning_fmt), "AMGX_finallize_plugins", (int)retval, err_str);
+    bft_printf(_(warning_fmt), "AMGX_finalize_plugins", (int)retval, err_str);
   }
 
   retval = AMGX_finalize();
@@ -300,22 +269,22 @@ _amgx_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Load AMGX solver configuration.
+ * \brief Load AmgX solver configuration.
  *
- * \param[in, out]  c   pointer to AMGX solver info and context
+ * \param[in, out]  c   pointer to AmgX solver info and context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_load_solver_config(cs_sles_amgx_t  *c)
+_load_amgx_config(cs_sles_amgx_t  *c)
 {
   char err_str[4096];
   const char error_fmt[] = N_("%s returned %d.\n"
                               "%s");
   AMGX_RC retval = AMGX_RC_OK;
 
-  if (c->solver_config_file == NULL) {
-    retval = AMGX_config_create(&(c->solver_config),
+  if (c->amgx_config_file == NULL) {
+    retval = AMGX_config_create(&(c->amgx_config),
                                 cs_sles_amgx_get_config(c));
     if (retval != AMGX_RC_OK) {
       AMGX_get_error_string(retval, err_str, 4096);
@@ -324,14 +293,40 @@ _load_solver_config(cs_sles_amgx_t  *c)
     }
   }
   else {
-    retval = AMGX_config_create_from_file(&(c->solver_config),
-                                          c->solver_config_file);
+    retval = AMGX_config_create_from_file(&(c->amgx_config),
+                                          c->amgx_config_file);
     if (retval != AMGX_RC_OK) {
       AMGX_get_error_string(retval, err_str, 4096);
       bft_error(__FILE__, __LINE__, 0, _(error_fmt),
                 "AMGX_config_create_from_file", retval, err_str);
     }
   }
+
+  AMGX_config_add_parameters(&(c->amgx_config), "min_rows_latency_hiding=10000");
+
+#if 0
+  /* Exception handling can be ensured by AMGX, but by default,
+     we prefer to check return codes and used the regular code_saturne
+     error handling. */
+  AMGX_config_add_parameters(&(c->amgx_config), "exception_handling=1");
+#endif
+
+  void *comm_ptr = NULL;
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    comm_ptr = &_amgx_comm;
+#endif
+
+  retval = AMGX_resources_create(&c->amgx_resources, c->amgx_config,
+                                 comm_ptr,
+                                 _n_devices, _devices);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_resources_create", retval, err_str);
+  }
+
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -342,7 +337,7 @@ _load_solver_config(cs_sles_amgx_t  *c)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define and associate an AMGX linear system solver
+ * \brief Define and associate an AmgX linear system solver
  *        for a given field or equation name.
  *
  * If this system did not previously exist, it is added to the list of
@@ -366,7 +361,7 @@ _load_solver_config(cs_sles_amgx_t  *c)
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
  *
- * \return  pointer to newly created AMGX solver info object.
+ * \return  pointer to newly created AmgX solver info object.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -395,7 +390,7 @@ cs_sles_amgx_define(int           f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create AMGX linear system solver info and context.
+ * \brief Create AmgX linear system solver info and context.
  *
  * In case of rotational periodicity for a block (non-scalar) matrix,
  * the matrix type will be forced to MATSHELL ("shell") regardless
@@ -438,8 +433,8 @@ cs_sles_amgx_create(void  *context)
 
   c->setup_data = NULL;
 
-  c->solver_config_file = NULL;
-  c->solver_config_string = NULL;
+  c->amgx_config_file = NULL;
+  c->amgx_config_string = NULL;
 
   cs_sles_amgx_set_use_device(c, true);
 
@@ -450,7 +445,7 @@ cs_sles_amgx_create(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create AMGX linear system solver info and context
+ * \brief Create AmgX linear system solver info and context
  *        based on existing info and context.
  *
  * \param[in]  context  pointer to reference info and context
@@ -476,9 +471,9 @@ cs_sles_amgx_copy(const void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Destroy AMGX linear system solver info and context.
+ * \brief Destroy AmgX linear system solver info and context.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *                           (actual type: cs_sles_amgx_t  **)
  */
 /*----------------------------------------------------------------------------*/
@@ -491,11 +486,28 @@ cs_sles_amgx_destroy(void **context)
 
     /* Free local strings */
 
-    BFT_FREE(c->solver_config_file);
-    BFT_FREE(c->solver_config_string);
+    BFT_FREE(c->amgx_config_file);
+    BFT_FREE(c->amgx_config_string);
 
-    if (c->n_setups >= 1)
-      AMGX_config_destroy(c->solver_config);
+    if (c->n_setups >= 1) {
+      char err_str[4096];
+      const char warning_fmt[] = N_("\nwarning: %s returned %d.\n"
+                                    "%s\n");
+
+      AMGX_RC retval = AMGX_resources_destroy(c->amgx_resources);
+      if (retval != AMGX_RC_OK) {
+        AMGX_get_error_string(retval, err_str, 4096);
+        bft_printf(_(warning_fmt), "AMGX_resources_destroy",
+                   (int)retval, err_str);
+      }
+
+      retval = AMGX_config_destroy(c->amgx_config);
+      if (retval != AMGX_RC_OK) {
+        AMGX_get_error_string(retval, err_str, 4096);
+        bft_printf(_(warning_fmt), "AMGX_resources_destroy",
+                   (int)retval, err_str);
+      }
+    }
 
     /* Free structure */
 
@@ -512,63 +524,11 @@ cs_sles_amgx_destroy(void **context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the resources configuration string for AMGX.
+ * \brief return the configuration for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration strings syntax.
+ * Check the AmgX docummentation for configuration strings syntax.
  *
- * \return  configuration string
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_sles_amgx_get_config_resources(void)
-{
-  if (_resource_config_string == NULL) {
-
-    if (cs_glob_n_ranks > 1)
-      cs_sles_amgx_set_config_resources
-        ("communicator=MPI, min_rows_latency_hiding=10000");
-    else
-      cs_sles_amgx_set_config_resources("min_rows_latency_hiding=10000");
-
-  }
-
-  return _resource_config_string;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define the resources configuration for AMGX.
- *
- * Check the AMGX docummentation for configuration strings syntax.
- *
- * This function must be called before the first system using AMGX is set up.
- * If it is not called, or called after that point, a default configuration
- * will be used.
- *
- * \param[in]   config  string defining resources to use
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_amgx_set_config_resources(const char  *config)
-{
-  assert(config != NULL);
-
-  size_t l = strlen(config);
-
-  BFT_REALLOC(_resource_config_string, l, char);
-  strncpy(_resource_config_string, config, l);
-  _resource_config_string[l] = '\0';
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief return the solver configuration for an AMGX solver.
- *
- * Check the AMGX docummentation for configuration strings syntax.
- *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *
  * \return  configuration string
  */
@@ -579,8 +539,8 @@ cs_sles_amgx_get_config(void  *context)
 {
   cs_sles_amgx_t  *c = context;
 
-  if (   c->solver_config_file == NULL
-      && c->solver_config_string == NULL) {
+  if (   c->amgx_config_file == NULL
+      && c->amgx_config_string == NULL) {
 
     const char config[] =
       "config_version=2, "
@@ -591,7 +551,7 @@ cs_sles_amgx_get_config(void  *context)
       "monitor_residual=1, "
       "tolerance=1e-8, "
       "preconditioner(amg_solver)=AMG, "
-      "amg_solver:algorithm=CLASSICAL, "
+      "amg_solver:algorithm=AGGREGATION, "
       "amg_solver:max_iters=2, "
       "amg_solver:presweeps=1, "
       "amg_solver:postsweeps=1, "
@@ -604,18 +564,18 @@ cs_sles_amgx_get_config(void  *context)
 
   }
 
-  return c->solver_config_string;
+  return c->amgx_config_string;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define the solver configuration for an AMGX solver.
+ * \brief Define the solver configuration for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration strings syntax.
+ * Check the AmgX docummentation for configuration strings syntax.
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  * \param[in]       config   string defining configuration to use
  */
 /*----------------------------------------------------------------------------*/
@@ -628,18 +588,18 @@ cs_sles_amgx_set_config(void        *context,
 
   size_t l = strlen(config);
 
-  BFT_REALLOC(c->solver_config_string, l+1, char);
-  strncpy(c->solver_config_string, config, l);
-  c->solver_config_string[l] = '\0';
+  BFT_REALLOC(c->amgx_config_string, l+1, char);
+  strncpy(c->amgx_config_string, config, l);
+  c->amgx_config_string[l] = '\0';
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief return the name of the solver configuration file for an AMGX solver.
+ * \brief return the name of the solver configuration file for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration file syntax.
+ * Check the AmgX docummentation for configuration file syntax.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *
  * \return  configuration file name, or NULL
  */
@@ -650,18 +610,18 @@ cs_sles_amgx_get_config_file(void  *context)
 {
   cs_sles_amgx_t  *c = context;
 
-  return c->solver_config_file;
+  return c->amgx_config_file;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the solver configuration file for an AMGX solver.
+ * \brief Set the solver configuration file for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration file syntax.
+ * Check the AmgX docummentation for configuration file syntax.
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  * \param[in]       path     path to configuration file
  */
 /*----------------------------------------------------------------------------*/
@@ -674,19 +634,19 @@ cs_sles_amgx_set_config_file(void        *context,
 
   size_t l = strlen(path);
 
-  BFT_REALLOC(c->solver_config_file, l+1, char);
-  strncpy(c->solver_config_file, path, l);
-  c->solver_config_file[l] = '\0';
+  BFT_REALLOC(c->amgx_config_file, l+1, char);
+  strncpy(c->amgx_config_file, path, l);
+  c->amgx_config_file[l] = '\0';
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Indicate whether an AMGX solver should pin host memory.
+ * \brief Indicate whether an AmgX solver should pin host memory.
  *
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to AMGX solver info and context
+ * \param[in]  context  pointer to AmgX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -702,12 +662,12 @@ cs_sles_amgx_get_pin_memory(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether an AMGX solver should pin host memory.
+ * \brief Define whether an AmgX solver should pin host memory.
  *
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "pin_memory = false", thie may be deactivated.
  *
- * \param[in, out]  context       pointer to AMGX solver info and context
+ * \param[in, out]  context       pointer to AmgX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -723,9 +683,9 @@ cs_sles_amgx_set_pin_memory(void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Query whether an AMGX solver should use the device or host.
+ * \brief Query whether an AmgX solver should use the device or host.
  *
- * \param[in]  context  pointer to AMGX solver info and context
+ * \param[in]  context  pointer to AmgX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -747,12 +707,12 @@ cs_sles_amgx_get_use_device(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether an AMGX solver should use the device or host.
+ * \brief Define whether an AmgX solver should use the device or host.
  *
  * By default, the device will be used, but by calling this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in, out]  context       pointer to AMGX solver info and context
+ * \param[in, out]  context      pointer to AmgX solver info and context
  * \param[in]       use_device   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -780,9 +740,9 @@ cs_sles_amgx_set_use_device(void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup AMGX linear equation solver.
+ * \brief Setup AmgX linear equation solver.
  *
- * \param[in, out]  context    pointer to AMGX solver info and context
+ * \param[in, out]  context    pointer to AmgX solver info and context
  *                             (actual type: cs_sles_amgx_t  *)
  * \param[in]       name       pointer to system name
  * \param[in]       a          associated matrix
@@ -814,7 +774,16 @@ cs_sles_amgx_setup(void               *context,
   }
 
   if (c->n_setups < 1)
-    _load_solver_config(c);
+    _load_amgx_config(c);
+
+  int n_rings = 1;
+  AMGX_config_get_default_number_of_rings(c->amgx_config, &n_rings);
+
+  if (n_rings != 1)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("The selected AmgX solver configuration parameters are not compatible\n"
+         "with the \"one ring\" communication scheme currently handled."));
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const int n_rows = cs_matrix_get_n_rows(a);
@@ -830,7 +799,7 @@ cs_sles_amgx_setup(void               *context,
   if (sizeof(cs_lnum_t) != sizeof(int))
     bft_error
       (__FILE__, __LINE__, 0,
-       _("AMGX bindings are not currently handled for code_saturne builds\n"
+       _("AmgX bindings are not currently handled for code_saturne builds\n"
          "using long cs_lnumt_ types (i.e. --enable-long-lnum)."));
 
   /* Periodicity is not handled (at least not) in serial mode, as the matrix
@@ -841,9 +810,9 @@ cs_sles_amgx_setup(void               *context,
     bft_error
       (__FILE__, __LINE__, 0,
        _("Matrix type %s with block size %d for system \"%s\"\n"
-         "is not usable by AMGX.\n"
+         "is not usable by AmgX.\n"
          "Only block size 1 with CSR or MSR format "
-         "is currently supported by AMGX."),
+         "is currently supported by AmgX."),
        cs_matrix_type_name[cs_matrix_get_type(a)], db_size,
        name);
 
@@ -851,8 +820,6 @@ cs_sles_amgx_setup(void               *context,
      so as to use the main (and not ghost) cell id */
 
   assert(have_perio == false);
-
-  const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
 
   const cs_lnum_t *a_row_index, *a_col_id;
 
@@ -885,7 +852,7 @@ cs_sles_amgx_setup(void               *context,
   AMGX_RC retval;
 
   retval = AMGX_matrix_create(&(sd->matrix),
-                              _amgx_resources,
+                              c->amgx_resources,
                               c->amgx_mode);
 
   if (retval != AMGX_RC_OK) {
@@ -949,11 +916,11 @@ cs_sles_amgx_setup(void               *context,
   const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
 
   if (c->pin_memory) {
-    AMGX_pin_memory(row_index, (n_rows+1)*sizeof(int));
-    AMGX_pin_memory(col_id, a_row_index[n_rows]*sizeof(int));
-    AMGX_pin_memory(a_val, a_row_index[n_rows]*b_mem_size);
+    AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
+    AMGX_pin_memory((void *)col_id, a_row_index[n_rows]*sizeof(int));
+    AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
     if (a_d_val != NULL)
-      AMGX_pin_memory(a_d_val, n_rows*b_mem_size);
+      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
   }
 
   retval = AMGX_matrix_upload_all(sd->matrix,
@@ -974,10 +941,10 @@ cs_sles_amgx_setup(void               *context,
 
   if (c->pin_memory) {
     if (a_d_val != NULL)
-      AMGX_unpin_memory(a_d_val);
-    AMGX_unpin_memory(a_val);
-    AMGX_unpin_memory(col_id);
-    AMGX_unpin_memory(row_index);
+      AMGX_unpin_memory((void *)a_d_val);
+    AMGX_unpin_memory((void *)a_val);
+    AMGX_unpin_memory((void *)col_id);
+    AMGX_unpin_memory((void *)row_index);
   }
 
   BFT_FREE(_row_index);
@@ -986,9 +953,9 @@ cs_sles_amgx_setup(void               *context,
   /* Solver */
 
   retval = AMGX_solver_create(&(sd->solver),
-                              _amgx_resources,
+                              c->amgx_resources,
                               c->amgx_mode,
-                              c->solver_config);
+                              c->amgx_config);
 
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
@@ -1015,13 +982,13 @@ cs_sles_amgx_setup(void               *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Call AMGX linear equation solver.
+ * \brief Call AmgX linear equation solver.
  *
  * \warning The precision, r_norm, and n_iter parameters are ignored here.
  *          the matching configuration options should be set earlier, using
  *          the \ref cs_sles_amgx_set_config function
  *
- * \param[in, out]  context        pointer to AMGX solver info and context
+ * \param[in, out]  context        pointer to AmgX solver info and context
  *                                 (actual type: cs_sles_amgx_t  *)
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
@@ -1089,7 +1056,7 @@ cs_sles_amgx_solve(void                *context,
     if (db_size > 1)
       bft_error(__FILE__, __LINE__, 0,
         _("Rotation mode %d with block size %d for system \"%s\"\n"
-          "is not usable by AMGX."),
+          "is not usable by AmgX."),
           rotation_mode, db_size, name);
   }
 
@@ -1097,7 +1064,7 @@ cs_sles_amgx_solve(void                *context,
   snprintf(options, 63, "tolerance=%e", precision*r_norm);
   options[63] = '\0';
 
-  AMGX_RC retval = AMGX_config_add_parameters(&(c->solver_config), options);
+  AMGX_RC retval = AMGX_config_add_parameters(&(c->amgx_config), options);
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
     bft_error(__FILE__, __LINE__, 0, _(error_fmt),
@@ -1106,8 +1073,8 @@ cs_sles_amgx_solve(void                *context,
 
   /* Vector */
 
-  AMGX_vector_create(&x, _amgx_resources, c->amgx_mode);
-  AMGX_vector_create(&b, _amgx_resources, c->amgx_mode);
+  AMGX_vector_create(&x, c->amgx_resources, c->amgx_mode);
+  AMGX_vector_create(&b, c->amgx_resources, c->amgx_mode);
 
   if (cs_glob_n_ranks > 1) {
     AMGX_vector_bind(x, c->setup_data->matrix);
@@ -1117,8 +1084,8 @@ cs_sles_amgx_solve(void                *context,
   unsigned int n_bytes = n_rows*db_size*sizeof(cs_real_t);
 
   if (c->pin_memory) {
-    AMGX_pin_memory(vx, n_bytes);
-    AMGX_pin_memory(rhs, n_bytes);
+    AMGX_pin_memory((void *)vx, n_bytes);
+    AMGX_pin_memory((void *)rhs, n_bytes);
   }
 
   retval = AMGX_vector_upload(x, n_rows, db_size, vx);
@@ -1141,6 +1108,8 @@ cs_sles_amgx_solve(void                *context,
 
   AMGX_solver_solve(sd->solver, b, x);
 
+  cs_fp_exception_restore_trap();
+
   retval = AMGX_vector_download(x, vx);
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
@@ -1155,8 +1124,8 @@ cs_sles_amgx_solve(void                *context,
   // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
 
   if (c->pin_memory) {
-    AMGX_unpin_memory(vx);
-    AMGX_unpin_memory(rhs);
+    AMGX_unpin_memory((void *)vx);
+    AMGX_unpin_memory((void *)rhs);
   }
 
   AMGX_SOLVE_STATUS  solve_status;
@@ -1201,13 +1170,13 @@ cs_sles_amgx_solve(void                *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free AMGX linear equation solver setup context.
+ * \brief Free AmgX linear equation solver setup context.
  *
  * This function frees resolution-related data, such as
  * buffers and preconditioning but does not free the whole context,
  * as info used for logging (especially performance data) is maintained.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *                           (actual type: cs_sles_amgx_t  *)
  */
 /*----------------------------------------------------------------------------*/
@@ -1238,7 +1207,7 @@ cs_sles_amgx_free(void  *context)
 /*!
  * \brief Log sparse linear equation solver info.
  *
- * \param[in]  context   pointer to AMGX solver info and context
+ * \param[in]  context   pointer to AmgX solver info and context
  *                       (actual type: cs_sles_amgx_t  *)
  * \param[in]  log_type  log type
  */
@@ -1255,7 +1224,7 @@ cs_sles_amgx_log(const void  *context,
   if (log_type == CS_LOG_SETUP) {
 
     cs_log_printf(log_type,
-                  _("  Solver type:                       AMGX\n"
+                  _("  Solver type:                       AmgX\n"
                     "    Matrix format:                     %s\n"),
                   m_type);
 
@@ -1273,7 +1242,7 @@ cs_sles_amgx_log(const void  *context,
 
     cs_log_printf(log_type,
                   _("\n"
-                    "  Solver type:                   AMGX\n"
+                    "  Solver type:                   AmgX\n"
                     "    Matrix format:               %s\n"
                     "  Number of setups:              %12d\n"
                     "  Number of calls:               %12d\n"

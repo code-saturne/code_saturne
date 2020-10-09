@@ -2,7 +2,7 @@
 #define __CS_SLES_AMGX_H__
 
 /*============================================================================
- * Sparse Linear Equation Solvers using AMGX
+ * Sparse Linear Equation Solvers using AmgX
  *============================================================================*/
 
 /*
@@ -47,7 +47,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* AMGX linear solver context (opaque) */
+/* AmgX linear solver context (opaque) */
 
 typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
 
@@ -60,7 +60,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define and associate an AMGX linear system solver
+ * Define and associate an AmgX linear system solver
  * for a given field or equation name.
  *
  * If this system did not previously exist, it is added to the list of
@@ -70,7 +70,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  * This is a utility function: if finer control is needed, see
  * cs_sles_define() and cs_sles_amgx_create().
  *
- * Note that this function returns a pointer directly to the AMGX solver
+ * Note that this function returns a pointer directly to the AmgX solver
  * management structure. This may be used to set further options.
  * If needed, cs_sles_find() may be used to obtain a pointer to the matching
  * cs_sles_t container.
@@ -82,7 +82,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  *                    for setup_hook, or NULL
  *
  * returns:
- *   pointer to newly created AMGX solver info object.
+ *   pointer to newly created AmgX solver info object.
  *----------------------------------------------------------------------------*/
 
 cs_sles_amgx_t *
@@ -91,7 +91,7 @@ cs_sles_amgx_define(int          f_id,
                     void        *context);
 
 /*----------------------------------------------------------------------------
- * Create AMGX linear system solver info and context.
+ * Create AmgX linear system solver info and context.
  *
  * In case of rotational periodicity for a block (non-scalar) matrix,
  * the matrix type will be forced to MATSHELL ("shell") regardless
@@ -109,7 +109,7 @@ cs_sles_amgx_t *
 cs_sles_amgx_create(void  *context);
 
 /*----------------------------------------------------------------------------
- * Create AMGX linear system solver info and context
+ * Create AmgX linear system solver info and context
  * based on existing info and context.
  *
  * parameters:
@@ -125,10 +125,10 @@ void *
 cs_sles_amgx_copy(const void  *context);
 
 /*----------------------------------------------------------------------------
- * Destroy AMGX linear system solver info and context.
+ * Destroy AmgX linear system solver info and context.
  *
  * parameters:
- *   context  <-> pointer to AMGX linear solver info
+ *   context  <-> pointer to AmgX linear solver info
  *                (actual type: cs_sles_amgx_t  **)
  *----------------------------------------------------------------------------*/
 
@@ -137,41 +137,11 @@ cs_sles_amgx_destroy(void  **context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the resources configuration string for AMGX.
+ * \brief return the solver configuration for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration strings syntax.
+ * Check the AmgX docummentation for configuration strings syntax.
  *
- * \return  configuration string
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_sles_amgx_get_config_resources(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define the resources configuration for AMGX.
- *
- * Check the AMGX docummentation for configuration strings syntax.
- *
- * This function must be called before the first system using AMGX is set up.
- * If it is not called, or called after that point, a default configuration
- * will be used.
- *
- * \param[in]   config  string defining resources to use
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_amgx_set_config_resources(const char  *config);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief return the solver configuration for an AMGX solver.
- *
- * Check the AMGX docummentation for configuration strings syntax.
- *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *
  * \return  configuration string
  */
@@ -182,13 +152,13 @@ cs_sles_amgx_get_config(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define the solver configuration for an AMGX solver.
+ * \brief Define the configuration for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration strings syntax.
+ * Check the AmgX docummentation for configuration strings syntax.
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  * \param[in]       config   string defining configuration to use
  */
 /*----------------------------------------------------------------------------*/
@@ -199,11 +169,11 @@ cs_sles_amgx_set_config(void        *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief return the name of the solver configuration file for an AMGX solver.
+ * \brief return the name of the solver configuration file for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration file syntax.
+ * Check the AmgX docummentation for configuration file syntax.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  *
  * \return  configuration file name, or NULL
  */
@@ -214,13 +184,13 @@ cs_sles_amgx_get_config_file(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the solver configuration file for an AMGX solver.
+ * \brief Set the solver configuration file for an AmgX solver.
  *
- * Check the AMGX docummentation for configuration file syntax.
+ * Check the AmgX docummentation for configuration file syntax.
  *
  * If this function is not called, a default configuration will be used.
  *
- * \param[in, out]  context  pointer to AMGX solver info and context
+ * \param[in, out]  context  pointer to AmgX solver info and context
  * \param[in]       path     path to configuration file
  */
 /*----------------------------------------------------------------------------*/
@@ -231,12 +201,12 @@ cs_sles_amgx_set_config_file(void        *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Indicate whether an AMGX solver should pin host memory.
+ * \brief Indicate whether an AmgX solver should pin host memory.
  *
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to AMGX solver info and context
+ * \param[in]  context  pointer to AmgX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -247,12 +217,12 @@ cs_sles_amgx_get_pin_memory(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether an AMGX solver should pin host memory.
+ * \brief Define whether an AmgX solver should pin host memory.
  *
  * By default, memory will be pinned for faster transfers, but by calling
  * this function with "pin_memory = false", thie may be deactivated.
  *
- * \param[in, out]  context       pointer to AMGX solver info and context
+ * \param[in, out]  context       pointer to AmgX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -263,12 +233,12 @@ cs_sles_amgx_set_pin_memory(void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether an AMGX solver should use the device or host
+ * \brief Define whether an AmgX solver should use the device or host
  *
  * By default, the device will be used, but by callingg this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in]  context  pointer to AMGX solver info and context
+ * \param[in]  context  pointer to AmgX solver info and context
  *
  * \return  true for device, false for host only
  */
@@ -279,12 +249,12 @@ cs_sles_amgx_get_use_device(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether an AMGX solver should use the device or host.
+ * \brief Define whether an AmgX solver should use the device or host.
  *
  * By default, the device will be used, but by callingg this function
  * with "use_device = false", only the host will be used.
  *
- * \param[in, out]  context       pointer to AMGX solver info and context
+ * \param[in, out]  context       pointer to AmgX solver info and context
  * \param[in]       use_device   true for devince, false for host only
  */
 /*----------------------------------------------------------------------------*/
@@ -294,10 +264,10 @@ cs_sles_amgx_set_use_device(void  *context,
                             bool   use_device);
 
 /*----------------------------------------------------------------------------
- * Setup AMGX linear equation solver.
+ * Setup AmgX linear equation solver.
  *
  * parameters:
- *   context   <-> pointer to AMGX linear solver info
+ *   context   <-> pointer to AmgX linear solver info
  *                 (actual type: cs_sles_amgx_t  *)
  *   name      <-- pointer to system name
  *   a         <-- associated matrix
@@ -311,7 +281,7 @@ cs_sles_amgx_setup(void               *context,
                    int                 verbosity);
 
 /*----------------------------------------------------------------------------
- * Call AMGX linear equation solver.
+ * Call AmgX linear equation solver.
  *
  * \warn The precision, r_norm, and n_iter parameters are ignored here.
  *       the matching configuration options should be set earlier, using
@@ -319,7 +289,7 @@ cs_sles_amgx_setup(void               *context,
  *
  *
  * parameters:
- *   context       <-> pointer to AMGX linear solver info
+ *   context       <-> pointer to AmgX linear solver info
  *                     (actual type: cs_sles_amgx_t  *)
  *   name          <-- pointer to system name
  *   a             <-- matrix
@@ -354,14 +324,14 @@ cs_sles_amgx_solve(void                *context,
                    void                *aux_vectors);
 
 /*----------------------------------------------------------------------------
- * Free AMGX linear equation solver setup context.
+ * Free AmgX linear equation solver setup context.
  *
  * This function frees resolution-related data, such as
  * buffers and preconditioning but does not free the whole context,
  * as info used for logging (especially performance data) is maintained.
 
  * parameters:
- *   context <-> pointer to AMGX linear solver info
+ *   context <-> pointer to AmgX linear solver info
  *               (actual type: cs_sles_amgx_t  *)
  *----------------------------------------------------------------------------*/
 
@@ -372,7 +342,7 @@ cs_sles_amgx_free(void  *context);
  * Log sparse linear equation solver info.
  *
  * parameters:
- *   context  <-> pointer to AMGX linear solver info
+ *   context  <-> pointer to AmgX linear solver info
  *                (actual type: cs_sles_amgx_t  *)
  *   log_type <-- log type
  *----------------------------------------------------------------------------*/
