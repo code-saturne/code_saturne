@@ -110,6 +110,12 @@ if (ippmod(iaeros).ge.0) then
   call ctiniv0
 endif
 
+! Electric arcs, Joule effect or ionic conduction
+
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call eliniv(isuite)
+endif
+
 !----
 ! Formats
 !----
@@ -164,12 +170,6 @@ implicit none
 ! Local variables
 
 !===============================================================================
-
-! Electric arcs, Joule effect or ionic conduction
-
-if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-  call eliniv(isuite)
-endif
 
 ! Atmospheric flows, second stage
 if (ippmod(iatmos).ge.0) then
