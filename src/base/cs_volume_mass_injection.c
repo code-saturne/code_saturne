@@ -407,6 +407,8 @@ cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
                                      cs_lnum_t   cell_num[],
                                      int         cell_zone_id[])
 {
+  CS_UNUSED(n_cells); /* Avoid a warning when compiling with optimization */
+
   /* First, flag all volume zones with injection definitions */
 
   cs_lnum_t l = 0;

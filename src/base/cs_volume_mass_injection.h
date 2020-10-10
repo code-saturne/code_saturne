@@ -63,8 +63,9 @@ typedef void
                                    cs_real_t        *val);
 
 /*!
- * \struct cs_xdef_analytic_input_t
- * \brief Input structure when a definition by analytic function is used
+ * \struct cs_volume_mass_injection_by_function_context_t
+ * \brief Context structure associated to a mass injection inside a volume
+ *        relying on a function
  */
 
 typedef struct {
@@ -76,7 +77,7 @@ typedef struct {
   void                             *input;
 
   /*! \var func
-   * pointer to a \ref cs_analytic_func_t to call
+   * pointer to a \ref cs_volume_mass_injection_eval_t to call
    */
   cs_volume_mass_injection_eval_t  *func;
 

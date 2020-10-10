@@ -1348,7 +1348,6 @@ cs_cdo_advection_fb_upwnoc(int                        dim,
       c_row[f] -= beta_minus;
       c_row[c] += beta_minus;
 
-
       if (csys->bf_ids[f] > -1) { /* This is a boundary face */
         if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
