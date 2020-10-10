@@ -160,7 +160,7 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        eqc->advection_func = cs_cdo_advection_fb_cencsv;
+        eqc->advection_func = cs_cdo_advection_fb_cennoc;
         break;
 
       default:

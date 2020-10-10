@@ -282,7 +282,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
   param->qtype = CS_QUADRATURE_BARY;
 
-  param->adv_form   = CS_PARAM_N_ADVECTION_FORMULATIONS;
+  param->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Forcing steady state in order to avoid inconsistencies */
@@ -836,14 +836,16 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   const char  *quad_key = _quad_type_key[nsp->qtype];
 
   /* If requested, add advection */
-  if (nsp->adv_form != CS_PARAM_N_ADVECTION_FORMULATIONS) {
+  if ((nsp->model & (CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES |
+                     CS_NAVSTO_MODEL_OSEEN)) > 0) {
+
     /* If different from default value */
     const char *form_key = _adv_formulation_key[nsp->adv_form];
     cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
 
-    assert(nsp->adv_scheme != CS_PARAM_N_ADVECTION_SCHEMES);
     const char *scheme_key = _adv_scheme_key[nsp->adv_scheme];
     cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, scheme_key);
+
   }
 
   cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
