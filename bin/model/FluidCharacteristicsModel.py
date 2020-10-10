@@ -848,7 +848,13 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
 
-        formula = tag + " = -1.;"
+        d_value = {'density': 'rho0',
+                   'molecular_viscosity': 'mu0',
+                   'specific_heat': 'cp0',
+                   'thermal_conductivity': 'lambda0',
+                   'volume_viscosity': 'viscv0'}
+
+        formula = tag + " = " + d_value[tag] + ";"
 
         return formula
 
