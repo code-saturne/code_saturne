@@ -201,10 +201,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         # Combo models
 
-        self.modelRho       = ComboModel(self.comboBoxRho,      3, 1)
-        self.modelMu        = ComboModel(self.comboBoxMu,       3, 1)
-        self.modelCp        = ComboModel(self.comboBoxCp,       3, 1)
-        self.modelAl        = ComboModel(self.comboBoxAl,       3, 1)
+        self.modelRho       = ComboModel(self.comboBoxRho,      2, 1)
+        self.modelMu        = ComboModel(self.comboBoxMu,       2, 1)
+        self.modelCp        = ComboModel(self.comboBoxCp,       2, 1)
+        self.modelAl        = ComboModel(self.comboBoxAl,       2, 1)
         self.modelDiff      = ComboModel(self.comboBoxDiff,     2, 1)
         self.modelNameDiff  = ComboModel(self.comboBoxNameDiff, 1, 1)
         self.modelViscv0    = ComboModel(self.comboBoxViscv0,   3, 1)
@@ -213,39 +213,43 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelMethod    = ComboModel(self.comboBoxMethod,   1, 1)
         self.modelReference = ComboModel(self.comboBoxReference,  1, 1)
 
-        self.modelRho.addItem(self.tr('constant'), 'constant')
-        self.modelRho.addItem(self.tr('user law'), 'user_law')
-        self.modelRho.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_joule == 'off':
+            self.modelRho.addItem(self.tr('constant'), 'constant')
+            self.modelRho.addItem(self.tr('material law'), 'thermal_law')
         if mdl_atmo != 'off':
-            self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
-        if mdl_hgn != "off":
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
+        elif mdl_hgn != "off":
             self.modelRho.addItem(self.tr('linear mixture law'), 'predefined_law')
-        elif mdl_joule == 'arc':
-            self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_joule != 'off':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
         elif mdl_comp != 'off':
             self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
         elif mdl_gas != 'off' or mdl_coal != 'off':
             self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
+        self.modelRho.addItem(self.tr('user law'), 'user_law')
 
-        self.modelMu.addItem(self.tr('constant'), 'constant')
-        self.modelMu.addItem(self.tr('user law'), 'user_law')
-        self.modelMu.addItem(self.tr('material law'), 'thermal_law')
-        if mdl_joule == 'arc':
-            self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        if mdl_joule == 'off':
+            self.modelMu.addItem(self.tr('constant'), 'constant')
+            self.modelMu.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_joule != 'off':
+            self.modelMu.addItem(self.tr('predefined law'), 'predefined_law')
         if mdl_hgn != "off":
             self.modelMu.addItem(self.tr('linear mixture law'), 'predefined_law')
+        self.modelMu.addItem(self.tr('user law'), 'user_law')
 
-        self.modelCp.addItem(self.tr('constant'), 'constant')
+        if mdl_joule == 'off':
+            self.modelCp.addItem(self.tr('constant'), 'constant')
+            self.modelCp.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_joule != 'off':
+            self.modelCp.addItem(self.tr('predefined law'), 'predefined_law')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
-        self.modelCp.addItem(self.tr('material law'), 'thermal_law')
-        if mdl_joule == 'arc':
-            self.modelCp.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
-        self.modelAl.addItem(self.tr('constant'), 'constant')
+        if mdl_joule == 'off':
+            self.modelAl.addItem(self.tr('constant'), 'constant')
+            self.modelAl.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_joule != 'off':
+            self.modelAl.addItem(self.tr('predefined law'), 'predefined_law')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
-        self.modelAl.addItem(self.tr('material law'), 'thermal_law')
-        if mdl_joule == 'arc':
-            self.modelAl.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
@@ -504,10 +508,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __label.show()
                     __labelu.show()
                     __labelv.show()
-                if self.mdl.getMaterials() == "user_material":
-                    __model.disableItem(str_model='thermal_law')
-                else:
-                    __model.enableItem(str_model='thermal_law')
+                try:
+                    if self.mdl.getMaterials() == "user_material":
+                        __model.disableItem(str_model='thermal_law')
+                    else:
+                        __model.enableItem(str_model='thermal_law')
+                except Exception:
+                    pass
             else:
                 __label.setText(self.tr("Reference value"))
 
@@ -551,17 +558,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
             # Joule
             if mdl_joule == 'arc':
-                __model.disableItem(str_model='constant')
-                __model.disableItem(str_model='predefined_law')
                 __model.setItem(str_model='predefined_law')
                 __combo.setEnabled(False)
                 __button.setEnabled(False)
                 __button.hide()
                 self.mdl.setPropertyMode(tag, 'predefined_law')
-            if mdl_joule == 'joule':
-                __model.setItem(str_model='user_law')
-                __model.disableItem(str_model='constant')
-                self.mdl.setPropertyMode(tag, 'user_law')
 
             # Atmospheric Flows
             if mdl_atmo != 'off':

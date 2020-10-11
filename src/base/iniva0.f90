@@ -132,6 +132,15 @@ call field_get_key_id("variable_id", keyvar)
 
 call field_get_val_s_by_name('dt', dt)
 
+! Initialize temperature to reference temperature if present
+call field_get_id_try('temperature', f_id)
+if (f_id .ge. 0) then
+  call field_get_val_s(f_id, field_s_v)
+  do iel = 1, ncel
+    field_s_v(iel) = t0
+  enddo
+endif
+
 ! Initialize variables to avoid compiler warnings
 
 jj = 0

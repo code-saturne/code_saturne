@@ -2821,12 +2821,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               BFT_FREE(ini_vals);
             }
           }
-          else {
-            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-              cs_lnum_t iel = cell_ids[icel];
-              c->val[iel] = 0.0;
-            }
-          }
+          /* If no formula was provided, the previous field values are
+             kept (allowing mode-specific automatic initialization). */
         }
 
         /* User Scalars initialization */

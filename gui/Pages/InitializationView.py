@@ -98,7 +98,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         # create group to control hide/show options
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
                            self.comboBoxTurbulence]
-        self.thermal_group = [self.labelThermal, self.pushButtonThermal]
+        self.thermal_group = [self.labelThermal, self.comboBoxThermal, self.pushButtonThermal]
         self.velocity_group = [self.labelVelocity, self.pushButtonVelocity]
         self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
         self.meteo_group = [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
@@ -118,12 +118,17 @@ class InitializationView(QWidget, Ui_InitializationForm):
             if zone.getLabel() == zone_name:
                 self.zone_id = str(zone.getCodeNumber())  # FIXME : using str() conversion is not great
 
+        self.modelThermal = ComboModel(self.comboBoxThermal, 2, 1)
+        self.modelThermal.addItem(self.tr("Automatic initialization"), 'automatic')
+        self.modelThermal.addItem(self.tr("Initialization by formula"), 'formula')
+
         self.modelTurbulence = ComboModel(self.comboBoxTurbulence, 2, 1)
         self.modelTurbulence.addItem(self.tr("Initialization by formula"), 'formula')
         self.modelTurbulence.addItem(self.tr("Initialization by reference value(s)"), 'reference_value')
 
         # 2/ Connections
 
+        self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
         self.comboBoxTurbulence.activated[str].connect(self.slotChoice)
         self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
         self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
@@ -227,6 +232,27 @@ class InitializationView(QWidget, Ui_InitializationForm):
         turb_model = self.turb.getTurbulenceModel()
 
         self.initializeVariables()
+
+
+    @pyqtSlot(str)
+    def slotThermalChoice(self, text):
+        """
+        INPUT choice of method of initialization
+        """
+        choice = self.modelThermal.dicoV2M[str(text)]
+        log.debug("slotThermalChoice choice =  %s " % str(choice))
+        if choice == 'formula':
+            th_formula = self.init.getThermalFormula(self.zone_id)
+            if not th_formula:
+                th_formula = self.init.getDefaultThermalFormula()
+                self.pushButtonThermal.setStyleSheet("background-color: red")
+            else:
+                self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.init.setThermalFormula(self.zone_id, th_formula)
+            self.pushButtonThermal.show()
+        else:
+            self.init.setThermalFormula(self.zone_id, None)
+            self.pushButtonThermal.hide()
 
 
     @pyqtSlot(str)
@@ -747,13 +773,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.thermal_group:
                 item.show()
             th_formula = self.init.getThermalFormula(self.zone_id)
-            if not th_formula:
-                th_formula = self.init.getDefaultThermalFormula()
-                self.pushButtonThermal.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.init.setThermalFormula(self.zone_id, th_formula)
-            self.pushButtonThermal.setToolTip(th_formula)
+            str_model = 'automatic'
+            if th_formula:
+                str_model = 'formula'
+            self.modelThermal.setItem(str_model = str_model)
+            self.slotThermalChoice(self.modelThermal.dicoM2V[str_model])
 
         # Initialisation of the termodynamics values for the compressible model
         if self.comp.getCompressibleModel() != 'off':

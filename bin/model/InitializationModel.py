@@ -368,10 +368,13 @@ omega = k^0.5/almax;"""
         self.__verifyZone(zone)
         node = self.node_scalartherm.xmlGetNode('variable')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
-        n.xmlSetTextNode(formula)
+        if formula:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -383,7 +386,7 @@ omega = k^0.5/almax;"""
         self.__verifyZone(zone)
         node = self.node_scalartherm.xmlGetNode('variable')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -519,7 +522,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
@@ -535,7 +538,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -569,7 +572,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_veloce.xmlGetNode('variable', name = 'hydraulic_head')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
@@ -585,7 +588,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_veloce.xmlGetNode('variable', name = 'hydraulic_head')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -619,7 +622,7 @@ pressure = p0 + g * ro * z;\n"""
         self.__verifyZone(zone)
         node = self.node_fluid.xmlGetNode('property', name = 'density')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlGetNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
@@ -634,7 +637,7 @@ pressure = p0 + g * ro * z;\n"""
         self.__verifyZone(zone)
         node = self.node_fluid.xmlGetNode('property', name = 'density')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -668,7 +671,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_comp.xmlGetNode('variable', name = 'temperature')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlGetNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
@@ -684,7 +687,7 @@ pressure = p0 + g * ro * z;\n"""
         node = self.node_comp.xmlGetNode('variable', name = 'temperature')
 
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -716,7 +719,7 @@ pressure = p0 + g * ro * z;\n"""
         self.__verifyZone(zone)
         node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlGetNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
@@ -731,7 +734,7 @@ pressure = p0 + g * ro * z;\n"""
         self.__verifyZone(zone)
         node = self.node_scalartherm.xmlGetNode('variable', name = 'total_energy')
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -788,7 +791,7 @@ pressure = p0 + g * ro * z;\n"""
         self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
         node = self.node_userscalar.xmlGetNode('variable', name = str(species))
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
         n.xmlSetTextNode(formula)
@@ -804,7 +807,7 @@ pressure = p0 + g * ro * z;\n"""
         self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
         node = self.node_userscalar.xmlGetNode('variable', name = str(species))
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
@@ -839,7 +842,7 @@ pressure = p0 + g * ro * z;\n"""
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
         node = node_atmo.xmlGetNode('variable', name = str(scalar))
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
         n.xmlSetTextNode(formula)
@@ -856,7 +859,7 @@ pressure = p0 + g * ro * z;\n"""
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
         node = node_atmo.xmlGetNode('variable', name = str(scalar))
         if not node:
-            msg = "There is an error: this node " + str(node) + " should be existed"
+            msg = "There is an error: this node " + str(node) + " should be present"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
