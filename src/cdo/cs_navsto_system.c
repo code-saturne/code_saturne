@@ -566,6 +566,9 @@ cs_navsto_system_init_setup(void)
 
   cs_navsto_param_t  *nsp = ns->param;
 
+  /* Set shared pointers for the turbulence modelling */
+  cs_cdo_turbulence_init(nsp->turbulence_struct);
+
   /* Set field metadata */
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");

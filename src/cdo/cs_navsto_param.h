@@ -30,10 +30,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_boundary.h"
+#include "cs_cdo_turbulence.h"
 #include "cs_equation_param.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
-#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -525,27 +525,17 @@ typedef struct {
   cs_property_t              *lami_viscosity;
 
   /*!
-   * @}
    * @name Turbulence modelling
    * Set of parameters to handle turbulence modelling.
    * @{
    */
 
-  /*! \var turbulence
-   * Main set of parameters to handle turbulence modelling. This
-   * structure is shared with the legacy part.
+  /*! \var turbulence_struct
+   *  Structure storing all information needed to set up and solve the equations
+   *  related to the tubulence modelling
    */
 
-  cs_turb_model_t            *turbulence;
-
-  /*! \var rans_modelling
-   * Main set of parameters to handle RANS modelling. This
-   * structure is shared with the legacy part.
-   * RANS means Reynolds Average Navier-Stokes
-   */
-
-  cs_turb_rans_model_t       *rans_modelling;
-
+  cs_cdo_turbulence_t        *turbulence_struct;
 
   /*!
    * @name Numerical options
