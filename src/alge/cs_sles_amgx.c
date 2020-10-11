@@ -128,10 +128,6 @@ struct _cs_sles_amgx_t {
   cs_timer_counter_t   t_setup;            /* Total setup */
   cs_timer_counter_t   t_solve;            /* Total time used */
 
-  /* Additional setup options */
-
-  void                        *hook_context;   /* Optional user context */
-
   /* Setup data */
 
   char                   *amgx_config_file;
@@ -329,6 +325,373 @@ _load_amgx_config(cs_sles_amgx_t  *c)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup AmgX matrix with at most 1 ring.
+ *
+ * \param[in, out]  c   pointer to AmgX solver info and context
+ * \param[in]       a   associated matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_matrix_1_ring(cs_sles_amgx_t     *c,
+                     const cs_matrix_t  *a)
+{
+  char err_str[4096];
+  const char error_fmt[] = N_("%s returned %d.\n"
+                              "%s");
+
+  cs_sles_amgx_setup_t *sd = c->setup_data;
+
+  if (sizeof(cs_lnum_t) != sizeof(int))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("AmgX bindings are not currently handled for code_saturne builds\n"
+         "using long cs_lnum_t types (i.e. --enable-long-lnum)."));
+
+  const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
+  const int n_rows = cs_matrix_get_n_rows(a);
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_lnum_t *a_row_index, *a_col_id;
+
+  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+
+  if (cs_mat_type == CS_MATRIX_CSR)
+    cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
+  else if (cs_mat_type == CS_MATRIX_MSR)
+    cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
+
+  const cs_lnum_t  *row_index = a_row_index;
+  int              *_row_index = NULL;
+  const cs_lnum_t  *col_id = a_col_id;
+  cs_lnum_t        *_col_id = NULL;
+
+  if (sizeof(int) != sizeof(cs_lnum_t)) {
+    BFT_MALLOC(_row_index, n_rows, int);
+    for (cs_lnum_t i = 0; i < n_rows; i++)
+      _row_index[i] = a_row_index[i];
+    row_index = _row_index;
+    int nnz = row_index[n_rows];
+    BFT_MALLOC(_col_id, nnz, int);
+    for (cs_lnum_t i = 0; i < nnz; i++)
+      _col_id[i] = a_col_id[i];
+    col_id = _col_id;
+  }
+
+  /* Matrix */
+
+  AMGX_RC retval;
+
+  retval = AMGX_matrix_create(&(sd->matrix),
+                              c->amgx_resources,
+                              c->amgx_mode);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_matrix_create", retval, err_str);
+  }
+
+  if (cs_glob_n_ranks > 1) {
+
+    int *send_sizes, *recv_sizes;
+    BFT_MALLOC(send_sizes, halo->n_c_domains, int);
+    BFT_MALLOC(recv_sizes, halo->n_c_domains, int);
+    for (int i = 0; i < halo->n_c_domains; i++) {
+      send_sizes[i] =   halo->send_index[2*i + 1]
+                      - halo->send_index[2*i];
+      recv_sizes[i] =   halo->index[2*i + 1]
+                      - halo->index[2*i];
+    }
+    int **send_maps, **recv_maps;
+    BFT_MALLOC(send_maps, halo->n_c_domains, int *);
+    BFT_MALLOC(recv_maps, halo->n_c_domains, int *);
+
+    assert(sizeof(cs_lnum_t) == sizeof(int));
+
+    for (int i = 0; i < halo->n_c_domains; i++) {
+      BFT_MALLOC(send_maps[i], send_sizes[i], int);
+      int *_send_map = send_maps[i];
+      for (int j = 0; j < send_sizes[i]; j++)
+        _send_map[j] = halo->send_list[halo->send_index[2*i] + j];
+      BFT_MALLOC(recv_maps[i], recv_sizes[i], int);
+      int *_recv_map = recv_maps[i];
+      for (int j = 0; j < recv_sizes[i]; j++)
+        _recv_map[j] = halo->n_local_elts + halo->index[2*i] + j;
+    }
+
+    retval = AMGX_matrix_comm_from_maps_one_ring(sd->matrix,
+                                                 1, /* allocated_halo_depth */
+                                                 halo->n_c_domains,
+                                                 halo->c_domain_rank,
+                                                 send_sizes,
+                                                 (const int **)send_maps,
+                                                 recv_sizes,
+                                                 (const int **)recv_maps);
+
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_matrix_comm_from_maps_one_ring", retval, err_str);
+    }
+
+    for (int i = 0; i < halo->n_c_domains; i++) {
+      BFT_FREE(recv_maps[i]);
+      BFT_FREE(send_maps[i]);
+    }
+    BFT_FREE(recv_sizes);
+    BFT_FREE(send_sizes);
+
+  }
+
+  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+
+  if (c->pin_memory) {
+    AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
+    AMGX_pin_memory((void *)col_id, a_row_index[n_rows]*sizeof(int));
+    AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
+    if (a_d_val != NULL)
+      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
+  }
+
+  retval = AMGX_matrix_upload_all(sd->matrix,
+                                  n_rows,
+                                  cs_matrix_get_n_entries(a),
+                                  db_size[1],
+                                  db_size[2],
+                                  row_index,
+                                  col_id,
+                                  a_val,
+                                  a_d_val);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_matrix_upload_all", retval, err_str);
+  }
+
+  if (c->pin_memory) {
+    if (a_d_val != NULL)
+      AMGX_unpin_memory((void *)a_d_val);
+    AMGX_unpin_memory((void *)a_val);
+    AMGX_unpin_memory((void *)col_id);
+    AMGX_unpin_memory((void *)row_index);
+  }
+
+  BFT_FREE(_row_index);
+  BFT_FREE(_col_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup AmgX matrix with multiple halo rings
+ *
+ * \param[in, out]  c   pointer to AmgX solver info and context
+ * \param[in]       a   associated matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_matrix_multi_ring(cs_sles_amgx_t     *c,
+                         const cs_matrix_t  *a)
+{
+  char err_str[4096];
+  const char error_fmt[] = N_("%s returned %d.\n"
+                              "%s");
+
+  cs_sles_amgx_setup_t *sd = c->setup_data;
+
+  if (sizeof(cs_lnum_t) != sizeof(int))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("AmgX bindings are not currently handled for code_saturne builds\n"
+         "using long cs_lnumt_ types (i.e. --enable-long-lnum)."));
+
+  const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
+  const int n_rows = cs_matrix_get_n_rows(a);
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_lnum_t *a_row_index, *a_col_id;
+
+  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+
+  if (cs_mat_type == CS_MATRIX_CSR)
+    cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
+  else if (cs_mat_type == CS_MATRIX_MSR)
+    cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
+
+  const cs_lnum_t  *row_index = a_row_index;
+  int              *_row_index = NULL;
+  cs_gnum_t        *col_gid = NULL;
+
+  if (sizeof(int) != sizeof(cs_lnum_t)) {
+    BFT_MALLOC(_row_index, n_rows, int);
+    for (cs_lnum_t i = 0; i < n_rows; i++)
+      _row_index[i] = a_row_index[i];
+    row_index = _row_index;
+  }
+
+  cs_lnum_t nnz = row_index[n_rows];
+  BFT_MALLOC(col_gid, nnz, cs_gnum_t);
+  const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  for (cs_lnum_t j = 0; j < n_rows; j++) {
+    for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
+      col_gid[i] = grow_id[a_col_id[i]];
+  }
+
+  /* Matrix */
+
+  AMGX_RC retval;
+
+  retval = AMGX_matrix_create(&(sd->matrix),
+                              c->amgx_resources,
+                              c->amgx_mode);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_matrix_create", retval, err_str);
+  }
+
+  /* Assume partitioning with continuous blocks */
+
+  cs_gnum_t *partition_offsets;
+  BFT_MALLOC(partition_offsets, cs_glob_n_ranks + 1, cs_gnum_t);
+
+  /* Gather the number of rows on each rank, use exclusive scan to get the offsets */
+
+  int n_ranks = cs_glob_n_ranks;
+
+  cs_gnum_t n_g_rows = n_rows;
+  partition_offsets[0] = 0;
+  MPI_Allgather(&n_g_rows, 1, CS_MPI_GNUM, &partition_offsets[1], 1, CS_MPI_GNUM,
+                _amgx_comm);
+  for (cs_lnum_t i = 2; i < n_ranks + 1; i++) {
+    partition_offsets[i] += partition_offsets[i-1];
+  }
+  n_g_rows = partition_offsets[n_ranks];
+
+  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+
+  if (c->pin_memory) {
+    AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
+    AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(int));
+    AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
+    if (a_d_val != NULL)
+      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
+    AMGX_pin_memory(partition_offsets, (n_ranks+1)*sizeof(cs_gnum_t));
+  }
+
+  AMGX_distribution_handle dist;
+  AMGX_distribution_create(&dist, c->amgx_config);
+
+  if (sizeof(cs_gnum_t) == sizeof(int32_t))
+    AMGX_distribution_set_32bit_colindices(dist, 1);
+
+  retval = AMGX_distribution_set_partition_data(dist,
+                                                AMGX_DIST_PARTITION_OFFSETS,
+                                                partition_offsets);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_distribution_set_partition_data", retval, err_str);
+  }
+
+  retval = AMGX_matrix_upload_distributed(sd->matrix,
+                                          n_g_rows, n_rows, nnz,
+                                          db_size[1], db_size[2],
+                                          row_index, col_gid,
+                                          a_val, a_d_val,
+                                          dist);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_matrix_upload_distributed", retval, err_str);
+  }
+
+  AMGX_distribution_destroy(dist);
+
+  if (c->pin_memory) {
+    AMGX_unpin_memory(partition_offsets);
+    if (a_d_val != NULL)
+      AMGX_unpin_memory((void *)a_d_val);
+    AMGX_unpin_memory((void *)a_val);
+    AMGX_unpin_memory(col_gid);
+    AMGX_unpin_memory((void *)row_index);
+  }
+
+  BFT_FREE(partition_offsets);
+  BFT_FREE(col_gid);
+  BFT_FREE(_row_index);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update AmgX setup with new matrix coefficients for same structure.
+ *
+ * \param[in, out]  c   pointer to AmgX solver info and context
+ * \param[in]       a   associated matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_update_coeffs(cs_sles_amgx_t     *c,
+                     const cs_matrix_t  *a)
+{
+  char err_str[4096];
+  const char error_fmt[] = N_("%s returned %d.\n"
+                              "%s");
+
+  cs_sles_amgx_setup_t *sd = c->setup_data;
+
+  const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
+  const int n_rows = cs_matrix_get_n_rows(a);
+  const cs_lnum_t *a_row_index, *a_col_id;
+
+  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+
+  if (cs_mat_type == CS_MATRIX_CSR)
+    cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
+  else if (cs_mat_type == CS_MATRIX_MSR)
+    cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
+
+  /* Matrix */
+
+  AMGX_RC retval;
+
+  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+
+  if (c->pin_memory) {
+    AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
+    if (a_d_val != NULL)
+      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
+  }
+
+  retval = AMGX_matrix_replace_coefficients(sd->matrix,
+                                            n_rows,
+                                            cs_matrix_get_n_entries(a),
+                                            a_val,
+                                            a_d_val);
+
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_matrix_replace_coefficients", retval, err_str);
+  }
+
+  if (c->pin_memory) {
+    if (a_d_val != NULL)
+      AMGX_unpin_memory((void *)a_d_val);
+    AMGX_unpin_memory((void *)a_val);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -358,8 +721,6 @@ _load_amgx_config(cs_sles_amgx_t  *c)
  *
  * \param[in]      f_id          associated field id, or < 0
  * \param[in]      name          associated name if f_id < 0, or NULL
- * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
  *
  * \return  pointer to newly created AmgX solver info object.
  */
@@ -367,10 +728,9 @@ _load_amgx_config(cs_sles_amgx_t  *c)
 
 cs_sles_amgx_t *
 cs_sles_amgx_define(int           f_id,
-                     const char  *name,
-                     void        *context)
+                     const char  *name)
 {
-  cs_sles_amgx_t * c = cs_sles_amgx_create(context);
+  cs_sles_amgx_t * c = cs_sles_amgx_create();
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,
@@ -396,15 +756,12 @@ cs_sles_amgx_define(int           f_id,
  * the matrix type will be forced to MATSHELL ("shell") regardless
  * of the option used.
  *
- * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
- *
  * \return  pointer to associated linear system object.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_amgx_t *
-cs_sles_amgx_create(void  *context)
+cs_sles_amgx_create(void)
 
 {
   cs_sles_amgx_t *c;
@@ -424,10 +781,6 @@ cs_sles_amgx_create(void  *context)
 
   CS_TIMER_COUNTER_INIT(c->t_setup);
   CS_TIMER_COUNTER_INIT(c->t_solve);
-
-  /* Options */
-
-  c->hook_context = context;
 
   /* Setup data */
 
@@ -463,7 +816,23 @@ cs_sles_amgx_copy(const void  *context)
 
   if (context != NULL) {
     const cs_sles_amgx_t *c = context;
-    d = cs_sles_amgx_create(c->hook_context);
+    d = cs_sles_amgx_create();
+
+    if (c->amgx_config_file != NULL) {
+      size_t l = strlen(c->amgx_config_file);
+      BFT_MALLOC(d->amgx_config_file, l+1, char);
+      strncpy(d->amgx_config_file, c->amgx_config_file, l);
+      d->amgx_config_file[l] = '\0';
+    }
+    if (c->amgx_config_string != NULL) {
+      size_t l = strlen(c->amgx_config_string);
+      BFT_MALLOC(d->amgx_config_string, l+1, char);
+      strncpy(d->amgx_config_string, c->amgx_config_string, l);
+      d->amgx_config_string[l] = '\0';
+    }
+
+    d->amgx_mode = c->amgx_mode;
+    d->pin_memory = d->pin_memory;
   }
 
   return d;
@@ -768,199 +1137,86 @@ cs_sles_amgx_setup(void               *context,
   cs_sles_amgx_t  *c = context;
   cs_sles_amgx_setup_t *sd = c->setup_data;
 
+  AMGX_RC retval = AMGX_RC_OK;
+
+  /* Case where setup data is not currently present */
+
   if (sd == NULL) {
+
     BFT_MALLOC(c->setup_data, 1, cs_sles_amgx_setup_t);
     sd = c->setup_data;
-  }
 
-  if (c->n_setups < 1)
-    _load_amgx_config(c);
+    /* Load configuration at first call */
 
-  int n_rings = 1;
-  AMGX_config_get_default_number_of_rings(c->amgx_config, &n_rings);
+    if (c->n_setups < 1)
+      _load_amgx_config(c);
 
-  if (n_rings != 1)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("The selected AmgX solver configuration parameters are not compatible\n"
-         "with the \"one ring\" communication scheme currently handled."));
+    const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
+    const int db_size = cs_matrix_get_diag_block_size(a)[0];
+    const cs_halo_t *halo = cs_matrix_get_halo(a);
 
-  const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
-  const int n_rows = cs_matrix_get_n_rows(a);
-  const int db_size = cs_matrix_get_diag_block_size(a)[0];
-  const cs_halo_t *halo = cs_matrix_get_halo(a);
+    /* Periodicity is not handled (at least not in serial mode), as the matrix
+       is not square due to ghost cells */
 
-  bool have_perio = false;
-  if (halo != NULL) {
-    if (halo->n_transforms > 0)
-      have_perio = true;
-  }
-
-  if (sizeof(cs_lnum_t) != sizeof(int))
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("AmgX bindings are not currently handled for code_saturne builds\n"
-         "using long cs_lnumt_ types (i.e. --enable-long-lnum)."));
-
-  /* Periodicity is not handled (at least not) in serial mode, as the matrix
-     is not square due to ghost cells */
-
-  if (   db_size > 1
-      || (cs_mat_type != CS_MATRIX_CSR && cs_mat_type != CS_MATRIX_MSR))
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Matrix type %s with block size %d for system \"%s\"\n"
-         "is not usable by AmgX.\n"
-         "Only block size 1 with CSR or MSR format "
-         "is currently supported by AmgX."),
-       cs_matrix_type_name[cs_matrix_get_type(a)], db_size,
-       name);
-
-  /* TODO: handle periodicity, by renumbering local periodic cells
-     so as to use the main (and not ghost) cell id */
-
-  assert(have_perio == false);
-
-  const cs_lnum_t *a_row_index, *a_col_id;
-
-  const cs_real_t *a_val = NULL, *a_d_val = NULL;
-
-  if (cs_mat_type == CS_MATRIX_CSR)
-    cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
-  else if (cs_mat_type == CS_MATRIX_MSR)
-    cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
-
-  const int   *row_index = a_row_index;
-  int         *_row_index = NULL;
-  const int   *col_id = a_col_id;
-  int         *_col_id = NULL;
-
-  if (sizeof(int) != sizeof(cs_lnum_t)) {
-    BFT_MALLOC(_row_index, n_rows, int);
-    for (cs_lnum_t i = 0; i < n_rows; i++)
-      _row_index[i] = a_row_index[i];
-    row_index = _row_index;
-    int nnz = row_index[n_rows];
-    BFT_MALLOC(_col_id, nnz, int);
-    for (cs_lnum_t i = 0; i < nnz; i++)
-      _col_id[i] = a_col_id[i];
-    col_id = _col_id;
-  }
-
-  /* Matrix */
-
-  AMGX_RC retval;
-
-  retval = AMGX_matrix_create(&(sd->matrix),
-                              c->amgx_resources,
-                              c->amgx_mode);
-
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_matrix_create", retval, err_str);
-  }
-
-  if (cs_glob_n_ranks > 1) {
-
-    int *send_sizes, *recv_sizes;
-    BFT_MALLOC(send_sizes, halo->n_c_domains, int);
-    BFT_MALLOC(recv_sizes, halo->n_c_domains, int);
-    for (int i = 0; i < halo->n_c_domains; i++) {
-      send_sizes[i] =   halo->send_index[2*i + 1]
-                      - halo->send_index[2*i];
-      recv_sizes[i] =   halo->index[2*i + 1]
-                      - halo->index[2*i];
-    }
-    int **send_maps, **recv_maps;
-    BFT_MALLOC(send_maps, halo->n_c_domains, int *);
-    BFT_MALLOC(recv_maps, halo->n_c_domains, int *);
-
-    assert(sizeof(cs_lnum_t) == sizeof(int));
-
-    for (int i = 0; i < halo->n_c_domains; i++) {
-      BFT_MALLOC(send_maps[i], send_sizes[i], int);
-      int *_send_map = send_maps[i];
-      for (int j = 0; j < send_sizes[i]; j++)
-        _send_map[j] = halo->send_list[halo->send_index[2*i] + j];
-      BFT_MALLOC(recv_maps[i], recv_sizes[i], int);
-      int *_recv_map = recv_maps[i];
-      for (int j = 0; j < recv_sizes[i]; j++)
-        _recv_map[j] = halo->n_local_elts + halo->index[2*i] + j;
+    if (halo != NULL) {
+      bool have_perio = false;
+      if (halo->n_transforms > 0)
+        have_perio = true;
+      assert(have_perio == false);
     }
 
-    retval = AMGX_matrix_comm_from_maps_one_ring(sd->matrix,
-                                                 1, /* allocated_halo_depth */
-                                                 halo->n_c_domains,
-                                                 halo->c_domain_rank,
-                                                 send_sizes,
-                                                 (const int **)send_maps,
-                                                 recv_sizes,
-                                                 (const int **)recv_maps);
+    /* TODO: handle periodicity, by renumbering local periodic cells
+       so as to use the main (and not ghost) cell id */
+
+    if (   db_size > 1
+        || (cs_mat_type != CS_MATRIX_CSR && cs_mat_type != CS_MATRIX_MSR))
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Matrix type %s with block size %d for system \"%s\"\n"
+           "is not usable by AmgX.\n"
+           "Only block size 1 with CSR or MSR format "
+           "is currently supported by AmgX."),
+         cs_matrix_type_name[cs_matrix_get_type(a)], db_size,
+         name);
+
+    /* Number of ghost cell layers depends on solver configuration
+       (classical seems to require 2 rings, aggregation 1 ring) */
+
+    int n_rings = 1;
+    if (cs_glob_n_ranks > 1)
+      AMGX_config_get_default_number_of_rings(c->amgx_config, &n_rings);
+
+    if (n_rings <= 1)
+      _setup_matrix_1_ring(c, a);
+
+    else
+      _setup_matrix_multi_ring(c, a);
+
+    if (n_rings > 2)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("The selected AmgX solver configuration parameters are not compatible\n"
+           "with the \"one ring\" communication scheme currently handled."));
+
+    /* Solver */
+
+    retval = AMGX_solver_create(&(sd->solver),
+                                c->amgx_resources,
+                                c->amgx_mode,
+                                c->amgx_config);
 
     if (retval != AMGX_RC_OK) {
       AMGX_get_error_string(retval, err_str, 4096);
       bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-                "AMGX_matrix_comm_from_maps_one_ring", retval, err_str);
+                "AMGX_solver_create", retval, err_str);
     }
 
-    for (int i = 0; i < halo->n_c_domains; i++) {
-      BFT_FREE(recv_maps[i]);
-      BFT_FREE(send_maps[i]);
-    }
-    BFT_FREE(recv_sizes);
-    BFT_FREE(send_sizes);
-
   }
 
-  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+  /* Case where setup data is already present (simple update) */
 
-  if (c->pin_memory) {
-    AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
-    AMGX_pin_memory((void *)col_id, a_row_index[n_rows]*sizeof(int));
-    AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-    if (a_d_val != NULL)
-      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
-  }
-
-  retval = AMGX_matrix_upload_all(sd->matrix,
-                                  n_rows,
-                                  cs_matrix_get_n_entries(a),
-                                  db_size,
-                                  db_size,
-                                  row_index,
-                                  col_id,
-                                  a_val,
-                                  a_d_val);
-
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_matrix_upload_all", retval, err_str);
-  }
-
-  if (c->pin_memory) {
-    if (a_d_val != NULL)
-      AMGX_unpin_memory((void *)a_d_val);
-    AMGX_unpin_memory((void *)a_val);
-    AMGX_unpin_memory((void *)col_id);
-    AMGX_unpin_memory((void *)row_index);
-  }
-
-  BFT_FREE(_row_index);
-  BFT_FREE(_col_id);
-
-  /* Solver */
-
-  retval = AMGX_solver_create(&(sd->solver),
-                              c->amgx_resources,
-                              c->amgx_mode,
-                              c->amgx_config);
-
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_solver_create", retval, err_str);
+  else {
+    _setup_update_coeffs(c, a);
   }
 
   retval = AMGX_solver_setup(sd->solver, sd->matrix);
@@ -1106,7 +1362,12 @@ cs_sles_amgx_solve(void                *context,
 
   cs_fp_exception_disable_trap();
 
-  AMGX_solver_solve(sd->solver, b, x);
+  retval = AMGX_solver_solve(sd->solver, b, x);
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_solver_solve", retval, err_str);
+  }
 
   cs_fp_exception_restore_trap();
 

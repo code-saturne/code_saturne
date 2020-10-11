@@ -21,10 +21,8 @@ Architectural changes:
 
 - Add AmgX library support for linear system resolution on NVIDIA GPU's.
   * Associated matrices should be forced in CSR format.
-  * In parallel, the support is currently compatible only with AmgX
-    solver configurations involving only one communication "ring"
-    (i.e. a single halo layer), and mesh renumbering must be
-    set to `CS_RENUMBER_ADJACENT_LOW`.
+  * In parallel, Mesh renumbering should be set
+    to use `CS_RENUMBER_ADJACENT_LOW`.
 
 Release 6.2.0 (August 27 2020)
 --------------------------

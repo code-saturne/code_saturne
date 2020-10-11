@@ -78,8 +78,6 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  * parameters:
  *   f_id         <-- associated field id, or < 0
  *   name         <-- associated name if f_id < 0, or NULL
- *   context      <-> pointer to optional (untyped) value or structure
- *                    for setup_hook, or NULL
  *
  * returns:
  *   pointer to newly created AmgX solver info object.
@@ -87,8 +85,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
 
 cs_sles_amgx_t *
 cs_sles_amgx_define(int          f_id,
-                    const char  *name,
-                    void        *context);
+                    const char  *name);
 
 /*----------------------------------------------------------------------------
  * Create AmgX linear system solver info and context.
@@ -97,16 +94,12 @@ cs_sles_amgx_define(int          f_id,
  * the matrix type will be forced to MATSHELL ("shell") regardless
  * of the option used.
  *
- * parameters:
- *   context      <-> pointer to optional (untyped) value or structure
- *                    for setup_hook, or NULL
- *
  * returns:
  *   pointer to newly created solver info object.
  *----------------------------------------------------------------------------*/
 
 cs_sles_amgx_t *
-cs_sles_amgx_create(void  *context);
+cs_sles_amgx_create(void);
 
 /*----------------------------------------------------------------------------
  * Create AmgX linear system solver info and context
