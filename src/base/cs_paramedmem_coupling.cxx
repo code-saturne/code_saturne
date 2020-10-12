@@ -440,7 +440,7 @@ cs_paramedmem_coupling_create(const char *app1_name,
 
   /* Set coupling name */
   char *_name = NULL;
-  cpl_name;
+
   if (cpl_name == NULL) {
     /* string is <a_name>_<p_name>_cpl */
     size_t lname = strlen(apps[0].app_name)
