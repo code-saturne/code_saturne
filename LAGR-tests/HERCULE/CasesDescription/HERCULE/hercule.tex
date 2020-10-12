@@ -32,7 +32,7 @@
 \chapter{HERCULE Test Bench - Confined Two-phase Gas-Solid Flow}
 
 \sousti{N. Picard - A. Douce (2004), RENUDA}{22/06/2020}
-\keywords{Lagrangian Two-Phase, Turbulent ($R_{ij}-\varepsilon~SSG$), two-way coupling, 2D axisymmetric, Langevin approach.}
+\keywords{Lagrangian Two-Phase, Turbulent ($R_{ij}-\varepsilon~SSG$), two-way coupling, 2D axisymmetric, Fluid like tracer particles approach.}
 
 \section{Test Case Description}
 
@@ -46,12 +46,12 @@ The test case relates to two-phase flow of air with co-flowing particles in a co
 The geometry is presented in figure \ref{schema} and the flow is visualised in figure \ref{ecoulement}.
 
 \noindent
-At the primary inlet, air and particles (glass spheres) are injected in the centre of the vertical, cylindrical pipe of length $1,5~m$ and radius $R_2~=~0,15~m$. Air is also injected in the annular, secondary inlet. The primary inlet has a radius of $R_j~=~0,01~m$.
+At the primary inlet, air and particles (glass spheres) are injected in the centre of the vertical, cylindrical pipe of length $1.5~m$ and radius $R_2~=~0.15~m$. Air is also injected in the annular, secondary inlet. The primary inlet has a radius of $R_j~=~0.01~m$.
 
 \noindent
 Several experimental cases are available (\cite{Rap3} and
-\cite{TheseNC}). Amongst those, the case with a mass fraction of 22 \%\footnote{The thesis \cite{TheseNC} also mentions cases with 11\% and 110\% mass loadings} has been selected for the simulations. Experimental data is available along the centre line and at different horizontal plane sections: $z = 0,003~m$,
-$z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
+\cite{TheseNC}). Amongst those, the case with a mass fraction of 22 \%\footnote{The thesis \cite{TheseNC} also mentions cases with 11\% and 110\% mass loadings} has been selected for the simulations. Experimental data is available along the centre line and at different horizontal plane sections: $z = 0.003~m$,
+$z = 0.08~m$, $z = 0.16~m$, $z = 0.24~m$, $z = 0.32~m$, $z = 0.42~m$.
 
 
 \begin{figure}[H]
@@ -77,9 +77,9 @@ $z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
          \begin{table}[!bth]
             \begin{center}
                \begin{tabular}{|l|c|} \hline
-                  Pipe diameter              & $0,3~m $ \\ \hline
-                  Pipe length                & $1,50~m$ \\ \hline
-                  Jet diameter               & $0,02~m$ \\ \hline
+                  Pipe diameter              & $0.3~m $ \\ \hline
+                  Pipe length                & $1.50~m$ \\ \hline
+                  Jet diameter               & $0.02~m$ \\ \hline
                   Jet maximum speed          & $4 ~m/s$ \\ \hline
                   Peripheral injection speed & $6 ~m/s$ \\ \hline
                   Jet Reynolds number        & $3000$   \\ \hline
@@ -90,8 +90,8 @@ $z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
    \item[$\bullet$] Fluid properties
 
          \begin{itemize}
-            \item[-] dynamic viscosity: $\mu~=~1,83337.10^{-5}~kg.m^{-1}.s^{-1}$
-            \item[-] density: $\rho~=~1,17861~kg/m^3$
+            \item[-] dynamic viscosity: $\mu~=~1.83337 \times 10^{-5}~kg.m^{-1}.s^{-1}$
+            \item[-] density: $\rho~=~1.17861~kg/m^3$
          \end{itemize}
          \vspace{5mm}
 
@@ -101,9 +101,9 @@ $z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
             \begin{center}
                \begin{tabular}{|l|c|} \hline
                   Mean diameter $d_p^{\mu}$       & \  $60~ \mu m$   \\ \hline
-                  Standard deviation $\sigma_{p}$ & $14,55 ~\mu m$   \\ \hline
+                  Standard deviation $\sigma_{p}$ & $14.55 ~\mu m$   \\ \hline
                   Density $\rho_{p}$              & $2470 ~kg/m^{3}$ \\ \hline
-                  Mass loading $\phi$             & $0,22$           \\ \hline
+                  Mass loading $\phi$             & $0.22$           \\ \hline
                \end{tabular}
             \end{center}
          \end{table}
@@ -184,7 +184,7 @@ $z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
          \begin{itemize}
             \item[$\rightarrow$] Continuous phase: incompressible, turbulent, 2D axisymmetric, isothermal.
             \item[$\rightarrow$] Dispersed phase: solid particles, two-way coupling with the complete model with the local rotation option.
-            \item[$\rightarrow$] Fluid particles: Langevin approach.
+            \item[$\rightarrow$] Fluid like tracer particles approach.
          \end{itemize}
 
    \item \textbf{Gravity}: Activated
@@ -195,7 +195,7 @@ $z = 0,08~m$, $z = 0,16~m$, $z = 0,24~m$, $z = 0,32~m$, $z = 0,42~m$.
 
 \subsection{Mesh}
 
-The mesh represents a 5\textdegree\  wedge. It is made of a single layer containing 8664 mesh cells. The origin is situated on the axis of revolution, in the inlet plane. The whole mesh and details of the mesh are shown in figure \ref{maillage}.
+The mesh represents a 5\textdegree\ wedge. It is made of a single layer containing 8664 mesh cells. The origin is situated on the axis of revolution, in the inlet plane. The whole mesh and details of the mesh are shown in figure \ref{maillage}.
 
 \begin{description}
 
@@ -204,7 +204,7 @@ The mesh represents a 5\textdegree\  wedge. It is made of a single layer contain
    \item[\textbf{Coordinate system}:] Cartesian\footnote{In the experiments, the measurements are done in a cylindrical system of coordinates. Therefore the data points must be converted to the mesh coordinate system (user codes cs\_user\_modules.f90,
             cs\_user\_lagr\_particle.c and cs\_user\_boundary\_conditions.f90).}.
 
-   \item[\textbf{Number of cells} :] 8~664
+   \item[\textbf{Number of cells} :] 8664
 
    \item[\textbf{Mesh construction methodology}:] SIMAIL mesher.
 
@@ -243,12 +243,12 @@ The injection data of the particle cloud taken from the experimental data are li
                      & mean        & mean        & mean       & axial
                      & radial      & tangential                                                \\
          $mm$        & $m/s$       & $m/s$       & $m/s$      & $m/s$    & $m/s$    & $m/s$    \\ \hline
-         0           & 3,989888    & 0,021573    & 0          & 0,492889 & 0,145902 & 0,145902 \\ \hline
-         2           & 3,955918    & 0,019587    & 0          & 0,248873 & 0,153009 & 0,153009 \\ \hline
-         4           & 3,818365    & 0,019053    & 0          & 0,276544 & 0,161393 & 0,161393 \\ \hline
-         6           & 3,615492    & 0,018448    & 0          & 0,339334 & 0,174045 & 0,174045 \\ \hline
-         8           & 3,235091    & 0,015862    & 0          & 0,45922  & 0,232101 & 0,232101 \\ \hline
-         10          & 2,148246    & 0,098097    & 0          & 0,60341  & 0,198226 & 0,198226 \\ \hline
+         0           & 3.989888    & 0.021573    & 0          & 0.492889 & 0.145902 & 0.145902 \\ \hline
+         2           & 3.955918    & 0.019587    & 0          & 0.248873 & 0.153009 & 0.153009 \\ \hline
+         4           & 3.818365    & 0.019053    & 0          & 0.276544 & 0.161393 & 0.161393 \\ \hline
+         6           & 3.615492    & 0.018448    & 0          & 0.339334 & 0.174045 & 0.174045 \\ \hline
+         8           & 3.235091    & 0.015862    & 0          & 0.45922  & 0.232101 & 0.232101 \\ \hline
+         10          & 2.148246    & 0.098097    & 0          & 0.60341  & 0.198226 & 0.198226 \\ \hline
       \end{tabular}
    \end{center}
    \caption{Dispersed phase distribution profiles.}
@@ -276,7 +276,7 @@ The velocity is then converted to the mesh's Cartesian coordinate system:
 Similarly, the instantaneous fluid velocity is obtained from the experimental data in table \ref{CL_fluide}: interpolation of the fluid velocity mean and fluctuating components at the cell centre, reconstruction of the instantaneous velocity, and conversion to the mesh's Cartesian coordinate system \footnote{By default, during the injection phase \CS\ uses the continuous phase's mean velocity as the fluid velocity which is seen by the particles. For this work, we have used the instantaneous fluid velocity.}.
 
 \noindent
-The particle injection mass flow rate is $1~kg/h$. For the reduced, axisymmetric domain, this translates to $0,385.10^{-5}~kg/s$.,This is equivalent to injecting $13.8$ particles per time step in the computational domain, for $60~\mu m$ diameter particles and a $0,001~s$ time step. However, given the distribution of particle diameters, we chose to inject only $10$ particles per time step. The statistical weight of each particle is then adjusted with regard to the mass flow rate.\\
+The particle injection mass flow rate is $1~kg/h$. For the reduced, axisymmetric domain, this translates to $0.385 \times 10^{-5}~kg/s$. This is equivalent to injecting $13.8$ particles per time step in the computational domain, for $60~\mu m$ diameter particles and a $0.001~s$ time step. However, given the distribution of particle diameters, we chose to inject only $10$ particles per time step. The statistical weight of each particle is then adjusted with regard to the mass flow rate.\\
 
 \item[$\bullet$] \textbf{Particle boundary conditions} :
 %
@@ -332,26 +332,26 @@ radial  & axial    &   radial  &  tangential   & velocity
 &mean & mean  & mean &  axial
 &    radial &  tangential  \\
 $mm$   & $m/s$  &  $m/s$ & $m/s$ & $m/s$& $m/s$& $m/s$ \\  \hline
-0    & 3,989888 &  0,043071 & 0  & 0,2206   & 0,165755 & 0,165755 \\   \hline
-2    & 3,955918 &  0,056412 & 0  & 0,235237 & 0,167099 & 0,167099 \\   \hline
-4    & 3,818365 &  0,071609 & 0  & 0,280546 & 0,188935 & 0,188935 \\   \hline
-6    & 3,615492 &  0,056304 & 0  & 0,345076 & 0,196318 & 0,196318 \\   \hline
-8    & 3,235091 &  0,067233 & 0  & 0,480505 & 0,199175 & 0,199175 \\   \hline
-10    & 1,15302  &  0,057133 & 0  & 0,462576 & 0,192527 & 0,192527 \\   \hline
-76    & 4,609382 & -0,078698 & 0  & 0,620767 & 0,297634 & 0,297634 \\   \hline
-80    & 5,050922 & -0,062107 & 0  & 0,412637 & 0,26486  & 0,26486  \\   \hline
-84    & 5,349239 & -0,043911 & 0  & 0,378357 & 0,253143 & 0,253143 \\   \hline
-88    & 5,663382 & -0,060412 & 0  & 0,33724  & 0,227446 & 0,227446 \\   \hline
-92    & 5,774033 & -0,039152 & 0  & 0,309257 & 0,198263 & 0,198263 \\   \hline
-96    & 5,852311 & -0,041603 & 0  & 0,268617 & 0,180068 & 0,180068 \\   \hline
-100    & 5,957135 & -0,047923 & 0  & 0,26992  & 0,16104  & 0,16104  \\   \hline
-104    & 6,0781   & -0,034075 & 0  & 0,248661 & 0,157479 & 0,157479 \\   \hline
-108    & 6,075214 & -0,043817 & 0  & 0,239869 & 0,145587 & 0,145587 \\   \hline
-112    & 5,910082 & -0,028827 & 0  & 0,24758  & 0,16021  & 0,16021  \\   \hline
-116    & 5,932579 & -0,029241 & 0  & 0,238192 & 0,15885  & 0,15885  \\   \hline
-120    & 5,929479 & -0,015086 & 0  & 0,31793  & 0,186978 & 0,186978 \\   \hline
-124    & 5,824071 &  0,017707 & 0  & 0,337416 & 0,201831 & 0,201831 \\   \hline
-127    & 5,773876 &  0,045791 & 0  & 0,338541 & 0,214657 & 0,214657 \\   \hline
+0    & 3.989888 &  0.043071 & 0  & 0.2206   & 0.165755 & 0.165755 \\   \hline
+2    & 3.955918 &  0.056412 & 0  & 0.235237 & 0.167099 & 0.167099 \\   \hline
+4    & 3.818365 &  0.071609 & 0  & 0.280546 & 0.188935 & 0.188935 \\   \hline
+6    & 3.615492 &  0.056304 & 0  & 0.345076 & 0.196318 & 0.196318 \\   \hline
+8    & 3.235091 &  0.067233 & 0  & 0.480505 & 0.199175 & 0.199175 \\   \hline
+10    & 1.15302  &  0.057133 & 0  & 0.462576 & 0.192527 & 0.192527 \\   \hline
+76    & 4.609382 & -0.078698 & 0  & 0.620767 & 0.297634 & 0.297634 \\   \hline
+80    & 5.050922 & -0.062107 & 0  & 0.412637 & 0.26486  & 0.26486  \\   \hline
+84    & 5.349239 & -0.043911 & 0  & 0.378357 & 0.253143 & 0.253143 \\   \hline
+88    & 5.663382 & -0.060412 & 0  & 0.33724  & 0.227446 & 0.227446 \\   \hline
+92    & 5.774033 & -0.039152 & 0  & 0.309257 & 0.198263 & 0.198263 \\   \hline
+96    & 5.852311 & -0.041603 & 0  & 0.268617 & 0.180068 & 0.180068 \\   \hline
+100    & 5.957135 & -0.047923 & 0  & 0.26992  & 0.16104  & 0.16104  \\   \hline
+104    & 6.0781   & -0.034075 & 0  & 0.248661 & 0.157479 & 0.157479 \\   \hline
+108    & 6.075214 & -0.043817 & 0  & 0.239869 & 0.145587 & 0.145587 \\   \hline
+112    & 5.910082 & -0.028827 & 0  & 0.24758  & 0.16021  & 0.16021  \\   \hline
+116    & 5.932579 & -0.029241 & 0  & 0.238192 & 0.15885  & 0.15885  \\   \hline
+120    & 5.929479 & -0.015086 & 0  & 0.31793  & 0.186978 & 0.186978 \\   \hline
+124    & 5.824071 &  0.017707 & 0  & 0.337416 & 0.201831 & 0.201831 \\   \hline
+127    & 5.773876 &  0.045791 & 0  & 0.338541 & 0.214657 & 0.214657 \\   \hline
 \end {tabular}
 \end{center}
 \caption{Continuous phase profiles.}
@@ -400,23 +400,23 @@ $mm$   & $m/s$  &  $m/s$ & $m/s$ & $m/s$& $m/s$& $m/s$ \\  \hline
 
             \item[$\rightarrow$] Turbulent dissipation based on the method programmed in \textbf{cs\_user\_boundary\_conditions.f90} and in \textbf{cs\_user\_modules.f90}:
                   \begin{description}
-                     \item[+] Primary inlet hydraulic diameter: $D_h=0,02~m$
-                     \item[+] Secondary inlet hydraulic diameter: $D_h=0,15~m$
+                     \item[+] Primary inlet hydraulic diameter: $D_h=0.02~m$
+                     \item[+] Secondary inlet hydraulic diameter: $D_h=0.15~m$
                      \item[+] The Reynolds number
                            $\displaystyle{R_e=\frac{D_h V}{\nu}}$ makes it possible to calculate the friction velocity, $u^*$, using the following formula:
                            \begin{displaymath}
-                              u^* = V \sqrt{\frac{\lambda}{8}} \quad \text{avec} \quad
+                              u^* = V \sqrt{\frac{\lambda}{8}} \quad \text{with} \quad
                               \begin{cases}
                                  \displaystyle
-                                 \lambda = 0,3164 Re^{-0,25} & \text{si} \; Re \leq 30000 \\
-                                 \lambda = 0,184 Re^{-0,2}   & \text{si} \; Re \geq 30000
+                                 \lambda = 0.3164 Re^{-0.25} & \text{for} \; Re \leq 30000 \\
+                                 \lambda = 0.184 Re^{-0.2}   & \text{for} \; Re \geq 30000
                               \end{cases}
                            \end{displaymath}
                      \item[+] Inlet turbulent dissipation:
                            \begin{displaymath}
-                              \varepsilon_{ent} = C_{\mu} \frac{{k_{ent}}^2}{\kappa \, u^* \, 0,1 \, D_h}
+                              \varepsilon_{ent} = C_{\mu} \frac{{k_{ent}}^2}{\kappa \, u^* \, 0.1 \, D_h}
                            \end{displaymath}
-                           where $C_{\mu}=0,09$ and $\kappa=0,41$ (constant of K\'arm\'an).
+                           where $C_{\mu}=0.09$ and $\kappa=0.41$ (constant of K\'arm\'an).
                   \end{description}
 
          \end{description}
@@ -437,19 +437,19 @@ $mm$   & $m/s$  &  $m/s$ & $m/s$ & $m/s$& $m/s$& $m/s$ \\  \hline
 
 \begin{description}
 
-   \item[-] \textbf{cs\_user\_modules.f90} : programs to interpolate the experimental data at the inlet.
+   \item[-] \textbf{cs\_user\_modules.f90} : subroutines to interpolate the experimental data at the inlet.
    
    \item[-] \textbf{cs\_user\_boundary\_conditions.f90} : definition of the continuous phase boundary conditions as a function of the border faces
    
    \item[-] \textbf{cs\_user\_lagr\_particle.c} : definition of the dispersed phase boundary conditions as a function of the border faces
    
-   \item[-] \textbf{cs\_user\_extra\_operations.f90} : clipping the $\varepsilon$ field during the two-way coupling calculation with the complete model with the local rotation option to help the code to run.
+   \item[-] \textbf{cs\_user\_extra\_operations.f90} : clipping the $\varepsilon$ field during the two-way coupling calculation with the complete model with the local rotation option to help the code run.
 
 \end{description}
 
 \subsection{Calculation strategy}
 
-The runs are carried out in two steps. The first step is a single phase calculation, without particles. This makes it possible to initialise the two-phase calculation or the Langevin calculation.\\ 
+The runs are carried out in two steps. The first step is a single phase calculation, without particles. This makes it possible to initialise the two-phase calculation or the fluid like tracer particles calculation.\\ 
 
 \begin{description}
 
@@ -461,7 +461,7 @@ The runs are carried out in two steps. The first step is a single phase calculat
          \end{itemize}
 
 
-   \item[$\bullet$]\textbf{Complete two-phase calculation}
+   \item[$\bullet$]\textbf{Two-phase calculation}
          \begin{itemize}
             \item[-] {\bf Restart:} YES
             \item[-] {\bf Restart of the Lagrangian calculation:} NO
@@ -472,7 +472,7 @@ The runs are carried out in two steps. The first step is a single phase calculat
 
             \item[-] {\bf Turbulent dispersion model:}
                   \begin{itemize}
-                     \item[*] For the two-phase calculation, the default complete modele with the local rotation
+                     \item[*] For the two-phase calculation, the default complete model with the local rotation option is utilised.
 
                   \end{itemize}
             \item[-] {\bf Dynamic two-way coupling:} YES (\texttt{IILAGR=2} and \texttt{LTSDYN=1})
@@ -486,7 +486,7 @@ The runs are carried out in two steps. The first step is a single phase calculat
             \item[-] {\bf Total number of particles injected at each time step:} 10
          \end{itemize}
          
-   \item[$\bullet$]\textbf{Langevin calculation}
+   \item[$\bullet$]\textbf{Fluid like tracer particles calculation}
          \begin{itemize}
             \item[-] {\bf Restart:} YES
             \item[-] {\bf Restart of the Lagrangian calculation:} NO
@@ -502,7 +502,7 @@ The runs are carried out in two steps. The first step is a single phase calculat
             \item[-] {\bf Total number of particles injected at each time step:} 10
          \end{itemize}
 
-For the the two-way coupling calculation with the complete model with the local rotation option, the field "$\varepsilon$" were hardly clipped to keep the calculation running. If the coupling source terms are time averaged from the first lagrangian iteration, the code is more stable. The code become hardly instable when the time average of coupling source term starts when the number of particles in the domain is constant (around 3.5s) that it is done in the present study.
+For the the two-way coupling calculation with the complete model and the local rotation option, the field "$\varepsilon$" was strongly clipped to keep the calculation running. If the coupling source terms are time averaged from the first Lagrangian iteration, the code is more stable. The code becomes strongly unstable when the time average of the coupling source terms starts when the number of particles in the domain is constant (around 3.5s). This is what is done in the present study.
 
 
 \end{description}
@@ -523,22 +523,22 @@ For the the two-way coupling calculation with the complete model with the local 
             \item[$\bullet$] Maximum CFL number of the order of 1.75 (very stable)
          \end{itemize}
 
-   \item[$\bullet$]\textbf{"complete" two-phase run}
+   \item[$\bullet$]\textbf{Two-phase run}
 
          \begin{itemize}
             \item[$\bullet$] Inlet flow at the outlet: NO
             \item[$\bullet$] Number of clips on $R_{ij}-\varepsilon$ in the listing: none
             \item[$\bullet$] Maximum CFL number of the order of 1.75 (very stable)
-            \item[$\bullet$] Percentage of lost particles: $0,0$\%
+            \item[$\bullet$] Percentage of lost particles: $0.0$\%
          \end{itemize}
          
-   \item[$\bullet$]\textbf{"Langevin" run}
+   \item[$\bullet$]\textbf{Fluid like tracer particles run}
 
          \begin{itemize}
             \item[$\bullet$] Inlet flow at the outlet: NO
             \item[$\bullet$] Number of clips on $R_{ij}-\varepsilon$ in the listing: none
             \item[$\bullet$] Maximum CFL number of the order of 1.75 (very stable)
-            \item[$\bullet$] Percentage of lost particles: $0,0$\%
+            \item[$\bullet$] Percentage of lost particles: $0.0$\%
          \end{itemize}
 
    \item[$\bullet$]\textbf{Single phase run convergence}
@@ -551,35 +551,35 @@ For the the two-way coupling calculation with the complete model with the local 
                   \hline
                   $Probe$ & $Probe~number$ & $X$ & $Z$ \\
                   \hline
-                  $A$ & $1$ & $0,02$ & $0,89.10^{-2}$ \\
+                  $A$ & $1$ & $0.02$ & $0.89 \times 10^{-2}$ \\
                   \hline
-                  $B$ & $2$ & $0,02$ & $0,49.10^{-1}$ \\
+                  $B$ & $2$ & $0.02$ & $0.49 \times 10^{-1}$ \\
                   \hline
-                  $C$ & $3$ & $0,02$ & $0,25$         \\
+                  $C$ & $3$ & $0.02$ & $0.25$         \\
                   \hline
-                  $D$ & $4$ & $0,02$ & $0,5$          \\
+                  $D$ & $4$ & $0.02$ & $0.5$          \\
                   \hline
-                  $E$ & $5$ & $0,02$ & $1$            \\
+                  $E$ & $5$ & $0.02$ & $1$            \\
                   \hline
-                  $F$ & $6$ & $0,07$ & $0,89.10^{-2}$ \\
+                  $F$ & $6$ & $0.07$ & $0.89 \times 10^{-2}$ \\
                   \hline
-                  $G$ & $7$ & $0,07$ & $0,49.10^{-2}$ \\
+                  $G$ & $7$ & $0.07$ & $0.49 \times 10^{-2}$ \\
                   \hline
-                  $H$ & $8$ & $0,07$ & $0,25$         \\
+                  $H$ & $8$ & $0.07$ & $0.25$         \\
                   \hline
-                  $I$ & $9$ & $0,07$ & $0,5$          \\
+                  $I$ & $9$ & $0.07$ & $0.5$          \\
                   \hline
-                  $J$ & $10$ & $0,07$ & $1$            \\
+                  $J$ & $10$ & $0.07$ & $1$            \\
                   \hline
-                  $K$ & $11$ & $0,12$ & $0,89.10^{-2}$ \\
+                  $K$ & $11$ & $0.12$ & $0.89 \times 10^{-2}$ \\
                   \hline
-                  $L$ & $12$ & $0,12$ & $0,49.10^{-1}$ \\
+                  $L$ & $12$ & $0.12$ & $0.49 \times 10^{-1}$ \\
                   \hline
-                  $M$ & $13$ & $0,12$ & $0,25$         \\
+                  $M$ & $13$ & $0.12$ & $0.25$         \\
                   \hline
-                  $N$ & $14$ & $0,12$ & $0,5$          \\
+                  $N$ & $14$ & $0.12$ & $0.5$          \\
                   \hline
-                  $P$ & $15$ & $0,12$ & $1$            \\
+                  $P$ & $15$ & $0.12$ & $1$            \\
                   \hline
                \end{tabular}
                \caption{Probe coordinates ($m$)}
@@ -599,38 +599,38 @@ For the the two-way coupling calculation with the complete model with the local 
             \label{Histo_mono}
          \end{figure}
 
-         Globally, the graphs show that the calculations are converged within the 2000 iterations. Although, probes F (probe number 6) and G (probe number 7) display oscillations around a mean value. This can be explained by the probes' position just upstream of the separation of the two inlets in the recirculation zone. As the oscillations are stable, the run is considered converged.
+         Globally, the graphs show that the calculations are converged within the specified 2000 time steps. Although, probes F (probe number 6) and G (probe number 7) display oscillations around the mean value. This can be explained by the probes' position just upstream of the separation of the two inlets in the recirculation zone. As the oscillations are stable, the run is considered converged.
 
    \item[$\bullet$]\textbf{Two-phase run convergence}
 
-         For the two-phase run, the figure \ref{Histo_Cplt} show the time histories of the continuous phase mean velocity axial and radial components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the
-         dissipation. As for the single phase calculation, probes F (probe number 6) and G (probe number 7) display oscillations around a mean value.
-         The graphs indicate that the two-phase runs may be considered converged by time step $3.5~s$.
+         For the two-phase run, figure \ref{Histo_Cplt} shows the time histories of the continuous phase mean axial and radial velocity components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the
+         dissipation. As for the single phase calculation, probes F (probe number 6) and G (probe number 7) display the strongest oscillations around the mean value.
+         The graphs indicate that the two-phase runs may be considered converged after $3.5~s$.
 
 
          \begin{figure}[H]
             \centerline{\includegraphics[width=14.cm]{\IMAGES/VNV/probes_DIPH-CPL-RijSSG.pdf}}
-            \caption{"complete" two-phase run: convergence history of the mean velocity axial and radial components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the dissipation.}
+            \caption{Two-phase run: convergence history of the mean axial and radial velocity components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the dissipation.}
             \label{Histo_Cplt}
          \end{figure}
 
-   \item[$\bullet$]\textbf{Langevin run convergence}
+   \item[$\bullet$]\textbf{Fluid like tracer particles run convergence}
 
-         For the Langevin run, the figures \ref{Histo_Lang} show the time histories of the continuous phase mean velocity axial and radial components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the
-         dissipation. As for the single phase calculation, probes F (probe number 6) and G (probe number 7) display oscillations around a mean value.
-         The graphs indicate that the Langevin run may be considered converged by time step $3.5~s$.
+         For the fluid like tracer particles run, figures \ref{Histo_Lang} show the time histories of the continuous phase mean axial and radial velocity components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the
+         dissipation. As for the single phase calculation, probes F (probe number 6) and G (probe number 7) display the strongest oscillations around the mean value.
+         The graphs indicate that the fluid like tracer particles' run may be considered converged after $2~s$.
 
 
          \begin{figure}[H]
-            \centerline{\includegraphics[width=14.cm]{\IMAGES/VNV/probes_DIPH-Langevin-RijSSG.pdf}}
-            \caption{"Langevin" run: convergence history of the mean velocity axial and radial components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the dissipation.}
+            \centerline{\includegraphics[width=14.cm]{\IMAGES/VNV/probes_Fluid-like-tracer-particles-RijSSG.pdf}}
+            \caption{Fluid like tracer particles run: convergence history of the mean axial and radial velocity components, the Reynolds stresses $R_{11}$, $R_{22}$, $R_{33}$ and the dissipation.}
             \label{Histo_Lang} 
          \end{figure}
 
 
    \item[$\bullet$] \textbf{Total number of particles in the computational domain}
 
-         Figure \ref{nbpart} shows the time history of the total number of particles in the computational domain for both two-phase runs. The number of particles stabilises $3.5~s$. \\ The maximum number of particles obtained in the two runs is different, of the order of $4500$ particles in the "complete" two-phase run compared to about $9000$ for the "Langevin" run.\\
+         Figure \ref{nbpart} shows the time history of the total number of particles in the computational domain for both runs. The number of particles stabilises after $3.5~s$. \\ The maximum number of particles obtained in the two runs is different: approximately $4500$ particles for the "complete" two-phase run compared to about $9000$ for the fluid like tracer particles run.\\
 
          \begin{figure}[H]
             \centerline{\includegraphics[width=9cm]{\IMAGES/VNV/Number_of_particles.pdf}}
@@ -646,46 +646,46 @@ For the the two-way coupling calculation with the complete model with the local 
 
 \subsubsection{Single-phase run}
 
-The measured and computed mean velocity axial components are compared along the $z$ axis in figure \ref{AxeFluide_mono} and along horizontal plane sections at $z = 0,003~m$, $0,08~m$, $0,16~m$, $0,24~m$, $0,32~m$, $0,42~m$ in \ref{ProfVZFluide_mono}. On these graphs, the velocity fields are time averaged from $t=1.5~s$ to $2~s$.
+The measured and computed mean axial velocity components are compared along the $z$ axis in figure \ref{AxeFluide_mono} and along horizontal plane sections at $z = 0.003~m$, $0.08~m$, $0.16~m$, $0.24~m$, $0.32~m$, $0.42~m$ in \ref{ProfVZFluide_mono}. On these graphs, the velocity fields are time averaged from $t=1.5~s$ to $2~s$.
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=13cm]{\IMAGES/VNV/Axial_profile_MONO.pdf}}
-   \caption{Single phase run: fluid mean velocity axial component along the centre line.}
+   \caption{Single phase run: fluid mean axial velocity component along the centre line.}
    \label{AxeFluide_mono}
 \end{figure}
 
 \noindent
-Looking at the graph, the flow is divided in three large regions which are separated by the two stagnation points around $0.1m$ and $0.2m$ on figure \ref{AxeFluide_mono} and named $S_{1}$ and $S_{2}$ on figure \ref{ecoulement}. The first region, (called A on figure \ref{ecoulement}) situated between the primary inlet and the first stagnation point is representative of the central jet penetration. The calculation gives a reasonable prediction for an axial distance inferior to $0.15m$. The second region (called B on figure \ref{ecoulement}), located between the two stagnation points represents the recirculation zone. The calculation doesn't give a good prediction, particularly with regard to the position of points $S_{1}$ and $S_{2}$. The minimum velocity is slightly underestimated. The third zone (called C on figure \ref{ecoulement}) denotes the zone where the annular flow reaches the axis of symmetry and evolves towards a free jet flow. The results from the run are offset from the experimental results in this zone. Whilst the offset is also evident on the radial profiles at $z=0,32~m$ and $z=0,42~m$ in figure \ref{ProfVZFluide_mono}, it is smaller. In any case, according to \cite{Rap3}, there are reasons to question the experimental measurements in this region.
+Looking at the graph we can see that the flow is divided in three large regions which are separated by the two stagnation points at around $0.1m$ and $0.2m$ in figure \ref{AxeFluide_mono} and named $S_{1}$ and $S_{2}$ in figure \ref{ecoulement}. The first region, (called A in figure \ref{ecoulement}), situated between the primary inlet and the first stagnation point, is representative of the central jet penetration. The calculation gives a reasonable prediction for an axial distance less than $0.15m$. The second region (called B in figure \ref{ecoulement}), located between the two stagnation points, represents the recirculation zone. The calculation did not provide a good prediction, particularly with regard to the position of points $S_{1}$ and $S_{2}$. The minimum velocity is slightly underestimated. The third zone (called C in figure \ref{ecoulement}) denotes the zone where the annular flow reaches the axis of symmetry and evolves towards a free jet flow. The results from the run are offset from the experimental results in this zone. Although the offset is also evident on the radial profiles at $z=0.32~m$ and $z=0.42~m$ in figure \ref{ProfVZFluide_mono}, it is smaller. In any case, according to \cite{Rap3}, there are reasons to question the experimental measurements in this region.
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_MONO.pdf}}
-   \caption{Single-phase run: fluid mean velocity axial component profiles at the different measurement plane sections.}
+   \caption{Single-phase run: fluid mean axial velocity component profiles at the different measurement plane sections.}
    \label{ProfVZFluide_mono}
 \end{figure}
 
 \clearpage
 
-\subsubsection{Two-phase and Langevin runs}
+\subsubsection{Two-phase run}
 
 \begin{description}
    \item[$\bullet$] \textbf{Continuous phase} :
 \end{description}
 
-Figures \ref{AxeFluide_diph} and \ref{ProfVZFluide_diph} show the calculated continuous phase mean velocity axial component. As for the single-phase run, the fluid and particle velocity fields are time averaged from $t=4~s$ to $7~s$. Figure \ref{AxeFluide_diph} shows the profiles along the centre line, $z$, whereas figure \ref{ProfVZFluide_diph} shows the profiles along the plane sections at $z = 0,003~m$, $0,08~m$, $0,16~m$, $0,24~m$, $0,32~m$, $0,42~m$.
+Figures \ref{AxeFluide_diph} and \ref{ProfVZFluide_diph} show the calculated continuous phase mean axial velocity component. As for the single-phase run, the fluid and particle velocity fields are time averaged from $t=4~s$ to $7~s$. Figure \ref{AxeFluide_diph} shows the profiles along the centre line, $z$, whereas figure \ref{ProfVZFluide_diph} shows the profiles along the plane sections at $z = 0.003~m$, $0.08~m$, $0.16~m$, $0.24~m$, $0.32~m$ and $0.42~m$.
 
 \noindent
 
-The continuous phase flow predictions do not differ much between the single phase run and the "Langevin" run but differ a lot between the single-phase and the "complete" two-phase run. The figure \ref{AxeFluide_diph} indicates that the "complete" two-phase run do not give correct predictions of the first two zones: the penetration length of the primary inlet jet is underestimated and the length of the recirculation zone between the two stagnation points is shorter. The comparisons in the transversal plane sections show that the difference between the measured and computed values is significant mostly in a zone very close to the centre line. Figure \ref{ProfVZFluide_diph} shows as well that the quality of the predicted values deteriorates with distance from the inlets.
+The continuous phase flow predictions differ a lot between the single-phase and the two-phase run. Figure \ref{AxeFluide_diph} indicates that the two-phase run did not produce correct predictions for the first two zones: the penetration length of the primary inlet jet is underestimated and the length of the recirculation zone between the two stagnation points is shorter. In comparison, in the transversal plane sections, we can see that the difference between the measured and computed values is significant, mostly in a zone very close to the centre line. Figure \ref{ProfVZFluide_diph} also shows that the quality of the predicted values deteriorates with distance from the inlets.
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=13cm]{\IMAGES/VNV/Axial_profile_DIPH.pdf}}
-   \caption{"Complete" two-phase and "Langevin" runs: mean fluid velocity axial component along the centre line.}
+   \caption{Two-phase run: mean fluid axial velocity component along the centre line.}
    \label{AxeFluide_diph}
 \end{figure}
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_DIPH.pdf}}
-   \caption{"Complete" two-phase and "Langevin" runs: mean fluid velocity axial component profiles along the different measurement planes.}
+   \caption{Two-phase run: mean fluid axial velocity component profiles along the different measurement planes.}
    \label{ProfVZFluide_diph}
 \end{figure}
 
@@ -694,39 +694,64 @@ The continuous phase flow predictions do not differ much between the single phas
 \end{description}
 \noindent
 
-The calculated mean dispersed phase velocity axial and radial components are shown in figures \ref{VitZPart} and \ref{VitXPart} along the plane sections at $z = 0,003~m$, $0,08~m$, $0,16~m$, $0,24~m$, $0,32~m$, and $0,42~m$.
-Figures \ref{VitZpPart} et \ref{VitXpPart} show the fluctuation dispersed phase velocity axial and radial components.
+The calculated mean dispersed phase axial and radial velocity components are shown in figures \ref{VitZPart} and \ref{VitXPart} along the plane sections at $z = 0.003~m$, $0.08~m$, $0.16~m$, $0.24~m$, $0.32~m$, and $0.42~m$.
+Figures \ref{VitZpPart} and \ref{VitXpPart} show the fluctuation dispersed phase axial and radial velocity components.
 
 \noindent
-Away from the external edges of the particle cloud (near the edges of the measuring points), the calculated mean axial velocities are in acceptable agreement with the experimental ones. However, the results for the mean radial velocity are more questionable. \\ With regard to the axial or radial component of the fluctuating particle velocity, the "complete" or the "Langevin" run show poor predictions.
+Away from the external edges of the particle cloud (near the edges of the measuring points), the calculated mean axial velocities are in acceptable agreement with the experimental ones. However, the results for the mean radial velocity are more questionable. \\ With regard to the axial or radial component of the fluctuating particle velocity, the two-phase run shows poor predictions.
 
 \noindent
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_mean_axial_vel_part_DIPH.pdf}}
-   \caption{Two-phase run: profiles of the mean particle velocity axial component along the different measurement plane sections.}
+   \caption{Two-phase run: profiles of the mean particle axial velocity component along the different measurement plane sections.}
    \label{VitZPart}
 \end{figure}
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_mean_radial_vel_part_DIPH.pdf}}
-   \caption{Two-phase run: profiles of the mean particle velocity radial component along the different measurement plane sections.}
+   \caption{Two-phase run: profiles of the mean particle radial velocity component along the different measurement plane sections.}
    \label{VitXPart}
 \end{figure}
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_mean_axial_flu_vel_part_DIPH.pdf}}
-   \caption{Two-phase run: profiles of the fluctuating particle velocity axial component along the different measurement plane sections.}
+   \caption{Two-phase run: profiles of the fluctuating particle axial velocity component along the different measurement plane sections.}
    \label{VitZpPart}
 \end{figure}
 
 \begin{figure}[H]
    \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_mean_radial_flu_vel_part_DIPH.pdf}}
-   \caption{Two-phase run: profiles of the fluctuating particle velocity radial component along the different measurement plane sections.}
+   \caption{Two-phase run: profiles of the fluctuating particle radial velocity component along the different measurement plane sections.}
    \label{VitXpPart}
 \end{figure}
 
 \clearpage
+
+\subsubsection{Fluid like tracer particles run}
+
+\begin{description}
+   \item[$\bullet$] \textbf{Continuous phase} :
+\end{description}
+
+Figures \ref{AxeFluide_Fluid_like} and \ref{ProfVZFluide_Fluid_like} show the calculated continuous phase mean axial velocity component. As for the single-phase run, the flowfield is time averaged from $t=4~s$ to $7~s$. Figure \ref{AxeFluide_Fluid_like} shows the profiles along the centre line, $z$, whereas figure \ref{ProfVZFluide_Fluid_like} shows the profiles along the plane sections at $z = 0.003~m$, $0.08~m$, $0.16~m$, $0.24~m$, $0.32~m$, $0.42~m$.
+
+\noindent
+
+The continuous phase flow predictions do not differ between the single phase run and the fluid like tracer particles run.
+
+\begin{figure}[H]
+   \centerline{\includegraphics[width=13cm]{\IMAGES/VNV/Axial_profile_Fluid-like-tracer-particles.pdf}}
+   \caption{Fluid like tracer particles runs: mean fluid axial velocity component along the centre line.}
+   \label{AxeFluide_Fluid_like}
+\end{figure}
+
+\begin{figure}[H]
+   \centerline{\includegraphics[width=14cm]{\IMAGES/VNV/Radial_profile_Fluid-like-tracer-particles.pdf}}
+   \caption{Fluid like tracer particles runs: mean fluid axial velocity component profiles along the different measurement planes.}
+   \label{ProfVZFluide_Fluid_like}
+\end{figure}
+
 
 \section{Archiving}
 
@@ -736,9 +761,9 @@ The sub-directories are organised as follows:
 \medskip\\
 \hspace*{2cm}\textbf{HERCULE-MONO-RijSSG}: everything having to do with the single-phase calculation.
 \medskip\\
-\hspace*{2cm}\textbf{HERCULE-DIPH-Langevin-RijSSG}: everything having to do with the "Langevin" calculation.
+\hspace*{2cm}\textbf{HERCULE-Fluid-like-tracer-particles-RijSSG}: everything having to do with the fluid like tracer particles calculation.
 \medskip\\
-\hspace*{2cm}\textbf{HERCULE-DIPH-CPL-RijSSG}: everything having to do with the "complete" two-phase calculation.
+\hspace*{2cm}\textbf{HERCULE-DIPH-CPL-RijSSG}: everything having to do with the two-phase calculation.
 
 
 

@@ -19,24 +19,31 @@
 
     <measurement file="Axe.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="5" markevery="1" spids="  10" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" spids="10010" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="003m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  11" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10011" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="008m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  12" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10012" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="016m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  13" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10013" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="024m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  14" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10014" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="032m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  15" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10015" xcol="1" ycol="2"/>
      </measurement>
     <measurement file="042m.dat" path="./EXP/MONO">
       <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="  16" xcol="1" ycol="2"/>
+      <plot fmt="k." legend="Exp" markersize="3" markevery="1" spids="10016" xcol="1" ycol="2"/>
      </measurement>
 
     <!-- ********************
@@ -309,116 +316,68 @@
       </data>
     </case>
 
-    <!-- ****************************
-         *     DIPH-Langevin-Rij-SSG     *
-         **************************** -->
+    <!-- ***********************************************
+         *     Fluid-like-tracer-particles-Rij-SSG     *
+         *********************************************** -->
 
-    <case compute="on" label="HERCULE-DIPH-Langevin-RijSSG" post="on" run_id="CALC_DIPH-Langevin-RijSSG" status="on">
+    <case compute="on" label="HERCULE-Fluid-like-tracer-particles-RijSSG" post="on" run_id="CALC_Fluid-like-tracer-particles-RijSSG" status="on">
     <!-- Axial Velocity -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4201" file="probes_Velocity[Z].dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4201" file="probes_Velocity[Z].dat"/>
     <!-- Radial Velocity -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4202" file="probes_Velocity[X].dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4202" file="probes_Velocity[X].dat"/>
     <!-- R11 -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4203" file="probes_Rij[XX].dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4203" file="probes_Rij[XX].dat"/>
     <!-- R22 -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4204" file="probes_Rij[YY].dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4204" file="probes_Rij[YY].dat"/>
     <!-- R33 -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4205" file="probes_Rij[ZZ].dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4205" file="probes_Rij[ZZ].dat"/>
     <!-- Dissipation -->
-      <probes dest="CALC_DIPH-Langevin-RijSSG" fig="4206" file="probes_epsilon.dat"/>
+      <probes dest="CALC_Fluid-like-tracer-particles-RijSSG" fig="4206" file="probes_epsilon.dat"/>
 
     <!-- Axial Average Velocity on the Axe -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="AXE.dat">
-        <plot fmt="c-" legend="Langevin" spids="1010" xcol="4" ycol="17"/>
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="AXE.dat">
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10010" xcol="4" ycol="17"/>
       </data>
 
     <!-- Z = 0.003m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z003.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z003.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1011" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1021" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1031" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1121" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1131" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10011" xcol="2" ycol="17"/>
       </data>
 
     <!-- Z = 0.08m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z080.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z080.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1012" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1022" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1032" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1122" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1132" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10012" xcol="2" ycol="17"/>
       </data>
 
     <!-- Z = 0.16m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z160.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z160.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1013" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1023" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1033" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1123" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1133" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10013" xcol="2" ycol="17"/>
       </data>
 
     <!-- Z = 0.24m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z240.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z240.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1014" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1024" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1034" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1124" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1134" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10014" xcol="2" ycol="17"/>
       </data>
 
     <!-- Z = 0.32m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z320.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z320.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1015" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1025" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1035" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1125" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1135" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10015" xcol="2" ycol="17"/>
       </data>
 
     <!-- Z = 0.42m -->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="Z420.dat">
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="Z420.dat">
     <!-- Axial Average Velocity -->
-        <plot fmt="c-" legend="Langevin" spids="1016" xcol="2" ycol="17"/>
-    <!-- Axial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1026" xcol="2" ycol="20"/>
-    <!-- Radial Average Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1036" xcol="2" ycol="18"/>
-    <!-- Axial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1126" xcol="2" ycol="23"/>
-    <!-- Radial Average fluctuation Velocity of Particles -->
-        <plot fmt="c-" legend="Langevin" spids="1136" xcol="2" ycol="21"/>
+        <plot fmt="c-" legend="Fluid-like-tracer-particles" spids="10016" xcol="2" ycol="17"/>
       </data>
 
     <!-- Number of particles-->
-      <data dest="CALC_DIPH-Langevin-RijSSG" file="lagrangian.log">
-        <plot fmt="c--" legend="Langevin" spids="200" xcol="2" ycol="3"/>
+      <data dest="CALC_Fluid-like-tracer-particles-RijSSG" file="lagrangian.log">
+        <plot fmt="c--" legend="Fluid-like-tracer-particles" spids="200" xcol="2" ycol="3"/>
       </data>
     </case>
 
@@ -486,6 +445,74 @@
     </subplot>
     <!-- Axial Average Velocity at Z = 0.42m -->
     <subplot id="16" legpos="1. 0." legstatus="off" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.42m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+
+    <!-- Axial profile -->
+    <!-- Axial Average Velocity on the Axis -->
+    <subplot id="10010" legpos="1. 0." legstatus="on" xlim="0. 0.5">
+      <plt_command>plt.title(&quot;Axial velocity&quot;,fontsize = 16)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=12)</plt_command>
+      <plt_command>plt.xlabel(&quot;Axial distance $(m)$&quot;, fontsize=12)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=12)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=12)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+
+    <!-- Radial profile -->
+    <!-- Axial Average Velocity at Z = 0.003m -->
+    <subplot id="10011" legpos="1. 0." legstatus="on" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.003m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Axial Average Velocity at Z = 0.08m -->
+    <subplot id="10012" legpos="1. 0." legstatus="off" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.08m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+    <!-- Axial Average Velocity at Z = 0.16m -->
+    <subplot id="10013" legpos="1. 0." legstatus="off" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.16m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+    <!-- Axial Average Velocity at Z = 0.24m -->
+    <subplot id="10014" legpos="1. 0." legstatus="off" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.24m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+    <!-- Axial Average Velocity at Z = 0.32m -->
+    <subplot id="10015" legpos="1. 0." legstatus="off" xlim="0. 0.15">
+      <plt_command>plt.title(&quot;$Z = 0.32m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+    </subplot>
+    <!-- Axial Average Velocity at Z = 0.42m -->
+    <subplot id="10016" legpos="1. 0." legstatus="off" xlim="0. 0.15">
       <plt_command>plt.title(&quot;$Z = 0.42m$&quot;,fontsize = 6)</plt_command>
       <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
       <plt_command>plt.xlabel(&quot;Radial distance $(m)$&quot;, fontsize=6)</plt_command>
@@ -904,9 +931,9 @@
       <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
     </subplot>
 
-    <!-- ****************************
-         *     DIPH-Langevin-Rij-SSG     *
-         **************************** -->
+    <!-- ***********************************************
+         *     Fluid-like-tracer-particles-Rij-SSG     *
+         *********************************************** -->
 
     <!-- Probes historics -->
     <!-- Axial Velocity -->
@@ -984,13 +1011,6 @@
     <!-- Probes historics -->
     <figure figsize="(5,6)" idlist=" 3201 3202 3203 3204 3205 3206" name="probes_DIPH-CPL-RijSSG" nbcol="2" nbrow="3" title="DIPH-CPL Rij-SSG"/>
 
-
-    <!-- ****************************
-         *     DIPH-Langevin-Rij-SSG     *
-         **************************** -->
-    <!-- Probes historics -->
-    <figure figsize="(5,6)" idlist=" 4201 4202 4203 4204 4205 4206" name="probes_DIPH-Langevin-RijSSG" nbcol="2" nbrow="3" title="DIPH-Langevin Rij-SSG"/>
-
     <!-- Axial profile -->
     <!-- Axial Average Velocity on the Axis -->
     <figure figsize="(5,6)" idlist=" 1010" name="Axial_profile_DIPH" nbcol="1" nbrow="1"/>
@@ -998,6 +1018,20 @@
     <!-- Radial profile -->
     <!-- Axial Average Velocity at Z = 0.003m to 0.42m-->
     <figure figsize="(5,6)" idlist=" 1011 1012 1013 1014 1015 1016" name="Radial_profile_DIPH" nbcol="2" nbrow="3"/>
+
+    <!-- ***********************************************
+         *     Fluid-like-tracer-particles-Rij-SSG     *
+         *********************************************** -->
+    <!-- Probes historics -->
+    <figure figsize="(5,6)" idlist=" 4201 4202 4203 4204 4205 4206" name="probes_Fluid-like-tracer-particles-RijSSG" nbcol="2" nbrow="3" title="Fluid-like-tracer-particles Rij-SSG"/>
+
+    <!-- Axial Average Velocity on the Axis -->
+    <figure figsize="(5,6)" idlist=" 10010" name="Axial_profile_Fluid-like-tracer-particles" nbcol="1" nbrow="1"/>
+
+    <!-- Radial profile -->
+    <!-- Axial Average Velocity at Z = 0.003m to 0.42m-->
+    <figure figsize="(5,6)" idlist=" 10011 10012 10013 10014 10015 10016" name="Radial_profile_Fluid-like-tracer-particles" nbcol="2" nbrow="3"/>
+
 
     <!-- Number of particles-->
     <figure figsize="(5,6)" idlist=" 200" name="Number_of_particles" nbcol="1" nbrow="3"/>
