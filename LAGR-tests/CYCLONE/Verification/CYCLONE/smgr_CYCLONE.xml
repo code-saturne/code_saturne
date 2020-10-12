@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="utf-8"?><studymanager solver_version="6.0;6.2-alpha" version="2.0">
+
+  <repository/>
+  <destination/>
+
+  <!-- ************
+       *  CYCLONE *
+       ************ -->
+
+  <study label="CYCLONE" status="on">
+
+    <!-- **********************
+         *  Experimental data *
+         ********************** -->
+
+    <measurement file="axial_velocity_015m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  1"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids=" 21"/>
+     </measurement>
+    <measurement file="axial_velocity_033m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  2"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids=" 22"/>
+     </measurement>
+    <measurement file="axial_velocity_036m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  3"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids=" 23"/>
+     </measurement>
+    <measurement file="axial_velocity_057m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  4"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids=" 24"/>
+     </measurement>
+    <measurement file="axial_velocity_060m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  5"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids=" 25"/>
+     </measurement>
+    <measurement file="tangential_velocity_015m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  11"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  31"/>
+     </measurement>
+    <measurement file="tangential_velocity_033m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  12"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  32"/>
+     </measurement>
+    <measurement file="tangential_velocity_036m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  13"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  33"/>
+     </measurement>
+    <measurement file="tangential_velocity_057m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  14"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  34"/>
+     </measurement>
+    <measurement file="tangential_velocity_060m.dat" path="./EXP">
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  15"/>
+      <plot fmt="k." legend="Exp" markersize="5" markevery="1" xcol="1" ycol="2" spids="  35"/>
+     </measurement>
+
+
+    <!-- ********************
+         *       MONO       *
+         ******************** -->
+
+         <!-- RIJ -->
+
+    <case compute="on" label="RIJ" post="on" run_id="CALC_MONO" status="on">
+    <!-- Axial Velocity -->
+      <probes dest="CALC_MONO" fig="101" file="probes_Velocity[Z].dat"/>
+
+    <!-- Z = 0.15m -->
+      <data dest="CALC_MONO" file="profile_Z015m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="7" spids="1"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="9" spids="21"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="5" yscale="-1.0" spids="11"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="8" yscale="-1.0" spids="31"/>
+      </data>
+
+    <!-- Z = 0.33m -->
+      <data dest="CALC_MONO" file="profile_Z033m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="7" spids="2"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="9" spids="22"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="5" yscale="-1.0" spids="12"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="8" yscale="-1.0" spids="32"/>
+      </data>
+
+    <!-- Z = 0.36m -->
+      <data dest="CALC_MONO" file="profile_Z036m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="7" spids="3"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="9" spids="23"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="5" yscale="-1.0" spids="13"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="8" yscale="-1.0" spids="33"/>
+      </data>
+
+    <!-- Z = 0.57m -->
+      <data dest="CALC_MONO" file="profile_Z057m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="7" spids="4"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="9" spids="24"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="5" yscale="-1.0" spids="14"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="8" yscale="-1.0" spids="34"/>
+      </data>
+
+    <!-- Z = 0.6m -->
+      <data dest="CALC_MONO" file="profile_Z06m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="7" spids="5"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="9" spids="25"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="5" yscale="-1.0" spids="15"/>
+        <plot fmt="g-" legend="RIJ - Single phase" xcol="3" ycol="8" yscale="-1.0" spids="35"/>
+      </data>
+    </case>
+
+    <!-- ********************
+         *       DIPH       *
+         ******************** -->
+
+         <!-- RIJ Two way One injection-->
+
+    <case compute="on" label="DIPH_TwoWay" post="on" run_id="CALC_DIPH-TwoWay_1inj" status="on">
+    <!-- Axial Velocity -->
+      <probes dest="CALC_DIPH-TwoWay_1inj" fig="112" file="probes_Velocity[Z].dat"/>
+
+    <!-- Z = 0.15m -->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="profile_Z015m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="7" spids="1"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="9" spids="21"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="5" yscale="-1.0" spids="11"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="8" yscale="-1.0" spids="31"/>
+      </data>
+
+    <!-- Z = 0.33m -->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="profile_Z033m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="7" spids="2"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="9" spids="22"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="5" yscale="-1.0" spids="12"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="8" yscale="-1.0" spids="32"/>
+      </data>
+
+    <!-- Z = 0.36m -->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="profile_Z036m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="7" spids="3"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="9" spids="23"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="5" yscale="-1.0" spids="13"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="8" yscale="-1.0" spids="33"/>
+      </data>
+
+    <!-- Z = 0.57m -->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="profile_Z057m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="7" spids="4"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="9" spids="24"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="5" yscale="-1.0" spids="14"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="8" yscale="-1.0" spids="34"/>
+      </data>
+
+    <!-- Z = 0.6m -->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="profile_Z06m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="7" spids="5"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="9" spids="25"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="5" yscale="-1.0" spids="15"/>
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="3" ycol="8" yscale="-1.0" spids="35"/>
+      </data>
+
+    <!-- Number of particles-->
+      <data dest="CALC_DIPH-TwoWay_1inj" file="lagrangian.log">
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="2" ycol="3" spids="200"/>
+      </data>
+      
+      <script label="lag_script_tab_1inj_For_CS62alpha.py" args="" dest="" status="on"/>
+
+    <!-- Outlet bottom -->
+      <data dest="" file="particles_through_bottom_outlet.dat">
+        <plot fmt="b--" legend="RIJ - Two Way" xcol="1" ycol="2" spids="201"/>
+      </data>
+    </case>
+    
+         <!-- RIJ One way One injection-->
+
+    <case compute="on" label="DIPH_OneWay" post="on" run_id="CALC_DIPH-OneWay_1inj" status="on">
+    <!-- Axial Velocity -->
+      <probes dest="CALC_DIPH-OneWay_1inj" fig="111" file="probes_Velocity[Z].dat"/>
+
+    <!-- Z = 0.15m -->
+      <data dest="CALC_DIPH-OneWay_1inj" file="profile_Z015m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="7" spids="1"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="9" spids="21"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="5" yscale="-1.0" spids="11"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="8" yscale="-1.0" spids="31"/>
+      </data>
+
+    <!-- Z = 0.33m -->
+      <data dest="CALC_DIPH-OneWay_1inj" file="profile_Z033m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="7" spids="2"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="9" spids="22"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="5" yscale="-1.0" spids="12"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="8" yscale="-1.0" spids="32"/>
+      </data>
+
+    <!-- Z = 0.36m -->
+      <data dest="CALC_DIPH-OneWay_1inj" file="profile_Z036m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="7" spids="3"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="9" spids="23"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="5" yscale="-1.0" spids="13"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="8" yscale="-1.0" spids="33"/>
+      </data>
+
+    <!-- Z = 0.57m -->
+      <data dest="CALC_DIPH-OneWay_1inj" file="profile_Z057m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="7" spids="4"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="9" spids="24"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="5" yscale="-1.0" spids="14"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="8" yscale="-1.0" spids="34"/>
+      </data>
+
+    <!-- Z = 0.6m -->
+      <data dest="CALC_DIPH-OneWay_1inj" file="profile_Z06m.dat">
+    <!-- Axial Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="7" spids="5"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="9" spids="25"/>
+    <!-- Tangential Velocity -->
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="5" yscale="-1.0" spids="15"/>
+        <plot fmt="m--" legend="RIJ - One Way" xcol="3" ycol="8" yscale="-1.0" spids="35"/>
+      </data>
+
+    <!-- Number of particles-->
+      <data dest="CALC_DIPH-OneWay_1inj" file="lagrangian.log">
+        <plot fmt="m--" legend="RIJ - One Way" xcol="2" ycol="3" spids="200"/>
+      </data>
+      
+      <script label="lag_script_tab_1inj_For_CS62alpha.py" args="" dest="" status="on"/>
+
+    <!-- Outlet bottom -->
+      <data dest="" file="particles_through_bottom_outlet.dat">
+        <plot fmt="m--" legend="RIJ - One Way" xcol="1" ycol="2" spids="201"/>
+      </data>
+    </case>
+
+    <!-- ************************
+         *  Figures declaration *
+         ************************ -->
+
+    <!-- Probes historics -->
+    <!-- Axial Velocity -->
+    <subplot id="101" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity&quot;,fontsize = 8)</plt_command>
+      <plt_command>plt.legend(loc='upper right', bbox_to_anchor=(1, 1),prop={'size':6})</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+    </subplot>
+    
+    <!-- Probes historics -->
+    <!-- Axial Velocity -->
+    <subplot id="111" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity&quot;,fontsize = 8)</plt_command>
+      <plt_command>plt.legend(loc='upper right', bbox_to_anchor=(1, 1),prop={'size':6})</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+    </subplot>
+    
+    <subplot id="112" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity&quot;,fontsize = 8)</plt_command>
+      <plt_command>plt.legend(loc='upper right', bbox_to_anchor=(1, 1),prop={'size':6})</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+    </subplot>
+
+    <!-- Z = 0.15m -->
+    <!-- Axial Velocity -->
+    <subplot id="1" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.15m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="11" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.15m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Axial Velocity -->
+    <subplot id="21" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.15m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="31" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.15m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+
+    <!-- Z = 0.33m -->
+    <!-- Axial Velocity -->
+    <subplot id="2" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.33m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="12" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.33m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Axial Velocity -->
+    <subplot id="22" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.33m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="32" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.33m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+
+    <!-- Z = 0.36m -->
+    <!-- Axial Velocity -->
+    <subplot id="3" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.36m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="13" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.36m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Axial Velocity -->
+    <subplot id="23" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.36m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="33" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.36m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+
+    <!-- Z = 0.57m -->
+    <!-- Axial Velocity -->
+    <subplot id="4" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.57m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="14" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.57m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Axial Velocity -->
+    <subplot id="24" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.57m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="34" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.57m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+
+    <!-- Z = 0.6m -->
+        <!-- Axial Velocity -->
+    <subplot id="5" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.6m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="15" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.6m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+        <!-- Axial Velocity -->
+    <subplot id="25" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Axial velocity at $z = 0.6m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Axial velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+    <!-- Tangential Velocity -->
+    <subplot id="35" xlim="-0.1 0.1" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Tangential velocity at $z = 0.6m$&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Tangential velocity $(m/s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Radius $(m)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':3.5})</plt_command>
+    </subplot>
+
+
+    <!-- Number of particles-->
+    <subplot id="200" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Number of particles&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Number of particles&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Time $(s)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':6})</plt_command>
+    </subplot>
+    
+    <!-- Outlet bottom -->
+    <subplot id="201" ylim="0 100.0" legpos="1. 0." legstatus="on">
+      <plt_command>plt.title(&quot;Particles going through the bottom outlet&quot;,fontsize = 6)</plt_command>
+      <plt_command>plt.ylabel(&quot;Number of particles $(\%)$&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.xlabel(&quot;Class particles&quot;, fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_xticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.setp(ax.get_yticklabels(), fontsize=6)</plt_command>
+      <plt_command>plt.grid(True)</plt_command>
+      <plt_command>plt.legend(prop={'size':6})</plt_command>
+    </subplot>
+    
+    <!-- *****************
+         *  Save figures *
+         *****************-->
+
+    <!-- Probes historics -->
+    <figure figsize="(5,6)" idlist=" 101" name="probes_MONO_RIJ" nbcol="1" nbrow="1"/>
+    <!-- Probes historics -->
+    <figure figsize="(5,6)" idlist=" 111" name="probes_DIPH_RIJ_OneWay" nbcol="1" nbrow="1"/>
+    <figure figsize="(5,6)" idlist=" 112" name="probes_DIPH_RIJ_TwoWay" nbcol="1" nbrow="1"/>
+
+    <!-- Radial profile -->
+    <!-- Axial Velocity at Z = 0.15m to 0.6m -->
+    <figure figsize="(5,6)" idlist=" 5 4 3 2 1" name="Axial_velocity" nbcol="2" nbrow="3"/>
+    <figure figsize="(5,6)" idlist=" 25 24 23 22 21" name="Time_avg_Axial_velocity" nbcol="2" nbrow="3"/>
+
+    <!-- Radial profile -->
+    <!-- Tangential Velocity at Z = 0.15m to 0.6m -->
+    <figure figsize="(5,6)" idlist=" 15 14 13 12 11" name="Tangential_velocity" nbcol="2" nbrow="3"/>
+    <figure figsize="(5,6)" idlist=" 35 34 33 32 31" name="Time_avg_Tangential_velocity" nbcol="2" nbrow="3"/>
+
+    <figure figsize="(5,6)" idlist=" 200" name="Number_of_particles" nbcol="1" nbrow="3"/>
+    <figure figsize="(5,6)" idlist=" 201" name="Outlet_bottom" nbcol="2" nbrow="2"/>
+
+  </study>
+</studymanager>

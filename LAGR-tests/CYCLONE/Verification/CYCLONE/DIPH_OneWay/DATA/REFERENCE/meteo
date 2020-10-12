@@ -1,0 +1,72 @@
+/ METEO FILE EXAMPLE
+/ (free comment lines )
+/---------------------------------------------------------
+/ The format of the file is important and is the following:
+/ --------------------------------------------------------
+/ year (integer), quantile (integer), hour (integer), minute (integer), second (dble precision) of the profile
+/ location of the meteo profile in the domaine (x,y) in m (double precision)
+/ sea level pressure (Pa) (double precision)
+/
+/ temperature profile: 
+/ number of levels (integer)
+/ for each level :
+/ altitude(m), temperature(°C),humidity(kg/kg),number of droplet(n/cm3) (double)
+/
+/ wind profile:
+/ number of levels (integer)
+/ for each level :
+/ altitude (m),u(m/s),v(m/s),k(m2/s2),eps(m2/s3) (double precision)
+/
+/ NO EMPY LINE AT THE END OF THE FILE
+/ ---------------------------------------------------------
+/ ---------------------------------------------------------
+/
+/ year, quantile, hour, minute, second of the profile:
+/
+2007, 17, 7, 23 , 8.
+/
+/ location of the meteo profile in the domaine (x,y):
+/
+  0.0000E+00   0.0000E+00
+/
+/Sea level pressure :
+/
+100350.
+/
+/ Temperature profile: number of levels,(altitude of each level in m, 
+/ temperature(°C), humidity(kg/kg) and number of droplet(n/cm3)) 
+/                   
+14
+  0.50  14.7000  0.0000 0.000
+  2.00  14.7000  0.0000 0.000
+  4.00  14.7000  0.0000 0.000
+  6.00  14.7000  0.0000 0.000
+  8.00  14.7000  0.0000 0.000
+ 15.00  14.7000  0.0000 0.000
+ 25.00  14.7000  0.0000 0.000
+ 35.00  14.7000  0.0000 0.000
+ 45.00  14.7000  0.0000 0.000
+ 70.00  14.7000  0.0000 0.000
+120.00  14.7000  0.0000 0.000
+180.00  14.7000  0.0000 0.000
+250.00  14.7000  0.0000 0.000
+500.00  14.7000  0.0000 0.000
+/
+/ Wind profile: number  of levels,(alt.,u,v,k,eps)
+/
+15
+  0.50   3.882   0.000    2.5040E+00    2.7128E+00
+  1.00   5.196   0.000    2.5040E+00    1.4797E+00
+  2.00   6.597   0.000    2.5040E+00    7.7509E-01
+  4.00   8.047   0.000    2.5040E+00    3.9700E-01
+  6.00   8.907   0.000    2.5040E+00    2.6683E-01
+  8.00   9.522   0.000    2.5040E+00    2.0095E-01
+ 15.00  10.871   0.000    2.5040E+00    1.0779E-01
+ 25.00  11.972   0.000    2.5040E+00    6.4848E-02
+ 35.00  12.699   0.000    2.5040E+00    4.6373E-02
+ 45.00  13.242   0.000    2.5040E+00    3.6091E-02
+ 70.00  14.198   0.000    2.5040E+00    2.3219E-02
+120.00  15.365   0.000    2.5040E+00    1.3553E-02
+180.00  16.242   0.000    2.5040E+00    9.0377E-03
+250.00  16.954   0.000    2.5040E+00    6.5081E-03
+500.00  18.455   0.000    2.5040E+00    3.2547E-03

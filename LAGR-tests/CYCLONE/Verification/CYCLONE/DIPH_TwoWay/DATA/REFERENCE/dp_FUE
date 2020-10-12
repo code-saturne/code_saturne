@@ -1,0 +1,44 @@
+THERMOCHIMIE
+13			Nb especes courantes
+15                      Nb de points de tabulation ENTH-TEMP
+ESPECES COURANTES    
+CH4 C2H4 CO H2S H2 HCN NH3  O2 CO2 H2O SO2 N2 C(S)
+298.                    Tmin
+3798.                   Tmax
+5                       Nb especes elementaires / Composition C,H,O,N,S
+ .012        1       2       1       0       0     1     0     0      1       0       0     0      1
+ .001        4       4       0       2       2     1     3     0      0       2       0     0      0
+ .016        0       0       1       0       0     0     0     2      2       1       2     0      0
+ .014        0       0       0       0       0     1     1     0      0       0       0     2      0
+ .032        0       0       0       1       0     0     0     0      0       0       1     0      0          
+RAYONNEMENT
+0.1                     Coeff absorption pour le melange gazeux constant 
+CARACTERISTIQUES FUEL
+3                                                                            Nb de classes
+10.E-6     25.E-6       50.E-6                                                Diametre (m)
+84.67                                                                        Composition C (%) sur sec
+13.79                                                                        Composition H (%) sur sec
+0.50                                                                         Composition O (%) sur sec
+0.05                                                                         Composition S (%) sur sec
+40467310.                                                                    PCI (J/kg) sur pur (0) sur sec 1 
+1800.                                                                        CP moyen du fuel (J/kg/K)
+844.                                                                         Masse volumique (kg/m3)
+Coke
+100.                                                                           Composition C (%) sur pur
+0.                                                                             Composition H (%) sur pur
+0.                                                                             Composition O (%) sur pur
+0.                                                                             Composition S (%) sur pur
+7.77                                                                           PCI sur sec (J/kg)
+0.2                                                                            FKC (réf 0.2)
+423.                                                                         TEMP debut evaporation (K)
+723.                                                                         TEMP fin evaporation (K)
+Parametres de combustion heterogene (modele a sphere retrecissante)
+17.88                                                                          Constante pre-exponentielle (kg/m2/s/atm)
+16.55                                                                          Energie d'activation (kcal/mol)
+1                                                                              Ordre de la reaction 0.5 si = 0 1 si = 1 
+CARACTERISTIQUES OXYDANTS (O2,N2,H2O,CO2)
+1
+1.     0.     1. 
+3.73   0.     0. 
+0.     0.     0.
+0.     1.     0.
