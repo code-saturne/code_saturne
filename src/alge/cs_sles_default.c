@@ -127,15 +127,7 @@ _sles_default_native(int                f_id,
 
   if (name != NULL) {
 
-    if (!strcmp(name, "wall_distance")) { /* distpr.f90 */
-      sles_it_type = CS_SLES_PCG;
-      multigrid = 1;
-    }
-    if (!strcmp(name, "yplus_wall")) { /* distyp.f90 */
-      sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
-    }
-    else if (   !strcmp(name, "hydrostatic_pressure")  /* calhyd.f90 */
-             || !strcmp(name, "potential")) {   /* predfl.f90 */
+    if (!strcmp(name, "potential")) {   /* predfl.f90 */
       /* Copy from pressure if possible */
       cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
       cs_sles_t *src = NULL;
@@ -149,35 +141,35 @@ _sles_default_native(int                f_id,
           return;
       }
       /* If copying from pressure failed, default to multigrid */
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
       multigrid = 1;
     }
     else if (!strcmp(name, "Pr compress")) { /* resopv.f90 */
       sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
     }
-    else if (!strcmp(name, "PoissonL")) { /* lageqp.f90 */
-      sles_it_type = CS_SLES_PCG;
+    else if (!strcmp(name, "PoissonL")) { /* _lageqp */
+      sles_it_type = CS_SLES_FCG;
       n_max_iter = 1000;
     }
-    else if (!strcmp(name, "radiation_p1")) { /* raypun.f90 */
-      sles_it_type = CS_SLES_PCG;
+    else if (!strcmp(name, "radiation_p1")) { /* cs_rad_transfer_pun */
+      sles_it_type = CS_SLES_FCG;
       multigrid = 1;
     }
     /* cs_bad_cells_regularisation.c */
     else if (!strcmp(name, "potential_regularisation_scalar")) {
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
     }
     else if (!strcmp(name, "potential_regularisation_vector")) {
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
     }
     else if (!strcmp(name, "potential_regularisation_sym_tensor")) {
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
     }
   }
   else if (f_id > -1) {
     const cs_field_t *f = cs_field_by_id(f_id);
     if (!strcmp(f->name, "hydraulic_head")) {
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
       multigrid = 2;
     }
   }
@@ -195,7 +187,7 @@ _sles_default_native(int                f_id,
     }
 
     if (symmetric) {
-      sles_it_type = CS_SLES_PCG;
+      sles_it_type = CS_SLES_FCG;
       if (f_id > -1 && coupling_id < 0)
         multigrid = 1;
     }
