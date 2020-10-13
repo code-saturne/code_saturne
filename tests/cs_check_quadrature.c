@@ -1221,7 +1221,7 @@ _test_cdofb_source(FILE                     *out,
     if (_func == NULL)
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-    cs_xdef_analytic_input_t  anai = {.func = _func, .input = NULL };
+    cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL };
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                            dim,
                                            0,  /* z_id */
@@ -1404,7 +1404,7 @@ _test_cdovb_source(FILE                     *out,
   }
   else { /* Definition by analytic */
 
-    cs_xdef_analytic_input_t  anai = {.func = _get_func_to_eval(dim, ftype),
+    cs_xdef_analytic_context_t  anai = {.func = _get_func_to_eval(dim, ftype),
                                       .input = NULL };
 
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
@@ -1622,7 +1622,7 @@ _test_quadratures_xdef(FILE                     *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_input_t  anai = {.func = _func, .input = NULL };
+  cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL };
 
   cs_real_t  *st0, *st1, *st2;
   BFT_MALLOC(st0, totdof, cs_real_t);
@@ -1739,7 +1739,7 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_input_t  anai = {.func = _func, .input = NULL};
+  cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL};
 
   /* Reset values */
   memset(st0, 0, totdof*sizeof(cs_real_t));

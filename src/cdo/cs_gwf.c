@@ -245,10 +245,10 @@ _update_darcy_vb_flux_at_boundary(cs_real_t                t_eval,
               __func__);
 
   cs_xdef_t  *def = adv->bdy_flux_defs[0];
-  cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
-  cs_real_t  *nflx_val = ai->values;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)def->context;
+  cs_real_t  *nflx_val = ac->values;
 
-  if (cs_flag_test(ai->loc, cs_flag_dual_closure_byf) == false)
+  if (cs_flag_test(ac->loc, cs_flag_dual_closure_byf) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
@@ -1655,10 +1655,10 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 
 #if defined(DEBUG) && !defined(NDEBUG)
       cs_xdef_t  *_def = adv->bdy_flux_defs[0];
-      cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)_def->input;
+      cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)_def->context;
 
       assert(adv->n_bdy_flux_defs == 1 && _def->type == CS_XDEF_BY_ARRAY);
-      assert(cs_flag_test(ai->loc, cs_flag_dual_closure_byf) == true);
+      assert(cs_flag_test(ac->loc, cs_flag_dual_closure_byf) == true);
 #endif
 
       const cs_adjacency_t  *bf2v = connect->bf2v;

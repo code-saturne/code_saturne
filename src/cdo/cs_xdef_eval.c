@@ -78,15 +78,15 @@ BEGIN_C_DECLS
 /*!
  * \brief  Evaluate a scalar-valued quantity for a list of elements
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -98,7 +98,7 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
                            cs_real_t                    time_eval,
-                           void                        *input,
+                           void                        *context,
                            cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
@@ -107,7 +107,7 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(time_eval);
   assert(eval != NULL || n_elts == 0);
 
-  const cs_real_t  *constant_val = (cs_real_t *)input;
+  const cs_real_t  *constant_val = (cs_real_t *)context;
 
   if (elt_ids != NULL && !compact) {
 
@@ -136,7 +136,7 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
+ * \param[in]  context    pointer to a context structure
  * \param[out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -149,7 +149,7 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
                            cs_real_t                    time_eval,
-                           void                        *input,
+                           void                        *context,
                            cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
@@ -158,7 +158,7 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(time_eval);
   assert(eval != NULL);
 
-  const cs_real_t  *constant_val = (cs_real_t *)input;
+  const cs_real_t  *constant_val = (cs_real_t *)context;
 
   if (elt_ids != NULL && !compact) {
 
@@ -194,7 +194,7 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
+ * \param[in]  context    pointer to a context structure
  * \param[out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -207,7 +207,7 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
                            cs_real_t                    time_eval,
-                           void                        *input,
+                           void                        *context,
                            cs_real_t                   *eval)
 {
   CS_UNUSED(quant);
@@ -217,7 +217,7 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
 
   assert(eval != NULL);
 
-  const cs_real_3_t  *constant_val = (const cs_real_3_t *)input;
+  const cs_real_3_t  *constant_val = (const cs_real_3_t *)context;
 
   if (elt_ids != NULL && !compact) {
 
@@ -253,15 +253,15 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
  * \brief Evaluate a scalar-valued quantity with only a time-dependent
  *        variation for a list of elements
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -273,7 +273,7 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
                                           const cs_cdo_connect_t     *connect,
                                           const cs_cdo_quantities_t  *quant,
                                           cs_real_t                   time_eval,
-                                          void                       *input,
+                                          void                       *context,
                                           cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
@@ -281,11 +281,11 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
   assert(eval != NULL);
 
-  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Evaluate the quantity */
   cs_real_t  _eval;
-  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, &_eval);
+  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, &_eval);
 
   if (elt_ids != NULL && !compact) {
 
@@ -308,15 +308,15 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
  * \brief Evaluate a vector-valued quantity with only a time-dependent
  *        variation for a list of elements
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -328,7 +328,7 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
                                           const cs_cdo_connect_t     *connect,
                                           const cs_cdo_quantities_t  *quant,
                                           cs_real_t                   time_eval,
-                                          void                       *input,
+                                          void                       *context,
                                           cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
@@ -336,11 +336,11 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
   assert(eval != NULL);
 
-  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Evaluate the quantity */
   cs_real_t  _eval[3];
-  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, _eval);
+  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, _eval);
 
   if (elt_ids != NULL && !compact) {
 
@@ -365,15 +365,15 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
  * \brief Evaluate a tensor-valued quantity with only a time-dependent
  *        variation for a list of elements
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -385,7 +385,7 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
                                           const cs_cdo_connect_t     *connect,
                                           const cs_cdo_quantities_t  *quant,
                                           cs_real_t                   time_eval,
-                                          void                       *input,
+                                          void                       *context,
                                           cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
@@ -393,11 +393,11 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
   assert(eval != NULL);
 
-  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Evaluate the quantity */
   cs_real_t  _eval[9];
-  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, _eval);
+  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, _eval);
 
   if (elt_ids != NULL && !compact) {
 
@@ -421,15 +421,15 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
 /*!
  * \brief  Evaluate a quantity defined at cells using an analytic function
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -441,22 +441,21 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
                                   const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   cs_real_t                    time_eval,
-                                  void                        *input,
+                                  void                        *context,
                                   cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   const cs_real_t *cell_centers = (quant != NULL) ? quant->cell_centers : NULL;
 
   /* Evaluate the function for this time at the cell center */
-  anai->func(time_eval,
-             n_elts, elt_ids, cell_centers,
-             compact, /* Is output compacted ? */
-             anai->input,
-             eval);
+  ac->func(time_eval,
+           n_elts, elt_ids, cell_centers, compact, /* Is output compacted ? */
+           ac->input,
+           eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -464,15 +463,15 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
  * \brief  Evaluate a quantity defined at border faces using an analytic
  *         function
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -484,20 +483,20 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                     const cs_cdo_connect_t      *connect,
                                     const cs_cdo_quantities_t   *quant,
                                     cs_real_t                    time_eval,
-                                    void                        *input,
+                                    void                        *context,
                                     cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the border face center */
-  anai->func(time_eval,
-             n_elts, elt_ids, quant->b_face_center,
-             compact,  // compacted output ?
-             anai->input,
-             eval);
+  ac->func(time_eval,
+           n_elts, elt_ids, quant->b_face_center,
+           compact,  // compacted output ?
+           ac->input,
+           eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -505,17 +504,17 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
  * \brief  Evaluate a quantity defined at border faces using an analytic
  *         function
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[in]  qtype      quadrature type
- * \param[in]  dim        dimension of the analytic function return
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[in]  qtype       quadrature type
+ * \param[in]  dim         dimension of the analytic function return
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -527,7 +526,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         const cs_cdo_connect_t      *connect,
                                         const cs_cdo_quantities_t   *quant,
                                         cs_real_t                    time_eval,
-                                        void                        *input,
+                                        void                        *context,
                                         cs_quadrature_type_t         qtype,
                                         const int                    dim,
                                         cs_real_t                   *eval)
@@ -536,7 +535,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(dim, qtype);
-  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)context;
 
   const cs_adjacency_t  *f2e = connect->f2e;
   const cs_adjacency_t  *e2v = connect->e2v;
@@ -562,7 +561,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start,
                                          &v1, &v2, &v3);
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3, pfq.meas,
-                anai->func, anai->input, val_i);
+                ac->func, ac->input, val_i);
         }
         break;
 
@@ -575,7 +574,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                 cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
-                anai->func, anai->input, val_i);
+                ac->func, ac->input, val_i);
 
         } /* Loop on edges */
 
@@ -612,7 +611,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start,
                                          &v1, &v2, &v3);
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, xv + 3*v3,
-                pfq.meas, anai->func, anai->input, val_i);
+                pfq.meas, ac->func, ac->input, val_i);
         }
         break;
 
@@ -625,7 +624,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
           qfunc(time_eval, xv + 3*v1, xv + 3*v2, pfq.center,
                 cs_math_surftri(xv + 3*v1, xv + 3*v2, pfq.center),
-                anai->func, anai->input, val_i);
+                ac->func, ac->input, val_i);
 
         } /* Loop on edges */
 
@@ -645,15 +644,15 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 /*!
  * \brief  Evaluate a quantity defined at vertices using an analytic function
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -665,20 +664,20 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
                                      const cs_cdo_connect_t      *connect,
                                      const cs_cdo_quantities_t   *quant,
                                      cs_real_t                    time_eval,
-                                     void                        *input,
+                                     void                        *context,
                                      cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the cell center */
-  anai->func(time_eval,
-             n_elts, elt_ids, quant->vtx_coord,
-             compact,  // compacted output ?
-             anai->input,
-             eval);
+  ac->func(time_eval,
+           n_elts, elt_ids, quant->vtx_coord,
+           compact,  // compacted output ?
+           ac->input,
+           eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -686,15 +685,15 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
  * \brief  Evaluate a scalar-valued quantity at cells defined by an array.
  *         Array is assumed to be interlaced.
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -706,41 +705,41 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
                                       const cs_cdo_connect_t      *connect,
                                       const cs_cdo_quantities_t   *quant,
                                       cs_real_t                    time_eval,
-                                      void                        *input,
+                                      void                        *context,
                                       cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  assert(array_input->stride == 1);
+  assert(ac->stride == 1);
 
-  if ((array_input->loc & cs_flag_primal_cell) == cs_flag_primal_cell) {
+  if ((ac->loc & cs_flag_primal_cell) == cs_flag_primal_cell) {
 
     if (elt_ids != NULL && !compact) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         const cs_lnum_t  c_id = elt_ids[i];
-        eval[c_id] = array_input->values[c_id];
+        eval[c_id] = ac->values[c_id];
       }
 
     }
     else if (elt_ids != NULL && compact) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++)
-        eval[i] = array_input->values[elt_ids[i]];
+        eval[i] = ac->values[elt_ids[i]];
 
     }
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, array_input->values, n_elts * sizeof(cs_real_t));
+      memcpy(eval, ac->values, n_elts * sizeof(cs_real_t));
 
     }
 
   }
-  else if ((array_input->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx) {
+  else if ((ac->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -749,7 +748,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_pv_at_cell_center(c_id,
                                   connect->c2v,
                                   quant,
-                                  array_input->values,
+                                  ac->values,
                                   eval + c_id);
       }
 
@@ -760,7 +759,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_pv_at_cell_center(elt_ids[i],
                                   connect->c2v,
                                   quant,
-                                  array_input->values,
+                                  ac->values,
                                   eval + i);
 
     }
@@ -771,7 +770,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_pv_at_cell_center(i,
                                   connect->c2v,
                                   quant,
-                                  array_input->values,
+                                  ac->values,
                                   eval + i);
 
     }
@@ -788,15 +787,15 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
  * \brief  Evaluate a nd-valued quantity at cells defined by an array.
  *         Array is assumed to be interlaced.
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -808,17 +807,17 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
                                   const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   cs_real_t                    time_eval,
-                                  void                        *input,
+                                  void                        *context,
                                   cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  const int  stride = array_input->stride;
+  const int  stride = ac->stride;
 
-  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     assert(stride > 1);
     if (elt_ids != NULL && !compact) {
@@ -826,7 +825,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         const cs_lnum_t  c_id = elt_ids[i];
         for (int k = 0; k < stride; k++)
-          eval[stride*c_id + k] = array_input->values[stride*c_id + k];
+          eval[stride*c_id + k] = ac->values[stride*c_id + k];
       }
 
     }
@@ -835,22 +834,22 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         const cs_lnum_t  c_id = elt_ids[i];
         for (int k = 0; k < stride; k++)
-          eval[stride*i + k] = array_input->values[stride*c_id + k];
+          eval[stride*i + k] = ac->values[stride*c_id + k];
       }
 
     }
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, array_input->values, stride*n_elts * sizeof(cs_real_t));
+      memcpy(eval, ac->values, stride*n_elts * sizeof(cs_real_t));
 
     }
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
 
     assert(stride == 3);
-    assert(array_input->index == connect->c2e->idx);
+    assert(ac->index == connect->c2e->idx);
 
     if (elt_ids != NULL && !compact) {
 
@@ -859,7 +858,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_dfbyc_at_cell_center(c_id,
                                      connect->c2e,
                                      quant,
-                                     array_input->values,
+                                     ac->values,
                                      eval + c_id*stride);
       }
 
@@ -870,7 +869,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_dfbyc_at_cell_center(elt_ids[i],
                                      connect->c2e,
                                      quant,
-                                     array_input->values,
+                                     ac->values,
                                      eval + i*stride);
 
     }
@@ -880,7 +879,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
         cs_reco_dfbyc_at_cell_center(i,
                                      connect->c2e,
                                      quant,
-                                     array_input->values,
+                                     ac->values,
                                      eval + i*stride);
 
     }
@@ -896,15 +895,15 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
 /*!
  * \brief  Evaluate a quantity defined at vertices using an array
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -916,7 +915,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
                                   const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   cs_real_t                    time_eval,
-                                  void                        *input,
+                                  void                        *context,
                                   cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
@@ -924,11 +923,11 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  const int  stride = array_input->stride;
+  const int  stride = ac->stride;
 
-  if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
+  if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
 
     if (elt_ids != NULL && !compact) {
 
@@ -937,7 +936,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
       case 1: /* Scalar-valued */
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  v_id = elt_ids[i];
-          eval[v_id] = array_input->values[v_id];
+          eval[v_id] = ac->values[v_id];
         }
         break;
 
@@ -945,7 +944,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  v_id = elt_ids[i];
           for (int j = 0; j < stride; j++)
-            eval[stride*v_id + j] = array_input->values[stride*v_id+j];
+            eval[stride*v_id + j] = ac->values[stride*v_id+j];
         }
         break;
 
@@ -958,13 +957,13 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
 
       case 1: /* Scalar-valued */
         for (cs_lnum_t i = 0; i < n_elts; i++)
-          eval[i] = array_input->values[elt_ids[i]];
+          eval[i] = ac->values[elt_ids[i]];
         break;
 
       default:
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           for (int j = 0; j < stride; j++)
-            eval[stride*i + j] = array_input->values[stride*elt_ids[i] + j];
+            eval[stride*i + j] = ac->values[stride*elt_ids[i] + j];
         }
         break;
 
@@ -974,7 +973,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
     else {
 
       assert(elt_ids == NULL);
-      memcpy(eval, array_input->values, n_elts*stride * sizeof(cs_real_t));
+      memcpy(eval, ac->values, n_elts*stride * sizeof(cs_real_t));
 
     }
 
@@ -997,7 +996,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
+ * \param[in]  context    pointer to a context structure
  * \param[out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -1010,16 +1009,16 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
                                         const cs_cdo_connect_t     *connect,
                                         const cs_cdo_quantities_t  *quant,
                                         cs_real_t                   time_eval,
-                                        void                       *input,
+                                        void                       *context,
                                         cs_real_t                  *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
   CS_UNUSED(compact);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  const int  stride = array_input->stride;
+  const int  stride = ac->stride;
 
   if (elt_ids != NULL || n_elts < quant->n_vertices)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case\n", __func__);
@@ -1031,7 +1030,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
   for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
     dc_vol[i] = 0;
 
-  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     assert(stride == 3);
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -1039,7 +1038,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
       /* Retrieve the cell vector */
       cs_real_3_t  cell_vector;
       for (int k = 0; k < stride; k++)
-        cell_vector[k] = array_input->values[stride*c_id + k];
+        cell_vector[k] = ac->values[stride*c_id + k];
 
       /* Interpolate with a weighting related to the vertex volume in each
          cell */
@@ -1055,9 +1054,9 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
         cs_real_t  *v_val = eval + 3*v_id;
         for (int k = 0; k < 3; k++) v_val[k] += vol_vc[v] * cell_vector[k];
 
-      } // Loop on cell vertices
+      } /* Loop on cell vertices */
 
-    } // Loop on cells
+    } /* Loop on cells */
 
 #   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
@@ -1066,10 +1065,10 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
       cs_real_t *v_val = eval + 3*v_id;
       for (int k = 0; k < 3; k++) v_val[k] *= inv_dcvol;
 
-    } // Loop on vertices
+    } /* Loop on vertices */
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
 
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -1078,7 +1077,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
       cs_reco_dfbyc_at_cell_center(c_id,
                                    connect->c2e,
                                    quant,
-                                   array_input->values,
+                                   ac->values,
                                    cell_vector);
 
       /* Interpolate with a weighting related to the vertex volume in each
@@ -1095,9 +1094,9 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
         cs_real_t  *v_val = eval + 3*v_id;
         for (int k = 0; k < 3; k++) v_val[k] += vol_vc[v] * cell_vector[k];
 
-      } // Loop on cell vertices
+      } /* Loop on cell vertices */
 
-    } // Loop on cells
+    } /* Loop on cells */
 
 #   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
@@ -1106,7 +1105,7 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
       cs_real_t *v_val = eval + 3*v_id;
       for (int k = 0; k < 3; k++) v_val[k] *= inv_dcvol;
 
-    } // Loop on vertices
+    } /* Loop on vertices */
 
   }
   else
@@ -1121,15 +1120,15 @@ cs_xdef_eval_3_at_all_vertices_by_array(cs_lnum_t                   n_elts,
 /*!
  * \brief  Evaluate a quantity inside a cell defined using a field
  *
- * \param[in]  n_elts     number of elements to consider
- * \param[in]  elt_ids    list of element ids
- * \param[in]  compact    true:no indirection, false:indirection for output
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  n_elts      number of elements to consider
+ * \param[in]  elt_ids     list of element ids
+ * \param[in]  compact     true:no indirection, false:indirection for output
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1141,15 +1140,16 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
                            cs_real_t                    time_eval,
-                           void                        *input,
+                           void                        *context,
                            cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(time_eval);
 
-  cs_field_t  *field = (cs_field_t *)input;
+  cs_field_t  *field = (cs_field_t *)context;
   assert(field != NULL);
   cs_real_t  *values = field->val;
+
   const int  c_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
   const int  v_ml_id = cs_mesh_location_get_id_by_name(N_("vertices"));
 

@@ -1647,7 +1647,7 @@ _test_hho_schemes(FILE                *out,
     cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->jstab);
 
     {
-      cs_xdef_analytic_input_t  anai = {.func = _unity, .input = NULL };
+      cs_xdef_analytic_context_t  anai = {.func = _unity, .input = NULL };
       cs_xdef_t  *uni = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                               1,
                                               0, /* z_id */
@@ -1956,7 +1956,7 @@ _test_divergence(FILE                     *out,
   memset(red, 0, totdof*sizeof(cs_real_t));
 
   { /* Constant */
-    cs_xdef_analytic_input_t  anai = {.func = _unity_vect, .input = NULL };
+    cs_xdef_analytic_context_t  anai = {.func = _unity_vect, .input = NULL };
 
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
                                                    (void*)(&anai),
@@ -1967,7 +1967,7 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Linear */
-    cs_xdef_analytic_input_t  anai = {.func = _linear_xyz_vect, .input = NULL };
+    cs_xdef_analytic_context_t  anai = {.func = _linear_xyz_vect, .input = NULL };
     cs_real_t  ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
@@ -1984,7 +1984,7 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Quadratic */
-    cs_xdef_analytic_input_t  anai = {.func = _quadratic_x2_vect,
+    cs_xdef_analytic_context_t  anai = {.func = _quadratic_x2_vect,
                                       .input = NULL };
     cs_real_t ex_div = 0.0;
 
@@ -2002,7 +2002,7 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Cubic */
-    cs_xdef_analytic_input_t  anai = {.func = _cubic_xyz3_vect, .input = NULL };
+    cs_xdef_analytic_context_t  anai = {.func = _cubic_xyz3_vect, .input = NULL };
     cs_real_t ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
@@ -2018,7 +2018,7 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Non pol */
-    cs_xdef_analytic_input_t  anai = {.func = _nonpoly_vect, .input = NULL };
+    cs_xdef_analytic_context_t  anai = {.func = _nonpoly_vect, .input = NULL };
 
     memset(red, 0, totdof*sizeof(cs_real_t));
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,

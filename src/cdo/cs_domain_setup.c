@@ -406,13 +406,13 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   /* Uniform in space but can change from one time step to the other */
   domain->time_options.idtvar = CS_TIME_STEP_ADAPTIVE;
 
-  cs_xdef_time_func_input_t  def = {.input = func_input,
-                                    .func = func};
+  cs_xdef_time_func_context_t  tfc = {.input = func_input,
+                                      .func = func};
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
                                                   0,     /* state flag */
                                                   0,     /* meta flag */
-                                                  &def);
+                                                  &tfc);
 
   /* Set the property related to the time step if used for building a system */
   cs_property_def_by_time_func(cs_property_by_name("time_step"),

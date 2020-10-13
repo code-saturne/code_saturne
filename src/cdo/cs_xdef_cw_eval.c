@@ -360,12 +360,12 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
  *         function defined through a descriptor (\ref cs_xdef_t structure) by
  *         a cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      f          local face id
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
- * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f           local face id
+ * \param[in]      time_eval   physical time at which one evaluates the term
+ * \param[in]      context     pointer to a context structure
+ * \param[in]      qtype       level of quadrature to use
+ * \param[in, out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -373,24 +373,24 @@ void
 cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
                                             short int               f,
                                             cs_real_t               time_eval,
-                                            void                   *input,
+                                            void                   *context,
                                             cs_quadrature_type_t    qtype,
                                             cs_real_t              *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(1, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_f_int_by_analytic(cm, time_eval, f,
-                                    anai->func, anai->input, qfunc, eval);
+                                    ac->func, ac->input, qfunc, eval);
 
   /* Average */
   eval[0] /= cm->face[f].meas;
@@ -405,7 +405,7 @@ cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f        local face id
  * \param[in]      t_eval   physical time at which one evaluates the term
- * \param[in]      input    pointer to an input structure
+ * \param[in]      context  pointer to a context structure
  * \param[in]      qtype    level of quadrature to use
  * \param[in, out] eval     result of the evaluation
  */
@@ -415,24 +415,24 @@ void
 cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
                                             short int                f,
                                             cs_real_t                t_eval,
-                                            void                    *input,
+                                            void                    *context,
                                             cs_quadrature_type_t     qtype,
                                             cs_real_t               *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(3, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_f_int_by_analytic(cm, t_eval, f,
-                                    anai->func, anai->input, qfunc, eval);
+                                    ac->func, ac->input, qfunc, eval);
 
   /* Average */
   const double _oversurf = 1./cm->face[f].meas;
@@ -449,7 +449,7 @@ cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f        local face id
  * \param[in]      t_eval   physical time at which one evaluates the term
- * \param[in]      input    pointer to an input structure
+ * \param[in]      context  pointer to a context structure
  * \param[in]      qtype    level of quadrature to use
  * \param[in, out] eval     result of the evaluation
  */
@@ -459,24 +459,24 @@ void
 cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
                                             short int                f,
                                             cs_real_t                t_eval,
-                                            void                    *input,
+                                            void                    *context,
                                             cs_quadrature_type_t     qtype,
                                             cs_real_t               *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(9, qtype);;
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_f_int_by_analytic(cm, t_eval, f,
-                                    anai->func, anai->input, qfunc, eval);
+                                    ac->func, ac->input, qfunc, eval);
 
   /* Average */
   const double _oversurf = 1./cm->face[f].meas;
@@ -494,7 +494,7 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
- * \param[in]      input    pointer to an input structure
+ * \param[in]      context  pointer to a context structure
  * \param[in, out] eval     result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -502,24 +502,24 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
 void
 cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
-                                       void                     *input,
+                                       void                     *context,
                                        cs_quadrature_type_t      qtype,
                                        cs_real_t                *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(1, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
-                                    anai->func, anai->input, qfunc,
+                                    ac->func, ac->input, qfunc,
                                     eval);
 
   /* Average */
@@ -534,35 +534,35 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
  *         This evaluation hinges on the computation of integrals
  *         Vector-valued case.
  *
- * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      t_eval   physical time at which one evaluates the term
- * \param[in]      qtype    quadrature type
- * \param[in]      input    pointer to an input structure
- * \param[in, out] eval     result of the evaluation
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in]      qtype     quadrature type
+ * \param[in]      context   pointer to a context structure
+ * \param[in, out] eval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
-                                       void                     *input,
+                                       void                     *context,
                                        cs_quadrature_type_t      qtype,
                                        cs_real_t                *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(3, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
-                                    anai->func, anai->input,
+                                    ac->func, ac->input,
                                     qfunc, eval);
 
   /* Average */
@@ -579,35 +579,35 @@ cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
  *         This evaluation hinges on the computation of integrals
  *         Tensor-valued case.
  *
- * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      t_eval   physical time at which one evaluates the term
- * \param[in]      qtype    quadrature type
- * \param[in]      input    pointer to an input structure
- * \param[in, out] eval     result of the evaluation
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in]      qtype     quadrature type
+ * \param[in]      context   pointer to a context structure
+ * \param[in, out] eval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        cs_real_t                 t_eval,
-                                       void                     *input,
+                                       void                     *context,
                                        cs_quadrature_type_t      qtype,
                                        cs_real_t                *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(9, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   cs_xdef_cw_eval_c_int_by_analytic(cm, t_eval,
-                                    anai->func, anai->input, qfunc,
+                                    ac->func, ac->input, qfunc,
                                     eval);
 
   /* Average */
@@ -621,24 +621,24 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
  * \brief  Evaluate a  quantity by a cellwise process using a definition by
  *         time function
  *
- * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      pointer to an input structure
- * \param[out] eval       result of the evaluation
+ * \param[in]  cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  time_eval   physical time at which one evaluates the term
+ * \param[in]  context     pointer to a context structure
+ * \param[out] eval        result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
                              cs_real_t                 time_eval,
-                             void                     *input,
+                             void                     *context,
                              cs_real_t                *eval)
 {
   CS_UNUSED(cm);
-  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+  cs_xdef_time_func_context_t *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Evaluate the quantity */
-  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, eval);
+  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -646,27 +646,26 @@ cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
  * \brief  Evaluate a quantity defined using an analytic function by a
  *         cellwise process (usage of a \ref cs_cell_mesh_t structure)
  *
- * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
- * \param[in, out] eval       result of the evaluation at cell center
+ * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      time_eval   physical time at which one evaluates the term
+ * \param[in]      context     pointer to a context structure
+ * \param[in, out] eval        result of the evaluation at cell center
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
                             cs_real_t                   time_eval,
-                            void                       *input,
+                            void                       *context,
                             cs_real_t                  *eval)
 {
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the cell center */
-  anai->func(time_eval,
-             1, NULL, cm->xc,
-             true, /* compacted output ? */
-             anai->input,
-             eval);
+  ac->func(time_eval,
+           1, NULL, cm->xc, true, /* compacted output ? */
+           ac->input,
+           eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -677,7 +676,7 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       result of the evaluation at cell center
  */
 /*----------------------------------------------------------------------------*/
@@ -685,23 +684,23 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
 void
 cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
                          cs_real_t                  time_eval,
-                         void                      *input,
+                         void                      *context,
                          cs_real_t                 *eval)
 {
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  const int  stride = array_input->stride;
+  const int  stride = ac->stride;
 
   /* array is assumed to be interlaced */
-  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     for (int k = 0; k < stride; k++)
-      eval[k] = array_input->values[stride*cm->c_id + k];
+      eval[k] = ac->values[stride*cm->c_id + k];
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
@@ -709,17 +708,17 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
     /* Reconstruct (or interpolate) value at the current cell center */
     for (short int v = 0; v < cm->n_vc; v++) {
       for (int k = 0; k < stride; k++)
-        eval[k] += cm->wvc[v] * array_input->values[stride*cm->v_ids[v] + k];
+        eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
     }
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
 
-    assert(array_input->index != NULL);
+    assert(ac->index != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_dfbyc_in_cell(cm,
-                          array_input->values + array_input->index[cm->c_id],
+                          ac->values + ac->index[cm->c_id],
                           eval);
 
   }
@@ -736,20 +735,20 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       value of the property at the cell center
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_by_field(const cs_cell_mesh_t        *cm,
-                         cs_real_t                    time_eval,
-                         void                        *input,
-                         cs_real_t                   *eval)
+cs_xdef_cw_eval_by_field(const cs_cell_mesh_t      *cm,
+                         cs_real_t                  time_eval,
+                         void                      *context,
+                         cs_real_t                 *eval)
 {
   CS_UNUSED(time_eval);
 
-  cs_field_t  *field = (cs_field_t *)input;
+  cs_field_t  *field = (cs_field_t *)context;
   assert(field != NULL);
   cs_real_t  *values = field->val;
   const int  c_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
@@ -789,7 +788,7 @@ cs_xdef_cw_eval_by_field(const cs_cell_mesh_t        *cm,
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -799,19 +798,18 @@ cs_xdef_cw_eval_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
                                    cs_lnum_t                   n_points,
                                    const cs_real_t            *xyz,
                                    cs_real_t                   time_eval,
-                                   void                       *input,
+                                   void                       *context,
                                    cs_real_t                  *eval)
 {
   CS_UNUSED(cm);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the given coordinates */
-  anai->func(time_eval,
-             n_points, NULL, xyz,
-             true, /* compacted output ? */
-             anai->input,
-             eval);
+  ac->func(time_eval,
+           n_points, NULL, xyz, true, /* compacted output ? */
+           ac->input,
+           eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -825,33 +823,33 @@ cs_xdef_cw_eval_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
-                                       cs_lnum_t                   n_points,
-                                       const cs_real_t            *xyz,
-                                       cs_real_t                   time_eval,
-                                       void                       *input,
-                                       cs_real_t                  *eval)
+cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
+                                       cs_lnum_t                 n_points,
+                                       const cs_real_t          *xyz,
+                                       cs_real_t                 time_eval,
+                                       void                     *context,
+                                       cs_real_t                *eval)
 {
   CS_UNUSED(xyz);
   CS_UNUSED(time_eval);
 
-  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)context;
 
-  const int  stride = array_input->stride;
+  const int  stride = ac->stride;
 
   /* array is assumed to be interlaced */
-  if (cs_flag_test(array_input->loc, cs_flag_primal_cell)) {
+  if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     assert(stride == 3);
     cs_real_3_t  cell_vector;
     for (int k = 0; k < stride; k++)
-      cell_vector[k] = array_input->values[stride*cm->c_id + k];
+      cell_vector[k] = ac->values[stride*cm->c_id + k];
     for (int i = 0; i < n_points; i++) {
       eval[3*i    ] = cell_vector[0];
       eval[3*i + 1] = cell_vector[1];
@@ -859,7 +857,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
     }
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
+  else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
@@ -867,23 +865,19 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (int k = 0; k < stride; k++) {
-
-      for (short int v = 0; v < cm->n_vc; v++) {
-        eval[k] += cm->wvc[v] * array_input->values[stride*cm->v_ids[v] + k];
-
-      }
-
+      for (short int v = 0; v < cm->n_vc; v++)
+        eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
     }
 
   }
-  else if (cs_flag_test(array_input->loc, cs_flag_dual_face_byc)) {
+  else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
 
-    assert(array_input->index != NULL);
+    assert(ac->index != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_real_3_t  cell_vector;
     cs_reco_dfbyc_in_cell(cm,
-                          array_input->values + array_input->index[cm->c_id],
+                          ac->values + ac->index[cm->c_id],
                           cell_vector);
 
     for (int i = 0; i < n_points; i++) {
@@ -910,7 +904,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
  * \param[in]      n_points   number of points where to compute the evaluation
  * \param[in]      xyz        where to compute the evaluation
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -920,13 +914,13 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
                                        cs_lnum_t                n_points,
                                        const cs_real_t         *xyz,
                                        cs_real_t                time_eval,
-                                       void                    *input,
+                                       void                    *context,
                                        cs_real_t               *eval)
 {
   CS_UNUSED(xyz);
   CS_UNUSED(time_eval);
 
-  cs_field_t  *field = (cs_field_t *)input;
+  cs_field_t  *field = (cs_field_t *)context;
   const cs_real_t  *values = field->val;
 
   assert(field != NULL);
@@ -954,13 +948,9 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
-    for (int k = 0; k < 3; k++) {
-
-      for (short int v = 0; v < cm->n_vc; v++) {
+    for (int k = 0; k < 3; k++)
+      for (short int v = 0; v < cm->n_vc; v++)
         eval[k] += cm->wvc[v] * values[3*cm->v_ids[v] + k];
-      }
-
-    }
 
   }
   else
@@ -979,7 +969,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in, out] eval       result of the evaluation (updated inside)
  */
 /*----------------------------------------------------------------------------*/
@@ -988,13 +978,13 @@ void
 cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
                                    short int                 f,
                                    cs_real_t                 time_eval,
-                                   void                     *input,
+                                   void                     *context,
                                    cs_real_t                *eval)
 {
   CS_UNUSED(time_eval);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
-  const cs_real_t  *flux = (cs_real_t *)input;
+  const cs_real_t  *flux = (cs_real_t *)context;
 
   if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
@@ -1039,7 +1029,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
  * \param[in, out] eval       result of the evaluation (updated inside)
  */
@@ -1049,14 +1039,14 @@ void
 cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                         short int                  f,
                                         cs_real_t                  time_eval,
-                                        void                      *input,
+                                        void                      *context,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
-  const cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  const cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)context;
   const cs_quant_t  fq = cm->face[f];
 
   switch (qtype) {
@@ -1067,9 +1057,9 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_3_t  flux_xf = {0, 0, 0};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, fq.center, true, /* compacted output ? */
-                 anai->input,
-                 flux_xf);
+      ac->func(time_eval, 1, NULL, fq.center, true, /* compacted output ? */
+               ac->input,
+               flux_xf);
 
       /* Plug into the evaluation by value now */
       cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, time_eval, flux_xf, eval);
@@ -1097,10 +1087,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           }
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 2, NULL,
-                     (const cs_real_t *)_xyz, true, /* compacted output ? */
-                     anai->input,
-                     (cs_real_t *)_val);
+          ac->func(time_eval, 2, NULL,
+                   (const cs_real_t *)_xyz, true, /* compacted output ? */
+                   ac->input,
+                   (cs_real_t *)_val);
 
           eval[v1] += 0.5*cm->tef[i] * _dp3(_val[0], fq.unitv);
           eval[v2] += 0.5*cm->tef[i] * _dp3(_val[1], fq.unitv);
@@ -1124,10 +1114,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           }
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 2, NULL,
-                     (const cs_real_t *)_xyz, true, /* compacted output ? */
-                     anai->input,
-                     (cs_real_t *)_val);
+          ac->func(time_eval, 2, NULL,
+                   (const cs_real_t *)_xyz, true, /* compacted output ? */
+                   ac->input,
+                   (cs_real_t *)_val);
 
           const double tef = cs_compute_area_from_quant(cm->edge[e], fq.center);
 
@@ -1174,10 +1164,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 4, w + 4);
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 8, NULL,
-                     (const cs_real_t *)gpts, true, /* compacted output ? */
-                     anai->input,
-                     _val);
+          ac->func(time_eval, 8, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
 
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 4; p++) {
@@ -1213,10 +1203,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 4, w + 4);
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 8, NULL,
-                     (const cs_real_t *)gpts, true, /* compacted output ? */
-                     anai->input,
-                     _val);
+          ac->func(time_eval, 8, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
 
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 4; p++) {
@@ -1267,10 +1257,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 7, w + 7);
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 14, NULL,
-                     (const cs_real_t *)gpts, true, /* compacted output ? */
-                     anai->input,
-                     _val);
+          ac->func(time_eval, 14, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
 
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 7; p++) {
@@ -1306,10 +1296,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 7, w + 7);
 
           /* Evaluate the function for this time at the given coordinates */
-          anai->func(time_eval, 14, NULL,
-                     (const cs_real_t *)gpts, true, /* compacted output ? */
-                     anai->input,
-                     _val);
+          ac->func(time_eval, 14, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
 
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 7; p++) {
@@ -1345,7 +1335,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
  * \param[in, out] eval       result of the evaluation (set inside)
  */
@@ -1355,11 +1345,11 @@ void
 cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                  short int                  f,
                                  cs_real_t                  time_eval,
-                                 void                      *input,
+                                 void                      *context,
                                  cs_quadrature_type_t       qtype,
                                  cs_real_t                 *eval)
 {
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   switch (qtype) {
 
@@ -1369,10 +1359,10 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_3_t  flux_xf = {0, 0, 0};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, cm->face[f].center,
-                 true, /* compacted output ? */
-                 anai->input,
-                 flux_xf);
+      ac->func(time_eval, 1, NULL, cm->face[f].center,
+               true, /* compacted output ? */
+               ac->input,
+               flux_xf);
 
       /* Plug into the evaluation by value now */
       cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, flux_xf, eval);
@@ -1402,10 +1392,10 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 1, NULL,
-                   (const cs_real_t *)_xyz, true, /* compacted output ? */
-                   anai->input,
-                   (cs_real_t *)_val);
+        ac->func(time_eval, 1, NULL,
+                 (const cs_real_t *)_xyz, true, /* compacted output ? */
+                 ac->input,
+                 (cs_real_t *)_val);
 
         eval[f] += cm->tef[i] * _dp3(_val, fq.unitv);
 
@@ -1442,10 +1432,10 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 4, NULL,
-                   (const cs_real_t *)gpts, true,  /* compacted output ? */
-                   anai->input,
-                   _val);
+        ac->func(time_eval, 4, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 _val);
 
         cs_real_t  add = 0;
         for (int p = 0; p < 4; p++)
@@ -1487,10 +1477,10 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 7, NULL,
-                   (const cs_real_t *)gpts, true,  /* compacted output ? */
-                   anai->input,
-                   _val);
+        ac->func(time_eval, 7, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 _val);
 
         cs_real_t  add = 0;
         for (int p = 0; p < 7; p++)
@@ -1522,7 +1512,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
+ * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
  * \param[in, out] eval       result of the evaluation (set inside)
  */
@@ -1532,11 +1522,11 @@ void
 cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         short int                  f,
                                         cs_real_t                  time_eval,
-                                        void                      *input,
+                                        void                      *context,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   switch (qtype) {
 
@@ -1546,9 +1536,9 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_33_t  flux_xc = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
       /* Evaluate the function for this time at the given coordinates */
-      anai->func(time_eval, 1, NULL, cm->xc, true,  /* compacted output ? */
-                 anai->input,
-                 (cs_real_t *)flux_xc);
+      ac->func(time_eval, 1, NULL, cm->xc, true,  /* compacted output ? */
+               ac->input,
+               (cs_real_t *)flux_xc);
 
       /* Plug into the evaluation by value now */
       cs_xdef_cw_eval_tensor_flux_by_val(cm, f, time_eval, flux_xc, eval);
@@ -1580,10 +1570,10 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 1, NULL,
-                   (const cs_real_t *)_xyz, true,  /* compacted output ? */
-                   anai->input,
-                   (cs_real_t *)_eval);
+        ac->func(time_eval, 1, NULL,
+                 (const cs_real_t *)_xyz, true,  /* compacted output ? */
+                 ac->input,
+                 (cs_real_t *)_eval);
 
         cs_math_33_3_product((const cs_real_t (*)[3])_eval, fq.unitv, _val);
         for (int k = 0; k < 3; k++)
@@ -1623,10 +1613,10 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 4, NULL,
-                   (const cs_real_t *)gpts, true,  /* compacted output ? */
-                   anai->input,
-                   (cs_real_t *)_eval);
+        ac->func(time_eval, 4, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 (cs_real_t *)_eval);
 
         for (int p = 0; p < 4; p++) {
           cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
@@ -1669,10 +1659,10 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
-        anai->func(time_eval, 7, NULL,
-                   (const cs_real_t *)gpts, true,  /* compacted output ? */
-                   anai->input,
-                   (cs_real_t *)_eval);
+        ac->func(time_eval, 7, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 (cs_real_t *)_eval);
 
         for (int p = 0; p < 7; p++) {
           cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
@@ -1707,22 +1697,22 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
- * \param[in]      input    pointer to an input structure
+ * \param[in]      context  pointer to a context structure
  * \param[in, out] eval     result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
-                                               cs_real_t                 t_eval,
-                                               void                     *input,
-                                               cs_quadrature_type_t      qtype,
-                                               cs_real_t                *eval)
+cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
+                                               cs_real_t                t_eval,
+                                               void                    *context,
+                                               cs_quadrature_type_t     qtype,
+                                               cs_real_t               *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_flag_test(cm->flag,
                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
@@ -1734,11 +1724,11 @@ cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
     *q_tet = cs_quadrature_get_tetra_integral(dim, qtype);
   cs_quadrature_tria_integral_t
     *q_tri = cs_quadrature_get_tria_integral(dim, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
   cs_real_t *c_eval = eval + nf;
 
   cs_xdef_cw_eval_fc_int_by_analytic(cm, t_eval,
-                                     anai->func, anai->input,
+                                     ac->func, ac->input,
                                      dim,
                                      q_tet, q_tri,
                                      c_eval, eval);
@@ -1761,22 +1751,22 @@ cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      t_eval   physical time at which one evaluates the term
  * \param[in]      qtype    quadrature type
- * \param[in]      input    pointer to an input structure
+ * \param[in]      context  pointer to a context structure
  * \param[in, out] eval     result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
-                                               cs_real_t                 t_eval,
-                                               void                     *input,
-                                               cs_quadrature_type_t      qtype,
-                                               cs_real_t                *eval)
+cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
+                                               cs_real_t                t_eval,
+                                               void                    *context,
+                                               cs_quadrature_type_t     qtype,
+                                               cs_real_t               *eval)
 {
   if (eval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
-  assert(input != NULL);
+  assert(context != NULL);
   assert(cs_flag_test(cm->flag,
                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
@@ -1788,11 +1778,11 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t     *cm,
     *q_tet = cs_quadrature_get_tetra_integral(3, qtype);
   cs_quadrature_tria_integral_t
     *q_tri = cs_quadrature_get_tria_integral(3, qtype);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
   cs_real_t *c_eval = eval + dim*nf;
 
   cs_xdef_cw_eval_fc_int_by_analytic(cm, t_eval,
-                                     anai->func, anai->input,
+                                     ac->func, ac->input,
                                      dim,
                                      q_tet, q_tri,
                                      c_eval, eval);

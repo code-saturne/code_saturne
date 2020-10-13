@@ -2946,14 +2946,14 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
+  cs_xdef_analytic_context_t  ac = {.func = analytic,
                                     .input = input };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
                                         0, // state flag
                                         meta_flag,
-                                        &anai);
+                                        &ac);
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -3079,7 +3079,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_array_input_t  input = {.stride = eqp->dim,
+  cs_xdef_array_context_t  input = {.stride = eqp->dim,
                                   .loc = loc,
                                   .values = array,
                                   .index = index,
@@ -3146,7 +3146,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
+  cs_xdef_analytic_context_t  ac = {.func = analytic,
                                     .input = input };
 
   int dim = eqp->dim;
@@ -3178,7 +3178,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                           cs_get_bdy_zone_id(z_name),
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta
-                                          &anai);
+                                          &ac);
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -3504,13 +3504,13 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_input_t  ana_input = {.func = func, .input = input };
+  cs_xdef_analytic_context_t  ac = {.func = func, .input = input };
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &ana_input);
+                                        &ac);
 
   /* Default setting for quadrature is different in this case */
   cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
@@ -3559,9 +3559,9 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_input_t  context = { .func = func,
-                                   .input = input,
-                                   .loc = loc_flag };
+  cs_xdef_dof_context_t  context = { .func = func,
+                                     .input = input,
+                                     .loc = loc_flag };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3625,18 +3625,18 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_input_t  input = {.stride = eqp->dim,
-                                  .loc = loc,
-                                  .values = array,
-                                  .is_owner = is_owner,
-                                  .index = index };
+  cs_xdef_array_context_t  ctxt = {.stride = eqp->dim,
+                                   .loc = loc,
+                                   .values = array,
+                                   .is_owner = is_owner,
+                                   .index = index };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)&input);
+                                        (void *)&ctxt);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
@@ -3757,10 +3757,10 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
-                                                  const char             *z_name,
-                                                  cs_analytic_func_t     *func,
-                                                  void                   *input)
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
+                                                  const char            *z_name,
+                                                  cs_analytic_func_t    *func,
+                                                  void                  *input)
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -3773,13 +3773,13 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_input_t  ana_input = {.func = func, .input = input};
+  cs_xdef_analytic_context_t  ac = {.func = func, .input = input};
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &ana_input);
+                                        &ac);
 
   int  new_id = eqp->n_volume_mass_injections;
   eqp->n_volume_mass_injections += 1;

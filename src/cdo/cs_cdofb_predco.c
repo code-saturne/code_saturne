@@ -462,7 +462,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
                                               connect,
                                               quant,
                                               time_eval,
-                                              pdef->input,
+                                              pdef->context,
                                               cc->bdy_pressure_incr);
           break;
 
@@ -474,7 +474,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
                                                   connect,
                                                   quant,
                                                   time_eval,
-                                                  pdef->input,
+                                                  pdef->context,
                                                   pdef->qtype,
                                                   pdef->dim,
                                                   cc->bdy_pressure_incr);

@@ -143,7 +143,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                       connect,
                                       quant,
                                       t_eval,
-                                      def->input,
+                                      def->context,
                                       st_loc);
     break;
 
@@ -155,7 +155,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                           connect,
                                           quant,
                                           t_eval,
-                                          def->input,
+                                          def->context,
                                           st_loc);
     break;
 
@@ -173,14 +173,14 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                connect,
                                quant,
                                t_eval,
-                               def->input,
+                               def->context,
                                st_loc);
     break;
 
   case CS_XDEF_BY_FUNCTION:
     {
       cs_volume_mass_injection_by_function_context_t *context
-        = def->input;
+        = def->context;
       context->func(context->input,
                     z,
                     NULL, /* field */
@@ -198,7 +198,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    connect,
                                    quant,
                                    t_eval,
-                                   def->input,
+                                   def->context,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++)
           st_loc[i] /= z->f_measure;
@@ -211,7 +211,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    connect,
                                    quant,
                                    t_eval,
-                                   def->input,
+                                   def->context,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
@@ -226,7 +226,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    connect,
                                    quant,
                                    t_eval,
-                                   def->input,
+                                   def->context,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           for (cs_lnum_t j = 0; j < 6; j++)
@@ -251,7 +251,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                                 connect,
                                                 quant,
                                                 t_eval,
-                                                def->input,
+                                                def->context,
                                                 st_loc);
     else if (dim == 3)
       cs_xdef_eval_vector_at_cells_by_time_func(z->n_elts,
@@ -261,7 +261,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                                 connect,
                                                 quant,
                                                 t_eval,
-                                                def->input,
+                                                def->context,
                                                 st_loc);
     else if (dim == 6)
       cs_xdef_eval_tensor_at_cells_by_time_func(z->n_elts,
@@ -271,7 +271,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                                 connect,
                                                 quant,
                                                 t_eval,
-                                                def->input,
+                                                def->context,
                                                 st_loc);
     break;
 
@@ -284,7 +284,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                  connect,
                                  quant,
                                  t_eval,
-                                 def->input,
+                                 def->context,
                                  st_loc);
     else if (dim == 3)
       cs_xdef_eval_vector_by_val(z->n_elts,
@@ -294,7 +294,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                  connect,
                                  quant,
                                  t_eval,
-                                 def->input,
+                                 def->context,
                                  st_loc);
     else if (dim == 6)
       cs_xdef_eval_tensor_by_val(z->n_elts,
@@ -304,7 +304,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                  connect,
                                  quant,
                                  t_eval,
-                                 def->input,
+                                 def->context,
                                  st_loc);
     break;
 

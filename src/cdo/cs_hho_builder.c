@@ -114,7 +114,7 @@ _fill_vol_reco_op(cs_sdm_t             *stiffness,
  *         the current time
  *
  * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       ac       pointer to an analytical definition
  * \param[in]       fbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
  * \param[in]       xv2      second vertex
@@ -126,15 +126,15 @@ _fill_vol_reco_op(cs_sdm_t             *stiffness,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tria_reduction(cs_real_t                        t_eval,
-                    const cs_xdef_analytic_input_t  *anai,
-                    const cs_basis_func_t           *fbf,
-                    const cs_real_3_t                xv1,
-                    const cs_real_3_t                xv2,
-                    const cs_real_3_t                xv3,
-                    const double                     surf,
-                    cs_cell_builder_t               *cb,
-                    cs_real_t                        array[])
+_add_tria_reduction(cs_real_t                          t_eval,
+                    const cs_xdef_analytic_context_t  *ac,
+                    const cs_basis_func_t             *fbf,
+                    const cs_real_3_t                  xv1,
+                    const cs_real_3_t                  xv2,
+                    const cs_real_3_t                  xv3,
+                    const double                       surf,
+                    cs_cell_builder_t                 *cb,
+                    cs_real_t                          array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
   cs_real_t  *gw = cb->values;
@@ -145,8 +145,8 @@ _add_tria_reduction(cs_real_t                        t_eval,
   cs_quadrature_tria_7pts(xv1, xv2, xv3, surf, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(t_eval, 7, NULL, (const cs_real_t *)gpts, true,
-             anai->input, ana_eval);
+  ac->func(t_eval, 7, NULL, (const cs_real_t *)gpts, true,
+           ac->input, ana_eval);
 
   for (short int gp = 0; gp < 7; gp++) {
 
@@ -166,7 +166,7 @@ _add_tria_reduction(cs_real_t                        t_eval,
  *         the current time. Vector case.
  *
  * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       ac       pointer to an analytical definition
  * \param[in]       fbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
  * \param[in]       xv2      second vertex
@@ -178,15 +178,15 @@ _add_tria_reduction(cs_real_t                        t_eval,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tria_reduction_v(cs_real_t                        t_eval,
-                      const cs_xdef_analytic_input_t  *anai,
-                      const cs_basis_func_t           *fbf,
-                      const cs_real_3_t                xv1,
-                      const cs_real_3_t                xv2,
-                      const cs_real_3_t                xv3,
-                      const double                     surf,
-                      cs_cell_builder_t               *cb,
-                      cs_real_t                        array[])
+_add_tria_reduction_v(cs_real_t                          t_eval,
+                      const cs_xdef_analytic_context_t  *ac,
+                      const cs_basis_func_t             *fbf,
+                      const cs_real_3_t                  xv1,
+                      const cs_real_3_t                  xv2,
+                      const cs_real_3_t                  xv3,
+                      const double                       surf,
+                      cs_cell_builder_t                 *cb,
+                      cs_real_t                          array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
 
@@ -203,8 +203,8 @@ _add_tria_reduction_v(cs_real_t                        t_eval,
   cs_quadrature_tria_7pts(xv1, xv2, xv3, surf, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(t_eval, 7, NULL, (const cs_real_t *)gpts, true,
-             anai->input, ana_eval);
+  ac->func(t_eval, 7, NULL, (const cs_real_t *)gpts, true,
+           ac->input, ana_eval);
 
   for (short int gp = 0; gp < 7; gp++) {
 
@@ -233,7 +233,7 @@ _add_tria_reduction_v(cs_real_t                        t_eval,
  *         the current time
  *
  * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       ac       pointer to an analytical definition
  * \param[in]       cbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
  * \param[in]       xv2      second vertex
@@ -246,16 +246,16 @@ _add_tria_reduction_v(cs_real_t                        t_eval,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tetra_reduction(cs_real_t                        t_eval,
-                     const cs_xdef_analytic_input_t  *anai,
-                     const cs_basis_func_t           *cbf,
-                     const cs_real_3_t                xv1,
-                     const cs_real_3_t                xv2,
-                     const cs_real_3_t                xv3,
-                     const cs_real_3_t                xv4,
-                     const double                     vol,
-                     cs_cell_builder_t               *cb,
-                     cs_real_t                        array[])
+_add_tetra_reduction(cs_real_t                          t_eval,
+                     const cs_xdef_analytic_context_t  *ac,
+                     const cs_basis_func_t             *cbf,
+                     const cs_real_3_t                  xv1,
+                     const cs_real_3_t                  xv2,
+                     const cs_real_3_t                  xv3,
+                     const cs_real_3_t                  xv4,
+                     const double                       vol,
+                     cs_cell_builder_t                 *cb,
+                     cs_real_t                          array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
   cs_real_t  *gw = cb->values;
@@ -266,8 +266,8 @@ _add_tetra_reduction(cs_real_t                        t_eval,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(t_eval, 15, NULL, (const cs_real_t *)gpts, true,
-             anai->input, ana_eval);
+  ac->func(t_eval, 15, NULL, (const cs_real_t *)gpts, true,
+           ac->input, ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
 
@@ -287,7 +287,7 @@ _add_tetra_reduction(cs_real_t                        t_eval,
  *         the current time.Vector case.
  *
  * \param[in]       t_eval   time at which one performs the evaluation
- * \param[in]       anai     pointer to an analytical definition
+ * \param[in]       ac       pointer to an analytical definition
  * \param[in]       cbf      pointer to a structure for face basis functions
  * \param[in]       xv1      first vertex
  * \param[in]       xv2      second vertex
@@ -300,16 +300,16 @@ _add_tetra_reduction(cs_real_t                        t_eval,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tetra_reduction_v(cs_real_t                         t_eval,
-                       const cs_xdef_analytic_input_t   *anai,
-                       const cs_basis_func_t            *cbf,
-                       const cs_real_3_t                 xv1,
-                       const cs_real_3_t                 xv2,
-                       const cs_real_3_t                 xv3,
-                       const cs_real_3_t                 xv4,
-                       const double                      vol,
-                       cs_cell_builder_t                *cb,
-                       cs_real_t                         array[])
+_add_tetra_reduction_v(cs_real_t                           t_eval,
+                       const cs_xdef_analytic_context_t   *ac,
+                       const cs_basis_func_t              *cbf,
+                       const cs_real_3_t                   xv1,
+                       const cs_real_3_t                   xv2,
+                       const cs_real_3_t                   xv3,
+                       const cs_real_3_t                   xv4,
+                       const double                        vol,
+                       cs_cell_builder_t                  *cb,
+                       cs_real_t                           array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
 
@@ -326,8 +326,8 @@ _add_tetra_reduction_v(cs_real_t                         t_eval,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(t_eval, 15, NULL, (const cs_real_t *)gpts, true,
-             anai->input, ana_eval);
+  ac->func(t_eval, 15, NULL, (const cs_real_t *)gpts, true,
+           ac->input, ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
 
@@ -1479,7 +1479,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   assert(cbf->facto != NULL && cbf->project != NULL);
@@ -1500,7 +1500,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
 
-      _add_tetra_reduction(t_eval, anai, cbf,
+      _add_tetra_reduction(t_eval, ac, cbf,
                            cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
                            cb, c_rhs);
 
@@ -1518,7 +1518,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-        _add_tria_reduction(t_eval, anai, fbf,
+        _add_tria_reduction(t_eval, ac, fbf,
                             cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
                             cb, f_rhs);
 
@@ -1527,7 +1527,6 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
         shift += fbf->size;
 
       } /* Loop on cell faces */
-
     }
     break;
 
@@ -1562,12 +1561,12 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
 
-          _add_tria_reduction(t_eval, anai, fbf, xv0, xv1, xv2, pfq.meas, cb, f_rhs);
+          _add_tria_reduction(t_eval, ac, fbf, xv0, xv1, xv2, pfq.meas,
+                              cb, f_rhs);
 
-          _add_tetra_reduction(t_eval, anai, cbf,
+          _add_tetra_reduction(t_eval, ac, cbf,
                                xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
                                cb, c_rhs);
-
         }
         break;
 
@@ -1582,12 +1581,11 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _add_tetra_reduction(t_eval, anai, cbf, xv0, xv1, pfq.center, cm->xc,
+            _add_tetra_reduction(t_eval, ac, cbf, xv0, xv1, pfq.center, cm->xc,
                                  hf_coef*tef[e], cb, c_rhs);
 
-            _add_tria_reduction(t_eval, anai, fbf, xv0, xv1, pfq.center, tef[e],
+            _add_tria_reduction(t_eval, ac, fbf, xv0, xv1, pfq.center, tef[e],
                                 cb, f_rhs);
-
           }
         }
         break;
@@ -1652,7 +1650,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   assert(cbf->facto != NULL && cbf->project != NULL);
@@ -1680,7 +1678,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
       assert(cm->n_fc == 4 && cm->n_vc == 4);
 
       /* Call vector case reduction */
-      _add_tetra_reduction_v(t_eval, anai, cbf,
+      _add_tetra_reduction_v(t_eval, ac, cbf,
                              cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
                              cb, c_rhs);
 
@@ -1700,7 +1698,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
         /*Call vector case reduction*/
-        _add_tria_reduction_v(t_eval, anai, fbf,
+        _add_tria_reduction_v(t_eval, ac, fbf,
                               cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, pfq.meas,
                               cb, f_rhs);
 
@@ -1751,16 +1749,15 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
             const double  *xv2 = cm->xv + 3*v2;
 
             /* Call vector case reductions */
-            _add_tria_reduction_v(t_eval, anai,
+            _add_tria_reduction_v(t_eval, ac,
                                   fbf, xv0, xv1, xv2, pfq.meas,
                                   cb,
                                   f_rhs);
 
-            _add_tetra_reduction_v(t_eval, anai, cbf,
+            _add_tetra_reduction_v(t_eval, ac, cbf,
                                    xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
                                    cb,
                                    c_rhs);
-
           }
           break;
 
@@ -1776,12 +1773,12 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
               const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
               /* Call vector case reductions */
-              _add_tetra_reduction_v(t_eval, anai, cbf,
+              _add_tetra_reduction_v(t_eval, ac, cbf,
                                      xv0, xv1, pfq.center, cm->xc,
                                      hf_coef*tef[e], cb,
                                      c_rhs);
 
-              _add_tria_reduction_v(t_eval, anai, fbf,
+              _add_tria_reduction_v(t_eval, ac, fbf,
                                     xv0, xv1, pfq.center, tef[e],
                                     cb,
                                     f_rhs);
@@ -1869,7 +1866,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
 
   case CS_XDEF_BY_VALUE:
     {
-      const cs_real_t  *constant_val = (cs_real_t *)def->input;
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
       /* The bc is constant thus its projection is a multiple of the
          constant basis function */
@@ -1886,7 +1883,8 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+      cs_xdef_analytic_context_t  *ac =
+        (cs_xdef_analytic_context_t *)def->context;
 
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
@@ -1905,7 +1903,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
 
-          _add_tria_reduction(t_eval, anai, fbf,
+          _add_tria_reduction(t_eval, ac, fbf,
                               xv0, xv1, xv2, pfq.meas,
                               cb, rhs);
         }
@@ -1922,7 +1920,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _add_tria_reduction(t_eval, anai, fbf,
+            _add_tria_reduction(t_eval, ac, fbf,
                                 xv0, xv1, pfq.center, tef[e],
                                 cb, rhs);
 
@@ -1997,7 +1995,7 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
 
   case CS_XDEF_BY_VALUE:
     {
-      const cs_real_t  *constant_val = (cs_real_t *)def->input;
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
       /* The bc is constant thus its projection is a multiple of the
          constant basis function */
@@ -2018,11 +2016,12 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+      cs_xdef_analytic_context_t *ac =
+        (cs_xdef_analytic_context_t *)def->context;
 
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
@@ -2038,7 +2037,7 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
           const double  *xv2 = cm->xv + 3*v2;
 
           /* Call the vector case */
-          _add_tria_reduction_v(t_eval, anai, fbf,
+          _add_tria_reduction_v(t_eval, ac, fbf,
                                 xv0, xv1, xv2, pfq.meas, cb, rhs);
         }
         break;
@@ -2055,7 +2054,7 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
             /* Call the vector case*/
-            _add_tria_reduction_v(t_eval, anai, fbf,
+            _add_tria_reduction_v(t_eval, ac, fbf,
                                   xv0, xv1, pfq.center, tef[e],
                                   cb, rhs);
 

@@ -311,17 +311,17 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
       switch(def->type) {
       case CS_XDEF_BY_VALUE:
         {
-          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+          const cs_real_t  *constant_val = (cs_real_t *)def->context;
           nsb->pressure_bc_val[i] = constant_val[0];
         }
         break;
 
       case CS_XDEF_BY_ARRAY:
         {
-          cs_xdef_array_input_t  *a_in = (cs_xdef_array_input_t *)def->input;
-          assert(a_in->stride == 1);
-          assert(cs_flag_test(a_in->loc, cs_flag_primal_face));
-          nsb->pressure_bc_val[i] = a_in->values[bf_id];
+          cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)def->context;
+          assert(c->stride == 1);
+          assert(cs_flag_test(c->loc, cs_flag_primal_face));
+          nsb->pressure_bc_val[i] = c->values[bf_id];
         }
         break;
 
@@ -331,13 +331,13 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
         case CS_PARAM_REDUCTION_DERHAM:
           cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, cm->face[f].center,
                                              t_eval,
-                                             def->input,
+                                             def->context,
                                              nsb->pressure_bc_val + i);
           break;
 
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_cw_eval_scalar_face_avg_by_analytic(cm, f, t_eval,
-                                                      def->input,
+                                                      def->context,
                                                       def->qtype,
                                                       nsb->pressure_bc_val + i);
           break;
