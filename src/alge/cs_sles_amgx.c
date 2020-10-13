@@ -298,7 +298,15 @@ _load_amgx_config(cs_sles_amgx_t  *c)
     }
   }
 
-  AMGX_config_add_parameters(&(c->amgx_config), "min_rows_latency_hiding=10000");
+  retval = AMGX_config_add_parameters(&(c->amgx_config),
+                                      "config_version=2, "
+                                      "main:monitor_residual=1, "
+                                      "main:store_res_history=1");
+  if (retval != AMGX_RC_OK) {
+    AMGX_get_error_string(retval, err_str, 4096);
+    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+              "AMGX_config_add_parameters", retval, err_str);
+  }
 
 #if 0
   /* Exception handling can be ensured by AMGX, but by default,
@@ -912,22 +920,35 @@ cs_sles_amgx_get_config(void  *context)
       && c->amgx_config_string == NULL) {
 
     const char config[] =
-      "config_version=2, "
-      "solver=PCGF, "
-      "max_iters=100, "
-      "norm=L2, "
-      "convergence=ABSOLUTE, "
-      "monitor_residual=1, "
-      "tolerance=1e-8, "
-      "preconditioner(amg_solver)=AMG, "
-      "amg_solver:algorithm=AGGREGATION, "
-      "amg_solver:max_iters=2, "
-      "amg_solver:presweeps=1, "
-      "amg_solver:postsweeps=1, "
-      "amg_solver:cycle=V, "
-      "print_solve_stats=1, "
-      "print_grid_stats=1, "
-      "obtain_timings=1";
+      "{"
+      "  \"config_version\": 2, "
+      "  \"solver\": {"
+      "    \"preconditioner\": {"
+      "      \"print_grid_stats\": 1, "
+      "      \"print_vis_data\": 0, "
+      "      \"solver\": \"AMG\", "
+      "      \"print_solve_stats\": 0, "
+      "      \"interpolator\": \"D2\", "
+      "      \"presweeps\": 1, "
+      "      \"max_iters\": 1, "
+      "      \"monitor_residual\": 0, "
+      "      \"store_res_history\": 0, "
+      "      \"scope\": \"amg\", "
+      "      \"cycle\": \"V\", "
+      "      \"postsweeps\": 1 "
+      "    }, "
+      "    \"solver\": \"FGMRES\", "
+      "    \"print_solve_stats\": 0, "
+      "    \"solver_verbose\": 0, "
+      "    \"obtain_timings\": 0, "
+      "    \"max_iters\": 100, "
+      "    \"gmres_n_restart\": 20, "
+      "    \"convergence\": \"ABSOLUTE\", "
+      "    \"scope\": \"main\", "
+      "    \"tolerance\": 0.0001, "
+      "    \"norm\": \"L2\""
+      "  }"
+      "}";
 
     cs_sles_amgx_set_config(context, config);
 
@@ -1282,6 +1303,8 @@ cs_sles_amgx_solve(void                *context,
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
+  AMGX_RC retval = AMGX_RC_OK;
+
   char err_str[4096];
   const char error_fmt[] = N_("%s returned %d.\n"
                               "%s");
@@ -1316,15 +1339,31 @@ cs_sles_amgx_solve(void                *context,
           rotation_mode, db_size, name);
   }
 
-  char options[64];
-  snprintf(options, 63, "tolerance=%e", precision*r_norm);
-  options[63] = '\0';
+  /* Try to set tolerance to normalized value. */
+  {
+#if 0
+    const char config_fmt[] =
+      "{"
+      "  \"config_version\": 2, "
+      "  \"main\": {"
+      "    \"convergence\": \"ABSOLUTE\", "
+      "    \"tolerance\": %e}"
+      "}";
 
-  AMGX_RC retval = AMGX_config_add_parameters(&(c->amgx_config), options);
-  if (retval != AMGX_RC_OK) {
-    AMGX_get_error_string(retval, err_str, 4096);
-    bft_error(__FILE__, __LINE__, 0, _(error_fmt),
-              "AMGX_config_add_parameters", retval, err_str);
+#else
+    const char config_fmt[] =
+      "config_version=2, main:convergence=ABSOLUTE, main:tolerance=%e";
+#endif
+
+    char options[256];
+    snprintf(options, 255, config_fmt, precision*r_norm);
+    options[255] = '\0';
+    retval = AMGX_config_add_parameters(&(c->amgx_config), options);
+    if (retval != AMGX_RC_OK) {
+      AMGX_get_error_string(retval, err_str, 4096);
+      bft_error(__FILE__, __LINE__, 0, _(error_fmt),
+                "AMGX_config_add_parameters", retval, err_str);
+    }
   }
 
   /* Vector */
@@ -1382,7 +1421,7 @@ cs_sles_amgx_solve(void                *context,
   AMGX_vector_destroy(b);
 
   AMGX_solver_get_iterations_number(sd->solver, &its);
-  // AMGX_solver_get_iteration_residual(sd->solver, its, 0, &_residue);
+  AMGX_solver_get_iteration_residual(sd->solver, its-1, 0, &_residue);
 
   if (c->pin_memory) {
     AMGX_unpin_memory((void *)vx);
