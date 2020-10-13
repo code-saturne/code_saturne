@@ -129,7 +129,7 @@ cs_user_boundary_conditions(int         nvar,
 
     /* Imposed a normalised flux on the scalar */
     icodcl[var_id*n_b_faces + face_id] = 3;
-    rcodcl[var_id*n_b_faces + face_id] = flux;
+    rcodcl[2 * n_b_faces * nvar +  var_id*n_b_faces + face_id] = flux;
   }
 
 
