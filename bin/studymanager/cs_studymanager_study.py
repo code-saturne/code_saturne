@@ -50,6 +50,7 @@ from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
 from code_saturne.studymanager.cs_studymanager_parser import Parser
 from code_saturne.studymanager.cs_studymanager_texmaker import Report1, Report2
+from code_saturne.studymanager.cs_studymanager_graph import node_case, dependency_graph
 
 try:
     from code_saturne.studymanager.cs_studymanager_drawing import Plotter
@@ -158,34 +159,38 @@ class Case(object):
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
-        self.__log      = rlog
-        self.__diff     = diff
-        self.__parser   = parser
-        self.__study    = study
-        self.__data     = data
-        self.__repo     = repo
-        self.__dest     = dest
+        self.__log       = rlog
+        self.__diff      = diff
+        self.__parser    = parser
+        self.__study     = study
+        self.__data      = data
+        self.__repo      = repo
+        self.__dest      = dest
 
         self.pkg = pkg
 
-        self.node       = data['node']
-        self.label      = data['label']
-        self.compute    = data['compute']
-        self.plot       = data['post']
-        self.run_id     = data['run_id']
-        self.tags       = data['tags']
-        self.compare    = data['compare']
+        self.node        = data['node']
+        self.label       = data['label']
+        self.compute     = data['compute']
+        self.plot        = data['post']
+        self.run_id      = data['run_id']
+        self.tags        = data['tags']
+        self.compare     = data['compare']
+        self.n_procs     = data['n_procs']
+        self.n_iter      = data['n_iter']
+        self.estim_wtime = data['estim_wtime']
+        self.depends     = data['depends']
 
-        self.is_compiled= "not done"
-        self.is_run     = "not done"
-        self.is_time    = None
-        self.is_plot    = "not done"
-        self.is_compare = "not done"
-        self.threshold  = "default"
-        self.diff_value = [] # list of differences (in case of comparison)
-        self.m_size_eq  = True # mesh sizes equal (in case of comparison)
-        self.subdomains = None
-        self.run_dir    = ""
+        self.is_compiled = "not done"
+        self.is_run      = "not done"
+        self.is_time     = None
+        self.is_plot     = "not done"
+        self.is_compare  = "not done"
+        self.threshold   = "default"
+        self.diff_value  = [] # list of differences (in case of comparison)
+        self.m_size_eq   = True # mesh sizes equal (in case of comparison)
+        self.subdomains  = None
+        self.run_dir     = ""
 
         self.resu = 'RESU'
 
@@ -1263,6 +1268,33 @@ class Studies(object):
             log_lines = s.create_cases()
             for line in log_lines:
                 self.reporting(line)
+
+        self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def create_graph(self):
+        """
+        Create dependency graph based on all studies and all cases.
+        """
+
+        self.reporting(' Create dependency graph')
+
+        global_graph = dependency_graph()
+
+        for l, s in self.studies:
+            for case in s.cases:
+                if case.compute:
+                    local_name = l + '/' + case.label + '/' + case.run_id
+                    global_graph.add_node(node_case(local_name, case.n_procs,
+                                                    case.n_iter, case.estim_wtime,
+                                                    case.tags, case.depends))
+
+        print(global_graph)
+
+        sub_graph1 = global_graph.extract_sub_graph(level=1, n_procs=1)
+        print('\ngraph1 with level 1 and n_procs = 1')
+        print(sub_graph1)
 
         self.reporting('')
 

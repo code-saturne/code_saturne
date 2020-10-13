@@ -352,6 +352,21 @@ class Parser(object):
                 except:
                     d['tags'] = None
 
+                try:
+                    d['depends'] = str(node.attributes["depends"].value)
+                except:
+                    d['depends'] = None
+
+                try:
+                    d['n_iter'] = str(node.attributes["n_iter"].value)
+                except:
+                    d['n_iter'] = None
+
+                try:
+                    d['estim_wtime'] = str(node.attributes["estim_wtime"].value)
+                except:
+                    d['estim_wtime'] = None
+
                 for n in node.childNodes:
                     if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
                         if n.tagName not in ("compare", "prepro", "script", "data"):

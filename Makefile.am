@@ -295,7 +295,8 @@ bin/studymanager/cs_studymanager_parser.py \
 bin/studymanager/cs_studymanager_study.py \
 bin/studymanager/cs_studymanager_texmaker.py \
 bin/studymanager/cs_studymanager_pathes_model.py \
-bin/studymanager/cs_studymanager_xml_init.py
+bin/studymanager/cs_studymanager_xml_init.py \
+bin/studymanager/cs_studymanager_graph.py
 
 modeldir = $(pkgpythondir)/model
 model_PYTHON = \
