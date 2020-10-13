@@ -168,37 +168,37 @@
 
     <!-- Axial Average Velocity on the Axe -->
       <data dest="CALC_MONO-RijSSG" file="AXE.dat">
-        <plot fmt="m--" legend="MONO" spids="10" xcol="4" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="10" xcol="4" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.003m -->
       <data dest="CALC_MONO-RijSSG" file="Z003.dat">
-        <plot fmt="m--" legend="MONO" spids="11" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="11" xcol="2" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.08m -->
       <data dest="CALC_MONO-RijSSG" file="Z080.dat">
-        <plot fmt="m--" legend="MONO" spids="12" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="12" xcol="2" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.16m -->
       <data dest="CALC_MONO-RijSSG" file="Z160.dat">
-        <plot fmt="m--" legend="MONO" spids="13" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="13" xcol="2" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.24m -->
       <data dest="CALC_MONO-RijSSG" file="Z240.dat">
-        <plot fmt="m--" legend="MONO" spids="14" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="14" xcol="2" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.32m -->
       <data dest="CALC_MONO-RijSSG" file="Z320.dat">
-        <plot fmt="m--" legend="MONO" spids="15" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="15" xcol="2" ycol="17"/>
       </data>
 
     <!-- Axial Average Velocity at Z = 0.42m -->
       <data dest="CALC_MONO-RijSSG" file="Z420.dat">
-        <plot fmt="m--" legend="MONO" spids="16" xcol="2" ycol="17"/>
+        <plot fmt="m--" legend="Single phase" spids="16" xcol="2" ycol="17"/>
       </data>
     </case>
 
@@ -995,7 +995,7 @@
          **************************** -->
 
     <!-- Probes historics -->
-    <figure figsize="(5,6)" idlist=" 31 32 33 34 35 36" name="probes_MONO-RijSSG" nbcol="2" nbrow="3" title="MONO Rij-SSG"/>
+    <figure figsize="(5,6)" idlist=" 31 32 33 34 35 36" name="probes_MONO-RijSSG" nbcol="2" nbrow="3" title="Single Phase Rij-SSG"/>
     
     <!-- Axial profile -->
     <!-- Axial Average Velocity on the Axis -->
