@@ -119,7 +119,7 @@ cs_user_boundary_conditions(int         nvar,
   BFT_FREE(lstelt);
   /*! [apply_bc] */
   /* Use boundary zones */
-  cs_zone_t *z = cs_boundary_zone_by_name("seine");
+  const cs_zone_t *z = cs_boundary_zone_by_name("seine");
 
   /* Get the fluid mesure (i.e. surface) of the zone */
   cs_real_t flux = 1. / z->f_measure;
