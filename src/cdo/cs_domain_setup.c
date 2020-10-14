@@ -346,10 +346,6 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 
   domain->time_step->nt_max = nt_max;
   domain->time_step->t_max = t_max;
-
-  /* Add a property related to the time step (in case of use when building a
-     linear system) */
-  cs_property_add("time_step", CS_PROPERTY_ISO);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -391,10 +387,12 @@ cs_domain_automatic_time_step_settings(cs_domain_t       *domain)
  * \param[in, out] domain      pointer to a cs_domain_t structure
  * \param[in]      func        pointer to a cs_time_func_t function
  * \param[in]      func_input  pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the created definition (\ref cs_xdef_t structure)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_domain_def_time_step_by_function(cs_domain_t        *domain,
                                     cs_time_func_t     *func,
                                     void               *func_input)
@@ -406,28 +404,28 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   /* Uniform in space but can change from one time step to the other */
   domain->time_options.idtvar = CS_TIME_STEP_ADAPTIVE;
 
-  cs_xdef_time_func_context_t  tfc = { .func = func,
-                                       .input = func_input,
-                                       .free_input = NULL };
-
-  domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
-                                                  0,     /* state flag */
-                                                  0,     /* meta flag */
-                                                  &tfc);
-
   /* Set the property related to the time step if used for building a system */
-  cs_property_def_by_time_func(cs_property_by_name("time_step"),
-                               NULL, /* all cells are selected */
-                               func,
-                               func_input);
+  cs_property_t  *dt_pty = cs_property_by_name("time_step");
+  if (dt_pty == NULL)
+    dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+
+  cs_property_set_reference_value(dt_pty, domain->time_step->t_max);
+
+  cs_xdef_t  *def =
+    cs_property_def_by_time_func(dt_pty,
+                                 NULL, /* all cells are selected */
+                                 func,
+                                 func_input);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
 
   domain->time_step->dt[0] = domain->time_step->t_max;
-  domain->time_step->dt_ref =  domain->time_step->t_max;
-  domain->time_options.dtmin =  domain->time_step->t_max;
+  domain->time_step->dt_ref = domain->time_step->t_max;
+  domain->time_options.dtmin = domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
+
+  return def;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -450,11 +448,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   /* Constant time step by default */
   domain->time_options.idtvar = CS_TIME_STEP_CONSTANT;
 
-  domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_VALUE,
-                                                  0, /* state flag */
-                                                  0, /* meta flag */
-                                                  &dt);
-
   domain->time_step->dt[0] = dt;
   domain->time_step->dt_ref = dt;
   domain->time_step->dt_next = dt;
@@ -462,7 +455,12 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_options.dtmax = dt;
 
   /* Set the property related to the time step if used for building a system */
-  cs_property_def_iso_by_value(cs_property_by_name("time_step"), NULL, dt);
+  cs_property_t  *dt_pty = cs_property_by_name("time_step");
+
+  if (dt_pty == NULL)
+    dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+
+  cs_property_def_constant_value(dt_pty, dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -660,14 +658,14 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last setup stage of the cs_domain_t structure
+ * \brief  Last user setup stage of the cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_setup(cs_domain_t         *domain)
+cs_domain_finalize_user_setup(cs_domain_t         *domain)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
@@ -701,16 +699,23 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
    */
 
   cs_user_finalize_setup(domain);
+}
 
-  /* Assign to a cs_equation_t structure a list of function to manage this
-   * structure during the computation.
-   * The set of functions chosen for each equation depends on the parameters
-   * specifying the cs_equation_t structure
-   */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last user setup stage of the cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
 
-  domain->only_steady = cs_equation_set_functions();
-  if (domain->only_steady)
-    domain->is_last_iter = true;
+void
+cs_domain_finalize_module_setup(cs_domain_t         *domain)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain->cdo_context == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
 
   /* Last stage for the settings for each predefined set of equations:
      - wall distance computation
@@ -910,9 +915,6 @@ cs_domain_setup_log(const cs_domain_t   *domain)
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid idtvar value for the CDO module.\n"));
     }
-
-    cs_xdef_log("        Time step definition", domain->time_step_def);
-    cs_log_printf(CS_LOG_SETUP, "\n");
 
   }
 

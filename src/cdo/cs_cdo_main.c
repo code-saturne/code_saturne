@@ -81,6 +81,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static int  cs_cdo_ts_id;
+static cs_property_t  *cs_dt_pty = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -96,6 +97,30 @@ cs_f_cdo_solve_unsteady_state_domain(void);
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if this is the last iteration
+ *
+ * \param[in]  ts    pointer to a cs_time_step_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_is_last_iter(const cs_time_step_t   *ts)
+{
+  if (ts->t_max > 0) /* t_max has been set */
+    if (ts->t_cur + ts->dt[0] > ts->t_max)
+      return true;
+
+  if (ts->nt_max > 0) /* nt_max has been set */
+    if (ts->nt_cur + 1 > ts->nt_max)
+      return true;
+
+  return false;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -348,6 +373,46 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the current time step for this new time iteration
+ *
+ * \param[in, out]  ts      pointer to a cs_time_step_t structure
+ * \param[in, out]  ts_opt  pointer to a cs_time_step_options_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_current_time_step(cs_time_step_t           *ts,
+                          cs_time_step_options_t   *ts_opt)
+{
+  /* Sanity check */
+  assert(cs_dt_pty != NULL);
+  assert(cs_property_is_uniform(cs_dt_pty));
+
+  const double  t_cur = ts->t_cur;
+
+  ts->dt[2] = ts->dt[1];
+  ts->dt[1] = ts->dt[0];
+  ts->dt[0] = cs_property_get_cell_value(0, t_cur, cs_dt_pty);
+
+  if (cs_property_is_steady(cs_dt_pty) == false) {  /* dt_cur may change */
+
+    /* Update time_options */
+    double  dtmin = CS_MIN(ts_opt->dtmin, ts->dt[0]);
+    double  dtmax = CS_MAX(ts_opt->dtmax, ts->dt[0]);
+
+    ts_opt->dtmin = dtmin;
+    ts_opt->dtmax = dtmax;
+
+    /* TODO: Check how the following value is set in FORTRAN
+     * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
+    if (ts->dt_ref < 0) /* Should be the initial val. */
+      ts->dt_ref = ts->dt[0];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve all the equations of a computational domain for one time step
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
@@ -530,8 +595,21 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_property_t  *pty = cs_property_by_name("unity");
   if (pty == NULL) {
     pty = cs_property_add("unity", CS_PROPERTY_ISO);
-    cs_property_def_iso_by_value(pty, "cells", 1.0);
+    cs_property_def_constant_value(pty, 1.0);
   }
+
+  /* Add a property related to the time step. A property can be called easily
+   * from everywhere: cs_property_by_name("time_step")
+   * This is useful when building linear system. */
+  pty = cs_property_by_name("time_step");
+  if (pty == NULL) {
+
+    pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+    /* By default: -1 --> steady-state */
+    cs_property_set_reference_value(pty, -1);
+
+  }
+  cs_dt_pty = pty;
 
   cs_timer_stats_start(cs_cdo_ts_id);
 
@@ -589,10 +667,45 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_domain_init_cdo_structures(domain);
 
-  /* Last setup stage */
-  cs_domain_finalize_setup(domain);
+  /* Last user setup stage */
+  cs_domain_finalize_user_setup(domain);
 
-  /* Initialization of the default post-processing for the computational domain */
+  /* Assign to a cs_equation_t structure a list of function to manage this
+   * structure during the computation.
+   * The set of functions chosen for each equation depends on the parameters
+   * specifying the cs_equation_t structure
+   */
+  domain->only_steady = cs_equation_set_functions();
+
+  if (domain->only_steady)
+    domain->is_last_iter = true;
+
+  else { /* Setup the time step if not already done */
+
+    /* Sanity checks */
+    if (cs_dt_pty == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Please check your settings.\n"
+                " Unsteady computation but no current time step defined.\n",
+                __func__);
+
+    if (cs_dt_pty->n_definitions == 0)
+      /* No definition available yet. Try a definition by value */
+      cs_domain_automatic_time_step_settings(domain);
+
+    if (cs_property_is_uniform(cs_dt_pty) == false)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Please check your settings.\n"
+                " Unsteady computation with a non-uniform time step.\n",
+                __func__);
+
+  }
+
+  /* Last setup stage */
+  cs_domain_finalize_module_setup(domain);
+
+  /* Initialization of the default post-processing for the computational
+     domain */
   cs_domain_post_init(domain);
 
   /* Summary of the settings */
@@ -727,14 +840,15 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
 
-  /* Build and solve equations related to the computational domain in case of
-     steady-state equations */
+  /* ======================================== */
+  /* Compute first the steady-state equations */
+  /* ======================================== */
+
   _solve_steady_state_domain(domain);
 
+  /* ============== */
   /* Main time loop */
-  if (domain->time_step_def == NULL && domain->only_steady == false)
-    /* No definition available yet. Try a definition by value */
-    cs_domain_automatic_time_step_settings(domain);
+  /* ============== */
 
   if (domain->time_step->nt_cur == 0)
     domain->time_step->nt_cur = 1; /* Same numbering as Finite Volume part */
@@ -742,7 +856,10 @@ cs_cdo_main(cs_domain_t   *domain)
   while (cs_domain_needs_iteration(domain)) {
 
     /* Define the current time step */
-    cs_domain_define_current_time_step(domain);
+    _define_current_time_step(domain->time_step, &(domain->time_options));
+
+    /* Check if this is the last iteration */
+    domain->is_last_iter = _is_last_iter(domain->time_step);
 
     /* Build and solve equations related to the computational domain */
     _solve_domain(domain);
