@@ -1255,10 +1255,10 @@ cs_property_def_by_time_func(cs_property_t      *pty,
                                        .free_input = NULL };
 
   /* Default initialization */
-  int  dim = 0;
   pty->get_eval_at_cell[new_id] = NULL;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_time_func;
 
+  int  dim = 0;
   if (pty->type & CS_PROPERTY_ISO) {
     dim = 1;
     pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_at_cells_by_time_func;
@@ -1316,10 +1316,8 @@ cs_property_def_by_analytic(cs_property_t        *pty,
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  new_id = _add_new_def(pty);
+  cs_flag_t  state_flag = 0, meta_flag = 0; /* metadata */
   int  z_id = cs_get_vol_zone_id(zname);
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_analytic_context_t  ac = { .z_id = z_id,
                                      .func = func,
                                      .input = input,
@@ -1338,6 +1336,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
                                         meta_flag,
                                         &ac);
 
+  int  new_id = _add_new_def(pty);
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_at_cells_by_analytic;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_analytic;

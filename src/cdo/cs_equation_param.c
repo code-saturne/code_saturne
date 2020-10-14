@@ -3152,7 +3152,8 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
   /* Set the value for dim */
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
+
+  if (bc_type == CS_PARAM_BC_NEUMANN ||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
@@ -3504,13 +3505,11 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  /* Add a new cs_xdef_t structure */
-  int z_id = cs_get_vol_zone_id(z_name);
-
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
+  int z_id = cs_get_vol_zone_id(z_name);
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
@@ -3519,6 +3518,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                      .input = input,
                                      .free_input = NULL };
 
+  /* Add a new cs_xdef_t structure */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,

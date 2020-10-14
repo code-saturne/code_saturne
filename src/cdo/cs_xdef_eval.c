@@ -283,7 +283,7 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
-  /* Evaluate the quantity */
+  /* Evaluate the quantity only once */
   cs_real_t  _eval;
   tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, &_eval);
 
@@ -296,7 +296,6 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   }
   else {
 
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++)
       eval[i] = _eval;
 

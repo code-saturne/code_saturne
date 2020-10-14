@@ -447,6 +447,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
       b->input = a->input;
       b->free_input = a->free_input;
 
+      d->state |= CS_FLAG_STATE_UNIFORM;
       d->context = b;
     }
     break;

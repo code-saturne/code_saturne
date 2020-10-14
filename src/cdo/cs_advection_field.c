@@ -833,6 +833,12 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
+  if (loc & CS_FLAG_VECTOR)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Advection field: %s\n"
+              " The boundary flux is not compatible with a vector-valued"
+              " definition.\n", __func__, adv->name);
+
   cs_flag_t  state_flag =  0;
   cs_flag_t  meta_flag = 0;
 
@@ -840,11 +846,6 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   if (z_id == 0)
     meta_flag  |= CS_FLAG_FULL_LOC;
 
-  if (loc & CS_FLAG_VECTOR)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Advection field: %s\n"
-              " The boundary flux is not compatible with a vector-valued"
-              " definition.\n", __func__, adv->name);
   cs_xdef_array_context_t  context = {.z_id = z_id,
                                       .stride = 1,
                                       .loc = loc,

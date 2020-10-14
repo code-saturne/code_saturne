@@ -1273,9 +1273,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
     nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
-    int z_id = 0;
-    if (z_name != NULL && strlen(z_name) > 0)
-      z_id = (cs_volume_zone_by_name(z_name))->id;
+    int z_id = cs_get_vol_zone_id(z_name);
 
     cs_flag_t  meta_flag = 0;
     if (z_id == 0)
@@ -1382,9 +1380,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   /* Add a new cs_xdef_t structure */
-  int z_id = 0;
-  if (z_name != NULL && strlen(z_name) > 0)
-    z_id = (cs_volume_zone_by_name(z_name))->id;
+  int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
   if (z_id == 0)
@@ -1817,7 +1813,6 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_velocity_bc_defs;
-
   nsp->n_velocity_bc_defs += 1;
   BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
