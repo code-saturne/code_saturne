@@ -58,6 +58,7 @@
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -331,6 +332,8 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           double  **xnrmu,
                                           double  **xnrmu0,
                                           double  **epsdp);
+int
+cs_f_velocity_pressure_cell_is_1d(cs_lnum_t  cell_id);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -398,6 +401,30 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
   *xnrmu  = &(_velocity_pressure_param.xnrmu);
   *xnrmu0 = &(_velocity_pressure_param.xnrmu0);
   *epsdp  = &(_velocity_pressure_param.epsdp );
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return 1 if cell is 1d (for staggered_scheme option), 0 otherwise
+ *
+ * \param[in]  cell_id
+ *
+ * \return  1  if cell is 1d
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_f_velocity_pressure_cell_is_1d(cs_lnum_t  cell_id)
+{
+  const int *zone_id = cs_volume_zone_cell_zone_id();
+  const cs_zone_t  *z = cs_volume_zone_by_id(zone_id[cell_id]);
+
+  if (z->type & CS_VOLUME_ZONE_1D) {
+    return 1;
+  } else {
+    return 0;
+  }
+
 }
 
 /*============================================================================
