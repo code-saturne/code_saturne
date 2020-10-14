@@ -198,6 +198,54 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  returns true if the property is steady and uniform, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_constant(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return true; /* Treated as the "unity" property */
+
+  if (pty->state_flag & CS_FLAG_STATE_STEADY) {
+    if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
+      return true;
+    else
+      return false;
+  }
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the property is steady, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_steady(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return true; /* Treated as the "unity" property */
+
+  if (pty->state_flag & CS_FLAG_STATE_STEADY)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  returns true if the property is uniform, otherwise false
  *
  * \param[in]    pty    pointer to a property to test
