@@ -130,6 +130,8 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_analytic_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
+      assert(a->z_id == z_id);
+      b->z_id = a->z_id;
       b->func = a->func;
       b->input = a->input;
       b->free_input = a->free_input;
@@ -144,6 +146,8 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_dof_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_dof_context_t);
+      assert(a->z_id == z_id);
+      b->z_id = a->z_id;
       b->func = a->func;
       b->loc = a->loc;
       b->input = a->input;
@@ -173,6 +177,8 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       cs_xdef_array_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_array_context_t);
+      assert(a->z_id == z_id);
+      b->z_id = a->z_id;
       b->stride = a->stride;
       b->loc = a->loc;
       b->values = a->values;
@@ -293,6 +299,8 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       cs_xdef_analytic_context_t  *b = NULL;
 
       BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
+      assert(a->z_id == z_id);
+      b->z_id = a->z_id;
       b->func = a->func;
       b->input = a->input;
       b->free_input = a->free_input;

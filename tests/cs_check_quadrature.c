@@ -1221,7 +1221,8 @@ _test_cdofb_source(FILE                     *out,
     if (_func == NULL)
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-    cs_xdef_analytic_context_t  ac = {.func = _func,
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _func,
                                       .input = NULL,
                                       .free_input = NULL };
 
@@ -1407,7 +1408,8 @@ _test_cdovb_source(FILE                     *out,
   }
   else { /* Definition by analytic */
 
-    cs_xdef_analytic_context_t  ac = {.func = _get_func_to_eval(dim, ftype),
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _get_func_to_eval(dim, ftype),
                                       .input = NULL,
                                       .free_input = NULL };
 
@@ -1626,7 +1628,8 @@ _test_quadratures_xdef(FILE                     *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_context_t  ac = {.func = _func,
+  cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                    .func = _func,
                                     .input = NULL,
                                     .free_input = NULL };
 
@@ -1745,7 +1748,8 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_context_t  ac = {.func = _func,
+  cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                    .func = _func,
                                     .input = NULL,
                                     .free_input = NULL };
 

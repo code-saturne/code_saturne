@@ -1647,31 +1647,32 @@ _test_hho_schemes(FILE                *out,
     cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->jstab);
 
     {
-      cs_xdef_analytic_context_t  anai = { .func = _unity,
-                                           .input = NULL,
-                                           .free_input = NULL };
+      cs_xdef_analytic_context_t  ac = { .z_id = 0,
+                                         .func = _unity,
+                                         .input = NULL,
+                                         .free_input = NULL };
       cs_xdef_t  *uni = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                               1,
                                               0, /* z_id */
                                               0, /* state flag */
                                               0, /* meta flag */
-                                              &anai);
+                                              &ac);
 
-      anai.func = _linear_xyz;
+      ac.func = _linear_xyz;
       cs_xdef_t  *lin = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                               1,
                                               0, /* z_id */
                                               0, /* state flag */
                                               0, /* meta flag */
-                                              &anai);
+                                              &ac);
 
-      anai.func = _quadratic_x2;
+      ac.func = _quadratic_x2;
       cs_xdef_t  *x2 = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                              1,
                                              0, /* z_id */
                                              0, /* state flag */
                                              0, /* meta flag */
-                                             &anai);
+                                             &ac);
 
       cs_real_t  reduction_uni[22], reduction_xyz[22], reduction_x2[22];
       for (int i = 0; i < 3*cm->n_fc+4; i++)
@@ -1958,12 +1959,13 @@ _test_divergence(FILE                     *out,
   memset(red, 0, totdof*sizeof(cs_real_t));
 
   { /* Constant */
-    cs_xdef_analytic_context_t  anai = {.func = _unity_vect,
-                                        .input = NULL,
-                                        .free_input = NULL };
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _unity_vect,
+                                      .input = NULL,
+                                      .free_input = NULL };
 
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
-                                                   (void*)(&anai),
+                                                   (void*)(&ac),
                                                    CS_QUADRATURE_HIGHEST, red);
 
     fprintf(out, "\n CDO.FB; DIVERGENCE; P0; |ERR(Div_c)| = %10.6e\n",
@@ -1971,9 +1973,10 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Linear */
-    cs_xdef_analytic_context_t  anai = {.func = _linear_xyz_vect,
-                                        .input = NULL,
-                                        .free_input = NULL };
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _linear_xyz_vect,
+                                      .input = NULL,
+                                      .free_input = NULL };
     cs_real_t  ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
@@ -1982,7 +1985,7 @@ _test_divergence(FILE                     *out,
                                       &ex_div);
     ex_div *= 6. * ov;
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
-                                                   (void*)(&anai),
+                                                   (void*)(&ac),
                                                    CS_QUADRATURE_HIGHEST, red);
 
     fprintf(out, " CDO.FB; DIVERGENCE; P1; |ERR(Div_c)| = %10.6e\n",
@@ -1990,9 +1993,10 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Quadratic */
-    cs_xdef_analytic_context_t  anai = {.func = _quadratic_x2_vect,
-                                        .input = NULL,
-                                        .free_input = NULL };
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _quadratic_x2_vect,
+                                      .input = NULL,
+                                      .free_input = NULL };
     cs_real_t ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
@@ -2001,7 +2005,7 @@ _test_divergence(FILE                     *out,
                                       &ex_div);
     ex_div *= 2. *ov;
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
-                                                   (void*)(&anai),
+                                                   (void*)(&ac),
                                                    CS_QUADRATURE_HIGHEST, red);
 
     fprintf(out, " CDO.FB; DIVERGENCE; P2; |ERR(Div_c)| = %10.6e\n",
@@ -2009,9 +2013,10 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Cubic */
-    cs_xdef_analytic_context_t  anai = {.func = _cubic_xyz3_vect,
-                                        .input = NULL,
-                                        .free_input = NULL };
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _cubic_xyz3_vect,
+                                      .input = NULL,
+                                      .free_input = NULL };
     cs_real_t ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
@@ -2019,7 +2024,7 @@ _test_divergence(FILE                     *out,
                                       cs_quadrature_tet_5pts_scal, &ex_div);
     ex_div *= 3. * ov;
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
-                                                   (void*)(&anai),
+                                                   (void*)(&ac),
                                                    CS_QUADRATURE_HIGHEST, red);
 
     fprintf(out, " CDO.FB; DIVERGENCE; P3; |ERR(Div_c)| = %10.6e\n",
@@ -2027,13 +2032,14 @@ _test_divergence(FILE                     *out,
   }
 
   { /* Non pol */
-    cs_xdef_analytic_context_t  anai = {.func = _nonpoly_vect,
-                                        .input = NULL,
-                                        .free_input = NULL };
+    cs_xdef_analytic_context_t  ac = {.z_id = 0,
+                                      .func = _nonpoly_vect,
+                                      .input = NULL,
+                                      .free_input = NULL };
 
     memset(red, 0, totdof*sizeof(cs_real_t));
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
-                                                   (void*)(&anai),
+                                                   (void*)(&ac),
                                                    CS_QUADRATURE_HIGHEST, red);
 
     const short int  type = (cm->type == FVM_CELL_TETRA);

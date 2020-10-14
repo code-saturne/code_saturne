@@ -2946,7 +2946,8 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .func = analytic,
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = analytic,
                                      .input = input,
                                      .free_input = NULL };
 
@@ -3079,19 +3080,22 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
          cs_flag_test(loc, cs_flag_primal_vtx)  ||
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
   /* Add a new cs_xdef_t structure */
-  cs_xdef_array_context_t  input = {.stride = eqp->dim,
-                                  .loc = loc,
-                                  .values = array,
-                                  .index = index,
-                                  .is_owner = is_owner};
+  cs_xdef_array_context_t  input = {.z_id = z_id,
+                                    .stride = eqp->dim,
+                                    .loc = loc,
+                                    .values = array,
+                                    .index = index,
+                                    .is_owner = is_owner};
 
   cs_flag_t  state_flag = 0;
   if (loc == cs_flag_primal_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
+  if (bc_type == CS_PARAM_BC_NEUMANN ||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
@@ -3106,7 +3110,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
-                                          cs_get_bdy_zone_id(z_name),
+                                          z_id,
                                           state_flag,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)&input);
@@ -3146,11 +3150,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  ac = { .func = analytic,
-                                     .input = input,
-                                     .free_input = NULL };
-
+  /* Set the value for dim */
   int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
@@ -3175,9 +3175,17 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
-                                          cs_get_bdy_zone_id(z_name),
+                                          z_id,
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           &ac);
@@ -3506,7 +3514,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .func = func,
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = func,
                                      .input = input,
                                      .free_input = NULL };
 
@@ -3631,7 +3640,8 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_context_t  ctxt = {.stride = eqp->dim,
+  cs_xdef_array_context_t  ctxt = {.z_id = z_id,
+                                   .stride = eqp->dim,
                                    .loc = loc,
                                    .values = array,
                                    .is_owner = is_owner,
@@ -3774,12 +3784,12 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
   /* Add a new cs_xdef_t structure */
   int z_id = cs_get_vol_zone_id(z_name);
 
-  cs_flag_t state_flag = 0, meta_flag = 0;
-
+  cs_flag_t  state_flag = 0, meta_flag = 0;
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = { .func = func,
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = func,
                                      .input = input,
                                      .free_input = NULL };
 

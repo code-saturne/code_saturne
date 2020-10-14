@@ -1281,7 +1281,8 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
     if (z_id == 0)
       meta_flag |= CS_FLAG_FULL_LOC;
 
-    cs_xdef_analytic_context_t  anai = { .func = analytic,
+    cs_xdef_analytic_context_t  anai = { .z_id = z_id,
+                                         .func = analytic,
                                          .input = input,
                                          .free_input = NULL };
 
@@ -1389,16 +1390,17 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  anai = { .func = analytic,
-                                       .input = input,
-                                       .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         1,  /* dim */
                                         z_id,
                                         0,  /* state flag */
                                         meta_flag,
-                                        &anai);
+                                        &ac);
 
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is
@@ -1797,16 +1799,17 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  anai = { .func = ana,
-                                       .input = input,
-                                       .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = ana,
+                                     .input = input,
+                                     .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           3,    /* dim */
                                           z_id,
                                           0,    /* state */
                                           CS_CDO_BC_DIRICHLET,
-                                          &anai);
+                                          &ac);
 
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is

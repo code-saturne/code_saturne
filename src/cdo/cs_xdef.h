@@ -207,6 +207,9 @@ typedef struct {
 typedef struct {
 
   /*!
+   * \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   *
    * \var stride
    * Stride to access the array values
    *
@@ -226,6 +229,7 @@ typedef struct {
    * Otherwise, the lifecycle is managed by the calling code.
    */
 
+  int           z_id;
   int           stride;
   cs_flag_t     loc;
   cs_real_t    *values;
@@ -240,6 +244,11 @@ typedef struct {
  */
 
 typedef struct {
+
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   */
+  int                    z_id;
 
   /*! \var func
    * pointer to a \ref cs_analytic_func_t to call
@@ -265,6 +274,11 @@ typedef struct {
  */
 
 typedef struct {
+
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   */
+  int                    z_id;
 
   /*! \var loc
    *  Flag to know which type of entities are given as parameter in the

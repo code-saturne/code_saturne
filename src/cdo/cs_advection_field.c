@@ -626,16 +626,17 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
   int  dim = _get_dim_def(adv);
-  cs_xdef_analytic_context_t  anai = { .func = func,
-                                       .input = input,
-                                       .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = { .z_id = 0, /* all cells */
+                                     .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
                                           0,  /* zone_id = 0 => all cells */
                                           state_flag,
                                           meta_flag,
-                                          &anai);
+                                          &ac);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -663,7 +664,8 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
 
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
-  cs_xdef_array_context_t  context = {.stride = 3, /* default initialization */
+  cs_xdef_array_context_t  context = {.z_id = 0, /* all cells */
+                                      .stride = 3, /* default initialization */
                                       .loc = loc,
                                       .values = array,
                                       .is_owner = is_owner,
@@ -785,18 +787,19 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0;
-  cs_xdef_analytic_context_t  anai = { .func = func,
-                                       .input = input,
-                                       .free_input = NULL };
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  int  z_id = cs_get_bdy_zone_id(zname);
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           1,  /* dim. */
-                                          cs_get_bdy_zone_id(zname),
+                                          z_id,
                                           state_flag,
                                           meta_flag,
-                                          &anai);
+                                          &ac);
 
   int  def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;
@@ -832,11 +835,6 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
 
   cs_flag_t  state_flag =  0;
   cs_flag_t  meta_flag = 0;
-  cs_xdef_array_context_t  context = {.stride = 1,
-                                    .loc = loc,
-                                    .values = array,
-                                    .is_owner = is_owner,
-                                    .index = index };
 
   int  z_id = cs_get_bdy_zone_id(zname);
   if (z_id == 0)
@@ -847,6 +845,12 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
               "%s: Advection field: %s\n"
               " The boundary flux is not compatible with a vector-valued"
               " definition.\n", __func__, adv->name);
+  cs_xdef_array_context_t  context = {.z_id = z_id,
+                                      .stride = 1,
+                                      .loc = loc,
+                                      .values = array,
+                                      .is_owner = is_owner,
+                                      .index = index };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           1,  /* dim. */
