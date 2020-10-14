@@ -483,6 +483,24 @@ cs_property_data_init(bool                     need_tensor,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a single uniform and steady isotropic definition for the
+ *         given cs_property_t structure.
+ *         This is a specialized variant of \ref cs_property_def_iso_by_value
+ *         since several assumptions are satisfied.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       val      value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_def_constant_value(cs_property_t    *pty,
+                               double            val);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define an isotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *

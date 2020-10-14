@@ -1062,6 +1062,61 @@ cs_property_data_init(bool                     need_tensor,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a single uniform and steady isotropic definition for the
+ *         given cs_property_t structure.
+ *         This is a specialized variant of \ref cs_property_def_iso_by_value
+ *         since several assumptions are satisfied.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       val      value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_def_constant_value(cs_property_t    *pty,
+                               double            val)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+  if ((pty->type & CS_PROPERTY_ISO) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid setting: property %s is not isotropic.\n"
+              " Please check your settings.", pty->name);
+
+  int  new_id = _add_new_def(pty);
+
+  if (new_id > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid setting: property %s is assumed to be constant.\n"
+              " Several definitions have been added.\n"
+              " Please check your settings.", __func__, pty->name);
+
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
+    CS_FLAG_STATE_STEADY;
+  cs_flag_t  meta_flag = 0; /* metadata */
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        1,     /* dim */
+                                        0,     /* all cells */
+                                        state_flag,
+                                        meta_flag,
+                                        &val); /* context */
+
+  pty->defs[new_id] = d;
+  pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
+
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+  pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+
+  /* Set automatically the reference value if all cells are selected */
+  cs_property_set_reference_value(pty, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define an isotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
@@ -1721,22 +1776,33 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
   }
   else { /* Simple case: One has to evaluate the property */
 
-    for (int i = 0; i < pty->n_definitions; i++) {
+    if ((pty->type & CS_PROPERTY_ISO) && cs_property_is_constant(pty)) {
 
-      cs_xdef_t  *def = pty->defs[i];
-      const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+#     pragma omp parallel for if (cs_cdo_connect->n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < cs_cdo_connect->n_cells; i++)
+        array[i] = pty->ref_value;
 
-      pty->get_eval_at_cell[i](z->n_elts,
-                               z->elt_ids,
-                               false, /* without compact output */
-                               cs_glob_mesh,
-                               cs_cdo_connect,
-                               quant,
-                               t_eval,
-                               def->context,
-                               array);
+    }
+    else {
 
-    } /* Loop on definitions */
+      for (int i = 0; i < pty->n_definitions; i++) {
+
+        cs_xdef_t  *def = pty->defs[i];
+        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+        pty->get_eval_at_cell[i](z->n_elts,
+                                 z->elt_ids,
+                                 false, /* without compact output */
+                                 cs_glob_mesh,
+                                 cs_cdo_connect,
+                                 quant,
+                                 t_eval,
+                                 def->context,
+                                 array);
+
+      } /* Loop on definitions */
+
+    } /* Not isotropic and not constant */
 
   } /* Not defined as the product of two existing properties */
 }
@@ -1820,8 +1886,14 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     return result_a * result_b;
 
   }
-  else
-    return _get_cell_value(c_id, t_eval, pty);
+  else {
+
+    if (cs_property_is_constant(pty))
+      return pty->ref_value;
+    else
+      return _get_cell_value(c_id, t_eval, pty);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1903,8 +1975,14 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
                                                t_eval);
     return result_a * result_b;
   }
-  else
-    return _value_in_cell(cm, pty, t_eval);
+  else {
+
+    if (cs_property_is_constant(pty))
+      return pty->ref_value;
+    else
+      return _value_in_cell(cm, pty, t_eval);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
