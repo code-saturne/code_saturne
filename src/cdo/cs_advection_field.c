@@ -625,8 +625,10 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
 
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
-  cs_xdef_analytic_context_t  anai = {.func = func, .input = input };
   int  dim = _get_dim_def(adv);
+  cs_xdef_analytic_context_t  anai = { .func = func,
+                                       .input = input,
+                                       .free_input = NULL };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
@@ -785,8 +787,9 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
 
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0;
-  cs_xdef_analytic_context_t  anai = {.func = func,
-                                      .input = input };
+  cs_xdef_analytic_context_t  anai = { .func = func,
+                                       .input = input,
+                                       .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           1,  /* dim. */

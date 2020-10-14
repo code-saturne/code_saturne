@@ -77,24 +77,24 @@ BEGIN_C_DECLS
  * \brief  Allocate and initialize a new cs_xdef_t structure based on volumic
  *         elements
  *
- * \param[in]  type       type of definition
- * \param[in]  dim        dimension of the values to define
- * \param[in]  z_id       volume zone id
- * \param[in]  state      flag to know if this uniform, cellwise, steady...
- * \param[in]  meta       metadata associated to this description
- * \param[in]  context    pointer to a structure
+ * \param[in]  type        type of definition
+ * \param[in]  dim         dimension of the values to define
+ * \param[in]  z_id        volume zone id
+ * \param[in]  state       flag to know if this uniform, cellwise, steady...
+ * \param[in]  meta        metadata associated to this description
+ * \param[in]  context     pointer to a structure
  *
  * \return a pointer to the new cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_volume_create(cs_xdef_type_t     type,
-                      int                dim,
-                      int                z_id,
-                      cs_flag_t          state,
-                      cs_flag_t          meta,
-                      void              *context)
+cs_xdef_volume_create(cs_xdef_type_t           type,
+                      int                      dim,
+                      int                      z_id,
+                      cs_flag_t                state,
+                      cs_flag_t                meta,
+                      void                    *context)
 {
   cs_xdef_t  *d = NULL;
 
@@ -132,6 +132,7 @@ cs_xdef_volume_create(cs_xdef_type_t     type,
       BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
       b->func = a->func;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -146,6 +147,7 @@ cs_xdef_volume_create(cs_xdef_type_t     type,
       b->func = a->func;
       b->loc = a->loc;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -159,6 +161,7 @@ cs_xdef_volume_create(cs_xdef_type_t     type,
       BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
       b->func = a->func;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -292,6 +295,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       BFT_MALLOC(b, 1, cs_xdef_analytic_context_t);
       b->func = a->func;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -306,6 +310,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       b->func = a->func;
       b->loc = a->loc;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -432,6 +437,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
       BFT_MALLOC(b, 1, cs_xdef_time_func_context_t);
       b->func = a->func;
       b->input = a->input;
+      b->free_input = a->free_input;
 
       d->context = b;
     }
@@ -461,20 +467,59 @@ cs_xdef_free(cs_xdef_t     *d)
   if (d == NULL)
     return d;
 
-  if (d->type == CS_XDEF_BY_ARRAY) {
+  switch (d->type) {
 
-    cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
-    if (a->is_owner)
-      BFT_FREE(a->values);
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
+      if (a->is_owner)
+        BFT_FREE(a->values);
+      BFT_FREE(d->context);
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_context_t *c = (cs_xdef_analytic_context_t *)d->context;
+
+      if (c->free_input != NULL)
+        c->input = c->free_input(c->input);
+
+      BFT_FREE(d->context);
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_context_t *c = (cs_xdef_dof_context_t *)d->context;
+
+      if (c->free_input != NULL)
+        c->input = c->free_input(c->input);
+
+      BFT_FREE(d->context);
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t *c =
+        (cs_xdef_time_func_context_t *)d->context;
+
+      if (c->free_input != NULL)
+        c->input = c->free_input(c->input);
+
+      BFT_FREE(d->context);
+    }
+    break;
+
+  case CS_XDEF_BY_VALUE:
+  case CS_XDEF_BY_QOV:
     BFT_FREE(d->context);
+    break;
 
+  default:
+    break; /* Nothing special to do */
   }
-  else if (d->type == CS_XDEF_BY_TIME_FUNCTION     ||
-           d->type == CS_XDEF_BY_VALUE             ||
-           d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
-           d->type == CS_XDEF_BY_DOF_FUNCTION      ||
-           d->type == CS_XDEF_BY_QOV)
-    BFT_FREE(d->context);
 
   BFT_FREE(d);
 
@@ -537,6 +582,63 @@ cs_xdef_copy(cs_xdef_t     *src)
   cpy->qtype = src->qtype;
 
   return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief In case of a definition by an analytic function, a time function or a
+ *        function relying on degrees of freedom (DoFs). One can set a function
+ *        to free a complex input data structure (please refer to \ref
+ *        cs_xdef_free_input_t) for more details.
+ *
+ * \param[in, out]  d             pointer to a cs_xdef_t structure
+ * \param[in]       free_input    pointer to a function which free the input
+ *                                structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_free_input_function(cs_xdef_t               *d,
+                                cs_xdef_free_input_t    *free_input)
+{
+  if (d == NULL)
+    return;
+
+  switch (d->type) {
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_context_t *c = (cs_xdef_analytic_context_t *)d->context;
+
+      c->free_input = free_input;
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_context_t *c = (cs_xdef_dof_context_t *)d->context;
+
+      c->free_input = free_input;
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t *c =
+        (cs_xdef_time_func_context_t *)d->context;
+
+      c->free_input = free_input;
+    }
+    break;
+
+  default:
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: Setting a free input function is ignored.\n"
+                  " The type of definition is not compatible.", __func__);
+    break; /* Nothing special to do */
+
+  } /* End of switch */
 }
 
 /*----------------------------------------------------------------------------*/

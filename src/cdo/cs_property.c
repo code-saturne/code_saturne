@@ -1250,8 +1250,9 @@ cs_property_def_by_time_func(cs_property_t      *pty,
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t  tfc = {.input = input,
-                                      .func = func};
+  cs_xdef_time_func_context_t  tfc = { .func = func,
+                                       .input = input,
+                                       .free_input = NULL };
 
   /* Default initialization */
   int  dim = 0;
@@ -1319,8 +1320,9 @@ cs_property_def_by_analytic(cs_property_t        *pty,
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_analytic_context_t  anai = {.func = func,
-                                      .input = input };
+  cs_xdef_analytic_context_t  anai = { .func = func,
+                                       .input = input,
+                                       .free_input = NULL };
 
   int  dim = 1;
   if (pty->type == CS_PROPERTY_ORTHO)

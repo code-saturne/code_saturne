@@ -2946,8 +2946,9 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = {.func = analytic,
-                                    .input = input };
+  cs_xdef_analytic_context_t  ac = { .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
@@ -3146,8 +3147,9 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  ac = {.func = analytic,
-                                    .input = input };
+  cs_xdef_analytic_context_t  ac = { .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
 
   int dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN||
@@ -3504,7 +3506,10 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = {.func = func, .input = input };
+  cs_xdef_analytic_context_t  ac = { .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
@@ -3561,6 +3566,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
 
   cs_xdef_dof_context_t  context = { .func = func,
                                      .input = input,
+                                     .free_input = NULL,
                                      .loc = loc_flag };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
@@ -3773,7 +3779,10 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  ac = {.func = func, .input = input};
+  cs_xdef_analytic_context_t  ac = { .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,

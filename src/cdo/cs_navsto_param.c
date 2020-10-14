@@ -1281,8 +1281,9 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
     if (z_id == 0)
       meta_flag |= CS_FLAG_FULL_LOC;
 
-    cs_xdef_analytic_context_t  anai = {.func = analytic,
-                                      .input = input };
+    cs_xdef_analytic_context_t  anai = { .func = analytic,
+                                         .input = input,
+                                         .free_input = NULL };
 
     d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                               3,  /* dim */
@@ -1388,8 +1389,9 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_context_t  anai = {.func = analytic,
-                                    .input = input };
+  cs_xdef_analytic_context_t  anai = { .func = analytic,
+                                       .input = input,
+                                       .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         1,  /* dim */
@@ -1795,7 +1797,10 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  anai = {.func = ana, .input = input };
+  cs_xdef_analytic_context_t  anai = { .func = ana,
+                                       .input = input,
+                                       .free_input = NULL };
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           3,    /* dim */
                                           z_id,

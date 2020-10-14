@@ -1221,12 +1221,15 @@ _test_cdofb_source(FILE                     *out,
     if (_func == NULL)
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-    cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL };
+    cs_xdef_analytic_context_t  ac = {.func = _func,
+                                      .input = NULL,
+                                      .free_input = NULL };
+
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                            dim,
                                            0,  /* z_id */
                                            state_flag, meta_flag,
-                                           &anai);
+                                           &ac);
 
     /* Loop on runs to evaluate the performance of each quadrature */
     for (int r = 0; r < n_runs; r++) {
@@ -1404,15 +1407,16 @@ _test_cdovb_source(FILE                     *out,
   }
   else { /* Definition by analytic */
 
-    cs_xdef_analytic_context_t  anai = {.func = _get_func_to_eval(dim, ftype),
-                                      .input = NULL };
+    cs_xdef_analytic_context_t  ac = {.func = _get_func_to_eval(dim, ftype),
+                                      .input = NULL,
+                                      .free_input = NULL };
 
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                            dim,
                                            0,  /* z_id */
                                            state_flag,
                                            meta_flag,
-                                           &anai);
+                                           &ac);
 
     /* Loop on runs to evaluate the performance of each quadrature */
     for (int r = 0; r < n_runs; r++) {
@@ -1622,7 +1626,9 @@ _test_quadratures_xdef(FILE                     *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL };
+  cs_xdef_analytic_context_t  ac = {.func = _func,
+                                    .input = NULL,
+                                    .free_input = NULL };
 
   cs_real_t  *st0, *st1, *st2;
   BFT_MALLOC(st0, totdof, cs_real_t);
@@ -1670,21 +1676,21 @@ _test_quadratures_xdef(FILE                     *out,
     memset(st2, 0, totdof*sizeof(cs_real_t));
 
     cs_timer_t  t0 = cs_timer_time();
-    cell_int(cm, teval, (void*)(&anai), CS_QUADRATURE_BARY, c_st0);
+    cell_int(cm, teval, (void*)(&ac), CS_QUADRATURE_BARY, c_st0);
     for (short int f = 0; f < nf; f++)
-      face_int(cm, f, teval, (void*)(&anai), CS_QUADRATURE_BARY,
+      face_int(cm, f, teval, (void*)(&ac), CS_QUADRATURE_BARY,
                st0 + f*dim);
     cs_timer_t  t1 = cs_timer_time();
 
-    cell_int(cm, teval, (void*)(&anai), CS_QUADRATURE_HIGHER, c_st1);
+    cell_int(cm, teval, (void*)(&ac), CS_QUADRATURE_HIGHER, c_st1);
     for (short int f = 0; f < nf; f++)
-      face_int(cm, f, teval, (void*)(&anai), CS_QUADRATURE_HIGHER,
+      face_int(cm, f, teval, (void*)(&ac), CS_QUADRATURE_HIGHER,
                st1 + f*dim);
     cs_timer_t  t2 = cs_timer_time();
 
-    cell_int(cm, teval, (void*)(&anai), CS_QUADRATURE_HIGHEST, c_st2);
+    cell_int(cm, teval, (void*)(&ac), CS_QUADRATURE_HIGHEST, c_st2);
     for (short int f = 0; f < nf; f++)
-      face_int(cm, f, teval, (void*)(&anai), CS_QUADRATURE_HIGHEST,
+      face_int(cm, f, teval, (void*)(&ac), CS_QUADRATURE_HIGHEST,
                st2 + f*dim);
     cs_timer_t  t3 = cs_timer_time();
 
@@ -1739,7 +1745,9 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   if (_func == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  cs_xdef_analytic_context_t  anai = {.func = _func, .input = NULL};
+  cs_xdef_analytic_context_t  ac = {.func = _func,
+                                    .input = NULL,
+                                    .free_input = NULL };
 
   /* Reset values */
   memset(st0, 0, totdof*sizeof(cs_real_t));
@@ -1761,9 +1769,9 @@ _test_cdofb_quadatures_avg(FILE                   *out,
 
   } /* Switch */
 
-  compute(cm, teval, (void*)(&anai), CS_QUADRATURE_BARY, st0);
-  compute(cm, teval, (void*)(&anai), CS_QUADRATURE_HIGHER, st1);
-  compute(cm, teval, (void*)(&anai), CS_QUADRATURE_HIGHEST, st2);
+  compute(cm, teval, (void*)(&ac), CS_QUADRATURE_BARY, st0);
+  compute(cm, teval, (void*)(&ac), CS_QUADRATURE_HIGHER, st1);
+  compute(cm, teval, (void*)(&ac), CS_QUADRATURE_HIGHEST, st2);
 
   /* Dump performance and evaluations */
   _dump_quad_res(out, "RED AVG", cm, dim, ftype,
