@@ -105,7 +105,7 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   const cs_real_t  *constant_val = (cs_real_t *)input;
 
