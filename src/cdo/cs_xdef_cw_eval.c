@@ -47,7 +47,6 @@
 #include "cs_field.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
-#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -638,7 +637,7 @@ cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
   cs_xdef_time_func_context_t *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Evaluate the quantity */
-  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, eval);
+  tfc->func(time_eval, tfc->input, eval);
 }
 
 /*----------------------------------------------------------------------------*/

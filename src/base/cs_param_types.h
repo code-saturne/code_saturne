@@ -124,10 +124,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function which defines the evolution of a quantity according to the
- *         number of iteration already done, the current time and any structure
- *         given as a parameter
+ *         current time and any structure given as a parameter
  *
- * \param[in]   time_iter   current number of iterations
  * \param[in]   time        value of the time at the end of the last iteration
  * \param[in]   input       pointer to a structure cast on-the-fly
  * \param[in]   retval      result of the evaluation
@@ -135,8 +133,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_time_func_t) (int           time_iter,
-                  double        time,
+(cs_time_func_t) (double        time,
                   void         *input,
                   cs_real_t    *retval);
 

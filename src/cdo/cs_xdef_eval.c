@@ -47,7 +47,6 @@
 #include "cs_field.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
-#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -285,7 +284,7 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
 
   /* Evaluate the quantity only once */
   cs_real_t  _eval;
-  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, &_eval);
+  tfc->func(time_eval, tfc->input, &_eval);
 
   if (elt_ids != NULL && !compact) {
 
@@ -339,7 +338,7 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
 
   /* Evaluate the quantity */
   cs_real_t  _eval[3];
-  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, _eval);
+  tfc->func(time_eval, tfc->input, _eval);
 
   if (elt_ids != NULL && !compact) {
 
@@ -396,7 +395,7 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
 
   /* Evaluate the quantity */
   cs_real_t  _eval[9];
-  tfc->func(cs_glob_time_step->nt_cur, time_eval, tfc->input, _eval);
+  tfc->func(time_eval, tfc->input, _eval);
 
   if (elt_ids != NULL && !compact) {
 
