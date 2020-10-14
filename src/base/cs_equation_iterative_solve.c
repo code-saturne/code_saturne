@@ -279,12 +279,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
 
-  /* Determine if we are in the special convection-diffusion
-     multigrid case */
+  /* solving info */
+  key_sinfo_id = cs_field_key_id("solving_info");
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+  }
 
-  if (iconvp > 0) {
+  /* Determine if we are in a case with special requirements */
+
+  if (coupling_id < 0 && iconvp > 0) {
     cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
-    if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
+    const char *sles_type = cs_sles_get_type(sc);
+    if (strcmp(sles_type, "cs_multigrid_t") == 0)
       conv_diff_mg = true;
   }
 
@@ -302,14 +310,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     BFT_MALLOC(adxkm1, n_cells_ext, cs_real_t);
     BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_t);
     BFT_MALLOC(rhs0, n_cells_ext, cs_real_t);
-  }
-
-  /* solving info */
-  key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1) {
-    f = cs_field_by_id(f_id);
-    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Symmetric matrix, except if advection */
@@ -652,15 +652,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      xam_conv,
                                      dam_diff,
                                      xam_diff);
-
-    else if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    dam,
-                                    xam);
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -1582,15 +1573,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /*  Solver residual */
     ressol = residu;
 
-    if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    (cs_real_t *)dam,
-                                    xam);
-
     cs_sles_solve_native(f_id,
                          var_name,
                          symmetric,
@@ -2401,15 +2383,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
-
-    if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    (cs_real_t *)dam,
-                                    xam);
 
     cs_sles_solve_native(f_id,
                          var_name,

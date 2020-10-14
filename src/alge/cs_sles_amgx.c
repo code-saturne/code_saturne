@@ -136,6 +136,8 @@ struct _cs_sles_amgx_t {
   AMGX_Mode               amgx_mode;
   bool                    pin_memory;
 
+  int                     flags;              /* additional option flags */
+
   AMGX_config_handle      amgx_config;        /* Solver configuration */
   AMGX_resources_handle   amgx_resources;     /* Associated resources */
 
@@ -495,7 +497,7 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup AmgX matrix with multiple halo rings
+ * \brief Setup AmgX matrix based on distribution info
  *
  * \param[in, out]  c   pointer to AmgX solver info and context
  * \param[in]       a   associated matrix
@@ -503,8 +505,8 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 /*----------------------------------------------------------------------------*/
 
 static void
-_setup_matrix_multi_ring(cs_sles_amgx_t     *c,
-                         const cs_matrix_t  *a)
+_setup_matrix_dist(cs_sles_amgx_t     *c,
+                   const cs_matrix_t  *a)
 {
   char err_str[4096];
   const char error_fmt[] = N_("%s returned %d.\n"
@@ -800,6 +802,7 @@ cs_sles_amgx_create(void)
   cs_sles_amgx_set_use_device(c, true);
 
   c->pin_memory = true;
+  c->flags = 0;
 
   return c;
 }
@@ -840,7 +843,8 @@ cs_sles_amgx_copy(const void  *context)
     }
 
     d->amgx_mode = c->amgx_mode;
-    d->pin_memory = d->pin_memory;
+    d->pin_memory = c->pin_memory;
+    d->flags = c->flags;
   }
 
   return d;
@@ -1033,8 +1037,8 @@ cs_sles_amgx_set_config_file(void        *context,
 /*!
  * \brief Indicate whether an AmgX solver should pin host memory.
  *
- * By default, memory will be pinned for faster transfers, but by calling
- * this function with "use_device = false", only the host will be used.
+ * By default, host memory will be pinned for faster transfers.
+ * This setting is relevant only when not using unified memory.
  *
  * \param[in]  context  pointer to AmgX solver info and context
  *
@@ -1054,8 +1058,9 @@ cs_sles_amgx_get_pin_memory(void  *context)
 /*!
  * \brief Define whether an AmgX solver should pin host memory.
  *
- * By default, memory will be pinned for faster transfers, but by calling
- * this function with "pin_memory = false", thie may be deactivated.
+ * By default, host memory will be pinned for faster transfers, but by calling
+ * this function with "pin_memory = false", this may be deactivated.
+ * This setting is relevant only when not using unified memory.
  *
  * \param[in, out]  context       pointer to AmgX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
@@ -1126,6 +1131,43 @@ cs_sles_amgx_set_use_device(void  *context,
     else if (sizeof(cs_real_t) == sizeof(float))
       c->amgx_mode = AMGX_mode_hFFI;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query additional AmgX solver usage flags.
+ *
+ * \param[in]  context  pointer to AmgX solver info and context
+ *
+ * \return  associated flags
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_amgx_get_flags(void  *context)
+{
+  cs_sles_amgx_t  *c = context;
+  return c->flags;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define additional AmgX solver usage flags
+ *
+ * By default, the device will be used, but by calling this function
+ * with "use_device = false", only the host will be used.
+ *
+ * \param[in, out]  context   pointer to AmgX solver info and context
+ * \param[in]       flags     flags (sum/bitwise of) for AmgX usage options.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_amgx_set_flags(void  *context,
+                       int    flags)
+{
+  cs_sles_amgx_t  *c = context;
+  c->flags = flags;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1201,23 +1243,30 @@ cs_sles_amgx_setup(void               *context,
          name);
 
     /* Number of ghost cell layers depends on solver configuration
-       (classical seems to require 2 rings, aggregation 1 ring) */
+       (classical seems to require 2 rings, aggregation 1 ring,
+       but it seems AMGX_config_get_default_number_of_rings cannot
+       always be trusted, so we need a user-defined flag to allow
+       forcing a setting in case of incorrect compatibility detection;
+       we could also use the distribution systematically, but prefer
+       to have both options for safety) */
 
-    int n_rings = 1;
-    if (cs_glob_n_ranks > 1)
-      AMGX_config_get_default_number_of_rings(c->amgx_config, &n_rings);
+    bool use_dist = false;
+    if (cs_glob_n_ranks > 1) {
+      if (c->flags & CS_SLES_AMGX_PREFER_COMM_FROM_MAPS) {
+        int n_rings = 1;
+        AMGX_config_get_default_number_of_rings(c->amgx_config, &n_rings);
+        if (n_rings > 1)
+          use_dist = true;
+      }
+      else
+        use_dist = true;
+    }
 
-    if (n_rings <= 1)
+    if (use_dist == false)
       _setup_matrix_1_ring(c, a);
 
     else
-      _setup_matrix_multi_ring(c, a);
-
-    if (n_rings > 2)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("The selected AmgX solver configuration parameters are not compatible\n"
-           "with the \"one ring\" communication scheme currently handled."));
+      _setup_matrix_dist(c, a);
 
     /* Solver */
 

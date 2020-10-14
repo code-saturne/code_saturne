@@ -43,6 +43,14 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * AmgX wrapper option flags
+ */
+
+/*! Use AMGX_comm_from_maps_1_ring instead of AMGX_distribution
+  for parallel matrices when its use seems possible */
+#define CS_SLES_AMGX_PREFER_COMM_FROM_MAPS     (1 << 0)
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -196,8 +204,8 @@ cs_sles_amgx_set_config_file(void        *context,
 /*!
  * \brief Indicate whether an AmgX solver should pin host memory.
  *
- * By default, memory will be pinned for faster transfers, but by calling
- * this function with "use_device = false", only the host will be used.
+ * By default, host memory will be pinned for faster transfers.
+ * This setting is relevant only when not using unified memory.
  *
  * \param[in]  context  pointer to AmgX solver info and context
  *
@@ -212,8 +220,9 @@ cs_sles_amgx_get_pin_memory(void  *context);
 /*!
  * \brief Define whether an AmgX solver should pin host memory.
  *
- * By default, memory will be pinned for faster transfers, but by calling
- * this function with "pin_memory = false", thie may be deactivated.
+ * By default, host memory will be pinned for faster transfers, but by calling
+ * this function with "pin_memory = false", this may be deactivated.
+ * This setting is relevant only when not using unified memory.
  *
  * \param[in, out]  context       pointer to AmgX solver info and context
  * \param[in]       pin_memory   true for devince, false for host only
@@ -255,6 +264,35 @@ cs_sles_amgx_get_use_device(void  *context);
 void
 cs_sles_amgx_set_use_device(void  *context,
                             bool   use_device);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define additional AmgX solver usage flags
+ *
+ * By default, the device will be used, but by calling this function
+ * with "use_device = false", only the host will be used.
+ *
+ * \param[in, out]  context   pointer to AmgX solver info and context
+ * \param[in]       flags     flags (sum/bitwise of) for AmgX usage options.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_amgx_set_flags(void  *context,
+                       int    flags);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query additional AmgX solver usage flags.
+ *
+ * \param[in]  context  pointer to AmgX solver info and context
+ *
+ * \return  associated flags
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_amgx_get_flags(void  *context);
 
 /*----------------------------------------------------------------------------
  * Setup AmgX linear equation solver.
