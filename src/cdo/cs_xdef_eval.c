@@ -155,7 +155,7 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   const cs_real_t  *constant_val = (cs_real_t *)context;
 
@@ -213,8 +213,7 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(time_eval);
-
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   const cs_real_3_t  *constant_val = (const cs_real_3_t *)context;
 
@@ -278,7 +277,7 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
   CS_UNUSED(connect);
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
@@ -332,7 +331,7 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
   CS_UNUSED(connect);
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
@@ -389,7 +388,7 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
   CS_UNUSED(connect);
-  assert(eval != NULL);
+  assert(eval != NULL || n_elts == 0);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
