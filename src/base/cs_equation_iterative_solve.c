@@ -2059,7 +2059,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
-  int coupling_id = -1;
 
   cs_field_t *f;
 
@@ -2103,7 +2102,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Name */

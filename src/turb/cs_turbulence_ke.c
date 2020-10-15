@@ -356,10 +356,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   BFT_MALLOC(usimpe, n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
-  cs_real_t *prdtke, *prdeps, *sqrt_k, *sqrt_strain;
-  cs_real_3_t *grad_sqk, *grad_sqs;
-  cs_real_t *coefa_sqk, *coefb_sqk, *coefa_sqs, *coefb_sqs;
-  cs_real_t *w10, *w11;
+  cs_real_t *prdtke = NULL, *prdeps = NULL, *sqrt_k = NULL, *sqrt_strain = NULL;
+  cs_real_3_t *grad_sqk = NULL, *grad_sqs = NULL;
+  cs_real_t *coefa_sqk = NULL, *coefb_sqk = NULL;
+  cs_real_t *coefa_sqs = NULL, *coefb_sqs = NULL;
+  cs_real_t *w10 = NULL, *w11 = NULL;
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON) {
     BFT_MALLOC(prdtke, n_cells_ext, cs_real_t);
@@ -402,11 +403,11 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       || cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K){
     cvara_phi = (cs_real_t *)CS_F_(phi)->val_pre;
   }
-  cs_real_t *cvara_al;
+  cs_real_t *cvara_al = NULL;
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     cvara_al = (cs_real_t *)CS_F_(alp_bl)->val_pre;
   }
-  const cs_real_t *w_dist;
+  const cs_real_t *w_dist = NULL;
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
     w_dist =  cs_field_by_name("wall_distance")->val;
   }
@@ -985,9 +986,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
    *      viscf, viscb
    *      Going out of the step we keep w10, w11 */
 
-  cs_real_t *w12;
   cs_real_t xnu, xnut, xphi, ttmin, tt;
-  cs_real_t *coefap, *coefbp, *cofafp, *cofbfp;
+  cs_real_t *coefap = NULL, *coefbp = NULL, *cofafp = NULL, *cofbfp = NULL;
+  cs_real_t *w12 = NULL;
 
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
 

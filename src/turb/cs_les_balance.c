@@ -2409,12 +2409,12 @@ _check_restart_type(void)
        default_path);
 
   if (rp != NULL)  {
-    int ierror = cs_restart_read_section(rp,
-                                         "les_balance_type",
-                                         CS_MESH_LOCATION_NONE,
-                                         1,
-                                         CS_TYPE_int,
-                                         &b_type);
+    cs_restart_read_section(rp,
+                            "les_balance_type",
+                            CS_MESH_LOCATION_NONE,
+                            1,
+                            CS_TYPE_int,
+                            &b_type);
 
     if (!(b_type & _les_balance.type))
       bft_error(__FILE__, __LINE__, 0,

@@ -456,6 +456,7 @@ _read_ent_values(cs_restart_t           *r,
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
     break;
   default:
+    nbr_byte_ent = 0;
     assert(0);
   }
 

@@ -139,9 +139,9 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   /* Map field arrays */
 
   const cs_real_3_t *vela = (const cs_real_3_t *)CS_F_(vel)->val_pre;
-  const cs_real_t *cvara_k;
-  const cs_real_t *cvara_ep;
-  const cs_real_t *cvara_omg;
+  const cs_real_t *cvara_k = NULL;
+  const cs_real_t *cvara_ep = NULL;
+  const cs_real_t *cvara_omg = NULL;
 
   if (cs_glob_turb_rans_model->itycor == 1){
     cvara_k = (const cs_real_t *)CS_F_(k)->val_pre;

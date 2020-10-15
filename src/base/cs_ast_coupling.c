@@ -878,7 +878,7 @@ void CS_PROCF(astcin, ASTCIN)
           c3,
           nb_dyn);
   }
-  else if (ast_cpl->s_it_id > 0) {
+  else { /* if (ast_cpl->s_it_id > 0) */
     alpha = 0.5;
     c1    = alpha;
     c2    = 1. - alpha;

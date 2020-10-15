@@ -440,7 +440,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 
   cs_real_t vect_s[3];
-  cs_real_t domegat;
+  cs_real_t domegat = 0;
   bool one_dir = false;
   /* Compute the Angular direction for direct solar radiation */
   if (gg_id == 0) {

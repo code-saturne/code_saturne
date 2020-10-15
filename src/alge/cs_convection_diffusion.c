@@ -12061,10 +12061,10 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
   bool recompute_cocg = (iccocg) ? true : false;
 
-  cs_real_6_t *viscce;
-  cs_real_6_t *w2;
-  cs_real_3_t *grad;
-  cs_field_t *f;
+  cs_real_6_t *viscce = NULL;
+  cs_real_6_t *w2 = NULL;
+  cs_real_3_t *grad = NULL;
+  cs_field_t *f = NULL;
 
   cs_real_t *gweight = NULL;
 
