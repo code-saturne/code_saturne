@@ -523,7 +523,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     f = gen_cmd_file(cmds)
 
     if debugger_ui == 'gdbgui':
-        cmd.append('--gdb-args="-x ' + f + '"')
+        cmd.append('--gdb-cmd')
+        cmd.append(gdb + ' -x ' + f + ' ' + path)
     else:
         cmd.append('-x')
         cmd.append(f)
@@ -539,7 +540,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     # Finalize command
 
-    cmd.append(path)
+    if debugger_ui != 'gdbgui':
+        cmd.append(path)
 
     # Start building command to run
 
