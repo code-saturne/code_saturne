@@ -230,6 +230,12 @@ def process_cmd_line(argv, pkg):
                     if 'id' in run_conf.sections['run']:
                         run_id = run_conf.sections['run']['id']
 
+    if s_c['stage'] == False and not run_id:
+        err_str = os.linesep + os.linesep + 'Error:' + os.linesep
+        err_str += 'Incompatible options in the run.cfg file or command arguments'
+        err_str += os.linesep
+        err_str += 'When the "stage" step is set to False, a run id is required.'
+        raise cs_case_domain.RunCaseError(err_str)
 
     # Check for multiple domain case
     # Kept the 'coupling' file def for the definition of the case_dir function
@@ -246,12 +252,11 @@ def process_cmd_line(argv, pkg):
         cmd_line = sys.argv[0]
         for arg in sys.argv[1:]:
             cmd_line += ' ' + arg
-        err_str = 'Error:' + os.linesep
+        err_str = os.linesep + os.linesep + 'Error:' + os.linesep
         err_str += cmd_line + os.linesep
         err_str += '-p/--param option is incompatible with '
         err_str += '"coupled_domains" option defined within the run.cfg file.'
-        raise RunCaseError(err_str)
-
+        raise cs_case_domain.RunCaseError(err_str)
 
     casedir, staging_dir = cs_case.get_case_dir(case=options.case,
                                                 param=options.param,

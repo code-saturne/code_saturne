@@ -242,6 +242,14 @@ class BatchRunningModel(object):
         if self.job_header_lines:
             self.job_header_lines_ini = list(self.job_header_lines)
 
+        # Fix incompatible options if needed
+        # (add entries to dictionnaries so __is_changed__ will detect update)
+
+        if self.run_conf.get_bool('run', 'stage') == False:
+            if not self.run_dict_ini['id']:
+                self.run_dict_ini['stage'] = False
+                self.run_dict['stage'] = None
+
         # Query info related to compute build
 
         self.updateComputeBuildInfo(self.run_dict['compute_build'])

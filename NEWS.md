@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Enforce consistency of "stage" and "id" run configuration options.
+
 - Fix GUI handling of batch job name.
 
 - Fix GUI crash when inserting a comment in formula
