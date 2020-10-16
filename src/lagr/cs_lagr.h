@@ -270,8 +270,8 @@ typedef struct {
     When \ref modcpl is strictly positive, its value is interpreted as the
     absolute Lagrangian time step number (including restarts) after which the
     complete model is applied.
-    Since the complete model uses volume statistics, \ref modcpl must be
-    either 0 or larger than \ref cs_lagr_stat_options_t::idstnt "idstnt". */
+    Since the complete model uses volume statistics, this is only effective
+    once the time step reaches \ref cs_lagr_stat_options_t::idstnt "idstnt". */
   int modcpl;
 
   /*!  direction (1=x, 2=y, 3=z) of the complete model.

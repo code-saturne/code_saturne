@@ -114,6 +114,12 @@ cs_lagr_gradients(int            time_id,
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
+  bool turb_disp_model = false;
+  if (   cs_glob_lagr_model->modcpl > 0
+      && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl
+      && cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->idstnt)
+    turb_disp_model = true;
+
   /* Use pressure gradient of NEPTUNE_CFD if needed */
   if (cs_field_by_name_try("velocity_1") != NULL) {
     cs_real_t *cpro_pgradlagr = cs_field_by_name("lagr_pressure_gradient")->val;
@@ -122,9 +128,7 @@ cs_lagr_gradients(int            time_id,
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
-    if (  (   cs_glob_lagr_model->modcpl > 0
-           && cs_glob_time_step->nt_cur >= cs_glob_lagr_model->modcpl)
-        || cs_glob_lagr_model->shape > 0) {
+    if (turb_disp_model || cs_glob_lagr_model->shape > 0) {
 
       cs_real_33_t *cpro_vgradlagr
         = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
@@ -261,10 +265,7 @@ cs_lagr_gradients(int            time_id,
   /* Compute velocity gradient
      ========================= */
 
-  if ( (  cs_glob_lagr_model->modcpl > 0
-        && cs_glob_time_step->nt_cur >= cs_glob_lagr_model->modcpl)
-      || cs_glob_lagr_model->shape > 0 ) {
-
+  if (turb_disp_model || cs_glob_lagr_model->shape > 0 ) {
     cs_field_gradient_vector(extra->vel,
                              time_id,
                              inc,

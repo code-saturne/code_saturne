@@ -1721,8 +1721,8 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
   BFT_MALLOC(extra->grad_pr, ncelet, cs_real_3_t);
-  if (cs_glob_lagr_model->modcpl > 0
-      || cs_glob_lagr_model->shape > 0 )
+  if (   cs_glob_lagr_model->modcpl > 0
+      || cs_glob_lagr_model->shape > 0)
     BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
 
   /* For frozen field:
