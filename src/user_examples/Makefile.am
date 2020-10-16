@@ -110,6 +110,7 @@ cs_user_mesh-joining.c \
 cs_user_mesh-modify.c \
 cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
+cs_user_paramedmem_coupling-base.c \
 cs_user_parameters-base.c \
 cs_user_parameters-cdo-condif.c \
 cs_user_parameters-ctwr.c \

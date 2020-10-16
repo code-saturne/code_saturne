@@ -104,6 +104,7 @@ cs_user_les_inflow.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
 cs_user_metal_structures_source_terms.f90 \
+cs_user_paramedmem_coupling.c \
 cs_user_parameters.c \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.c \

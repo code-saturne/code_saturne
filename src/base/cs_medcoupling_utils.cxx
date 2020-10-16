@@ -580,9 +580,14 @@ cs_medcoupling_mesh_create(const char  *name,
 #else
 
   BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
-  BFT_MALLOC(m->sel_criteria, strlen(selection_criteria)+1, char);
-  strcpy(m->sel_criteria, selection_criteria);
 
+  if (selection_criteria != NULL) {
+    BFT_MALLOC(m->sel_criteria, strlen(selection_criteria)+1, char);
+    strcpy(m->sel_criteria, selection_criteria);
+  } else {
+    BFT_MALLOC(m->sel_criteria, strlen("all[]")+1, char);
+    strcpy(m->sel_criteria, "all[]");
+  }
   m->elt_dim  = elt_dim;
   m->n_elts   = 0;
   m->elt_list = NULL;

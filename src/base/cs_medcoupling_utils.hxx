@@ -48,7 +48,6 @@
 
 #if defined(HAVE_MEDCOUPLING)
 
-#include "MEDCoupling_version.h"
 #include "MEDCouplingUMesh.hxx"
 
 using namespace MEDCoupling;

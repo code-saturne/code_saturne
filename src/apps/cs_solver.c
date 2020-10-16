@@ -91,6 +91,7 @@
 #include "cs_notebook.h"
 #include "cs_opts.h"
 #include "cs_param_cdo.h"
+#include "cs_paramedmem_coupling.hxx"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_properties.h"
@@ -289,6 +290,8 @@ _run(void)
   cs_syr_coupling_all_init();
   cs_sat_coupling_all_init();
 
+  cs_paramedmem_coupling_all_init();
+
   /* Initialize main post-processing */
 
   cs_gui_postprocess_writers();
@@ -418,6 +421,8 @@ _run(void)
 
           cs_syr_coupling_init_meshes();
 
+          cs_paramedmem_coupling_define_mesh_fields();
+
           cs_post_default_write_meshes();
 
           cs_turbomachinery_restart_mesh();
@@ -487,6 +492,7 @@ _run(void)
   cs_syr_coupling_all_finalize();
 #if defined(HAVE_MPI)
   cs_sat_coupling_all_finalize();
+  cs_paramedmem_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
 
