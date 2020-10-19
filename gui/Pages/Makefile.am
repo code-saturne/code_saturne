@@ -123,7 +123,8 @@ OpenTurnsDialogView.py \
 SolidView.py \
 ThermodynamicsView.py \
 TimeStepViewNeptune.py \
-VolumicTermsView.py \
+VolumicNatureView.py \
+BoundaryNatureView.py \
 VolumicConditionsView.py
 
 # PyQt User Interface files
@@ -233,7 +234,8 @@ BoundaryConditionsScalar.ui \
 BoundaryConditionsWall.ui \
 BoundaryConditionsInterfacialArea.ui \
 TimeStep.ui \
-VolumicTermsForm.ui \
+VolumicNatureForm.ui \
+BoundaryNatureForm.ui \
 VolumicConditionsForm.ui
 
 # PyQt Resources files

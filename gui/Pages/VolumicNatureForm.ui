@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-    <class>VolumicTermsForm</class>
-    <widget class="QWidget" name="VolumicTermsForm">
+    <class>VolumicNatureForm</class>
+    <widget class="QWidget" name="VolumicNatureForm">
         <property name="geometry">
             <rect>
                 <x>0</x>
@@ -13,8 +13,8 @@
         <property name="windowTitle">
             <string>Form</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
+        <layout class="QGridLayout" name="gridLayout">
+            <item row="1" column="0">
                 <widget class="QGroupBox" name="groupBox">
                     <property name="title">
                         <string>Define volumic terms to apply per zone</string>
@@ -26,7 +26,7 @@
                     </layout>
                 </widget>
             </item>
-            <item>
+            <item row="2" column="0">
                 <spacer name="verticalSpacer">
                     <property name="orientation">
                         <enum>Qt::Vertical</enum>

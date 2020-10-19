@@ -933,12 +933,12 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         # Model for table View
         if zoneType == "BoundaryZone":
-            self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V, tree, case)
+            self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
             self.tableView.setModel(self.modelLocalization)
             self.tableView.setItemDelegateForColumn(0, delegateLabel)
             self.tableView.setItemDelegateForColumn(1, delegateCode)
-            self.tableView.setItemDelegateForColumn(3, delegateLocal)
-            last_section = 3
+            self.tableView.setItemDelegateForColumn(2, delegateLocal)
+            last_section = 2
         else:
             self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
             self.tableView.setModel(self.modelLocalization)
@@ -1052,24 +1052,24 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         actionMerge.triggered.connect(self.slotMerge)
         fileMenu.addAction(actionMerge)
 
-        if self.zoneType == 'BoundaryZone':
-            fileMenu.addSeparator()
-
-            self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
-            self.actionInlet.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionInlet)
-
-            self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
-            self.actionOutlet.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionOutlet)
-
-            self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
-            self.actionWall.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionWall)
-
-            self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
-            self.actionSymmetry.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionSymmetry)
+        # if self.zoneType == 'BoundaryZone':
+        #     fileMenu.addSeparator()
+        #
+        #     self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
+        #     self.actionInlet.triggered.connect(self.slotSelectBoudaries)
+        #     fileMenu.addAction(self.actionInlet)
+        #
+        #     self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
+        #     self.actionOutlet.triggered.connect(self.slotSelectBoudaries)
+        #     fileMenu.addAction(self.actionOutlet)
+        #
+        #     self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
+        #     self.actionWall.triggered.connect(self.slotSelectBoudaries)
+        #     fileMenu.addAction(self.actionWall)
+        #
+        #     self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
+        #     self.actionSymmetry.triggered.connect(self.slotSelectBoudaries)
+        #     fileMenu.addAction(self.actionSymmetry)
 
         fileMenu.popup(QCursor().pos())
         fileMenu.show()
@@ -1182,6 +1182,33 @@ class BoundaryLocalizationView(LocalizationView):
         # Delegates
         delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
         self.tableView.setItemDelegateForColumn(2, delegateNature)
+
+    # @pyqtSlot()
+    # def slotSelectBoudaries(self):
+    #     """
+    #     Public slot.
+    #
+    #     Warning: works only if the selection mode of the view is set to MultiSelection.
+    #     """
+    #     previous_selecion_mode = self.tableView.selectionMode()
+    #     self.tableView.setSelectionMode(QAbstractItemView.MultiSelection)
+    #     self.tableView.clearSelection()
+    #
+    #     if self.sender() == self.actionInlet:
+    #         select = "inlet"
+    #     elif self.sender() == self.actionOutlet:
+    #         select = "outlet"
+    #     elif self.sender() == self.actionWall:
+    #         select = "wall"
+    #     elif self.sender() == self.actionSymmetry:
+    #         select = "symmetry"
+    #
+    #     for row in range(self.modelLocalization.rowCount()):
+    #         [label, code, nature, localization] = self.modelLocalization.getItem(row)
+    #         if nature == select:
+    #             self.tableView.selectRow(row)
+    #
+    #     self.tableView.setSelectionMode(previous_selecion_mode)
 
 #-------------------------------------------------------------------------------
 # End

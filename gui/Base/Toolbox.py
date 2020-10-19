@@ -71,7 +71,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
                 import code_saturne.Pages.BoundaryConditionsView as Page
                 thisPage = Page.BoundaryConditionsView(root, case, zone_name)
 
-        elif item.parentItem.itemData[0] == tr("Volumic terms"):
+        elif item.parentItem.itemData[0] == tr("Volume conditions"):
             import code_saturne.Pages.VolumicConditionsView as Page
             thisPage = Page.VolumicConditionsView(root, case, zone_name)
 
@@ -105,13 +105,17 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)
 
+    elif page_name == tr("Boundary zones"):
+        import code_saturne.Pages.LocalizationView as Page
+        thisPage = Page.BoundaryLocalizationView(root, case, tree)
+
     elif page_name == tr("Notebook"):
         import code_saturne.Pages.NotebookView as Page
         thisPage = Page.NotebookView(root, case)
 
-    elif page_name == tr("Volumic terms"):
-        import code_saturne.Pages.VolumicTermsView as Page
-        thisPage = Page.VolumicTermsView(root, case)
+    elif page_name == tr("Volume conditions"):
+        import code_saturne.Pages.VolumicNatureView as Page
+        thisPage = Page.VolumicNatureView(root, case)
 
     elif page_name == tr("Calculation features"):
         import code_saturne.Pages.AnalysisFeaturesView as Page
@@ -198,8 +202,8 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         thisPage = Page.ImmersedBoundariesViewNeptune(root, case)
 
     elif page_name == tr("Boundary conditions"):
-        import code_saturne.Pages.LocalizationView as Page
-        thisPage = Page.BoundaryLocalizationView(root, case, tree)
+        import code_saturne.Pages.BoundaryNatureView as Page
+        thisPage = Page.BoundaryNatureView(root, case, tree)
 
     elif page_name == tr("Particle boundary conditions"):
         import code_saturne.Pages.LagrangianBoundariesView as Page

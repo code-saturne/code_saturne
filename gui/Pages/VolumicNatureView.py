@@ -42,7 +42,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
-from code_saturne.Pages.VolumicTermsForm import Ui_VolumicTermsForm
+from code_saturne.Pages.VolumicNatureForm import Ui_VolumicNatureForm
 
 # -------------------------------------------------------------------------------
 # Widgets import
@@ -53,7 +53,7 @@ from code_saturne.Pages.VolumicTermsForm import Ui_VolumicTermsForm
 # -------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("VolumicTermsView")
+log = logging.getLogger("VolumicNatureView")
 log.setLevel(GuiParam.DEBUG)
 
 
@@ -185,12 +185,12 @@ def bool2CheckState(bool_value):
 # Main class
 # -------------------------------------------------------------------------------
 
-class VolumicTermsView(QWidget, Ui_VolumicTermsForm):
+class VolumicNatureView(QWidget, Ui_VolumicNatureForm):
     """ Display available volumic treatments for a given zone """
 
     def __init__(self, parent, case):
         QWidget.__init__(self, parent)
-        Ui_VolumicTermsForm.__init__(self)
+        Ui_VolumicNatureForm.__init__(self)
         self.setupUi(self)
 
         self.case = case

@@ -216,10 +216,13 @@ class TreeModel(QAbstractItemModel):
                 elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == self.tr('Volumic terms'):
+                elif page_name == self.tr('Volume conditions'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary zones'):
+                    img_path = ":/icons/22x22/boundary_conditions.png"
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == self.tr('Boundary conditions'):
                     img_path = ":/icons/22x22/boundary_conditions.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Time settings'):
@@ -471,7 +474,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
               'Closure modeling', 'Fluid properties',
-              'Particles and droplets tracking', 'Volumic terms',
+              'Particles and droplets tracking', 'Volume conditions',
               'Boundary conditions', 'Additional BC models', 'Time settings',
               'Numerical parameters',
               'Postprocessing', 'Performance settings']
@@ -483,7 +486,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if section == 'Calculation environment':
             return ['Notebook']
         elif section == 'Mesh':
-            return ['Preprocessing', "Volume zones"]
+            return ['Preprocessing', "Volume zones", "Boundary zones"]
         elif section == 'Calculation features':
             return ['Main fields', 'Deformable mesh', 'Turbulence models',
                     'Thermal model', 'Body forces', 'Gas combustion',
@@ -501,7 +504,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return []
         elif section == 'Particles and droplets tracking':
             return ['Statistics']
-        elif section == 'Volumic terms':
+        elif section == 'Volume conditions':
             return []
         elif section == "Boundary conditions":
             return []
@@ -792,7 +795,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Statistics'))
         """
 
-        self.setRowShow(self.tr('Volumic terms'), False)
+        self.setRowShow(self.tr('Volume conditions'), False)
         """
         self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Head losses'))
@@ -1020,7 +1023,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Volume zones
 
         self.setRowShow(self.tr('Volume zones'), True)
-        self.setRowShow(self.tr('Volumic terms'), True)
+        self.setRowShow(self.tr('Volume conditions'), True)
 
         node_domain = case.xmlGetNode('solution_domain')
 
@@ -1066,7 +1069,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         # Update volume zones display
         volume_zone_labels = LocalizationModel("VolumicZone", case).getSortedZoneLabels()
-        self.updateBrowserZones(volume_zone_labels, "Volumic terms")
+        self.updateBrowserZones(volume_zone_labels, "Volume conditions")
 
         self.__hideRow()
 
