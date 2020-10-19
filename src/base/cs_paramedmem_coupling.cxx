@@ -76,7 +76,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_paramedmem_coupling.hxx"
+#include "cs_paramedmem_coupling.h"
 
 #if defined(HAVE_PARAMEDMEM)
 
@@ -245,10 +245,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_by_id(int cpl_id)
+cs_paramedmem_coupling_by_id(int  cpl_id)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(cpl_id);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -283,6 +284,7 @@ cs_paramedmem_coupling_by_name(const char *name)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(name);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -318,13 +320,17 @@ cs_paramedmem_coupling_by_name(const char *name)
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create(const char *app1_name,
-                              const char *app2_name,
-                              const char *cpl_name)
+cs_paramedmem_coupling_create(const char  *app1_name,
+                              const char  *app2_name,
+                              const char  *cpl_name)
 {
   cs_paramedmem_coupling_t *c = NULL;
 
 #if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(app1_name);
+  CS_NO_WARN_IF_UNUSED(app2_name);
+  CS_NO_WARN_IF_UNUSED(cpl_name);
 
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
@@ -409,6 +415,7 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -463,9 +470,13 @@ cs_paramedmem_coupling_all_finalize(void)
 void
 cs_paramedmem_add_mesh_from_criteria(cs_paramedmem_coupling_t  *c,
                                      const char                *sel_crit,
-                                     const int                  elt_dim)
+                                     int                        elt_dim)
 {
 #if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(sel_crit);
+  CS_NO_WARN_IF_UNUSED(elt_dim);
 
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
@@ -493,6 +504,8 @@ cs_paramedmem_add_mesh_from_zone(cs_paramedmem_coupling_t  *c,
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(zone);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -566,6 +579,7 @@ cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t  *coupling)
 
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(coupling);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -596,6 +610,7 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling)
 
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(coupling);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -634,6 +649,12 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   int f_id = -1;
 
 #if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(dim);
+  CS_NO_WARN_IF_UNUSED(space_discr);
+  CS_NO_WARN_IF_UNUSED(time_discr);
 
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
@@ -711,6 +732,10 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
 
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(f);
+  CS_NO_WARN_IF_UNUSED(td);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -754,6 +779,10 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
                            const double               values[])
 {
 #if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(values);
 
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
@@ -812,6 +841,10 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(values);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -866,6 +899,7 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *c)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -894,6 +928,7 @@ cs_paramedmem_send_data(cs_paramedmem_coupling_t  *c)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -919,6 +954,7 @@ cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *c)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -946,6 +982,8 @@ cs_paramedmem_attach_field_by_id(cs_paramedmem_coupling_t  *c,
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(field_id);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -972,6 +1010,8 @@ cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
 {
 #if !defined(HAVE_PARAMEDMEM)
 
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: %s cannot be called without "
               "MEDCoupling MPI support."), __func__);
@@ -1025,6 +1065,12 @@ cs_paramedmem_send_field_vals(cs_paramedmem_coupling_t *c,
   /* Send data */
   cs_paramedmem_send_data(c);
 
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
+
 #endif
 }
 
@@ -1054,6 +1100,12 @@ cs_paramedmem_recv_field_vals(cs_paramedmem_coupling_t *c,
 
   /* Read values */
   cs_paramedmem_field_import(c, name, vals);
+
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
 
 #endif
 }

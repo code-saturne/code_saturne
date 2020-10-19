@@ -25,9 +25,11 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
-#include "cs_paramedmem_coupling.hxx"
+#include "cs_defs.h"
 
 /*============================================================================
  * Structure definitions
@@ -35,11 +37,13 @@
 
 typedef struct _cs_paramedmem_coupling_t cs_paramedmem_coupling_t;
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*============================================================================
  *  Global variable definitions
  *============================================================================*/
-
-BEGIN_C_DECLS
 
 typedef enum {
   CS_MEDCPL_ON_CELLS,
@@ -135,7 +139,7 @@ cs_paramedmem_coupling_all_finalize(void);
 void
 cs_paramedmem_add_mesh_from_criteria(cs_paramedmem_coupling_t  *c,
                                      const char                *sel_crit,
-                                     const int                  elt_dim);
+                                     int                        elt_dim);
 
 /*----------------------------------------------------------------------------*/
 /*!

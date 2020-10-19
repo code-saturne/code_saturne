@@ -64,7 +64,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_paramedmem_remapper.hxx"
+#include "cs_paramedmem_remapper.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -100,6 +100,8 @@ using namespace MEDCoupling;
 /*----------------------------------------------------------------------------
  * MEDCoupling/ParaMEDMEM parallel interpolation structure
  *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_PARAMEDMEM) && defined(HAVE_MEDCOUPLING_LOADER)
 
 struct _cs_paramedmem_remapper_t {
 
@@ -142,19 +144,19 @@ struct _mesh_transformation_t {
   cs_real_t angle     = 0.;
 };
 
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
 static int                         _n_remappers = 0;
 static cs_paramedmem_remapper_t  **_remapper = NULL;
-
-/*----------------------------------------------------------------------------*/
 
 static int                      _n_transformations = 0;
 static _mesh_transformation_t **_transformations = NULL;
 
 static bool _transformations_applied = false;
+
+#endif
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
 
 #if defined(HAVE_PARAMEDMEM) && defined(HAVE_MEDCOUPLING_LOADER)
 
@@ -509,13 +511,21 @@ cs_paramedmem_remapper_create(char       *name,
                               cs_real_t   center[3],
                               cs_real_t   radius)
 {
-
   cs_paramedmem_remapper_t *r = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(sel_criteria);
+  CS_NO_WARN_IF_UNUSED(file_name);
+  CS_NO_WARN_IF_UNUSED(mesh_name);
+  CS_NO_WARN_IF_UNUSED(center);
+  CS_NO_WARN_IF_UNUSED(radius);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
+
 #else
 
   if (_remapper == NULL)
@@ -554,8 +564,8 @@ cs_paramedmem_remapper_create(char       *name,
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_by_name_try(const char *name)
 {
-
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
@@ -601,9 +611,17 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(default_val);
+  CS_NO_WARN_IF_UNUSED(dt);
+  CS_NO_WARN_IF_UNUSED(it);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
+
 #else
   /* Source Field */
   const std::string fname(field_name);
@@ -708,6 +726,12 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(default_val);
+  CS_NO_WARN_IF_UNUSED(time_choice);
+  CS_NO_WARN_IF_UNUSED(tval);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
@@ -792,6 +816,8 @@ cs_paramedmem_remapper_translate(cs_paramedmem_remapper_t  *r,
                                  cs_real_t                  translation[3])
 {
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(translation);
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
@@ -824,6 +850,11 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
                               cs_real_t                  angle)
 {
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(invariant);
+  CS_NO_WARN_IF_UNUSED(axis);
+  CS_NO_WARN_IF_UNUSED(angle);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));

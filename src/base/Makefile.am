@@ -414,10 +414,10 @@ pkglib_LTLIBRARIES =
 
 pkginclude_HEADERS += \
 cs_medcoupling_utils.hxx \
-cs_medcoupling_remapper.hxx \
-cs_medcoupling_intersector.hxx \
-cs_paramedmem_coupling.hxx \
-cs_paramedmem_remapper.hxx
+cs_medcoupling_remapper.h \
+cs_medcoupling_intersector.h \
+cs_paramedmem_coupling.h \
+cs_paramedmem_remapper.h
 
 if HAVE_PLUGIN_MEDCOUPLING
 

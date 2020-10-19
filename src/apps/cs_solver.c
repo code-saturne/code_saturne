@@ -91,7 +91,7 @@
 #include "cs_notebook.h"
 #include "cs_opts.h"
 #include "cs_param_cdo.h"
-#include "cs_paramedmem_coupling.hxx"
+#include "cs_paramedmem_coupling.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_properties.h"

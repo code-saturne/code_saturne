@@ -106,10 +106,10 @@
 #include "cs_wall_functions.h"
 #include "cs_zone.h"
 
-#include "cs_medcoupling_remapper.hxx"
-#include "cs_medcoupling_intersector.hxx"
-#include "cs_paramedmem_remapper.hxx"
-#include "cs_paramedmem_coupling.hxx"
+#include "cs_medcoupling_remapper.h"
+#include "cs_medcoupling_intersector.h"
+#include "cs_paramedmem_remapper.h"
+#include "cs_paramedmem_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 

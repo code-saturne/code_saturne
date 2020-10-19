@@ -61,7 +61,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_medcoupling_remapper.hxx"
+#include "cs_medcoupling_remapper.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -594,7 +594,6 @@ BEGIN_C_DECLS
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id)
 {
-
   cs_medcoupling_remapper_t *r = NULL;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
