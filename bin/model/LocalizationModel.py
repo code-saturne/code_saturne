@@ -448,7 +448,6 @@ class LocalizationModel(object):
         labels = self.getLabelsZonesList()
         Model().isInList(label, labels)
 
-
     def setNature(self, label, nature):
         """
         Define a new nature number for the current zone (zone.getLabel == label)
@@ -456,13 +455,25 @@ class LocalizationModel(object):
         # Set nature: nothing here, see other setNature reimplementation methods
         pass
 
+    def selectZone(self, value, criterium):
+        """ Return first zone satisfying criterium """
+        zones = self.getZones()
+        for zone in zones:
+            if criterium == "label":
+                if zone.getLabel() == value:
+                    return zone
+            elif criterium == "codeNumber":
+                if zone.getCodeNumber() == value:
+                    return zone
+            else:
+                raise ValueError
 
-    def addZone(self, newZone = None):
+    def addZone(self, newZone=None):
         """
         Add a new zone. Management of default values.
         """
         if newZone == None:
-            newZone = Zone(self._typeZone, case = self.case)
+            newZone = Zone(self._typeZone, case=self.case)
 
         zones = self.getZones()
 
@@ -613,19 +624,6 @@ class VolumicLocalizationModel(LocalizationModel):
                         nature=nature)
             zones.append(zone)
         return zones
-
-    def selectZone(self, value, criterium):
-        """ Return first zone satisfying criterium """
-        zones = self.getZones()
-        for zone in zones:
-            if criterium == "label":
-                if zone.getLabel() == value:
-                    return zone
-            elif criterium == "codeNumber":
-                if zone.getCodeNumber() == value:
-                    return zone
-            else:
-                raise ValueError
 
     @Variables.noUndo
     def getCodeNumberOfZoneLabel(self, label):

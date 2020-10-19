@@ -74,174 +74,6 @@ log = logging.getLogger("LocalizationView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Advanced dialog
-#-------------------------------------------------------------------------------
-
-class VolumicZoneAdvancedView(QDialog, Ui_VolumicZoneAdvancedDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent, case, keys, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_VolumicZoneAdvancedDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.case = case
-        self.case.undoStopGlobal()
-
-        self.default = default
-        self.keys    = keys
-        self.result  = self.default.copy()
-
-        if 'initialization' not in self.keys:
-            self.labelInitialization.hide()
-            self.checkBoxInitialization.hide()
-        else:
-            if self.default['initialization'] == 'on':
-                self.checkBoxInitialization.setChecked(True)
-            else:
-                self.checkBoxInitialization.setChecked(False)
-
-        if 'head_losses' not in self.keys:
-            self.labelHeadLosses.hide()
-            self.checkBoxHeadLosses.hide()
-        else:
-            if self.default['head_losses'] == 'on':
-                self.checkBoxHeadLosses.setChecked(True)
-            else:
-                self.checkBoxHeadLosses.setChecked(False)
-
-        if 'porosity' not in self.keys:
-            self.labelPorosity.hide()
-            self.checkBoxPorosity.hide()
-        else:
-            if self.default['porosity'] == 'on':
-                self.checkBoxPorosity.setChecked(True)
-            else:
-                self.checkBoxPorosity.setChecked(False)
-
-        if 'momentum_source_term' not in self.keys:
-            self.labelMomentum.hide()
-            self.checkBoxMomentum.hide()
-        else:
-            if self.default['momentum_source_term'] == 'on':
-                self.checkBoxMomentum.setChecked(True)
-            else:
-                self.checkBoxMomentum.setChecked(False)
-
-        if 'mass_source_term' not in self.keys:
-            self.labelMass.hide()
-            self.checkBoxMass.hide()
-        else:
-            if self.default['mass_source_term'] == 'on':
-                self.checkBoxMass.setChecked(True)
-            else:
-                self.checkBoxMass.setChecked(False)
-
-        if 'thermal_source_term' not in self.keys:
-            self.labelThermal.hide()
-            self.checkBoxThermal.hide()
-        else:
-            if self.default['thermal_source_term'] == 'on':
-                self.checkBoxThermal.setChecked(True)
-            else:
-                self.checkBoxThermal.setChecked(False)
-
-        if 'scalar_source_term' not in self.keys:
-            self.labelScalar.hide()
-            self.checkBoxScalar.hide()
-        else:
-            if self.default['scalar_source_term'] == 'on':
-                self.checkBoxScalar.setChecked(True)
-            else:
-                self.checkBoxScalar.setChecked(False)
-
-        if 'groundwater_law' not in self.keys:
-            self.labelGroundWater.hide()
-            self.checkBoxGroundWater.hide()
-        else:
-            if self.default['groundwater_law'] == 'on':
-                self.checkBoxGroundWater.setChecked(True)
-            else:
-                self.checkBoxGroundWater.setChecked(False)
-
-        self.case.undoStartGlobal()
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        if 'initialization' in self.keys:
-            if self.checkBoxInitialization.isChecked():
-                self.result['initialization'] = 'on'
-            else:
-                self.result['initialization'] = 'off'
-
-        if 'head_losses' in self.keys:
-            if self.checkBoxHeadLosses.isChecked():
-                self.result['head_losses'] = 'on'
-            else:
-                self.result['head_losses'] = 'off'
-
-        if 'porosity' in self.keys:
-            if self.checkBoxPorosity.isChecked():
-                self.result['porosity'] = 'on'
-            else:
-                self.result['porosity'] = 'off'
-
-        if 'momentum_source_term' in self.keys:
-            if self.checkBoxMomentum.isChecked():
-                self.result['momentum_source_term'] = 'on'
-            else:
-                self.result['momentum_source_term'] = 'off'
-
-        if 'mass_source_term' in self.keys:
-            if self.checkBoxMass.isChecked():
-                self.result['mass_source_term'] = 'on'
-            else:
-                self.result['mass_source_term'] = 'off'
-
-        if 'thermal_source_term' in self.keys:
-            if self.checkBoxThermal.isChecked():
-                self.result['thermal_source_term'] = 'on'
-            else:
-                self.result['thermal_source_term'] = 'off'
-
-        if 'scalar_source_term' in self.keys:
-            if self.checkBoxScalar.isChecked():
-                self.result['scalar_source_term'] = 'on'
-            else:
-                self.result['scalar_source_term'] = 'off'
-
-        if 'groundwater_law' in self.keys:
-            if self.checkBoxGroundWater.isChecked():
-                self.result['groundwater_law'] = 'on'
-            else:
-                self.result['groundwater_law'] = 'off'
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
-
-
-#-------------------------------------------------------------------------------
 # Line edit delegate for the label
 #-------------------------------------------------------------------------------
 
@@ -334,212 +166,6 @@ class CodeNumberDelegate(QItemDelegate):
 
             model.setData(index, value, Qt.DisplayRole)
 
-#-------------------------------------------------------------------------------
-# QComboBox delegate for the boundary nature
-#-------------------------------------------------------------------------------
-
-class BoundaryNatureDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent, dicoM2V):
-        super(BoundaryNatureDelegate, self).__init__(parent)
-        self.parent   = parent
-        self.dicoM2V = dicoM2V
-
-        self.dicoV2M = {}
-        for k, v in list(self.dicoM2V.items()):
-            self.dicoV2M[v] = k
-
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        for k in list(self.dicoV2M.keys()):
-            editor.addItem(k)
-        editor.installEventFilter(self)
-        editor.setMinimumWidth(120)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        row = index.row()
-        col = index.column()
-        str_model = index.model().getData(row, col)
-        idx = list(self.dicoM2V.keys()).index(str_model)
-        comboBox.setCurrentIndex(idx)
-
-
-    def setModelData(self, comboBox, model, index):
-        txt   = str(comboBox.currentText())
-        value = self.dicoV2M[txt]
-        selectionModel = self.parent.selectionModel()
-        for idx in selectionModel.selectedIndexes():
-            if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
-
-
-#-------------------------------------------------------------------------------
-# StandarItemModel class for QComboBox in nature delegate (Volumic)
-#-------------------------------------------------------------------------------
-
-class StandardItemVolumeNature(QStandardItemModel):
-    """
-    QStandardItemModel associated with the QComboBox
-    in the delegate (validator) for the nature in the case of volumic zone.
-
-    Attr. natureList is a dictionnary between model string and view string.
-    Attr. dicoNature holds value 'on' or 'off' if the item is checked or not.
-    """
-
-    def __init__(self, dicoM2V, case, data):
-        """
-        """
-        QStandardItemModel.__init__(self)
-
-        # Dictionary item to label for display
-        self.dicoM2V = dicoM2V
-        # Dictionary item to status (on/off)
-        self.dicoNature = data
-
-        #self.keys = self.natureList.keys() # ordered tuple
-        self.keys = Zone('VolumicZone', case = case).getNatureList()
-
-        self.setColumnCount(1)
-
-        row = 0
-        for key in self.keys:
-            self.setItem(row, QStandardItem(str(self.dicoM2V[key])))
-            row += 1
-        self.setRowCount(row)
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-
-        if role == Qt.EditRole:
-            key = self.keys[index.row()]
-            return self.dicoM2V[key]
-
-        elif role == Qt.DisplayRole:
-            key = self.keys[index.row()]
-            return self.dicoM2V[key]
-
-        elif role == Qt.CheckStateRole:
-            key = self.keys[index.row()]
-            value = self.dicoNature[key]
-            if value == 'on':
-                return Qt.Checked
-            else:
-                return Qt.Unchecked
-
-        return None
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
-
-
-    def setData(self, index, value, role=None):
-        if not index.isValid():
-            return
-
-        if role == Qt.EditRole:
-            pass
-
-        elif role == Qt.DisplayRole:
-            key = self.keys[index.row()]
-            self.dicoNature[key] = str(value)
-
-        elif role == Qt.CheckStateRole:
-            state = from_qvariant(value, int)
-            key = self.keys[index.row()]
-            if state == Qt.Unchecked:
-                self.dicoNature[key] = "off"
-            else:
-                self.dicoNature[key] = "on"
-
-        id1 = self.index(0, 0)
-        id2 = self.index(self.rowCount(), 0)
-        self.dataChanged.emit(id1, id2)
-        return True
-
-
-    def getChecked(self):
-        s = []
-        for k, v in list(self.dicoNature.items()):
-            if v == "on":
-                s.append(k)
-        return ";".join(s)
-
-#-------------------------------------------------------------------------------
-# FlagBox: new QComboBox to construct Delegate for the volume nature
-#-------------------------------------------------------------------------------
-
-class FlagBox(QComboBox):
-    def __init__(self, parent):
-        QComboBox.__init__(self, parent)
-
-        opt = QStyleOptionComboBox()
-        opt.initFrom(self)
-        opt.editable = self.isEditable()
-        if (self.style().styleHint(QStyle.SH_ComboBox_Popup, opt)):
-            self.setItemDelegate(QItemDelegate(self))
-
-        self.activated[int].connect(self.slotActivated)
-
-
-    @pyqtSlot(int)
-    def slotActivated(self, index):
-        value = self.itemData(index, Qt.CheckStateRole)
-        state = from_qvariant(value, int)
-        if state == Qt.Unchecked:
-            s = Qt.Checked
-        else:
-            s = Qt.Unchecked
-        self.setItemData(index, s, Qt.CheckStateRole)
-
-
-#-------------------------------------------------------------------------------
-# Delegate for the volume nature
-#-------------------------------------------------------------------------------
-
-class VolumeNatureDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent, case):
-        super(VolumeNatureDelegate, self).__init__(parent)
-        self.case = case
-
-
-    def createEditor(self, parent, option, index):
-        editor = FlagBox(parent)
-        editor.setEditable(False)
-        editor.setMinimumWidth(160)
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        editor.setAutoFillBackground(True)
-        data = index.model().getData(index.row(), index.column())
-        dicoM2V = index.model().dicoM2V
-
-        self.flagbox_model = StandardItemVolumeNature(dicoM2V, self.case, data)
-        editor.setModel(self.flagbox_model)
-
-
-    def setModelData(self, editor, model, index):
-        value = self.flagbox_model.getChecked()
-        model.setData(index, value, Qt.DisplayRole)
-
-#-------------------------------------------------------------------------------
-# QLineEdit delegate for localization
-#-------------------------------------------------------------------------------
 
 class LocalizationSelectorDelegate(QItemDelegate):
     def __init__(self, parent, mdl):
@@ -587,189 +213,8 @@ class LocalizationSelectorDelegate(QItemDelegate):
         if str(value) != "" :
             model.setData(index, value, Qt.DisplayRole)
 
-#-------------------------------------------------------------------------------
-# StandarItemModel class
-#-------------------------------------------------------------------------------
 
-class StandardItemModelLocalization(QStandardItemModel):
-    def __init__(self, mdl, zoneType, dicoM2V, tree = None, case = None):
-        """
-        """
-        QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"),
-                        self.tr("Zone"),
-                        self.tr("Nature"),
-                        self.tr("Selection criteria")]
-        self.setColumnCount(len(self.headers))
-
-        self.mdl      = mdl
-        self.zoneType = zoneType
-        self.dicoM2V  = dicoM2V
-        self.browser = tree
-        self.case = case
-
-        self._data = []
-        self._disable = []
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-
-        if role == Qt.DisplayRole:
-            row = index.row()
-            col = index.column()
-
-            if col in [0, 1, 3]:
-                return self._data[row][col]
-
-            elif col == 2:
-                if self.zoneType == "VolumicZone":
-                    data = self._data[row][col]
-                    item = "\n".join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"])
-
-                    return item
-
-                elif self.zoneType == "BoundaryZone":
-                    key = self._data[row][col]
-                    return self.dicoM2V[key]
-
-        return None
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        if (index.row(), index.column()) in self._disable:
-            return Qt.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
-
-
-    def setData(self, index, value, role):
-        row = index.row()
-        col = index.column()
-
-        [old_label, old_code, old_nature, old_local] = self._data[row]
-
-        old_zone = Zone(self.zoneType,
-                        case         = self.case,
-                        label        = old_label,
-                        codeNumber   = old_code,
-                        localization = old_local,
-                        nature       = old_nature)
-
-        new_label  = old_label
-        new_code   = old_code
-        new_nature = old_nature
-        new_local  = old_local
-
-        if col == 0:
-            new_label = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_label
-
-        elif col == 1:
-            new_code = from_qvariant(value, int)
-            self._data[row][col] = new_code
-
-        elif col == 2:
-
-            if self.zoneType == "VolumicZone":
-                # We modify the dictionary here
-                nature_list = str(from_qvariant(value, to_text_string)).split(";")
-
-                for key in list(self._data[row][col].keys()):
-                    if key in nature_list:
-                        self._data[row][col][key] = "on"
-                    else:
-                        self._data[row][col][key] = "off"
-
-                    new_nature = self._data[row][col].copy()
-
-            elif self.zoneType == "BoundaryZone":
-                new_nature = str(from_qvariant(value, to_text_string))
-                self._data[row][col] = new_nature
-
-        elif col == 3:
-            new_local = str(from_qvariant(value, to_text_string))
-            self._data[row][col] = new_local
-
-        new_zone = Zone(self.zoneType,
-                        case         = self.case,
-                        label        = new_label,
-                        codeNumber   = new_code,
-                        localization = new_local,
-                        nature       = new_nature)
-
-        self.mdl.replaceZone(old_zone, new_zone)
-
-        self.dataChanged.emit(index, index)
-        self.browser.configureTree(self.case)
-        return True
-
-
-    def addItem(self, zone=None):
-        """
-        Add an element in the table view.
-        """
-        if not zone:
-            zone = self.mdl.addZone(Zone(self.zoneType, case = self.case))
-
-        line = [zone.getLabel(),
-                zone.getCodeNumber(),
-                zone.getNature(),
-                zone.getLocalization()]
-        self._data.append(line)
-        row = self.rowCount()
-        self.setRowCount(row + 1)
-
-        # Warning: the Volume region 'all_cells' is mandatory, and can not be removed.
-        if zone.getLabel() == "all_cells":
-            for c in [0, 2]:
-                self._disable.append((row, c))
-        self._disable.append((row, 1))
-        self.browser.configureTree(self.case)
-        return zone
-
-
-    def getItem(self, row):
-        return self._data[row]
-
-
-    def updateItem(self):
-        # update zone Id
-        for id in range(0, len(self.mdl.getCodeNumbersList())):
-            self._data[id][1] = id + 1
-
-
-    def updateZone(self, index, nature):
-        self._data[index.row()][2] = nature
-        self.dataChanged.emit(index, index)
-
-
-    def deleteItem(self, irow):
-        del self._data[irow]
-        nb_rows = self.rowCount()
-        self.setRowCount(nb_rows - 1)
-        self.updateItem()
-        if irow < nb_rows:
-            self.browser.configureTree(self.case)
-
-    def deleteItems(self):
-        for row in range(self.rowCount()):
-            del self._data[0]
-        self.setRowCount(0)
-
-    def getData(self, row, column):
-        return self._data[row][column]
-
-
-class VolumeZonesTableModel(QStandardItemModel):
+class DefineZonesTableModel(QStandardItemModel):
     def __init__(self, mdl, zoneType, tree=None, case=None):
         """
         """
@@ -907,7 +352,8 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     """
     Main class
     """
-    def __init__(self, zoneType, parent, case, dicoM2V, tree = None):
+
+    def __init__(self, zoneType, parent, case, tree=None):
         """
         Constructor
         """
@@ -932,20 +378,12 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         delegateLocal = LocalizationSelectorDelegate(self.tableView, self.mdl)
 
         # Model for table View
-        if zoneType == "BoundaryZone":
-            self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
-            self.tableView.setModel(self.modelLocalization)
-            self.tableView.setItemDelegateForColumn(0, delegateLabel)
-            self.tableView.setItemDelegateForColumn(1, delegateCode)
-            self.tableView.setItemDelegateForColumn(2, delegateLocal)
-            last_section = 2
-        else:
-            self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
-            self.tableView.setModel(self.modelLocalization)
-            last_section = 2
-            self.tableView.setItemDelegateForColumn(0, delegateLabel)
-            self.tableView.setItemDelegateForColumn(1, delegateCode)
-            self.tableView.setItemDelegateForColumn(2, delegateLocal)
+        self.modelLocalization = DefineZonesTableModel(self.mdl, zoneType, tree, case)
+        self.tableView.setModel(self.modelLocalization)
+        self.tableView.setItemDelegateForColumn(0, delegateLabel)
+        self.tableView.setItemDelegateForColumn(1, delegateCode)
+        self.tableView.setItemDelegateForColumn(2, delegateLocal)
+        last_section = 2
 
         # Populate QTableView model
         for zone in self.mdl.getZones():
@@ -1085,11 +523,11 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             lst.append(index.row())
 
         row = lst.pop(0)
-        [label, code, nature, new_localization] = self.modelLocalization.getItem(row)
+        [label, code, new_localization] = self.modelLocalization.getItem(row)
         ll = label
 
         for row in lst:
-            [label, code, nature, localization] = self.modelLocalization.getItem(row)
+            [label, code, localization] = self.modelLocalization.getItem(row)
             if "all[]" not in new_localization.split(" "):
                 new_localization += " or " + localization
             if localization == "all[]":
@@ -1146,9 +584,8 @@ class VolumeLocalizationView(LocalizationView):
         """
         self.case = case
         self.browser = tree
-        dicoM2V = Zone("VolumicZone", self.case).getModel2ViewDictionary()
 
-        LocalizationView.__init__(self, "VolumicZone", parent, self.case, dicoM2V, tree)
+        LocalizationView.__init__(self, "VolumicZone", parent, self.case, tree)
 
         title = self.tr("Definition of volume regions")
         self.groupBoxLocalization.setTitle(title)
@@ -1171,20 +608,15 @@ class BoundaryLocalizationView(LocalizationView):
         Constructor.
         """
         self.case = case
-        dicoM2V = Zone("BoundaryZone", case = self.case).getModel2ViewDictionary()
         self.browser = tree
 
-        LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)
+        LocalizationView.__init__(self, "BoundaryZone", parent, self.case, tree)
 
         title = self.tr("Boundary regions definition")
         self.groupBoxLocalization.setTitle(title)
 
-        # Delegates
-        delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
-        self.tableView.setItemDelegateForColumn(2, delegateNature)
-
-    # @pyqtSlot()
-    # def slotSelectBoudaries(self):
+# @pyqtSlot()
+# def slotSelectBoudaries(self):
     #     """
     #     Public slot.
     #
