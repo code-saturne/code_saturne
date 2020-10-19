@@ -45,7 +45,7 @@
 #include "cs_headers.h"
 
 #if defined(HAVE_MEDCOUPLING_LOADER)
-#include "cs_medcoupling_remapper.hxx"
+#include "cs_medcoupling_remapper.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
