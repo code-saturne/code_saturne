@@ -88,8 +88,8 @@ BEGIN_C_DECLS
         Indicates whether the source terms in transposed gradient
         and velocity divergence should be taken into account in the
         momentum equation. In the compressible module, these terms
-        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0" and
-        \ref ppincl::iviscv "iviscv")
+        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0"
+        and \ref ppincl::iviscv "iviscv")
         \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
         +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
         - 0: not taken into account,
@@ -200,7 +200,8 @@ BEGIN_C_DECLS
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
         - 1: calculation of the hydrostatic pressure at the outlet boundary
-        - 0: no calculation of the hydrostatic pressure at the outlet boundary (default)
+        - 0: no calculation of the hydrostatic pressure at the outlet boundary
+             (default)
         This option is automatically specified depending on the choice of
         \ref iphydr and the value of gravity (\ref icalhy = 1 if  \ref iphydr = 1
         and gravity is different from 0; otherwise \ref icalhy = 0). The
@@ -210,8 +211,9 @@ BEGIN_C_DECLS
         in order to deactivate the recalculation of the hydrostatic pressure
         at the boundary, which may otherwise cause instabilities
   \var  cs_stokes_model_t::irecmf
-        use interpolated face diffusion coefficient instead of cell diffusion coefficient
-        for the mass flux reconstruction for the non-orthogonalities
+        use interpolated face diffusion coefficient instead of cell diffusion
+        coefficient for the mass flux reconstruction for the
+        non-orthogonalities
         - 1: true
         - 0: false (default)
   \var  cs_stokes_model_t::fluid_solid
@@ -297,7 +299,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
  *   arak    --> pointer to cs_glob_stokes_model->arak
- *   mass_preconditioner --> pointer to cs_glob_stokes_model->mass_preconditioner
+ *   mass_preconditioner
+ *           --> pointer to cs_glob_stokes_model->mass_preconditioner
  *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
  *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
  *   idilat  --> pointer to cs_glob_stokes_model->idilat
