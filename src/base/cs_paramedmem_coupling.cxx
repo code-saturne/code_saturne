@@ -442,13 +442,7 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
 void
 cs_paramedmem_coupling_all_finalize(void)
 {
-#if !defined(HAVE_PARAMEDMEM)
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: %s cannot be called without "
-              "MEDCoupling MPI support."), __func__);
-
-#else
+#if defined(HAVE_PARAMEDMEM)
 
   /* Clear vector */
   _paramed_couplers.clear();
