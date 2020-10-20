@@ -44,10 +44,6 @@
 
 #include "cs_headers.h"
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
-#include "cs_medcoupling_remapper.h"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
