@@ -107,19 +107,21 @@ module optcal
   integer(c_int), pointer, save :: isto2t
 
   !> for each scalar, \ref isso2t specifies the time scheme activated
-  !> for the source terms of the equation for the scalar, apart from convection and
-  !> diffusion (for instance: variance production, user-specified terms, ...).
+  !> for the source terms of the equation for the scalar, apart from convection
+  !> and diffusion (for instance: variance production, user-specified terms,
+  !> ...).
   !> - 0: "standard" first-order: the terms which are linear
   !> functions of the solved variable are implicit and the others are explicit
   !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
   !> linear functions of the solved variable \f$\phi\f$ are expressed
   !> as second-order terms by interpolation (according to the formula
-  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetav associated with the variable \f$\phi\f$);
+  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetav associated with
+  !> the variable \f$\phi\f$);
   !> the other terms \f$S_e\f$ are expressed as second-order terms by
   !> extrapolation (according to the formula
-  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of \ref thetss (iscal) = 0.5)
+  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetss (iscal) = 0.5)
   !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same way as
   !> when \ref isso2t = 1; the other terms \f$S_e\f$ are extrapolated
   !> according to the same formula as when \ref isso2t = 1, but with
@@ -193,8 +195,8 @@ module optcal
   !> property \f$\phi\f$ "specific heat" when the extrapolation
   !> has been activated (see \ref time_extrapolated field key int), according to
   !> the formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen for
-  !> the specific heat. Generally, only the value 0.5 is used.
+  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen
+  !> for the specific heat. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -683,7 +685,8 @@ module optcal
   !> LRR).\n It is not recommended to take these terms into account:
   !> they have an influence only near the walls, their expression is hardly
   !> justifiable according to some authors and, in the configurations
-  !> studied with Code_Saturne, they did not bring any improvement in the results.\n
+  !> studied with code_saturne, they did not bring any improvement in
+  !> the results.\n
   !> In addition, their use induces an increase in the calculation time.\n
   !> The wall echo terms imply the calculation of the distance to the wall
   !> for every cell in the domain. See \ref icdpar for potential restrictions
@@ -1062,16 +1065,20 @@ module optcal
   !> of the distance to the wall in case of calculation restart
   !> - 2: former algorithm (based on geometrical considerations), with
   !> reading of the distance to the wall from the restart file if possible\n
-  !> - -2: former algorithm (based on geometrical considerations) with systematic
-  !> recalculation of the distance to the wall in case of calculation restart.\n\n
-  !> In case of restart calculation, if the position of the walls haven’t changed,
-  !> reading the distance to the wall from the restart file can save a fair amount
-  !> of CPU time.\n Useful in \f$ R_{ij}-\epsilon \f$ model with wall echo
+  !> - -2: former algorithm (based on geometrical considerations) with
+  !> systematic recalculation of the distance to the wall in case of
+  !> calculation restart.\n\n
+  !> In case of restart calculation, if the position of the walls haven’t
+  !> changed, reading the distance to the wall from the restart file can save
+  !> a fair amount of computational time.\n Useful in \f$ R_{ij}-\epsilon \f$
+  !> model with wall echo
   !> (\ref iturb=30 and \ref irijec=1), in LES with van Driest damping
-  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST (\ref iturb=60).
-  !> By default, \ref icdpar is initialised to -1, in case there has been a change
-  !> in the definition of the boundary conditions between two computations (change
-  !> in the number or the positions of the walls). Yet, with the \f$k-\omega\f$
+  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST
+  !> (\ref iturb=60).
+  !> By default, \ref icdpar is initialised to -1, in case there has been a
+  !> change in the definition of the boundary conditions between two
+  !> computations (change in the number or the positions of the walls).
+  !> Yet, with the \f$k-\omega\f$
   !> SST model, the distance to the wall is needed to calculate the turbulent
   !> viscosity, which is done before the calculation of the distance to the wall.
   !> Hence, when this model is used (and only in that case), \ref icdpar is set
@@ -1079,13 +1086,13 @@ module optcal
   !> As a consequence, with the \f$k-\omega\f$ SST model, if the number and
   !> positions of the walls are changed
   !> at a calculation restart, it is mandatory for the user to set \ref icdpar
-  !> explicitly to -1, otherwise the distance to the wall used will not correspond
-  !> to the actual position of the walls.\n The former algorithm is not compatible
-  !> with parallelism nor periodicity. Also, whatever the value chosen for \ref
-  !> icdpar, the calculation of the distance to the wall is made at the most
-  !> once for all at the beginning of the calculation; it is therefore not
-  !> compatible with moving walls. Please contact the development team if you
-  !> need to override this limitation.
+  !> explicitly to -1, otherwise the distance to the wall used will not
+  !> correspond to the actual position of the walls.\n The former algorithm
+  !> is not compatible with parallelism nor periodicity. Also, whatever the
+  !> value chosen for \ref icdpar, the calculation of the distance to the wall
+  !> is made at the most> once for all at the beginning of the calculation; it
+  !> is therefore not compatible with moving walls. Please contact the
+  !> development team if you need to override this limitation.
   integer, save :: icdpar
 
   !> \}
@@ -1110,8 +1117,8 @@ module optcal
   !> - 0: clipping to 0 for the lower range of values
   !> - 1: clipping to 0 for the lower range of values and to
   !> \f$(f-f_{min})(f_{max}-f)\f$ for higher values, where \f$f\f$ is
-  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and maximum
-  !> values specified by the user (i.e. scamin (ii) and scamax (ii))
+  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and
+  !> maximum values specified by the user (i.e. scamin (ii) and scamax (ii))
   !> - 2: clipping to max(0,scamin(iscal)) for lower values and to
   !>  scamax(iscal) for higher values.scamin and scamax are limits
   !> specified by the user.\n Useful for the scalars iscal for
@@ -1370,11 +1377,11 @@ module optcal
 
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
                                                 arak  , mass_preconditioner,   &
-                                                ipucou, iccvfg,         &
+                                                ipucou, iccvfg,                &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
                                                 iifren, icalhy, irecmf,        &
-                                                fluid_solid)&
+                                                fluid_solid)                   &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1421,9 +1428,9 @@ module optcal
 
     subroutine cs_f_elec_model_get_pointers(ngazge, ielcor, pot_diff, coejou,  &
                                             elcou, couimp, irestrike, ntdcla,  &
-                                            restrike_point_x,                  &
-                                            restrike_point_y,                  &
-                                            restrike_point_z)                  &
+                                            restrike_point_x,  &
+                                            restrike_point_y,  &
+                                            restrike_point_z)  &
       bind(C, name='cs_f_elec_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1814,9 +1821,9 @@ contains
     type(c_ptr) :: c_elcou, c_irestrike, c_ntdcla, c_restrike_point_x
     type(c_ptr) :: c_restrike_point_y, c_restrike_point_z
 
-    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff,          &
-                                      c_coejou, c_elcou, c_couimp,             &
-                                      c_irestrike, c_ntdcla,                   &
+    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff,  &
+                                      c_coejou, c_elcou, c_couimp,  &
+                                      c_irestrike, c_ntdcla,  &
                                       c_restrike_point_x, c_restrike_point_y,  &
                                       c_restrike_point_z)
 
