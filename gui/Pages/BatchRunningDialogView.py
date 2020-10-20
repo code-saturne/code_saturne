@@ -776,16 +776,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             QMessageBox.information(self, title, msg)
             return
 
-        # Verify if boundary condition definitions exist
-        if self.case['run_type'] == 'standard':
-            bd = LocalizationModel('BoundaryZone', self.case)
-            if not bd.getZones():
-                if self.case['no_boundary_conditions'] == False:
-                    title = self.tr("Warning")
-                    msg   = self.tr("No boundary definition declared.\n\n")
-                    QMessageBox.warning(self, title, msg)
-                    self.case['no_boundary_conditions'] = True
-
         # Build command line
 
         rm_type = self.jmdl.batch.rm_type

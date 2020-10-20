@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- When no boundary condition is provided for some boundary faces, a default
+  (wall or symmetry) is used. This can be set using `cs_boundary_set_default`.
+
 - Modify the way the code is handling input file.
   * If no xml file is provided by the 'run.cfg' file and a 'setup.xml' exists,
     the latter is used (previous behaviour). If it does not exist, the

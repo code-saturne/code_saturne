@@ -571,7 +571,6 @@ endif
 ! Boundary conditions
 
 do ifac = 1, nfabor
-  itypfb(ifac) = 0
   itrifb(ifac) = 0
 enddo
 
