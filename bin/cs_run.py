@@ -354,12 +354,41 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     # Parameters file
 
     for kw in ('param',):
-        if not r_c[kw]:
+        if run_conf.get('setup', kw):
             r_c[kw] = run_conf.get('setup', kw)
 
     if not r_c['param'] and setup_default_path:
         if os.path.isfile(setup_default_path):
             r_c['param'] = setup_default_path
+
+    # Print warning if setup.xml exists but another xml was provided
+    if r_c['param'] and setup_default_path:
+        if os.path.basename(r_c['param']) != os.path.basename(setup_default_path):
+            if os.path.isfile(setup_default_path):
+                msg = '*****************************************************\n'
+                msg+= 'Warning:\n'
+                msg+= '    Both %s and %s exist within your DATA folder.\n' % \
+                        (os.path.basename(r_c['param']), \
+                         os.path.basename(setup_default_path))
+                msg+= '    code_saturne Best Practices Guide recommends to \
+only have one of the two within the DATA folder.\n'
+                msg+= '*****************************************************\n'
+                print(msg, file = sys.stderr)
+
+
+    # Check that an .xml file was provided
+    if not r_c['param']:
+        msg = '*************************************************************\n'
+        msg+= 'Error:\n'
+        msg+= '    No xml file was provided. Please check \'run.cfg\' file'
+        msg+= 'inside DATA folder.\n'
+        msg+= '    If you are using the \'run\' command, it can also be'
+        msg+= 'combined with the -p option.\n'
+        msg+= '*************************************************************\n'
+        print(msg, file = sys.stderr)
+        sys.exit(1)
+        return
+
 
     # Run id
 

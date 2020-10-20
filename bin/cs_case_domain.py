@@ -406,7 +406,7 @@ class domain(base_domain):
         # Default executable
 
         self.solver_path = os.path.join(self.package_compute.get_dir("pkglibexecdir"),
-                                        "cs_solver" + self.package.config.exeext)
+                                        self.package.solver)
 
         # Preprocessor options
 
