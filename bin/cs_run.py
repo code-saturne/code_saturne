@@ -370,8 +370,11 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
                 msg+= '    Both %s and %s exist within your DATA folder.\n' % \
                         (os.path.basename(r_c['param']), \
                          os.path.basename(setup_default_path))
-                msg+= '    code_saturne Best Practices Guide recommends to \
-only have one of the two within the DATA folder.\n'
+                msg+= '    %s will be used for the computation.\n' % \
+                        os.path.basename(r_c['param'])
+                msg+= '    Be aware that code_saturne Best Practices Guide\n'
+                msg+= '    recommends to only have one of the two within the\n'
+                msg+= '    DATA folder.\n'
                 msg+= '*****************************************************\n'
                 print(msg, file = sys.stderr)
 

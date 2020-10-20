@@ -3,6 +3,23 @@ Master (not on release branches yet)
 
 User changes:
 
+- Modify the way the code is handling input file.
+  * If no xml file is provided by the 'run.cfg' file and a 'setup.xml' exists,
+    the latter is used (previous behaviour). If it does not exist, the
+    code stops and prints an error message indicating the reason.
+  * If an input file, other than 'setup.xml', is provided using the 'run.cfg'
+    or '-p' option (for code_saturne run only), and a 'setup.xml' exists inside
+    the DATA folder, the provided input file is used. Before this change
+    'setup.xml' was the one used. A warning is printed to warn the user that
+    having the two is against code_saturne BPG.
+
+- Modify available C-API for usage of ParaMEDMEM coupling (MEDCoupling MPI).
+  Specific user functions are added (cs_user_paramedmem_coupling.c) to allow
+  an easier definitions of coupling. Examples are provided in the
+  'cs_user_paramedmem_coupling-base.c' user_example file.
+  Send/recieve operations still need to be done by the user, but are simplified
+  by allowing send/recv based on a cs_field_t pointer.
+
 - GUI: present volume and boundary conditions using sub-nodes in the
   left-hand tree for the appropriate zones. This is a first step in
   a change of zone setup presentation.
