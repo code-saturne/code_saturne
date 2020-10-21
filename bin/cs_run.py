@@ -382,15 +382,13 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     # Check that an .xml file was provided
     if not r_c['param']:
         msg = '*************************************************************\n'
-        msg+= 'Error:\n'
+        msg+= 'Warning:\n'
         msg+= '    No xml file was provided. Please check \'run.cfg\' file'
         msg+= 'inside DATA folder.\n'
         msg+= '    If you are using the \'run\' command, it can also be'
         msg+= 'combined with the -p option.\n'
         msg+= '*************************************************************\n'
         print(msg, file = sys.stderr)
-        sys.exit(1)
-        return
 
 
     # Run id

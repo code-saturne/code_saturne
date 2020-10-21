@@ -6,7 +6,7 @@ User changes:
 - Modify the way the code is handling input file.
   * If no xml file is provided by the 'run.cfg' file and a 'setup.xml' exists,
     the latter is used (previous behaviour). If it does not exist, the
-    code stops and prints an error message indicating the reason.
+    code prints a warning message indicating that no xml was found.
   * If an input file, other than 'setup.xml', is provided using the 'run.cfg'
     or '-p' option (for code_saturne run only), and a 'setup.xml' exists inside
     the DATA folder, the provided input file is used. Before this change
