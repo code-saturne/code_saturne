@@ -365,31 +365,24 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     if r_c['param'] and setup_default_path:
         if os.path.basename(r_c['param']) != os.path.basename(setup_default_path):
             if os.path.isfile(setup_default_path):
-                msg = '*****************************************************\n'
-                msg+= 'Warning:\n'
-                msg+= '    Both %s and %s exist within your DATA folder.\n' % \
-                        (os.path.basename(r_c['param']), \
+                msg  = '*****************************************************\n'
+                msg += 'Warning:\n'
+                msg += '  Both %s and %s exist in the DATA folder.\n' % \
+                         (os.path.basename(r_c['param']), \
                          os.path.basename(setup_default_path))
-                msg+= '    %s will be used for the computation.\n' % \
+                msg += '  %s will be used for the computation.\n' % \
                         os.path.basename(r_c['param'])
-                msg+= '    Be aware that code_saturne Best Practices Guide\n'
-                msg+= '    recommends to only have one of the two within the\n'
-                msg+= '    DATA folder.\n'
-                msg+= '*****************************************************\n'
+                msg += '  Be aware that to follow code_saturne best practices\n'
+                msg += '  only one of the two should be present in DATA.\n'
+                msg += '*****************************************************\n'
                 print(msg, file = sys.stderr)
 
-
-    # Check that an .xml file was provided
+    # Check that an XML file was provided
     if not r_c['param']:
-        msg = '*************************************************************\n'
-        msg+= 'Warning:\n'
-        msg+= '    No xml file was provided. Please check \'run.cfg\' file'
-        msg+= 'inside DATA folder.\n'
-        msg+= '    If you are using the \'run\' command, it can also be'
-        msg+= 'combined with the -p option.\n'
-        msg+= '*************************************************************\n'
+        msg += 'Remark:\n'
+        msg += '  No setup.xml file was provided in the DATA folder.\n'
+        msg += '  Default settings will be used.\n'
         print(msg, file = sys.stderr)
-
 
     # Run id
 

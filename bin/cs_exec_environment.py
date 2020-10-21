@@ -676,7 +676,7 @@ def source_shell_script(path):
 
     if not os.path.isfile(path):
         sys.stderr.write('Warning:\n'
-                         + '   file ' + path + '\n'
+                         + '  file ' + path + '\n'
                          + 'not present, so cannot be sourced.\n\n')
 
     if sys.platform.startswith('win'):
@@ -1177,7 +1177,7 @@ class resource_info(batch_info):
             if self.n_procs != None:
                 if self.n_procs != n_procs:
                     sys.stderr.write('Warning:\n'
-                                     +'   Will try to use ' + str(n_procs)
+                                     +'  Will try to use ' + str(n_procs)
                                      + ' processes while resource manager ('
                                      + self.manager + ')\n   allows for '
                                      + str(self.n_procs) + '.\n\n')
@@ -1191,7 +1191,7 @@ class resource_info(batch_info):
         if n_threads != None:
             if self.n_threads != None and n_threads != self.n_threads:
                 sys.stderr.write('Warning:\n'
-                                 +'   Will try to use ' + str(self.n_threads)
+                                 +'  Will try to use ' + str(self.n_threads)
                                  + ' threads per task while resource manager ('
                                  + self.manager + ')\n   allows for '
                                  + str(n_threads) + '.\n\n')
@@ -1559,7 +1559,7 @@ class mpi_environment:
             return 'gforker' # might also be remshell
 
         sys.stderr.write('Warning:\n'
-                         + '   Unable to determine MPICH program manager:'
+                         + '  Unable to determine MPICH program manager:'
                          + ' assume "Hydra".\n\n')
 
         return 'hydra'
@@ -1696,7 +1696,7 @@ class mpi_environment:
                     hosts = True
             if hosts == True:
                 sys.stderr.write('Warning:\n'
-                                 + '   Hosts list will be ignored by'
+                                 + '  Hosts list will be ignored by'
                                  + ' MPICH gforker program manager.\n\n')
 
         # Info commands
