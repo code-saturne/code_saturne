@@ -90,6 +90,7 @@ use ppincl
 use ppcpfu
 use coincl
 use radiat
+use ctincl
 use cs_c_bindings
 
 !===============================================================================
@@ -102,7 +103,6 @@ integer ixmlpu
 
 return
 end subroutine usppmo
-
 
 !===============================================================================
 
@@ -168,17 +168,22 @@ integer iturb, itherm, iale
 return
 end subroutine usipph
 
-
 !===============================================================================
 
 !> \brief User subroutine for the input of additional user parameters.
+!
+!>  This subroutine allows setting parameters
+!>  which do not already appear in the other subroutines of this file.
+!>
+!>  It is possible to add or remove parameters.
+!>  The number of physical properties and variables is known here.
 !
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nmodpp         number of active specific physics models
+!> \param[in]     nmodpp         number of active specific physical models     !
 !______________________________________________________________________________!
 
 subroutine usipsu &
@@ -219,21 +224,12 @@ integer nmodpp
 
 !===============================================================================
 
-!>  This subroutine allows setting parameters
-!>  which do not already appear in the other subroutines of this file.
-!>
-!>  It is possible to add or remove parameters.
-!>  The number of physical properties and variables is known here.
-
-!===============================================================================
-
 !----
 ! Formats
 !----
 
 return
 end subroutine usipsu
-
 
 !===============================================================================
 

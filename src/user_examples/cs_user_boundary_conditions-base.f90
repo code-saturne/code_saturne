@@ -58,8 +58,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -122,12 +121,15 @@ double precision rcodcl(nfabor,nvar,3)
 !< [loc_var_dec]
 integer          ifac, iel, ii
 integer          ilelt, nlelt
+integer          f_id_rough, f_id_t_rough
 double precision uref2
 double precision rhomoy, xdh
 double precision xitur
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: bfpro_rom
+double precision, dimension(:), pointer :: bpro_roughness
+double precision, dimension(:), pointer :: bpro_roughness_t
 !< [loc_var_dec]
 
 !===============================================================================
@@ -322,8 +324,12 @@ enddo
 ! Assign a rough wall to boundary faces of group '7'
 
 !< [example_5]
-call getfbr('7', nlelt, lstelt)
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bpro_roughness)
+call field_get_id_try("boundary_thermal_roughness", f_id_t_rough)
+if (f_id_t_rough.ge.0) call field_get_val_s(f_id_t_rough, bpro_roughness_t)
 
+call getfbr('7', nlelt, lstelt)
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -335,10 +341,12 @@ do ilelt = 1, nlelt
   itypfb(ifac) = iparug
 
   ! Roughness for velocity: 1cm
-  rcodcl(ifac,iu,3) = 0.01d0
+  if (f_id_rough.ge.0) &
+    bpro_roughness(ifac) = 0.01d0
 
-  ! Roughness for scalar (if required): 1cm
-  rcodcl(ifac,iv,3) = 0.01d0
+  ! Roughness for temperature (if required): 1cm
+  if (f_id_rough.ge.0) &
+    bpro_roughness_t(ifac) = 0.01d0
 
   ! If sliding wall with velocity u = 1:
   rcodcl(ifac, iu, 1) = 1.d0
@@ -347,7 +355,7 @@ do ilelt = 1, nlelt
   if (nscal.gt.0) then
 
     ! If temperature prescribed to 20 (scalar ii=1)
-    ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
+    ! (with thermal roughness specified in bpro_roughness_t) :
     ii = 1
     icodcl(ifac, isca(ii))    = 6
     rcodcl(ifac, isca(ii), 1) = 20.d0

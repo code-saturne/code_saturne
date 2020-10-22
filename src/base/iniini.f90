@@ -500,7 +500,6 @@ hybrid_turb  = 0
 !        IGRHOK = 1
 igrhok = 0
 igrake = 1
-iwallt = 0
 iclkep = 0
 irijnu = 0
 irijrb = 0
@@ -704,7 +703,6 @@ dpow    = 1.d0/(1.d0+bpow)
 ce1     = 1.44d0
 ce2     = 1.92d0
 ce4     = 1.20d0
-sigmak  = 1.00d0
 
 !   pour le k-epsilon quadratic (Baglietto)
 cnl1  = 0.8d0
@@ -771,7 +769,6 @@ cpale1 = 1.44d0
 cpale2 = 1.83d0
 cpale3 = 2.3d0
 cpale4 = 0.4d0
-cpalse = 1.5d0
 cpalmu = 0.22d0
 cpalct = 4.d0
 cpalcl = 0.164d0
@@ -834,7 +831,6 @@ uref    = -grand*10.d0
   xlomlg    = -grand*10.d0
 
 ! --- Scalaires
-!       L'utilisateur devra remplir VISLS0
 !       On remplira plus tard, selon les modifs utilisateur,
 !         ISCSTH
 !       On donne la valeur par defaut pour les autres
@@ -845,7 +841,6 @@ uref    = -grand*10.d0
 
 do iscal = 1, nscamx
   iclvfl(iscal) = -1
-  visls0(iscal) =-grand*10.d0
   rvarfl(iscal) = 0.8d0
 enddo
 

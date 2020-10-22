@@ -144,7 +144,7 @@ integer          nitbwo , nrtbwo
 
 double precision f1m(ncelet), f2m(ncelet)
 double precision f3m(ncelet), f4m(ncelet)
-double precision f3p2m(ncelet), f4p2m(ncelet)
+double precision f4p2m(ncelet)
 double precision enth(ncelet), rom1(ncelet)
 
 ! Local variables

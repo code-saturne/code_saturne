@@ -52,6 +52,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_coupling.h"
 #include "cs_gradient.h"
 #include "cs_gui_util.h"
@@ -735,20 +736,31 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Create the boundary conditions face type and face zone arrays
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the legacy boundary conditions face type and face zone arrays
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_create(void)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
+  /* Get default boundary type (converting "current" to "legacy" codes) */
+
+  const cs_boundary_t  *boundaries = cs_glob_boundaries;
+  int default_type = 0;
+  if (boundaries->default_type & CS_BOUNDARY_WALL)
+    default_type = CS_SMOOTHWALL;
+  else if (boundaries->default_type & CS_BOUNDARY_SYMMETRY)
+    default_type = CS_SYMMETRY;
+
   /* boundary conditions type by boundary face */
 
   BFT_MALLOC(_bc_type, n_b_faces, int);
   for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
-    _bc_type[ii] = 0;
+    _bc_type[ii] = default_type;
   }
   cs_glob_bc_type = _bc_type;
 

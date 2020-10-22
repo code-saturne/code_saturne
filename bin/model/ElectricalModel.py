@@ -125,6 +125,22 @@ class ElectricalModel(Variables, Model):
             ThermalScalarModel(self.case).setThermalModel('enthalpy')
 
         self.__updateScalarAndProperty()
+
+        fcm = FluidCharacteristicsModel(self.case)
+
+        if model == 'off':
+            for tag, symbol in fcm.lst:
+                c = fcm.getPropertyMode(tag)
+                if c == 'predefined_law':
+                    c = 'constant'
+                    fcm.setPropertyMode(tag, c)
+
+        else:
+            for tag, symbol in fcm.lst:
+                c = fcm.getPropertyMode(tag)
+                if c == 'constant':
+                    c = 'predefined_law'
+                    fcm.setPropertyMode(tag, c)
 #
 #        from code_saturne.model.Boundary import Boundary
 #        for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):

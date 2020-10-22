@@ -47,15 +47,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
 #include "bft_error.h"
 #include "bft_mem.h"
+#include "bft_printf.h"
 
-#include "fvm_periodicity.h"
-
+#include "cs_base.h"
+#include "cs_file.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_divergence.h"
 #include "cs_face_viscosity.h"
@@ -67,14 +66,12 @@
 #include "cs_gradient.h"
 #include "cs_halo.h"
 #include "cs_math.h"
-#include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_properties.h"
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_time_moment.h"
-#include "cs_timer_stats.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 
@@ -482,7 +479,7 @@ _les_balance_laplacian(cs_real_t   *wa,
                var_cal_opt.imrgra,
                var_cal_opt.nswrgr,
                var_cal_opt.imligr,
-               var_cal_opt.iwarni,
+               var_cal_opt.verbosity,
                var_cal_opt.epsrgr,
                var_cal_opt.climgr,
                NULL,
@@ -564,10 +561,9 @@ _les_balance_compute_gradients(void)
                        0,
                        0,
                        1,
-                       var_cal_opt.iwarni,
+                       var_cal_opt.verbosity,
                        var_cal_opt.imligr,
                        var_cal_opt.epsrgr,
-                       var_cal_opt.extrag,
                        var_cal_opt.climgr,
                        NULL,
                        coefas,
@@ -1801,10 +1797,8 @@ static void
 _les_balance_time_moment_tui(void)
 {
   const int keysca = cs_field_key_id("scalar_id");
-  char *buffer;
+  char buffer[32];
   int isca = 0;
-
-  BFT_MALLOC(buffer, 32, char);
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
     /* _djnutdiuj */
@@ -2254,8 +2248,6 @@ _les_balance_time_moment_tui(void)
       isca++;
     }
   }
-
-  BFT_FREE(buffer);
 }
 
 /*----------------------------------------------------------------------------
@@ -2391,38 +2383,50 @@ _les_balance_initialize_rij(void)
 static void
 _check_restart_type(void)
 {
-  int ierror;
+  int b_type = -1;
 
-  char const *ficsui = "les_balance.csc";
-  cs_restart_t *suite = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
+  cs_restart_t *rp = NULL;
+  const char default_path[] = "restart/les_balance.csc";
 
-  {
-    int itysup = 0;
-    int type;
+  int is_reg = cs_file_isreg(default_path);
+  if (is_reg)
+    rp = cs_restart_create("les_balance.csc",
+                           NULL,
+                           CS_RESTART_MODE_READ);
 
-    ierror = cs_restart_read_section(suite,
-                                     "les_balance_type",
-                                     itysup,
-                                     1,
-                                     CS_TYPE_int,
-                                     &type);
+  else {
+    is_reg = cs_file_isreg("restart/les_balance");
+    if (is_reg)
+      rp = cs_restart_create("les_balance",
+                             NULL,
+                             CS_RESTART_MODE_READ);
+  }
 
-    if (ierror < CS_RESTART_SUCCESS)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("Abort while opening the LES balance restart file: %s\n"
-           "This file does not seem to be a LES balance checkpoint file."),
-                ficsui);
+  if (rp == NULL)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("LES balance restart file not present: %s."),
+       default_path);
 
-    if (!(type & _les_balance.type))
+  if (rp != NULL)  {
+    cs_restart_read_section(rp,
+                            "les_balance_type",
+                            CS_MESH_LOCATION_NONE,
+                            1,
+                            CS_TYPE_int,
+                            &b_type);
+
+    if (!(b_type & _les_balance.type))
       bft_error(__FILE__, __LINE__, 0,
                 _("Abort while reading the LES balance restart file: %s\n"
                   "The previous balance type is different from the current\n"
                   "balance type:\n"
                   "  previous type: %d\n"
                   "  current type:  %d\n"),
-                  ficsui, type, _les_balance.type);
+                cs_restart_get_name(rp), b_type, _les_balance.type);
   }
+
+  cs_restart_destroy(&rp);
 }
 
 /*----------------------------------------------------------------------------
@@ -2734,13 +2738,13 @@ void
 cs_les_balance_create(void)
 {
   /* Rij active if Rij basic or full is active */
-  if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE
-   || _les_balance.type & CS_LES_BALANCE_RIJ_FULL)
+  if (   _les_balance.type & CS_LES_BALANCE_RIJ_BASE
+      || _les_balance.type & CS_LES_BALANCE_RIJ_FULL)
     _les_balance.type |= CS_LES_BALANCE_RIJ;
 
   /* Tui active if Tui basic or full is active */
-  if (_les_balance.type & CS_LES_BALANCE_TUI_BASE
-   || _les_balance.type & CS_LES_BALANCE_TUI_FULL)
+  if (   _les_balance.type & CS_LES_BALANCE_TUI_BASE
+      || _les_balance.type & CS_LES_BALANCE_TUI_FULL)
     _les_balance.type |= CS_LES_BALANCE_TUI;
 
   /* Count the number of scalars nscal */
@@ -3144,10 +3148,9 @@ cs_les_balance_compute_rij(void)
                        0,
                        0,
                        1,
-                       var_cal_opt.iwarni,
+                       var_cal_opt.verbosity,
                        var_cal_opt.imligr,
                        var_cal_opt.epsrgr,
-                       var_cal_opt.extrag,
                        var_cal_opt.climgr,
                        NULL,
                        coefas,
@@ -3648,10 +3651,9 @@ cs_les_balance_compute_tui(void)
                          0,
                          0,
                          1,
-                         var_cal_opt.iwarni,
+                         var_cal_opt.verbosity,
                          var_cal_opt.imligr,
                          var_cal_opt.epsrgr,
-                         var_cal_opt.extrag,
                          var_cal_opt.climgr,
                          NULL,
                          coefas,
@@ -3789,31 +3791,27 @@ cs_les_balance_compute_tui(void)
 void
 cs_les_balance_write_restart(void)
 {
-  char const *ficsui = "les_balance.csc";
-  cs_restart_t *suite = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_WRITE);
+  const char  restart_name[] = "les_balance.csc";
+  cs_restart_t *rp = cs_restart_create(restart_name,
+                                       NULL,
+                                       CS_RESTART_MODE_WRITE);
 
-  if (suite == NULL)
+  if (rp == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Abort while opening the auxiliary restart "
                 "file in write mode for the LES balance module.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              ficsui);
+              restart_name);
 
-  { /* Write the header */
-    char nomrub[] = "les_balance_type";
+  /* Write the header */
+  cs_restart_write_section(rp,
+                           "les_balance_type",
+                           CS_MESH_LOCATION_NONE,
+                           1,
+                           CS_TYPE_int,
+                           &(_les_balance.type));
 
-    int support = CS_MESH_LOCATION_NONE;
-
-    cs_restart_write_section(suite,
-                             nomrub,
-                             support,
-                             1,
-                             CS_TYPE_int,
-                             &(_les_balance.type));
-
-  }
-
-  cs_restart_destroy(&suite);
+  cs_restart_destroy(&rp);
 }
 
 /*----------------------------------------------------------------------------*/

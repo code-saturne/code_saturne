@@ -64,7 +64,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_paramedmem_remapper.hxx"
+#include "cs_paramedmem_remapper.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -100,6 +100,8 @@ using namespace MEDCoupling;
 /*----------------------------------------------------------------------------
  * MEDCoupling/ParaMEDMEM parallel interpolation structure
  *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_PARAMEDMEM) && defined(HAVE_MEDCOUPLING_LOADER)
 
 struct _cs_paramedmem_remapper_t {
 
@@ -142,19 +144,19 @@ struct _mesh_transformation_t {
   cs_real_t angle     = 0.;
 };
 
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
 static int                         _n_remappers = 0;
 static cs_paramedmem_remapper_t  **_remapper = NULL;
-
-/*----------------------------------------------------------------------------*/
 
 static int                      _n_transformations = 0;
 static _mesh_transformation_t **_transformations = NULL;
 
 static bool _transformations_applied = false;
+
+#endif
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
 
 #if defined(HAVE_PARAMEDMEM) && defined(HAVE_MEDCOUPLING_LOADER)
 
@@ -379,27 +381,27 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
 /*!
  * \brief   Load the mesh parts on each process
  *
- * \param[in] r         pointer to cs_paramedmem_remapper_t struct
- * \param[in] fileName  name of med file containing the data
- * \param[in] meshName  name of the mesh to read in the med file
+ * \param[in] r          pointer to cs_paramedmem_remapper_t struct
+ * \param[in] file_name  name of med file containing the data
+ * \param[in] mesh_name  name of the mesh to read in the med file
  *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
-                             char                     *fileName,
-                             char                     *meshName)
+                             char                     *file_name,
+                             char                     *mesh_name)
 {
   int myPart;
   MPI_Comm_rank(cs_glob_mpi_comm, &myPart);
   int nParts;
   MPI_Comm_size(cs_glob_mpi_comm, &nParts);
 
-  const std::string fname = fileName;
+  const std::string fname = file_name;
 
-  if (meshName != NULL) {
-    const std::string mname = meshName;
+  if (mesh_name != NULL) {
+    const std::string mname = mesh_name;
 
     // Mesh is stored with -1, -1 indices in MED files
     r->src_mesh = ParaMEDFileUMesh::New(myPart,
@@ -492,8 +494,10 @@ BEGIN_C_DECLS
  *
  * \param[in] name          name of the remapper
  * \param[in] sel_criteria  cells selection criteria
- * \param[in] fileName      med file name
- * \param[in] meshName      name of the mesh in the med file
+ * \param[in] file_name     med file name
+ * \param[in] mesh_name     name of the mesh in the med file
+ * \param[in] center        center of bounding sphere
+ * \param[in] radius        radius of bounding sphere
  *
  * \return  cs_paramedmem_remapper_t struct
  */
@@ -502,18 +506,26 @@ BEGIN_C_DECLS
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_create(char       *name,
                               const char *sel_criteria,
-                              char       *fileName,
-                              char       *meshName,
+                              char       *file_name,
+                              char       *mesh_name,
                               cs_real_t   center[3],
                               cs_real_t   radius)
 {
-
   cs_paramedmem_remapper_t *r = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(sel_criteria);
+  CS_NO_WARN_IF_UNUSED(file_name);
+  CS_NO_WARN_IF_UNUSED(mesh_name);
+  CS_NO_WARN_IF_UNUSED(center);
+  CS_NO_WARN_IF_UNUSED(radius);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
+
 #else
 
   if (_remapper == NULL)
@@ -525,7 +537,7 @@ cs_paramedmem_remapper_create(char       *name,
 
   _cs_paramedmem_remapper_target_mesh(r, name, sel_criteria);
 
-  _cs_paramedmem_load_paramesh(r, fileName, meshName);
+  _cs_paramedmem_load_paramesh(r, file_name, mesh_name);
 
   r->_sphere_rad = radius;
   for (int i = 0; i < 3; i++)
@@ -552,8 +564,8 @@ cs_paramedmem_remapper_create(char       *name,
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_by_name_try(const char *name)
 {
-
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
@@ -578,10 +590,11 @@ cs_paramedmem_remapper_by_name_try(const char *name)
 /*!
  * \brief   Remaps a field from the med file to the local mesh for a given time
  *
- * \param[in] r         pointer to cs_paramedmem_remapper_t struct
- * \param[in] fieldName name of the field to remap from the file
- * \param[in] iter      time iteration to use from the file
- * \param[in] order     time order to use from the file
+ * \param[in] r           pointer to cs_paramedmem_remapper_t struct
+ * \param[in] field_name  name of the field to remap from the file
+ * \param[in] default_val default value for unmapped elements
+ * \param[in] dt          time value to use from the file
+ * \param[in] it          time iteration to use from the file
  *
  * \return  cs_real_t pointer containing the new values on target mesh
  */
@@ -589,7 +602,7 @@ cs_paramedmem_remapper_by_name_try(const char *name)
 
 cs_real_t *
 cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
-                                   char                     *fieldName,
+                                   char                     *field_name,
                                    cs_real_t                 default_val,
                                    int                       dt,
                                    int                       it)
@@ -598,12 +611,20 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(default_val);
+  CS_NO_WARN_IF_UNUSED(dt);
+  CS_NO_WARN_IF_UNUSED(it);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
+
 #else
   /* Source Field */
-  const std::string fname(fieldName);
+  const std::string fname(field_name);
 
   MCAuto<MEDFileAnyTypeField1TS> f =
     r->MEDFields->getFieldWithName(fname)->getTimeStep(dt,it);
@@ -677,7 +698,8 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
  * \brief Interpolate a given field on the local mesh for a given time
  *
  * \param[in] r             pointer to cs_paramedmem_remapper_t struct
- * \param[in] fieldName     name of the field to remap from the file
+ * \param[in] field_name    name of the field to remap from the file
+ * \param[in] default_val  default value for unmapped elements
  * \param[in] time_choice   Choice of the time interpolation.
  *                          0: Value of field interpolated at t=tval from the
  *                          med file.
@@ -696,14 +718,20 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
 
 cs_real_t *
 cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
-                          char                     *fieldName,
-                          cs_real_t                 dval,
+                          char                     *field_name,
+                          cs_real_t                 default_val,
                           int                       time_choice,
                           double                    tval)
 {
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(field_name);
+  CS_NO_WARN_IF_UNUSED(default_val);
+  CS_NO_WARN_IF_UNUSED(time_choice);
+  CS_NO_WARN_IF_UNUSED(tval);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
@@ -714,15 +742,21 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
     /* First instance */
     int it    = r->iter[0];
     int order = r->order[0];
-    new_vals = cs_paramedmem_remap_field_one_time(r, fieldName, dval, it, order);
+    new_vals = cs_paramedmem_remap_field_one_time(r,
+                                                  field_name,
+                                                  default_val,
+                                                  it,
+                                                  order);
 
-  } else if ( (time_choice == 0 && tval > r->time_steps[r->ntsteps-1]) ||
-              time_choice == 2) {
+  }
+  else if (   (time_choice == 0 && tval > r->time_steps[r->ntsteps-1])
+           || time_choice == 2) {
     /* Last instance */
     int it    = r->iter[r->ntsteps-1];
     int order = r->order[r->ntsteps-1];
 
-    new_vals = cs_paramedmem_remap_field_one_time(r, fieldName, dval, it, order);
+    new_vals
+      = cs_paramedmem_remap_field_one_time(r, field_name, default_val, it, order);
 
   } else if (time_choice == 0) {
     /* A given time within the file time bounds*/
@@ -740,14 +774,14 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
     cs_real_t t2 = r->time_steps[id2];
 
     cs_real_t *vals1 = cs_paramedmem_remap_field_one_time(r,
-                                                          fieldName,
-                                                          dval,
+                                                          field_name,
+                                                          default_val,
                                                           r->iter[id1],
                                                           r->order[id1]);
 
     cs_real_t *vals2 = cs_paramedmem_remap_field_one_time(r,
-                                                          fieldName,
-                                                          dval,
+                                                          field_name,
+                                                          default_val,
                                                           r->iter[id2],
                                                           r->order[id2]);
 
@@ -782,14 +816,13 @@ cs_paramedmem_remapper_translate(cs_paramedmem_remapper_t  *r,
                                  cs_real_t                  translation[3])
 {
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(translation);
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #else
-  if (_transformations == NULL)
-    BFT_MALLOC(_transformations, 1, _mesh_transformation_t *);
-  else
-    BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
+  BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
 
   cs_real_t cen[3] = {0.,0.,0.};
   _transformations[_n_transformations] =
@@ -817,14 +850,16 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
                               cs_real_t                  angle)
 {
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
+  CS_NO_WARN_IF_UNUSED(invariant);
+  CS_NO_WARN_IF_UNUSED(axis);
+  CS_NO_WARN_IF_UNUSED(angle);
+
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
               "MEDCoupling MPI support.\n"));
 #else
-  if (_transformations == NULL)
-    BFT_MALLOC(_transformations, 1, _mesh_transformation_t *);
-  else
-    BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
+  BFT_REALLOC(_transformations, _n_transformations+1, _mesh_transformation_t *);
 
   _transformations[_n_transformations] =
     _cs_paramedmem_create_transformation(0, invariant, axis, angle);

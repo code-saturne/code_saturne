@@ -20,11 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_fuel_varini &
-!========================
-
- ( nvar   , nscal  ,                                            &
-   dt     )
+subroutine cs_fuel_varini
 
 !===============================================================================
 ! FONCTION :
@@ -56,15 +52,8 @@ subroutine cs_fuel_varini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -91,10 +80,6 @@ use field
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
 integer          iel, ige, mode, icla , ioxy, ifac
@@ -115,10 +100,6 @@ double precision, dimension(:), pointer :: cvar_yco2
 double precision, dimension(:), pointer :: cvar_yhcn, cvar_yno, cvar_hox
 double precision, dimension(:), pointer :: x1, b_x1
 
-integer          ipass
-data             ipass /0/
-save             ipass
-
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
@@ -126,8 +107,6 @@ save             ipass
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
 call field_get_val_s_by_name("b_x_c", b_x1)
-
-ipass = ipass + 1
 
 d2s3 = 2.d0/3.d0
 
@@ -172,7 +151,7 @@ endif
 
 ! RQ IMPORTANTE : pour la combustion FU, 1 seul passage suffit
 
-if ( isuite.eq.0 .and. ipass.eq.1 ) then
+if (isuite.eq.0) then
 
 ! --> Initialisation de k et epsilon comme dans ESTET
 
@@ -296,19 +275,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   do ifac = 1, nfabor
     b_x1(ifac) = 1.d0
   enddo
-
-endif
-
-!===============================================================================
-! 3. User initialization
-!===============================================================================
-
-if (ipass.eq.1) then
-
-  call cs_user_f_initialization &
-  !==========================
-( nvar   , nscal  ,                                            &
-  dt     )
 
 endif
 

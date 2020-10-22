@@ -368,8 +368,7 @@ if (ncesmp.gt.0) then
     enddo
   enddo
 
-  call catsmv(ncelet, ncel, ncesmp, iterns,                              &
-              icetsm, itypsm(:,iu),                                      &
+  call catsmv(ncesmp, iterns, icetsm, itypsm(:,iu),                      &
               cell_f_vol, vel0, smacel(:,iu), smacel(:,ipr),             &
               tsexp, tsimp, gavinj)
 

@@ -41,8 +41,11 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/* The following block applies to cs_defs.h directly, as it mainly
+   concerns itself with type definitions */
+
 /*!
-  \file cs_defs.c
+  \file cs_defs.h
         Base macro and typedef definitions for system portability.
 
   \typedef cs_gnum_t

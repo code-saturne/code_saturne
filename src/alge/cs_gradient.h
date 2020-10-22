@@ -173,7 +173,6 @@ cs_gradient_free_quantities(void);
  * \param[in]       verbosity      verbosity level
  * \param[in]       clip_mode      clipping mode
  * \param[in]       epsilon        precision for iterative gradient calculation
- * \param[in]       extrap         boundary gradient extrapolation coefficient
  * \param[in]       clip_coeff     clipping coefficient
  * \param[in]       f_ext          exterior force generating the
  *                                 hydrostatic pressure
@@ -199,7 +198,6 @@ cs_gradient_scalar(const char                    *var_name,
                    int                            verbosity,
                    cs_gradient_limit_t            clip_mode,
                    double                         epsilon,
-                   double                         extrap,
                    double                         clip_coeff,
                    cs_real_3_t                    f_ext[],
                    const cs_real_t                bc_coeff_a[],
@@ -310,7 +308,6 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   verbosity       verbosity level
  * \param[in]   clip_mode       clipping mode
  * \param[in]   epsilon         precision for iterative gradient calculation
- * \param[in]   extrap          boundary gradient extrapolation coefficient
  * \param[in]   clip_coeff      clipping coefficient
  * \param[in]   f_ext           exterior force generating the
  *                              hydrostatic pressure
@@ -336,7 +333,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 int                         verbosity,
                                 cs_gradient_limit_t         clip_mode,
                                 double                      epsilon,
-                                double                      extrap,
                                 double                      clip_coeff,
                                 cs_real_t                   f_ext[][3],
                                 const cs_real_t             bc_coeff_a[],
@@ -369,7 +365,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   cpl             associated internal coupling, or NULL
- * \param[out]  gradv           gradient
+ * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/

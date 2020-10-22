@@ -147,7 +147,7 @@ logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
 integer          ii, ifac , iel, isou
-integer          iprev , inc   , iccocg, iiun, ibcl
+integer          iprev , inc   , iccocg, ibcl
 integer          ivarsc
 integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
@@ -163,16 +163,18 @@ integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id
 integer          iviext
+integer          key_turb_schmidt
+integer          t_scd_id
 
 integer          ivoid(1)
 
-double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
+double precision epsrgp, climgp, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod
 double precision temp, idifftp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork
@@ -204,6 +206,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st
+double precision, dimension(:), pointer :: cpro_turb_schmidt
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
 double precision, dimension(:), pointer :: cpro_x2icla
@@ -279,7 +282,7 @@ call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+call field_get_key_struct_var_cal_opt(iflid, vcopt)
 
 if (vcopt%iwgrec.eq.1) then
   ! Id weighting field for gradient
@@ -316,7 +319,7 @@ else
 endif
 
 ! --- Numero des grandeurs physiques
-call field_get_key_int (ivarfl(isca(iscal)), kromsl, icrom_scal)
+call field_get_key_int (iflid, kromsl, icrom_scal)
 
 if (icrom_scal.eq.-1) then
   icrom_scal = icrom
@@ -330,10 +333,12 @@ endif
 call field_get_val_s(ivisct, visct)
 call field_get_val_s(iviscl, viscl)
 
-call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+call field_get_key_int (iflid, kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
+
+call field_get_key_double(iflid, kvisl0, visls_0)
 
 if (idilat.ge.4) then
   call field_get_val_s(iustdy(iscal), cpro_tsscal)
@@ -363,14 +368,11 @@ endif
 imucpp = 0
 if (iscavr(iscal).gt.0) then
   call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
-  if (iscacp.eq.1) then
-    imucpp = 1
-  endif
 else
   call field_get_key_int(iflid, kscacp, iscacp)
-  if (iscacp.eq.1) then
-    imucpp = 1
-  endif
+endif
+if (iscacp.eq.1) then
+  imucpp = 1
 endif
 
 allocate(xcpp(ncelet))
@@ -398,7 +400,13 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! Retrieve turbulent Schmidt value for current scalar
-call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+call field_get_key_double(iflid, ksigmas, turb_schmidt)
+! If turbulent Schmidt is variable, id of the corresponding field
+call field_get_key_id("turbulent_schmidt_id", key_turb_schmidt)
+call field_get_key_int(iflid, key_turb_schmidt, t_scd_id)
+if (t_scd_id.ge.0) then
+  call field_get_val_s(t_scd_id, cpro_turb_schmidt)
+endif
 
 !===============================================================================
 ! 2. Source terms
@@ -425,7 +433,7 @@ call ustssc &
   ckupdc , smacel , smbrs  , rovsdt )
 
 ! C version
-call user_source_terms(ivarfl(isca(iscal)), smbrs, rovsdt)
+call user_source_terms(iflid, smbrs, rovsdt)
 
 ! Take into account radioactive decay rate (implicit source term)
 if (ippmod(idarcy).eq.1) then
@@ -631,9 +639,6 @@ endif
 
 if (ncesmp.gt.0) then
 
-  ! Entier egal a 1 (pour navsto : nb de sur-iter)
-  iiun = 1
-
   allocate(srcmas(ncesmp))
 
   ! When treating the Temperature, the equation is multiplied by Cp
@@ -646,11 +651,9 @@ if (ncesmp.gt.0) then
   enddo
 
   ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma
-  call catsma &
- ( ncesmp , iiun   ,                                              &
-   icetsm , itypsm(:,ivar) ,                                      &
-   cell_f_vol , cvara_var    , smacel(:,ivar) , srcmas   ,        &
-   smbrs  , rovsdt , w1)
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),               &
+              cell_f_vol, cvara_var, smacel(:,ivar), srcmas,   &
+              smbrs, rovsdt, w1)
 
   deallocate(srcmas)
 
@@ -779,11 +782,10 @@ if (itspdv.eq.1) then
     iwarnp = vcopt_varsc%iwarni
     epsrgp = vcopt_varsc%epsrgr
     climgp = vcopt_varsc%climgr
-    extrap = vcopt_varsc%extrag
 
     call gradient_s                                                          &
      ( ivarfl(ivarsc)  , imrgrp , inc    , iccocg , nswrgp , imligp ,        &
-       iwarnp          , epsrgp , climgp , extrap ,                          &
+       iwarnp          , epsrgp , climgp ,                                   &
        cvara_varsca    , coefa_p, coefb_p,                                   &
        grad )
 
@@ -791,7 +793,8 @@ if (itspdv.eq.1) then
 
     ! Production Term
 
-    ! NB: diffusivity is clipped to 0 because in LES, it might be negative. Problematic
+    ! NB: diffusivity is clipped to 0 because in LES, it might be negative.
+    ! Problematic
     ! for the variance even if it is strange to use variance and LES ...
 
     ! Time extrapolation (2nd order)
@@ -823,12 +826,22 @@ if (itspdv.eq.1) then
         enddo
       ! SGDH model
       else
-        do iel = 1, ncel
-          cproa_scal_st(iel) = cproa_scal_st(iel)                             &
-               + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
-               *cell_f_vol(iel)/turb_schmidt                                 &
-               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+                 *cell_f_vol(iel)/cpro_turb_schmidt(iel)                        &
+                 *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+                 *cell_f_vol(iel)/turb_schmidt                                 &
+                 *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
 
     ! If not time extrapolation...
@@ -839,7 +852,6 @@ if (itspdv.eq.1) then
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
       if (ityturt(iiscav).ge.1) then
-
 
         ! Name of the scalar ivarsc associated to the variance iscal
         call field_get_name(ivarfl(ivarsc), fname)
@@ -869,22 +881,42 @@ if (itspdv.eq.1) then
 
       ! SGDH model
       else
-        do iel = 1, ncel
-          smbrs(iel) = smbrs(iel)                                            &
-                     + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
-                     * cell_f_vol(iel)/turb_schmidt                       &
-                     * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            smbrs(iel) = smbrs(iel)                                         &
+                       + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
+                       * cell_f_vol(iel)/cpro_turb_schmidt(iel)             &
+                       * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            smbrs(iel) = smbrs(iel)                                         &
+                       + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
+                       * cell_f_vol(iel)/turb_schmidt                       &
+                       * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
 
       ! Production term for a variance  TODO compute ustdy when isso2t >0
       if (idilat.ge.4) then
-        do iel = 1, ncel
-          cpro_tsscal(iel) = cpro_tsscal(iel) +                   &
-               2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
-             *cell_f_vol(iel)/turb_schmidt                     &
-             *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            cpro_tsscal(iel) = cpro_tsscal(iel) +                &
+                 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
+               *cell_f_vol(iel)/cpro_turb_schmidt(iel)           &
+               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            cpro_tsscal(iel) = cpro_tsscal(iel) +                &
+                 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
+               *cell_f_vol(iel)/turb_schmidt                     &
+               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
     endif
 
@@ -955,7 +987,7 @@ if (itspdv.eq.1) then
       if (ifcvsl.ge.0) then
         prdtl = viscl(iel)*xcpp(iel)/cpro_viscls(iel)
       else
-        prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+        prdtl = viscl(iel)*xcpp(iel)/visls_0
       endif
       xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * rvarfl(iscal)
 
@@ -1015,7 +1047,7 @@ if (vcopt%idiff.ge.1) then
     ! EB-GGDH/AFM/DFM: solving alpha for the scalar
     if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
       ! Name of the scalar
-      call field_get_name(ivarfl(isca(iscal)), fname)
+      call field_get_name(iflid, fname)
 
       ! Index of the corresponding turbulent flux
       call field_get_id(trim(fname)//'_alpha', f_id)
@@ -1044,14 +1076,26 @@ if (vcopt%idiff.ge.1) then
 
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
-        w1(iel) = visls0(iscal)                                     &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        w1(iel) = visls_0
       enddo
     else
       do iel = 1, ncel
-        w1(iel) = cpro_viscls(iel)                                &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        w1(iel) = cpro_viscls(iel)
       enddo
+    endif
+    if (idifftp.ge.1) then
+      ! Variable Schmidt number
+      if (t_scd_id.ge.0) then
+        do iel = 1, ncel
+          w1(iel) = w1(iel)                                &
+             + idifftp*xcpp(iel)*max(visct(iel),zero)/cpro_turb_schmidt(iel)
+        enddo
+      else
+        do iel = 1, ncel
+          w1(iel) = w1(iel)                                &
+             + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        enddo
+      endif
     endif
 
     if (vcopt%iwgrec.eq.1) then
@@ -1090,9 +1134,9 @@ if (vcopt%idiff.ge.1) then
         do iel = 1, ncel
 
           temp = vcopt%idifft*xcpp(iel)
-          viscce(1,iel) = temp*vistet(1,iel) + visls0(iscal)
-          viscce(2,iel) = temp*vistet(2,iel) + visls0(iscal)
-          viscce(3,iel) = temp*vistet(3,iel) + visls0(iscal)
+          viscce(1,iel) = temp*vistet(1,iel) + visls_0
+          viscce(2,iel) = temp*vistet(2,iel) + visls_0
+          viscce(3,iel) = temp*vistet(3,iel) + visls_0
           viscce(4,iel) = temp*vistet(4,iel)
           viscce(5,iel) = temp*vistet(5,iel)
           viscce(6,iel) = temp*vistet(6,iel)
@@ -1116,9 +1160,9 @@ if (vcopt%idiff.ge.1) then
         do iel = 1, ncel
 
           temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
-          viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
-          viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
-          viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
+          viscce(1,iel) = temp*visten(1,iel) + visls_0
+          viscce(2,iel) = temp*visten(2,iel) + visls_0
+          viscce(3,iel) = temp*visten(3,iel) + visls_0
           viscce(4,iel) = temp*visten(4,iel)
           viscce(5,iel) = temp*visten(5,iel)
           viscce(6,iel) = temp*visten(6,iel)
@@ -1295,7 +1339,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -1307,12 +1350,11 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
-!==========
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvark_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

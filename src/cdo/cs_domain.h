@@ -105,7 +105,7 @@ typedef struct {
   /* Time step management */
   bool                      only_steady;
   bool                      is_last_iter;     /* true or false */
-  cs_xdef_t                *time_step_def;    /* Definition of the time_step */
+
   cs_time_step_t           *time_step;        /* time step descriptor */
   cs_time_step_options_t    time_options;     /* time step options */
 
@@ -128,7 +128,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain */
+extern cs_domain_t  *cs_glob_domain; /* Pointer to main computational domain */
 
 /*============================================================================
  * Static inline public function prototypes
@@ -229,17 +229,6 @@ cs_domain_needs_iteration(cs_domain_t  *domain);
 
 bool
 cs_domain_needs_log(const cs_domain_t      *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the current time step for this new time iteration
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_define_current_time_step(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

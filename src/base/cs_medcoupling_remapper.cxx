@@ -61,7 +61,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_medcoupling_remapper.hxx"
+#include "cs_medcoupling_remapper.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -418,7 +418,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
-    const DataArrayInt *subcells
+    const DataArrayIdType *subcells
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,  1.1);
 
     // Construct the subfields based on the subcells list
@@ -519,7 +519,7 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
-    const DataArrayInt *subcells
+    const DataArrayIdType *subcells
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox, 1.1);
 
     // Construction of a subfield and the submesh associated with it.
@@ -594,7 +594,6 @@ BEGIN_C_DECLS
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id)
 {
-
   cs_medcoupling_remapper_t *r = NULL;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
@@ -668,7 +667,6 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           iteration,
                                    int           order)
 {
-
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   _add_remapper(name,
                 elt_dim,
@@ -704,7 +702,6 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         iteration,
                                       int                         order)
 {
-
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
@@ -717,7 +714,6 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -741,7 +737,6 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
                                     const char                  key[],
                                     const char                  value[])
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
@@ -789,9 +784,6 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
          "           \"%s\" (ignored).\n"),
        key);
 #endif
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -829,8 +821,6 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
 
   }
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -838,7 +828,8 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
  * \brief   Interpolate values for a given field
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
- * \param[in] field_id     id of the field to interpolate (in the list given before)
+ * \param[in] field_id     id of the field to interpolate (in the list
+ *                         given before)
  * \param[in] default_val  value to apply for elements not intersected by
  *                         source mesh
  *
@@ -891,8 +882,6 @@ cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
     r->source_fields[i]->getMesh()->translate(translation);
   }
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -921,8 +910,6 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
     r->source_fields[i]->getMesh()->rotate(invariant, axis, angle);
   }
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1000,8 +987,6 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
 #else
   *t = r->time_steps[id];
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1009,12 +994,12 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
  *
  * The returned value is int[2].
  * If the requested time value if outside the time bounds stored in the file,
- * the both values are identical (first or last value), and a warning is printed
- * in the listing file.
+ * the both values are identical (first or last value), and a warning is output
+ * in the lod file.
  *
  * \param[in]      r      pointer to remapper object
  * \param[in]      id     requested time index
- * \param[in,out]  iter   index iteration
+ * \param[in,out]  it     index iteration
  * \param[in,out]  order  index iteration order
  */
 /*----------------------------------------------------------------------------*/
@@ -1025,7 +1010,6 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                       *it,
                                                   int                       *order)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
@@ -1034,9 +1018,8 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
   *it    = r->iter_order[id][0];
   *order = r->iter_order[id][1];
 #endif
-
-  return;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all remappers
@@ -1055,9 +1038,6 @@ cs_medcoupling_remapper_destroy_all(void)
   for (int r_id = 0; r_id < _n_remappers; r_id++)
     _cs_medcoupling_remapper_destroy(_remapper[r_id]);
 #endif
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1087,8 +1067,6 @@ cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
                                                            order);
   }
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

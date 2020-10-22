@@ -46,6 +46,7 @@ rank_id = -1
 
 debuggers = {"gdb": "GNU gdb debugger",
              "cgdb": "Console front-end to gdb",
+             "cuda-gdb": "CUDA debugger",
              "gdbgui": "gdbgui gdb web browser interface",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
@@ -522,7 +523,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     f = gen_cmd_file(cmds)
 
     if debugger_ui == 'gdbgui':
-        cmd.append('--gdb-args="-x ' + f + '"')
+        cmd.append('--gdb-cmd')
+        cmd.append(gdb + ' -x ' + f + ' ' + path)
     else:
         cmd.append('-x')
         cmd.append(f)
@@ -538,7 +540,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     # Finalize command
 
-    cmd.append(path)
+    if debugger_ui != 'gdbgui':
+        cmd.append(path)
 
     # Start building command to run
 
@@ -766,7 +769,7 @@ def run_debug(cmds):
     if 'debugger' in cmds.keys():
         debugger = cmds['debugger'][0]
         dbg_name = os.path.basename(debugger)
-        if dbg_name in debuggers.keys() and dbg_name != 'gdb':
+        if dbg_name in debuggers.keys() and dbg_name not in ('gdb', 'cuda-gdb'):
             debugger_ui = dbg_name
         elif dbg_name.find("emacs23") > -1:
             debugger_ui = 'emacs23'

@@ -139,9 +139,8 @@ cs_time_moment_update_all(void);
 int
 cs_time_moment_is_active(int moment_id);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a moment of a product of existing field components
+/*----------------------------------------------------------------------------
+ * Define a moment of a product of existing field components
  *
  * Moments will involve the tensor products of their component fields,
  * and only scalar, vector, or rank-2 tensors are handled (for

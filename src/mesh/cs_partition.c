@@ -1079,7 +1079,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
  * If face Fi is periodic with face Fj, and face Fi is adjacent to cell Ci,
  * while face Fj is adjacent to face Cj, we add Cj to Fi's adjacent cells,
  * and Ci to Fj's adjacent cells, just as if Fi and Fj were regular interior
- * faces (this ignores the geometric transformation, but is suffient to
+ * faces (this ignores the geometric transformation, but is sufficent to
  * build the cells -> cells graph for domain partitioning).
  *
  * This function should be called when faces are distributed by blocks,
@@ -1173,6 +1173,8 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
                                     send_adj,
                                     NULL);
 
+  BFT_FREE(send_adj);
+
   /* Update face -> cell connectivity */
 
   for (cs_lnum_t i = 0; i < n_b; i++) {
@@ -1180,14 +1182,22 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
     const cs_gnum_t g_cell_num = b_data[2*i + 1];
     if (g_face_cells[g_face_id*2] == 0)
       g_face_cells[g_face_id*2] = g_cell_num;
-    else {
-      assert(g_face_cells[g_face_id*2 + 1] == 0);
+    else if (g_face_cells[g_face_id*2 + 1] == 0)
       g_face_cells[g_face_id*2 + 1] = g_cell_num;
-    }
+    else if (g_face_cells[g_face_id*2 + 1] != g_cell_num)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Inconsistency adding periocicity info for partitioning.\n"
+                  "Face %llu: adjacent to cells %llu and %llu,\n"
+                  "trying to add %llu instead of %llu.\n\n"
+                  "Try ignoring periodicity for partitioning."),
+                (unsigned long long)b_data[2*i],
+                (unsigned long long)g_face_cells[g_face_id*2],
+                (unsigned long long)g_face_cells[g_face_id*2+1],
+                (unsigned long long)g_cell_num,
+                (unsigned long long)g_face_cells[g_face_id*2+1]);
   }
 
   BFT_FREE(b_data);
-  BFT_FREE(send_adj);
 
   cs_all_to_all_destroy(&d);
 }

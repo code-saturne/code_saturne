@@ -31,7 +31,8 @@ EXTRA_DIST = Base/icons/code_saturne.ico
 imagesdir = ${pkgdatadir}/images
 
 images_DATA = \
-Base/icons/splashscreen.png
+Base/icons/splashscreen.png \
+Base/icons/22x22/logo_salome_cfd.png
 
 install-exec-local:
 	@case ${host_os} in \

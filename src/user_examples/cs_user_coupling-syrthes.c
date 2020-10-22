@@ -221,7 +221,7 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
   const cs_real_t  *cpro_mu = (const cs_real_t *)CS_F_(mu)->val;
 
   const cs_real_t  cp0 = cs_glob_fluid_properties->cp0;
-  cs_real_t  visls0 = -1;
+  cs_real_t  visls_0 = -1;
 
   const cs_real_t  *cpro_cp = NULL, *cpro_viscls = NULL;
   cs_lnum_t  cp_step = 0, viscls_step = 0;
@@ -247,8 +247,8 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
     viscls_step = 1;
   }
   else {
-    visls0 = cs_field_get_key_double(fth, cs_field_key_id("diffusivity_ref"));
-    cpro_viscls = &visls0;
+    visls_0 = cs_field_get_key_double(fth, cs_field_key_id("diffusivity_ref"));
+    cpro_viscls = &visls_0;
   }
 
   const int is_temperature

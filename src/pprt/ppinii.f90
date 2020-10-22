@@ -265,10 +265,6 @@ ifrace = 0
 ! ---> Initialisation Common / TCHPPI /
 
 npo   = 0
-ngaze = 0
-ngazg = 0
-nato  = 0
-nrgaz = 0
 
 ! ---> Initialisation Common / TCHPPR /
 
@@ -655,11 +651,6 @@ enddo
 
 !--> Initialisation for the meteo profile
 
-imeteo = 0
-nbmetd = 0
-nbmett = 0
-nbmetm = 0
-nbmaxt = 0
 do izone = 1, nozppm
   iprofm(izone) = 0
 enddo

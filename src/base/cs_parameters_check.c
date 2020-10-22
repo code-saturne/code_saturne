@@ -1183,25 +1183,6 @@ cs_parameters_check(void)
                                       var_cal_opt.climgr,
                                       1.);
 
-      /* Extrag can be different from zero only for the pressure
-         and in that case equal to 1 */
-      if (f_id == f_pot->id) {
-        const cs_real_t extrag_vals[2] = {0., 1.};
-        cs_parameters_is_in_list_double(CS_ABORT_DELAYED,
-                                        _(f_desc),
-                                        "var_cal_opt.extrag",
-                                        var_cal_opt.extrag,
-                                        2,
-                                        extrag_vals,
-                                        NULL);
-      } else {
-        cs_parameters_is_equal_double(CS_ABORT_DELAYED,
-                                      _(f_desc),
-                                      "var_cal_opt.extrag",
-                                      var_cal_opt.extrag,
-                                      0.);
-      }
-
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
                                     "var_cal_opt.ircflu (fluxes "
@@ -1943,7 +1924,7 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_real_t visls0 = cs_field_get_key_double(f, kvisls0);
+      cs_real_t visls_0 = cs_field_get_key_double(f, kvisls0);
       f_desc = _field_section_desc(f, "reference diffusivity value for "
                                       "variable ");
 
@@ -1955,7 +1936,7 @@ cs_parameters_check(void)
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                         _(f_desc),
                                         "key diffusivity_ref",
-                                        visls0,
+                                        visls_0,
                                         0.);
       }
 

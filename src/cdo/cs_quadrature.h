@@ -853,6 +853,47 @@ cs_quadrature_tria_4pts_scal(double                tcur,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over a triangle with a quadrature rule using
+ *         7 Gauss points and 7 weights and add it to \p results
+ *         Case of a scalar-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      v1           first point of the triangle
+ * \param[in]      v2           second point of the triangle
+ * \param[in]      v3           third point of the triangle
+ * \param[in]      area         area of the triangle
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_tria_7pts_scal(double                tcur,
+                             const cs_real_3_t     v1,
+                             const cs_real_3_t     v2,
+                             const cs_real_3_t     v3,
+                             double                area,
+                             cs_analytic_func_t   *ana,
+                             void                 *input,
+                             double                results[])
+{
+  cs_real_3_t  gauss_pts[7];
+  double  evaluation[7], weights[7];
+
+  /* Compute Gauss points and its weights */
+  cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
+
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+
+  *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
+              weights[2] * evaluation[2] + weights[3] * evaluation[3] +
+              weights[4] * evaluation[4] + weights[5] * evaluation[5] +
+              weights[6] * evaluation[6] ;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the integral over a triangle using a barycentric quadrature
  *         rule and add it to \p results
  *         Case of a vector-valued function.
@@ -971,6 +1012,48 @@ cs_quadrature_tria_4pts_vect(double                tcur,
   ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 4; p++) {
+    results[0] += weights[p] * evaluation[3*p  ];
+    results[1] += weights[p] * evaluation[3*p+1];
+    results[2] += weights[p] * evaluation[3*p+2];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over a triangle with a quadrature rule using
+ *         7 Gauss points and 7 weights and add it to \p results.
+ *         Case of a vector-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      v1           first point of the triangle
+ * \param[in]      v2           second point of the triangle
+ * \param[in]      v3           third point of the triangle
+ * \param[in]      area         area of the triangle
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_tria_7pts_vect(double                tcur,
+                             const cs_real_3_t     v1,
+                             const cs_real_3_t     v2,
+                             const cs_real_3_t     v3,
+                             double                area,
+                             cs_analytic_func_t   *ana,
+                             void                 *input,
+                             double                results[])
+{
+  cs_real_3_t  gauss_pts[7];
+  double  evaluation[3*7], weights[7];
+
+  /* Compute Gauss points and its weights */
+  cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
+
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+
+  for (int p = 0; p < 7; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
     results[1] += weights[p] * evaluation[3*p+1];
     results[2] += weights[p] * evaluation[3*p+2];
@@ -1099,6 +1182,49 @@ cs_quadrature_tria_4pts_tens(double                tcur,
   for (int p = 0; p < 4; p++) {
     const double wp = weights[p];
     double *eval_p = evaluation + 9*p;
+    for (short int ij = 0; ij < 9; ij++)
+      results[ij] += wp * eval_p[ij];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over a triangle with a quadrature rule using
+ *         7 Gauss points and 7 weights and add it to \p results.
+ *         Case of a tensor-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      v1           first point of the triangle
+ * \param[in]      v2           second point of the triangle
+ * \param[in]      v3           third point of the triangle
+ * \param[in]      area         area of the triangle
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_tria_7pts_tens(double                tcur,
+                             const cs_real_3_t     v1,
+                             const cs_real_3_t     v2,
+                             const cs_real_3_t     v3,
+                             double                area,
+                             cs_analytic_func_t   *ana,
+                             void                 *input,
+                             double                results[])
+{
+  cs_real_3_t  gauss_pts[7];
+  double  evaluation[9*7], weights[7];
+
+  /* Compute Gauss points and its weights */
+  cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
+
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+
+  for (int p = 0; p < 7; p++) {
+    const  double wp = weights[p];
+    double  *eval_p = evaluation + 9*p;
     for (short int ij = 0; ij < 9; ij++)
       results[ij] += wp * eval_p[ij];
   }
@@ -1586,9 +1712,9 @@ cs_quadrature_get_tria_integral(int                   dim,
     case CS_QUADRATURE_BARY_SUBDIV:
       return cs_quadrature_tria_1pt_scal;
     case CS_QUADRATURE_HIGHER:
-      return cs_quadrature_tria_3pts_scal;
-    case CS_QUADRATURE_HIGHEST:
       return cs_quadrature_tria_4pts_scal;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_tria_7pts_scal;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
@@ -1604,9 +1730,9 @@ cs_quadrature_get_tria_integral(int                   dim,
     case CS_QUADRATURE_BARY_SUBDIV:
       return cs_quadrature_tria_1pt_vect;
     case CS_QUADRATURE_HIGHER:
-      return cs_quadrature_tria_3pts_vect;
-    case CS_QUADRATURE_HIGHEST:
       return cs_quadrature_tria_4pts_vect;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_tria_7pts_vect;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
@@ -1622,9 +1748,9 @@ cs_quadrature_get_tria_integral(int                   dim,
     case CS_QUADRATURE_BARY_SUBDIV:
       return cs_quadrature_tria_1pt_tens;
     case CS_QUADRATURE_HIGHER:
-      return cs_quadrature_tria_3pts_tens;
-    case CS_QUADRATURE_HIGHEST:
       return cs_quadrature_tria_4pts_tens;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_tria_7pts_tens;
 
     default:
       bft_error(__FILE__, __LINE__, 0,

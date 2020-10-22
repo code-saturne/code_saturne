@@ -46,7 +46,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Clipping of the turbulent kinetic energy and turbulent dissipation.
  *
- * \param[in]     ncel     number of cells
+ * \param[in]     n_cells  number of cells
  * \param[in]     iclip    indicator = 0 if viscl0 is used
  *                         otherwise viscl is used.
  */

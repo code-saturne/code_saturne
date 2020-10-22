@@ -51,6 +51,24 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy an input data structure.
+ *         Complex data structure can be used when a \ref cs_xdef_t structure
+ *         is defined by an analytic function, a DoF function or a time
+ *         function. Please refer to \ref cs_xdef_analytic_context_t,
+ *         \ref cs_xdef_time_func_context_t or \ref cs_xdef_dof_context_t
+ *
+ * \param[in, out]  input   pointer to an input structure associated to a
+ *                          context structure
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void *
+(cs_xdef_free_input_t)(void   *input);
+
 /*!
  * \enum cs_xdef_type_t
  *
@@ -160,11 +178,11 @@ typedef struct {
    * type of quadrature to use for evaluating the description (see
    * \ref cs_quadrature_type_t)
    *
-   * \var input
+   * \var context
    * Pointer to a structure cast on-the-fly according to the type of description
-   * May be set to NULL or \ref cs_xdef_array_input_t or
-   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_time_func_input_t or
-   * \ref cs_xdef_dof_input_t
+   * May be set to NULL or \ref cs_xdef_array_context_t or
+   * \ref cs_xdef_analytic_context_t or \ref cs_xdef_time_func_context_t or
+   * \ref cs_xdef_dof_context_t
    */
 
   int                    dim;
@@ -177,18 +195,21 @@ typedef struct {
 
   cs_quadrature_type_t   qtype;
 
-  void                  *input;
+  void                  *context;
 
 } cs_xdef_t;
 
 /*!
- * \struct cs_xdef_array_input_t
- * \brief Input structure when an array is used for the definition
+ * \struct cs_xdef_array_context_t
+ * \brief Context structure when an array is used for the definition
  */
 
 typedef struct {
 
   /*!
+   * \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   *
    * \var stride
    * Stride to access the array values
    *
@@ -208,79 +229,105 @@ typedef struct {
    * Otherwise, the lifecycle is managed by the calling code.
    */
 
+  int           z_id;
   int           stride;
   cs_flag_t     loc;
   cs_real_t    *values;
   cs_lnum_t    *index;
   bool          is_owner;
 
-} cs_xdef_array_input_t;
+} cs_xdef_array_context_t;
 
 /*!
- * \struct cs_xdef_analytic_input_t
- * \brief Input structure when a definition by analytic function is used
+ * \struct cs_xdef_analytic_context_t
+ * \brief Context structure when a definition by analytic function is used
  */
 
 typedef struct {
 
-  /*! \var input
-   * NULL or pointer to a structure cast on-the-fly for additional information
-   * used in the function
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
    */
-  void                *input;
+  int                    z_id;
 
   /*! \var func
    * pointer to a \ref cs_analytic_func_t to call
    */
-  cs_analytic_func_t  *func;
-
-} cs_xdef_analytic_input_t;
-
-/*!
- * \struct cs_xdef_dof_input_t
- * \brief Input structure when a definition by DoF function is used
- */
-
-typedef struct {
+  cs_analytic_func_t    *func;
 
   /*! \var input
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
-  void                *input;
+  void                  *input;
+
+  /*! \var free_input
+   * NULL or pointer to a function to free a given input structure
+   */
+  cs_xdef_free_input_t  *free_input;
+
+} cs_xdef_analytic_context_t;
+
+/*!
+ * \struct cs_xdef_dof_context_t
+ * \brief Context structure when a definition by DoF function is used
+ */
+
+typedef struct {
+
+  /*! \var z_id
+   * id related to a zone (volume or boundary) for this definition
+   */
+  int                    z_id;
 
   /*! \var loc
    *  Flag to know which type of entities are given as parameter in the
    *  \ref cs_dof_func_t
    */
-  cs_flag_t            loc;
+  cs_flag_t              loc;
 
   /*! \var func
    * pointer to a \ref cs_dof_func_t to call
    */
-  cs_dof_func_t       *func;
-
-} cs_xdef_dof_input_t;
-
-/*!
- * \struct cs_xdef_time_func_input_t
- * \brief Input structure when a time step function is used for the definition
- */
-
-typedef struct {
+  cs_dof_func_t         *func;
 
   /*! \var input
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
-  void                *input;
+  void                  *input;
+
+  /*! \var free_input
+   * NULL or pointer to a function to free a given input structure
+   */
+  cs_xdef_free_input_t  *free_input;
+
+} cs_xdef_dof_context_t;
+
+/*!
+ * \struct cs_xdef_time_func_context_t
+ * \brief Context structure when a time step function is used for the definition
+ */
+
+typedef struct {
 
   /*! \var func
    * pointer to a \ref cs_time_func_t to call
    */
-  cs_time_func_t      *func;
+  cs_time_func_t        *func;
 
-} cs_xdef_time_func_input_t;
+  /*! \var input
+   * NULL or pointer to a structure cast on-the-fly for additional information
+   * used in the function
+   */
+  void                  *input;
+
+  /*! \var free_input
+   * NULL or pointer to a function to free a given input structure
+   */
+  cs_xdef_free_input_t  *free_input;
+
+} cs_xdef_time_func_context_t;
 
 /*============================================================================
  * Public function prototypes
@@ -353,7 +400,7 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
   assert(def->dim == 1);
   assert(def->type == CS_XDEF_BY_VALUE);
 
-  cs_real_t  *value = (cs_real_t *)def->input;
+  cs_real_t  *value = (cs_real_t *)def->context;
 
   return value[0];
 }
@@ -375,7 +422,7 @@ cs_xdef_get_array(cs_xdef_t     *def)
   assert(def != NULL);
   assert(def->type == CS_XDEF_BY_ARRAY);
 
-  cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
+  cs_xdef_array_context_t  *ai = (cs_xdef_array_context_t *)def->context;
 
   return ai->values;
 }
@@ -389,24 +436,24 @@ cs_xdef_get_array(cs_xdef_t     *def)
  * \brief  Allocate and initialize a new cs_xdef_t structure based on volumic
  *         elements
  *
- * \param[in]  type       type of definition
- * \param[in]  dim        dimension of the values to define
- * \param[in]  z_id       volume zone id
- * \param[in]  state      flag to know if this uniform, cellwise, steady...
- * \param[in]  meta       metadata associated to this description
- * \param[in]  input      pointer to a structure
+ * \param[in]  type        type of definition
+ * \param[in]  dim         dimension of the values to define
+ * \param[in]  z_id        volume zone id
+ * \param[in]  state       flag to know if this uniform, cellwise, steady...
+ * \param[in]  meta        metadata associated to this description
+ * \param[in]  context     pointer to a structure
  *
  * \return a pointer to the new cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_volume_create(cs_xdef_type_t    type,
-                      int               dim,
-                      int               z_id,
-                      cs_flag_t         state,
-                      cs_flag_t         meta,
-                      void             *input);
+cs_xdef_volume_create(cs_xdef_type_t           type,
+                      int                      dim,
+                      int                      z_id,
+                      cs_flag_t                state,
+                      cs_flag_t                meta,
+                      void                    *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -418,7 +465,7 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
  * \param[in]  z_id       volume zone id
  * \param[in]  state      flag to know if this uniform, cellwise, steady...
  * \param[in]  meta       metadata associated to this description
- * \param[in]  input      pointer to a structure
+ * \param[in]  context    pointer to a structure
  *
  * \return a pointer to the new cs_xdef_t structure
  */
@@ -430,7 +477,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
                         int               z_id,
                         cs_flag_t         state,
                         cs_flag_t         meta,
-                        void             *input);
+                        void             *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -440,7 +487,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
  * \param[in]  type       type of definition
  * \param[in]  state      flag to know if this uniform, cellwise, steady...
  * \param[in]  meta       metadata associated to this description
- * \param[in]  input      pointer to a structure storing the parameters (cast
+ * \param[in]  context    pointer to a structure storing the parameters (cast
  *                        on-the-fly according to the type of definition)
  *
  * \return a pointer to the new cs_xdef_t structure
@@ -448,10 +495,10 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_xdef_timestep_create(cs_xdef_type_t             type,
-                        cs_flag_t                  state,
-                        cs_flag_t                  meta,
-                        void                      *input);
+cs_xdef_timestep_create(cs_xdef_type_t       type,
+                        cs_flag_t            state,
+                        cs_flag_t            meta,
+                        void                *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -478,6 +525,23 @@ cs_xdef_free(cs_xdef_t     *d);
 
 cs_xdef_t *
 cs_xdef_copy(cs_xdef_t     *src);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief In case of a definition by an analytic function, a time function or a
+ *        function relying on degrees of freedom (DoFs). One can set a function
+ *        to free a complex input data structure (please refer to \ref
+ *        cs_xdef_free_input_t) for more details.
+ *
+ * \param[in, out]  d             pointer to a cs_xdef_t structure
+ * \param[in]       free_input    pointer to a function which free the input
+ *                                structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_free_input_function(cs_xdef_t               *d,
+                                cs_xdef_free_input_t    *free_input);
 
 /*----------------------------------------------------------------------------*/
 /*!

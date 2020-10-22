@@ -494,7 +494,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_petsc_1] */
 
-
   /* Setting pressure solver with PETSc */
   /*------------------------------------*/
 
@@ -562,7 +561,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_petsc_gamg_2] */
 
-
   /* Setting global options for PETSc with HYPRE BoomerAMG preconditioner */
   /*----------------------------------------------------------------------*/
 
@@ -618,6 +616,18 @@ cs_user_linear_solvers(void)
 
 #endif /* defined(HAVE_PETSC) */
 
+  /* Setting pressure solver with AMGX */
+  /*-----------------------------------*/
+
+#if defined(HAVE_AMGX)
+  /*! [sles_amgx] */
+  {
+    cs_sles_amgx_t *amgx_p = cs_sles_amgx_define(CS_F_(p)->id, NULL);
+
+    cs_sles_amgx_set_config_file(amgx_p, "PCG_CLASSICAL_V_JACOBI.json");
+  }
+  /*! [sles_amgx] */
+#endif /* defined(HAVE_AMGX) */
 }
 
 /*----------------------------------------------------------------------------*/

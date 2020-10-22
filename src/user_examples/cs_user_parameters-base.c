@@ -123,15 +123,19 @@ cs_user_model(void)
   /*--------------------------------------------------------------------------*/
 
   /* Advanced choice of Wall function:
-   *  CS_WALL_F_DISABLED: Disabled,
-   *  CS_WALL_F_1SCALE_POWER: One scale power law, forbidden for k-eps,
-   *  CS_WALL_F_1SCALE_LOG: One scale log law,
-   *  CS_WALL_F_2SCALES_LOG: Two scales log law,
-   *  CS_WALL_F_SCALABLE_2SCALES_LOG: Scalable wall function,
-   *  CS_WALL_F_2SCALES_VDRIEST: Two scales Van Driest,
-   *  CS_WALL_F_2SCALES_SMOOTH_ROUGH: Two scales smooth/rough,
-   *  CS_WALL_F_2SCALES_CONTINUOUS: All y+
-   * */
+   *  Wall function for the dynamic, iwallf can be:
+   *   CS_WALL_F_DISABLED: no wall function
+   *   CS_WALL_F_1SCALE_POWER: deprecated 1 velocity scale power law
+   *   CS_WALL_F_1SCALE_LOG: 1 velocity scale log law
+   *   CS_WALL_F_2SCALES_LOG: 2 velocity scales log law (default for many models)
+   *   CS_WALL_F_SCALABLE_2SCALES_LOG: Scalable log wll function with two
+   *                                   velocity scales
+   *   CS_WALL_F_2SCALES_VDRIEST: 2 velocity scales with Van Driest damping
+   *   CS_WALL_F_2SCALES_SMOOTH_ROUGH: 2 velocity scales valid for smooth and
+   *                                   rough regimes
+   *   CS_WALL_F_2SCALES_CONTINUOUS: 2 velcoity scales (all y+), default for
+   *                                 low Reynolds turbulence models.
+   */
   {
     cs_wall_functions_t *wf = cs_get_glob_wall_functions();
      wf->iwallf = CS_WALL_F_2SCALES_VDRIEST;
@@ -140,10 +144,12 @@ cs_user_model(void)
   /*--------------------------------------------------------------------------*/
 
   /* Advanced choice of scalars wall function:
-   *  CS_WALL_F_S_ARPACI_LARSEN
-   *  CS_WALL_F_S_VDRIEST
-   *  CS_WALL_F_S_LOUIS
-   *  CS_WALL_F_S_MONIN_OBUKHOV
+   *   CS_WALL_F_S_ARPACI_LARSEN: 3 layer Arpaci and Larsen wall function
+   *                              (default for most of the models)
+   *   CS_WALL_F_S_VDRIEST: Van Driest wall function
+   *   CS_WALL_F_S_LOUIS: Atmospheric Louis wall function
+   *   CS_WALL_F_S_MONIN_OBUKHOV: Monin Obukhov atmospheric wall function
+   *   CS_WALL_F_S_SMOOTH_ROUGH: smooth rough wall function
    * */
   {
     cs_wall_functions_t *wf = cs_get_glob_wall_functions();
@@ -303,6 +309,7 @@ cs_user_model(void)
                              CS_MESH_LOCATION_BOUNDARY_FACES);
 
   /*! [user_property_addition] */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -316,6 +323,8 @@ cs_user_model(void)
  * At this stage, the mesh is not built or read yet, so associated data
  * such as field values are not accessible yet, though pending mesh
  * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -610,12 +619,8 @@ cs_user_parameters(cs_domain_t *domain)
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t vcopt;
-        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-        cs_field_get_key_struct(f, key_cal_opt_id, &vcopt);
-        vcopt.iwarni = 2;
-        cs_field_set_key_struct(f, key_cal_opt_id, &vcopt);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->verbosity = 2;
       }
     }
   }
@@ -1106,6 +1111,138 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [change_nsave_checkpoint_files] */
   cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Atmospheric module options
+   */
+
+  /*! [atmo_module] */
+  /* Read the meteo file (1) or impose directly the input values to compute it
+   * in Code_Saturne (2) */
+  cs_glob_atmo_option->meteo_profile = 2;
+
+  /* Inverse LMO length */
+  cs_glob_atmo_option->meteo_dlmo = 0.;
+  /* Large scale roughness */
+  cs_glob_atmo_option->meteo_z0 = 0.1;
+  /* Elevation for reference velocity */
+  cs_glob_atmo_option->meteo_zref = 10.;
+  /* Friction velocity */
+  cs_glob_atmo_option->meteo_ustar0 = 1.;
+  /* Velocity direction */
+  cs_glob_atmo_option->meteo_angle = 270.;
+  /* Temperature at 2m */
+  cs_glob_atmo_option->meteo_t0 = 288.;
+  /* Pressure at sea level */
+  cs_glob_atmo_option->meteo_psea = 1.01325e5;
+
+  /* Option to compute ground elevation in the domain */
+  cs_glob_atmo_option->compute_z_ground = true;
+
+  /* Automatic open boundary conditions
+   *   1: meteo mass flow rate is imposed with a constant large scale
+   *      pressure gradient
+   *   2: same plus velocity profile imposed at ingoing faces
+   */
+  cs_glob_atmo_option->open_bcs_treatment = 1;
+
+  /* Time of the simulation (for radiative model or chemistry)
+   * syear:  starting year
+   * squant: starting quantile
+   * shour:  starting hour (UTC)
+   * smin:   starting minute
+   * ssec:   starting second
+   */
+  cs_glob_atmo_option->syear = 2020;
+  cs_glob_atmo_option->squant = 1;
+  cs_glob_atmo_option->shour = 1;
+  cs_glob_atmo_option->smin = 0;
+  cs_glob_atmo_option->ssec = 0.;
+
+  /* Geographic position
+   *  longitude: longitude of the domain origin
+   *  latitude: latitude of the domain origin
+   */
+  cs_glob_atmo_option->longitude = 0.;
+  cs_glob_atmo_option->latitude = 45.0;
+
+  /* Chemistry:
+   *   model: choice of chemistry resolution scheme
+   *     0: no atmospheric chemistry
+   *     1: quasi steady equilibrium NOx scheme with 4 species and 5 reactions
+   *     2: scheme with 20 species and 34 reactions
+   *     3: scheme CB05 with 52 species and 155 reactions
+   *     4: user defined scheme
+   *      for model = 4, a SPACK file must be provided using
+   *        call atmo_chemistry_set_spack_file_name("species.spack.dat")
+   *      the following sources generated by SPACK should be included in the SRC folder
+   *        kinetic.f90, fexchem.f90, jacdchemdc.f90, rates.f90, dratedc.f90
+   *        dimensions.f90, LU_decompose.f90, LU_solve.f90
+   */
+   cs_glob_atmo_chemistry->model = 0;
+
+   /* Chemistry with photolysis: inclusion (true) or not (false) of photolysis reactions
+    * warning: photolysis is not compatible with space-variable time step
+    */
+   cs_glob_atmo_chemistry->chemistry_with_photolysis = true;
+
+   /* Aerosol chemistry
+    * -----------------*/
+
+   /*   aerosol_model: flag to activate aerosol chemistry
+    *   CS_ATMO_AEROSOL_OFF: aerosol chemistry deactivated, default
+    *   CS_ATMO_AEROSOL_SSH: model automatically set to 4
+    *     External library SSH-aerosol is used
+    *     Corresponding SPACK files must be provided
+    *     The SSH namelist file can be specified using
+    *       call atmo_chemistry_set_aerosol_file_name("namelist_coag.ssh")
+    *       if no namelist file is specified, "namelist.ssh" is used
+    */
+   cs_glob_atmo_chemistry->aerosol_model = CS_ATMO_AEROSOL_SSH;
+
+   /* Frozen gaseous chemistry
+    *   false: gaseous chemistry is activated (default)
+    *   true: gaseous chemistry is frozen
+    */
+   cs_glob_atmo_chemistry->frozen_gas_chem = false;
+
+  /*! [atmo_module] */
+
+  /* Example: compute porosity from a scan of points
+   * ------------------------------------------------*/
+
+  cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
+
+  /* Apply a transformation to the scanned points */
+  /* Translation part */
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][3] = 1.98;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][3] = 37.5477;
+  /* Rotation part arround z axis */
+  cs_real_t angle = 15. /180. * cs_math_pi;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][0] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][1] =  sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
+
+  /* Add some sources to fill fluid space */
+  {
+    cs_real_3_t source = {4.295, 1.15326, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
+  {
+    cs_real_3_t source = {4.295, 3.2, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1157,44 +1294,14 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling] */
 
-  /* Example: compute porosity from a scan of points
-   * ------------------------------------------------*/
 
-  cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
-
-  /* Apply a transformation to the scanned points */
-  /* Translation part */
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][3] = 1.98;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[2][3] = 37.5477;
-  /* Rotation part arround z axis */
-  cs_real_t angle = 15. /180. * cs_math_pi;
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][0] =  cos(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[0][1] =  sin(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
-  cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
-
-  /* Add some sources to fill fluid space */
-  {
-    cs_real_3_t source = {4.295, 1.15326, 0.5};
-    /* If a transformation matrix has been applied
-     * chose if if has to be applied to the source */
-    bool transform = true ;
-    cs_porosity_from_scan_add_source(source, transform);
-  }
-  {
-    cs_real_3_t source = {4.295, 3.2, 0.5};
-    /* If a transformation matrix has been applied
-     * chose if if has to be applied to the source */
-    bool transform = true ;
-    cs_porosity_from_scan_add_source(source, transform);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  *  \brief Define or modify log user parameters.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

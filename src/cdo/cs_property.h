@@ -198,6 +198,54 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  returns true if the property is steady and uniform, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_constant(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return true; /* Treated as the "unity" property */
+
+  if (pty->state_flag & CS_FLAG_STATE_STEADY) {
+    if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
+      return true;
+    else
+      return false;
+  }
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the property is steady, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_steady(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return true; /* Treated as the "unity" property */
+
+  if (pty->state_flag & CS_FLAG_STATE_STEADY)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  returns true if the property is uniform, otherwise false
  *
  * \param[in]    pty    pointer to a property to test
@@ -432,6 +480,24 @@ cs_property_data_init(bool                     need_tensor,
                       bool                     need_eigen,
                       const cs_property_t     *property,
                       cs_property_data_t      *data);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a single uniform and steady isotropic definition for the
+ *         given cs_property_t structure.
+ *         This is a specialized variant of \ref cs_property_def_iso_by_value
+ *         since several assumptions are satisfied.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       val      value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_def_constant_value(cs_property_t    *pty,
+                               double            val);
 
 /*----------------------------------------------------------------------------*/
 /*!

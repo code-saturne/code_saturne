@@ -378,6 +378,8 @@ class MainView(object):
 
         self.runOrSubmitAction.triggered.connect(self.runOrSubmit)
 
+        self.editCouplingParametersAction.triggered.connect(self.editCouplingParams)
+
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
 
@@ -728,7 +730,6 @@ class MainView(object):
         if hasattr(self, 'case'):
             delattr(self, 'case')
 
-
     def loadFile(self, file_name=None):
         """
         Private method
@@ -912,7 +913,7 @@ class MainView(object):
 
         if not open_editor:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: you can only manage user files for a "\
+            msg   = self.tr("You can only manage user files for a "\
                             "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
@@ -954,7 +955,7 @@ class MainView(object):
 
         if not open_viewer:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: you can only view log files for a "\
+            msg   = self.tr("You can only view log files for a "\
                             "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
@@ -1317,6 +1318,59 @@ class MainView(object):
             dialog.show()
 
 
+    def editCouplingParams(self):
+        """
+        """
+
+        open_editor = True
+        if not hasattr(self, 'case'):
+            open_editor = False
+        else:
+            if not hasattr(self, 'IdPthMdl'):
+                self.IdPthMdl = IdentityAndPathesModel(self.case)
+
+            fic = self.IdPthMdl.getXmlFileName()
+            if not fic:
+                open_editor = False
+            else:
+                file_dir = os.path.split(fic)[0]
+                if file_dir:
+                    if not os.path.basename(file_dir) == "DATA":
+                        open_editor = False
+
+        if not open_editor:
+            title = self.tr("Warning")
+            msg   = self.tr("You can only manage coupling parameters inside "\
+                            "the run.cfg if you are editing a code_saturne "\
+                            "case. Otherwise launch code_saturne cplgui run.cfg")
+
+            QMessageBox.warning(self, title, msg)
+            return
+
+        studydir = os.path.split(os.path.split(file_dir)[0])[0]
+        if studydir:
+            if not os.path.isfile(os.path.join(studydir, "run.cfg")):
+                open_editor = False
+        else:
+            open_editor = False
+
+        if not open_editor:
+            title = self.tr("Warning")
+            msg   = self.tr("Could not find a top-level (coupling) run.cfg file")
+            QMessageBox.warning(self, title, msg)
+            return
+
+        path_to_cfg = os.path.join(studydir, "run.cfg")
+
+        from code_saturne.Base.QCouplingEditorView import QCouplingEditor
+
+        couplingEditor = QCouplingEditor(parent=self,
+                                         cfgfile=path_to_cfg)
+
+        couplingEditor.show()
+
+
+
     def runOTMode(self):
         """
         public slot
@@ -1644,10 +1698,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.case['current_tab'] = 0
         self.case['current_index'] = None
         return displaySelectedPage('Calculation environment',
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
+                                   self,
+                                   self.case,
+                                   stbar=self.statusbar,
+                                   tree=self.Browser)
 
 
     def displayCSManual(self):

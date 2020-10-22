@@ -107,20 +107,11 @@ double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
 double precision, dimension(:), pointer :: cvar_f3m, cvar_f4p2m
 
-! NOMBRE DE PASSAGES DANS LA ROUTINE
-
-integer          ipass
-data             ipass /0/
-save             ipass
-
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
-
-ipass = ipass + 1
-
 
 d2s3 = 2.d0/3.d0
 
@@ -156,7 +147,7 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 ! RQ IMPORTANTE : pour la combustion CP, 1 seul passage suffit
 
-if ( isuite.eq.0 .and. ipass.eq.1 ) then
+if ( isuite.eq.0) then
 
 ! --> Initialisation de k et epsilon
 

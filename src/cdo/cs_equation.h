@@ -195,6 +195,20 @@ cs_equation_get_field_id(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the range set structure associated to a cs_equation_t
+ *         structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a cs_range_set_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_range_set_t *
+cs_equation_get_range_set(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the global number of degrees of freedom associated to this
  *         cs_equation_t structure
  *

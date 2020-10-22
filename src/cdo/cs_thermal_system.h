@@ -94,7 +94,7 @@ typedef cs_flag_t  cs_thermal_model_type_t;
  * \def CS_THERMAL_MODEL_STEADY
  * \brief Disable the unsteady term of the thermal equation
  *
- * \def CS_THERMAL_MODEL_NAVSTO_VELOCITY
+ * \def CS_THERMAL_MODEL_NAVSTO_ADVECTION
  * \brief Add an advection term arising from the velocity field solution
  *        of the Navier-Stokes equations
  *
@@ -119,7 +119,7 @@ typedef cs_flag_t  cs_thermal_model_type_t;
 typedef enum {
 
   CS_THERMAL_MODEL_STEADY                     = 1<<0,  /* =  1 */
-  CS_THERMAL_MODEL_NAVSTO_VELOCITY            = 1<<1,  /* =  2 */
+  CS_THERMAL_MODEL_NAVSTO_ADVECTION           = 1<<1,  /* =  2 */
 
   /* Main variable to consider (by default the temperature in Kelvin)
      ---------------------------------------------------------------- */
@@ -190,6 +190,41 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the value of the reference temperature associated to a
+ *        thermal system.
+ *
+ * \return the value of the reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_thermal_system_get_reference_temperature(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the model flag related to a thermal system
+ *
+ * \return a flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_thermal_system_get_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Does the thermal system rely on the advection field associated to
+ *        the Navier-Stokes equations ?
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_thermal_system_needs_navsto(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

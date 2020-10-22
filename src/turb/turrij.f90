@@ -114,10 +114,13 @@ integer          f_id0 , f_id
 integer          iprev
 integer          key_t_ext_id
 integer          iroext
+integer          f_id_phij
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
 double precision xnoral, xnal(3)
+double precision k,P
+double precision d1s3,d2s3
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
@@ -141,6 +144,7 @@ double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 double precision, dimension(:,:), pointer :: lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_produc
+double precision, dimension(:,:), pointer :: cpro_press_correl
 double precision, dimension(:), pointer :: cpro_beta
 
 type(var_cal_opt) :: vcopt
@@ -174,6 +178,12 @@ else
   cpro_produc => produc
 endif
 
+call field_get_id_try("rij_pressure_strain_correlation", f_id_phij)
+if (f_id_phij.ge.0) then
+  call field_get_val_v(f_id_phij, cpro_press_correl)
+endif
+call field_get_val_s(ivarfl(iep), cvar_ep)
+
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
@@ -202,6 +212,24 @@ endif
 
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+!===============================================================================
+! 1.1 Call source terms for Rij
+!===============================================================================
+
+if (irijco.eq.1) then
+
+  call cs_user_turbulence_source_terms2 &
+   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+     ivarfl(irij)    ,                                              &
+     icepdc , icetsm , itypsm ,                                     &
+     ckupdc , smacel ,                                              &
+     smbrts , rovsdtts)
+
+  ! C version
+  call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
+
+endif
 
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
@@ -443,6 +471,56 @@ else
 endif
 
 !===============================================================================
+! 2.3 Compute the pressure correlation  term for Rij
+!===============================================================================
+! Phi,ij = Phi1,ij+Phi2,ij
+! Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
+! Phi,ij is stored as (Phi11, Phi22, Phi33, Phi12, Phi23, Phi13)
+
+! TODO : coherent with the model
+if (f_id_phij.ge.0) then
+  d1s3 = 1.0d0/3.0d0
+  d2s3 = 2.0d0/3.0d0
+  if (irijco.eq.1) then
+    do iel = 1, ncel
+      k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+      do isou=1,3
+        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*k)  &
+                                       -crij2*(cpro_produc(isou,iel)-d2s3*P)
+      enddo
+      do isou=4,6
+        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
+                                       -crij2*(cpro_produc(isou,iel))
+      enddo
+    enddo
+  else
+    do iel = 1, ncel
+      k=0.5*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+
+      cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(1,iel)-d2s3*P)
+
+      cpro_press_correl(2, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(2,iel)-d2s3*P)
+
+      cpro_press_correl(3, iel)= -crij1*cvar_ep(iel)/k*(cvara_r33(iel)-d2s3*k)  &
+                                 -crij2*(cpro_produc(3,iel)-d2s3*P)
+
+      cpro_press_correl(4, iel)= -crij1*cvar_ep(iel)/k*cvara_r12(iel)  &
+                                 -crij2*cpro_produc(4,iel)
+
+      cpro_press_correl(5, iel)= -crij1*cvar_ep(iel)/k*cvara_r22(iel)  &
+                                 -crij2*cpro_produc(5,iel)
+
+      cpro_press_correl(6, iel)= -crij1*cvar_ep(iel)/k*cvara_r13(iel)  &
+                                 -crij2*cpro_produc(6,iel)
+    enddo
+  endif
+endif
+
+!===============================================================================
 ! 3. Compute the density gradient for buoyant terms
 !===============================================================================
 
@@ -535,7 +613,7 @@ else if (igrari.eq.1) then
 
     call gradient_s                                                 &
       ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,       &
-      iwarnp , epsrgp , climgp , extrap ,                           &
+      iwarnp , epsrgp , climgp ,                                    &
       cromo  , bromo  , viscb           ,                           &
       gradro )
 
@@ -564,15 +642,16 @@ if (irijco.eq.1) then
 
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then !TODO
+
     call resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   cpro_produc , gradro ,                                         &
+   gradv  , cpro_produc , gradro ,                                &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
-   smbrts   , rovsdtts )
+   smbrts , rovsdtts )
 
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
@@ -580,10 +659,10 @@ if (irijco.eq.1) then
     call resssg2 &
   ( nvar    , nscal  , ncepdp , ncesmp ,                            &
     ivar    ,                                                       &
-    icepdc  , icetsm , itypsm ,                                     &
+    icetsm , itypsm ,                                               &
     dt      ,                                                       &
     gradv   , cpro_produc, gradro ,                                 &
-    ckupdc  , smacel ,                                              &
+    smacel ,                                                        &
     viscf   , viscb  ,                                              &
     tslagi ,                                                        &
     smbrts  , rovsdtts )

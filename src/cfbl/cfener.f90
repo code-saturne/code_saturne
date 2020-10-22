@@ -108,9 +108,9 @@ integer          icvflb
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
-double precision epsrgp, climgp, extrap, blencp, epsilp
+double precision epsrgp, climgp, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
@@ -395,8 +395,9 @@ if (vcopt_e%idiff.ge. 1) then
   endif
 !     (CP/CV)*MUT/TURB_SCHMIDT+LAMBDA/CV
   if(ifcvsl.lt.0)then
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
     do iel = 1, ncel
-      w1(iel) = w1(iel) + visls0(iscal)
+      w1(iel) = w1(iel) + visls_0
     enddo
   else
     do iel = 1, ncel
@@ -451,7 +452,6 @@ if (vcopt_e%idiff.ge. 1) then
   iwarnp = vcopt_u%iwarni
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
-  extrap = vcopt_u%extrag
 
 ! Allocate temporary arrays
   allocate(coefap(nfabor))
@@ -466,9 +466,8 @@ if (vcopt_e%idiff.ge. 1) then
 !              that the variable is not Rij)
   f_id0 = -1
   call gradient_s                                                   &
-  !==========
    ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-     iwarnp , epsrgp , climgp , extrap ,                            &
+     iwarnp , epsrgp , climgp ,                                     &
      w7     , coefap , coefbp ,                                     &
      grad   )
 
@@ -750,7 +749,6 @@ epsilp = vcopt_e%epsilo
 epsrsp = vcopt_e%epsrsm
 epsrgp = vcopt_e%epsrgr
 climgp = vcopt_e%climgr
-extrap = vcopt_e%extrag
 relaxp = vcopt_e%relaxv
 thetap = vcopt_e%thetav
 iescap = 0
@@ -770,12 +768,11 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits                                                      &
-!==========
 ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   iwarnp , normp  ,                                              &
-  blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+  blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
   relaxp , thetap ,                                              &
   cvara_energ     , cvara_energ     ,                            &
   coefap , coefbp , cofafp , cofbfp ,                            &

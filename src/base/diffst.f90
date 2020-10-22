@@ -86,7 +86,7 @@ integer          imucpp, idftnp, imasac
 integer          key_buoyant_id, is_buoyant_fld
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 integer          icvflb
 integer          ivoid(1)
@@ -213,9 +213,10 @@ do iscal = 1, nscal
 
     call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
-    if(ifcvsl.lt.0)then
+    if (ifcvsl.lt.0)then
+      call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
       do iel = 1, ncel
-        vistot(iel) = visls0(iscal)                                     &
+        vistot(iel) = visls_0                                           &
            + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
       enddo
     else
@@ -226,7 +227,6 @@ do iscal = 1, nscal
     endif
 
     call viscfa ( imvisf , vistot , viscf , viscb )
-    !==========
 
   else
 
@@ -252,7 +252,6 @@ do iscal = 1, nscal
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
   call bilsca &
-  !==========
   ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
     iwarnp , imucpp , idftnp , imasac ,                            &

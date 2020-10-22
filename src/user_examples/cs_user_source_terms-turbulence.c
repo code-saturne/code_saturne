@@ -118,7 +118,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /*! [rem_code_3] */
   if (f == CS_F_(k)) {
 
-    if (var_cal_opt->iwarni >= 1)
+    if (var_cal_opt->verbosity >= 1)
       bft_printf(" User source terms for turbulence variable %s\n",
                  cs_field_get_label(f));
 

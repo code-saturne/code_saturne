@@ -34,6 +34,7 @@
 #include "cs_cdo_advection.h"
 #include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
+#include "cs_equation_common.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -84,8 +85,8 @@ struct  _cs_cdofb_t {
   cs_cdo_enforce_bc_t       *enforce_sliding;
 
   /* Pointer of function to build the advection term */
-  cs_cdofb_advection_t      *adv_func;
-  cs_cdofb_advection_bc_t   *adv_func_bc;
+  cs_cdofb_advection_build_t      *advection_build;
+  cs_cdofb_advection_t            *advection_func;
 
   /* If one needs to build a local hodge op. for time and reaction */
   cs_hodge_param_t           mass_hodgep;
@@ -93,9 +94,27 @@ struct  _cs_cdofb_t {
   cs_hodge_compute_t        *get_mass_matrix;
 };
 
+typedef struct _cs_cdofb_t  cs_cdofb_priv_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the advection-related parameters in the context structure of
+ *         CDO face-based schemes
+ *
+ * \param[in]      eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb    pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] eqc    pointer to a \ref cs_cdofb_priv_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
+                                cs_equation_builder_t       *eqb,
+                                cs_cdofb_priv_t             *eqc);
 
 /*----------------------------------------------------------------------------*/
 

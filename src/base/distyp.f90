@@ -154,6 +154,8 @@ save             ipass
 ! 1. Initialization
 !===============================================================================
 
+extrap = 0
+
 ! Allocate temporary arrays for the distance resolution
 allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 allocate(dpvar(ncelet))
@@ -323,7 +325,6 @@ iphydp = 0
 
 imrgrp = vcopt%imrgra
 epsrgp = vcopt%epsrgr
-extrap = vcopt%extrag
 climgp = vcopt%climgr
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -488,7 +489,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
@@ -509,7 +509,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , xnorm0 ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    dvarp  , dvarp  ,                                              &
    coefap , coefbp ,                                              &

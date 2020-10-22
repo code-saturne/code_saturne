@@ -171,25 +171,29 @@ do ivar = 1, nvar
   endif
 enddo
 
+! First pre-initialization for specific physic modules
+! before the GUI
+if (ippmod(iphpar).gt.0) then
+  call ppiniv0
+endif
+
 ! - Interface Code_Saturne
 !   ======================
 
 call uiiniv (isuite, ippmod(idarcy), ithvar)
 
-!   - Sous-programme utilisateur
-!     ==========================
+! User subroutine
+! ===============
 
-if (ippmod(iphpar).eq.0) then
-
-  call cs_user_f_initialization(nvar, nscal, dt)
-
-else
-
-  call ppiniv(nvar, nscal, dt)
-
-endif
+call cs_user_f_initialization(nvar, nscal, dt)
 
 call user_initialization()
+
+! Second stage of initialization for specific physic modules
+! after the user
+if (ippmod(iphpar).gt.0) then
+  call ppiniv1
+endif
 
 ! VoF algorithm
 if (ivofmt.gt.0) then

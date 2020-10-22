@@ -268,6 +268,65 @@ _init_thermal_system(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the value of the reference temperature associated to a
+ *        thermal system.
+ *
+ * \return the value of the reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_thermal_system_get_reference_temperature(void)
+{
+  if (cs_thermal_system == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A reference temperature is requested but no thermal"
+              " system is activated.\n"
+              " Please check your settings.", __func__);
+
+  return cs_thermal_system->ref_temperature;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the model flag related to a thermal system
+ *
+ * \return a flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_thermal_system_get_model(void)
+{
+  if (cs_thermal_system == NULL)
+    return 0;
+
+  return cs_thermal_system->model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Does the thermal system rely on the advection field associated to
+ *        the Navier-Stokes equations ?
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_thermal_system_needs_navsto(void)
+{
+  if (cs_thermal_system == NULL)
+    return false;
+
+  if (cs_thermal_system->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if the resolution of the thermal system has been activated
  *
  * \return true or false
@@ -325,7 +384,9 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, CS_PROPERTY_ISO);
 
   /* Thermal capacity */
-  thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
+  thm->cp = cs_property_by_name(CS_THERMAL_CP_NAME);
+  if (thm->cp == NULL)
+    thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
 
   /* Thermal conductivity */
   cs_property_type_t  pty_type = CS_PROPERTY_ISO;
@@ -390,7 +451,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   thm->thermal_eq = eq;
 
   /* Add an advection term  */
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY) {
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION) {
 
     cs_equation_add_advection(eqp,
                               cs_advection_field_by_name("mass_flux"));
@@ -531,9 +592,10 @@ cs_thermal_system_get_equation(void)
 {
   cs_thermal_system_t  *thm = cs_thermal_system;
 
-  if (thm == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
-
-  return thm->thermal_eq;
+  if (thm == NULL)
+    return NULL;
+  else
+    return thm->thermal_eq;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -837,7 +899,7 @@ cs_thermal_system_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "  * Thermal | Model:");
   if (thm->model & CS_THERMAL_MODEL_STEADY)
     cs_log_printf(CS_LOG_SETUP, " Steady-state");
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY)
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
     cs_log_printf(CS_LOG_SETUP, " + Navsto advection");
   if (thm->model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     cs_log_printf(CS_LOG_SETUP, " + Anistropic conductivity");

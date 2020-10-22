@@ -311,17 +311,17 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
       switch(def->type) {
       case CS_XDEF_BY_VALUE:
         {
-          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+          const cs_real_t  *constant_val = (cs_real_t *)def->context;
           nsb->pressure_bc_val[i] = constant_val[0];
         }
         break;
 
       case CS_XDEF_BY_ARRAY:
         {
-          cs_xdef_array_input_t  *a_in = (cs_xdef_array_input_t *)def->input;
-          assert(a_in->stride == 1);
-          assert(cs_flag_test(a_in->loc, cs_flag_primal_face));
-          nsb->pressure_bc_val[i] = a_in->values[bf_id];
+          cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)def->context;
+          assert(c->stride == 1);
+          assert(cs_flag_test(c->loc, cs_flag_primal_face));
+          nsb->pressure_bc_val[i] = c->values[bf_id];
         }
         break;
 
@@ -331,13 +331,13 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
         case CS_PARAM_REDUCTION_DERHAM:
           cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, cm->face[f].center,
                                              t_eval,
-                                             def->input,
+                                             def->context,
                                              nsb->pressure_bc_val + i);
           break;
 
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_cw_eval_scalar_face_avg_by_analytic(cm, f, t_eval,
-                                                      def->input,
+                                                      def->context,
                                                       def->qtype,
                                                       nsb->pressure_bc_val + i);
           break;
@@ -1497,7 +1497,7 @@ cs_cdofb_symmetry(short int                       f,
   /* Compute \int_f du/dn v and update the matrix */
   _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
 
-  /* 2) Update the bc_op matrix and nothing done to the RHS since a sliding
+  /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
      means homogeneous Dirichlet values on the normal component and hommogeneous
      Neumann on the tangential flux */
 
@@ -1586,7 +1586,7 @@ cs_cdofb_fixed_wall(short int                       f,
   const cs_real_t  *ni = pfq.unitv;
   const cs_real_t  ni_ni[9] = { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
                                 ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
-                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
+                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2] };
 
   /* chi * \meas{f} / h_f  */
   const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);

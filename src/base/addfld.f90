@@ -49,7 +49,7 @@ subroutine addfld
 ! Module files
 !===============================================================================
 
-use atincl, only: compute_z_ground
+use atincl, only: compute_z_ground, imeteo
 use paramx
 use dimens
 use optcal
@@ -95,6 +95,8 @@ integer          nfld
 integer          n_prev
 integer          t_ext
 integer          kclipp
+integer          key_turb_schmidt, kscavr
+integer          var_f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
@@ -134,6 +136,7 @@ call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
 call field_get_key_id('alpha_turbulent_flux_id', kfturt_alpha)
 call field_get_key_id('coupled', keycpl)
+call field_get_key_id("first_moment_id", kscavr)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -221,6 +224,23 @@ do ii = 1, nscal
 
 enddo
 
+! Hydrostatic pressure used to update pressure BCs
+if (icalhy.eq.1) then
+  f_name  = 'hydrostatic_pressure'
+  f_label = 'Hydrostatic Pressure'
+  call add_variable_field(f_name, f_label, 1, ivar)
+  f_id = ivarfl(ivar)
+
+  ! Elliptic equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  vcopt%iconv = 0
+  vcopt%istat = 0
+  vcopt%nswrsm = 2
+  vcopt%idifft = 0
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+  call field_set_key_struct_var_cal_opt(f_id, vcopt)
+endif
+
 !===============================================================================
 ! 2. Additional property fields
 !===============================================================================
@@ -235,7 +255,8 @@ enddo
 do ii = 1, nscal
   f_id = ivarfl(isca(ii))
   call field_get_key_int(f_id, kivisl, ifcvsl)
-  if (ifcvsl.eq.0 .and. iscavr(ii).le.0) then
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.eq.0 .and. var_f_id.lt.0) then
     ! Build name and label, using a general rule, with a
     ! fixed name for temperature or enthalpy
     call field_get_name(f_id, s_name)
@@ -300,7 +321,8 @@ enddo
 do ii = 1, nscal
   f_id = ivarfl(isca(ii))
   call field_get_key_int(f_id, kromsl, ifcvsl)
-  if (ifcvsl.eq.0 .and. iscavr(ii).le.0) then
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.eq.0 .and.var_f_id.lt.0) then
     ! Build name and label, using a general rule, with a
     ! fixed name for temperature or enthalpy
     call field_get_name(f_id, s_name)
@@ -314,7 +336,7 @@ do ii = 1, nscal
   endif
 enddo
 
-! For variances, the diffusivity is that of the associated scalar,
+! For variances, the density is that of the associated scalar,
 ! and must not be initialized first.
 
 do ii = 1, nscal
@@ -330,13 +352,50 @@ do ii = 1, nscal
   endif
 enddo
 
-! Boundary roughness
-if (iwallf.eq.5.or.iwallf.eq.6) then
-  call add_boundary_property_field_owner('boundary_roughness', &
-                                         'Boundary Roughness', &
-                                         iflid)
-endif
+! Add a scalar turbulent Schmidt field
+call field_get_key_id("turbulent_schmidt_id", key_turb_schmidt)
 
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+  call field_get_key_int(f_id, key_turb_schmidt, ifcvsl)
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.ge.0 .and. var_f_id.lt.0) then
+    ! Build name and label, using a general rule, with a
+    ! fixed name for temperature or enthalpy
+    call field_get_name(f_id, s_name)
+    call field_get_label(f_id, s_label)
+    f_name  = trim(s_name) // '_turb_schmidt'
+    f_label = trim(s_label) // ' ScT'
+
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., ifcvsl)
+    call field_set_key_int(ivarfl(ii), key_turb_schmidt, ifcvsl)
+  endif
+enddo
+
+! For variances, the Schmidt is that of the associated scalar,
+! and must not be initialized first.
+do ii = 1, nscal
+  if (iscavr(ii).gt.0) then
+    f_id = ivarfl(isca(ii))
+    call field_get_key_int(ivarfl(isca(iscavr(ii))), key_turb_schmidt, ifcvsl)
+    call field_is_key_set(f_id, key_turb_schmidt, is_set)
+    if (is_set.eqv..true.) then
+      write(nfecra,7040) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
+    else
+      call field_set_key_int(f_id, key_turb_schmidt, ifcvsl)
+    endif
+  endif
+enddo
+
+! Boundary roughness (may be already created by the atmospheric module)
+if (iwallf.eq.5.or.iwallf.eq.6) then
+  idim1  = 1
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+
+  call field_find_or_create('boundary_roughness', itycat, ityloc, idim1, iflid)
+endif
 
 ! Van Driest damping
 if (idries.eq.-1) then
@@ -386,7 +445,7 @@ if (ineedy.eq.1) then
     call field_set_key_int(iflid, keyvis, 1)
     call field_set_key_int(iflid, keylog, 1)
 
-    ! Elliptic equation (no convection, no time term)
+    ! Pure convection (no time term)
     call field_get_key_struct_var_cal_opt(iflid, vcopt)
     vcopt%iconv = 1 ! default
     vcopt%istat = 0
@@ -419,7 +478,7 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
-  ! Elliptic equation (no convection, no time term)
+  ! Pure convection equation (no convection, no time term)
   call field_get_key_struct_var_cal_opt(iflid, vcopt)
   vcopt%iconv = 1
   vcopt%blencv= 0.d0 ! Pure upwind
@@ -443,6 +502,49 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   call field_set_key_int(iflid, keydri, iscdri)
 endif
 
+if (imeteo.eq.2) then
+  f_name  = 'meteo_temperature'
+  f_label = 'Meteo Temperature'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+
+  f_name  = 'meteo_pot_temperature'
+  f_label = 'Meteo pot Temperature'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  if (ippmod(iatmos).eq.2) then
+    f_name  = 'meteo_humidity'
+    f_label = 'Meteo humidity'
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+
+    f_name  = 'meteo_drop_nb'
+    f_label = 'Meteo drop. nb'
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+  endif
+  f_name  = 'meteo_velocity'
+  f_label = 'Meteo velocity'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 3, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'meteo_tke'
+  f_label = 'Meteo TKE'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'meteo_eps'
+  f_label = 'Meteo epsilon'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+endif
+
 
 if (compute_porosity_from_scan) then
   f_name  = 'porosity_w_field'
@@ -450,7 +552,7 @@ if (compute_porosity_from_scan) then
   call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
-  ! Elliptic equation (no convection, no time term)
+  ! Pure convection equation (no time term)
   call field_get_key_struct_var_cal_opt(iflid, vcopt)
   vcopt%iconv = 1
   vcopt%blencv= 0.d0 ! Pure upwind

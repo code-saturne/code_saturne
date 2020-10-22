@@ -95,6 +95,7 @@ double precision hpcond(nfbpcd)
 
 integer          ii, iz, iel, ifac, iesp
 integer          ivar, f_id, ifcvsl
+integer          ustar_id
 
 double precision flux
 double precision sink_term, gamma_cond
@@ -117,6 +118,7 @@ double precision C_k1,C_k2,C_k3,C_k4,C_k5,C_k6
 double precision C_k7,C_k8,C_k9,t_wall
 double precision pr_c,t_c,dtheta
 double precision lcond
+double precision uk, rough_t
 
 type(gas_mix_species_prop) s_h2o_g, s_k
 type(var_cal_opt) :: vcopt
@@ -127,6 +129,7 @@ double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_v
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
+double precision, dimension(:), pointer :: bpro_ustar
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
@@ -151,6 +154,11 @@ if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 
 call field_get_id("y_h2o_g", f_id)
 call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
+
+call field_get_id_try('ustar', ustar_id)
+if (ustar_id.ge.0) then
+  call field_get_val_s(ustar_id, bpro_ustar)
+endif
 
 !===============================================================================
 ! 1 - Constant physical values of the Copain modelling
@@ -348,6 +356,15 @@ do ii = 1, nfbpcd
   !-- kinematic viscosity --------------------------
   xnu = cpro_viscl(iel)/cpro_rho(iel)
 
+  ! Thermal roughness
+  rough_t = 0.d0
+  ! Turbulent friction velocity
+  if (ustar_id.ge.0) then
+    uk = bpro_ustar(ifac)
+  else
+    uk = 0.d0
+  endif
+
   !-- Compute the t_in temperature far away
   !-- from the wall. t_inf := t_atmos, is the
   !-- temperature associate to the cell.
@@ -434,7 +451,8 @@ do ii = 1, nfbpcd
     dplus = 0.d0
     yplus = yplbr(ifac)
     sigmat = 0.9d0
-    call hturbp(iwalfs,schdt,sigmat,yplus,dplus,hflui,ypth)
+
+    call hturbp(iwalfs,xnu,schdt,sigmat,rough_t,uk,yplus,dplus,hflui,ypth)
 
     hcdt =  diff_m(iel)/distbf*hflui
 
@@ -529,7 +547,7 @@ do ii = 1, nfbpcd
   sigmat = 0.9d0
   Prdtl = cpro_viscl(iel)/cpro_venth(iel)
 
-  call hturbp(iwalfs,Prdtl,sigmat,yplus,dplus,hpflui,ypth)
+  call hturbp(iwalfs,xnu,Prdtl,sigmat,rough_t,uk,yplus,dplus,hpflui,ypth)
   hw_enth = cpro_venth(iel)/distbf*hpflui
 
   h1max = max(h1max,hw_enth)

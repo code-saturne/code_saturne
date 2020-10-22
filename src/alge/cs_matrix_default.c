@@ -125,6 +125,11 @@ static cs_lnum_t  _row_num_size = 0;
 static cs_gnum_t  *_global_row_id = NULL;
 static cs_gnum_t  _l_range[2] = {0, 0};
 
+/* Pointer to default matrix structures
+   currently only used for periodicity of translation with external solvers */
+
+static cs_matrix_assembler_t  *_matrix_assembler = NULL;
+
 /* Pointer to internal coupling oriented matrix structures */
 
 static cs_matrix_assembler_t  **_matrix_assembler_coupled = NULL;
@@ -433,12 +438,9 @@ cs_matrix_initialize(void)
   int n_ic = cs_internal_coupling_n_couplings();
 
   if (n_ic > 0) {
-
     BFT_MALLOC(_matrix_assembler_coupled, n_ic, cs_matrix_assembler_t *);
-
     for (int i = 0; i < n_ic; i++)
-      _matrix_assembler_coupled[i] = _create_assembler(i);
-
+      _matrix_assembler_coupled[i] = NULL;
   }
 }
 
@@ -461,6 +463,8 @@ cs_matrix_finalize(void)
     if (_matrix_struct[t] != NULL)
       cs_matrix_structure_destroy(&(_matrix_struct[t]));
   }
+
+  cs_matrix_assembler_destroy(&_matrix_assembler);
 
   /* Matrices for internal couplings */
 
@@ -502,13 +506,13 @@ cs_matrix_update_mesh(void)
     _matrix[t] = cs_matrix_create(_matrix_struct[t]);
   }
 
+  cs_matrix_assembler_destroy(&_matrix_assembler);
+
   /* Matrices for internal couplings */
 
   int n_ic = cs_internal_coupling_n_couplings();
-
   for (int i = 0; i < n_ic; i++) {
     cs_matrix_assembler_destroy(&(_matrix_assembler_coupled[i]));
-    _matrix_assembler_coupled[i] = _create_assembler(i);
   }
 }
 
@@ -750,19 +754,16 @@ cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
-                                   cs_matrix_type_t   type,
-                                   bool               symmetric,
-                                   const cs_lnum_t   *diag_block_size,
-                                   const cs_lnum_t   *extra_diag_block_size,
-                                   const cs_real_t   *da,
-                                   const cs_real_t   *xa)
+cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
+                                        cs_matrix_type_t   type,
+                                        bool               symmetric,
+                                        const cs_lnum_t   *diag_block_size,
+                                        const cs_lnum_t   *extra_diag_block_size,
+                                        const cs_real_t   *da,
+                                        const cs_real_t   *xa)
 {
   int coupling_id = cs_field_get_key_int(f,
                                          cs_field_key_id("coupling_entity"));
-
-  assert(coupling_id > -1);  /* Only reason for this restriction is
-                                storage/access to assembler */
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
@@ -778,7 +779,20 @@ cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
     s1 = 0;
   }
 
-  cs_matrix_assembler_t  *ma = _matrix_assembler_coupled[coupling_id];
+  /* Build matrix assembler on demand */
+
+  cs_matrix_assembler_t  *ma = (coupling_id < 0) ?
+    _matrix_assembler : _matrix_assembler_coupled[coupling_id];
+
+  if (ma == NULL) {
+    ma = _create_assembler(coupling_id);
+    if (coupling_id < 0)
+      _matrix_assembler = ma;
+    else
+      _matrix_assembler_coupled[coupling_id] = ma;
+  }
+
+  /* Now build matrix */
 
   cs_matrix_t *m = cs_matrix_create_from_assembler(type, ma);
 
@@ -848,11 +862,12 @@ cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
 
   /* Set extended contribution for domain coupling */
 
-  cs_internal_coupling_matrix_add_values(f,
-                                         db_size,
-                                         eb_size,
-                                         r_g_id,
-                                         mav);
+  if (coupling_id > -1)
+    cs_internal_coupling_matrix_add_values(f,
+                                           db_size,
+                                           eb_size,
+                                           r_g_id,
+                                           mav);
 
   /* Finalize assembly */
 

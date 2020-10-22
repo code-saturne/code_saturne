@@ -179,7 +179,8 @@ cs_cell_segment_intersect_probes_define(void          *input,
  * \param[out]  n_elts  number of selected coordinates
  * \param[out]  coords  coordinates of selected elements.
  * \param[out]  s       curvilinear coordinates of selected elements
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_b_face_criterion_probes_define(void          *input,

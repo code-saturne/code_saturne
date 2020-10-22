@@ -61,9 +61,9 @@ BEGIN_C_DECLS
  *        composition of products in co2, h2o and soot
  *        using linear regressions established by Modak.
  *
- * \param[out] ck     medium's absorption coefficient (zero if transparent)
- * \param[in]  pco2   co2 partial pressure
- * \param[in]  pco2   h2o partial pressure
+ * \param[out] ck     medium's absorbtion coefficient (0 if transparent)
+ * \param[in]  pco2   CO2 partial pressure
+ * \param[in]  ph2o   H2O partial pressure
  * \param[in]  fv     soot volume fraction
  * \param[in]  temp   temperature
  */

@@ -32,13 +32,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step
 !______________________________________________________________________________
 
-subroutine cs_gas_mix_initialization &
- ( nvar   , nscal  , dt )
+subroutine cs_gas_mix_initialization
 
 !===============================================================================
 ! Module files
@@ -65,10 +61,6 @@ use cs_c_bindings
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 
@@ -127,16 +119,9 @@ call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 call field_get_val_s(igmxml, mix_mol_mas)
 
 !===============================================================================
-! 2. User initialization
-!===============================================================================
-
-call cs_user_f_initialization &
-( nvar   , nscal  ,                                            &
-  dt     )
-
-!===============================================================================
-! 3. Deduce the mass fraction (y_d) from the mass fractions (yk) of
+! 2. Deduce the mass fraction (y_d) from the mass fractions (yk) of
 !    the noncondensable gases transported
+!    Note: mass fraction has been provided by the user in the GUI or routines
 !===============================================================================
 
 if (isuite.eq.0) then
@@ -205,7 +190,7 @@ if (isuite.eq.0) then
   endif
 
   !===============================================================================
-  ! 4. Print to the log to check the variables intialization
+  ! 3. Print to the log to check the variables intialization
   !===============================================================================
 
   write(nfecra, 200)
@@ -214,7 +199,7 @@ if (isuite.eq.0) then
 endif
 
 !===============================================================================
-! 5. Stop if problem
+! 4. Stop if problem
 !===============================================================================
 
 if (iok.gt.0) then

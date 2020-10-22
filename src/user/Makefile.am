@@ -33,17 +33,18 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/darc \
+-I$(top_srcdir)/src/cogz \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
@@ -103,6 +104,7 @@ cs_user_les_inflow.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
 cs_user_metal_structures_source_terms.f90 \
+cs_user_paramedmem_coupling.c \
 cs_user_parameters.c \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.c \

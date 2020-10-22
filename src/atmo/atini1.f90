@@ -106,7 +106,7 @@ if (ippmod(iatmos).eq.0) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      visls0(jj) = viscl0
+      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
     endif
 
   enddo
@@ -128,7 +128,7 @@ if (ippmod(iatmos).eq.1) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      visls0(jj) = viscl0
+      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
     endif
 
   enddo
@@ -150,7 +150,7 @@ if (ippmod(iatmos).eq.2) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      visls0(jj) = viscl0
+      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
     endif
 
   enddo

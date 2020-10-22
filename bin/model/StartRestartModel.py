@@ -157,11 +157,10 @@ class StartRestartModel(Model):
         """
         Return restart path if applicable; use '*' for automatic mode.
         """
-        node = self.node_start.xmlInitNode('restart', 'path')
-        restart = node['path']
-        if not restart:
-            restart = None
-            self.setRestartPath(restart)
+        restart = None
+        node = self.node_start.xmlGetNode('restart', 'path')
+        if node:
+            restart = node['path']
         return restart
 
 
@@ -170,10 +169,12 @@ class StartRestartModel(Model):
         """
         Set restart path if applicable; use '*' for automatic mode.
         """
-        node = self.node_start.xmlInitNode('restart', 'path')
+        node = self.node_start.xmlGetNode('restart')
         if v:
+            if not node:
+                node = self.node_start.xmlInitNode('restart', 'path')
             node['path'] = v
-        else:
+        elif node:
             node.xmlRemoveNode()
             for n in self.case.xmlGetNodeList('time_average'):
                 n.xmlRemoveChild('restart_from_time_average')
@@ -184,11 +185,10 @@ class StartRestartModel(Model):
         """
         Return restart mesh path if applicable
         """
-        node = self.node_start.xmlInitNode('restart_mesh', 'path')
-        restart_mesh = node['path']
-        if not restart_mesh:
-            restart_mesh = None
-            self.setRestartMeshPath(restart_mesh)
+        restart_mesh = None
+        node = self.node_start.xmlGetNode('restart_mesh', 'path')
+        if node:
+            restart_mesh = node['path']
         return restart_mesh
 
 
@@ -197,10 +197,12 @@ class StartRestartModel(Model):
         """
         Set restart mesh path if applicable
         """
-        node = self.node_start.xmlInitNode('restart_mesh', 'path')
+        node = self.node_start.xmlGetNode('restart_mesh')
         if v:
+            if not node:
+                node = self.node_start.xmlInitNode('restart_mesh', 'path')
             node['path'] = v
-        else:
+        elif node:
             node.xmlRemoveNode()
 
 

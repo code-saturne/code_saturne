@@ -233,7 +233,7 @@ cs_gui_node_get_child_real(cs_tree_node_t  *node,
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
- * \param[in, out]  value       queried value
+ * \param[in, out]  status      queried value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -252,7 +252,7 @@ cs_gui_node_get_child_status_int(cs_tree_node_t  *node,
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
- * \param[in, out]  value       queried value
+ * \param[in, out]  status      queried value
  */
 /*----------------------------------------------------------------------------*/
 

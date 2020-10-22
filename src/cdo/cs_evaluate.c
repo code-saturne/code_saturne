@@ -2038,7 +2038,7 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   const cs_lnum_t  *elt_ids
     = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
   cs_quadrature_tetra_integral_t *qfunc
     = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
@@ -2046,11 +2046,11 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcsd_by_analytic(time_eval, anai->func, anai->input,
+      _pcsd_by_analytic(time_eval, ac->func, ac->input,
                         z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcsd_by_analytic(time_eval, anai->func, anai->input,
+      _dcsd_by_analytic(time_eval, ac->func, ac->input,
                         z->n_elts, elt_ids, qfunc,
                         retval);
     else
@@ -2060,11 +2060,11 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcvd_by_analytic(time_eval, anai->func, anai->input,
+      _pcvd_by_analytic(time_eval, ac->func, ac->input,
                         z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcvd_by_analytic(time_eval, anai->func, anai->input,
+      _dcvd_by_analytic(time_eval, ac->func, ac->input,
                         z->n_elts, elt_ids, qfunc,
                         retval);
     else
@@ -2106,7 +2106,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    const cs_real_t  *constant_val = (const cs_real_t *)def->input;
+    const cs_real_t  *constant_val = (const cs_real_t *)def->context;
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
@@ -2118,7 +2118,7 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   }
   else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
 
-    const cs_real_t  *constant_vec = (const cs_real_t *)def->input;
+    const cs_real_t  *constant_vec = (const cs_real_t *)def->context;
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
@@ -2161,24 +2161,24 @@ cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
 
   /* Perform the evaluation */
   if (n_vertices == n_v_selected)
-    anai->func(time_eval,
-               n_vertices, NULL, quant->vtx_coord,
-               false,  /* compacted output ? */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             n_vertices, NULL, quant->vtx_coord,
+             false,  /* compacted output ? */
+             ac->input,
+             retval);
   else
-    anai->func(time_eval,
-               n_v_selected, selected_lst, quant->vtx_coord,
-               false,  /* compacted output ? */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             n_v_selected, selected_lst, quant->vtx_coord,
+             false,  /* compacted output ? */
+             ac->input,
+             retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2209,7 +2209,7 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
@@ -2221,16 +2221,16 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
        - First pass: interior faces
        - Second pass: border faces
     */
-    anai->func(time_eval,
-               quant->n_i_faces, NULL, quant->i_face_center,
-               true, /* Output is compacted ? */
-               anai->input,
-               retval);
-    anai->func(time_eval,
-               quant->n_b_faces, NULL, quant->b_face_center,
-               true, /* Output is compacted ? */
-               anai->input,
-               retval + def->dim*quant->n_i_faces);
+    ac->func(time_eval,
+             quant->n_i_faces, NULL, quant->i_face_center,
+             true, /* Output is compacted ? */
+             ac->input,
+             retval);
+    ac->func(time_eval,
+             quant->n_b_faces, NULL, quant->b_face_center,
+             true, /* Output is compacted ? */
+             ac->input,
+             retval + def->dim*quant->n_i_faces);
 
   }
   else {
@@ -2247,20 +2247,20 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     }
 
     /* Interior faces */
-    anai->func(time_eval,
-               n_i_faces, selected_lst, quant->i_face_center,
-               false, /* Output is compacted ? */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             n_i_faces, selected_lst, quant->i_face_center,
+             false, /* Output is compacted ? */
+             ac->input,
+             retval);
 
     /* Border faces */
     cs_lnum_t n_b_faces = n_f_selected - n_i_faces;
     assert(n_b_faces > -1);
-    anai->func(time_eval,
-               n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
-               false, /* Output is compacted ? */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
+             false, /* Output is compacted ? */
+             ac->input,
+             retval);
 
   }
 
@@ -2290,23 +2290,23 @@ cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
-    anai->func(time_eval,
-               quant->n_cells, NULL, quant->cell_centers,
-               false,  /* compacted output */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             quant->n_cells, NULL, quant->cell_centers,
+             false,  /* compacted output */
+             ac->input,
+             retval);
   else
-    anai->func(time_eval,
-               z->n_elts, z->elt_ids, quant->cell_centers,
-               false,  /* compacted output */
-               anai->input,
-               retval);
+    ac->func(time_eval,
+             z->n_elts, z->elt_ids, quant->cell_centers,
+             false,  /* compacted output */
+             ac->input,
+             retval);
 
   /* No sync since theses values are computed by only one rank */
 }
@@ -2337,7 +2337,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *input = (cs_real_t *)def->context;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
@@ -2391,7 +2391,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_vertices = cs_cdo_quant->n_vertices;
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *input = (cs_real_t *)def->context;
 
   /* Perform the evaluation */
   if (def->dim == 1) { /* DoF is scalar-valued */
@@ -2468,7 +2468,7 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_faces = cs_cdo_quant->n_faces;
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *input = (cs_real_t *)def->context;
 
   if (def->dim == 1) { /* DoF is scalar-valued */
 
@@ -2559,7 +2559,7 @@ cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *input = (cs_real_t *)def->context;
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   if (def->dim == 1) { /* DoF is scalar-valued */
@@ -2649,7 +2649,7 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
   const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *input = (cs_real_t *)def->context;
 
   /* DoF is scalar-valued since this is a circulation but the definition is
    * either scalar-valued meaning that one only gives the tangential part or
@@ -2736,8 +2736,8 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
   const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
 
-  cs_xdef_array_input_t  *ainput = (cs_xdef_array_input_t *)def->input;
-  assert(cs_flag_test(ainput->loc, cs_flag_primal_edge));
+  cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)def->context;
+  assert(cs_flag_test(ac->loc, cs_flag_primal_edge));
 
   /* DoF is scalar-valued since this is a circulation but the definition is
    * either scalar-valued meaning that one only gives the tangential part or
@@ -2746,12 +2746,12 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
   switch (def->dim) {
 
   case 1: /* Scalar-valued integral */
-    assert(ainput->stride == 1);
+    assert(ac->stride == 1);
     if (n_edges == n_e_selected) {
 
 #     pragma omp parallel for if (n_edges > CS_THR_MIN)
       for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
-        retval[e_id] = ainput->values[e_id];
+        retval[e_id] = ac->values[e_id];
 
     }
     else { /* A selection of edges is selected */
@@ -2761,19 +2761,19 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
 #     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < n_e_selected; e++) {
         const cs_lnum_t e_id = selected_lst[e];
-        retval[e_id] = ainput->values[e_id];
+        retval[e_id] = ac->values[e_id];
       }
 
     }
     break;
 
   case 3:
-    assert(ainput->stride == 3);
+    assert(ac->stride == 3);
     if (n_edges == n_e_selected) {
 
 #     pragma omp parallel for if (n_edges > CS_THR_MIN)
       for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
-        retval[e_id] = _dp3(ainput->values + 3*e_id, edge_vector + 3*e_id);
+        retval[e_id] = _dp3(ac->values + 3*e_id, edge_vector + 3*e_id);
 
     }
     else { /* A selection of edges is selected */
@@ -2783,7 +2783,7 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
 #     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < n_e_selected; e++) {
         const cs_lnum_t e_id = selected_lst[e];
-        retval[e_id] = _dp3(ainput->values + 3*e_id, edge_vector + 3*e_id);
+        retval[e_id] = _dp3(ac->values + 3*e_id, edge_vector + 3*e_id);
       }
 
     }
@@ -2830,7 +2830,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
   const cs_real_t  *xv = cs_cdo_quant->vtx_coord;
   const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
 
-  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
   cs_quadrature_edge_integral_t
     *qfunc = cs_quadrature_get_edge_integral(def->dim, def->qtype);
 
@@ -2850,7 +2850,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
         cs_real_t  e_len = cs_math_3_norm(edge_vector + 3*e_id);
         cs_real_t  integral = 0.;
         qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_len,
-              anai->func, anai->input, &integral);
+              ac->func, ac->input, &integral);
 
         retval[e_id] = integral;
 
@@ -2870,7 +2870,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
         cs_real_t  e_len = cs_math_3_norm(edge_vector + 3*e_id);
         cs_real_t  integral = 0.;
         qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_len,
-              anai->func, anai->input, &integral);
+              ac->func, ac->input, &integral);
 
         retval[e_id] = integral;
 
@@ -2892,7 +2892,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
 
         cs_real_3_t  integral = {0., 0., 0.};
         qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_vec.meas,
-              anai->func, anai->input, integral);
+              ac->func, ac->input, integral);
 
         retval[e_id] = _dp3(integral, e_vec.unitv);
 
@@ -2914,7 +2914,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
 
         cs_real_3_t  integral = {0., 0., 0.};
         qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_vec.meas,
-              anai->func, anai->input, integral);
+              ac->func, ac->input, integral);
 
         retval[e_id] = _dp3(integral, e_vec.unitv);
 
@@ -2958,7 +2958,7 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_faces = cs_cdo_quant->n_faces;
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *values = (cs_real_t *)def->context;
 
   if (n_faces == n_f_selected) {
 
@@ -2966,7 +2966,7 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        retval[f_id] = input[0];
+        retval[f_id] = values[0];
 
     }
     else { /* Multi-valued case */
@@ -2974,7 +2974,7 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
       const size_t  s = def->dim*sizeof(cs_real_t);
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
-        memcpy(retval + def->dim*f_id, input, s);
+        memcpy(retval + def->dim*f_id, values, s);
 
     }
 
@@ -2987,7 +2987,7 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        retval[selected_lst[f]] = input[0];
+        retval[selected_lst[f]] = values[0];
 
     }
     else { /* Multi-valued case */
@@ -2995,7 +2995,7 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
       const size_t  s = def->dim*sizeof(cs_real_t);
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f = 0; f < n_f_selected; f++)
-        memcpy(retval + def->dim*selected_lst[f], input, s);
+        memcpy(retval + def->dim*selected_lst[f], values, s);
 
     }
 
@@ -3033,13 +3033,13 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(def->dim, def->qtype);
-  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
 
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
     _pfsa_by_analytic(time_eval,
-                      anai->func, anai->input,
+                      ac->func, ac->input,
                       n_f_selected, selected_lst,
                       qfunc,
                       retval);
@@ -3047,7 +3047,7 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
 
   case 3: /* Vector-valued */
     _pfva_by_analytic(time_eval,
-                      anai->func, anai->input,
+                      ac->func, ac->input,
                       n_f_selected, selected_lst,
                       qfunc,
                       retval);
@@ -3082,16 +3082,16 @@ cs_evaluate_average_on_cells_by_value(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_real_t  *values = (cs_real_t *)def->context;
 
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
-    _pcsa_by_value(input[0], z->n_elts, z->elt_ids, retval);
+    _pcsa_by_value(values[0], z->n_elts, z->elt_ids, retval);
     break;
 
   case 3: /* Vector-valued */
-    _pcva_by_value(input, z->n_elts, z->elt_ids, retval);
+    _pcva_by_value(values, z->n_elts, z->elt_ids, retval);
     break;
 
   default:
@@ -3123,11 +3123,11 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
-  const int  stride = input->stride;
-  const cs_real_t  *val = input->values;
+  const cs_xdef_array_context_t  *ac = (cs_xdef_array_context_t *)def->context;
+  const int  stride = ac->stride;
+  const cs_real_t  *val = ac->values;
 
-  if (cs_flag_test(input->loc, cs_flag_primal_cell) == false)
+  if (cs_flag_test(ac->loc, cs_flag_primal_cell) == false)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case. Not implemented yet.",
               __func__);
 
@@ -3190,7 +3190,7 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
-  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
 
   switch (def->dim) {
 
@@ -3203,7 +3203,7 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
     }
 
     _pcsa_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
+                      ac->func, ac->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
@@ -3217,7 +3217,7 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
     }
 
     _pcva_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
+                      ac->func, ac->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 

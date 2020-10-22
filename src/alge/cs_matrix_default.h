@@ -254,13 +254,13 @@ cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
-                                   cs_matrix_type_t   type,
-                                   bool               symmetric,
-                                   const cs_lnum_t   *diag_block_size,
-                                   const cs_lnum_t   *extra_diag_block_size,
-                                   const cs_real_t   *da,
-                                   const cs_real_t   *xa);
+cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
+                                        cs_matrix_type_t   type,
+                                        bool               symmetric,
+                                        const cs_lnum_t   *diag_block_size,
+                                        const cs_lnum_t   *extra_diag_block_size,
+                                        const cs_real_t   *da,
+                                        const cs_real_t   *xa);
 
 /*----------------------------------------------------------------------------*/
 

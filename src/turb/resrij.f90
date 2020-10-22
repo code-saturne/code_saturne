@@ -121,7 +121,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 ! Local variables
 
 integer          iel
-integer          ii    , jj    , kk    , iiun, comp_id
+integer          ii    , jj    , kk    , comp_id
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -136,7 +136,7 @@ integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
 
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrgp, climgp, relaxp
 double precision epsrsp
 double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
@@ -307,22 +307,17 @@ endif
 
 if (ncesmp.gt.0) then
 
-!       Integer equal to 1 (for navsto: nb of sur-iter)
-  iiun = 1
+  ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
+              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
+              smbr,  rovsdt, w1)
 
-!       We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
-  call catsma &
- ( ncesmp , iiun   ,                                              &
-   icetsm , itypsm(:,ivar)  ,                                     &
-   cell_f_vol , cvara_var   , smacel(:,ivar)   , smacel(:,ipr) ,  &
-   smbr   ,  rovsdt , w1 )
-
-!       If we extrapolate the source terms we put Gamma Pinj in c_st_prv
+  ! If we extrapolate the source terms we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       c_st_prv(iel) = c_st_prv(iel) + w1(iel)
     enddo
-!       Otherwise we put it directly in smbr
+  ! Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)
@@ -655,7 +650,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -667,7 +661,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

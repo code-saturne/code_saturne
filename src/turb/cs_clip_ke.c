@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_clipke.c
+  \file cs_clip_ke.c
 
   Clipping of the turbulent kinetic energy and the turbulent
   dissipation.
@@ -107,7 +107,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Clipping of the turbulent kinetic energy and turbulent dissipation.
  *
- * \param[in]     ncel     number of cells
+ * \param[in]     n_cells  number of cells
  * \param[in]     iclip    indicator = 0 if viscl0 is used
  *                         otherwise viscl is used.
  */
@@ -134,7 +134,7 @@ cs_clip_ke(cs_lnum_t  n_cells,
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &vcopt);
 
-  int iwarnk = vcopt.iwarni;
+  int iwarnk = vcopt.verbosity;
 
   /* Une petite valeur pour eviter des valeurs exactement nulles. */
 

@@ -109,13 +109,9 @@ integer          ifac, ivar
 !===============================================================================
 
 !      ICODCL = 0 INDIQUE QUE LA CL N'A PAS ETE RENSEIGNEE
-!      ITYPFB = 0 INDIQUE QUE LA CL N'A PAS ETE RENSEIGNEE
-
 !      RINFIN : VALEUR INFINIE
 
-do ifac = 1, nfabor
-  itypfb(ifac) = 0
-enddo
+! itypfb has already been initialized with default value, do not modify it here.
 
 ! Pour toutes les variables, on initialise RCODCL(1)a RINFIN
 ! Cette valeur sera reinitialisee a zero dans typecl.F

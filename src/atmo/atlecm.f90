@@ -26,8 +26,8 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   imode       IMODE = 0 : READING FOR DIMENSIONS ONLY
-!>                          IMODE = 1 : READING ACTUAL METEO DATA
+!> \param[in]   imode        0: reading for dimensions only
+!>                           1: reading actual meteo data
 !-------------------------------------------------------------------------------
 subroutine atlecm ( imode )
 
@@ -350,7 +350,7 @@ if (imode.eq.1) then
     do k = 2, nbmaxt
       tmoy = 0.5d0*(ttmet(k-1,itp) + ttmet(k,itp)) + tkelvi
 
-      if(ippmod(iatmos).eq.2) then ! take liquid water into account
+      if (ippmod(iatmos).eq.2) then ! take liquid water into account
         q0 = min( qvmet(k-1,itp), cs_air_yw_sat( ttmet(k-1,itp) &
             , phmet(k-1,itp)))
         q1 = min( qvmet(k  ,itp), cs_air_yw_sat( ttmet(k  ,itp) &
@@ -455,7 +455,7 @@ endif
 ! 9. Printings
 !===============================================================================
 
-if (imode.eq.1) then
+if (imode.eq.1.and.imeteo.eq.1) then
   if (itp.eq.1) then
     write(nfecra, *)
     write(nfecra, *) '==================================================='

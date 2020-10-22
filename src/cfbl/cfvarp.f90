@@ -84,11 +84,11 @@ if (ippmod(icompf).ge.0) then
   ! Pointer and reference value for conductivity of temperature scalar
   ! TODO itempk should be a property
   call field_set_key_int (ivarfl(isca(itempk)), kivisl, -1)
-  visls0(itempk) = epzero
+  call field_set_key_double(ivarfl(isca(itempk)), kvisl0, epzero)
 
   ! Pointer and reference value for diffusivity of total energy scalar
   call field_set_key_int (ivarfl(isca(ienerg)), kivisl, -1)
-  visls0(ienerg) = epzero
+  call field_set_key_double(ivarfl(isca(ienerg)), kvisl0, epzero)
 
   ! Pointer for volumetric molecular viscosity
   ! (constant by default)
@@ -107,11 +107,11 @@ if (ippmod(icompf).ge.0) then
 
     ! Pointer and reference value for diffusivity of three fractions
     call field_set_key_int (ivarfl(ifracv), kivisl, -1)
-    visls0(ifracv) = epzero
     call field_set_key_int (ivarfl(ifracm), kivisl, -1)
-    visls0(ifracm) = epzero
     call field_set_key_int (ivarfl(ifrace), kivisl, -1)
-    visls0(ifrace) = epzero
+    call field_set_key_double(ivarfl(isca(ifracv)), kvisl0, epzero)
+    call field_set_key_double(ivarfl(isca(ifracm)), kvisl0, epzero)
+    call field_set_key_double(ivarfl(isca(ifrace)), kvisl0, epzero)
 
     ! Pure convection equation for three fractions
     call field_get_key_struct_var_cal_opt(ivarfl(ifracv), vcopt)

@@ -605,22 +605,13 @@ if (nfabok.eqv..true.) then
 
   call restart_read_bc_coeffs(rp)
 
-  ! Symmetry type (used for least squares gradients on extended
-  ! neighborhood, with extrapolation of gradient at boundary).
-
-  rubriq = 'isympa_fb_phase01'
-  itysup = 3
-  nbval  = 1
-  call restart_read_section_int_t(rp,rubriq,itysup,nbval,isympa,ierror)
-  nberro = nberro+ierror
-
 endif
 !     fin du test "si les supports des faces de bord sont identiques"
 
 if (ilu.eq.1) then
 
 !     Si erreur, on previent mais pas stop :
-!       (on n'a pas forcement les coefs 2, on n'a pas forcement isympa
+!       (on n'a pas forcement les coefs 2
 !        si on prend les fichiers d'une version anterieure)
   if (nberro.ne.0) then
     car54 = 'Lecture des conditions aux limites                    '
@@ -783,10 +774,21 @@ if (iale.ge.1 .and. jale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
 
-  call restart_read_real_3_t_compat                       &
-         (rp, 'vertex_displacement',                      &
-         'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
-         itysup, disale, ierror)
+  call restart_read_field_vals(rp, fdiale, 0, ierror)
+  if (ierror .ne. 0) then
+    call restart_read_real_3_t_compat                        &
+           (rp, 'vertex_displacement',                       &
+            'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
+            itysup, disale, ierror)
+  endif
+
+  if (ierror.eq.0) then
+    call restart_read_field_vals(rp, fdiale, 1, ierror)
+    if (ierror.ne.0) then
+      call field_current_to_previous(fdiale)
+      ierror = 0
+    endif
+  endif
 
   nberro=nberro+ierror
 

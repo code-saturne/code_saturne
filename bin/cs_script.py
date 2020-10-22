@@ -40,6 +40,7 @@ class master_script:
                          'bdump':self.bdump,
                          'compile':self.compile,
                          'config':self.config,
+                         'cplgui':self.gui,
                          'create':self.create,
                          'gui':self.gui,
                          'studymanagergui':self.studymanager_gui,
@@ -108,6 +109,7 @@ Topics:
   bdump
   compile
   config
+  cplgui
   create
   gui
   studymanagergui
@@ -149,6 +151,8 @@ Options:
         return cs_create.main(options, self.package)
 
     def gui(self, options = None):
+        if self.package.config.features["gui"] == "no":
+            raise Exception("This code_saturne build does not include the GUI.")
         from code_saturne import cs_gui
         return cs_gui.main(options, self.package)
 

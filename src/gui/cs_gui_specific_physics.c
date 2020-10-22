@@ -48,6 +48,7 @@
 
 #include "fvm_selector.h"
 
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_cf_model.h"
 #include "cs_gui_util.h"
@@ -592,13 +593,11 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
  *
  * subroutine uiati1
  * *****************
- * integer         imeteo   <--   on/off index
  * char(*)         fmeteo   <--   meteo file name
  * int             len      <--   meteo file name destination string length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
-                                char          *fmeteo,
+void CS_PROCF (uiati1, UIATI1) (char          *fmeteo,
                                 int           *len
                                 CS_ARGF_SUPP_CHAINE)
 {
@@ -609,9 +608,9 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
   if (tn == NULL)
     return;
 
-  cs_gui_node_get_child_status_int(tn, "read_meteo_data", imeteo);
+  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
 
-  if (*imeteo) {
+  if (cs_glob_atmo_option->meteo_profile) {
 
     const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
 
@@ -639,7 +638,7 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--imeteo  = %i\n", *imeteo);
+  bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
 #endif
 }
 

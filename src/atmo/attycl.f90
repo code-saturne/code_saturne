@@ -103,11 +103,15 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iel, izone
 integer          ii
 integer jsp, isc
-double precision d2s3, zent, vs, xuent, xvent
+double precision d2s3, zent, vs, xuent, xvent, xwent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
 double precision viscla, uref2, rhomoy, dhy, xiturb
 double precision, dimension(:), pointer :: brom, coefap, viscl
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, dimension(:), pointer :: cpro_met_potemp
+double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
+double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -132,6 +136,17 @@ tpent = 0.d0
 
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
+
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
+  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
+    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
+  endif
+endif
 
 !===============================================================================
 ! 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI
@@ -251,7 +266,7 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  if (iprofm(izone).eq.1.and.imeteo.eq.1) then
+  if (iprofm(izone).eq.1.and.imeteo.ge.1) then
 
 !     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
 !       ete modifie. Il servira si la face est une face d'entree ou si c'est une
@@ -260,48 +275,55 @@ do ifac = 1, nfabor
 
     if (imbrication_flag .and.cressman_u) then
       xuent = u_bord(ifac)
-    else
-      call intprf                                                    &
-      !==========
+    else if (imeteo.eq.1) then
+      call intprf &
       (nbmetd, nbmetm,                                               &
-       zdmet, tmmet, umet , zent  , ttcabs, xuent )
+        zdmet, tmmet, umet , zent  , ttcabs, xuent )
+    else
+      xuent = cpro_met_vel(1, iel)
     endif
 
+    xwent = 0.d0
     if (imbrication_flag .and.cressman_v) then
       xvent = v_bord(ifac)
-    else
-      call intprf                                                    &
-      !==========
+    else if (imeteo.eq.1) then
+      call intprf &
       (nbmetd, nbmetm,                                               &
        zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+    else
+      xvent = cpro_met_vel(2, iel)
+      xwent = cpro_met_vel(3, iel)
     endif
 
     if (imbrication_flag .and.cressman_tke) then
       xkent = tke_bord(ifac)
-    else
-      call intprf                                                    &
-      !==========
+    else if (imeteo.eq.1) then
+      call intprf &
       (nbmetd, nbmetm,                                               &
        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+    else
+      xkent = cpro_met_k(iel)
     endif
 
     if (imbrication_flag .and.cressman_eps) then
       xeent = eps_bord(ifac)
-    else
-      call intprf                                                    &
-      !==========
+    else if (imeteo.eq.1) then
+      call intprf &
       (nbmetd, nbmetm,                                               &
        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+    else
+      xeent = cpro_met_eps(iel)
     endif
 
     if(imbrication_flag .and.cressman_theta                          &
        .and. ippmod(iatmos).ge.1 ) then
-        tpent = theta_bord(ifac)
-    else
-      call intprf                                                    &
-      !==========
+       tpent = theta_bord(ifac)
+    else if (imeteo.eq.1) then
+      call intprf &
       (nbmett, nbmetm,                                               &
        ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+    else
+      tpent = cpro_met_potemp(iel)
     endif
 
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
@@ -323,7 +345,7 @@ do ifac = 1, nfabor
 
       if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = xuent
       if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = xvent
-      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
+      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = xwent
 
       call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
 
@@ -337,10 +359,11 @@ do ifac = 1, nfabor
             if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
               if (imbrication_flag .and. cressman_qw)then
                 qvent = qw_bord(ifac)
-              else
+              else if (imeteo.eq.1) then
                 call intprf &
-                !==========
                 (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
+              else
+                qvent = cpro_met_qv(iel)
               endif
               rcodcl(ifac,isca(iymw),1) = qvent
             endif
@@ -348,10 +371,11 @@ do ifac = 1, nfabor
             if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
               if (imbrication_flag .and. cressman_nc)then
                 ncent = nc_bord(ifac)
-              else
+              else if (imeteo.eq.1) then
                 call intprf &
-                !==========
                 (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+              else
+                ncent = cpro_met_nc(iel)
               endif
               rcodcl(ifac,isca(intdrp),1) = ncent
             endif
@@ -391,7 +415,7 @@ do ifac = 1, nfabor
           icodcl(ifac,iw) = 1
           rcodcl(ifac,iu,1) = xuent
           rcodcl(ifac,iv,1) = xvent
-          rcodcl(ifac,iw,1) = 0.d0
+          rcodcl(ifac,iw,1) = xwent
 
         endif
 
@@ -448,7 +472,7 @@ if (ifilechemistry.ge.1) then
 
     ! For species present in the concentration profiles file,
     ! profiles are used here as boundary conditions if boundary conditions have
-    ! not been treated earier (eg, in usatcl)
+    ! not been treated earlier (eg, in usatcl)
     do ii = 1, nespgi
       if (rcodcl(ifac,isca(isca_chem(idespgi(ii))),1).gt.0.5d0*rinfin) then
         call intprf                                                    &
@@ -462,7 +486,7 @@ if (ifilechemistry.ge.1) then
 
    endif
 
-   ! For other species zero dirichlet conditions are imposed,
+   ! For other species zero Dirichlet conditions are imposed,
    ! unless they have already been treated earlier (eg, in usatcl)
    do ii =1 , nespg
     if (rcodcl(ifac,isca(isca_chem(ii)),1).gt.0.5d0*rinfin) then

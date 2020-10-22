@@ -387,7 +387,7 @@ cs_hodge_set_property_value(const cs_lnum_t       c_id,
  * \brief  Set the property value (scalar- or tensor-valued) related to a
  *         discrete Hodge operator inside a cell and if needed ohter related
  *         quantities.
- *         Cell-wise variant (usage of cs_cell_mesh_t strcuture)
+ *         Cell-wise variant (usage of cs_cell_mesh_t structure)
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval  time at which one performs the evaluation

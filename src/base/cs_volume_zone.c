@@ -983,8 +983,8 @@ cs_volume_zone_print_info(void)
     bft_printf(_("  Volume zone \"%s\"\n"
                  "    id              = %d\n"
                  "    Number of cells = %llu\n"
-                 "    Volume          = %14.7e\n"
-                 "  Center of gravity = (%14.7e, %14.7e, %14.7e)\n"),
+                 "    Volume          = %1.5g\n"
+                 "    Center of gravity = (%1.5g, %1.5g, %1.5g)\n"),
                z->name,
                z->id,
                (unsigned long long)z->n_g_elts,
@@ -992,7 +992,7 @@ cs_volume_zone_print_info(void)
                z->cog[0], z->cog[1], z->cog[2]);
     /* Only log fluid volumes when different to volumes */
     if (cell_f_vol != cell_vol && cell_f_vol != NULL)
-      bft_printf(_("    Fluid volume    = %14.7e\n"),
+      bft_printf(_("    Fluid volume    = %1.5g\n"),
                  z->f_measure);
 
     if (z->boundary_measure < 0.) {
@@ -1002,11 +1002,11 @@ cs_volume_zone_print_info(void)
         bft_printf(_("    Fluid surface   = -1 (not computed)\n"));
     }
     else {
-      bft_printf(_("    Surface         = %14.7e\n"),
+      bft_printf(_("    Surface         = %1.5g\n"),
                  z->f_boundary_measure);
       /* Only log fluid fluid when different to surface */
       if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
-        bft_printf(_("    Fluid surface   = %14.7e\n"),
+        bft_printf(_("    Fluid surface   = %1.5g\n"),
                    z->f_boundary_measure);
     }
   }

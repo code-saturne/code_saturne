@@ -704,19 +704,14 @@ cs_ctwr_log_balance(void)
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;  /* humid air bulk density */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;      /* humid air temperature */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;      /* humid air enthalpy */
-  cs_real_t *y_w = (cs_real_t *)CS_F_(ym_w)->val;   /* Water mass fraction
-                                                       in humid air */
-  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val;    /* humid air bulk humidity */
-
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /* liquid temperature */
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /* liquid enthalpy */
   cs_real_t *y_l = (cs_real_t *)CS_F_(y_l_pack)->val;   /* liquid mass per unit
                                                        cell volume */
 
-  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;//FIXME take the good one... for y_p
+  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val; //FIXME take the good one... for y_p
   cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
 
   FILE *f;
@@ -1062,8 +1057,6 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 void
 cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 {
-
-  const cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
   cs_real_t *y_l = (cs_real_t *)CS_F_(y_l_pack)->val; /* mass fraction of liquidus */
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /*liquid enthalpy */
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /*liquid temperature */
@@ -1073,7 +1066,6 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   const cs_lnum_2_t *i_face_cells =
     (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
 
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
 
@@ -1296,7 +1288,6 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   // Initialise the fields - based on map
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;   /* humid air (bulk) density */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;     /* humid air (bulk) Cp */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
   cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre; /* humid air temperature */
@@ -1565,8 +1556,6 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   cs_real_t lambda_h = cs_glob_air_props->lambda_h;
-  cs_real_t cp_l = cs_glob_air_props->cp_l;
-  cs_real_t lambda_l = cs_glob_air_props->lambda_l;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
@@ -1656,7 +1645,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
 
         cs_lnum_t face_id = ct->outlet_faces_ids[i];
-        cs_lnum_t cell_id_l, cell_id_h;
+        cs_lnum_t cell_id_l;
 
         /* Convention: outlet is positive mass flux
          * Then upwind cell for liquid is i_face_cells[][0] */
@@ -1664,10 +1653,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
         if (liq_mass_flow[face_id] < 0) {
           sign = -1;
           cell_id_l = i_face_cells[face_id][1];
-          cell_id_h = i_face_cells[face_id][0];
         } else {
           cell_id_l = i_face_cells[face_id][0];
-          cell_id_h = i_face_cells[face_id][1];
         }
 
         /* h_l is in fact (y_l. h_l),
@@ -1754,7 +1741,6 @@ cs_ctwr_source_term(int              f_id,
   cs_field_t *cfld_yp = cs_field_by_name_try("y_p");         /* Rain drops mass fraction */
   cs_field_t *cfld_tp = cs_field_by_name_try("y_p_t_l");     /* Rain drops temperature */
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_p");
-  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
 
   cs_real_t vertical[3], horizontal[3], norme_g;
 
@@ -2119,13 +2105,9 @@ cs_ctwr_source_term(int              f_id,
        ==================================================== */
 
     cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val;   /* liquid mass fraction */
-    cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy x
-                                                          liquid mass fraction */
     cs_real_t *liq_mass_flow
       = cs_field_by_name("inner_mass_flux_y_l_packing")->val; /* Inner mass flux of liquids
                                                                  (in the packing) */
-    cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
-
     for (int ict = 0; ict < _n_ct_zones; ict++) {
 
       cs_ctwr_zone_t *ct = _ct_zone[ict];

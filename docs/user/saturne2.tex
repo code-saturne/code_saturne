@@ -83,8 +83,8 @@ the following informations are given:
 \end{list}
 
 The L1 keywords can be modified through the Graphical Use Interface or
-in the \texttt{cs\_user\_parameters.f90} file. L2 and L3 keywords can only be modified through
-the \texttt{cs\_user\_parameters.f90} file, even if they do not appear in the version proposed
+in the \texttt{cs\_user\_parameters.c} file. L2 and L3 keywords can only be modified through
+the \texttt{cs\_user\_parameters.c} file, even if they do not appear in the version proposed
 as example it the \texttt{SRC/REFERENCE/base} directory.\\
 It is however recommended not to modify the keywords which do not belong to the L1
 level.
@@ -277,7 +277,7 @@ for detailed informations about the time stepping parameters.
 %==================================
 
 The gradient reconstruction keywords such as \texttt{imrgra}, \texttt{nswrgr},
-\texttt{epsrgr}, \texttt{imligr}, \texttt{climgr} or \texttt{extrag} are members
+\texttt{epsrgr}, \texttt{imligr}, or \texttt{climgr} are members
 of the \texttt{cs\_var\_cal\_opt\_t} structure for which informations can be
 found in the following \doxygenfile{structcs__var__cal__opt__t.html}{\texttt{Doxygen}
 documentation}.
@@ -510,12 +510,12 @@ Most physical variables are listed in the following
 \doxygenfile{group__cstphy.html}{\texttt{Doxygen} documentation}.
 
 Other physical variables such as \texttt{diftl0}, \texttt{srrom},
-\texttt{visls0}, \texttt{sigmas} or \texttt{rvarfl} are described in the following
+\texttt{sigmas} or \texttt{rvarfl} are described in the following
 \texttt{Doxygen} pages :
 \begin{itemize}
 \item \doxygenanchor{group__thermophysical.html\#diftl0}{\texttt{diftl0}},
 \item \doxygenanchor{group__enthalpy.html\#srrom}{\texttt{srrom}},
-\item \doxygenfile{group__scalar__params.html}{\texttt{visls0}, \texttt{sigmas},
+\item \doxygenfile{group__scalar__params.html}{\texttt{sigmas},
 \texttt{rvarfl}}.
 \end{itemize}
 

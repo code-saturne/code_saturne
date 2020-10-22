@@ -112,7 +112,7 @@ double precision xrij(3,3),phiith(3), phiitw(3)
 double precision xnal(3), xnoral
 double precision alpha, xttdrbt, xttdrbw
 double precision pk, gk, xxc1, xxc2, xxc3, imp_term
-double precision rctse
+double precision rctse, visls_0
 
 double precision rvoid(1)
 
@@ -222,6 +222,8 @@ endif
 call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
+else
+  call field_get_key_double(ivarfl(ivar), kvisl0, visls_0)
 endif
 
 do iel = 1, ncelet
@@ -321,7 +323,7 @@ do iel = 1, ncel
   if (ifcvsl.ge.0) then
     prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
   else
-    prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+    prdtl = viscl(iel)*xcpp(iel)/visls_0
   endif
 
   trrij  = 0.5d0*(xrij(1,1) + xrij(2,2) + xrij(3,3))
@@ -457,12 +459,15 @@ enddo
 !===============================================================================
 ! Symmetric tensor diffusivity (GGDH)
 if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
+
+  call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+
   do iel = 1, ncel
 
     if (ifcvsl.ge.0) then
       prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
     else
-      prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+      prdtl = viscl(iel)*xcpp(iel)/visls_0
     endif
 
     do isou = 1, 6

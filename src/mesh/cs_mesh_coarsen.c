@@ -147,10 +147,9 @@ _print_mesh_counts(const cs_mesh_t  *m,
  *
  * The caller is responsible for freeing the returned array.
  *
- * \param[in, out]  m           mesh
- * \param[in]       cell_flag   coarsening type for each cell
- *                              (0: none; 1: isotropic)
- * \param[out]      c_o2n       cell old to new renumbering
+ * \param[in, out]  m          mesh
+ * \param[in]       cell_flag  coarsening flag for each cell (0: no 1: yes)
+ * \param[out]      c_o2n      cell old to new renumbering
  *
  * \return  number of new cells
  */
@@ -273,7 +272,7 @@ _cell_equiv(cs_mesh_t  *m,
  *
  * parameters:
  *   n_old      <-- old number of elements
- *   n_old      <-- new number of elements
+ *   n_new      <-- new number of elements
  *   o2n        <-- old to new array
  *
  * returns:
@@ -508,7 +507,7 @@ _merge_cells(cs_mesh_t       *m,
 /*!
  * \brief Create face merge state structure.
  *
- * \return  face merge helper state structur
+ * \return  face merge helper state structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -702,8 +701,8 @@ _build_merged_face(cs_lnum_t                    n_faces,
  * \brief Coarsen flagged mesh cells.
  *
  * \param[in, out]  m           mesh
- * \param[in]       cell_flag   subdivision type for each cell
- *                              (0: none; 1: isotropic)
+ * \param[in]       cell_flag   coarsening flag for each cell
+ *                              (0: do not coarsen; 1: coarsen)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -740,7 +739,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   if (m->verbosity > 0) {
     cs_log_printf(CS_LOG_DEFAULT, "\n");
     cs_log_separator(CS_LOG_DEFAULT);
-    _print_mesh_counts(cs_glob_mesh, _("Mesh before refinement"));
+    _print_mesh_counts(cs_glob_mesh, _("Mesh before coarsening"));
   }
 
   cs_lnum_t n_v_ini = m->n_vertices;
@@ -805,7 +804,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Refine selected mesh cells.
+ * \brief Coarsen selected mesh cells.
  *
  * \param[in, out]  m           mesh
  * \param[in]       n_cells     number of selected cells

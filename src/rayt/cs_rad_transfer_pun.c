@@ -186,7 +186,7 @@ cs_rad_transfer_pun(int              iband,
   vcopt.istat  = -1;
   vcopt.ndircl =  1; /* There are Dirichlet BCs  */
   vcopt.isstpc =  0;
-  vcopt.iwarni =  cs_glob_rad_transfer_params->verbosity;
+  vcopt.verbosity =  cs_glob_rad_transfer_params->verbosity;
   vcopt.blencv =  0.0;
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
   vcopt.iconv  =  0;      /* No convection for P1 model */
@@ -268,7 +268,6 @@ cs_rad_transfer_pun(int              iband,
   int iwarnp = cs_glob_rad_transfer_params->verbosity;
   cs_real_t epsrgp = 1e-08;
   cs_real_t climgp = 1.5;
-  cs_real_t extrap = 0.0;
   int nswrgp = 100;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -293,7 +292,6 @@ cs_rad_transfer_pun(int              iband,
                      iwarnp,
                      imligp,
                      epsrgp,
-                     extrap,
                      climgp,
                      NULL,
                      coefap,

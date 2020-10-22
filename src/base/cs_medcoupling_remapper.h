@@ -141,7 +141,6 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
  * \brief update the interpolation matrix of the remapper
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -153,7 +152,8 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r);
  * \brief   Interpolate values for a given field
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
- * \param[in] field_id     id of the field to interpolate (in list given before)
+ * \param[in] field_id     id of the field to interpolate (in the list
+ *                         given before)
  * \param[in] default_val  value to apply for elements not intersected by
  *                         source mesh
  *
@@ -230,6 +230,7 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
  * \param[in,out]  t    corresponding time value
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
                                             int                        id,
@@ -240,12 +241,12 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
  *
  * The returned value is int[2].
  * If the requested time value if outside the time bounds stored in the file,
- * the both values are identical (first or last value), and a warning is printed
- * in the listing file.
+ * the both values are identical (first or last value), and a warning is output
+ * in the lod file.
  *
  * \param[in]      r      pointer to remapper object
  * \param[in]      id     requested time index
- * \param[in,out]  iter   index iteration
+ * \param[in,out]  it     index iteration
  * \param[in,out]  order  index iteration order
  */
 /*----------------------------------------------------------------------------*/

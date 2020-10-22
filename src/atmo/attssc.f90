@@ -386,7 +386,7 @@ contains
 
     ! Local variables
 
-    double precision climgp, epsrgp, extrap, depo
+    double precision climgp, epsrgp, depo
 
     integer    iccocg, ii, iifld, imligp, inc, iwarnp, imrgrp, nswrgp, ifac, iel
     double precision, dimension(:), allocatable :: local_coefa, local_coefb
@@ -474,7 +474,6 @@ contains
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
 
     ! homogeneous Neumann BCs for gradient computation
     allocate(local_coefa(nfabor))
@@ -499,7 +498,7 @@ contains
 
     call gradient_s                                                 &
    ( iifld  , imrgrp , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , epsrgp , climgp , extrap ,                            &
+     iwarnp , epsrgp , climgp ,                                     &
      local_field     , local_coefa , local_coefb ,                  &
      grad1   )
 
@@ -514,7 +513,7 @@ contains
 
     call gradient_s                                                 &
    ( iifld  , imrgrp , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , epsrgp , climgp , extrap ,                            &
+     iwarnp , epsrgp , climgp ,                                     &
      local_field     , local_coefa , local_coefb ,                  &
      grad2   )
 

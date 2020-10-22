@@ -92,6 +92,12 @@ type(var_cal_opt) :: vcopt
 
 interface
 
+  subroutine cs_gui_physical_properties()  &
+       bind(C, name='cs_gui_physical_properties')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_physical_properties
+
   subroutine cs_gui_porous_model()  &
        bind(C, name='cs_gui_porous_model')
     use, intrinsic :: iso_c_binding
@@ -257,7 +263,7 @@ if (icdo.lt.2) then
 endif
 
 ! Gravity, physical properties
-call csphys(visls0, itempk)
+call cs_gui_physical_properties
 
 ! Turbulence reference values (uref, almax)
 call cs_gui_turb_ref_values
@@ -270,7 +276,7 @@ call cs_f_turb_complete_constants
 call cssca2(iturt)
 
 ! Diffusivities
-call cssca3(visls0)
+call cssca3()
 
 ! Porosity model
 call cs_gui_porous_model()
@@ -305,9 +311,9 @@ if (ippmod(icompf).ge.0) then
   ! (diffusivity_id for itempk) and the volume viscosity (iviscv) has
   ! been set in fldprp.
 
-  ! Here call to uscfx2 to get visls0(itempk), viscv0, xmasmr, ivivar and
+  ! Here call to uscfx2 to get visls_0(itempk), viscv0, xmasmr, ivivar and
   ! psginf, gammasg, cv0 in stiffened gas thermodynamic.
-  ! With GUI, visls0(itempk), viscv0, xmasmr and ivivar have already been read
+  ! With GUI, visls_0(itempk), viscv0, xmasmr and ivivar have already been read
   ! above in the call to csphys.
   call uscfx2
 

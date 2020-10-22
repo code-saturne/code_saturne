@@ -419,13 +419,15 @@ cs_dbg_dump_linear_system(const char        *eqname,
       for (cs_lnum_t ii = 0; ii < _n_rows; ii++) {
         cs_log_printf(CS_LOG_DEFAULT, "ROW%4ld >> ", (long)i);
         for (cs_lnum_t jj = ii*_n_cols; jj < (ii+1)*_n_cols; jj++)
-          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |", (long)_col[jj], _val[jj]);
+          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |",
+                        (long)_col[jj], _val[jj]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
       }
       if (_n_rows*_n_cols < n_entries) {
         cs_log_printf(CS_LOG_DEFAULT, "ROW%4ld >> ", (long)i);
         for (cs_lnum_t jj = _n_rows*_n_cols; jj < n_entries; jj++)
-          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |", (long)_col[jj], _val[jj]);
+          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |",
+                        (long)_col[jj], _val[jj]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
       }
 

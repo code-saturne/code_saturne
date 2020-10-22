@@ -240,7 +240,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int ndircp = var_cal_opt->ndircl;
   double epsrsp = var_cal_opt->epsrsm;
@@ -279,12 +279,20 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
 
-  /* Determine if we are in the special convection-diffusion
-     multigrid case */
+  /* solving info */
+  key_sinfo_id = cs_field_key_id("solving_info");
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+  }
 
-  if (iconvp > 0) {
+  /* Determine if we are in a case with special requirements */
+
+  if (coupling_id < 0 && iconvp > 0) {
     cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
-    if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
+    const char *sles_type = cs_sles_get_type(sc);
+    if (strcmp(sles_type, "cs_multigrid_t") == 0)
       conv_diff_mg = true;
   }
 
@@ -302,14 +310,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     BFT_MALLOC(adxkm1, n_cells_ext, cs_real_t);
     BFT_MALLOC(dpvarm1, n_cells_ext, cs_real_t);
     BFT_MALLOC(rhs0, n_cells_ext, cs_real_t);
-  }
-
-  /* solving info */
-  key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1) {
-    f = cs_field_by_id(f_id);
-    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Symmetric matrix, except if advection */
@@ -347,27 +347,21 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   iinvpe = 0;
 
   if (cs_glob_mesh->n_init_perio > 0) {
-    /*    Par defaut, toutes les periodicites seront traitees,
-          les variables etant assimilees a des scalaires (meme si ce sont
-          des composantes de vecteurs ou de tenseur) */
-    iinvpe = 1;
+
+    iinvpe = 1; /* By default, all periodicity types are handled */
 
     if (f_id > -1) {
       f = cs_field_by_id(f_id);
 
+      /* For Reynolds stress component solved separately, only translation
+         periodicity information is exchanged.
+         When solving by increments, the increment will be cancelled for
+         faces with rotation periodicity. */
+
       if (   f == CS_F_(r11) || f == CS_F_(r12)
           || f == CS_F_(r13) || f == CS_F_(r22)
           || f == CS_F_(r23) || f == CS_F_(r33)) {
-        /*    Pour les tensions de Reynolds, et les tpucou
-              seules seront echangees les informations sur les faces periodiques
-              de translation ; on ne touche pas aux informations
-              relatives aux faces de periodicite de rotation. */
         itenso = 1;
-
-        /*    Lors de la resolution par increments, on echangera egalement les
-              informations relatives aux faces de periodicite de translation.
-              Pour les faces de periodicite de rotation, l'increment sera
-              annule en appelant syncmp au lieu de synsca (iinvpe=2). */
         iinvpe = 2;
       }
     }
@@ -429,7 +423,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *    second iteration).
    *==========================================================================*/
 
-  /* Application du theta schema */
+  /* Application of the theta-scheme */
 
   /* On calcule le bilan explicite total */
   thetex = 1. - thetap;
@@ -440,7 +434,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (f_id > -1)
     cs_beta_limiter_building(f_id, inc, rovsdt);
 
-  /* Si THETEX=0, ce n'est pas la peine d'en rajouter */
+  /* If thetex = 0, no need to do more */
   if (fabs(thetex) > cs_math_epzero) {
     inc    = 1;
     iccocg = 1;
@@ -658,15 +652,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      xam_conv,
                                      dam_diff,
                                      xam_diff);
-
-    else if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    dam,
-                                    xam);
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -1140,7 +1125,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               \f$ \vect{a}^k \f$.
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
- *                               \ref pvara (usually \ref pvar= \ref pvara)
+ *                               \c pvara (usually \c pvar= \c pvara)
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
@@ -1207,7 +1192,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const cs_real_33_t    fimp[],
+                                   cs_real_33_t          fimp[],
                                    cs_real_3_t           smbrp[],
                                    cs_real_3_t           pvar[],
                                    cs_real_3_t           eswork[])
@@ -1218,7 +1203,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
   int ndircp = var_cal_opt->ndircl;
@@ -1588,15 +1573,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     /*  Solver residual */
     ressol = residu;
 
-    if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    (cs_real_t *)dam,
-                                    xam);
-
     cs_sles_solve_native(f_id,
                          var_name,
                          symmetric,
@@ -1915,6 +1891,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   cs_sles_free_native(f_id, var_name);
 
+  /* Save diagonal in case we want to use it */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+        fimp[cell_id][i][j] = dam[cell_id][i][j];
+  }
+
   /* Free memory */
   BFT_FREE(dam);
   BFT_FREE(xam);
@@ -2052,7 +2035,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
   int ndircp = var_cal_opt->ndircl;
@@ -2076,7 +2059,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
-  int coupling_id = -1;
 
   cs_field_t *f;
 
@@ -2120,7 +2102,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Name */
@@ -2400,15 +2381,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
-
-    if (coupling_id > -1)
-      cs_sles_setup_native_coupling(f_id,
-                                    var_name,
-                                    symmetric,
-                                    db_size,
-                                    eb_size,
-                                    (cs_real_t *)dam,
-                                    xam);
 
     cs_sles_solve_native(f_id,
                          var_name,

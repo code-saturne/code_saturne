@@ -67,59 +67,6 @@ logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsView")
 log.setLevel(GuiParam.DEBUG)
 
-
-#-------------------------------------------------------------------------------
-# StandarItemModel class to display boundaries in a QTreeView
-#-------------------------------------------------------------------------------
-
-class StandardItemModelBoundaries(QStandardItemModel):
-    def __init__(self):
-        QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"),
-                        self.tr("Zone"),
-                        self.tr("Nature"),
-                        self.tr("Selection criteria")]
-        self.setColumnCount(len(self.headers))
-        self.dataBoundary = []
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        if role == Qt.DisplayRole:
-            return self.dataBoundary[index.row()][index.column()]
-        return None
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
-
-
-    def setData(self, index, value, role):
-        self.dataChanged.emit(index, index)
-        return True
-
-
-    def insertItem(self, label, codeNumber, var_nature, local):
-        line = [label, codeNumber, var_nature, local]
-        self.dataBoundary.append(line)
-        row = self.rowCount()
-        self.setRowCount(row+1)
-
-
-    def getItem(self, row):
-        return self.dataBoundary[row]
-
-
 #-------------------------------------------------------------------------------
 # StandardItemModelMainFields class
 #-------------------------------------------------------------------------------
@@ -209,7 +156,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
     """
     Boundary conditions layout.
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, zone_name):
         """
         Constructor
         """
@@ -222,25 +169,27 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.case.undoStopGlobal()
         self.mdl = BoundaryConditionsModel(self.case)
 
-        # Model and QTreeView for Boundaries
-
-        self.__modelBoundaries = StandardItemModelBoundaries()
-        self.treeViewBoundaries.setModel(self.__modelBoundaries)
-
-        # Fill the model with the boundary zone
-        list = ('wall', 'inlet', 'outlet')
-
+        self.groupBox.setTitle(zone_name)
         d = LocalizationModel('BoundaryZone', self.case)
         for zone in d.getZones():
             label = zone.getLabel()
-            nature = zone.getNature()
-            codeNumber = zone.getCodeNumber()
-            local = zone.getLocalization()
-            if nature in list:
-                self.__modelBoundaries.insertItem(label, codeNumber, nature, local)
-
+            if label == zone_name:
+                self.zone = zone
 
         # Main fields definition
+        self.__initializeFieldTable()
+        self.tableViewFields.hide()
+
+        self.__currentField = -1
+        self.__nature = self.zone.getNature()
+        self.__label = self.zone.getLabel()
+
+        self.__hideAllWidgets()
+        self.__slotSelectBoundary()
+
+        self.case.undoStartGlobal()
+
+    def __initializeFieldTable(self):
         self.tableModelFields = StandardItemModelMainFields(self.mdl)
         self.tableViewFields.setModel(self.tableModelFields)
         self.tableViewFields.resizeColumnsToContents()
@@ -248,30 +197,16 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         if QT_API == "PYQT4":
             self.tableViewFields.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFields.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
+            self.tableViewFields.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewFields.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFields.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+            self.tableViewFields.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
-
         for fieldId in self.mdl.getFieldIdList():
             self.tableModelFields.newItem(fieldId)
-
-        self.__currentField = -1
-        self.__nature = ""
-        self.__label = ""
-
-        # Connect signals to slots
-        self.treeViewBoundaries.clicked[QModelIndex].connect(self.__slotSelectBoundary)
         self.tableViewFields.clicked[QModelIndex].connect(self.__slotSelectField)
-
-        self.__hideAllWidgets()
-        self.tableViewFields.hide()
-
-        self.case.undoStartGlobal()
-
 
     @pyqtSlot("QModelIndex")
     def __slotSelectField(self, index):
@@ -297,37 +232,31 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.__selectOutletBoundary(boundary)
             self.tableViewFields.show()
 
-
     @pyqtSlot("QModelIndex")
-    def __slotSelectBoundary(self, index):
+    def __slotSelectBoundary(self):
         """
         Select a boundary in the QTreeView.
         """
-        label, codeNumber, nature, local = self.__modelBoundaries.getItem(index.row())
-        log.debug("slotSelectBoundary label %s (%s)" % (label, nature))
 
-        self.__nature = nature
-        self.__label = label
-
+        log.debug("slotSelectBoundary label %s (%s)" % (self.__label, self.__nature))
         self.__hideAllWidgets()
 
-        if (self.__nature == 'inlet' or self.__nature == 'outlet') :
-            boundary = Boundary(self.__nature, label, self.case, self.__currentField)
+        if self.__nature == 'inlet' or self.__nature == 'outlet':
+            boundary = Boundary(self.__nature, self.__label, self.case, self.__currentField)
             self.tableViewFields.show()
 
-            if self.__currentField > 0 :
+            if self.__currentField > 0:
                 if self.__nature == 'inlet':
                     self.__selectInletBoundary(boundary)
                 elif self.__nature == 'outlet':
                     self.__selectOutletBoundary(boundary)
         elif self.__nature == 'wall':
-            boundary = Boundary(self.__nature, label, self.case, self.__currentField)
+            boundary = Boundary(self.__nature, self.__label, self.case, self.__currentField)
 
             self.tableViewFields.hide()
             if len(MainFieldsModel(self.case).getSolidFieldIdList()) > 0:
                 self.tableViewFields.show()
             self.__selectWallBoundary(boundary)
-
 
     def __selectInletBoundary(self, boundary):
         """

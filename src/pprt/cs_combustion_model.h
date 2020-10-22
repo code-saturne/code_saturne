@@ -144,6 +144,13 @@ typedef struct {
   cs_combustion_coal_model_t  coal;  /*!< coal combustion model parameters */
   cs_combustion_fuel_model_t  fuel;  /*!< fuel combustion model parameters */
 
+  int     n_gas_el_comp;             /*!< number of elementary gas components */
+  int     n_gas_species;             /*!< number of global species */
+  int     n_atomic_species;          /*!< number of atomic species */
+
+  int     n_reactions;               /*!< number of global reactions
+                                      *   in gas phase */
+
   int     isoot;                     /*!< soot production modeling flag */
 
   int     ico2;                      /*!< index of co2 in wmole */

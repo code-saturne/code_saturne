@@ -112,7 +112,6 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          init
 integer          ivar
 integer          iel
-integer          iiun
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -123,13 +122,14 @@ integer          icvflb
 integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrgp, climgp, relaxp
 double precision epsrsp, alpha3
 double precision trprod , trrij
 double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision prdeps, xttdrb, xttke , xttkmg
 double precision normp
+double precision sigmae
 
 double precision rvoid(1)
 
@@ -187,6 +187,7 @@ call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_key_double(ivarfl(iep), ksigmas, sigmae)
 if (iturb.eq.32) call field_get_val_s(ivarfl(ial), cvar_al)
 if(irijco.eq.1) then
   call field_get_val_prev_v(ivarfl(irij), cvara_rij)
@@ -306,15 +307,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-  ! Integer equal to 1 (forr navsto: nb of sur-iter)
-  iiun = 1
-
   ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
-  call catsma &
- ( ncesmp , iiun   ,                                              &
-   icetsm , itypsm(:,ivar)  ,                                     &
-   cell_f_vol , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
-   smbr   , rovsdt , w1 )
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                    &
+              cell_f_vol, cvara_ep, smacel(:,ivar), smacel(:,ipr),  &
+              smbr, rovsdt, w1)
 
   ! If we extrapolate the source terms, we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then
@@ -562,7 +558,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -574,7 +569,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

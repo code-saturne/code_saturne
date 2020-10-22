@@ -261,25 +261,35 @@ interface
   end subroutine cs_syr_coupling_send_boundary
 
   subroutine cs_turbulence_ke &
-       (nvar, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+       (ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
     bind(C, name='cs_turbulence_ke')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), value :: ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
     real(kind=c_double), dimension(*), intent(in) :: prdv2f
   end subroutine cs_turbulence_ke
 
   subroutine cs_turbulence_kw &
-       (nvar, ncesmp, icetsm, itypsm, dt, smacel) &
+       (ncesmp, icetsm, itypsm, dt, smacel) &
     bind(C, name='cs_turbulence_kw')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), value :: ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
+
+  subroutine cs_volume_mass_injection_eval &
+       (nvar, ncesmp, itypsm, smacel) &
+    bind(C, name='cs_volume_mass_injection_eval')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), dimension(*), intent(in) :: itypsm
+    real(kind=c_double), dimension(*) :: smacel
+  end subroutine cs_volume_mass_injection_eval
 
 end interface
 
@@ -542,43 +552,29 @@ if (ncpdct.gt.0) then
 
   call cs_head_losses_compute(ckupdc)
 
- if (iflow .eq.1) then
-   call cs_lagr_head_losses(ncepdc, icepdc, itypfb, ckupdc)
- endif
+  if (iflow .eq.1) then
+    call cs_lagr_head_losses(ncepdc, icepdc, itypfb, ckupdc)
+  endif
 
 endif
 
-! REMPLISSAGE DES COEFS DE TERME SOURCE DE MASSE
+! Evaluate mass source term coefficients
+! (called on all ranks in case user calls global operations).
 
-!    ON Y PASSE MEME S'IL N'Y A PAS DE TSM SUR LE PROC COURANT AU CAS OU
-!    UN UTILISATEUR DECIDERAIT D'AVOIR UN TSM DEPENDANT DE
-!    VALEURS GLOBALES OU MAX.
-if(nctsmt.gt.0) then
+if (nctsmt.gt.0) then
 
-  !     Mise a zero du tableau de type de TS masse et source
-  do ii = 1, ncetsm
-    do ivar = 1, nvar
-      itypsm(ii,ivar) = 0
-      smacel(ii,ivar) = 0.d0
-    enddo
-  enddo
+  call cs_volume_mass_injection_eval(nvar, ncetsm, itypsm, smacel)
 
-  iappel = 3
-  call  cs_user_mass_source_terms &
-( nvar   , nscal  , ncepdc ,                                     &
-  ncetsm , iappel ,                                              &
-  icepdc ,                                                       &
-  icetsm , itypsm , izctsm ,                                     &
-  dt     ,                                                       &
-  ckupdc , smacel )
+  call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 3,      &
+                                 icepdc, icetsm, itypsm, izctsm,      &
+                                 dt, ckupdc, smacel)
 
   if (ippmod(iaeros).gt.0) then
 
     allocate(mass_source(ncelet))
-    ! Cooling tower model
-    ! Evaporation mass exchange term
-    call cs_ctwr_bulk_mass_source_term &
-      (p0, molmass_rat, mass_source)
+
+    ! Cooling tower model evaporation mass exchange term
+    call cs_ctwr_bulk_mass_source_term(p0, molmass_rat, mass_source)
 
     do ii = 1, ncetsm
       iel = icetsm(ii)
@@ -1303,8 +1299,7 @@ if (iccvfg.eq.0) then
 
   if ((itytur.eq.2) .or. (itytur.eq.5)) then
 
-    call cs_turbulence_ke(nvar, ncetsm, icetsm,   &
-                          itypsm, dt, smacel, prdv2f)
+    call cs_turbulence_ke(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
 
     if( itytur.eq.5 )  then
 
@@ -1356,7 +1351,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.60) then
 
-    call cs_turbulence_kw(nvar, ncetsm, icetsm, itypsm, dt, smacel)
+    call cs_turbulence_kw(ncetsm, icetsm, itypsm, dt, smacel)
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_prev_s(ivarfl(ik), cvara_k)

@@ -61,7 +61,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_medcoupling_intersector.hxx"
+#include "cs_medcoupling_intersector.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -242,8 +242,8 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     /* Matrix for the source mesh, based on the bbox of the target mesh */
     const cs_real_t *bbox = mi->local_mesh->bbox;
 
-    const DataArrayInt *subcells =
-      mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
+    const DataArrayIdType *subcells
+      = mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
 
     MEDCouplingNormalizedUnstructuredMesh<3,3>
       sMesh_wrapper(mi->source_mesh->buildPartOfMySelf(subcells->begin(),
@@ -251,7 +251,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
                                                        true));
 
     /* Compute the intersection matrix between source and target meshes */
-    std::vector<std::map<int,double> > mat;
+    std::vector<std::map<mcIdType, double> > mat;
     INTERP_KERNEL::Interpolation3D interpolator;
 
     interpolator.interpolateMeshes(sMesh_wrapper,
@@ -269,7 +269,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     const cs_lnum_t *connec = mi->local_mesh->new_to_old;
     for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
       cs_lnum_t c_id = connec[e_id];
-      for (std::map<int, double>::iterator it = mat[e_id].begin();
+      for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
            it != mat[e_id].end();
            ++it)
         mi->vol_intersect[c_id] += it->second;
@@ -374,6 +374,11 @@ cs_medcoupling_intersector_add(const char  *name,
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(medfile_path);
+  CS_NO_WARN_IF_UNUSED(interp_method);
+  CS_NO_WARN_IF_UNUSED(select_criteria);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -412,6 +417,7 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -511,10 +517,10 @@ cs_medcoupling_intersector_by_name(const char  *name)
 cs_real_t *
 cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 {
-
   cs_real_t *retval = NULL;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -530,7 +536,6 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 #endif
 
   return retval;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -544,9 +549,11 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 
 void
 cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t  *mi,
-                                     cs_real_t  translation[3])
+                                     cs_real_t             translation[3])
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(translation);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -577,6 +584,10 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
                                   cs_real_t                      angle)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(invariant);
+  CS_NO_WARN_IF_UNUSED(axis);
+  CS_NO_WARN_IF_UNUSED(angle);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -603,6 +614,8 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(prefix);
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));

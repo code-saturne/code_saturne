@@ -29,12 +29,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_measures_util.h"
-
 #include "cs_air_props.h"
 #include "cs_at_data_assim.h"
+#include "cs_atmo_aerosol.h"
+#include "cs_atmo_aerosol_ssh.h"
 #include "cs_at_opt_interp.h"
 #include "cs_atmo.h"
+#include "cs_atmo_profile_std.h"
+#include "cs_at_opt_interp.h"
+#include "cs_atprke.h"
+#include "cs_intprf.h"
 
 /*----------------------------------------------------------------------------*/
 

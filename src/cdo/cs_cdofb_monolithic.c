@@ -521,7 +521,6 @@ _build_shared_structures(void)
  *
  * \param[in]      sc        pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      mom_eqp   pointer to a cs_equation_param_t structure
- * \param[in]      mom_eqc   context structure for the momentum equation
  * \param[in]      cm        pointer to a cellwise view of the mesh
  * \param[in]      bf_type   type of boundary for the boundary face
  * \param[in]      diff_pty  pointer to a \cs_property_data_t struct. for diff.
@@ -533,7 +532,6 @@ _build_shared_structures(void)
 static void
 _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
                       const cs_equation_param_t     *mom_eqp,
-                      const cs_cdofb_vecteq_t       *mom_eqc,
                       const cs_cell_mesh_t          *cm,
                       const cs_boundary_type_t      *bf_type,
                       const cs_property_data_t      *diff_pty,
@@ -551,9 +549,6 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
     if (csys->has_nhmg_neumann)
       for (short int f  = 0; f < 3*cm->n_fc; f++)
         csys->rhs[f] += csys->neu_values[f];
-
-    if (cs_equation_param_has_convection(mom_eqp)) /* Always weakly enforced */
-      mom_eqc->adv_func_bc(mom_eqp, cm, cb, csys);
 
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -578,7 +573,7 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
       }
 
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
-        /* Always weakly enforce the symmetric constraint on the
+        /* Always weakly enforce the symmetry constraint on the
            velocity-block */
         sc->apply_symmetry(f, mom_eqp, cm, diff_pty, cb, csys);
       }
@@ -769,6 +764,42 @@ _init_system_by_blocks(cs_cdofb_monolithic_t        *sc)
     sc->mav_structures[i] = mav;
 
   } /* Loop on blocks */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the gravity effects.
+ *         Compute and add the source term to the local RHS.
+ *         This is a special treatment since of face DoFs are involved
+ *         contrary to the standard case where only the cell DoFs is involved.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_gravity_source_term(const cs_navsto_param_t           *nsp,
+                         const cs_cell_mesh_t              *cm,
+                         const cs_cdofb_navsto_builder_t   *nsb,
+                         cs_cell_sys_t                     *csys)
+{
+  assert(nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
+
+  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+  const cs_real_t  cell_contrib[3] =
+    { nsb->rho_c * gravity_vector[0] * cm->xc[0],
+      nsb->rho_c * gravity_vector[1] * cm->xc[1],
+      nsb->rho_c * gravity_vector[2] * cm->xc[2] };
+
+  for (int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    for (int k = 0; k < 3; k++)
+      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1081,12 +1112,15 @@ _steady_build(const cs_navsto_param_t      *nsp,
               const cs_lnum_t               forced_ids[],
               cs_cdofb_monolithic_t        *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve shared structures */
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1186,14 +1220,20 @@ _steady_build(const cs_navsto_param_t      *nsp,
                                    mass_hodge,
                                    cb, mom_eqb, csys);
 
+      /* Gravity effects (not Boussinesq up to now) rely on another strategy
+         than classical source term. The treatment is more compatible with the
+         pressure gradient by doing so. */
+      if (sc->add_gravity_source_term != NULL)
+        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+
       /* 3b- OTHER RHS CONTRIBUTIONS
        * ===========================
        *
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
-                            diff_hodge->pty_data, csys, cb);
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
+                            csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1265,8 +1305,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_lnum_t           forced_ids[],
                       cs_cdofb_monolithic_t    *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1278,6 +1316,11 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step */
@@ -1374,14 +1417,19 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                                    mass_hodge,
                                    cb, mom_eqb, csys);
 
+      /* Gravity effects (not Boussinesq up to now) rely on another strategy
+         than classical source term. The treatment is more compatible with the
+         pressure gradient by doing so. This is a steady source term */
+      if (sc->add_gravity_source_term != NULL)
+        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+
       /* 3b- OTHER RHS CONTRIBUTIONS *
        * =========================== *
        *
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc,
-                            cm, nsb.bf_type, diff_hodge->pty_data,
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
                             csys, cb);
 
       /* 4- TIME CONTRIBUTION (mass lumping or voronoï) */
@@ -1474,8 +1522,6 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_lnum_t           forced_ids[],
                     cs_cdofb_monolithic_t    *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1487,6 +1533,11 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step */
@@ -1619,14 +1670,19 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       } /* End of term source */
 
+      /* Gravity effects (not Boussinesq up to now) rely on another strategy
+         than classical source term. The treatment is more compatible with the
+         pressure gradient by doing so. This is a steady source term */
+      if (sc->add_gravity_source_term != NULL)
+        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+
       /* 3b- OTHER RHS CONTRIBUTIONS *
        * =========================== *
        *
        * First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _mono_apply_bc_partly(sc, mom_eqp, mom_eqc,
-                            cm, nsb.bf_type, diff_hodge->pty_data,
+      _mono_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, diff_hodge->pty_data,
                             csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
@@ -1924,6 +1980,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
               __func__);
 
   }
+  /* Source terme induced by the gravity (not the Boussinesq approximation but
+     only rho.g) */
+  sc->add_gravity_source_term = NULL;
+  if (nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
+    sc->add_gravity_source_term = _add_gravity_source_term;
 
   /* Set the build function */
   sc->steady_build = _steady_build;

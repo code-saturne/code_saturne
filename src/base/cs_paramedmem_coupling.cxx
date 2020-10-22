@@ -27,7 +27,7 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C/C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdarg.h>
@@ -40,6 +40,17 @@
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
+
+#if defined(HAVE_PARAMEDMEM)
+#include <string>
+#include <vector>
+#endif
+
+/*----------------------------------------------------------------------------
+ *  PLE headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -55,6 +66,7 @@
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
+#include "cs_coupling.h"
 
 #include "fvm_defs.h"
 #include "fvm_nodal_from_desc.h"
@@ -64,7 +76,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
-#include "cs_paramedmem_coupling.hxx"
+#include "cs_paramedmem_coupling.h"
 
 #if defined(HAVE_PARAMEDMEM)
 
@@ -85,86 +97,49 @@ using namespace MEDCoupling;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * ParaMEDMED field structure
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  int                       mesh_id;       /* Associated mesh structure id */
-  int                       dim;           /* Field dimension */
-
-#if defined(HAVE_PARAMEDMEM)
-  TypeOfTimeDiscretization  td;            /* NO_TIME, ONE_TIME, LINEAR_TIME,
-                                              or CONST_ON_TIME_INTERVAL */
-  MEDCouplingFieldDouble   *f;             /* Pointer to MED coupling field */
-  ParaFIELD                *pf;            /* Pointer to ParaMEDMEM field */
-#else
-  void                     *td;
-  void                     *f;
-  void                     *pf;
-#endif
-
-} _paramedmem_field_t;
-
-/*----------------------------------------------------------------------------
- * ParaMEDMED mesh structure
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  cs_medcoupling_mesh_t *mesh;        /* The Code_Saturne stracture englobing
-                                         the medcoupling mesh structure */
-
-  int                 direction;      /* 1: send, 2: receive, 3: both */
-#if defined(HAVE_PARAMEDMEM)
-  ParaMESH           *para_mesh[2];   /* parallel MED mesh structures
-                                         for send (0) and receive (1) */
-#else
-  void               *para_mesh[2];
-#endif
-} _paramedmem_mesh_t;
-
-/*----------------------------------------------------------------------------
  * MEDCoupling writer/reader structure
  *----------------------------------------------------------------------------*/
 
 struct _cs_paramedmem_coupling_t {
 
-  char                      *name;           /* Coupling name */
-
-  int                        n_meshes;       /* Number of meshes */
-  _paramedmem_mesh_t       **meshes;         /* Array of mesh helper
-                                                structures */
-
-  int                        n_fields;       /* Number of fields */
-  _paramedmem_field_t      **fields;         /* Array of field helper
-                                                structures */
-
 #if defined(HAVE_PARAMEDMEM)
-  InterpKernelDEC           *send_dec;       /* Send data exchange channel */
-  InterpKernelDEC           *recv_dec;       /* Receive data exchange channel */
+
+  /* Coupling Name */
+  std::string                  name;           /* Coupling name */
+
+  /* Current app name */
+  ple_coupling_mpi_set_info_t  apps[2];
+
+  cs_medcoupling_mesh_t       *mesh;
+
+  /* index 0 is for send, 1 for recv */
+
+  ParaMESH        *para_mesh;   /* Two meshes, one for send, one for recv */
+
+  InterpKernelDEC *dec;       /* Send data exchange channel */
+
+  std::vector<ParaFIELD *> fields;
+
 #else
-  void                      *send_dec;
-  void                      *recv_dec;
+
+  void *para_mesh;
+  void *dec;
+  void *fields;
+
 #endif
 
-  int                       send_synced;
-  int                       recv_synced;
+  int dec_synced;
 };
 
 /*=============================================================================
  * Private global variables
  *============================================================================*/
 
-static int                          _n_paramed_couplers = 0;
-static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
+#if defined(HAVE_PARAMEDMEM)
 
-const int cs_medcpl_cell_field = 0;
-const int cs_medcpl_vertex_field = 1;
+static std::vector<cs_paramedmem_coupling_t *> _paramed_couplers;
 
-const int cs_medcpl_no_time = 0;
-const int cs_medcpl_one_time = 1;
-const int cs_medcpl_linear_time = 2;
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -172,196 +147,82 @@ const int cs_medcpl_linear_time = 2;
 
 #if defined(HAVE_PARAMEDMEM)
 
-/*----------------------------------------------------------------------------
- * Initialize mesh for ParaMEDMEM coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generate mesh structure from user's defintion
  *
- * parameters:
- *   coupling  <-- coupling structure.
- *   mesh      <-> partially ParaMEDMEM mesh coupling structure
- *----------------------------------------------------------------------------*/
+ * \param[in] c   pointer to cs_paramedmem_coupling_t struct
+ * \param[in] select_criteria   selection criteria (string)
+ * \param[in] elt_dim           mesh dimension (2 or 3)
+ *
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
-_init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
-                    _paramedmem_mesh_t        *pmesh)
+_generate_coupling_mesh(cs_paramedmem_coupling_t  *c,
+                        const char                *select_criteria,
+                        int                        elt_dim)
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
-  assert(pmesh != NULL);
+  /* Initialization of the MEDCouplingUMesh*/
+  c->mesh = cs_medcoupling_mesh_create("CouplingMesh",
+                                       select_criteria,
+                                       elt_dim);
+  assert(c->mesh != NULL);
 
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, pmesh->mesh, 0);
+  cs_medcoupling_mesh_copy_from_base(parent_mesh, c->mesh, 0);
 
   /* Define associated ParaMESH */
-  pmesh->para_mesh[0] = new ParaMESH(pmesh->mesh->med_mesh,
-                                     *(coupling->send_dec->getSourceGrp()),
-                                     "source mesh");
-  pmesh->para_mesh[1] = new ParaMESH(pmesh->mesh->med_mesh,
-                                     *(coupling->recv_dec->getTargetGrp()),
-                                     "target mesh");
+  ProcessorGroup *Grp =
+    c->dec->isInSourceSide() ? c->dec->getSourceGrp():c->dec->getTargetGrp();
+
+  c->para_mesh = new ParaMESH(c->mesh->med_mesh, *(Grp), "CoupledMesh");
 }
 
-/*----------------------------------------------------------------------------
- * Destroy coupled entity helper structure.
- *
- * parameters:
- *   coupling ent <-> pointer to structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_destroy_mesh(_paramedmem_mesh_t  **mesh)
-{
-  _paramedmem_mesh_t *pm = *mesh;
-
-  if (pm == NULL)
-    return;
-
-  for (int i = 0; i < 2; i++) {
-    if (pm->para_mesh[i] != NULL)
-      delete pm->para_mesh[i];
-  }
-  if (pm->mesh != NULL)
-    cs_medcoupling_mesh_destroy(pm->mesh);
-
-  BFT_FREE(*mesh);
-}
-
-/*----------------------------------------------------------------------------
- * Create an InterpKernelDEC object based on two lists, and their sizes,
- * of mpi ranks (within MPI_COMM_WORLD).
- *
- * parameters:
- *   grp1_global_ranks <-- array of ranks of group 1
- *   grp1_size         <-- size of grp1_global_ranks array
- *   grp2_global_ranks <-- array of ranks of group 2
- *   grp2_size         <-- size of grp2_global_ranks array
- *
- * return:
- *   new InterpKernelDEC object
- *----------------------------------------------------------------------------*/
-
-static InterpKernelDEC *
-_cs_paramedmem_create_InterpKernelDEC(int  *grp1_global_ranks,
-                                      int   grp1_size,
-                                      int  *grp2_global_ranks,
-                                      int   grp2_size)
-{
-  /* Group 1 id's */
-  std::set<int> grp1_ids;
-  for (int i = 0; i < grp1_size; i++) {
-    grp1_ids.insert(grp1_global_ranks[i]);
-  }
-
-  /* Group 2 id's */
-  std::set<int> grp2_ids;
-  for (int i = 0; i < grp2_size; i++) {
-    grp2_ids.insert(grp2_global_ranks[i]);
-  }
-
-  /* Create the InterpKernel DEC */
-  InterpKernelDEC *NewDec = new InterpKernelDEC(grp1_ids, grp2_ids);
-
-  return NewDec;
-}
-
-/*----------------------------------------------------------------------------
- * Create a paramedmem coupling based on an InterpKernelDEC.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a paramedmem coupling based on an InterpKernelDEC.
  *
  * The latter is created using the the lists of ranks provided as
  * input to this function.
  *
- * parameters:
- *   name              <-- coupling name
- *   grp1_global_ranks <-- array of ranks of group 1
- *   grp1_size         <-- size of grp1_global_ranks array
- *   grp2_global_ranks <-- array of ranks of group 2
- *   grp2_size         <-- size of grp2_global_ranks array
+ * \param[in] cpl_name   coupling name
+ * \param[in] apps       array of size 2, containing ple_coupling_mpi_set_info_t
  *
- * return:
- *   pointer to new coupling object
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
-static void
-_add_paramedmem_interpkernel(const char  *name,
-                             int         *grp1_global_ranks,
-                             int          grp1_size,
-                             int         *grp2_global_ranks,
-                             int          grp2_size)
+static int
+_add_paramedmem_coupling(const std::string            cpl_name,
+                         ple_coupling_mpi_set_info_t  apps[2])
 {
+  cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
 
-  if (_paramed_couplers == NULL)
-    BFT_MALLOC(_paramed_couplers,
-               1,
-               cs_paramedmem_coupling_t *);
-  else
-    BFT_REALLOC(_paramed_couplers,
-                _n_paramed_couplers + 1,
-                cs_paramedmem_coupling_t *);
+  /* Apps identification */
+  for (int i = 0; i < 2; i++)
+    c->apps[i] = apps[i];
 
-  cs_paramedmem_coupling_t *c = NULL;
+  /* Set coupling name */
+  c->name = cpl_name;
 
-  /* Add corresponding coupling to temporary ICoCo couplings array */
+  c->mesh = NULL;
 
-  BFT_MALLOC(c, 1, cs_paramedmem_coupling_t);
+  std::set<int> grp1_ids;
+  std::set<int> grp2_ids;
+  for (int i = 0; i < apps[0].n_ranks; i++)
+    grp1_ids.insert(apps[0].root_rank + i);
+  for (int i = 0; i < apps[1].n_ranks; i++)
+    grp2_ids.insert(apps[1].root_rank + i);
 
-  BFT_MALLOC(c->name, strlen(name) + 1, char);
-  strcpy(c->name, name);
+  c->dec =new InterpKernelDEC(grp1_ids, grp2_ids);
 
-  c->n_meshes = 0;
-  c->meshes = NULL;
+  _paramed_couplers.push_back(c);
 
-  c->n_fields = 0;
-  c->fields = NULL;
+  int retval = _paramed_couplers.size() - 1;
 
-  c->send_synced = 0;
-  c->recv_synced = 0;
-
-  bool is_in_grp1 = false;
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-  for (int ii = 0; ii < grp1_size; ii++) {
-    if (my_rank == grp1_global_ranks[ii]) {
-      is_in_grp1 = true;
-      break;
-    }
-  }
-
-  if (is_in_grp1) {
-    c->send_dec = _cs_paramedmem_create_InterpKernelDEC(grp1_global_ranks,
-                                                        grp1_size,
-                                                        grp2_global_ranks,
-                                                        grp2_size);
-
-    c->recv_dec = _cs_paramedmem_create_InterpKernelDEC(grp2_global_ranks,
-                                                        grp2_size,
-                                                        grp1_global_ranks,
-                                                        grp1_size);
-  } else {
-    c->recv_dec = _cs_paramedmem_create_InterpKernelDEC(grp1_global_ranks,
-                                                        grp1_size,
-                                                        grp2_global_ranks,
-                                                        grp2_size);
-
-    c->send_dec = _cs_paramedmem_create_InterpKernelDEC(grp2_global_ranks,
-                                                        grp2_size,
-                                                        grp1_global_ranks,
-                                                        grp1_size);
-  }
-
-  _paramed_couplers[_n_paramed_couplers] = c;
-
-  _n_paramed_couplers++;
-
-}
-
-cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_by_id(int  pc_id)
-{
-
-  cs_paramedmem_coupling_t * c = _paramed_couplers[pc_id];
-
-  return c;
-
+  return retval;
 }
 
 #endif /* HAVE_PARAMEDMEM */
@@ -372,736 +233,976 @@ cs_paramedmem_coupling_by_id(int  pc_id)
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------
- * Define new ParaMEDMEM coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve coupling struct pointer by id
  *
- * arguments:
- *   name               <-- name of coupling
- *   grp1_global_ranks  <-- First group ranks in MPI_COMM_WORLD
- *   grp1_size          <-- Number of ranks in the first group
- *   grp2_global_ranks  <-- Second group ranks in MPI_COMM_WORLD
- *   grp2_size          <-- Number of ranks in the second group
- *----------------------------------------------------------------------------*/
+ * \param[in] cpl_id  index of the sought coupling
+ *
+ * \return pointer to cs_paramedmem_coupling_t struct. Raise an error if
+ * the coupling does not exist.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_interpkernel_create(const char  *name,
-                                  int         *grp1_global_ranks,
-                                  int          grp1_size,
-                                  int         *grp2_global_ranks,
-                                  int          grp2_size)
+cs_paramedmem_coupling_by_id(int  cpl_id)
 {
-  cs_paramedmem_coupling_t *c = NULL;
-
 #if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(cpl_id);
   bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  _add_paramedmem_interpkernel(name,
-                              grp1_global_ranks,
-                              grp1_size,
-                              grp2_global_ranks,
-                              grp2_size);
-
-  c = _paramed_couplers[_n_paramed_couplers-1];
-#endif
-
-  return c;
-}
-
-/*----------------------------------------------------------------------------
- * Define new ParaMEDMEM coupling.
- *
- * arguments:
- *   name     <-- name of coupling
- *   send_dec <-- send Data Exchange Channel
- *   recv_dec <-- receive Data Exchange Channel
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_destroy(cs_paramedmem_coupling_t  **coupling)
-{
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  cs_paramedmem_coupling_t  *c = *coupling;
-
-  if (c != NULL) {
-
-    BFT_FREE(c->name);
-
-    for (int i = 0; i < c->n_fields; i++) {
-      if (c->fields[i]->pf != NULL)
-        delete c->fields[i]->pf;
-      c->fields[i]->f = NULL;
-      BFT_FREE(c->fields[i]);
-    }
-    BFT_FREE(c->fields);
-
-    for (int i = 0; i < c->n_meshes; i++)
-      _destroy_mesh(&(c->meshes[i]));
-
-    c->n_meshes = 0;
-    c->meshes = NULL;
-
-    c->send_dec = NULL;
-    c->recv_dec = NULL;
-
-  }
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Define mesh for ParaMEDMEM coupling from selection criteria.
- *
- * parameters:
- *   coupling        <-- partially initialized ParaMEDMEM coupling structure
- *   name            <-- name of coupling mesh
- *   select_criteria <-- selection criteria
- *   elt_dim         <-- element dimension
- *   is_source       <-- true if fields located on mesh are sent
- *   is_dest         <-- true if fields located on mesh are received
- *
- * returns:
- *   id of created mesh in coupling
- *----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
-                          const char                *name,
-                          const char                *select_criteria,
-                          int                        elt_dim,
-                          bool                       is_source,
-                          bool                       is_dest)
-{
-  int id = -1;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  _paramedmem_mesh_t *pmmesh = NULL;
-  cs_medcoupling_mesh_t *mesh = NULL;
-
-  assert(coupling != NULL);
-
-  /* Initialization */
-
-  BFT_MALLOC(pmmesh, 1, _paramedmem_mesh_t);
-  BFT_MALLOC(mesh, 1, cs_medcoupling_mesh_t);
-
-  BFT_MALLOC(mesh->sel_criteria, strlen(select_criteria) + 1, char);
-  strcpy(mesh->sel_criteria, select_criteria);
-
-  pmmesh->direction = 0;
-
-  if (is_source)
-    pmmesh->direction += 1;
-  if (is_dest)
-    pmmesh->direction += 2;
-
-  mesh->elt_dim = elt_dim;
-
-  mesh->n_elts = 0;
-  mesh->elt_list = NULL;
-
-  /* Define MED mesh (connectivity will be defined later) */
-
-  mesh->med_mesh = MEDCouplingUMesh::New();
-  mesh->med_mesh->setName(name);
-  mesh->med_mesh->setTimeUnit("s");
-  mesh->med_mesh->setMeshDimension(elt_dim);
-
-  pmmesh->para_mesh[0] = NULL;
-  pmmesh->para_mesh[1] = NULL;
-
-  mesh->new_to_old = NULL;
-
-  /* Add as new MEDCoupling mesh structure */
-
-  id = coupling->n_meshes;
-  coupling->n_meshes += 1;
-
-  BFT_REALLOC(coupling->meshes, coupling->n_meshes, _paramedmem_mesh_t *);
-
-  pmmesh->mesh = mesh;
-  coupling->meshes[id] = pmmesh;
-#endif
-
-  return id;
-}
-
-/*----------------------------------------------------------------------------
- * Initialize nodal coupled meshes.
- *
- * parameters:
- *   coupling  <-- partially initialized ParaMEDMEM coupling structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_init_meshes(cs_paramedmem_coupling_t  *coupling)
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  for (int i = 0; i < coupling->n_meshes; i++)
-    _init_mesh_coupling(coupling, coupling->meshes[i]);
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Return the ParaMEDMEM mesh id associated with a given mesh name,
- * or -1 if no association found.
- *
- * parameters:
- *   coupling  <-- coupling structure
- *   mesh_name <-- mesh name
- *
- * returns:
- *    mesh id for this coupling, or -1 if mesh name is not associated
- *    with this coupling.
- *----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_mesh_id(cs_paramedmem_coupling_t  *coupling,
-                      const char                *mesh_name)
-{
-  int retval = -1;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  assert(coupling != NULL);
-
-  for (int i = 0; i < coupling->n_meshes; i++) {
-    const char *mesh_name_i
-      = coupling->meshes[i]->mesh->med_mesh->getName().c_str();
-
-    if (strcmp(mesh_name, mesh_name_i) == 0) {
-      retval = i;
-      break;
-    }
-  }
-
-#endif
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Get number of associated coupled elements in coupled mesh
- *
- * parameters:
- *   coupling <-- ParaMEDMEM coupling structure
- *   mesh_id  <-- id of coupled mesh in coupling
- *
- * returns:
- *   number of elements in coupled mesh
- *----------------------------------------------------------------------------*/
-
-cs_lnum_t
-cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t  *coupling,
-                              int                              mesh_id)
-{
-  cs_lnum_t retval = 0;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  if (mesh_id >= 0)
-    retval = coupling->meshes[mesh_id]->mesh->n_elts;
-#endif
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Get local list of coupled elements (0 to n-1 numbering) for a coupled mesh
- *
- * parameters:
- *   coupling <-- ParaMEDMEM coupling structure
- *   mesh_id  <-- id of coupled mesh in coupling
- *----------------------------------------------------------------------------*/
-
-const cs_lnum_t *
-cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling,
-                                int                              mesh_id)
-{
-  const cs_lnum_t *retval = NULL;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-  if (mesh_id >= 0)
-    retval = coupling->meshes[mesh_id]->mesh->elt_list;
-#endif
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Create a MEDCoupling field structure.
- *
- * parameters:
- *   coupling  <-- MED coupling structure.
- *   name      <-- field name.
- *   mesh_id   <-- id of associated mesh in structure.
- *   dim       <-- number of field components.
- *   type      <-- mesh mesh (ON_NODES, ON_CELLS)
- *   td        <-- time discretization type
- *   dirflag   <-- 1: send, 2: receive
- *
- * returns
- *   field id in coupling structure
- *----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
-                        const char                *name,
-                        int                        mesh_id,
-                        int                        dim,
-                        int                        medcpl_field_type,
-                        int                        medcpl_time_discr,
-                        int                        dirflag)
-{
-  int f_id = -1;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
-
-  /* Prepare coupling structure */
-  TypeOfField type = ON_CELLS;
-  if (medcpl_field_type == cs_medcpl_cell_field)
-    type = ON_CELLS;
-  else if (medcpl_field_type == cs_medcpl_vertex_field)
-    type = ON_NODES;
-
-  TypeOfTimeDiscretization td = NO_TIME;
-  if (medcpl_time_discr == cs_medcpl_no_time)
-    td = NO_TIME;
-  else if (medcpl_time_discr == cs_medcpl_one_time)
-    td = ONE_TIME;
-  else if (medcpl_time_discr == cs_medcpl_linear_time)
-    td = LINEAR_TIME;
-
-
-  f_id = coupling->n_fields;
-
-  BFT_REALLOC(coupling->fields,
-              coupling->n_fields + 1,
-              _paramedmem_field_t *);
-
-  BFT_MALLOC(coupling->fields[f_id], 1, _paramedmem_field_t);
-
-  /* Build ParaFIELD object if required */
-
-  MEDCouplingFieldDouble  *f = NULL;
-
-  if (dirflag == 1 && coupling->send_dec != NULL) {
-    if (pmesh->para_mesh[0] == NULL) {
-      pmesh->para_mesh[0] = new ParaMESH(pmesh->mesh->med_mesh,
-                                        *(coupling->send_dec->getSourceGrp()),
-                                        "source mesh");
-    }
-    ComponentTopology comp_topo(dim);
-    coupling->fields[f_id]->pf = new ParaFIELD(type,
-                                               td,
-                                               pmesh->para_mesh[0],
-                                               comp_topo);
-    f = coupling->fields[f_id]->pf->getField();
-    coupling->send_dec->attachLocalField(coupling->fields[f_id]->pf);
-  }
-  else if (dirflag == 2 && coupling->recv_dec != NULL) {
-    if (pmesh->para_mesh[1] == NULL) {
-      pmesh->para_mesh[1] = new ParaMESH(pmesh->mesh->med_mesh,
-                                        *(coupling->recv_dec->getTargetGrp()),
-                                        "target mesh");
-    }
-    ComponentTopology comp_topo(dim);
-    coupling->fields[f_id]->pf = new ParaFIELD(type,
-                                               td,
-                                               pmesh->para_mesh[1],
-                                               comp_topo);
-
-    f = coupling->fields[f_id]->pf->getField();
-    coupling->recv_dec->attachLocalField(coupling->fields[f_id]->pf);
-  }
-  else {
-    f = MEDCouplingFieldDouble::New(type, td);
-  }
-
-  coupling->fields[f_id]->td = td;
-  coupling->fields[f_id]->mesh_id = mesh_id;
-
-  /* TODO: setNature should be set by caller to allow for more options */
-
-  f->setNature(IntensiveConservation);
-
-  f->setName(name);
-
-  /* Assign array to field (filled later) */
-
-  int n_locs = 0;
-  DataArrayDouble *array = DataArrayDouble::New();
-
-  if (type == ON_NODES)
-    n_locs = pmesh->mesh->med_mesh->getNumberOfNodes();
-  else if (type == ON_CELLS)
-    n_locs = pmesh->mesh->med_mesh->getNumberOfCells();
-
-  array->alloc(n_locs, dim);
-  f->setArray(array);
-  f->getArray()->decrRef();
-
-  /* Update coupling structure */
-
-  coupling->fields[f_id]->td = td;
-  coupling->fields[f_id]->dim = dim;
-
-  coupling->fields[f_id]->f = f;
-
-  coupling->n_fields++;
-
-#endif
-
-  return f_id;
-}
-
-/*----------------------------------------------------------------------------
- * Return the ParaMEDMEM field id associated with given mesh and field names,
- * or -1 if no association found.
- *
- * parameters:
- *   coupling <-- coupling structure.
- *   mesh_id  <-- id of associated mesh in structure.
- *   name     <-- field name.
- *
- * returns
- *   field id in coupling structure, or -1 if not found
- *----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
-                           int                        mesh_id,
-                           const char                *name)
-{
-
-  int f_id = -1;
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  /* Loop on fields to know if field has already been created */
-  for (int i = 0; i < coupling->n_fields; i++) {
-    if (coupling->fields[i]->mesh_id == mesh_id &&
-        strcmp(name, coupling->fields[i]->f->getName().c_str()) == 0) {
-      f_id = i;
-      break;
-    }
-  }
-
-#endif
-
-  return f_id;
-}
-
-/*----------------------------------------------------------------------------
- * Write field associated with a mesh to MEDCoupling.
- *
- * Assigning a negative value to the time step indicates a time-independent
- * field (in which case the time_value argument is unused).
- *
- * parameters:
- *   coupling     <-- pointer to associated coupling
- *   field_id     <-- id of associated field
- *   on_parent    <-- if true, values are defined on parent mesh
- *   field_values <-- array of associated field value arrays
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
-                           int                        field_id,
-                           bool                       on_parent,
-                           const double               field_values[])
-{
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
-
-  MEDCouplingFieldDouble *f = NULL;
-
-  f = coupling->fields[field_id]->f;
-
-  double  *val_ptr = f->getArray()->getPointer();
-  const int dim = coupling->fields[field_id]->dim;
-
-  /* Assign element values */
-  /*-----------------------*/
-  if (! on_parent) {
-    cs_lnum_t n_elts = pmesh->mesh->n_elts;
-
-    for (cs_lnum_t i = 0; i < dim*n_elts; i++)
-      val_ptr[i] = field_values[i];
-  }
-  else {
-    cs_lnum_t  n_elts   = pmesh->mesh->n_elts;
-    cs_lnum_t *elt_list = pmesh->mesh->elt_list;
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      for (int j = 0; j < dim; j++)
-        val_ptr[i*dim + j] = field_values[elt_list[i]*dim + j];
-    }
-  }
-
-  /* Update field status */
-  /*---------------------*/
-  f->getArray()->declareAsNew();
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Read field associated with a mesh from MEDCoupling.
- *
- * Only double precision floating point values are considered.
- *
- * Assigning a negative value to the time step indicates a time-independent
- * field (in which case the time_value argument is unused).
- *
- * parameters:
- *   coupling     <-- pointer to associated coupling
- *   field_id     <-- id of associated field
- *   on_parent    <-- if true, values are defined on parent mesh
- *   field_values <-- array of associated field value arrays
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
-                           int                        field_id,
-                           bool                       on_parent,
-                           double                     field_values[])
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
-
-  MEDCouplingFieldDouble *f = coupling->fields[field_id]->f;
-
-  const double  *val_ptr = f->getArray()->getConstPointer();
-  const int dim = coupling->fields[field_id]->dim;
-
-  /* Import element values */
-  /*-----------------------*/
-
-  if (! on_parent) {
-    cs_lnum_t  n_elts = pmesh->mesh->n_elts;
-    cs_lnum_t *new_to_old = pmesh->mesh->new_to_old;
-
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      for (int j = 0; j < dim; j++) {
-        cs_lnum_t c_id = new_to_old[i];
-        field_values[dim*c_id+j] = val_ptr[i*dim + j];
-      }
-  }
-  else {
-    cs_lnum_t  n_elts   = pmesh->mesh->n_elts;
-    cs_lnum_t *elt_list = pmesh->mesh->elt_list;
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      for (int j = 0; j < dim; j++)
-        field_values[elt_list[i]*dim + j] = val_ptr[i*dim + j];
-    }
-  }
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize DEC assciated with a given coupling.
- *
- * This sync function needs to be called at least once before exchanging data.
- * dec->synchronize() creates the interpolation matrix between the two codes!
- *
- * parameters:
- *   coupling    <-- coupling structure.
- *   dec_to_sync <-- 1 for send_dec, != 1 for recv_dec
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
-                       int                        dec_to_sync)
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  if (dec_to_sync == 1) {
-    if (coupling->send_synced == 0) {
-      coupling->send_dec->synchronize();
-      coupling->send_synced = 1;
-    }
-  } else if (coupling->recv_synced == 0) {
-    coupling->recv_dec->synchronize();
-    coupling->recv_synced = 1;
-  }
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Send the values related to a coupling
- *
- * parameters:
- *   coupling <-> coupling structure.
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_send_data(cs_paramedmem_coupling_t  *coupling)
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  coupling->send_dec->sendData();
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Receive the values related to a coupling
- *
- * parameters:
- *   coupling <-> coupling structure.
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *coupling)
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  coupling->recv_dec->recvData();
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Link a given field to the DEC before send/recv
- *
- * parameters:
- *   coupling <-> coupling structure.
- *   field_id <-> associated field id
- *----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_reattach_field(cs_paramedmem_coupling_t  *coupling,
-                             int                        field_id)
-{
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
-
-  if (pmesh->direction == 1)
-    coupling->send_dec->attachLocalField(coupling->fields[field_id]->pf);
-  else if (pmesh->direction == 2)
-    coupling->recv_dec->attachLocalField(coupling->fields[field_id]->pf);
-
-#endif
-
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Map MPI ranks within cs_glob_mpi_comm to their values in MPI_COMM_WORLD.
- *
- * The caller is responsible for freeing the returned array
- *
- * return:
- *   list of ranks in MPI_COMM_WORLD
- *----------------------------------------------------------------------------*/
-
-int *
-cs_paramedmem_get_mpi_comm_world_ranks(void)
-{
-#if !defined(HAVE_PARAMEDMEM)
-
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
   return NULL;
 
 #else
 
-  /* Global rank of current rank */
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  if (cpl_id < 0 || cpl_id > _paramed_couplers.size())
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: coupling with id %d does not exist\n"), cpl_id);
 
-  /* Size of the local communicator */
-  int mycomm_size;
-  MPI_Comm_size(cs_glob_mpi_comm, &mycomm_size);
+  cs_paramedmem_coupling_t *c = _paramed_couplers[cpl_id];
 
-  int *world_ranks;
-  BFT_MALLOC(world_ranks, mycomm_size, int);
-
-  MPI_Allgather(&my_rank, 1, MPI_INT, world_ranks, 1, MPI_INT, cs_glob_mpi_comm);
-
-  return world_ranks;
+  return c;
 
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve coupling struct pointer by name
+ *
+ * \param[in] name  name of the coupling
+ *
+ * \return pointer to cs_paramedmem_coupling_t struct or NULL if not found.
+ *
+ */
+/*----------------------------------------------------------------------------*/
 
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_by_name(const char *name)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(name);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+  return NULL;
+
+#else
+
+  cs_paramedmem_coupling_t *c = NULL;
+
+  for (int i = 0; i < _paramed_couplers.size(); i++) {
+    if (strcmp(_paramed_couplers[i]->name.c_str(), name) == 0) {
+      c = _paramed_couplers[i];
+      break;
+    }
+  }
+
+  return c;
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new ParaMEDMEM coupling
+ *
+ * \param[in] app1_name  Name of app n°1 or NULL if calling app is app1
+ * \param[in] app2_name  Name of app n°2 or NULL if calling app is app2
+ * \param[in] cpl_name   Name of the coupling. If NULL an automatic name is generated.
+ *
+ * \return pointer to newly created cs_paramedmem_coupling_t structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_create(const char  *app1_name,
+                              const char  *app2_name,
+                              const char  *cpl_name)
+{
+  cs_paramedmem_coupling_t *c = NULL;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(app1_name);
+  CS_NO_WARN_IF_UNUSED(app2_name);
+  CS_NO_WARN_IF_UNUSED(cpl_name);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  /* Check that at least on app name is provided */
+  if (app1_name == NULL && app2_name == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Partner application name was not provided.\n"));
+
+  /* Find which app is which */
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
+
+  const int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+  const int app_id = ple_coupling_mpi_set_get_app_id(mpi_apps);
+
+  /* Get each application ranks */
+  ple_coupling_mpi_set_info_t apps[2];
+  for (int i = 0; i < 2; i++)
+    apps[i] = ple_coupling_mpi_set_get_info(mpi_apps, -1);
+
+  int l_id = -1;
+  if (app1_name == NULL)
+    l_id = 0;
+  else if (app2_name == NULL)
+    l_id = 1;
+
+  for (int i = 0; i < n_apps; i++) {
+    ple_coupling_mpi_set_info_t ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+    if (l_id > -1) {
+      if (app_id == i)
+        apps[l_id] = ai;
+    }
+    if (app1_name != NULL) {
+      if (strcmp(ai.app_name, app1_name) == 0)
+        apps[0] = ai;
+    }
+    if (app2_name != NULL) {
+      if (strcmp(ai.app_name, app2_name) == 0)
+        apps[1] = ai;
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (apps[i].root_rank < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: Partner app was not found...\n"));
+  }
+
+  /* Set coupling name */
+  std::string _name = "";
+  if (cpl_name == NULL) {
+    /* string is <a_name>_<p_name>_cpl */
+    std::stringstream ss;
+    ss << apps[0].app_name << "_" << apps[1].app_name << "_cpl";
+    _name = ss.str();
+  } else {
+    _name = cpl_name;
+  }
+
+  int cpl_id = _add_paramedmem_coupling(_name, apps);
+
+  c = cs_paramedmem_coupling_by_id(cpl_id);
+
+#endif
+
+  return c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a given ParaMEDMEM coupling structure
+ *
+ * \param[in] c pointer to cs_paramedmem_coupling_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  if (c != NULL) {
+
+    /* Destroy fields */
+    c->fields.clear();
+
+    /* Deallocate mesh */
+    delete c->para_mesh;
+    cs_medcoupling_mesh_destroy(c->mesh);
+
+    /* Destroy DECs */
+    delete c->dec;
+
+    delete c;
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all coupling structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_coupling_all_finalize(void)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* Clear vector */
+  _paramed_couplers.clear();
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupled mesh based on a selection criteria
+ *
+ * \param[in] c         pointer to cs_paramedmem_coupling_t struct
+ * \param[in] sel_crit  geometrical selection criteria (string)
+ * \param[in] elt_dim   dimension of coupled elements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_add_mesh_from_criteria(cs_paramedmem_coupling_t  *c,
+                                     const char                *sel_crit,
+                                     int                        elt_dim)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(sel_crit);
+  CS_NO_WARN_IF_UNUSED(elt_dim);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  _generate_coupling_mesh(c, sel_crit, elt_dim);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupled mesh based on a cs_zone_t pointer
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t struct
+ * \param[in] zone  pointer to cs_zone_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_add_mesh_from_zone(cs_paramedmem_coupling_t  *c,
+                                 const cs_zone_t           *zone)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(zone);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  /* Get location id */
+  int location_id = zone->location_id;
+
+  /* Get selection criteria from location id */
+  const char *sel_crit = cs_mesh_location_get_selection_string(location_id);
+
+  /* Get location id and deduce element dimension */
+  int elt_dim = -1;
+  cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
+  if (loc_type == CS_MESH_LOCATION_CELLS)
+    elt_dim = 3;
+  else if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+    elt_dim = 2;
+
+  if (elt_dim < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: wrong dimension for considered zone\n"));
+
+  _generate_coupling_mesh(c, sel_crit, elt_dim);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get number of defined couplings
+ *
+ * \return number of defined couplings (int)
+ */
+/*----------------------------------------------------------------------------*/
+int
+cs_paramedmem_get_number_of_couplings(void)
+{
+  int retval = 0;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  retval = _paramed_couplers.size();
+
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get number of elements of coupled mesh
+ *
+ * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
+ *
+ * \return number of elements in mesh associated to coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t  *coupling)
+{
+  cs_lnum_t retval = 0;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(coupling);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  retval = coupling->mesh->n_elts;
+
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get indirection list for elements in coupled mesh
+ *
+ * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
+ *
+ * \return cs_lnum_t pointer to indirection list
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling)
+{
+  const cs_lnum_t *retval = NULL;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(coupling);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  retval = coupling->mesh->elt_list;
+
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a coupled field
+ *
+ * \param[in] c           pointer to cs_paramedmem_coupling_t struct
+ * \param[in] name        name of field
+ * \param[in] dim         field dimension
+ * \param[in] space_discr field space discretisation (nodes or cells)
+ * \param[in] time_discr  field coupling time discretisation
+ *
+ * \return index of field within the storing vector
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
+                                const char                *name,
+                                int                        dim,
+                                cs_medcpl_space_discr_t    space_discr,
+                                cs_medcpl_time_discr_t     time_discr)
+{
+  int f_id = -1;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(dim);
+  CS_NO_WARN_IF_UNUSED(space_discr);
+  CS_NO_WARN_IF_UNUSED(time_discr);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  /* Prepare coupling structure */
+  TypeOfField type = ON_CELLS;
+  switch (space_discr) {
+  case CS_MEDCPL_ON_CELLS:
+    type = ON_CELLS;
+    break;
+
+  case CS_MEDCPL_ON_NODES:
+    type = ON_NODES;
+    break;
+  }
+
+  TypeOfTimeDiscretization td = NO_TIME;
+  switch (time_discr) {
+  case CS_MEDCPL_NO_TIME:
+    td = NO_TIME;
+    break;
+
+  case CS_MEDCPL_ONE_TIME:
+    td = ONE_TIME;
+    break;
+
+  case CS_MEDCPL_LINEAR_TIME:
+    td = LINEAR_TIME;
+    break;
+  }
+
+
+  /* Build ParaFIELD object if required */
+  ComponentTopology comp_topo(dim);
+  ParaFIELD *pf = new ParaFIELD(type, td, c->para_mesh, comp_topo);
+
+  if (type == ON_CELLS)
+    c->dec->setMethod("P0");
+  else
+    c->dec->setMethod("P1");
+
+
+  c->fields.push_back(pf);
+  /* TODO: setNature should be set by caller to allow for more options */
+
+  pf->getField()->setNature(IntensiveConservation);
+  pf->getField()->setName(name);
+
+#endif
+
+  return f_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a coupled field based on a cs_field_t pointer
+ *
+ * \param[in] c           pointer to cs_paramedmem_coupling_t struct
+ * \param[in] f           pointer to cs_field_t struct
+ * \param[in] time_discr  field coupling time discretisation
+ *
+ * \return index of field within the storing vector
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
+                                              cs_field_t               *f,
+                                              cs_medcpl_time_discr_t    td)
+{
+  int f_id = -1;
+
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(f);
+  CS_NO_WARN_IF_UNUSED(td);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(f->location_id);
+  cs_medcpl_space_discr_t sd       = CS_MEDCPL_ON_CELLS;
+
+  if (loc_type == CS_MESH_LOCATION_CELLS)
+    sd = CS_MEDCPL_ON_CELLS;
+  else if (loc_type == CS_MESH_LOCATION_VERTICES)
+    sd = CS_MEDCPL_ON_NODES;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Non-compatible field location for '%f'\n"), f->name);
+
+  f_id = cs_paramedmem_def_coupled_field(c,
+                                         f->name,
+                                         f->dim,
+                                         sd,
+                                         td);
+#endif
+
+  return f_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write values before sending operation
+ *
+ * \param[in] c      pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name   name of field
+ * \param[in] values array of values to write
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
+                           const char                *name,
+                           const double               values[])
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(values);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  MEDCouplingFieldDouble *f = NULL;
+  for (int i = 0; i < c->fields.size(); i++) {
+    if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
+      f = c->fields[i]->getField();
+      break;
+    }
+  }
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Could not find field '%s'\n"), name);
+
+  double  *val_ptr = f->getArray()->getPointer();
+  const int dim = f->getNumberOfComponents();
+
+  /* Assign element values */
+  /*-----------------------*/
+  cs_lnum_t n_elts = c->mesh->n_elts;
+  cs_lnum_t *elt_list = c->mesh->elt_list;
+  if (elt_list == NULL) {
+    for (cs_lnum_t i = 0; i < dim*n_elts; i++)
+      val_ptr[i] = values[i];
+  } else {
+    for (int j = 0; j < dim; j++) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = elt_list[i];
+        val_ptr[i + j*n_elts] = values[c_id + j*n_elts];
+      }
+    }
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read values before sending operation
+ *
+ * \param[in] c      pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name   name of field
+ * \param[in] values array in which values will be stored
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
+                           const char                *name,
+                           double                     values[])
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(values);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  MEDCouplingFieldDouble *f = NULL;
+  for (int i = 0; i < c->fields.size(); i++) {
+    if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
+      f = c->fields[i]->getField();
+      break;
+    }
+  }
+
+  const double  *val_ptr = f->getArray()->getConstPointer();
+  const int dim = f->getNumberOfComponents();
+
+  /* Import element values */
+  /*-----------------------*/
+
+  cs_lnum_t *connec = c->mesh->new_to_old;
+  cs_lnum_t  n_elts = c->mesh->n_elts;
+  if (connec != NULL) {
+    for (int j = 0; j < dim; j++) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t c_id = connec[i];
+        values[c_id + j*n_elts] = val_ptr[i + j*n_elts];
+      }
+    }
+  } else {
+    for (int j = 0; j < dim; j++) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        values[i + j*n_elts] = val_ptr[i + j*n_elts];
+      }
+    }
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sync the coupling's InterpKernelDEC
+ *
+ * \param[in] c pointer to cs_paramedmem_coupling_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *c)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  if (c->dec_synced == 0) {
+    c->dec->synchronize();
+    c->dec_synced = 1;
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send values of field attached to DEC
+ *
+ * \param[in] c pointer to cs_paramedmem_coupling_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_send_data(cs_paramedmem_coupling_t  *c)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  c->dec->sendData();
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Recieve values of field attached to DEC
+ *
+ * \param[in] c pointer to cs_paramedmem_coupling_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *c)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  c->dec->recvData();
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Attach a field to InterpKernelDEC for send operation using its index
+ *
+ * \param[in] c         pointer to cs_paramedmem_coupling_t structure
+ * \param[in] field_id  index of field in storing vector
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_attach_field_by_id(cs_paramedmem_coupling_t  *c,
+                                 int                        field_id)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(field_id);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  c->dec->attachLocalField(c->fields[field_id]);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Attach a field to InterpKernelDEC for send operation using its name
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field (string)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
+                                   const char                *name)
+{
+#if !defined(HAVE_PARAMEDMEM)
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: %s cannot be called without "
+              "MEDCoupling MPI support."), __func__);
+
+#else
+
+  ParaFIELD *pf = NULL;
+
+  for (int i = 0; i < c->fields.size(); i++) {
+    if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
+      pf = c->fields[i];
+      break;
+    }
+  }
+
+  if (pf == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Could not find field '%s'\n"), name);
+
+  c->dec->attachLocalField(pf);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send values of a field. If vals pointer is non-null,
+ * values are updated before send
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to write
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_send_field_vals(cs_paramedmem_coupling_t *c,
+                              const char               *name,
+                              const double             *vals)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* If provided, export data to DEC */
+  if (vals != NULL)
+    cs_paramedmem_field_export(c, name, vals);
+
+  /* Attach field to DEC for sending */
+  cs_paramedmem_attach_field_by_name(c, name);
+
+  /* Send data */
+  cs_paramedmem_send_data(c);
+
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Recieve values of a field.
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to write
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_recv_field_vals(cs_paramedmem_coupling_t *c,
+                              const char               *name,
+                              double                   *vals)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* Attach field to DEC for sending */
+  cs_paramedmem_attach_field_by_name(c, name);
+
+  /* Recieve data */
+  cs_paramedmem_recv_data(c);
+
+  /* Read values */
+  cs_paramedmem_field_import(c, name, vals);
+
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log ParaMEDMEM coupling setup information
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_coupling_log_setup(void)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* Get number of couplings */
+  int ncpls = cs_paramedmem_get_number_of_couplings();
+
+  if (ncpls > 0) {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\nParaMEDMEM coupling\n"
+                    "-------------------\n\n"
+                    "  number of couplings: %d\n"),
+                  ncpls);
+
+    for (int cpl_id = 0; cpl_id < ncpls; cpl_id++) {
+      cs_paramedmem_coupling_t *c = _paramed_couplers[cpl_id];
+
+      cs_log_printf(CS_LOG_SETUP,
+                    _("\n"
+                      "  Coupling: %s\n"
+                      "    App1: %s\n"
+                      "    App2: %s\n"),
+                    c->name.c_str(), c->apps[0].app_name, c->apps[1].app_name);
+
+      if (c->mesh->elt_dim == 3)
+        cs_log_printf(CS_LOG_SETUP, _("    Type: Volume coupling\n"));
+      else if (c->mesh->elt_dim == 2)
+        cs_log_printf(CS_LOG_SETUP, _("    Type: Boundary coupling\n"));
+
+    }
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "  Couplings not usable in non-MPI builds.n"));
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief initialize couplings based on user functions
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_coupling_all_init(void)
+{
+  cs_user_paramedmem_define_couplings();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief initialize coupled mesh and fields based on user functions
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_coupling_define_mesh_fields(void)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  cs_user_paramedmem_define_meshes();
+  cs_user_paramedmem_define_fields();
+
+  /* Sync dec after declaration using first field */
+  int ncpls = cs_paramedmem_get_number_of_couplings();
+  for (int cpl_id = 0; cpl_id < ncpls; cpl_id++) {
+    cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_by_id(cpl_id);
+    if (c->fields.size() < 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: You did not define fields to couple with "
+                  "coupling '%s'\n"),
+                c->name.c_str());
+
+    cs_paramedmem_attach_field_by_id(c, 0);
+    cs_paramedmem_sync_dec(c);
+  }
+
+  cs_paramedmem_coupling_log_setup();
+
+#endif /* defined(HAVE_PARAMEDMEM) */
+}
+
+/*----------------------------------------------------------------------------*/
 END_C_DECLS

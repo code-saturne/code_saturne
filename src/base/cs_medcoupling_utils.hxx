@@ -45,8 +45,9 @@
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
  *----------------------------------------------------------------------------*/
+
 #if defined(HAVE_MEDCOUPLING)
-#include "MEDCoupling_version.h"
+
 #include "MEDCouplingUMesh.hxx"
 
 using namespace MEDCoupling;
@@ -69,7 +70,7 @@ typedef struct {
   cs_lnum_t           n_elts;         /* Number of coupled elements */
   cs_lnum_t          *elt_list;       /* List of associated elements
                                          (0 to n-1) */
-  int                *new_to_old;     /* Connectivity used if only a section of
+  cs_lnum_t          *new_to_old;     /* Connectivity used if only a section of
                                          the mesh is read */
 
   cs_real_t          *bbox;           /* Bounding box to optimize search */
@@ -86,7 +87,7 @@ typedef struct {
  * Public functions
  *============================================================================*/
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   create a new cs_medcoupling_mesh_t instance
  *
@@ -98,14 +99,14 @@ typedef struct {
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
-                           const char  *select_criteria,
+                           const char  *selection_criteria,
                            int          elt_dim);
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief copy a cs_mesh_t into a cs_medcoupling_mesh_t
  *
@@ -115,29 +116,79 @@ cs_medcoupling_mesh_create(const char  *name,
  *                      for interpolation to reduce the matrix sice.
  *                      0: Do not use a reduced bbox
  *                      1: Use a reduced bbox
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
                                    cs_medcoupling_mesh_t  *pmmesh,
                                    int                     use_bbox);
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy a cs_medcoupling_mesh_t
  *
  * \param[in] mesh  cs_medcoupling_mesh_t pointer
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh);
+cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's spatial dimension
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated spatial dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_medcoupling_mesh_get_dim(cs_medcoupling_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's number of elements
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated number of elements
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_medcoupling_mesh_get_n_elts(cs_medcoupling_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated elements, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated elements, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif //__CS_MEDCOUPLING_UTILS_HXX__
+#endif /* __CS_MEDCOUPLING_UTILS_HXX__ */

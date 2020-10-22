@@ -503,9 +503,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
                         "upwind"                                 : 'Upwind',
                         "solu"                                   : 'SOLU'}
         self.dicoV2M = {"Automatic"                                    : 'automatic',
-                        "Jacobi (NEPTUNE_CFD)"                         : 'jacobi',
-                        "PCG (NEPTUNE_CFD)"                            : 'pcg',
-                        "CGSTAB (NEPTUNE_CFD)"                         : 'cgstab',
+                        "Jacobi (neptune_cfd)"                         : 'jacobi',
+                        "PCG (neptune_cfd)"                            : 'pcg',
+                        "CGSTAB (neptune_cfd)"                         : 'cgstab',
                         "Jacobi (code_saturne)"                        : 'jacobi_saturne',
                         "PCG (code_saturne)"                           : 'pcg_saturne',
                         "BICGSTAB (code_saturne)"                      : 'bicgstab_saturne',

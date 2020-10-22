@@ -63,66 +63,12 @@ logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
-# StandarItemModel class to display boundaries in a QTreeView
-#-------------------------------------------------------------------------------
-
-class StandardItemModelBoundaries(QStandardItemModel):
-    def __init__(self):
-        QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"),
-                        self.tr("Zone"),
-                        self.tr("Nature"),
-                        self.tr("Selection criteria")]
-        self.setColumnCount(len(self.headers))
-        self.dataBoundary = []
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        if role == Qt.DisplayRole:
-            return self.dataBoundary[index.row()][index.column()]
-        return None
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
-
-
-    def setData(self, index, value, role):
-        self.dataChanged.emit(index, index)
-        return True
-
-
-    def insertItem(self, label, codeNumber, var_nature, local):
-        line = [label, codeNumber, var_nature, local]
-        self.dataBoundary.append(line)
-        row = self.rowCount()
-        self.setRowCount(row+1)
-
-
-    def getItem(self, row):
-        return self.dataBoundary[row]
-
-#-------------------------------------------------------------------------------
-# Main class
-#-------------------------------------------------------------------------------
 
 class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
     """
     Main boundary conditions view class
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, zone_name):
         """
         Constructor
         """
@@ -134,34 +80,18 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         self.case.undoStopGlobal()
 
-        # Model and QTreeView for Boundaries
-
-        self.__modelBoundaries = StandardItemModelBoundaries()
-        self.treeViewBoundaries.setModel(self.__modelBoundaries)
-        self.treeViewBoundaries.setColumnWidth(2, 110)
-
-        # Fill the model with the boundary zone
-
-        if MobileMeshModel(self.case).getMethod() == "off":
-            if GroundwaterModel(self.case).getGroundwaterModel() == "off":
-                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', \
-                       'imposed_p_outlet')
-            else:
-                lst = ('groundwater')
-        else:
-            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
-                   'imposed_p_outlet')
-
         d = LocalizationModel('BoundaryZone', self.case)
         for zone in d.getZones():
-            label = zone.getLabel()
-            nature = zone.getNature()
-            codeNumber = zone.getCodeNumber()
-            local = zone.getLocalization()
-            if nature in lst:
-                self.__modelBoundaries.insertItem(label, codeNumber, nature, local)
+            if zone.getLabel() == zone_name:
+                self.zone = zone
 
-        self.treeViewBoundaries.clicked[QModelIndex].connect(self.__slotSelectBoundary)
+        _title = zone_name
+        if self.zone:
+            _title+= " ["
+            _title+= self.zone.getModel2ViewDictionary()[self.zone.getNature()]
+            _title+= "]"
+
+        self.groupBoxMain.setTitle(_title)
 
         # Set the case for custom widgets
         self.roughWidget.setup(self.case)
@@ -184,16 +114,16 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.setup(self.case)
 
         self.__hideAllWidgets()
+        self.__selectBoundary()
 
         self.case.undoStartGlobal()
 
-
-    @pyqtSlot("QModelIndex")
-    def __slotSelectBoundary(self, index):
+    def __selectBoundary(self):
         """
         Select a boundary in the QTreeView.
         """
-        label, codeNumber, nature, local = self.__modelBoundaries.getItem(index.row())
+        label = self.zone.getLabel()
+        nature = self.zone.getNature()
         log.debug("slotSelectBoundary label %s (%s)" % (label, nature))
 
         self.__hideAllWidgets()
@@ -219,8 +149,14 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         """
         Shows widgets for inlet.
         """
+
+        if GroundwaterModel(self.case).getGroundwaterModel() != 'off':
+            # TODO is this the desired behaviour ?
+            return
+
         self.hydraulicheadWidget.hideWidget()
         if self.coalWidget.getCoalNumber() == 0:
+            # TODO how should the widgets behave when groundwater model is activated ?
             if GroundwaterModel(self.case).getGroundwaterModel() == "off":
                 self.velocityWidget.showWidget(boundary)
             else:

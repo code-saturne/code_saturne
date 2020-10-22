@@ -20,9 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine d3pini &
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine d3pini
 
 !===============================================================================
 ! FONCTION :
@@ -55,15 +53,8 @@ subroutine d3pini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -89,10 +80,6 @@ use field
 !===============================================================================
 
 implicit none
-
-integer          nvar   , nscal
-
-double precision dt(ncelet)
 
 ! Local variables
 
@@ -179,11 +166,6 @@ if ( isuite.eq.0 ) then
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hinfue , tinfue )
-
-  ! User initilization
-  call cs_user_f_initialization &
-  ( nvar   , nscal  ,                                            &
-    dt     )
 
   ! ---> Parallelism and periodic exchange
   if (irangp.ge.0.or.iperio.eq.1) then

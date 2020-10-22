@@ -114,10 +114,12 @@ cs_domain_automatic_time_step_settings(cs_domain_t       *domain);
  * \param[in, out] domain      pointer to a cs_domain_t structure
  * \param[in]      func        pointer to a cs_time_func_t function
  * \param[in]      func_input  pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the created definition (\ref cs_xdef_t structure)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_domain_def_time_step_by_function(cs_domain_t        *domain,
                                     cs_time_func_t     *func,
                                     void               *func_input);
@@ -164,6 +166,17 @@ cs_domain_init_cdo_structures(cs_domain_t              *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Last user setup stage of the cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_finalize_user_setup(cs_domain_t         *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Last setup stage of the cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
@@ -171,7 +184,7 @@ cs_domain_init_cdo_structures(cs_domain_t              *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_setup(cs_domain_t         *domain);
+cs_domain_finalize_module_setup(cs_domain_t         *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

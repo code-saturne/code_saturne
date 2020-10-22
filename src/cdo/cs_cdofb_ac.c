@@ -419,7 +419,6 @@ _ac_update_pr(const cs_real_t               t_eval,
  *
  * \param[in]      sc          pointer to a cs_cdofb_ac_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary faces
  * \param[in]      diff_pty    pointer to \ref cs_property_data_t for diffusion
@@ -431,7 +430,6 @@ _ac_update_pr(const cs_real_t               t_eval,
 static void
 _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
                     const cs_equation_param_t     *eqp,
-                    const cs_cdofb_vecteq_t       *eqc,
                     const cs_cell_mesh_t          *cm,
                     const cs_boundary_type_t       bf_type[],
                     const cs_property_data_t      *diff_pty,
@@ -495,9 +493,6 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
       /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop on boundary faces */
-
-    if (cs_equation_param_has_convection(eqp)) /* Always weakly enforced */
-      eqc->adv_func_bc(eqp, cm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -612,16 +607,21 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
 
-  /* Sanity checks */
-  assert(cs_equation_param_has_time(mom_eqp) == true);
-  assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
-  assert(matrix != NULL && rhs != NULL);
-
   /* Retrieve shared structures */
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+  /* Sanity checks */
+  assert(cs_equation_param_has_time(mom_eqp) == true);
+  assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
+  assert(matrix != NULL && rhs != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav =
@@ -752,7 +752,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _ac_apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
+      _ac_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type,
                           diff_hodge->pty_data, csys, cb);
 
       /* 4- TIME CONTRIBUTION */

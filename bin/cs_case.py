@@ -167,7 +167,6 @@ class case:
                  package_compute = None,      # package for compute environment
                  case_dir = None,
                  staging_dir = None,
-                 coupling_parameters = None,
                  domains = None,
                  syr_domains = None,
                  py_domains = None):
@@ -289,9 +288,12 @@ class case:
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
 
-        # Coupling parameters if present
+        # Script hooks
 
-        self.coupling_parameters = coupling_parameters
+        self.run_prologue = None
+        self.run_epilogue = None
+        self.compute_prologue = None
+        self.compute_epilogue = None
 
         # Date or other name
 
@@ -559,7 +561,6 @@ class case:
         if os.path.isdir(r):
             self.result_dir = os.path.join(r, self.run_id)
         else:
-            r = os.path.join(self.case_dir, 'RESU')
             err_str = \
                     '\nResults directory: ' + r + '\n' \
                     + 'does not exist.\n' \
@@ -596,11 +597,6 @@ class case:
 
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'w')
-
-        preprocessor = self.package.get_preprocessor()
-        solver = os.path.join(self.exec_dir, self.package.solver)
-        if not os.path.isfile(solver):
-            solver = self.package.get_solver()
 
         r = exec_env.resources
 
@@ -716,12 +712,29 @@ class case:
         if os.path.basename(src) == self.package.name:
             src = self.parent_script
 
+        if not src:
+            src = self.package.name
+
         # Copy single file
 
-        if src:
-            dest = os.path.join(self.result_dir, os.path.basename(src))
-            if os.path.isfile(src) and src != dest:
-                shutil.copy2(src, dest)
+        dest = os.path.join(self.result_dir, os.path.basename(src))
+        if os.path.isfile(src) and src != dest:
+            shutil.copy2(src, dest)
+
+    #---------------------------------------------------------------------------
+
+    def copy_top_run_conf(self):
+        """
+        Retrieve top-level run.cfg (if present) from the top directory
+        """
+
+        n = "run.cfg"
+
+        src = os.path.join(self.case_dir, n)
+        dest = os.path.join(self.result_dir, n)
+
+        if os.path.isfile(src) and src != dest:
+            shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------
 
@@ -933,9 +946,11 @@ class case:
         mpi_cmd_exe = ''
         mpi_cmd_args = ''
 
-        if (n_procs > 1 and mpi_env.mpiexec != None) or \
-           (os.path.basename(mpi_env.mpiexec)[:4] == 'srun'):
-            mpi_cmd = mpi_env.mpiexec
+        if mpi_env.mpiexec != None:
+            if (n_procs > 1 or os.path.basename(mpi_env.mpiexec)[:4] == 'srun'):
+                mpi_cmd = mpi_env.mpiexec
+
+        if mpi_cmd:
             if mpi_env.mpiexec_opts != None:
                 mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpiexec_mpmd == False:
@@ -960,7 +975,6 @@ class case:
 
             s_args = self.domains[0].solver_command()
 
-            s.write('cd ' + s_args[0] + '\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
@@ -1006,7 +1020,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_script(self, exec_env, prologue=None, epilogue=None):
+    def generate_solver_script(self, exec_env):
         """
         Generate localexec file.
         """
@@ -1067,6 +1081,11 @@ class case:
                         cs_exec_environment.write_prepend_path(s,
                                                                "LD_LIBRARY_PATH",
                                                                lp)
+
+        # Handle python coupling
+        if self.py_domains:
+            pydir = self.package_compute.get_dir("pythondir")
+            cs_exec_environment.write_prepend_path(s, "PYTHONPATH", pydir)
 
         # Handle environment modules if used
 
@@ -1150,12 +1169,16 @@ class case:
             cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
             s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
-        # Add user-defined prologue if defined in run.cfg
+        # Ensure we are in the correct directory
 
-        if prologue:
-            s.write('\n')
-            s.write(prologue)
-            s.write('\n')
+        s.write('cd ' + cs_exec_environment.enquote_arg(self.exec_dir) + '\n\n')
+
+        # Add user-defined prologue if defined
+
+        if self.compute_prologue:
+            s.write('# Compute prologue\n')
+            s.write(self.compute_prologue)
+            s.write('\n\n')
 
         # Generate script body
 
@@ -1166,13 +1189,6 @@ class case:
         cs_exec_environment.write_export_env(s, 'CS_RET',
                                              cs_exec_environment.get_script_return_code())
 
-        # Add user-defined epilogue if defined in run.cfg
-
-        if epilogue:
-            s.write('\n')
-            s.write(epilogue)
-            s.write('\n')
-
         # Halt MPI daemons if necessary
 
         if n_procs > 1 and mpi_env.mpihalt != None:
@@ -1182,6 +1198,13 @@ class case:
         if mpi_env.del_hostsfile != None:
             cs_exec_environment.write_script_comment(s, 'Remove hostsfile.\n')
             s.write(mpi_env.del_hostsfile + '\n\n')
+
+        # Add user-defined epilogue if defined
+
+        if self.compute_epilogue:
+            s.write('\n# Compute epilogue\n')
+            s.write(self.compute_epilogue)
+            s.write('\n')
 
         if sys.platform.startswith('win'):
             s.write('\nexit %CS_RET%\n')
@@ -1324,6 +1347,7 @@ class case:
         # (as after that, the relative path will not be up to date).
 
         self.copy_script()
+        self.copy_top_run_conf()
 
         os.chdir(self.exec_dir)
 
@@ -1369,14 +1393,6 @@ class case:
             if len(d.error) > 0:
                 self.error = d.error
 
-        # Output coupling parameters for staging
-
-        if self.coupling_parameters:
-            s = open(os.path.join(self.result_dir,
-                                  'coupling_parameters.py'), 'w')
-            s.write(self.coupling_parameters)
-            s.close()
-
         # Rename temporary file to indicate new status
 
         if len(self.error) == 0:
@@ -1418,7 +1434,7 @@ class case:
             d.solver_path = os.path.join('.', 'syrthes')
 
         for d in self.py_domains:
-            d.solver_path = os.path.join('.', 'python')
+            d.solver_path = self.package.config.python
 
     #---------------------------------------------------------------------------
 
@@ -1540,6 +1556,12 @@ class case:
             return 0
 
         os.chdir(self.exec_dir)
+
+        # In case LMOD is present, avoid warnings on macros
+        # for called scripts.
+        for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%'):
+            if ev in os.environ:
+                del os.environ[ev]
 
         # Indicate status using temporary file for SALOME.
 
@@ -1692,9 +1714,7 @@ class case:
             scratchdir = None,
             run_id = None,
             force_id = False,
-            stages = None,
-            compute_prologue=None,
-            compute_epilogue=False):
+            stages = None):
 
         """
         Main script.
@@ -1807,6 +1827,12 @@ class case:
                                  'exceeded_time_limit'), None)
         # Now run
 
+        if self.run_prologue:
+            cwd = os.getcwd()
+            os.chdir(self.exec_dir)
+            retcode = cs_exec_environment.run_command(self.run_prologue)
+            os.chdir(cwd)
+
         try:
             retcode = 0
             if stages['prepare_data']:
@@ -1834,6 +1860,8 @@ class case:
 
         # Standard or error exit
 
+        retcode = 0
+
         if len(self.error) > 0:
             check_stage = {'preprocess':'preprocessing',
                            'solver':'calculation'}
@@ -1845,9 +1873,15 @@ class case:
             if len(self.error_long) > 0:
                 err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
-            return 1
-        else:
-            return 0
+            retcode = 1
+
+        if self.run_epilogue:
+            cwd = os.getcwd()
+            os.chdir(self.exec_dir)
+            retcode = cs_exec_environment.run_command(self.run_epilogue)
+            os.chdir(cwd)
+
+        return retcode
 
     #---------------------------------------------------------------------------
 
@@ -1891,7 +1925,7 @@ class case:
             if run_id_prefix:
                 run_id = run_id_prefix + run_id
             if run_id_suffix:
-                run_id = run_id_suffix + run_id
+                run_id = run_id + run_id_suffix
 
             result_dir = os.path.join(r, run_id)
 

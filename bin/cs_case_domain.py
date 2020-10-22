@@ -406,7 +406,7 @@ class domain(base_domain):
         # Default executable
 
         self.solver_path = os.path.join(self.package_compute.get_dir("pkglibexecdir"),
-                                        "cs_solver" + self.package.config.exeext)
+                                        self.package.solver)
 
         # Preprocessor options
 
@@ -1065,7 +1065,7 @@ class domain(base_domain):
                 if f in dir_files:
                     purge_list.append(f)
 
-        for f in ['restart', 'partition_input']:
+        for f in ['partition_input']:
             if f in dir_files:
                 purge_list.append(f)
 
@@ -1594,6 +1594,14 @@ class cathare_domain(domain):
         CATHARE2.
         """
 
+        msg = " ****************************************\n" \
+              "  Generating CATHARE2 .so file\n" \
+              " ****************************************\n\n"
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+        import subprocess
+
         orig = os.getcwd()
 
         os.chdir(self.exec_dir)
@@ -1620,7 +1628,32 @@ class cathare_domain(domain):
         shell_cmd+= '${v25_3}/unix-procedur/vers.unix\n'
         shell_cmd+= 'DATAFILE=${jdd_CATHARE} make -f ${v25_3}/ICoCo/Makefile_gad lib\n'
 
-        os.system(shell_cmd)
+        # Shell
+        user_shell = os.getenv('SHELL')
+        if not user_shell:
+            user_shell = '/bin/sh'
+
+        # log
+        log = open('cathare2_so_generation.log', 'w')
+
+        p = subprocess.Popen(shell_cmd,
+                             shell=True,
+                             executable=user_shell,
+                             stdout=log,
+                             stderr=log,
+                             universal_newlines=True)
+
+        log.close()
+
+        output, errors = p.communicate()
+
+        if p.returncode != 0:
+            self.error = 'compile cathare2 lib'
+            self.error_long = 'Compilation of cathare2 .so library based on '
+            self.error_long+= '%s file failed.' % (self.cathare_case_file)
+            self.error_long+= ' Check "cathare2_so_generation.log' \
+
+
         os.chdir(orig)
 
     #---------------------------------------------------------------------------

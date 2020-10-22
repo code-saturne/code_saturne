@@ -205,8 +205,6 @@ cs_thermal_table_set(const char                        *material,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
                      int                                temp_scale)
 {
-  const char _reference_default[] = "";
-  const char *_reference = (reference != NULL) ? reference : _reference_default;
   if (cs_glob_thermal_table == NULL)
     cs_glob_thermal_table = _thermal_table_create();
 
@@ -255,6 +253,9 @@ cs_thermal_table_set(const char                        *material,
     cs_glob_thermal_table->type = 2;
 #if defined(HAVE_EOS)
     {
+      const char _reference_default[] = "";
+      const char *_reference = (reference != NULL) ? reference : _reference_default;
+
       /* Open from shared library */
       _cs_eos_dl_lib = cs_base_dlopen_plugin("cs_eos");
 

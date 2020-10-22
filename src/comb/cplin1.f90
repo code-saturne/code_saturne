@@ -67,6 +67,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use field
 use cs_c_bindings
 
 !===============================================================================
@@ -102,7 +103,7 @@ do isc = 1, nscapp
 ! ---- En combustion on considere que la viscosite turbulente domine
 !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0
+    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
 
   endif
 

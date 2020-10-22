@@ -155,14 +155,17 @@ union _key_val_t {
 
 typedef struct {
 
-  union _key_val_t            def_val;          /* Default value container (int,
+  union _key_val_t              def_val;        /* Default value container (int,
                                                    double, or pointer to string
                                                    or structure) */
-  cs_field_log_key_struct_t  *log_func;         /* print function for
+  cs_field_log_key_struct_t    *log_func;       /* print function for
                                                    structure */
 
-  cs_field_log_key_struct_t  *log_func_default; /* default values print function
-                                                   for structure */
+  cs_field_log_key_struct_t    *log_func_default; /* default values log
+                                                     function for structure */
+
+  cs_field_clear_key_struct_t  *clear_func;     /* memory free function
+                                                   for sub-structures */
 
   size_t                      type_size;        /* Type length for added types
                                                    (0 for 'i', 'd', or 's') */
@@ -674,6 +677,8 @@ _cs_field_free_struct(void)
     if (kd->type_id == 't') {
       for (f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
+        if (kd->clear_func != NULL)
+          kd->clear_func(kv->val.v_p);
         BFT_FREE(kv->val.v_p);
       }
     }
@@ -1149,7 +1154,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
                 " does not have associated BC coefficients."),
               f->name);
 
-  if (f->type & CS_FIELD_VARIABLE) {
+  if (f->bc_coeffs != NULL) {
 
     if (pointer_type == 1)
       *p = f->bc_coeffs->a;
@@ -1181,10 +1186,12 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
     else {
 
       int coupled = 0;
-      int coupled_key_id = cs_field_key_id_try("coupled");
 
-      if (coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        int coupled_key_id = cs_field_key_id_try("coupled");
+        if (coupled_key_id > -1)
+          coupled = cs_field_get_key_int(f, coupled_key_id);
+      }
 
       if (coupled) {
 
@@ -2658,6 +2665,7 @@ cs_field_define_key_str(const char  *name,
  * \param[in]  default_value     pointer to default value associated with key
  * \param[in]  log_func          pointer to logging function
  * \param[in]  log_func_default  pointer to default logging function
+ * \param[in]  clear_func        pointer to substructures free function
  * \param[in]  size              sizeof structure
  * \param[in]  type_flag         mask associated with field types with which
  *                               the key may be associated, or 0
@@ -2667,12 +2675,13 @@ cs_field_define_key_str(const char  *name,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_field_define_key_struct(const char                 *name,
-                           const void                 *default_value,
-                           cs_field_log_key_struct_t  *log_func,
-                           cs_field_log_key_struct_t  *log_func_default,
-                           size_t                      size,
-                           int                         type_flag)
+cs_field_define_key_struct(const char                   *name,
+                           const void                   *default_value,
+                           cs_field_log_key_struct_t    *log_func,
+                           cs_field_log_key_struct_t    *log_func_default,
+                           cs_field_clear_key_struct_t  *clear_func,
+                           size_t                        size,
+                           int                           type_flag)
 {
   int n_keys_init = _n_keys;
 
@@ -2692,6 +2701,7 @@ cs_field_define_key_struct(const char                 *name,
     kd->def_val.v_p = NULL;
   kd->log_func = log_func;
   kd->log_func_default = log_func_default;
+  kd->clear_func = clear_func;
   kd->type_size = size;
   kd->type_flag = type_flag;
   kd->type_id = 't';

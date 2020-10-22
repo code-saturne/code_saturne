@@ -78,7 +78,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          ncel
 integer          indpdf(ncel)
 
 double precision pdfm1(ncel) , pdfm2(ncel) , dfuel(ncel)

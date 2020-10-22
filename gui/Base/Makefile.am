@@ -41,6 +41,7 @@ BrowserView.py \
 CommandMgrDialogView.py \
 CompletionTextEditor.py \
 MainView.py \
+QCouplingEditorView.py \
 QFileEditor.py \
 QtCase.py \
 QtPage.py \

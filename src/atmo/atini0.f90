@@ -64,6 +64,9 @@ cpvcpa = 1.866d0
 gammat = -6.5d-03
 rvap = rvsra*rair
 
+p0 = 1.01325d5
+t0 = 288.15d0
+
 !===============================================================================
 ! 1. Global variables for atmospheric flows
 !===============================================================================
@@ -151,8 +154,6 @@ vertical_influence_radius = 100.d0
 ! key id for optimal interpolation
 
 call field_get_key_id("opt_interp_id", kopint)
-
-iatmst = 0
 
 theo_interp = 0
 

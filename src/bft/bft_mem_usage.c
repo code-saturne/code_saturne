@@ -87,7 +87,7 @@
 #endif
 
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SBRK)
-#if defined(__blrts__) || defined(__bgp__)
+#if 0
 #define USE_SBRK 1
 #elif defined (__linux__)
 #define __USE_MISC 1

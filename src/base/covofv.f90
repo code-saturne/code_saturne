@@ -138,7 +138,7 @@ double precision sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp(3)
 double precision temp, idifftp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 double precision rvoid(1)
 
@@ -263,12 +263,15 @@ thetv  = vcopt%thetav
 
 call field_get_name(iflid, chaine)
 
-if(vcopt%iwarni.ge.1) then
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:16)
 endif
 
 ! Retrieve turbulent Schmidt value for current vector
 call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
+! Reference diffusivity
+call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
 
 !===============================================================================
 ! 2. Source terms
@@ -286,7 +289,6 @@ do iel = 1, ncel
 enddo
 
 call ustsvv &
-!==========
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
@@ -372,11 +374,9 @@ if (ncesmp.gt.0) then
 
   ! On incremente SMBRV par -Gamma RTPA et ROVSDT par Gamma
   allocate(gavinj(3,ncelet))
-  call catsmv &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   icetsm , itypsm(:,ivar) ,                                      &
-   cell_f_vol , cvara_var    , smacel(:,ivar) , smacel(:,ipr),    &
-   smbrv  , fimp , gavinj)
+  call catsmv(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
+              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
+              smbrv, fimp, gavinj)
 
   ! Si on extrapole les TS on met Gamma Pinj dans cproa_vect_st
   if (st_prv_id .ge. 0) then
@@ -441,7 +441,7 @@ if (vcopt%idiff.ge.1) then
     idifftp = vcopt%idifft
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
-        w1(iel) = visls0(iscal)                                     &
+        w1(iel) = visls_0                                         &
            + idifftp*max(visct(iel),zero)/turb_schmidt
       enddo
     else
@@ -482,9 +482,9 @@ if (vcopt%idiff.ge.1) then
       do iel = 1, ncel
 
         temp = vcopt%idifft*ctheta(iscal)/csrij
-        viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
-        viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
-        viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
+        viscce(1,iel) = temp*visten(1,iel) + visls_0
+        viscce(2,iel) = temp*visten(2,iel) + visls_0
+        viscce(3,iel) = temp*visten(3,iel) + visls_0
         viscce(4,iel) = temp*visten(4,iel)
         viscce(5,iel) = temp*visten(5,iel)
         viscce(6,iel) = temp*visten(6,iel)

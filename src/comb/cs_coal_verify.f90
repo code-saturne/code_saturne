@@ -62,6 +62,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -103,7 +104,7 @@ if( diftl0.lt.0d0) then
   write(nfecra,3010)'dift0', diftl0
   iok = iok + 1
 else
-  visls0(iscalt) = diftl0
+  call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
 endif
 
 

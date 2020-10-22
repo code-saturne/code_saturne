@@ -474,10 +474,12 @@ AC_ARG_ENABLE(openmp,
 if test "x$cs_have_openmp" = "xyes" ; then
 
   saved_CFLAGS="$CFLAGS"
+  saved_CXXFLAGS="$CFLAGS"
   saved_FCFLAGS="$FCFLAGS"
   saved_LDFLAGS="$LDFLAGS"
 
   CFLAGS="${CFLAGS} ${cflags_default_omp}"
+  CXXFLAGS="${CXXFLAGS} ${cxxflags_default_omp}"
   FCFLAGS="${FCFLAGS} ${fcflags_default_omp}"
   LDFLAGS="${LDFLAGS} ${cflags_default_omp}"
 
@@ -521,6 +523,7 @@ if test "x$cs_have_openmp" = "xyes" ; then
   else
     cs_have_openmp=no
     CFLAGS="$saved_CFLAGS"
+    CXXFLAGS="$saved_CXXFLAGS"
     FCFLAGS="$saved_FCFLAGS"
     LDFLAGS="$saved_LDFLAGS"
   fi

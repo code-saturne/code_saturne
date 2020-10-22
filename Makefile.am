@@ -509,6 +509,12 @@ install-shortcut:
 		echo "'$${DESKTOPPATH}' is not a folder" ; \
 		exit 1 ; \
 	fi ; \
+	if test "${shortcut-solver}" != "" ; then \
+	  DESKTOPSOLVER="${shortcut-solver}" ; \
+	else \
+	  DESKTOPSOLVER=code_saturne ; \
+	fi ; \
 	cp "$(top_srcdir)/extras/code_saturne.desktop.template" "$${DESKTOPPATH}/code_saturne_$(VERSION).desktop"; \
 	sed -i -e 's|CSPATH|$(prefix)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop; \
 	sed -i -e 's|CSVERSION|$(VERSION)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ;
+	sed -i -e 's|DSOLVER|'$${DESKTOPSOLVER}'|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ;

@@ -111,12 +111,11 @@ class package:
         if self.config.features['relocatable'] == "no":
             return self.dirs[installdir][1]
 
-        # Second, check if CS_ROOT_DIR is set
-        prefix = os.getenv('CS_ROOT_DIR')
-
-        # Third, assume that SALOME is being used
-        if prefix == None:
-            prefix = os.getenv('CFDMODULE_ROOT_DIR')
+        # Second, check if CS_ROOT_DIR was forced, or if CS_ROOT_DIR is set
+        if 'cs_root_dir' in self.dirs:
+            prefix = self.dirs['cs_root_dir']
+        else:
+            prefix = os.getenv('CS_ROOT_DIR')
 
         # Last, assume that the standard tree structure is used
         if prefix == None:
@@ -129,6 +128,9 @@ class package:
 
     def get_preprocessor(self):
 
+        if self.config.features['frontend'] == "no":
+            raise Exception("This " + self.name + " build does not " + \
+                            "include the front-end and Preprocessor.")
         return os.path.join(self.get_dir("pkglibexecdir"),
                             self.preprocessor)
 
@@ -234,6 +236,9 @@ class package:
                 package = importlib.import_module('cs_package')
                 pkg = package.package(reload_config=True)
             sys.path.pop(0)
+            if pkg.config.features['relocatable'] != "no":
+                pkg.dirs['cs_root_dir'] = os.path.normpath(os.path.join(pythondir,
+                                                           '..', '..', '..', '..'))
         else:
             raise ImportError("Alternative version '" + pythondir + "' not found.")
 

@@ -172,7 +172,7 @@ def coupling(package,
                 dom = syrthes_domain(package,
                                      cmd_line = d.get('opt'),
                                      name = domain_s,
-                                     param = d.get('script'),
+                                     param = d.get('param'),
                                      n_procs_weight = d.get('n_procs_weight'),
                                      n_procs_min = d.get('n_procs_min'),
                                      n_procs_max = d.get('n_procs_max'))
@@ -238,42 +238,10 @@ def coupling(package,
 
     # Now handle case for the corresponding calculation domain(s).
 
-    coupling_parameters = \
-"""
-# -*- coding: utf-8 -*-"
-
-domains = [
-
-"""
-
-    d_first = True
-    for d in domains:
-        if not d_first:
-            coupling_parameters += ",\n\n"
-        d_first = False
-        k_first = True
-        for k in ('solver', 'domain', 'script', 'n_procs_weight', 'n_procs_min',
-                  'cathare_case_file', 'neptune_cfd_domain'):
-            v = d.get(k)
-            if v:
-                if type(v) == str:
-                    s_v = "'" + v + "'"
-                else:
-                    s_v = str(v)
-                if k_first:
-                    coupling_parameters += "    {"
-                    k_first = False
-                else:
-                    coupling_parameters += ",\n     "
-                coupling_parameters += "'" + k + "': " + s_v
-        coupling_parameters += "}"
-    coupling_parameters += "\n\n    ]\n\n"
-
     c = case(package,
              package_compute = package_compute,
              case_dir = casedir,
              staging_dir = staging_dir,
-             coupling_parameters = coupling_parameters,
              domains = sat_domains + nep_domains + cat_domains,
              syr_domains = syr_domains,
              py_domains = py_domains)

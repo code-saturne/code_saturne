@@ -31,8 +31,7 @@ from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 import copy
 
-class InterfacialForcesModel(TurbulenceModel,
-                             ThermodynamicsModel):
+class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
     """
     This class manages the turbulence objects in the XML file
@@ -45,8 +44,9 @@ class InterfacialForcesModel(TurbulenceModel,
         #
         # XML file parameters
         MainFieldsModel.__init__(self, case)
-        TurbulenceModel.__init__(self, case)
-        ThermodynamicsModel.__init__(self, case)
+        self.turb_m   = TurbulenceModel(case)
+        self.thermo_m = ThermodynamicsModel(case)
+
         self.case = case
         self.XMLClosure      = self.case.xmlGetNode('closure_modeling')
         self.XMLInterForce   = self.XMLClosure.xmlInitNode('interfacial_forces')
@@ -92,23 +92,23 @@ class InterfacialForcesModel(TurbulenceModel,
          """
          return list of free couples
          """
-         list = []
-         list.append(fieldaId)
+         lst = []
+         lst.append(fieldaId)
          for fielda, fieldb in self.__freeCouples :
-             if fielda not in list :
-                 list.append(fielda)
-         return list
+             if fielda not in lst :
+                 lst.append(fielda)
+         return lst
 
 
     def getFieldIdbList (self, fieldaId) :
          """
          return list of free couples
          """
-         list = []
+         lst = []
          for fielda, fieldb in self.__freeCouples :
              if str(fielda) == str(fieldaId) :
-                 list.append(fieldb)
-         return list
+                 lst.append(fieldb)
+         return lst
 
 
     def getAvailableContinuousDragModelList(self):
@@ -124,15 +124,16 @@ class InterfacialForcesModel(TurbulenceModel,
         """
         # Only if : fieldaId is continuous and k-eps or Rij-eps
         #           fieldbId is dispersed without turbulence
-        list = []
+        lst = []
         if (fieldaId in self.getContinuousFieldList() and fieldbId in self.getDispersedFieldList()) :
-            if (self.isSecondOrderTurbulenceModel(fieldaId) and self.getTurbulenceModel(fieldbId) == "none") :
-                list = self.__availableturbulentedispersionModelsList
+            if (self.turb_m.isSecondOrderTurbulenceModel(fieldaId) and self.turb_m.getTurbulenceModel(fieldbId) == "none") :
+                lst = self.__availableturbulentedispersionModelsList
             else :
-                list = ["none"]
+                lst = ["none"]
         else :
-            list = ["none"]
-        return list
+            lst = ["none"]
+
+        return lst
 
 
     def getAvailableWallForcesModelList(self, fieldaId, fieldbId):
@@ -140,12 +141,12 @@ class InterfacialForcesModel(TurbulenceModel,
         Get available wall forces list model
         """
         # only for bubbles in water
-        list = []
+        lst = []
         if ((fieldbId in self.getDispersedFieldList()) and self.getFieldNature(fieldbId) == "gas") :
-            list = self.__availablewallforcesModelList
+            lst = self.__availablewallforcesModelList
         else :
-            list = ["none"]
-        return list
+            lst = ["none"]
+        return lst
 
 
     def getAvailableDragModels(self, fieldaId, fieldbId) :
@@ -177,7 +178,7 @@ class InterfacialForcesModel(TurbulenceModel,
 
 
     def defaultValues(self, fieldaId, fieldbId):
-        default = ThermodynamicsModel.defaultValues(self)
+        default = self.thermo_m.defaultValues()
 
         # Drag model
         default['gasdisperseddragmodel']         = 'ishii'
@@ -200,7 +201,7 @@ class InterfacialForcesModel(TurbulenceModel,
 
 
     def defaultValuesContinuous(self):
-        default = ThermodynamicsModel.defaultValues(self)
+        default = self.thermo_m.defaultValues()
         # Drag model
         default['continuousdragmodel']           = 'Large_Interface_Model'
 
@@ -226,11 +227,11 @@ class InterfacialForcesModel(TurbulenceModel,
         """
         return list of field couple for forces
         """
-        list = []
+        lst = []
         for node in self.XMLInterForce.xmlGetNodeList('force') :
             couple=[node['field_id_a'], node['field_id_b']]
-            list.append(couple)
-        return list
+            lst.append(couple)
+        return lst
 
 
     @Variables.undoGlobal

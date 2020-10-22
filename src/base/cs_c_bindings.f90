@@ -977,6 +977,23 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute molar and mass fractions of elementary species Ye, Xe
+    !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
+
+    !> \param[in]     yg            global mass fraction
+    !> \param[out]    ye            elementary mass fraction
+    !> \param[out]    xe            elementary molar fraction
+
+    subroutine yg2xye(yg, ye, xe)  &
+      bind(C, name='cs_combustion_gas_yg2xye')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: yg
+      real(kind=c_double), dimension(*), intent(out) :: ye, xe
+    end subroutine yg2xye
+
+    !---------------------------------------------------------------------------
+
     !> \brief  General user parameters
 
     subroutine user_parameters()  &
@@ -1979,7 +1996,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
       integer(c_int), dimension(*), intent(in) :: icvfli
-      real(kind=c_double), dimension(*), intent(in) :: fimp
+      real(kind=c_double), dimension(*), intent(inout) :: fimp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
     end subroutine cs_equation_iterative_solve_vector
 
@@ -2752,6 +2769,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Initialize has_disable_flag
+
+    subroutine cs_porous_model_init_disable_flag()   &
+      bind(C, name='cs_porous_model_init_disable_flag')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_porous_model_init_disable_flag
+
+    !---------------------------------------------------------------------------
+
     ! Set has_disable_flag
 
     subroutine cs_porous_model_set_has_disable_flag(flag)   &
@@ -2950,14 +2977,14 @@ module cs_c_bindings
 
     subroutine cs_f_gradient_s(f_id, imrgra, inc, iccocg, n_r_sweeps,          &
                                idimtr, iwarnp, imligp,                         &
-                               epsrgp, extrap, climgp,                         &
+                               epsrgp, climgp,                                 &
                                coefap, coefbp, pvar, grad)                     &
       bind(C, name='cs_f_gradient_s')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: idimtr, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
@@ -2968,15 +2995,15 @@ module cs_c_bindings
     ! Interface to C function for scalar potential gradient
 
     subroutine cs_f_gradient_potential(f_id, imrgra, inc, iccocg, n_r_sweeps,  &
-                                       iphydp,  iwarnp, imligp,                &
-                                       epsrgp, extrap, climgp,                 &
+                                       iphydp, iwarnp, imligp,                 &
+                                       epsrgp, climgp,                         &
                                        f_ext, coefap, coefbp, pvar, grad)      &
       bind(C, name='cs_f_gradient_potential')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
@@ -2988,7 +3015,7 @@ module cs_c_bindings
 
     subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, iccocg, n_r_sweeps, &
                                         iphydp,  iwarnp, imligp,               &
-                                        epsrgp, extrap, climgp,                &
+                                        epsrgp, climgp,                        &
                                         f_ext, coefap, coefbp, pvar, c_weight, &
                                         grad)                                  &
       bind(C, name='cs_f_gradient_weighted_s')
@@ -2996,7 +3023,7 @@ module cs_c_bindings
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
-      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
       real(kind=c_double), dimension(*), intent(inout) :: c_weight, grad
@@ -3038,6 +3065,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to get the bc type array pointer
+
+    subroutine cs_f_mass_source_terms_get_pointers(ncesmp, icetsm) &
+      bind(C, name='cs_f_mass_source_terms_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), intent(out) :: ncesmp
+      type(c_ptr), intent(out) :: icetsm
+    end subroutine cs_f_mass_source_terms_get_pointers
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function computing standard atmospheric profile
 
     subroutine atmstd(z, p, t, r) &
@@ -3068,11 +3107,10 @@ module cs_c_bindings
     subroutine catsma(ncesmp, iterns, icetsm, itpsmp,          &
                       volume, pvara, smcelp, gamma,            &
                       tsexp, tsimp, gapinj)                    &
-      bind(C, name='cs_mass_source_terms')
+      bind(C, name='cs_f_mass_source_terms_s')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value :: ncesmp
-      integer(c_int), intent(in), value :: iterns
+      integer(c_int), intent(in), value :: ncesmp, iterns
       integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
       real(kind=c_double), dimension(*), intent(in) :: volume
       real(kind=c_double), dimension(*), intent(in) :: pvara
@@ -3080,6 +3118,46 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
       real(kind=c_double), dimension(*), intent(out) :: gapinj
     end subroutine catsma
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to implicit and explicit sources terms
+    ! from sources mass computation.
+
+    subroutine catsmv(ncesmp, iterns, icetsm, itpsmp,          &
+                      volume, pvara, smcelp, gamma,            &
+                      tsexp, tsimp, gapinj)                    &
+      bind(C, name='cs_f_mass_source_terms_v')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncesmp, iterns
+      integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
+      real(kind=c_double), dimension(*), intent(in) :: volume
+      real(kind=c_double), dimension(*), intent(in) :: pvara
+      real(kind=c_double), dimension(*), intent(in) :: gamma, smcelp
+      real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
+      real(kind=c_double), dimension(*), intent(out) :: gapinj
+    end subroutine catsmv
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to implicit and explicit sources terms
+    ! from sources mass computation.
+
+    subroutine catsmt(ncesmp, iterns, icetsm, itpsmp,          &
+                      volume, pvara, smcelp, gamma,            &
+                      tsexp, tsimp, gapinj)                    &
+      bind(C, name='cs_f_mass_source_terms_t')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncesmp, iterns
+      integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
+      real(kind=c_double), dimension(*), intent(in) :: volume
+      real(kind=c_double), dimension(*), intent(in) :: pvara
+      real(kind=c_double), dimension(*), intent(in) :: gamma, smcelp
+      real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
+      real(kind=c_double), dimension(*), intent(out) :: gapinj
+    end subroutine catsmt
 
     !---------------------------------------------------------------------------
 
@@ -3730,14 +3808,13 @@ contains
   !> \param[in]       iwarnp           verbosity
   !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in, out]  pvar             cell values whose gradient is computed
   !> \param[in]       coefap           boundary coefap coefficients
   !> \param[in]       coefbp           boundary coefap coefficients
   !> \param[out]      grad             resulting gradient
 
   subroutine gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,             &
-                        imligp, iwarnp, epsrgp, climgp, extrap,                &
+                        imligp, iwarnp, epsrgp, climgp,                        &
                         pvar, coefap, coefbp, grad)
 
     use, intrinsic :: iso_c_binding
@@ -3752,7 +3829,7 @@ contains
 
     integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
     integer, intent(in) :: imligp, iwarnp
-    double precision, intent(in) :: epsrgp, climgp, extrap
+    double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
@@ -3791,76 +3868,9 @@ contains
 
     call cs_f_gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,            &
                          idimtr, iwarnp, imligp,                               &
-                         epsrgp, extrap, climgp, coefap, coefbp, pvar, grad)
+                         epsrgp, climgp, coefap, coefbp, pvar, grad)
 
   end subroutine gradient_s
-
-  !=============================================================================
-
-  !> \brief  Compute cell gradient of potential-type values
-
-  !> \param[in]       f_id             field id, or -1
-  !> \param[in]       imrgra           gradient computation mode
-  !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
-  !> \param[in]       nswrgp           number of sweeps for reconstruction
-  !> \param[in]       imligp           gradient limitation method:
-  !>                                     < 0 no limitation
-  !>                                     = 0 based on neighboring gradients
-  !>                                     = 1 based on mean gradient
-  !> \param[in]       hyd_p_flag       flag for hydrostatic pressure
-  !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsrgp           relative precision for reconstruction
-  !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       extrap           gradient extrapolation coefficient
-  !> \param[in]       f_ext            exterior force generating
-  !>                                   the hydrostatic pressure
-  !> \param[in, out]  pvar             cell values whose gradient is computed
-  !> \param[in]       coefap           boundary coefap coefficients
-  !> \param[in]       coefbp           boundary coefap coefficients
-  !> \param[out]      grad             resulting gradient
-
-  subroutine gradient_potential_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
-                                  imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
-                                  extrap, f_ext, pvar, coefap, coefbp, grad)
-
-    use, intrinsic :: iso_c_binding
-    use paramx
-    use mesh
-    use field
-
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
-    integer, intent(in) :: imligp, hyd_p_flag, iwarnp
-    double precision, intent(in) :: epsrgp, climgp, extrap
-    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
-    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
-    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
-
-    ! Local variables
-
-    integer          :: imrgrp
-
-    ! Use iterative gradient
-
-    if (imrgra.lt.0) then
-      imrgrp = 0
-    else
-      imrgrp = imrgra
-    endif
-
-    ! The gradient of a potential (pressure, ...) is a vector
-
-    call cs_f_gradient_potential(f_id, imrgrp, inc, recompute_cocg, nswrgp,    &
-                                 hyd_p_flag, iwarnp, imligp,                   &
-                                 epsrgp, extrap, climgp,                       &
-                                 f_ext, coefap, coefbp, pvar, grad)
-
-  end subroutine gradient_potential_s
 
   !=============================================================================
 
@@ -3879,7 +3889,6 @@ contains
   !> \param[in]       iwarnp           verbosity
   !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
-  !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in]       f_ext            exterior force generating
   !>                                   the hydrostatic pressure
   !> \param[in, out]  pvar             cell values whose gradient is computed
@@ -3890,7 +3899,7 @@ contains
 
   subroutine gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
                                  imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
-                                 extrap, f_ext, pvar, c_weight, coefap,       &
+                                 f_ext, pvar, c_weight, coefap,               &
                                  coefbp, grad)
 
     use, intrinsic :: iso_c_binding
@@ -3904,7 +3913,7 @@ contains
 
     integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
     integer, intent(in) :: imligp, hyd_p_flag, iwarnp
-    double precision, intent(in) :: epsrgp, climgp, extrap
+    double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(:), intent(inout) :: c_weight
@@ -3912,7 +3921,7 @@ contains
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     call cs_f_gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
-                                  hyd_p_flag, iwarnp, imligp, epsrgp, extrap,  &
+                                  hyd_p_flag, iwarnp, imligp, epsrgp,          &
                                   climgp, f_ext, coefap, coefbp,               &
                                   pvar, c_weight, grad)
 
@@ -5110,7 +5119,6 @@ contains
   !>                               reconstruction
   !> \param[in]     climgp        clipping coefficient for the computation of
   !>                               the gradient
-  !> \param[in]     extrap        coefficient for extrapolation of the gradient
   !> \param[in]     relaxp        coefficient of relaxation
   !> \param[in]     thetap        weighting coefficient for the theta-schema,
   !>                               - thetap = 0: explicit scheme
@@ -5169,7 +5177,7 @@ contains
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
                      idftnp, iswdyp, iwarnp, normp,                            &
                      blencp, epsilp, epsrsp, epsrgp,                           &
-                     climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
+                     climgp, relaxp, thetap, pvara, pvark, coefap,             &
                      coefbp, cofafp, cofbfp, i_massflux, b_massflux, i_viscm,  &
                      b_viscm, i_visc, b_visc, viscel, weighf, weighb, icvflb,  &
                      icvfli, rovsdt, smbrp, pvar, dpvar, xcpp, eswork)
@@ -5188,7 +5196,7 @@ contains
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: normp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
-    double precision, intent(in) :: extrap, relaxp, thetap
+    double precision, intent(in) :: relaxp, thetap
     real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
     real(kind=c_double), dimension(*), intent(in) :: coefbp, cofafp, cofbfp
     real(kind=c_double), dimension(*), intent(in) :: i_massflux, b_massflux
@@ -5233,7 +5241,6 @@ contains
     vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
     vcopt%climgr = climgp
-    vcopt%extrag = extrap
     vcopt%relaxv = relaxp
 
     p_k_value => vcopt
@@ -5441,7 +5448,7 @@ contains
     real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
     integer, intent(in) :: icvflb
     integer(c_int), dimension(*), intent(in) :: icvfli
-    real(kind=c_double), dimension(*), intent(in) :: fimp
+    real(kind=c_double), dimension(*), intent(inout) :: fimp
     real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
 
     ! Local variables
@@ -5802,7 +5809,7 @@ contains
   !>                               reconstruction
   !> \param[in]     climgp        clipping coefficient for the computation of
   !>                               the gradient
-  !> \param[in]     extrap        coefficient for extrapolation of the gradient
+  !> \param[in]     extrap        ignored
   !> \param[in]     relaxp        coefficient of relaxation
   !> \param[in]     thetap        weighting coefficient for the theta-schema,
   !>                               - thetap = 0: explicit scheme

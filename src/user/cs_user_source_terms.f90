@@ -97,12 +97,10 @@
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
 !> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see
-!>                               \ref cs_user_mass_source_terms)
+!>                              source terms or mass rate
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -283,12 +281,10 @@ end subroutine ustsnv
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
 !> \param[in]     itypsm        type of mass source term for each variable
-!> \param[in]                    (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!> \param[in]                    source terms or mass rate (see \ref
-!>                               cs_user_mass_source_terms)
+!> \param[in]                   source terms or mass rate
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !______________________________________________________________________________!
@@ -468,12 +464,10 @@ end subroutine ustssc
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
 !> \param[in]     itypsm        type of mass source term for each variable
-!> \param[in]                    (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!> \param[in]                    source terms or mass rate
-!>                               (see \ref cs_user_mass_source_terms)
+!> \param[in]                   source terms or mass rate
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !______________________________________________________________________________!
@@ -614,11 +608,9 @@ end subroutine ustsvv
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
 !> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see
-!>                               \ref cs_user_mass_source_terms)
+!>                              source terms or mass rate
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________

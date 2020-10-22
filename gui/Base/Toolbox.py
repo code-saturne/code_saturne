@@ -31,12 +31,20 @@ This module defines the following function:
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.QtCore  import QCoreApplication
+from code_saturne.Base.QtCore import QCoreApplication
 from code_saturne.model.Common import *
+
 
 #-------------------------------------------------------------------------------
 # displaySelectedPage direct to the good page with its name
 #-------------------------------------------------------------------------------
+
+class NonExistentPage(Exception):
+
+    def __init__(self, page_name):
+        msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
+        super().__init__(msg)
+
 
 def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
     """
@@ -48,6 +56,64 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
     # 'page_name' is the name of the page
     #
 
+    try:
+        thisPage = displayStaticPage(case, page_name, root, stbar, tree)
+    except NonExistentPage:
+        index = case['current_index']
+        item = index.internalPointer()
+        zone_name = item.itemData[0]
+
+        if item.parentItem.itemData[0] == tr("Boundary conditions"):
+            if case.xmlRootNode().tagName == tr("NEPTUNE_CFD_GUI"):
+                import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
+                thisPage = Page.BoundaryConditionsView(root, case, zone_name)
+            else:
+                import code_saturne.Pages.BoundaryConditionsView as Page
+                thisPage = Page.BoundaryConditionsView(root, case, zone_name)
+
+        elif item.parentItem.itemData[0] == tr("Initialization"):
+            if case.xmlRootNode().tagName == tr("NEPTUNE_CFD_GUI"):
+                import code_saturne.Pages.MainFieldsInitializationView as Page
+                thisPage = Page.MainFieldsInitializationView(root, case, zone_name)
+            else:
+                import code_saturne.Pages.InitializationView as Page
+                thisPage = Page.InitializationView(root, case, zone_name, stbar)
+
+        elif item.parentItem.itemData[0] == tr("Head losses"):
+            import code_saturne.Pages.HeadLossesView as Page
+            thisPage = Page.HeadLossesView(root, case, zone_name)
+
+        elif item.parentItem.itemData[0] == tr("Porosity"):
+            import code_saturne.Pages.PorosityView as Page
+            thisPage = Page.PorosityView(root, case, zone_name)
+
+        elif item.parentItem.itemData[0] == tr("Source terms"):
+            if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+                import code_saturne.Pages.MainFieldsSourceTermsView as Page
+                thisPage = Page.MainFieldsSourceTermsView(root, case, zone_name, stbar)
+            else:
+                import code_saturne.Pages.SourceTermsView as Page
+                thisPage = Page.SourceTermsView(root, case, zone_name, stbar)
+
+        elif item.parentItem.itemData[0] == tr("Groundwater laws"):
+            import code_saturne.Pages.GroundwaterLawView as Page
+            thisPage = Page.GroundwaterLawView(root, case, zone_name)
+
+        elif item.parentItem.itemData[0] in (tr("Boundary zones"), tr("Volume zones")):
+            import code_saturne.Pages.LocalizationView as Page
+            thisPage = Page.VolumeLocalizationView(root, case, tree, hide_all=True)
+
+        else:
+            import code_saturne.Pages.WelcomeView as Page
+            print(item.parentItem.itemData[0])
+            thisPage = Page.WelcomeView()
+
+    case['current_page'] = str(page_name)
+
+    return thisPage
+
+
+def displayStaticPage(case, page_name, root, stbar, tree):
     if page_name == tr("Calculation environment"):
         import code_saturne.Pages.IdentityAndPathesView as Page
         thisPage = Page.IdentityAndPathesView(root, case)
@@ -77,10 +143,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.MobileMeshView(root, case, tree)
 
     elif page_name == tr("Turbulence models"):
-         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.TurbulenceNeptuneView as Page
             thisPage = Page.TurbulenceView(root, case)
-         else :
+        else:
             import code_saturne.Pages.TurbulenceView as Page
             thisPage = Page.TurbulenceView(root, case)
 
@@ -104,34 +170,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.ConjugateHeatTransferView as Page
         thisPage = Page.ConjugateHeatTransferView(root, case)
 
-    elif page_name == tr("Main fields initialization"):
-        import code_saturne.Pages.MainFieldsInitializationView as Page
-        thisPage = Page.MainFieldsInitializationView(root, case)
-
-    elif page_name == tr("Initialization"):
-        import code_saturne.Pages.InitializationView as Page
-        thisPage = Page.InitializationView(root, case, stbar)
-
-    elif page_name == tr("Head losses"):
-        import code_saturne.Pages.HeadLossesView as Page
-        thisPage = Page.HeadLossesView(root, case)
-
-    elif page_name == tr("Porosity"):
-        import code_saturne.Pages.PorosityView as Page
-        thisPage = Page.PorosityView(root, case)
-
-    elif page_name == tr("Source terms"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            import code_saturne.Pages.MainFieldsSourceTermsView as Page
-            thisPage = Page.MainFieldsSourceTermsView(root, case, stbar)
-        else:
-            import code_saturne.Pages.SourceTermsView as Page
-            thisPage = Page.SourceTermsView(root, case, stbar)
-
-    elif page_name == tr("Groundwater laws"):
-        import code_saturne.Pages.GroundwaterLawView as Page
-        thisPage = Page.GroundwaterLawView(root, case)
-
     elif page_name == tr("Fluid properties"):
         import code_saturne.Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)
@@ -141,10 +179,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.BodyForcesView(root, case)
 
     elif page_name == tr("Species transport"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.SpeciesView as Page
             thisPage = Page.SpeciesView(root, case)
-        else :
+        else:
             import code_saturne.Pages.DefineUserScalarsView as Page
             thisPage = Page.DefineUserScalarsView(root, case, stbar, tree)
 
@@ -184,14 +222,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)
 
-    elif page_name == tr("Boundary conditions"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
-            thisPage = Page.BoundaryConditionsView(root, case)
-        else:
-            import code_saturne.Pages.BoundaryConditionsView as Page
-            thisPage = Page.BoundaryConditionsView(root, case)
-
     elif page_name == tr("Particle boundary conditions"):
         import code_saturne.Pages.LagrangianBoundariesView as Page
         thisPage = Page.LagrangianBoundariesView(root, case)
@@ -201,7 +231,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.TimeAveragesView(root, case, stbar)
 
     elif page_name == tr("Time settings"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.TimeStepViewNeptune as Page
             thisPage = Page.TimeStepView(root, case)
         else:
@@ -241,18 +271,18 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.BalanceView(root, case)
 
     elif page_name == tr("Equation parameters"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.NumericalParamEquationViewNeptune as Page
             thisPage = Page.NumericalParamEquationView(root, case)
-        else :
+        else:
             import code_saturne.Pages.NumericalParamEquationView as Page
             thisPage = Page.NumericalParamEquationView(root, case)
 
     elif page_name == tr("Numerical parameters"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.GlobalNumericalParametersView as Page
             thisPage = Page.GlobalNumericalParametersView(root, case)
-        else :
+        else:
             import code_saturne.Pages.NumericalParamGlobalView as Page
             thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
@@ -305,13 +335,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.InterfacialAreaView(root, case)
 
     else:
-        msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
-        print(msg)
-        # So we display the Welcome Page!
-        import code_saturne.Pages.WelcomeView as Page
-        thisPage = Page.WelcomeView()
+        raise NonExistentPage(page_name)
+        ## So we display the Welcome Page!
 
-    case['current_page'] = str(page_name)
 
     return thisPage
 

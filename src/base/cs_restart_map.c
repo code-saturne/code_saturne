@@ -276,10 +276,6 @@ _read_section_interpolate(cs_restart_t           *restart,
  * \brief  Indicate restart files should be mapped to a given mesh input
  *
  * \param[in]  mesh_path           path to mesh input
- * \param[in]  tolerance_base      associated base tolerance (used for bounding
- *                                 box check only, not for location test)
- * \param[in]  tolerance_fraction  associated fraction of element bounding
- *                                 boxes added to tolerance
  */
 /*----------------------------------------------------------------------------*/
 

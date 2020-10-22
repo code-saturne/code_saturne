@@ -112,7 +112,7 @@ double precision, pointer, dimension(:,:) :: trava
 ! Local variables
 
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
-integer          ii    , inod, itypfl, f_id
+integer          ii    , inod, itypfl, f_id, f_iddp
 integer          isou, ivar, iitsm
 integer          init, iautof
 integer          iflmas, iflmab
@@ -121,9 +121,10 @@ integer          imrgrp, nswrgp, imligp, iwarnp
 integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
+integer          f_dim , iflwgr
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
-double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
+double precision epsrgp, climgp, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision rhofac, dtfac
 double precision xnrdis, xnrtmp
@@ -142,15 +143,14 @@ double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
-double precision, allocatable, dimension(:) :: phi
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, dimension(:,:), allocatable :: gradp
-double precision, dimension(:), allocatable :: coefa_dp, coefb_dp
-double precision, dimension(:), allocatable :: xinvro
+double precision, dimension(:), pointer :: coefa_dp, coefb_dp
+double precision, dimension(:), pointer :: da_u
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
 double precision, dimension(:), pointer :: viscbi
@@ -172,6 +172,7 @@ double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cpro_rho_mass
 double precision, dimension(:), pointer :: bpro_rho_mass
 double precision, dimension(:), pointer :: brom_eos, crom_eos
+double precision, dimension(:), pointer :: cpro_wgrec_s
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -184,12 +185,11 @@ interface
   subroutine resopv &
    ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                 &
      icetsm , ifbpcd , ltmast , isostd ,                          &
-     dt     , vel    ,                                            &
+     dt     , vel    , da_u   ,                                   &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou ,                                   &
-     viscf  , viscb  ,                                            &
-     phi    , tslagr )
+     viscf  , viscb  ,  tslagr )
 
     use dimens, only: ndimfb
     use mesh
@@ -211,11 +211,11 @@ interface
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision viscf(nfac), viscb(ndimfb)
-    double precision phi(ncelet)
     double precision tslagr(ncelet,*)
     double precision coefav(3  ,ndimfb)
     double precision coefbv(3,3,ndimfb)
     double precision vel   (3  ,ncelet)
+    double precision da_u  (ncelet)
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
@@ -245,8 +245,10 @@ allocate(trav(3,ncelet))
 
 ! Allocate other arrays, depending on user options
 
-! Array for delta p gradient boundary conditions
-allocate(coefa_dp(ndimfb), coefb_dp(ndimfb))
+call field_get_id("pressure_increment",f_iddp)
+
+call field_get_coefa_s(f_iddp, coefa_dp)
+call field_get_coefb_s(f_iddp, coefb_dp)
 
 allocate(dfrcxt(3,ncelet))
 if (iand(vcopt_u%idften, ISOTROPIC_DIFFUSION).ne.0) then
@@ -469,17 +471,20 @@ endif
 
 iappel = 1
 
+allocate(da_u(ncelet))
+
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , vel    , vela   , velk   ,                            &
+  dt     , vel    , vela   , velk   , da_u   ,                   &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , frcxt  ,                                     &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     )
+
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
@@ -647,7 +652,6 @@ if (iprco.le.0) then
 
   ! Free memory
   !--------------
-  deallocate(coefa_dp, coefb_dp)
   if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
   if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 
@@ -850,20 +854,16 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1200)
 endif
 
-! Allocate temporary arrays for the pressure resolution
-allocate(phi(ncelet))
-
 if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
   call resopv &
 ( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
   icetsm , ifbpcd , ltmast , isostd ,                            &
-  dt     , vel    ,                                              &
+  dt     , vel    , da_u   ,                                     &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens ,                                     &
-  viscf  , viscb  ,                                              &
-  phi    , tslagr )
+  viscf  , viscb  , tslagr )
 
 endif
 
@@ -895,51 +895,29 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     ! The predicted velocity is corrected by the cell gradient of the
     ! pressure increment.
 
-    ! Phi is the pressure increment
-
-    ! ---> Periodicity and parallelism
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(phi)
-    endif
-
     iccocg = 1
     inc = 0
 
     call grdpor(inc)
 
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-    imrgrp = vcopt_p%imrgra
-    nswrgp = vcopt_p%nswrgr
-    imligp = vcopt_p%imligr
-    iwarnp = vcopt_p%iwarni
-    epsrgp = vcopt_p%epsrgr
-    climgp = vcopt_p%climgr
-    extrap = vcopt_p%extrag
 
     !Allocation
     allocate(gradp(3, ncelet))
 
-    if (ivofmt.eq.0) then
-      call gradient_potential_s &
-       (ivarfl(ipr)     , imrgrp , inc    , iccocg , nswrgp , imligp , &
-        iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
-        dfrcxt ,                                                       &
-        phi    , coefa_dp        , coefb_dp        ,                   &
-        gradp  )
-    else
-      allocate(xinvro(ncelet))
+    if (ivofmt.ne.0) then
+      call field_get_key_int(ivarfl(ipr), kwgrec, iflwgr)
+      call field_get_dim(iflwgr, f_dim)
+      call field_get_val_s(iflwgr, cpro_wgrec_s)
       do iel = 1, ncel
-        xinvro(iel) = dt(iel)/crom(iel)
+        cpro_wgrec_s(iel) = dt(iel) / crom(iel)
       enddo
-
-      call gradient_weighted_s &
-      ( ivarfl(ipr)     , imrgrp , inc    , iccocg , nswrgp , imligp , &
-        iphydr, iwarnp  , epsrgp , climgp , extrap , dfrcxt ,          &
-        phi    , xinvro , coefa_dp , coefb_dp ,                        &
-        gradp  )
-
-      deallocate(xinvro)
+      call synsca(cpro_wgrec_s)
     endif
+
+    call field_gradient_potential(f_iddp, 0, 0, inc,                   &
+                                  iccocg, iphydr,                      &
+                                  dfrcxt, gradp)
 
     ! Update the velocity field
     !--------------------------
@@ -998,7 +976,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
           iautof = iautom(ifac)
         endif
 
-        if (isostd(ifac).eq.1.or.iatmst.ge.1.and.iautof.eq.1) then
+        if (isostd(ifac).eq.1.or.iatmst.ge.1.and.iautof.ge.1) then
           coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)
         endif
       enddo
@@ -1500,7 +1478,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vel    , velk   ,                            &
+   dt     , vel    , vel    , velk   , da_u   ,                   &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , dttens , trav   ,          &
@@ -1733,8 +1711,8 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(phi)
 deallocate(trav)
+deallocate(da_u)
 deallocate(dfrcxt)
 deallocate(w1)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
@@ -1742,10 +1720,6 @@ if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
 if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
-
-! Free memory
-!--------------
-deallocate(coefa_dp, coefb_dp)
 
 !--------
 ! Formats

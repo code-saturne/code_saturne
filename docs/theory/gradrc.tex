@@ -329,7 +329,7 @@ On s'int\'eresse aux cas suivants :\\\\
 \hspace*{0.5cm}{ $\bullet${\underline { condition \`a la limite de type Dirichlet}}}\\
 $P_{F_{\,b_{\,ik}}} = P_{IMPOSE}$, aucun traitement particulier\\\\
 \hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Neumann
-homog\`ene standard}}}\\
+homog\`ene}}}\\
 On veut imposer :
 \begin{equation}
 \left. \displaystyle\frac{\delta P}{\delta n}\right|_{F_{\,b_{\,ik}}} = 0 + \mathcal{O}(h)
@@ -355,24 +355,6 @@ soit~:
 P_{F_{\,b_{\,ik}}} = P_I +  \mathcal{O}(h^2)
 \end{equation}
 On obtient donc une approximation d'ordre 1.\\
-\hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Neumann homog\`ene am\'elior\'ee}}}\\
-Des \'egalit\'es (\ref{Base_Gradrc_eq_orthogonal}, \ref{Base_Gradrc_eq_derivee_normale}), on tire~:
-\begin{equation}\notag
-P_{F_{\,b_{\,ik}}} = P_I +
-\displaystyle\frac{1}{2}\,\overline{IF}_{\,b_{\,ik}}\,.\,\left. \displaystyle\frac{\delta P}{\delta
-n}\right|_{I} + \mathcal{O}(h^3)
-\end{equation}
-On obtient donc une approximation d'ordre 2.\\
-\hspace*{0.5cm}{$\bullet $ {\underline { condition \`a la limite de type
-extrapolation du gradient}}$\ \ \left. \displaystyle\frac{\delta P}{\delta
-n}\right|_{F_{\,b_{\,ik}}} = \displaystyle\left. \displaystyle\frac{\delta
-P}{\delta n}\right|_{I}$}\\
-Des deux \'egalit\'es (\ref{Base_Gradrc_eq_orthogonal}, \ref{Base_Gradrc_eq_derivee_normale}), on d\'eduit~:
-\begin{equation}
-P_{F_{\,b_{\,ik}}}= P_I + \overline{IF}_{\,b_{\,ik}}\,.\left. \displaystyle\frac{\delta P}{\delta
-n}\right|_{I} + \mathcal{O}(h^3)
-\end{equation}
-On obtient donc \'egalement une approximation d'ordre 2.\\
 \paragraph{\bf Sur maillage non orthogonal}
 Dans ce cas, on peut seulement \'ecrire~:\\
 \begin{equation}
@@ -383,7 +365,7 @@ P)_{F_{\,b_{\,ik}}}\,] + \mathcal{O}(h^3)
 \hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Dirichlet}}\\
 $P_{F_{\,b_{\,ik}}} = P_{IMPOSE}$, toujours aucun traitement particulier\\\\
 \hspace*{0.5cm}{ $\bullet ${\underline { condition \`a la limite de type Neumann
-homog\`ene standard}}}\\
+homog\`ene}}}\\
 On veut :
 \begin{equation}
 \left. \displaystyle\frac{\delta P}{\delta n}\right|_{F_{\,b_{\,ik}}} = 0 + \mathcal{O}(h)
@@ -402,50 +384,11 @@ P_{F_{\,b_{\,ik}}} = P_{I'}  + \mathcal{O}(h^2)
 \end{equation}
 On obtient donc une approximation d'ordre 1.\\
 
-\hspace*{0.5cm}{$\bullet $ {\underline { condition \`a la limite de type Neumann homog\`ene am\'elior\'ee}}}\\
-Le gradient n'est connu qu'au centre des cellules $I$ et non aux points $I'$.
-\begin{equation}\notag
-(\grad P)_{I'} = (\grad P)_I +  \mathcal{O}(h)
-\end{equation}
-d'o\`u :
-\begin{equation}
-\begin{array}{ll}
-P_{F_{\,b_{\,ik}}} & = P_{I'} + \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,[\,(\grad P)_{I'} +
-(\grad P)_{F_{\,b_{\,ik}}}\,] + \mathcal{O}(h^3)\\
-& = P_{I'} + \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,[\,(\grad P)_{I} +
-(\grad P)_{F_{\,b_{\,ik}}}\,] + \mathcal{O}(h^2)\
-\end{array}
-\end{equation}
-Compte-tenu de la condition impos\'ee et de l'\'equation ($\ref{Base_Gradrc_eq_ortho}$), seule la contribution en $I$ reste.
-\begin{equation}
-\begin{array}{ll}
-P_{F_{\,b_{\,ik}}}  = P_{I'} + \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I}
- + \mathcal{O}(h^2)\\
-\end{array}
-\end{equation}
-On obtient donc une approximation d'ordre 1.\\
-\hspace*{0.5cm}{ $\bullet $ {\underline { condition \`a la limite de type extrapolation du gradient}} $\ \ \left. \displaystyle\frac{\delta P}{\delta n}\right|_{F_{\,b_{\,ik}}} =
-\displaystyle\left. \displaystyle\frac{\delta P}{\delta n}\right|_{I}$}\\
-En tenant compte de cette \'egalit\'e, l'expression de $P_{F_{\,b_{\,ik}}}$ devient :
-\begin{equation}
-P_{F_{\,b_{\,ik}}}  = P_{I'} + \displaystyle\,\vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I}
- + \mathcal{O}(h^2)
-\end{equation}
-On obtient \'egalement une approximation d'ordre 1.\\
-
 \hspace*{0.5cm}{\bf $\bullet $ Conclusion }\\
 On peut r\'ecapituler toutes ces situations {\it via} la formule :
 \begin{equation}\notag
-P_{F_{\,b_{\,ik}}}\,=\,P_{I'}+ \,\var{EXTRAP}\,\,(\vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I})
+P_{F_{\,b_{\,ik}}}\,=\,P_{I'}
 \end{equation}
-avec $\var{EXTRAP}$ valant $0$, $0.5$ ou $1$.\\
-
-Il ne faut en aucun cas utiliser $\var{EXTRAP}$ avec des conditions de type
-Neumann non homog\`enes $\left. \displaystyle\frac{\delta P}{\delta
-n}\right|_{F}$ = $g_{\,bord}$ , $g_{\,bord}$ donn\'ee non nulle ou de type
-Robin (mixtes) plus g\'en\'eralement \\ $a P_{F_{\,b_{\,ik}}} + b \left. \displaystyle\frac{\delta
-P}{\delta n}\right|_{F_{\,b_{\,ik}}} = g_{\,bord}$, le recours \`a  $
-\var{EXTRAP}$ n'ayant plus aucun sens.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -522,13 +465,7 @@ superflue et risque d'engendrer des erreurs (indicateur \var{ICCOCG}
 positionn\'e \`a 0 au lieu de 1) beaucoup plus p\'enalisantes que l'\'eventuel
 gain escompt\'e.\\\\
 \hspace*{1,5cm}{\bf Inversion de la matrice}\\
-%\hspace*{1,5cm}\etape{Inversion de la matrice}
 On calcule les coefficients de la comatrice, puis l'inverse.
-Pour des questions de vectorisation, la boucle sur les \var{NCEL} \'el\'ements
-est remplac\'ee par une
-s\'erie de boucles en vectorisation forc\'ee sur des blocs de \var{NBLOC=1024}
-\'el\'ements. Le reliquat ($\var{NCEL}-E(\var{NCEL}/1024)\times 1024$) est
-trait\'e apr\`es les boucles.
 La matrice inverse est ensuite stock\'ee dans \var{COCG}.\\
 \hspace*{1cm}\subsubsection*{\bf Phase it\'erative $k$, $k\in \mathbb{N}$}
 On suppose  $\delta\,\vect{G}^{\,k}_{\,i}$ connu et donc  $\vect{G}^{k}_{\,c,i}$ pour $k$ donn\'e et sur
@@ -554,8 +491,7 @@ trait\'ees comme suit dans \CS :
 P_{I'}&=P_{I}+\vect{II'}.\vect{G}_{c,i}\\
 P_{b,ik}& =\var{INC}\,A_{\,b,ik} + B_{\,b,ik}\,P_{I'} = \var{INC}\,A_{\,b,ik} + B_{\,b,ik}(P_{I}+\vect{II'}.\,\vect{G}_{\,c,i}) \\
 P_{b_{1},ik}&= P_{I}+\vect{I{F_{\,ij}}}.\,\vect{G}_{\,c,i}\\
-P_{f,\,b_{\,ik}}&= B_{\,b,ik}(\var{EXTRAP}\,P_{b_{1},ik} + (1 -\var{EXTRAP})\,P_{b,ik}) + (1 -
-B_{\,b,ik})P_{b,ik}
+P_{f,\,b_{\,ik}}&= P_{b,ik}
 \end{array}\right.
 \end{equation}
 ce qui correspond \`a :\\\\
@@ -564,41 +500,11 @@ P_{F_{\,b_{\,ik}}}$, $B_{\,b,ik} = 0$),
 \begin{equation}
 P_{F_{\,b_{\,ik}}}  = P_{IMPOSE}
 \end{equation}
-pour toute valeur de \var{EXTRAP}.\\\\
+\\\\
 \hspace*{1cm}{\tiny$\blacksquare$}\, lorsqu'on veut imposer des conditions de
 flux ($A_{\,b,ik} = 0$, $B_{\,b,ik} = 1$) (condition de type Neumann)
 \begin{equation}
-P_{F_{\,b_{\,ik}}}  = \,\var{EXTRAP}\,\ (P_{I} + (\vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I})  + (1 -\,\var{EXTRAP}) P_{I'}
-\end{equation}
-seules trois valeurs de \var{EXTRAP} sont licites.\\\\
-\hspace*{2cm}$\bullet $ avec un maillage non orthogonal \\\\
-L'ordre obtenu est \'egal \`a 1 dans tous les cas.
-\begin{equation}\notag
-\begin{array}{llll}
-\var{EXTRAP}&= 0 &\text{Neumann homog\`ene}&\ \  P_{F_{\,b_{\,ik}}} = P_{I'} + \mathcal{O}(h^2)\\
-\var{EXTRAP}&= \displaystyle\frac{1}{2} &\text{Neumann homog\`ene am\'elior\'e}&\ \
-P_{F_{\,b_{\,ik}}} = P_{I'} + \displaystyle\frac{1}{2}\,\vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I}
-+ \mathcal{O}(h^2)\\
-\var{EXTRAP} &= 1&\text{extrapolation du gradient}&\ \
-P_{F_{\,b_{\,ik}}} = P_{I'} + \vect{I'F}_{\,b_{\,ik}}\,.\,(\grad P)_{I} + \mathcal{O}(h^2)\\
-\end{array}
-\end{equation}\\\\
-\hspace*{2cm}$\bullet $ avec un maillage orthogonal \\\\
-On peut atteindre l'ordre deux.\\
-\begin{equation}\notag
-\begin{array}{lllll}
-\var{EXTRAP} &= 0 &\text{Neumann homog\`ene}&
-P_{F_{\,b_{\,ik}}}  = P_{I'} + \mathcal{O}(h^2)\\
-&\ &\text{on est \`a l'ordre 1}\\
-\var{EXTRAP} &=  \displaystyle\frac{1}{2} &\text{Neumann homog\`ene am\'elior\'e}&\ \
-P_{F_{\,b_{\,ik}}}  = P_{I} + \displaystyle\frac{1}{2}\,\vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I}
-+ \mathcal{O}(h^3)\\
-&\ &\text{on est \`a l'ordre 2}\\
-\var{EXTRAP} &= 1 &\text{extrapolation du gradient}&\ \
-P_{F_{\,b_{\,ik}}}  = P_{I} + \vect{IF}_{\,b_{\,ik}}\,.\,(\grad P)_{I} +
-\mathcal{O}(h^3)\\
-&\ &\text{on est \`a l'ordre 2}\\
-\end{array}
+P_{F_{\,b_{\,ik}}}  = P_{I'}
 \end{equation}
 
 \hspace*{1,5cm}{\bf Test de convergence de la m\'ethode it\'erative de r\'esolution}\\
@@ -615,22 +521,10 @@ Sinon, on continue d'it\'erer sur $k$.
 \section*{Points \`a traiter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Vectorisation forc\'ee}
-Il est peut-\^etre possible de s'affranchir du d\'ecoupage en boucles de 1024 si
-les compilateurs sont capables
-d'effectuer la vectorisation sans cette aide. On note cependant que ce
-d\'ecoupage en boucles de 1024 n'a pas de co\^ut CPU suppl\'ementaire, et que
-le co\^ut m\'emoire associ\'e est n\'egligeable.
-Le seul inconv\'enient r\'eside dans la relative complexit\'e  de l'\'ecriture.
-
-\etape{Traitement des conditions aux limites de pression}
-Actuellement, l'ordre deux d\'ecrit dans le cas $\var{EXTRAP} = \displaystyle \frac{1}{2}$ relativement
-aux conditions aux limites de pression n'existe pas dans \CS \ en non
-orthogonal. Mais en a-t-on vraiment besoin ?
 
 \etape{M\'ethode it\'erative de r\'esolution}
-La m\'ethode it\'erative de r\'esolution adopt\'ee dans ce sous-programme  marche, {\it
-i.e.} converge, mais ne rentre dans aucun cadre th\'eorique pr\'ecis. Des
+La m\'ethode it\'erative de r\'esolution adopt\'ee dans ce sous-programme
+ne rentre dans aucun cadre th\'eorique pr\'ecis. Des
 r\'eflexions sur le sujet pourraient \'eventuellement permettre d'exhiber certaines propri\'et\'es
 des matrices consid\'er\'ees, cerner les limites d'application ou expliquer
 certains comportements.

@@ -195,7 +195,7 @@ typedef struct {
   /*! during a Lagrangian calculation restart, indicates whether the particle
     statistics (volume and boundary) and two-way coupling terms are to be read
     from a restart file (=1) or reinitialized (=0).
-    Useful if \ref isuila = 1 */
+    Useful if \ref cs_lagr_time_scheme_t::isuila "isuila" = 1 */
   int  isuist;
 
   /*! absolute time step number (including the restarts) after
@@ -206,10 +206,10 @@ typedef struct {
     which the volume statistics are cumulated over time (they are then said
     to be steady).
     if the absolute time step number is lower than \ref nstist,
-    or if the flow is unsteady (\ref isttio=0), the statistics are reset
-    to zero at every time step (the volume statistics are then said
-    to be non-steady).
-    Useful if \ref isttio=1 */
+    or if the flow is unsteady (\ref cs_lagr_time_scheme_t::isttio "isttio"=0),
+    the statistics are reset to zero at every time step (the volume statistics
+    are then said to be non-steady).
+    Useful if \ref cs_lagr_time_scheme_t::isttio "isttio" = 1 */
   int  nstist;
 
   /*! threshold for statistical meaning when used by other model

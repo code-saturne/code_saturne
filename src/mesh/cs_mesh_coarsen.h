@@ -55,8 +55,8 @@ BEGIN_C_DECLS
  * \brief Coarsen flagged mesh cells.
  *
  * \param[in, out]  m           mesh
- * \param[in]       cell_flag   subdivision type for each cell
- *                              (0: none; 1: isotropic)
+ * \param[in]       cell_flag   coarsening flag for each cell
+ *                              (0: do not coarsen; 1: coarsen)
  */
 /*----------------------------------------------------------------------------*/
 

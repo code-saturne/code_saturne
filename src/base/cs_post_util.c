@@ -689,7 +689,8 @@ cs_cell_segment_intersect_probes_define(void          *input,
  * \param[out]  n_elts  number of selected coordinates
  * \param[out]  coords  coordinates of selected elements.
  * \param[out]  s       curvilinear coordinates of selected elements
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_b_face_criterion_probes_define(void          *input,
@@ -947,9 +948,6 @@ cs_post_stress_tangential(cs_lnum_t        n_b_faces,
  *
  * \param[in]   n_b_faces    number of faces
  * \param[in]   b_face_ids   list of faces (0 to n-1)
- * \param[in]   hyd_p_flag   flag for hydrostatic pressure
- * \param[in]   f_ext        exterior force generating
- *                           the hydrostatic pressure
  * \param[out]  pres         pressure on a specific boundary region
  */
 /*----------------------------------------------------------------------------*/

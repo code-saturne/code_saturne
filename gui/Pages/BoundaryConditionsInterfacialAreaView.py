@@ -80,7 +80,7 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
         self.lineEditDiameter.textChanged[str].connect(self.__slotDiameter)
 
         validatorDiam = DoubleValidator(self.lineEditDiameter, min = 0.)
-        validatorDiam.setExclusiveMin(False)
+        validatorDiam.setExclusiveMin(True)
 
         self.lineEditDiameter.setValidator(validatorDiam)
 

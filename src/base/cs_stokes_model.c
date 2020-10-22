@@ -88,8 +88,8 @@ BEGIN_C_DECLS
         Indicates whether the source terms in transposed gradient
         and velocity divergence should be taken into account in the
         momentum equation. In the compressible module, these terms
-        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0" and
-        \ref ppincl::iviscv "iviscv")
+        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0"
+        and \ref ppincl::iviscv "iviscv")
         \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
         +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
         - 0: not taken into account,
@@ -107,6 +107,11 @@ BEGIN_C_DECLS
         Please refer to the
         <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
         of the theory guide for more informations.
+  \var  cs_stokes_model_t::mass_preconditioner
+        <a name="mass_preconditioner"></a>
+        Preconditioner for mass:\n
+         - 0: dt (by default).\n
+         - 1: 1/A_u\n
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -159,9 +164,7 @@ BEGIN_C_DECLS
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
         non-physical velocities which may appear in highly stratified areas
-        or near horizontal walls (thus avoiding the use of
-        \ref cs_var_cal_opt_t::extrag "extrag"
-        if the non-physical velocities are due only to gravity effects).\n
+        or near horizontal walls.\n
         The improved algorithm also allows eradicating the velocity oscillations
         which tend to appear at the frontiers of areas with high head losses.\n
         In the case of a stratified flow, the calculation cost is higher when
@@ -197,7 +200,8 @@ BEGIN_C_DECLS
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
         - 1: calculation of the hydrostatic pressure at the outlet boundary
-        - 0: no calculation of the hydrostatic pressure at the outlet boundary (default)
+        - 0: no calculation of the hydrostatic pressure at the outlet boundary
+             (default)
         This option is automatically specified depending on the choice of
         \ref iphydr and the value of gravity (\ref icalhy = 1 if  \ref iphydr = 1
         and gravity is different from 0; otherwise \ref icalhy = 0). The
@@ -207,8 +211,9 @@ BEGIN_C_DECLS
         in order to deactivate the recalculation of the hydrostatic pressure
         at the boundary, which may otherwise cause instabilities
   \var  cs_stokes_model_t::irecmf
-        use interpolated face diffusion coefficient instead of cell diffusion coefficient
-        for the mass flux reconstruction for the non-orthogonalities
+        use interpolated face diffusion coefficient instead of cell diffusion
+        coefficient for the mass flux reconstruction for the
+        non-orthogonalities
         - 1: true
         - 0: false (default)
   \var  cs_stokes_model_t::fluid_solid
@@ -239,6 +244,7 @@ static cs_stokes_model_t  _stokes_model = {
   .irevmc = 0,
   .iprco  = 1,
   .arak   = 1.0,
+  .mass_preconditioner = 0,
   .ipucou = 0,
   .iccvfg = 0,
   .idilat = 1,
@@ -264,6 +270,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
+                                 int     **mass_preconditioner,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -292,6 +299,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
  *   arak    --> pointer to cs_glob_stokes_model->arak
+ *   mass_preconditioner
+ *           --> pointer to cs_glob_stokes_model->mass_preconditioner
  *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
  *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
  *   idilat  --> pointer to cs_glob_stokes_model->idilat
@@ -311,6 +320,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
+                                 int     **mass_preconditioner,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -328,6 +338,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);
   *arak   = &(_stokes_model.arak);
+  *mass_preconditioner = &(_stokes_model.mass_preconditioner);
   *ipucou = &(_stokes_model.ipucou);
   *iccvfg = &(_stokes_model.iccvfg);
   *idilat = &(_stokes_model.idilat);
@@ -546,6 +557,11 @@ cs_stokes_model_log_setup(void)
        _("    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv * stokes_model->arak);
   }
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    mass_preconditioner %d\n"),
+     stokes_model->mass_preconditioner);
+
   if (stokes_model->fluid_solid)
     cs_log_printf
       (CS_LOG_SETUP,

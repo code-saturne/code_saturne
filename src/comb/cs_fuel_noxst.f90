@@ -78,7 +78,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          ncel
 integer          indpdf(ncel)
 
 double precision pdfm1(ncel) , pdfm2(ncel) , dfuel(ncel)
@@ -220,7 +220,6 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
     call field_get_val_s(itemp2(icla), cpro_temp2(icla)%p)
   enddo
 
-!
   inok = 0
   i300 = 0
   i000 = 0
@@ -414,7 +413,6 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
       mode = 1
       call cs_fuel_htconvers1 ( mode , hoxyd , coefe , toxyd )
-      !======================
 !
       toxmin = min(toxmin,toxyd)
       toxmax = max(toxmax,toxyd)
@@ -488,8 +486,6 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
         mode = 1
         call cs_fuel_htconvers1 ( mode , hfs4ad , coefe , tfs4ad )
-        !======================
-
 !
 ! Calcul pour affichage
 !
@@ -539,31 +535,30 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
             imaxi = imaxi + 1
           endif
         endif
-!
+
 ! Fin calcul pour affichage
-!
 !
 ! Clipping de Ts4 : a min(toxyd,tmpgaz,tfuel) en min
 !                   a ts4ad                   en max
-!
+
         nbpt = nbpt + 1
         if ( ts4 .lt. min(toxyd,tmpgaz,tfuel) ) then
            nbclip1 = nbclip1 + 1
            ts4 = min(toxyd,tmpgaz,tfuel)
         endif
-!
+
         if ( ts4 .gt. tfs4ad ) then
            nbclip2 = nbclip2 + 1
            ts4 = tfs4ad
         endif
-!
+
 !   Concentration oxygene
-!
+
         xo2 = cpro_yo2(iel)                 &
              *cpro_mmel(iel)/wmole(io2)
-!
+
 !  Integration
-!
+
         do i = 1, npart+1
           gs(i) = pdfm1(iel)+dble(i-1)/dble(npart)*(pdfm2(iel)-pdfm1(iel))
 !        calcul de T
@@ -583,15 +578,15 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
             yyo2(i) = 0.d0
           endif
         enddo
-!
+
 !     pas d'integration
-!
+
         dgs = ( pdfm2(iel) - pdfm1(iel) ) / dble(npart)
-!
+
 ! Calcul de K1*EXP(-E1/T)
-!
+
         if ( ipdf1 .eq. 1 ) then
-!
+
           cpro_exp1(iel) = kk1*exp(-ee1/toxyd)*doxyd(iel)        &
                             +kk1*exp(-ee1/tfuel)*dfuel(iel)
 
@@ -605,24 +600,24 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
           enddo
 
         endif
-!
+
 !  Calcul de K2*EXP(-E2/T)
-!
-          if ( ipdf2 .eq. 1 ) then
-!
-            if ( xo2 .gt. 0.d0 ) then
-!
-              if(xo2.gt.0.018d0) then
+
+          if (ipdf2 .eq. 1) then
+
+            if (xo2 .gt. 0.d0) then
+
+              if (xo2.gt.0.018d0) then
                 bb=0.d0
-              else if(xo2 .lt. 0.0025d0) then
+              else if (xo2 .lt. 0.0025d0) then
                 bb=1.d0
               else
                 bb=(0.018d0-xo2)/(0.018d0-0.0025d0)
               endif
-!
+
               cpro_exp2(iel) = kk2*exp(-ee2/toxyd)*doxyd(iel)*(xo2**bb) &
                                  +kk2*exp(-ee2/tfuel)*dfuel(iel)*(xo2**bb)
-!
+
               do i = 1, npart+1
                 val(i) = kk2*exp(-ee2/tt(i))*hrec(iel)
               enddo
@@ -636,18 +631,18 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
             endif
 
           endif
-!
+
 !  Calcul de K3*EXP(-E3/T)
-!
+
           if ( ipdf3 .eq. 1 ) then
 
             if ( xo2 .gt. 0.d0 ) then
-!
+
               cpro_exp3(iel) = kk3*exp(-ee3/toxyd)                  &
-                                         *doxyd(iel)*(yo2ox**0.5d0)    &
+                                       *doxyd(iel)*(yo2ox**0.5d0)    &
                                  +kk3*exp(-ee3/tfuel)                  &
                                          *dfuel(iel)*(yo2cb**0.5d0)
-!
+
               do i = 1, npart+1
                 if (yyo2(i).gt.0.d0) then
                   if (gs(i).le.fs3no(iel)) then
@@ -664,21 +659,20 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
                 cpro_exp3(iel) = cpro_exp3(iel)                  &
                                    +0.5d0*dgs*(val(i)+val(i+1))
               enddo
-!
+
             else
               cpro_exp3(iel) = 0.d0
             endif
           endif
-!
+
       endif
-!
+
     endif
   enddo
 
   deallocate(cvar_yfolcl, cvar_h2cl)
   deallocate(cpro_temp2)
 
-!
   if ( irangp .ge. 0 ) then
     call parcpt(inok)
     call parcpt(i300)
@@ -702,19 +696,20 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
     call parmax(ts4admax)
     call parmin(sommin)
     call parmax(sommax)
-!
+
     call parcpt(nbclip30)
     call parcpt(nbclip31)
     call parmin(yo2min)
     call parmax(yo2max)
     call parmin(yo2min1)
     call parmax(yo2max1)
-!
+
     call parmin(toxmin)
     call parmax(toxmax)
     call parmin(yo2oxmin)
     call parmax(yo2oxmax)
   endif
+
 !===============================================================================
   write(nfecra,*) ' '
   write(nfecra,*) ' Min max de TSox ',toxmin,toxmax
@@ -736,15 +731,16 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
   write(nfecra,*) ' Min max concentration en fs4 ',sommin,sommax
   write(nfecra,*) ' Clipping en min en ',nbclip1,' points sur ',nbpt,' points'
   write(nfecra,*) ' Clipping en max en ',nbclip2,' points sur ',nbpt,' points'
-!
+
   write(nfecra,*) ' '
   write(nfecra,*) ' Min max de Yo2ox en 0 ',yo2oxmin,yo2oxmax
   write(nfecra,*) ' Min max de Yo2 en fs4 avant clipping ',yo2min,yo2max
   write(nfecra,*) ' Clipping en min sur Yo2 en fs4       ',nbclip30
   write(nfecra,*) ' Clipping en max sur Yo2 en fs4       ',nbclip31
   write(nfecra,*) ' Min max de Yo2 en fs4 apres clipping ',yo2min1,yo2max1
+
 !===============================================================================
-!
+
 endif
 
 return

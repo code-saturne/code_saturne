@@ -61,8 +61,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_physical_model.c
-        Specific physical models selection.
+  \file cs_combustion_model.c
+        Combustion  model selection parameters.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -95,6 +95,10 @@ cs_combustion_model_t
                                .rosoot = 0.},
                        .coal = {.nclacp = 0},
                        .fuel = {.nclafu = 0},
+                       .n_gas_el_comp = 0,
+                       .n_gas_species = 0,
+                       .n_atomic_species = 0,
+                       .n_reactions = 0,
                        .isoot = -1,
                        .ckabs0 = 0,
                        .xco2 = -1,
@@ -114,7 +118,11 @@ void
 cs_f_combustion_model_get_pointers(int  **isoot);
 
 void
-cs_f_ppthch_get_pointers(int     **iic,
+cs_f_ppthch_get_pointers(int     **ngaze,
+                         int     **ngazg,
+                         int     **nato,
+                         int     **nrgaz,
+                         int     **iic,
                          double  **wmole,
                          double  **wmolg,
                          double  **xco2,
@@ -174,6 +182,9 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  * enables mapping to Fortran global pointers.
  *
  * parameters:
+ *   ngaze  --> pointer to number of elementary species
+ *   ngazg  --> pointer to number of global species
+ *   nato   --> pointer to number of atomic species
  *   iic    --> pointer to rank of C in gas composition
  *   wmole  --> pointer to molar mass of elementary gas components
  *   wmolg  --> pointer to molar mass of global species
@@ -183,13 +194,22 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_ppthch_get_pointers(int     **iic,
+cs_f_ppthch_get_pointers(int     **ngaze,
+                         int     **ngazg,
+                         int     **nato,
+                         int     **nrgaz,
+                         int     **iic,
                          double  **wmole,
                          double  **wmolg,
                          double  **xco2,
                          double  **xh2o,
                          double  **ckabs1)
 {
+  *ngaze  = &(cs_glob_combustion_model->n_gas_el_comp);
+  *ngazg  = &(cs_glob_combustion_model->n_gas_species);
+  *nato   = &(cs_glob_combustion_model->n_atomic_species);
+  *nrgaz  = &(cs_glob_combustion_model->n_reactions);
+
   *iic    = &(cs_glob_combustion_model->gas.iic);
   *wmole  = cs_glob_combustion_model->wmole;
   *wmolg  = cs_glob_combustion_model->gas.wmolg;

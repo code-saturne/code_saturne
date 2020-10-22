@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_math.h"
 #include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
@@ -76,6 +77,7 @@ typedef enum {
   CS_WALL_F_S_VDRIEST = 1,
   CS_WALL_F_S_LOUIS = 2,
   CS_WALL_F_S_MONIN_OBUKHOV = 3,
+  CS_WALL_F_S_SMOOTH_ROUGH = 4,//TODO merge with MO ?
 
 } cs_wall_f_s_type_t;
 
@@ -402,7 +404,7 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
   /* Deduced velocity sclale uet*/
   *ustar = vel / uplus;
 
-  if( *yplus < 1.e-1 ) {
+  if (*yplus < 1.e-1) {
 
     *ypup   = 1.0;
     *cofimp = 0.0;
@@ -593,8 +595,8 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
   *yplus = *uk * y / l_visc;
 
   /* Compute the friction velocity ustar */
-  *uk = cs_turb_cmu025 * sqrt(kinetic_en);
-  *yplus = *uk * y / l_visc;
+  *uk = cs_turb_cmu025 * sqrt(kinetic_en);//FIXME
+  *yplus = *uk * y / l_visc;//FIXME
 
   /* Log layer */
   if (*yplus > ypluli) {
@@ -607,7 +609,6 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
   } else {
 
     *dplus = ypluli - *yplus;
-    *yplus = ypluli;
 
     /* Count the cell as if it was in the viscous sub-layer */
     *nsubla += 1;
@@ -615,13 +616,13 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
   }
 
   /* Mixing length viscosity */
-  ml_visc = cs_turb_xkappa * l_visc * *yplus;
-  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+  ml_visc = cs_turb_xkappa * l_visc * (*yplus + *dplus);
+  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / (*yplus + *dplus));
 
-  *ustar = vel / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
-  *ypup = (*yplus - *dplus) / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *ustar = vel / (log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *ypup = *yplus / (log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog);
   *cofimp = 1. - *ypup
-                 / cs_turb_xkappa * (2. * rcprod - 1. / (2. * *yplus - *dplus));
+                 / cs_turb_xkappa * (2. * rcprod - 1. / (2. * *yplus + *dplus));
 }
 
 /*----------------------------------------------------------------------------
@@ -828,7 +829,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     roughness     roughness
+ * \param[in]     rough_d       roughness length scale (not sand grain)
  * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[out]    iuntur        indicator: 0 in the viscous sublayer
  * \param[out]    nsubla        counter of cell in the viscous sublayer
@@ -849,7 +850,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
                                        cs_real_t   t_visc,
                                        cs_real_t   vel,
                                        cs_real_t   y,
-                                       cs_real_t   roughness,
+                                       cs_real_t   rough_d,
                                        cs_real_t   kinetic_en,
                                        int        *iuntur,
                                        cs_lnum_t  *nsubla,
@@ -875,14 +876,16 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
    * ln((y+y0)/y0) = ln((y+y0)/alpha xi) + kappa * 5.2
    *
    * y0 =  xi * exp(-kappa * 8.5)
-   * where xi is the roughness here
+   * where xi is the sand grain roughness here
    * y0 = alpha * xi * exp(-kappa * 5.2)
    *
    * so:
-   *  alpha = exp(-kappa * (8.5 - 5.2)) = 0.26
+   *  alpha = exp(-kappa * (8.5 - 5.2)) = 0.25
    *
    */
-  double y0 = roughness*exp(-cs_turb_xkappa*cs_turb_cstlog_rough);
+  cs_real_t y0 = rough_d;
+  /* Sand grain roughness */
+  cs_real_t sg_rough = rough_d * exp(cs_turb_xkappa*cs_turb_cstlog_rough);
 
   /* Blending for very low values of k */
   Re = sqrt(kinetic_en) * (y + y0) / l_visc;
@@ -891,18 +894,18 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
             + g * l_visc * vel / (y + y0));
 
-  double effective_visc = (l_visc + cs_turb_cstlog_alpha * roughness * *uk);
 
-  /* NB: tends to "y/xi" in rough regime, to "y.uk/nu" in smooth regime  */
-  *yplus = *uk * (y + y0) / effective_visc;
+  *yplus = *uk * y / l_visc;
 
-  double yk = *uk * y / l_visc;
+  /* As for scalable wall functions, yplus is shifted of "dplus" */
+  *dplus = *uk * y0 / l_visc;
 
-  /* As for scalable wall functions, "y*uk/effective_visc+ dplus = yplus" */
-  *dplus = *uk * y0 / effective_visc;
+  /* Shift of the velocity profile due to roughness */
+  cs_real_t shift_vel = -log(1. + cs_turb_cstlog_alpha * sg_rough * *uk/l_visc)
+    / cs_turb_xkappa;
 
   /* Log layer and shifted with the roughness */
-  if (yk > ypluli) {
+  if (*yplus > ypluli) {
 
     *nlogla += 1;
 
@@ -912,21 +915,21 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   else {
 
     *dplus = ypluli - *yplus;
-    *yplus = ypluli;
     /* Count the cell as if it was in the viscous sub-layer */
     *nsubla += 1;
 
   }
 
-  double uplus = log(*yplus) / cs_turb_xkappa + cs_turb_cstlog;
+  cs_real_t uplus = log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog + shift_vel;
   *ustar = vel / uplus;
-  *ypup = yk / uplus;
+  bft_printf("uet=%f, u=%f, uplus=%f, yk=%f, vel=%f, duplus=%f\n", *ustar, vel, uplus, *yplus, vel, 1./uplus);
+  *ypup = *yplus / uplus;
 
   /* Mixing length viscosity, compatible with both regimes */
   ml_visc = cs_turb_xkappa * *uk * (y + y0);
   rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
-  *cofimp = 1. - (*yplus - *dplus) / uplus
-          / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus - *dplus));
+  *cofimp = 1. - *yplus / uplus
+          / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus + *dplus));
 
 }
 
@@ -1013,19 +1016,26 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
  *  h = \dfrac{K}{\centip \centf} h_{tur}
  *  \f]
  *
+ * \param[in]     l_visc        kinetic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     rough_t       scalar roughness length scale
+ * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[out]    dplus         dimensionless shift to the wall for scalable
  *                              wall functions
- * \param[out]    htur          corrected exchange coefficient
+ * \param[out]    htur          correction for the exchange coefficient
+ *                              (\f$ Pr y^+/T^+ \f$)
  * \param[out]    yplim         value of the limit for \f$ y^+ \f$
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
+cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
+                                  cs_real_t  prl,
                                   cs_real_t  prt,
+                                  cs_real_t  rough_t,
+                                  cs_real_t  uk,
                                   cs_real_t  yplus,
                                   cs_real_t  dplus,
                                   cs_real_t *htur,
@@ -1037,15 +1047,29 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
   double yp2;
   double prlm1;
 
-  const double epzero = 1.e-12;
+  const double epzero = cs_math_epzero;
 
   /*==========================================================================
     1. Initializations
     ==========================================================================*/
 
-  (*htur) = CS_MAX(yplus-dplus,epzero)/CS_MAX(yplus,epzero);
+  (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
 
   prlm1 = 0.1;
+
+  /* Sand grain roughness is:
+   * zeta = z0 * exp(kappa 8.5)
+   * Then:
+   * hp = zeta uk / nu * exp( -kappa(8.5 - 5.2))
+   *    = z0 * uk / nu * exp(kappa * 5.2)
+   *   where 5.2 is the smooth log constant, and 8.5 the rough one
+   *
+   *   FIXME check if we should use a molecular Schmidt number
+   */
+  cs_real_t hp = rough_t *uk / l_visc * exp(cs_turb_xkappa*cs_turb_cstlog);
+
+  /* Shift of the temperature profile due to roughness */
+  cs_real_t shift_temp = -log(1. + hp);
 
   /*==========================================================================
     2. Compute htur for small Prandtl numbers
@@ -1054,8 +1078,8 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
   if (prl <= prlm1) {
     (*yplim)   = prt/(prl*cs_turb_xkappa);
     if (yplus > (*yplim)) {
-      tplus = prl*(*yplim) + prt/cs_turb_xkappa * log(yplus/(*yplim));
-      (*htur) = prl*(yplus-dplus)/tplus;
+      tplus = prl*(*yplim) + prt/cs_turb_xkappa * (log((yplus+dplus)/(*yplim)) + shift_temp);
+      (*htur) = prl * yplus / tplus;
     }
 
     /*========================================================================
@@ -1063,21 +1087,20 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
       ========================================================================*/
 
   } else {
-    yp2   = cs_turb_xkappa*1000./prt;
-    yp2   = sqrt(yp2);
-    (*yplim)   = pow(1000./prl,1./3.);
+    yp2 = sqrt(cs_turb_xkappa*1000./prt);
+    (*yplim)   = pow(1000./prl, 1./3.);
 
-    a2 = 15.*pow(prl,2./3.);
-    beta2 = a2 - 500./ pow(yp2,2);
+    a2 = 15.*pow(prl, 2./3.);
 
     if (yplus >= (*yplim) && yplus < yp2) {
-      tplus = a2 - 500./(yplus*yplus);
-      (*htur) = prl*(yplus-dplus)/tplus;
+      tplus = a2 - 500./((yplus+dplus)*(yplus+dplus));
+      (*htur) = prl * yplus / tplus;
     }
 
     if (yplus >= yp2) {
-      tplus = beta2 + prt/cs_turb_xkappa*log(yplus/yp2);
-      (*htur) = prl*(yplus-dplus)/tplus;
+      beta2 = a2 - 0.5 * prt /cs_turb_xkappa;
+      tplus = beta2 + prt/cs_turb_xkappa*log((yplus+dplus)/yp2);
+      (*htur) = prl * yplus / tplus;
     }
 
   }
@@ -1104,7 +1127,8 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
  *                              ( \f$ Pr=\sigma=\frac{\mu C_p}{\lambda_f} \f$ )
  * \param[in]     prt           turbulent Prandtl number ( \f$ \sigma_t \f$ )
  * \param[in]     yplus         dimensionless distance to the wall
- * \param[out]    htur          corrected exchange coefficient
+ * \param[out]    htur          correction for the exchange coefficient
+ *                              (\f$ Pr y^+/T^+ \f$)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1155,6 +1179,60 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
     }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Rough Smooth Thermal Wall Function - Prototype
+ *
+ * \param[in]     l_visc        kinetic viscosity
+ * \param[in]     prl           molecular Prandtl number
+ *                              ( \f$ Pr=\sigma=\frac{\mu C_p}{\lambda_f} \f$ )
+ * \param[in]     prt           turbulent Prandtl number ( \f$ \sigma_t \f$ )
+ * \param[in]     rough_t       scalar roughness length scale
+ * \param[in]     uk            velocity scale based on TKE
+ * \param[in]     yplus         dimensionless distance to the wall
+ * \param[in]     dplus         dimensionless shift to the wall for scalable
+ *                              wall function
+ * \param[out]    htur          correction for the exchange coefficient
+ *                              (\f$ Pr y^+/T^+ \f$)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
+                                 cs_real_t  prl,
+                                 cs_real_t  prt,
+                                 cs_real_t  rough_t,
+                                 cs_real_t  uk,
+                                 cs_real_t  yplus,
+                                 cs_real_t  dplus,
+                                 cs_real_t *htur)
+{
+  CS_UNUSED(prt);
+
+  /* Sand grain roughness is:
+   * zeta = z0 * exp(kappa 8.5)
+   * Then:
+   * hp = zeta uk / nu * exp( -kappa(8.5 - 5.2))
+   *    = z0 * uk / nu * exp(kappa * 5.2)
+   *   where 5.2 is the smooth log constant, and 8.5 the rough one
+   *
+   *   FIXME check if we should use a molecular Schmidt number
+   */
+  cs_real_t hp = rough_t *uk / l_visc * exp(cs_turb_xkappa*cs_turb_cstlog);
+  const double ypluli = cs_glob_wall_functions->ypluli;
+  const double epzero = cs_math_epzero;
+
+  (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
+
+  /* Shift of the temperature profile due to roughness */
+  cs_real_t shift_temp = -log(1. + hp);
+
+  if (yplus > ypluli) {
+    cs_real_t tplus = prt * ((log(yplus+dplus) + shift_temp)/cs_turb_xkappa + cs_turb_cstlog);
+    (*htur) = prl * yplus / tplus;
+  }
+}
+
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -1171,7 +1249,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
- const cs_real_t  *const roughness,
+ const cs_real_t  *const rough_d,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
        int              *iuntur,
@@ -1192,8 +1270,11 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 void CS_PROCF (hturbp, HTURBP)
 (
  const int        *const iwalfs,
+ const cs_real_t  *const l_visc,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
+ const cs_real_t  *const rough_t,
+ const cs_real_t  *const uk,
  const cs_real_t  *const yplus,
  const cs_real_t  *const dplus,
        cs_real_t        *htur,
@@ -1222,7 +1303,7 @@ cs_get_glob_wall_functions(void);
  * \param[in]     vel           wall projected
  *                              cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     roughness     roughness
+ * \param[in]     rough_d       roughness lenghth scale
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[in]     iuntur        indicator:
@@ -1248,7 +1329,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         t_visc,
                            cs_real_t         vel,
                            cs_real_t         y,
-                           cs_real_t         roughness,
+                           cs_real_t         rough_d,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
                            int              *iuntur,
@@ -1275,8 +1356,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  *  \f]
  *
  * \param[in]     iwalfs        type of wall functions for scalar
+ * \param[in]     l_visc        kinematic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     rough_t       scalar roughness lenghth scale
+ * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[in]     dplus         dimensionless distance for scalable
  *                              wall functions
@@ -1287,8 +1371,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
 void
 cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
+                         cs_real_t           l_visc,
                          cs_real_t           prl,
                          cs_real_t           prt,
+                         cs_real_t           rough_t,
+                         cs_real_t           uk,
                          cs_real_t           yplus,
                          cs_real_t           dplus,
                          cs_real_t          *htur,

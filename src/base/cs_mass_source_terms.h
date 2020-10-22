@@ -43,8 +43,9 @@ BEGIN_C_DECLS
 /*!
  * \brief Implicit and explicit mass source terms computation.
  *
- * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     iterns        iteration number on Navier-Stoke
+ * \param[in]     dim           associated field dimension
+ * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
  *                              (see \ref cs_user_mass_source_terms)
@@ -55,15 +56,16 @@ BEGIN_C_DECLS
  * \param[in,out] tsexp         explicit source term part linear in the variable
  * \param[in,out] tsimp         associated value with \c tsexp
  *                              to be stored in the matrix
- * \param[out]    gapinj        explicit source term part independant
+ * \param[out]    gapinj        explicit source term part independent
  *                              of the variable
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mass_source_terms(cs_lnum_t             ncesmp,
-                     int                   iterns,
-                     const int             icetsm[],
+cs_mass_source_terms(int                   iterns,
+                     int                   dim,
+                     cs_lnum_t             ncesmp,
+                     const cs_lnum_t       icetsm[],
                      int                   itpsmp[],
                      const cs_real_t       volume[],
                      const cs_real_t       pvara[],

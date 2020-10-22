@@ -191,18 +191,22 @@ const char *cs_lagr_attribute_name[] = {
   "neighbor_face_id",
   "marko_value",
   "fouling_index",
+
   "n_large_asperities",
   "n_small_asperities",
   "adhesion_force",
   "adhesion_torque",
   "displacement_norm",
+
   "height",
   "cluster_nb_part",
   "depo_time",
   "consol_height",
+
   "temperature",
   "fluid_temperature",
   "cp",
+
   "water_mass",
   "coal_mass",
   "coke_mass",
@@ -210,8 +214,14 @@ const char *cs_lagr_attribute_name[] = {
   "initial_diameter",
   "coal_id",
   "coal_density",
+
   "emissivity",
+
   "stat_class",
+
+  "agglo_class_id",
+  "agglo_fractal_dim",
+
   "user",
   "<none>"};
 
@@ -717,12 +727,15 @@ cs_lagr_particle_attr_initialize(void)
 
   /* Non-sphere model
    * TODO activate only required arrays */
-  if (lagr_model->shape != 0) {
+  if (lagr_model->shape != CS_LAGR_SHAPE_SPHERE_MODEL) {
     attr_keys[CS_LAGR_SHAPE][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_SHAPE][1] = ++loc_count;
 
     attr_keys[CS_LAGR_ORIENTATION][1] = ++loc_count;
     attr_keys[CS_LAGR_ORIENTATION][2] = 3;
+
+    attr_keys[CS_LAGR_QUATERNION][1] = ++loc_count;
+    attr_keys[CS_LAGR_QUATERNION][2] = 4;
 
     attr_keys[CS_LAGR_RADII][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_RADII][1] = ++loc_count;

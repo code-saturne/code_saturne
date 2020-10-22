@@ -59,6 +59,7 @@
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
 !> \param[in]     velk          velocity at the previous sub iteration (or vela)
+!> \param[in,out] da_u          inverse of diagonal part of velocity matrix
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -94,7 +95,7 @@ subroutine predvv &
    nvar   , nscal  , iterns ,                                     &
    ncepdp , ncesmp ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vela   , velk   ,                            &
+   dt     , vel    , vela   , velk   , da_u   ,                   &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
@@ -164,6 +165,7 @@ double precision cofbfv(3,3,nfabor)
 double precision vel   (3, ncelet)
 double precision velk  (3, ncelet)
 double precision vela  (3, ncelet)
+double precision da_u  (ncelet)
 
 ! Local variables
 
@@ -184,7 +186,7 @@ double precision rnorm , vitnor
 double precision romvom, drom  , rom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
-double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
+double precision vit1  , vit2  , vit3, xkb, pip, pfac
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
@@ -225,6 +227,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:,:), pointer :: cpro_gradp
+double precision, dimension(:,:), pointer :: cpro_pred_vel
 double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -575,14 +578,8 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
           + diipbx*cpro_gradp(1,iel)            &
           + diipby*cpro_gradp(2,iel)            &
           + diipbz*cpro_gradp(3,iel)
-    pfac = coefa_p(ifac) +coefb_p(ifac)*pip
-    pfac1= cvar_pr(iel)                                              &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)           &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)           &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*cpro_gradp(3,iel)
-    pfac = coefb_p(ifac)*(vcopt_p%extrag*pfac1                       &
-         +(1.d0-vcopt_p%extrag)*pfac)                                &
-         +(1.d0-coefb_p(ifac))*pfac                               &
+    pfac = coefa_p(ifac) + coefb_p(ifac)*pip
+    pfac = pfac                                                   &
          + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))                      &
          + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
          + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                         &
@@ -1499,17 +1496,13 @@ if (ncesmp.gt.0) then
 !       ROVSDT a chaque iteration recoit Gamma
   allocate(gavinj(3,ncelet))
   if (nterup.eq.1) then
-    call catsmv &
-  ( ncelet , ncel , ncesmp , iterns ,                           &
-    icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
-    trav   , fimp , gavinj )
+    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+                cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
+                trav, fimp, gavinj)
   else
-    call catsmv &
-  ( ncelet , ncel , ncesmp , iterns ,                           &
-    icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
-    trava  , fimp  , gavinj )
+    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+                cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
+                trava, fimp, gavinj)
   endif
 
   ! At the first PISO iteration, the explicit part "Gamma u^{in}" is added
@@ -1678,6 +1671,23 @@ if (iappel.eq.1) then
    vel    ,                                                       &
    eswork )
 
+
+ ! Store inverse of the diagonal velocity matrix for the
+ ! correction step if needed (otherwise dt is used)
+ if (mass_preconditioner.eq.0) then
+   do iel = 1, ncel
+     da_u(iel) = dt(iel)
+   enddo
+
+ else
+   do iel = 1, ncel
+     da_u(iel) = (3.d0* crom(iel)*cell_f_vol(iel)) &
+       / (fimp(1,1,iel) + fimp(2,2,iel) + fimp(3,3,iel))
+   enddo
+ endif
+
+ call synsca(da_u)
+
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized
   !  by 0. so that the advection/diffusion added by bilscv is 0.
@@ -1778,6 +1788,16 @@ else if (iappel.eq.2) then
 endif
 
 ! ---> Finilaze estimators + Printings
+
+call field_get_id_try("predicted_velocity", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, cpro_pred_vel)
+  do iel = 1, ncel
+    do isou = 1, 3
+      cpro_pred_vel(isou, iel) = vel(isou, iel)
+    enddo
+  enddo
+endif
 
 if (iappel.eq.1) then
 

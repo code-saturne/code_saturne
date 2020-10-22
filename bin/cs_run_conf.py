@@ -25,6 +25,7 @@
 
 import sys, os
 
+from collections import OrderedDict
 try:
     import ConfigParser  # Python2
     configparser = ConfigParser
@@ -43,10 +44,10 @@ def get_install_config_info(pkg):
     dictionnary with 'batch', 'submit_command', 'resource', 'compute_builds'
     """
 
-    c = {'batch': None,
-         'submit_command': None,
-         'resource_name': None,
-         'compute_builds': None}
+    c = OrderedDict({'batch': None,
+                     'submit_command': None,
+                     'resource_name': None,
+                     'compute_builds': None})
 
     # Use alternate compute (back-end) package if defined
 
@@ -106,7 +107,7 @@ class run_conf(object):
 
         self.path = path
         self.package = package
-        self.sections = {}
+        self.sections = OrderedDict()
         self.comments = {}
 
         if not path:
@@ -148,7 +149,7 @@ class run_conf(object):
         resource_name = get_resource_name(i_c)
 
         if not resource_name in self.sections:
-            self.sections[resource_name] = {}
+            self.sections[resource_name] = OrderedDict()
 
         # Determine or build default job name for batch
 
@@ -202,11 +203,11 @@ class run_conf(object):
         br = os.linesep
         lbr = len(br)
 
-        sections = {}
+        sections = OrderedDict()
         comments = {}
 
         section_name = 'job_defaults'
-        section_dict = {}
+        section_dict = OrderedDict()
         comment_dict = {}
         sub_section = False
         key_indent = -1  # not inside key if < 0
@@ -275,7 +276,7 @@ class run_conf(object):
                         section_dict = sections[section_name]
                         comment_dict = comments[section_name]
                     else:
-                        section_dict = {}
+                        section_dict = OrderedDict()
                         comment_dict = {}
                     if comment != '':
                         if '' in comment_dict:
@@ -426,7 +427,7 @@ class run_conf(object):
                             lines.append('    ' + l)
                         lines.append('')
                 elif k_comment:
-                    lines.append(k + ':')
+                    lines.append(k + ': ')
 
             if has_simple:
                 if k_value_l < 2:
@@ -546,7 +547,7 @@ class run_conf(object):
         """
 
         if not section in self.sections:
-            self.sections[section] = {}
+            self.sections[section] = OrderedDict()
         if value != None:
             self.sections[section][key] = str(value)
         else:
@@ -580,6 +581,35 @@ class run_conf(object):
         for line in lines:
             f.write(line + br)
         f.close()
+
+    #---------------------------------------------------------------------------
+
+    def get_coupling_parameters(self):
+        """
+        Return the list of coupled domains defined inside a run.cfg.
+        Empty list if single-case run.
+        """
+
+        domains = []
+
+        domain_names = self.get('setup', 'coupled_domains')
+
+        if domain_names:
+            for dom in domain_names.split(":"):
+                d = self.sections[dom.lower()]
+                domains.append(OrderedDict())
+
+                for key in d.keys():
+                    if d[key] and d[key] != 'None':
+                        if key in ('n_procs_max', 'n_procs_min', 'n_procs_weight'):
+                            domains[-1][key] = int(d[key])
+                        else:
+                            domains[-1][key] = str(d[key])
+                    else:
+                        domains[-1][key] = None
+
+        return domains
+
 
 #-------------------------------------------------------------------------------
 # End

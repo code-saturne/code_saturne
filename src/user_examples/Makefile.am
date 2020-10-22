@@ -38,8 +38,9 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/darc \
+-I$(top_srcdir)/src/cogz \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
@@ -109,6 +110,7 @@ cs_user_mesh-joining.c \
 cs_user_mesh-modify.c \
 cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
+cs_user_paramedmem_coupling-base.c \
 cs_user_parameters-base.c \
 cs_user_parameters-cdo-condif.c \
 cs_user_parameters-ctwr.c \
@@ -116,6 +118,7 @@ cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-linear_solvers.c \
+cs_user_parameters-volume_mass_injection.c \
 cs_user_parameters-time_moments.c \
 cs_user_performance_tuning-matrix.c \
 cs_user_performance_tuning-numbering.c \
@@ -170,7 +173,6 @@ cs_user_initialization-richards.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_les_inflow-base.f90 \
-cs_user_mass_source_terms.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \

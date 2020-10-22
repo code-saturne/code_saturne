@@ -94,7 +94,13 @@ cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
                                   cs_real_t                  t_intersect,
                                   cs_lagr_tracking_state_t  *tracking_state)
 {
-
+  CS_UNUSED(particles);
+  CS_UNUSED(p_id);
+  CS_UNUSED(face_id);
+  CS_UNUSED(face_norm);
+  CS_UNUSED(c_intersect);
+  CS_UNUSED(t_intersect);
+  CS_UNUSED(tracking_state);
 }
 
 /*----------------------------------------------------------------------------*/

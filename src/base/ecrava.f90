@@ -106,7 +106,6 @@ type(c_ptr) :: rp
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
-double precision, pointer, dimension(:,:) :: disale
 
 type(var_cal_opt) :: vcopt
 
@@ -459,14 +458,6 @@ if (iecaux.eq.1) then
   call restart_write_linked_fields(rp, "inner_mass_flux_id", iecr)
   call restart_write_linked_fields(rp, "boundary_mass_flux_id", iecr)
 
-  ! Symmetry flag (used for least-squares gradients,
-  ! with extrapolation at boundary).
-
-  rubriq = 'isympa_fb_phase01'
-  itysup = 3
-  nbval  = 1
-  call restart_write_section_int_t(rp,rubriq,itysup,nbval,isympa)
-
   ! Boundary condition coefficients
 
   call restart_write_bc_coeffs(rp)
@@ -568,13 +559,8 @@ if (iecaux.eq.1) then
 
   if (iale.ge.1) then
 
-    itysup = 4
-    nbval  = 3
-
-    call field_get_val_v(fdiale, disale)
-
-    rubriq = 'vertex_displacement'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
+    call restart_write_field_vals(rp, fdiale, 0)
+    call restart_write_field_vals(rp, fdiale, 1)
 
     car54=' End writing the ALE data              '
     write(nfecra,1110)car54

@@ -36,7 +36,7 @@
 */
 
 #if (SIZEOF_LONG < 8) && (_FILE_OFFSET_BITS == 64)
-# if defined(__linux__) || defined(__blrts__) || defined(__bg__)
+# if defined(__linux__)
 #  if !defined(_POSIX_SOURCE)
 #    define _GNU_SOURCE 1
 #  endif
@@ -3885,6 +3885,11 @@ cs_file_remove(const char  *path)
   if (stat(path, &s) == 0) {
     if (S_ISREG(s.st_mode) != 0) {
       retval = unlink(path);
+      if (retval != 0) {
+        /* Some error types are accepted */
+        if (errno == ENOENT)
+          retval = 0;
+      }
     }
     else if (S_ISDIR(s.st_mode) != 0) {
       retval = rmdir(path);
@@ -3906,6 +3911,9 @@ cs_file_remove(const char  *path)
   if ((f = fopen(path, "w")) != NULL) {
     fclose(f);
     retval = remove(f);
+    /* Some error types are accepted */
+    if (errno == ENOENT)
+      retval = 0;
   }
 
 #endif
@@ -3947,9 +3955,8 @@ cs_file_endswith(const char  *path,
     const int lpath = strlen(path);
     const int lext  = strlen(end);
 
-    /* If either strings is empty, or if the path is shorter than the end
-     * string, return 0
-     */
+    /* If either string is empty, or if the path is shorter than the end
+     * string, return 0 */
     if (lpath == 0 || lext == 0)
       retval = 0;
 

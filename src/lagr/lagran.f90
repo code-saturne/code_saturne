@@ -110,14 +110,17 @@ module lagran
   integer(c_int), pointer, save ::  ltsdyn
 
   !> activation (=1) or not (=0) of the two-way coupling on the mass.
-  !> Useful if \ref iilagr = 2, \ref physical_model = 1 and \ref impvar = 1
+  !> Useful if \ref iilagr = 2, \ref cs_lagr_model_t::physical_model = 1
+  !>and \ref cs_lagr_specific_physics_t::impvar = 1
   integer(c_int), pointer, save ::  ltsmas
 
-  !> if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
-  !> activates (=1) or not (=0) the two-way coupling on temperature.
-  !> if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
-  !> two-way coupling on the eulerian variables related to pulverised
-  !> coal combustion.
+  !> if \ref cs_lagr_model_t::physical_model = 1 and
+  !> \ref cs_lagr_specific_physics_t::itpvar = 1,
+  !> \ref ltsthe !> activates (=1) or not (=0) the two-way coupling on
+  !> temperature.
+  !> if \ref cs_lagr_model_t::physical_model = 2, \ref ltsthe
+  !> activates (=1) or not (=0) the two-way coupling on the eulerian
+  !> variables related to pulverized coal combustion.
   !> Useful if \ref iilagr = 2
   integer(c_int), pointer, save ::  ltsthe
 

@@ -165,6 +165,19 @@ _init_pointers(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Ensure field pointer array is initialized.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_ensure_init(void)
+{
+  if (_field_pointer == NULL)
+    _init_pointers();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free all field pointer data.
  */
 /*----------------------------------------------------------------------------*/
@@ -291,7 +304,8 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
   cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));
 
-  cs_field_pointer_map(CS_ENUMF_(hybrid_blend), cs_field_by_name_try("hybrid_blend"));
+  cs_field_pointer_map(CS_ENUMF_(hybrid_blend),
+                       cs_field_by_name_try("hybrid_blend"));
 
   cs_field_pointer_map(CS_ENUMF_(mesh_u),
                        cs_field_by_name_try("mesh_velocity"));

@@ -957,9 +957,9 @@ cs_rad_transfer_bcs(int         nvar,
     cs_rad_transfer_wall_flux(nvar,
                               ivart,
                               isothm,
-                              &tmin,
-                              &tmax,
-                              &tx,
+                              tmin,
+                              tmax,
+                              tx,
                               rcodcl,
                               twall,
                               f_bqinci->val,
@@ -1146,29 +1146,24 @@ cs_rad_transfer_bcs(int         nvar,
 /*!
  * \brief Boundary conditions for DO and P-1 models
  *
- * 1. Boundary conditions for the radiative intensity (DO model)
- * --------------------------------------------------------------
- *      The array coefap stores the intensity for each boundary faces,
- *        depending of the natur of the boundary (Dirichlet condition).
- *      The intensity of radiation is defined as the rate of emitted
- *        energy from unit surface area through unit solid angle.
+ *  The coefap array stores the intensity for each boundary face,
+ *  depending of the nature of the boundary (Dirichlet condition).
+ *  The intensity of radiation is defined as the rate of emitted
+ *  energy from unit surface area through a unit solid angle.
  *
  *   1/ Gray wall: isotropic radiation field.
- *                                   4
- *                     eps.sig.twall         (1-eps).qincid
- *       coefap   =    --------------    +    --------------
- *                           pi                     pi
- *   wall intensity     wall emission           reflecting flux.
- *      (eps=1: black wall; eps=0: reflecting wall)
- *   2/ Free boundary: condition to mimic infinite domain
  *
- * 2. Boundary conditions for the P-1 model
- * ----------------------------------------
+ *   \f$ coefap =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *
+ *   which is the sum of the wall emission and reflecting flux
+ *   (eps=1: black wall; eps=0: reflecting wall).
+ *
+ *   2/ Free boundary: condition to mimic infinite domain
  *
  * \param[in]  bc_type         boundary face types
  * \param[in]  vect_s          direction vector or NULL
  * \param[in]  ckmel           Absoprtion coefficcient of the mixture
- *                               gas-particules of coal or NULL
+ *                             gas-particules of coal or NULL
  * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
@@ -1208,6 +1203,9 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   /* Pointer to the radiative incident flux field */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
+
+  /* Pointer to the wall emissivity field */
+  cs_field_t *f_eps = cs_field_by_name("emissivity");
 
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -1255,6 +1253,32 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           || bc_type[face_id] == CS_FREE_INLET
           || bc_type[face_id] == CS_SYMMETRY) {
 
+        /* Legacy open boundary conditions if (eps < 0)
+           TODO use boundary definitions from cs_boundary.h instead
+           of this temporary hack. */
+
+        if (f_eps->val[face_id] < 0.5) {
+
+          cs_real_t pimp;
+          /* Symmetry: pseudo-reflecting boundary conditions
+           * true symmetry would require coupling directions */
+          if (bc_type[face_id] == CS_SYMMETRY)
+            pimp  = qpatmp * onedpi;
+          /* Inlet/Outlet face: entering intensity fixed to zero
+           * (warning: the treatment is different from than of P-1 model) */
+          else
+            pimp  = cs_math_epzero;
+
+          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
+                                                      &cofafp[face_id],
+                                                      &coefbp[face_id],
+                                                      &cofbfp[face_id],
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+          continue;
+        }
+
         /* Inlet/Outlet face: entering intensity fixed to zero flux
          * which mimics an infinite extrusion
          * (warning: the treatment is different from than of P-1 model)
@@ -1271,8 +1295,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           cs_real_t normal[3];
           cs_math_3_normalise(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
-          /* The two vectors are colinear */
-          if (CS_ABS(vs_dot_n) > 0.99)
+          if (CS_ABS(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;
 
           /* Top of the domain */

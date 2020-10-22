@@ -97,6 +97,8 @@ BEGIN_C_DECLS
         - CS_WALL_F_2SCALES_LOG: two scales of friction velocities (log law)
         - CS_WALL_F_SCALABLE_2SCALES_LOG: two scales of friction velocities (log law) (scalable wall functions)
         - CS_WALL_F_2SCALES_VDRIEST: two scales of friction velocities (mixing length based on V. Driest analysis)
+        - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth friction regimes
+        - CS_WALL_F_2SCALES_CONTINUOUS: All \f$ y^+ \f$  for low Reynolds models\n
         \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10, 40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
         \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32, 50 or 51\n
@@ -217,7 +219,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
- const cs_real_t  *const roughness,
+ const cs_real_t  *const rough_d,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
        int              *iuntur,
@@ -239,7 +241,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
                              *t_visc,
                              *vel,
                              *y,
-                             *roughness,
+                             *rough_d,
                              *rnnb,
                              *kinetic_en,
                              iuntur,
@@ -260,8 +262,11 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 void CS_PROCF (hturbp, HTURBP)
 (
  const int        *const iwalfs,
+ const cs_real_t  *const l_visc,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
+ const cs_real_t  *const rough_t,
+ const cs_real_t  *const uk,
  const cs_real_t  *const yplus,
  const cs_real_t  *const dplus,
        cs_real_t        *htur,
@@ -269,8 +274,11 @@ void CS_PROCF (hturbp, HTURBP)
 )
 {
   cs_wall_functions_scalar((cs_wall_f_s_type_t)*iwalfs,
+                           *l_visc,
                            *prl,
                            *prt,
+                           *rough_t,
+                           *uk,
                            *yplus,
                            *dplus,
                            htur,
@@ -303,7 +311,8 @@ cs_get_glob_wall_functions(void)
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     roughness     roughness
+ * \param[in]     rough_d       roughness length scale
+ *                              (not sand grain roughness)
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulente kinetic energy
  * \param[in]     iuntur        indicator: 0 in the viscous sublayer
@@ -327,7 +336,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         t_visc,
                            cs_real_t         vel,
                            cs_real_t         y,
-                           cs_real_t         roughness,
+                           cs_real_t         rough_d,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
                            int              *iuntur,
@@ -359,6 +368,9 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     if (mq->c_disable_flag[cell_id])
       iwallf = CS_WALL_F_DISABLED;
   }
+
+  /* Sand Grain roughness */
+  cs_real_t sg_rough = rough_d * exp(cs_turb_xkappa*cs_turb_cstlog_rough);
 
   switch (iwallf) {
   case CS_WALL_F_DISABLED:
@@ -435,7 +447,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                        cofimp);
     break;
   case CS_WALL_F_2SCALES_VDRIEST:
-    cs_wall_functions_2scales_vdriest(rnnb,
+   cs_wall_functions_2scales_vdriest(rnnb,
                                       l_visc,
                                       vel,
                                       y,
@@ -449,7 +461,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                       ypup,
                                       cofimp,
                                       &lmk,
-                                      roughness,
+                                      sg_rough,
                                       wf);
     break;
   case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
@@ -457,7 +469,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                            t_visc,
                                            vel,
                                            y,
-                                           roughness,
+                                           rough_d,
                                            kinetic_en,
                                            iuntur,
                                            nsubla,
@@ -504,8 +516,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  *  \f]
  *
  * \param[in]     iwalfs        type of wall functions for scalar
+ * \param[in]     l_visc        kinematic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     rough_t       scalar roughness lenghth scale
+ * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[in]     dplus         dimensionless distance for scalable
  *                              wall functions
@@ -516,8 +531,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
 void
 cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
+                         cs_real_t           l_visc,
                          cs_real_t           prl,
                          cs_real_t           prt,
+                         cs_real_t           rough_t,
+                         cs_real_t           uk,
                          cs_real_t           yplus,
                          cs_real_t           dplus,
                          cs_real_t          *htur,
@@ -525,8 +543,11 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 {
   switch (iwalfs) {
   case CS_WALL_F_S_ARPACI_LARSEN:
-    cs_wall_functions_s_arpaci_larsen(prl,
+    cs_wall_functions_s_arpaci_larsen(l_visc,
+                                      prl,
                                       prt,
+                                      rough_t,
+                                      uk,
                                       yplus,
                                       dplus,
                                       htur,
@@ -538,7 +559,31 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                                 yplus,
                                 htur);
     break;
+  case CS_WALL_F_S_SMOOTH_ROUGH:
+    cs_wall_functions_s_smooth_rough(l_visc,
+                                     prl,
+                                     prt,
+                                     rough_t,
+                                     uk,
+                                     yplus,
+                                     dplus,
+                                     htur);
+    break;
   default:
+    /* TODO Monin Obukhov or Louis atmospheric wall function
+     * must be adapted to smooth wall functions.
+     * Arpaci and Larsen walll functions are put as in previous versions of
+     * Code_Saturne.
+     * */
+    cs_wall_functions_s_arpaci_larsen(l_visc,
+                                      prl,
+                                      prt,
+                                      rough_t,
+                                      uk,
+                                      yplus,
+                                      dplus,
+                                      htur,
+                                      yplim);
     break;
   }
 }

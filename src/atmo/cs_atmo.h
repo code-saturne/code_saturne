@@ -112,21 +112,68 @@ typedef struct {
   int nbmetd;
   /*! numbers of altitudes for the temperature and specific humidity */
   int nbmett;
-  /* numbers of time steps for the meteo profiles */
+  /*! numbers of time steps for the meteo profiles */
+  /*! Number of vertical levels */
   int nbmetm;
-  /* Number of vertical levels */
   int nbmaxt;
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;
 
-  /* Model options */
+  /*! Option to compute ground elevation in the domain */
   bool compute_z_ground;
+
+  int open_bcs_treatment;
+
+  /* Model options */
   int sedimentation_model;
   int deposition_model;
   int nucleation_model;
   int subgrid_model;
-  int imeteo;
+  /*! Use meteo profile:
+   *  - 0: not use
+   *  - 1: use a meteo file
+   *  - 2: directly enter values */
+  int meteo_profile;
+
+  /*! Meteo Monin obukhov inverse length */
+  cs_real_t meteo_dlmo;
+  /*! Meteo reference roughness */
+  cs_real_t meteo_z0;
+  /*! Meteo reference elevation for reference velocity */
+  cs_real_t meteo_zref;
+  /*! Meteo Boundary layer elevation */
+  cs_real_t meteo_zi;
+  /*! Meteo reference elevation for reference velocity 1 */
+  cs_real_t meteo_zu1;
+  /*! Meteo reference elevation for reference velocity 2 */
+  cs_real_t meteo_zu2;
+  /*! Meteo reference elevation for reference temperature 1 */
+  cs_real_t meteo_zt1;
+  /*! Meteo reference elevation for reference temperature 2 */
+  cs_real_t meteo_zt2;
+  /*! Meteo reference velocity */
+  cs_real_t meteo_uref;
+  /*! Meteo reference velocity 1 */
+  cs_real_t meteo_u1;
+  /*! Meteo reference velocity 2 */
+  cs_real_t meteo_u2;
+  /*! Meteo reference ground friction velocity */
+  cs_real_t meteo_ustar0;
+  /*! Meteo reference convective velocity */
+  cs_real_t meteo_wstar0;
+  /*! Meteo wind direction */
+  cs_real_t meteo_angle;
+  /*! Meteo reference temperature at 2m */
+  cs_real_t meteo_t0;
+  /*! Meteo reference temperature 1 */
+  cs_real_t meteo_t1;
+  /*! Meteo reference temperature 2 */
+  cs_real_t meteo_t2;
+  /*! Meteo reference ground friction temperature */
+  cs_real_t meteo_tstar;
+  /*! Meteo pressure at sea level */
+  cs_real_t meteo_psea;
 
   /* Altitudes of the temperature profile */
   cs_real_t *z_temp_met;
@@ -293,6 +340,15 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
                              cs_real_t *muzero,
                              cs_real_t *omega,
                              cs_real_t *fo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the atmospheric module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

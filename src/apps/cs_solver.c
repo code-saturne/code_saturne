@@ -91,6 +91,7 @@
 #include "cs_notebook.h"
 #include "cs_opts.h"
 #include "cs_param_cdo.h"
+#include "cs_paramedmem_coupling.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_properties.h"
@@ -113,6 +114,7 @@
 #include "cs_timer_stats.h"
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
@@ -250,7 +252,6 @@ _run(void)
     if (ivoset)
       halo_type = CS_HALO_EXTENDED;
 
-    cs_gui_boundary_conditions_define(cs_glob_domain->boundaries);
     if (cs_glob_ale > 0) {
       cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
       if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
@@ -288,6 +289,8 @@ _run(void)
 
   cs_syr_coupling_all_init();
   cs_sat_coupling_all_init();
+
+  cs_paramedmem_coupling_all_init();
 
   /* Initialize main post-processing */
 
@@ -412,9 +415,13 @@ _run(void)
 
           cs_ctwr_build_all();
 
+          cs_volume_mass_injection_flag_zones();
+
           /* Setup couplings and fixed-mesh postprocessing */
 
           cs_syr_coupling_init_meshes();
+
+          cs_paramedmem_coupling_define_mesh_fields();
 
           cs_post_default_write_meshes();
 
@@ -485,6 +492,7 @@ _run(void)
   cs_syr_coupling_all_finalize();
 #if defined(HAVE_MPI)
   cs_sat_coupling_all_finalize();
+  cs_paramedmem_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
 

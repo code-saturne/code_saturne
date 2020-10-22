@@ -62,10 +62,6 @@ BEGIN_C_DECLS
  *  See \ref cs_user_radiative_transfer for examples.
  */
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -108,7 +104,8 @@ void
 cs_user_rad_transfer_absorption(const int  bc_type[],
                                 cs_real_t  ck[])
 {
-
+  CS_UNUSED(bc_type);
+  CS_UNUSED(ck);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -155,7 +152,18 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
                               const cs_real_t  ck[],
                               cs_real_t        net_flux[])
 {
-
+  CS_UNUSED(bc_type);
+  CS_UNUSED(coefap);
+  CS_UNUSED(coefbp);
+  CS_UNUSED(cofafp);
+  CS_UNUSED(cofbfp);
+  CS_UNUSED(twall);
+  CS_UNUSED(qincid);
+  CS_UNUSED(xlam);
+  CS_UNUSED(epa);
+  CS_UNUSED(eps);
+  CS_UNUSED(ck);
+  CS_UNUSED(net_flux);
 }
 
 /*----------------------------------------------------------------------------*/

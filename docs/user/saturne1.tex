@@ -313,8 +313,7 @@ The list of integers referring to solved variables can be accessed through
 the following \doxygenfile{group__main__variables.html}{\texttt{Doxygen} documentation}.
 These variable index-numbers can be used to retrieve the corresponding field indices
 (for instance, \texttt{ivarfl(ipr)} is the field index for the pressure),
-but also for some arrays of variable associated options (for instance,
-\texttt{visls0(itempk)} is the viscosity of the temperature).
+but also for some arrays of variable associated options.
 
 To access the main solved variables, please refer to the following
 \doxygenfile{field.html}{\texttt{Doxygen} documentation}.
@@ -376,9 +375,8 @@ numbering \doxygenfile{group__physical__prop.html}{\texttt{Doxygen} documentatio
 \minititre{Note: Variable physical properties}\label{provar}
 Some physical properties such as specific heat or diffusivity are often
 constant (choice made by the user).
-In that case, in order to limit the necessary memory, these
-properties are stored as a simple real number rather than in a domain-sized
-array of reals.
+In that case, these properties are stored as a simple real numbers
+rather than in a domain-sized array of reals.
 \begin{list}{$\bullet$}{}
 \item This is the case for the specific heat $C_p$.
 \begin{list}{-}{}
@@ -400,16 +398,15 @@ array of reals.
 \begin{list}{-}{}
 \item If $k$ is constant, it can be specified in the interface or by
       calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, -1)}
-      in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}) and the property
-      will be stored in the real number \texttt{visls0(iscal)}.
+      in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}).
 \item If $k$ is variable, it can be specified in the interface or by
       calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, 0)}
       in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}). The code will then
       modify this key value to make it refer to the effective
       field id corresponding to the diffusivity of the scalar
       \texttt{iscal}, in a way which is transparent for the user. For each cell
-      \texttt{iel}, the value of $k$ is then given in \texttt{usphyv} and stored
-      in the field whose id is given by calling
+      \texttt{iel}, the value of $k$ is then given in \texttt{usphyv} and associated
+      with the field whose id is given by calling
       \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, ...)}.
 \end{list}
 \end{list}
@@ -1658,8 +1655,9 @@ may produce negative density values).
 \item By default, the $C_p$ coefficient and the
       diffusivity for the scalars \texttt{iscal} ($\lambda_T$ for the
       temperature) are considered as constant in time and uniform in
-      space, with the values \texttt{cp0} and \texttt{visls0(iscal)}
-      specified in the interface or in \texttt{cs\_user\_parameters.f90}.\\
+      space, with the values \texttt{cp0} and the value associated
+      to the field's \texttt{diffusivity\_ref} keyword.
+      specified in the interface or in \texttt{cs\_user\_parameters.c}.\\
 To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       interface (with a user law) or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
       and fill for each cell \texttt{iel} the array \texttt{cpro\_cp} which can be retrieved by calling
@@ -3587,7 +3585,7 @@ must be completed by the user.
 \texttt{uscfx2} allows to specify:
 \begin{list}{-}{}
   \item \texttt{ivivar}: molecular viscosity, constant (\texttt{0}) or variable (\texttt{1}).
-  \item \texttt{visls0(itempk)}: reference molecular thermal conductivity.
+  \item \texttt{field\_set\_key\_double(icavr(isca(itempk)), kvisl0, ...)}: reference molecular thermal conductivity.
   \item \texttt{viscv0}: reference volumetric molecular viscosity.
   \item \texttt{xmasmr}: molar mass of the perfect gas (\texttt{ieos=1}).
   \item \texttt{icfgrp}: specify if the hydrostatic equilibrium must be accounted for in the

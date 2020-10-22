@@ -295,7 +295,8 @@ _random_point_in_face(cs_lnum_t        n_vertices,
  * \param[in]      face_ids           ids of faces in zone
  * \param[in]      face_particle_idx  starting index of added particles
  *                                    for each face in zone
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_new(cs_lagr_particle_set_t  *particles,
@@ -387,7 +388,8 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
  * \param[in]      cell_ids           ids of cells in zone
  * \param[in]      cell_particle_idx  starting index of added particles
  *                                    for each cell in zone
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
@@ -645,6 +647,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
   cs_lagr_extra_module_t  *extra = cs_get_lagr_extra_module();
 
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   /* Map field arrays */
 
   const cs_real_3_t  *vel = NULL;
@@ -714,33 +717,100 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
   }
 
+  cs_real_33_t *eig_vec;
+  cs_real_3_t *eig_val;
+
+  BFT_MALLOC(eig_vec, n_cells, cs_real_33_t);
+  BFT_MALLOC(eig_val, n_cells, cs_real_3_t);
+
+  /* Initialisation from the mean eulerian fluid */
+  if (cs_glob_lagr_model->idistu == 1) {
+
+    cs_real_33_t *sym_rij;
+    BFT_MALLOC(sym_rij, n_cells, cs_real_33_t);
+    cs_real_t tol_err = 1.0e-12;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      if (cvar_rij != NULL) {
+        sym_rij[cell_id][0][0] = cvar_rij[cell_id][0];
+        sym_rij[cell_id][1][1] = cvar_rij[cell_id][1];
+        sym_rij[cell_id][2][2] = cvar_rij[cell_id][2];
+        sym_rij[cell_id][0][1] = cvar_rij[cell_id][3];
+        sym_rij[cell_id][1][0] = cvar_rij[cell_id][3];
+        sym_rij[cell_id][1][2] = cvar_rij[cell_id][4];
+        sym_rij[cell_id][2][1] = cvar_rij[cell_id][4];
+        sym_rij[cell_id][0][2] = cvar_rij[cell_id][5];
+        sym_rij[cell_id][2][0] = cvar_rij[cell_id][5];
+      }
+      /* TODO do it better for EVM models */
+      else {
+        cs_real_t w = 0.;
+
+        if (cvar_k != NULL)
+          w = d2s3 * cvar_k[cell_id];
+        /* Deprecated irijco = 0 */
+        else if (cvar_r11 != NULL)
+          w = (cvar_r11[cell_id] + cvar_r22[cell_id] + cvar_r33[cell_id]) / 3.;
+
+        sym_rij[cell_id][0][0] = w;
+        sym_rij[cell_id][1][1] = w;
+        sym_rij[cell_id][2][2] = w;
+        sym_rij[cell_id][0][1] = 0.;
+        sym_rij[cell_id][1][0] = 0.;
+        sym_rij[cell_id][1][2] = 0.;
+        sym_rij[cell_id][2][1] = 0.;
+        sym_rij[cell_id][0][2] = 0.;
+        sym_rij[cell_id][2][0] = 0.;
+      }
+
+      eig_vec[cell_id][0][0] = 1;
+      eig_vec[cell_id][0][1] = 0;
+      eig_vec[cell_id][0][2] = 0;
+      eig_vec[cell_id][1][0] = 0;
+      eig_vec[cell_id][1][1] = 1;
+      eig_vec[cell_id][1][2] = 0;
+      eig_vec[cell_id][2][0] = 0;
+      eig_vec[cell_id][2][1] = 0;
+      eig_vec[cell_id][2][2] = 1;
+
+      cs_math_33_eig_val_vec(sym_rij[cell_id], tol_err, eig_val[cell_id], eig_vec[cell_id]);
+    }
+
+    BFT_FREE(sym_rij);
+  } else {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+      eig_vec[cell_id][0][0] = 1.;
+      eig_vec[cell_id][1][1] = 1.;
+      eig_vec[cell_id][2][2] = 1.;
+      eig_vec[cell_id][0][1] = 0.;
+      eig_vec[cell_id][0][2] = 0.;
+      eig_vec[cell_id][1][0] = 0.;
+      eig_vec[cell_id][1][2] = 0.;
+      eig_vec[cell_id][2][0] = 0.;
+      eig_vec[cell_id][2][1] = 0.;
+      eig_val[cell_id][0] = 0.;
+      eig_val[cell_id][1] = 0.;
+      eig_val[cell_id][2] = 0.;
+    }
+  }
+
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
     unsigned char *particle = pset->p_buffer + p_am->extents * p_id;
 
-    cs_lnum_t iel  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+    cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 
     cs_real_t  *vel_seen
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
 
-    cs_real_t w = 0.;
-
-    /* TODO better... */
-    if (cs_glob_lagr_model->idistu == 1) {
-      if (cvar_k != NULL)
-        w = cvar_k[iel];
-      else if (cvar_rij != NULL)
-        w = 0.5*(cvar_rij[iel][0] + cvar_rij[iel][1] + cvar_rij[iel][2]);
-      /* Deprecated irijco = 0 */
-      else if (cvar_r11 != NULL)
-        w = 0.5 * (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]);
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      vel_seen[i] = vel[cell_id][i]
+                  + vagaus[l_id][0] * sqrt(eig_val[cell_id][0]) * eig_vec[cell_id][0][i]
+                  + vagaus[l_id][1] * sqrt(eig_val[cell_id][1]) * eig_vec[cell_id][1][i]
+                  + vagaus[l_id][2] * sqrt(eig_val[cell_id][2]) * eig_vec[cell_id][2][i];
     }
-
-    cs_real_t tu = sqrt(d2s3 * w);
-
-    for (cs_lnum_t i = 0; i < 3; i++)
-      vel_seen[i] = vel[iel][i] + vagaus[l_id][i] * tu;
 
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);
 
@@ -750,6 +820,8 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
   }
 
   BFT_FREE(vagaus);
+  BFT_FREE(eig_vec);
+  BFT_FREE(eig_val);
 
   /* Compute velocity fluctuation if deposition model is active */
 

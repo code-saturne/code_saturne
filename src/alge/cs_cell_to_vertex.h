@@ -88,7 +88,7 @@ cs_cell_to_vertex_free(void);
  *
  * \param[in]       method            interpolation method
  * \param[in]       verbosity         verbosity level
- * \param[in]       var_dim           varible dimension
+ * \param[in]       var_dim           variable dimension
  * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
  * \param[in]       c_weight          cell weight, or NULL
  * \param[in]       c_var             base cell-based variable

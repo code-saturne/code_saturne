@@ -77,15 +77,18 @@ def update_run_steps(s_c, run_conf, final=False):
     # Default if nothing provided, ensure range is filled otherwise
 
     if filter_stages:
+
+        stages = ('stage', 'initialize', 'compute', 'finalize')
+
         stage_ini = s_c['stage']
         i_s = -1
         i_f = -1
-        for i, k in enumerate(s_c):
+        for i, k in enumerate(stages):
             if s_c[k] == True:
                 if i_s < 0:
                     i_s = i
                 i_f = i + 1
-        for i, k in enumerate(s_c):
+        for i, k in enumerate(stages):
             if i < i_s:
                 s_c[k] = False
             elif i < i_f:
@@ -139,10 +142,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="path to the case's directory")
 
-    parser.add_option("--coupling", dest="coupling", type="string",
-                      metavar="<coupling>",
-                      help="path or name of the coupling descriptor file")
-
     parser.add_option("--id", dest="id", type="string",
                       metavar="<id>",
                       help="use the given run id")
@@ -187,7 +186,6 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(compute=None)
     parser.set_defaults(finalize=None)
     parser.set_defaults(param=None)
-    parser.set_defaults(coupling=None)
     parser.set_defaults(domain=None)
     parser.set_defaults(id=None)
     parser.set_defaults(nprocs=None)
@@ -217,35 +215,48 @@ def process_cmd_line(argv, pkg):
     param = None
     compute_build = None
 
-    if options.coupling and options.param:
-        # Multiple domain case
-        cmd_line = sys.argv[0]
-        for arg in sys.argv[1:]:
-            cmd_line += ' ' + arg
-        err_str = 'Error:' + os.linesep
-        err_str += cmd_line + os.linesep
-        err_str += '--coupling and -p/--param options are incompatible.'
-        raise RunCaseError(err_str)
-
     # Also check for possible settings file
 
-    coupling = options.coupling
     run_id = options.id
     run_conf = None
 
     run_config_path = os.path.join(os.getcwd(), 'run.cfg')
     if os.path.isfile(run_config_path):
         run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
-        if not coupling:
-            if 'setup' in run_conf.sections:
-                if 'coupling' in run_conf.sections['setup']:
-                    coupling = run_conf.sections['setup']['coupling']
         if not run_id and not filter_stages:
             if 'run' in run_conf.sections and not filter_stages:
                 update_run_steps(s_c, run_conf)
                 if s_c['stage'] == False:
                     if 'id' in run_conf.sections['run']:
                         run_id = run_conf.sections['run']['id']
+
+    if s_c['stage'] == False and not run_id:
+        err_str = os.linesep + os.linesep + 'Error:' + os.linesep
+        err_str += 'Incompatible options in the run.cfg file or command arguments'
+        err_str += os.linesep
+        err_str += 'When the "stage" step is set to False, a run id is required.'
+        raise cs_case_domain.RunCaseError(err_str)
+
+    # Check for multiple domain case
+    # Kept the 'coupling' file def for the definition of the case_dir function
+    coupling = None
+    coupled_domains =[]
+
+    if run_conf:
+        coupled_domains = run_conf.get_coupling_parameters()
+
+    if coupled_domains != []:
+        coupling = run_config_path
+
+    if coupling and options.param:
+        cmd_line = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd_line += ' ' + arg
+        err_str = os.linesep + os.linesep + 'Error:' + os.linesep
+        err_str += cmd_line + os.linesep
+        err_str += '-p/--param option is incompatible with '
+        err_str += '"coupled_domains" option defined within the run.cfg file.'
+        raise cs_case_domain.RunCaseError(err_str)
 
     casedir, staging_dir = cs_case.get_case_dir(case=options.case,
                                                 param=options.param,
@@ -282,7 +293,7 @@ def process_cmd_line(argv, pkg):
            'staging_dir': staging_dir,
            'run_id': run_id,
            'param': param,
-           'coupling': coupling,
+           'coupled_domains': coupled_domains,
            'id_prefix': options.id_prefix,
            'id_suffix': options.id_suffix,
            'suggest_id': options.suggest_id,
@@ -307,11 +318,21 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     run_config_path = ""
     setup_default_path = ""
 
-    if r_c['coupling']:
+    if r_c['coupled_domains'] != []:
         run_config_path = os.path.join(casedir, 'run.cfg')
     else:
         run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
         setup_default_path = os.path.join(casedir, 'DATA', 'setup.xml')
+
+    # Ensure some keys are set in all cases to simplify future tests
+
+    run_conf_kw= ('job_parameters', 'job_header',
+                  'run_prologue', 'run_epilogue',
+                  'compute_prologue', 'compute_epilogue')
+
+    for kw in run_conf_kw:
+        if not kw in r_c:
+            r_c[kw] = None
 
     if run_conf == None:
         if not os.path.isfile(run_config_path):
@@ -333,12 +354,35 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     # Parameters file
 
     for kw in ('param',):
-        if not r_c[kw]:
+        if run_conf.get('setup', kw):
             r_c[kw] = run_conf.get('setup', kw)
 
     if not r_c['param'] and setup_default_path:
         if os.path.isfile(setup_default_path):
             r_c['param'] = setup_default_path
+
+    # Print warning if setup.xml exists but another xml was provided
+    if r_c['param'] and setup_default_path:
+        if os.path.basename(r_c['param']) != os.path.basename(setup_default_path):
+            if os.path.isfile(setup_default_path):
+                msg  = '*****************************************************\n'
+                msg += 'Warning:\n'
+                msg += '  Both %s and %s exist in the DATA folder.\n' % \
+                         (os.path.basename(r_c['param']), \
+                         os.path.basename(setup_default_path))
+                msg += '  %s will be used for the computation.\n' % \
+                        os.path.basename(r_c['param'])
+                msg += '  Be aware that to follow code_saturne best practices\n'
+                msg += '  only one of the two should be present in DATA.\n'
+                msg += '*****************************************************\n'
+                print(msg, file = sys.stderr)
+
+    # Check that an XML file was provided
+    if not r_c['param']:
+        msg += 'Remark:\n'
+        msg += '  No setup.xml file was provided in the DATA folder.\n'
+        msg += '  Default settings will be used.\n'
+        print(msg, file = sys.stderr)
 
     # Run id
 
@@ -379,14 +423,6 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
             v = run_conf.get_int(resource_name, kw)
             if v:
                 r_c[kw] = v
-
-    run_conf_kw= ('job_parameters', 'job_header',
-                  'run_prologue', 'run_epilogue',
-                  'compute_prologue', 'compute_epilogue')
-
-    for kw in run_conf_kw:
-        if not kw in r_c:
-            r_c[kw] = None
 
     if run_conf_r:
         for kw in run_conf_kw:
@@ -436,9 +472,19 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
 
     sections = {}
 
-    if 'coupling' in r_c:
-        if r_c['coupling']:
-            sections['setup'] = {'coupling': r_c['coupling']}
+    if 'coupled_domains' in r_c:
+        if r_c['coupled_domains'] != []:
+            dom_str=''
+            for i, d in enumerate(r_c['coupled_domains']):
+                dom_name = d['domain']
+                if i != 0:
+                    dom_str += ':'
+                dom_str += dom_name
+
+                # Add the domain section
+                sections[dom_name] = {key:str(d[key]) for key in d.keys()}
+
+            sections['setup'] = {'coupled_domains': dom_str}
 
     sections['run'] = {'id': r_c['run_id'],
                        'stage': False,
@@ -509,20 +555,11 @@ def run(argv=[], pkg=None, submit_args=None):
 
     # Specific case for coupling
 
-    if r_c['coupling']:
+    if r_c['coupled_domains'] != []:
 
         from code_saturne import cs_case_coupling
 
-        coupling =r_c['coupling']
-        if os.path.isfile(coupling):
-            try:
-                c_locals = {}
-                exec(compile(open(coupling).read(), coupling, 'exec'),
-                     globals(),
-                     c_locals)
-                domains = c_locals['domains']
-            except Exception:
-                execfile(coupling)
+        domains = r_c['coupled_domains']
 
         verbose = True
         if r_c['suggest_id']:
@@ -562,6 +599,11 @@ def run(argv=[], pkg=None, submit_args=None):
         for s in ('initialize', 'run_solver', 'save_results'):
             submit_stages[s] = stages[s]
             stages[s] = False
+
+    c.run_prologue = r_c['run_prologue']
+    c.run_epilogue = r_c['run_epilogue']
+    c.compute_prologue = r_c['compute_prologue']
+    c.compute_epilogue = r_c['compute_epilogue']
 
     # Now run case
 

@@ -185,11 +185,6 @@ _vfb_apply_bc_partly(const cs_equation_param_t     *eqp,
 
     }
 
-    if (cs_equation_param_has_convection(eqp) &&
-        ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0))
-      /* Always weakly enforced */
-      eqc->adv_func_bc(eqp, cm, cb, csys);
-
     if (csys->has_sliding)
       eqc->enforce_sliding(eqp, cm, fm, diff_hodge, cb, csys);
 
@@ -578,21 +573,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Define the local advection matrix and store the advection
        fluxes across primal faces */
-    cs_cdofb_advection_build(eqp, cm, eqc->adv_func, cb);
-
-    /* Add it to the local system */
-    if (eqp->adv_scaling_property != NULL) {
-
-      if (cs_property_is_uniform(eqp->adv_scaling_property))
-        cs_sdm_scale(eqp->adv_scaling_property->ref_value, cb->loc);
-      else {
-        cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                      eqp->adv_scaling_property,
-                                                      cb->t_pty_eval);
-        cs_sdm_scale(scaling, cb->loc);
-      }
-
-    }
+    eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
 
     /* Add the local advection operator to the local system */
     const cs_real_t  *sval = cb->loc->val;
@@ -1764,148 +1745,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Advection part */
-  eqc->adv_func = NULL;
-  eqc->adv_func_bc = NULL;
-
-  if (cs_equation_param_has_convection(eqp)) {
-
-    cs_xdef_type_t  adv_deftype =
-      cs_advection_field_get_deftype(eqp->adv_field);
-
-    if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
-      eqb->msh_flag |= CS_FLAG_COMP_FEQ;
-
-    /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ;
-
-    switch (eqp->adv_formulation) {
-
-    case CS_PARAM_ADVECTION_FORM_CONSERV:
-      switch (eqp->adv_scheme) {
-
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_upwcsv_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi_v;
-        }
-        else {
-          eqc->adv_func = cs_cdo_advection_fb_upwcsv;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
-        }
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_cencsv_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi_v;
-        }
-        else {
-          if (! cs_equation_param_has_time(eqp)) {
-            /* Remark 5 about static condensation of paper (DiPietro, Droniou,
-             * Ern, 2015) */
-            bft_error(__FILE__, __LINE__, 0,
-                      " %s: Centered advection scheme not valid for face-based"
-                      " discretization and steady pure convection.", __func__);
-          }
-          else {
-            eqc->adv_func = cs_cdo_advection_fb_cencsv;
-            eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_v;
-          } /* else has time */
-        } /* else has diffusion */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid advection scheme for face-based discretization",
-                  __func__);
-
-      } /* Scheme */
-      break; /* Conservative formulation */
-
-    case CS_PARAM_ADVECTION_FORM_NONCONS:
-      switch (eqp->adv_scheme) {
-
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_upwnoc_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi_v;
-        }
-        else {
-          eqc->adv_func = cs_cdo_advection_fb_upwnoc;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
-        }
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_cennoc_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi_v;
-        }
-        else {
-          if (! cs_equation_param_has_time(eqp)) {
-            /* Remark 5 about static condensation of paper (DiPietro, Droniou,
-             * Ern, 2015) */
-            bft_error(__FILE__, __LINE__, 0,
-                      " %s: Centered advection scheme not valid for face-based"
-                      " discretization and steady pure convection.", __func__);
-          }
-          else {
-            eqc->adv_func = cs_cdo_advection_fb_cennoc;
-            eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_v;
-          } /* else has time */
-        } /* else has diffusion */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid advection scheme for face-based discretization",
-                  __func__);
-
-      } /* Scheme */
-      break; /* Non-conservative formulation */
-
-    case CS_PARAM_ADVECTION_FORM_SKEWSYM:
-      switch (eqp->adv_scheme) {
-
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_upwskw_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw_wdi_v;
-        }
-        else {
-          eqc->adv_func = cs_cdo_advection_fb_upwskw;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw_v;
-        }
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_censkw_di;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw_wdi_v;
-        }
-        else {
-          /* Remark 5 about static condensation of paper (DiPietro, Droniou,
-           * Ern, 2015). Time contribution on cells only won't solve the
-           * problem */
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Centered advection scheme not valid for face-based"
-                    " discretization pure convection.", __func__);
-        } /* else has diffusion */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid advection scheme for face-based discretization",
-                  __func__);
-
-      } /* Scheme */
-      break; /* Skew-symmetric formulation */
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of formulation for the advection term",
-                __func__);
-
-    } /* Switch on the formulation */
-
-  }
+  cs_cdofb_set_advection_function(eqp, eqb, (cs_cdofb_priv_t *)eqc);
 
   /* Reaction term */
   if (cs_equation_param_has_reaction(eqp)) {
@@ -2222,7 +2062,6 @@ cs_cdofb_vecteq_extra_post(const cs_equation_param_t  *eqp,
                     NULL,                  // values at internal faces
                     bface_values,          // values at border faces
                     cs_shared_time_step);  // time step management structure
-
 
   BFT_FREE(postlabel);
 

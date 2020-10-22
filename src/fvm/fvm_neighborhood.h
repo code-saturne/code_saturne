@@ -160,7 +160,7 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
  * Box global numbers and extents may be either copied for the structure's
  * internal use from the caller, or transferred to the neighborhood management
  * structure: both the box_gnum and extents arguments have an "assigned"
- * variant, in which cas a pointer to a pointer is provided, and the
+ * variant, in which case a pointer to a pointer is provided, and the
  * argument's property is transferred to the neighborhod management structure.
  * The unused variant of an argument should be set to NULL.
  *

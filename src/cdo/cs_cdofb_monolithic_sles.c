@@ -469,7 +469,7 @@ _build_is_for_fieldsplit(IS   *isp,
 
   /* IndexSet for the velocity DoFs
    * Pressure unknowns are located at cell centers so the treatment should be
-   * the same in sequential and parallel computation*/
+   * the same in sequential and parallel computation */
   for (PetscInt i = 0; i < n_cells; i++)
     indices[i] = rset->g_id[i + 3*n_faces];
   ISCreateGeneral(PETSC_COMM_WORLD, n_cells, indices, PETSC_COPY_VALUES,
@@ -2172,7 +2172,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
 #if defined(HAVE_PETSC)
 #if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
-  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_PETSC:
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
                          NULL,
@@ -2189,8 +2189,8 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
                          _gkb_precond_hook,
                          (void *)nsp);
     break;
-#else
-  case CS_NAVSTO_SLES_GKB:
+#else  /* PETSC version < 3.11 */
+  case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
@@ -2198,8 +2198,8 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
               __func__, mom_eqp->name);
     break;
 #endif
-#else  /* HAVE_PETSC */
-  case CS_NAVSTO_SLES_GKB:
+#else  /* no HAVE_PETSC */
+  case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
@@ -2209,6 +2209,37 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 
 #endif
+
+  case CS_NAVSTO_SLES_MUMPS:
+#if defined(HAVE_MUMPS)
+    cs_sles_mumps_define(field_id,
+                         NULL,
+                         0, /* sym = 0 (default) */
+                         mom_slesp->verbosity,
+                         cs_user_sles_mumps_hook,
+                         (void *)mom_eqp);
+#else
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _mumps_hook,
+                         (void *)mom_eqp);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc with MUMPS is required with this option.\n",
+              __func__, mom_eqp->name);
+#endif  /* PETSC_HAVE_MUMPS */
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " Neither PETSc nor MUMPS is available.\n",
+              __func__, mom_eqp->name);
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
+    break;
 
 #if defined(HAVE_PETSC)
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
@@ -2247,28 +2278,11 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
                          (void *)nsp);
     break;
 
-  case CS_NAVSTO_SLES_MUMPS:
-#if defined(PETSC_HAVE_MUMPS)
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _mumps_hook,
-                         (void *)mom_eqp);
-#else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
-              " PETSc with MUMPS is required with this option.\n",
-              __func__, mom_eqp->name);
-#endif
-    break;
-
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-  case CS_NAVSTO_SLES_MUMPS:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc is required with this option.\n"

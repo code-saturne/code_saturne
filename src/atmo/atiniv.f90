@@ -25,17 +25,16 @@
 !>
 !> Initialise for example the meteorological field for each cell of
 !> the domain by interpolation of the data from the meteo file
+!> First stage, before GUI.
+!
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine atiniv  ( nvar, nscal, dt )
+subroutine atiniv0
 
 !===============================================================================
 ! Module files
@@ -61,15 +60,11 @@ use cs_c_bindings
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
 integer          imode, iel
 double precision d2s3
-double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
+double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 
 integer k,ii, isc
 double precision xcent
@@ -82,6 +77,10 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, dimension(:), pointer :: cpro_met_potemp
+double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
+double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 
 !===============================================================================
 
@@ -121,6 +120,17 @@ elseif (iturb.eq.70) then
   call field_get_val_s(ivarfl(inusa), cvar_nusa)
 endif
 
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
+  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
+    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
+  endif
+endif
+
 !===============================================================================
 ! 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
 !===============================================================================
@@ -132,6 +142,9 @@ if (imeteo.gt.0) then
   !==========
   ( imode )
 
+endif
+if (imeteo.eq.2) then
+  call cs_atmo_compute_meteo_profiles()
 endif
 
 if (iatra1.gt.0) then
@@ -283,27 +296,38 @@ if (isuite.eq.0) then
 
         zent = xyzcen(3,iel)
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, umet , zent  , ttcabs, xuent )
+        ! Meteo file
+        if (imeteo.eq.1) then
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
 
-        call intprf                                                   &
-       (nbmetd, nbmetm,                                               &
-        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+          call intprf &
+            (nbmetd, nbmetm,                                               &
+            zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+
+          xwent = 0.d0
+        else
+          xuent = cpro_met_vel(1, iel)
+          xvent = cpro_met_vel(2, iel)
+          xwent = cpro_met_vel(3, iel)
+          xkent = cpro_met_k(iel)
+          xeent = cpro_met_eps(iel)
+        endif
 
         vel(1,iel) = xuent
         vel(2,iel) = xvent
-        vel(3,iel) = 0.d0
+        vel(3,iel) = xwent
 
-    !     ITYTUR est un indicateur qui vaut ITURB/10
+        ! ITYTUR est un indicateur qui vaut ITURB/10
         if    (itytur.eq.2) then
 
           cvar_k(iel)  = xkent
@@ -346,32 +370,42 @@ if (isuite.eq.0) then
 
         endif
 
-
         if (ippmod(iatmos).eq.1) then
-          ! The thermal scalar is potential temperature
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+          if (imeteo.eq.1) then
+            ! The thermal scalar is potential temperature
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+          else
+            tpent = cpro_met_potemp(iel)
+          endif
 
-            cvar_scalt(iel) = tpent
+          cvar_scalt(iel) = tpent
         endif
 
         if (ippmod(iatmos).eq.2) then
-          ! The thermal scalar is liquid potential temperature
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-            cvar_scalt(iel) = tpent
 
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
-            cvar_totwt(iel) = qvent
+          if (imeteo.eq.1) then
+            ! The thermal scalar is liquid potential temperature
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
 
-            call intprf                                                 &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
-            cvar_ntdrp(iel) = ncent
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+
+            call intprf &
+              (nbmett, nbmetm,                                               &
+              ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+          else
+            tpent = cpro_met_potemp(iel)
+            qvent = cpro_met_qv(iel)
+            ncent = cpro_met_nc(iel)
+          endif
+          cvar_scalt(iel) = tpent
+          cvar_totwt(iel) = qvent
+          cvar_ntdrp(iel) = ncent
         endif
 
       enddo
@@ -381,18 +415,9 @@ if (isuite.eq.0) then
 
 endif
 
-!===============================================================================
-! 4. USER  OPTIONS
-!===============================================================================
-
-call cs_user_f_initialization &
-!==========================
-( nvar   , nscal  ,                                            &
-  dt     )
-
-!----
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
  1000 format(                                                     &
 '@                                                            ',/,&
@@ -479,9 +504,392 @@ call cs_user_f_initialization &
 '@                                                            ',/)
 
 !----
-! FIN
+! End
 !----
 
 return
 
-end subroutine atiniv
+end subroutine atiniv0
+
+!-------------------------------------------------------------------------------
+!> \file atiniv.f90
+!> \brief Initialisation of calculation variables for the atmospheric module,
+!> it is the counterpart of usiniv.f90.
+!>
+!> Initialise for example the meteorological field for each cell of
+!> the domain by interpolation of the data from the meteo file
+!> Second stage.
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!-------------------------------------------------------------------------------
+
+subroutine atiniv1
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppppar
+use ppthch
+use ppincl
+use atincl
+use mesh
+use atchem
+use sshaerosol
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Local variables
+
+integer          iel
+double precision d2s3
+double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
+
+double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
+double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
+double precision, dimension(:,:), pointer :: cvar_rij
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, dimension(:), pointer :: cpro_met_potemp
+double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
+double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
+
+!===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+
+!===============================================================================
+! 1.  INITIALISATION VARIABLES LOCALES
+!===============================================================================
+
+d2s3 = 2.d0/3.d0
+
+if (itytur.eq.2) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (itytur.eq.3) then
+  if (irijco.eq.1) then
+    call field_get_val_v(ivarfl(irij), cvar_rij)
+  else
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+  endif
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+elseif (iturb.eq.50) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(iphi), cvar_phi)
+  call field_get_val_s(ivarfl(ifb), cvar_fb)
+elseif (iturb.eq.60) then
+  call field_get_val_s(ivarfl(ik), cvar_k)
+  call field_get_val_s(ivarfl(iomg), cvar_omg)
+elseif (iturb.eq.70) then
+  call field_get_val_s(ivarfl(inusa), cvar_nusa)
+endif
+
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
+  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
+    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
+  endif
+endif
+
+!===============================================================================
+! 2. Checks of the reading the meteo profile file (if imeteo = 1 default option)
+!===============================================================================
+
+! Check simulation times used by atmo
+! radiative transfer or chemistry models
+if (     (iatra1.eq.1.or.ifilechemistry.ge.1)              &
+    .and.(syear.eq.-1.or.squant.eq.-1.or.shour.eq.-1 &
+          .or.smin.eq.-1.or.ssec.le.-1.d0)) then
+  if (iatra1.eq.1) write(nfecra,1000)
+  if (ifilechemistry.ge.1) write(nfecra,1001)
+  call csexit (1)
+endif
+
+! Check radiative module latitude / longitude
+if (iatra1.eq.1 .and. (xlat.ge.rinfin*0.5 .or. xlon.ge.rinfin*0.5)) then
+  write(nfecra,1002)
+  call csexit (1)
+endif
+
+! Check latitude / longitude from meteo file
+if (imeteo.gt.0) then
+  if (maxval(xmet).ge.rinfin*0.5 .or. maxval(ymet).ge.rinfin*0.5) then
+    write(nfecra,1003)
+    call csexit (1)
+  endif
+endif
+
+! Check latitude / longitude from chemistry file
+if (ifilechemistry.ge.1) then
+  if (maxval(xchem).ge.rinfin*0.5 .or. maxval(ychem).ge.rinfin*0.5) then
+    write(nfecra,1004)
+    call csexit (1)
+  endif
+endif
+
+!===============================================================================
+! 3. Dry atmosphere: default initialization of potential temperature
+!===============================================================================
+
+! Only if the simulation is not a restart from another one
+if (isuite.eq.0) then
+
+  !Note: if no meteo profile: done by user or previously
+  if (initmeteo.eq.1.and.imeteo.ge.1) then
+
+    if (ippmod(iatmos).eq.1) then
+      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+    else if (ippmod(iatmos).eq.2) then
+      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+      call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
+      call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
+    endif
+
+    do iel = 1, ncel
+
+      zent = xyzcen(3,iel)
+
+      ! Meteo file
+      if (imeteo.eq.1) then
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, umet , zent  , ttcabs, xuent )
+
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+        xwent = 0.d0
+      else
+        xuent = cpro_met_vel(1, iel)
+        xvent = cpro_met_vel(2, iel)
+        xwent = cpro_met_vel(3, iel)
+        xkent = cpro_met_k(iel)
+        xeent = cpro_met_eps(iel)
+      endif
+
+      vel(1,iel) = xuent
+      vel(2,iel) = xvent
+      vel(3,iel) = xwent
+
+      !     ITYTUR est un indicateur qui vaut ITURB/10
+      if    (itytur.eq.2) then
+
+        cvar_k(iel)  = xkent
+        cvar_ep(iel) = xeent
+
+      elseif (itytur.eq.3) then
+
+        if (irijco.eq.1) then
+          cvar_rij(1,iel) = d2s3*xkent
+          cvar_rij(2,iel) = d2s3*xkent
+          cvar_rij(3,iel) = d2s3*xkent
+          cvar_rij(4,iel) = 0.d0
+          cvar_rij(5,iel) = 0.d0
+          cvar_rij(6,iel) = 0.d0
+        else
+          cvar_r11(iel) = d2s3*xkent
+          cvar_r22(iel) = d2s3*xkent
+          cvar_r33(iel) = d2s3*xkent
+          cvar_r12(iel) = 0.d0
+          cvar_r13(iel) = 0.d0
+          cvar_r23(iel) = 0.d0
+        endif
+        cvar_ep(iel)  = xeent
+
+      elseif (iturb.eq.50) then
+
+        cvar_k(iel)   = xkent
+        cvar_ep(iel)  = xeent
+        cvar_phi(iel) = d2s3
+        cvar_fb(iel)  = 0.d0
+
+      elseif (iturb.eq.60) then
+
+        cvar_k(iel)   = xkent
+        cvar_omg(iel) = xeent/cmu/xkent
+
+      elseif (iturb.eq.70) then
+
+        cvar_nusa(iel) = cmu*xkent**2/xeent
+
+      endif
+
+
+      if (ippmod(iatmos).eq.1) then
+
+        if (imeteo.eq.1) then
+          ! The thermal scalar is potential temperature
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+        else
+          tpent = cpro_met_potemp(iel)
+        endif
+
+        cvar_scalt(iel) = tpent
+      endif
+
+      if (ippmod(iatmos).eq.2) then
+
+        if (imeteo.eq.1) then
+          ! The thermal scalar is liquid potential temperature
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+
+          call intprf                                                 &
+            (nbmett, nbmetm,                                               &
+            ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+
+        else
+          tpent = cpro_met_potemp(iel)
+          qvent = cpro_met_qv(iel)
+          ncent = cpro_met_nc(iel)
+        endif
+        cvar_scalt(iel) = tpent
+        cvar_totwt(iel) = qvent
+        cvar_ntdrp(iel) = ncent
+      endif
+
+    enddo
+
+  endif
+
+endif
+
+!--------
+! Formats
+!--------
+
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                RADITIVE MODEL (IATRA1)                     ',/,&
+'@                                                            ',/,&
+'@    The simulation time is wrong                            ',/,&
+'@    Check variables syear, squant, shour, smin, ssec        ',/,&
+'@                                                            ',/,&
+'@    By decreasing priority, these variables can be defined  ',/,&
+'@    in cs_user_parameters or the meteo file                 ',/,&
+'@    or the chemistry file                                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1001 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
+'@                                                            ',/,&
+'@    The simulation time is wrong                            ',/,&
+'@    Check variables syear, squant, shour, smin, ssec        ',/,&
+'@                                                            ',/,&
+'@    By decreasing priority, these variables can be defined  ',/,&
+'@    in cs_user_parameters or the meteo file                 ',/,&
+'@    or the chemistry file                                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1002 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                RADITIVE MODEL (IATRA1)                     ',/,&
+'@                                                            ',/,&
+'@    Wrong xlat and xlon coordinates.                        ',/,&
+'@                                                            ',/,&
+'@    See cs_user_parameters.f90                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1003 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC MODULE                                    ',/,&
+'@                                                            ',/,&
+'@    Wrong coordinates xmet, ymet for the meteo profile.     ',/,&
+'@                                                            ',/,&
+'@    See cs_user_parameters.f90                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1004 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
+'@                                                            ',/,&
+'@    Wrong xchem, ychem coordinates for the concentration    ',/,&
+'@    profiles (chemistry model).                             ',/,&
+'@                                                            ',/,&
+'@    See cs_user_parameters.f90                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+!----
+! End
+!----
+
+return
+
+end subroutine atiniv1

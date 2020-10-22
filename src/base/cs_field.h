@@ -167,6 +167,16 @@ typedef struct {
 typedef void
 (cs_field_log_key_struct_t) (const void  *t);
 
+/*----------------------------------------------------------------------------
+ * Function pointer for structure associated to field key
+ *
+ * parameters:
+ *   t <-- pointer to structure
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_field_clear_key_struct_t) (void  *t);
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -557,6 +567,7 @@ cs_field_define_key_str(const char  *name,
  *   default_value    <-- pointer to default value associated with key
  *   log_funct        <-- pointer to logging function
  *   log_func_default <-- pointer to default logging function
+ *   clear_func       <-- pointer to substructures free function
  *   size             <-- sizeof structure
  *   type_flag        <-- mask associated with field types with which
  *                        the key may be associated, or 0
@@ -566,12 +577,13 @@ cs_field_define_key_str(const char  *name,
  *----------------------------------------------------------------------------*/
 
 int
-cs_field_define_key_struct(const char                 *name,
-                           const void                 *default_value,
-                           cs_field_log_key_struct_t  *log_func,
-                           cs_field_log_key_struct_t  *log_func_default,
-                           size_t                      size,
-                           int                         type_flag);
+cs_field_define_key_struct(const char                   *name,
+                           const void                   *default_value,
+                           cs_field_log_key_struct_t    *log_func,
+                           cs_field_log_key_struct_t    *log_func_default,
+                           cs_field_clear_key_struct_t  *clear_func,
+                           size_t                        size,
+                           int                           type_flag);
 
 /*----------------------------------------------------------------------------
  * Define a sub key.

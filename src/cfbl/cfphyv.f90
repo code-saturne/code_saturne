@@ -61,6 +61,8 @@ implicit none
 ! Local variables
 
 integer :: iel, ifcven, ifclam
+double precision :: visls_0
+
 double precision, dimension(:), pointer :: cpro_venerg, cpro_lambda
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: mix_mol_mas
@@ -89,8 +91,9 @@ if (ifcven.ge.0) then
       cpro_venerg(iel) = cpro_lambda(iel)
     enddo
   else
+    call field_get_key_double(ivarfl(isca(itempk)), kvisl0, visls_0)
     do iel = 1, ncel
-      cpro_venerg(iel) = visls0(itempk)
+      cpro_venerg(iel) = visls_0
     enddo
   endif
 
@@ -122,7 +125,9 @@ if (ifcven.ge.0) then
 
 else
 
-  visls0(ienerg) = visls0(itempk)/cv0
+  call field_get_key_double(ivarfl(isca(itempk)), kvisl0, visls_0)
+  visls_0 = visls_0 / cv0
+  call field_set_key_double(ivarfl(isca(ienerg)), kvisl0, visls_0)
 
 endif
 

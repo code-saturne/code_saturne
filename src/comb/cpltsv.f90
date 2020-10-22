@@ -103,7 +103,7 @@ integer          icha
 integer          inc , iccocg , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk , xe , rhovst
-double precision epsrgp , climgp , extrap
+double precision epsrgp , climgp
 double precision turb_schmidt
 
 double precision, allocatable, dimension(:) :: coefap, coefbp
@@ -186,7 +186,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  extrap = vcopt%extrag
 
   ! Allocate work arrays
   allocate(w7(ncelet))
@@ -247,7 +246,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 
   call gradient_s                                                 &
  ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
+   iwarnp , epsrgp , climgp ,                                     &
    w7     , coefap , coefbp ,                                     &
    grad   )
 

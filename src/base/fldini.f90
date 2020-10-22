@@ -169,9 +169,6 @@ do ii = 1, nscal
       idfm = 1
     endif
 
-    ! Reference diffusivity value
-    call field_set_key_double(ivarfl(ivar), kvisl0, visls0(ii))
-
     ! Additional fields for Drift scalars is done in addfld
 
   endif

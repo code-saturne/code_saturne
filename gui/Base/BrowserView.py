@@ -34,16 +34,18 @@ This module defines the following classes:
 import sys, logging
 
 #-------------------------------------------------------------------------------
-# Third-party modules
+#Third-party modules
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.QtCore    import *
-from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtCore import *
+from code_saturne.Base.QtGui import *
 from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
+
+from code_saturne.model.LocalizationModel import LocalizationModel
 
 from code_saturne.Base.BrowserForm import Ui_BrowserForm
 from code_saturne.model.Common import GuiParam
@@ -60,34 +62,61 @@ logging.basicConfig()
 log = logging.getLogger("BrowserView")
 log.setLevel(GuiParam.DEBUG)
 
-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-
 try:
     _fromUtf8 = QString.fromUtf8
 except Exception:
     def _fromUtf8(s):
         return s
 
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
 
 class TreeItem:
+    """ Reimplementation of the Qt TreeItem.
+        Most attribute and method names are not PEP-8 compliant but follow the Qt convention.
+        See : https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html
+        """
+
     def __init__(self, data, typename, parent=None):
         self.parentItem = parent
         self.itemData = data
         self.itemType = typename
         self.itemIcon = None
         self.childItems = []
+        if parent == None:
+            self.n_parents = 0
+        else:
+            self.n_parents = parent.n_parents + 1
 
     def appendChild(self, item):
         self.childItems.append(item)
 
+    def insertChildren(self, position, count, columns):
+        for row in range(count):
+            data = [None for v in range(columns)]
+            item = TreeItem(data, typename="folder-new", parent=self)
+            self.childItems.insert(position, item)
+        return True
+
+    def removeChildren(self, position, count):
+        if (position < 0) or (position + count > len(self.childItems)):
+            return False
+        for row in range(count):
+            self.childItems.pop(position)
+
     def child(self, row):
         return self.childItems[row]
+
+    def childWithName(self, name):
+        for child in self.childItems:
+            if child.data(0) == name:
+                return child
+        return None
+
+    def remove(self):
+        while self.childCount() > 0:
+            self.child(-1).remove()
+
+        self.parentItem.childItems.remove(self)
+        return
 
     def childCount(self):
         return len(self.childItems)
@@ -98,6 +127,10 @@ class TreeItem:
     def data(self, column):
         return self.itemData[column]
 
+    def setData(self, column, value):
+        self.itemData[column] = value
+        return True
+
     def parent(self):
         return self.parentItem
 
@@ -107,6 +140,10 @@ class TreeItem:
 
         return 0
 
+    def level(self):
+        return self.n_parents
+
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -114,6 +151,7 @@ class TreeItem:
 class TreeModel(QAbstractItemModel):
     """A model representing the widget tree structure.
     """
+
     def __init__(self, data, parent=None):
         """Constructs a new item model with the given I{parent}.
 
@@ -124,12 +162,7 @@ class TreeModel(QAbstractItemModel):
         """
         QAbstractItemModel.__init__(self, parent)
 
-        rootData = []
-        rootData.append("Pages")
-
-        self.rootItem = TreeItem(rootData, "folder")
-        self.populateModel(data.split("\n"), self.rootItem)
-
+        self.rootItem = data[0]
 
     def columnCount(self, parent):
         """Returns the number of columns for the children of the given I{parent}.
@@ -142,7 +175,6 @@ class TreeModel(QAbstractItemModel):
             return parent.internalPointer().columnCount()
         else:
             return self.rootItem.columnCount()
-
 
     def data(self, index, role):
         """Returns the data stored under the given I{role} for the item referred to by the I{index}.
@@ -170,46 +202,37 @@ class TreeModel(QAbstractItemModel):
                 page_name = item.itemData[0]
 
                 style = QWidget().style()
+                icon = QIcon()
 
                 if page_name == self.tr('Mesh'):
                     img_path = ":/icons/22x22/prepro-mode.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Calculation features'):
                     img_path = ":/icons/22x22/calculation_features.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Fluid properties'):
                     img_path = ":/icons/22x22/physical_properties.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary zones'):
                     img_path = ":/icons/22x22/boundary_conditions.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Time settings'):
                     img_path = ":/icons/22x22/time_stepping.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Numerical parameters'):
                     img_path = ":/icons/22x22/numerical_params.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Postprocessing'):
                     img_path = ":/icons/22x22/postprocessing.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == 'Closure modeling':
                     img_path = ":/icons/22x22/closure_modeling.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Performance settings'):
                     img_path = ":/icons/22x22/run_parameters.png"
-                    icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
 
                 elif item.itemType == "folder-new":
@@ -232,7 +255,6 @@ class TreeModel(QAbstractItemModel):
 
         return None
 
-
     def flags(self, index):
         """What we can do with the item.
 
@@ -246,7 +268,6 @@ class TreeModel(QAbstractItemModel):
 
         return flags
 
-
     def headerData(self, section, orientation, role):
         """Return the header of the tree.*
 
@@ -256,7 +277,6 @@ class TreeModel(QAbstractItemModel):
             return self.rootItem.data(section)
 
         return None
-
 
     def index(self, row, column, parent):
         """Returns the index of the item in the model specified by the given I{row}, I{column} and I{parent} index.
@@ -274,7 +294,7 @@ class TreeModel(QAbstractItemModel):
         else:
             parentItem = parent.internalPointer()
 
-        #FIXME: why childItem can be None?
+        # FIXME: why childItem can be None?
         try:
             childItem = parentItem.child(row)
         except:
@@ -304,7 +324,6 @@ class TreeModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.row(), 0, parentItem)
 
-
     def rowCount(self, parent):
         """Returns the number of rows under the given I{parent}.
 
@@ -319,7 +338,6 @@ class TreeModel(QAbstractItemModel):
             parentItem = parent.internalPointer()
 
         return parentItem.childCount()
-
 
     def match(self, start, role, value, hits, flags):
         """
@@ -338,7 +356,7 @@ class TreeModel(QAbstractItemModel):
 
             index = self.index(r, start.column(), p)
             if not index.isValid():
-                 pass
+                pass
             v = self.data(index, role)
 
             if flags == Qt.MatchExactly:
@@ -353,10 +371,7 @@ class TreeModel(QAbstractItemModel):
 
         return result
 
-
     def itemLocalization(self, data, role=Qt.DisplayRole):
-        """
-        """
         info = []
         search_item = from_qvariant(data, to_text_string)
 
@@ -364,74 +379,58 @@ class TreeModel(QAbstractItemModel):
         indexList = self.match(start, role, search_item, -1, Qt.MatchExactly)
 
         for index in indexList:
-            item   = index.internalPointer()
+            item = index.internalPointer()
             column = index.column()
-            row    = index.row()
+            row = index.row()
             parent = self.parent(index)
 
-            info.append( (row, column, parent) )
+            info.append((row, column, parent))
 
         return info
 
+    def appendRowWithValue(self, value, parent=QModelIndex()):
+        nb_items = len(self.getItem(parent).childItems)
+        self.insertRows(nb_items, 1, parent)
+        last_index = self.index(nb_items, 0, parent)
+        self.setData(last_index, value, role=Qt.EditRole)
+        return
 
-    def populateModel(self, lines, parent):
-        """
-        @type lines: C{QString}
-        @param lines:
-        @type parent: C{QModelIndex}
-        @param parent: parent of the item
-        """
-        parents = []
-        indentations = []
+    def insertRows(self, position, rows, parent=QModelIndex()):
+        parentItem = self.getItem(parent)
+        self.beginInsertRows(parent, position, position + rows - 1)
+        success = parentItem.insertChildren(position, rows, self.rootItem.columnCount())
+        self.endInsertRows()
+        return success
 
-        parents.append(parent)
-        indentations.append(0)
+    def removeRows(self, position, rows, parent=QModelIndex()):
+        parentItem = self.getItem(parent)
+        self.beginRemoveRows(parent, position, position + rows - 1)
+        success = parentItem.removeChildren(position, rows)
+        self.endRemoveRows()
+        return success
 
-        for number in range(len(lines)):
-            position = 0
-            while position < len(lines[number]):
-                if lines[number][position] != " ":
-                    break
-                position += 1
+    def setData(self, index, value, role=Qt.EditRole):
+        if role != Qt.EditRole:
+            return False
+        item = self.getItem(index)
+        result = item.setData(index.column(), value)
+        if result:
+            self.dataChanged.emit(index, index)
+        return result
 
-            lineData = lines[number][position:].strip()
+    def getItem(self, index):
+        if index.isValid():
+            item = index.internalPointer()
+            if item:
+                return item
+        return self.rootItem
 
-            if lineData:
-                # Read the column data from the rest of the line.
-                columnStrings = lineData.split("\t")
-
-                columnData = []
-                for column in range(0, len(columnStrings)):
-                    columnData.append(columnStrings[column])
-
-                if position == 0:
-                    typename = "folder-new"
-                else:
-                    typename = "file-new"
-
-                if position > indentations[-1]:
-                    # The last child of the current parent is now the new parent
-                    # unless the current parent has no children.
-                    if parents[-1].childCount() > 0:
-                        parents.append(parents[-1].child(parents[-1].childCount() - 1))
-                        indentations.append(position)
-
-                else:
-                    while position < indentations[-1] and len(parents) > 0:
-                        parents.pop()
-                        indentations.pop()
-
-                # Append a new item to the current parent's list of children.
-                parents[-1].appendChild(TreeItem(columnData, typename, parents[-1]))
-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
 
 class BrowserView(QWidget, Ui_BrowserForm):
     """
     Class for the browser widget
     """
+
     def __init__(self, parent=None):
         """
         Constructor
@@ -444,7 +443,9 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setupUi(self)
 
         tree = self._browser()
-        self.model = TreeModel(from_qvariant(tree, to_text_string))
+        self.model = TreeModel(tree)
+        # TODO check how self.model should be initialized
+        # self.model = TreeModel(from_qvariant(tree, to_text_string))
 
         self.treeView.setModel(self.model)
         self.treeView.header().hide()
@@ -463,128 +464,119 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.treeView.expanded[QModelIndex].connect(self.onFolderOpen)
         self.treeView.collapsed[QModelIndex].connect(self.onFolderClose)
 
+    def _getSectionList(self):
+
+        sl = ['Calculation environment', 'Mesh', 'Calculation features',
+              'Closure modeling', 'Fluid properties',
+              'Particles and droplets tracking', 'Volume zones',
+              'Boundary zones', 'Time settings', 'Numerical parameters',
+              'Postprocessing', 'Performance settings']
+
+        return sl
+
+    def _getSubsectionList(self, section):
+
+        if section == 'Calculation environment':
+            return ['Notebook']
+        elif section == 'Mesh':
+            return ['Preprocessing']
+        elif section == 'Calculation features':
+            return ['Main fields', 'Deformable mesh', 'Turbulence models',
+                    'Thermal model', 'Body forces', 'Gas combustion',
+                    'Pulverized fuel combustion', 'Electrical models',
+                    'Conjugate heat transfer', 'Atmospheric flows',
+                    'Species transport', 'Turbomachinery', 'Groundwater flows',
+                    'Fans', 'Non condensable gases', 'Thermodynamics']
+        elif section == 'Closure modeling':
+            return ['Interfacial area',
+                    'Interfacial enthalpy transfer',
+                    'Nucleate boiling parameters',
+                    'Droplet condensation-evaporation',
+                    'Particles interactions']
+        elif section == 'Fluid properties':
+            return []
+        elif section == 'Particles and droplets tracking':
+            return ['Statistics']
+        elif section == 'Volume zones':
+            return ['Initialization', 'Head losses', 'Porosity',
+                    'Source terms', 'Groundwater laws']
+        elif section == 'Boundary zones':
+            return ['Boundary conditions', 'Particle boundary conditions',
+                    'Fluid structure interaction', 'Cathare Coupling',
+                    'Immersed Boundaries']
+        elif section == 'Time settings':
+            return ['Start/Restart']
+        elif section == 'Numerical parameters':
+            return ['Equation parameters']
+        elif section == 'Postprocessing':
+            return ['Additional user arrays', 'Time averages',
+                    'Volume solution control', 'Surface solution control',
+                    'Lagrangian solution control', 'Profiles',
+                    'Balance by zone']
+        elif section == 'Performance settings':
+            return []
+        else:
+            return None
 
     def _browser(self):
-        tree ="""
-Calculation environment
-    Notebook
-Mesh
-    Preprocessing
-Calculation features
-    Main fields
-    Deformable mesh
-    Turbulence models
-    Thermal model
-    Body forces
-    Gas combustion
-    Pulverized fuel combustion
-    Electrical models
-    Conjugate heat transfer
-    Atmospheric flows
-    Species transport
-    Turbomachinery
-    Groundwater flows
-    Fans
-    Non condensable gases
-    Thermodynamics
-Closure modeling
-    Interfacial area
-    Interfacial enthalpy transfer
-    Nucleate boiling parameters
-    Droplet condensation-evaporation
-    Particles interactions
-Fluid properties
-Particles and droplets tracking
-    Statistics
-Volume zones
-    Main fields initialization
-    Initialization
-    Head losses
-    Porosity
-    Source terms
-    Groundwater laws
-Boundary zones
-    Boundary conditions
-    Particle boundary conditions
-    Fluid structure interaction
-    Cathare Coupling
-    Immersed Boundaries
-Time settings
-    Start/Restart
-Numerical parameters
-    Equation parameters
-Postprocessing
-    Additional user arrays
-    Time averages
-    Volume solution control
-    Surface solution control
-    Lagrangian solution control
-    Profiles
-    Balance by zone
-Performance settings
-"""
 
-        tr_tree = ""
-        for l in tree.split('\n'):
-            l = l.rstrip()
-            if l[:4] == '    ':
-                l = '    ' + self.tr(l[4:])
-            else:
-                l = self.tr(l)
-            tr_tree += l + '\n'
+        # TODO : why is tree a list ?
+        tree = [TreeItem(['Pages'], 'folder')]
 
-        return tr_tree
+        for section in self._getSectionList():
+            section_item = TreeItem([section], typename='folder-new', parent=tree[0])
+            tree[0].appendChild(section_item)
 
+            for subsection in self._getSubsectionList(section):
+                subsection_item = TreeItem([subsection], typename='file-new', parent=section_item)
+                section_item.appendChild(subsection_item)
+
+        return tree
 
     def setRowClose(self, string):
         log.debug("setRowClose(): %s" % string)
-        itemInfoList = self.model.itemLocalization(string)
-        for itemInfo in itemInfoList:
-            row    = itemInfo[0]
-            column = itemInfo[1]
-            parent = itemInfo[2]
-            self.treeView.setRowHidden(row, parent, True)
-
+        item_info_list = self.model.itemLocalization(string)
+        for item_info in item_info_list:
+            row = item_info[0]
+            parent = item_info[2]
+            if string == 'Fluid properties':
+                self.model.rootItem.childWithName(string).remove()
+            else:
+                self.treeView.setRowHidden(row, parent, True)
 
     def setRowOpen(self, string):
         log.debug("setRowOpen(): %s" % string)
-        itemInfoList = self.model.itemLocalization(string)
-        for itemInfo in itemInfoList:
-            row    = itemInfo[0]
-            column = itemInfo[1]
-            parent = itemInfo[2]
+        item_info_list = self.model.itemLocalization(string)
+        for item_info in item_info_list:
+            row = item_info[0]
+            parent = item_info[2]
             self.treeView.setRowHidden(row, parent, False)
-
 
     def setRowShow(self, string, status=True):
         log.debug("setRowVisible(): %s" % string)
-        itemInfoList = self.model.itemLocalization(string)
+        item_info_list = self.model.itemLocalization(string)
         hidden = not status
-        for itemInfo in itemInfoList:
-            row    = itemInfo[0]
-            column = itemInfo[1]
-            parent = itemInfo[2]
+        for item_info in item_info_list:
+            row = item_info[0]
+            parent = item_info[2]
             self.treeView.setRowHidden(row, parent, hidden)
-
 
     def isRowClose(self, string):
         log.debug("isRowClose(): %s" % string)
-        itemInfoList = self.model.itemLocalization(string)
-        for itemInfo in itemInfoList:
-            row    = itemInfo[0]
-            column = itemInfo[1]
-            parent = itemInfo[2]
-            index  = self.model.index(row, column, parent)
+        item_info_list = self.model.itemLocalization(string)
+        for item_info in item_info_list:
+            row = item_info[0]
+            column = item_info[1]
+            parent = item_info[2]
+            index = self.model.index(row, column, parent)
             # FIXME: this return should not be in a loop
             return self.treeView.isRowHidden(row, index)
-
 
     @pyqtSlot('QModelIndex')
     def onItemPressed(self, index):
         item = index.internalPointer()
         if item.itemType == "file-new":
             item.itemType = "file-open"
-
 
     @pyqtSlot('QModelIndex')
     def onFolderOpen(self, index):
@@ -600,7 +592,6 @@ Performance settings
         if item.itemType == "folder-new" or item.itemType == "folder-close":
             item.itemType = "folder-open"
 
-
     @pyqtSlot('QModelIndex')
     def onFolderClose(self, index):
         """
@@ -615,7 +606,6 @@ Performance settings
         if item.itemType == "folder-new" or item.itemType == "folder-open":
             item.itemType = "folder-close"
 
-
     @pyqtSlot()
     def displayPopup(self):
         """
@@ -626,15 +616,13 @@ Performance settings
         self.fileMenu = QMenu(self.treeView)
 
         self.actionExpand = QAction(self.tr("Expand"), self.treeView)
-        #self.actionExpand.setShortcut(self.tr("F5"))
         self.actionExpand.triggered.connect(self.openTreeFolder)
 
         self.actionCollapse = QAction(self.tr("Collapse"), self.treeView)
-        #self.actionCollapse.setShortcut(self.tr("F6"))
         self.actionCollapse.triggered.connect(self.closeTreeFolder)
 
         # ... TODO
-        #self.actionWelcome = QAction(self.tr("Welcome page"), self.treeView)
+        # self.actionWelcome = QAction(self.tr("Welcome page"), self.treeView)
 
         self.fileMenu.addAction(self.actionExpand)
         self.fileMenu.addAction(self.actionCollapse)
@@ -642,7 +630,6 @@ Performance settings
         cursor = QCursor()
         self.fileMenu.popup(cursor.pos())
         self.fileMenu.show()
-
 
     def activeSelectedPage(self, index):
         """
@@ -653,26 +640,41 @@ Performance settings
 
         return
 
+    def addBrowserZone(self, zone_name, parent_name):
+        itemInfoList = self.model.itemLocalization(parent_name)
+        for itemInfo in itemInfoList:
+            parent = self.model.index(*itemInfo)
+            self.model.appendRowWithValue(zone_name, parent)
+
+    def removeAllBrowserZones(self, parent_name):
+        localization = self.model.itemLocalization(parent_name)
+        parent_index = self.model.index(*localization[0])
+        parent_item = self.model.getItem(parent_index)
+        nb_zones = parent_item.childCount()
+        self.model.removeRows(0, nb_zones, parent_index)
+
+    def updateBrowserZones(self, new_zone_names, parent_name):
+        self.removeAllBrowserZones(parent_name)
+        for zone_name in new_zone_names:
+            self.addBrowserZone(zone_name, parent_name)
 
     def display(self, root, case, stbar, tree):
         """
         """
         index = self.treeView.currentIndex()
-        item  = index.internalPointer()
-        name  = item.itemData[0]
+        item = index.internalPointer()
+        name = item.itemData[0]
         case['current_tab'] = 0
         case['current_index'] = index
         return displaySelectedPage(name, root, case, stbar, tree)
-
 
     def isFolder(self):
         """
         Return True if current item is a folder (parent)
         """
         index = self.treeView.currentIndex()
-        item  = index.internalPointer()
+        item = index.internalPointer()
         return item.childCount() != 0
-
 
     def openSingleFolder(self, string):
         """
@@ -680,12 +682,11 @@ Performance settings
         """
         itemInfoList = self.model.itemLocalization(string)
         for itemInfo in itemInfoList:
-            row    = itemInfo[0]
+            row = itemInfo[0]
             column = itemInfo[1]
             parent = itemInfo[2]
-            index  = self.model.index(row, column, parent)
+            index = self.model.index(row, column, parent)
             self.treeView.expand(index)
-
 
     @pyqtSlot()
     def openTreeFolder(self):
@@ -705,19 +706,17 @@ Performance settings
         if hasattr(self, 'case'):
             self.configureTree(self.case)
 
-
     def closeSingleFolder(self, string):
         """
         Close a single folder of the Tree.
         """
         itemInfoList = self.model.itemLocalization(string)
         for itemInfo in itemInfoList:
-            row    = itemInfo[0]
+            row = itemInfo[0]
             column = itemInfo[1]
             parent = itemInfo[2]
-            index  = self.model.index(row, column, parent)
+            index = self.model.index(row, column, parent)
             self.treeView.collapse(index)
-
 
     @pyqtSlot()
     def closeTreeFolder(self):
@@ -733,7 +732,6 @@ Performance settings
         for row in range(self.model.rowCount(parent)):
             index = self.model.index(row, column, parent)
             self.onFolderClose(index)
-
 
     def __configureTreePrepro(self, case):
         """
@@ -791,7 +789,6 @@ Performance settings
 
         self.setRowShow(self.tr('Volume zones'), False)
         """
-        self.setRowClose(self.tr('Main fields initialization'))
         self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
@@ -826,7 +823,6 @@ Performance settings
 
         self.__hideRow()
 
-
     def configureTree(self, case):
         """
         Public method.
@@ -841,7 +837,7 @@ Performance settings
             p_module = 'neptune_cfd'
 
         # Precompute some values
-        #-----------------------
+        # ----------------------
 
         m_tbm = False
         m_fans = False
@@ -853,7 +849,6 @@ Performance settings
         m_sf_comb = False
         m_elec = False
         m_atmo = False
-        m_comp = False
         m_gwf = False
 
         node_pm = case.xmlGetNode('thermophysical_models')
@@ -888,7 +883,7 @@ Performance settings
                     m_elec = True
                     m_thermal = 1
             if not m_thermal:
-                node = node_pm.xmlGetNode('atmospheric_flows',  'model')
+                node = node_pm.xmlGetNode('atmospheric_flows', 'model')
                 if node and node['model'] != 'off':
                     m_atmo = True
                     if node['model'] == 'constant':
@@ -906,7 +901,7 @@ Performance settings
                 if node and node['model'] != 'off':
                     m_thermal = 2
 
-            node = node_pm.xmlGetNode('groundwater_model',  'model')
+            node = node_pm.xmlGetNode('groundwater_model', 'model')
             if node and node['model'] != 'off':
                 m_gwf = True
                 m_thermal = -1
@@ -932,7 +927,6 @@ Performance settings
         ncfd_fields = 0
 
         if p_module == 'neptune_cfd' and node_pm:
-
             m_fans = False
             m_thermal = 1
             m_cht = True
@@ -943,14 +937,13 @@ Performance settings
 
         if ncfd_fields > 1:
             from code_saturne.model.MainFieldsModel import MainFieldsModel
-            from code_saturne.model.NonCondensableModel import NonCondensableModel
             from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
 
             if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
                 m_ncfd['particles_interactions'] = True
             if (len(MainFieldsModel(case).getDispersedFieldList()) > 0
-                or InterfacialForcesModel(case).getBubblesForLIMStatus() == 'on'):
+                    or InterfacialForcesModel(case).getBubblesForLIMStatus() == 'on'):
                 m_ncfd['itf_area'] = True
 
             if predefined_flow == "free_surface":
@@ -972,7 +965,7 @@ Performance settings
         is_ncfd = (p_module == 'neptune_cfd')
 
         # Manage visibility
-        #------------------
+        # -----------------
 
         self.setRowOpen(self.tr('Notebook'))
 
@@ -1046,8 +1039,7 @@ Performance settings
             if node['groundwater_law'] == 'on':
                 z_groundwater = True
 
-        self.setRowShow(self.tr('Main fields initialization'), is_ncfd and init)
-        self.setRowShow(self.tr('Initialization'), (not is_ncfd) and init)
+        self.setRowShow(self.tr('Initialization'), init)
         self.setRowShow(self.tr('Head losses'), z_head_loss)
         self.setRowShow(self.tr('Porosity'), z_porosity)
         self.setRowShow(self.tr('Source terms'), z_st)
@@ -1089,20 +1081,59 @@ Performance settings
         self.setRowShow(self.tr('Performance tuning'), True)
         self.setRowShow(self.tr('Prepare batch calculation'), True)
 
-        # End of test of physical module
+        # Update boundary zones display
+        boundary_zone_labels = self._getSortedZoneLabels(case, "BoundaryZone")
+        self.updateBrowserZones(boundary_zone_labels, "Boundary conditions")
+
+        # Update volume zones display
+        # TODO split code into smaller methods
+        volume_zones = LocalizationModel("VolumicZone", case).getZones()
+        if volume_zones:
+
+            model2ViewDictionary = volume_zones[0].getModel2ViewDictionary()
+            zonelist_per_treatment = {}
+            for nature, page_name in model2ViewDictionary.items():
+                # TODO remove unelegant fixes for page_name
+                if "source_term" in nature:
+                    page_name = "Source terms"
+                if "groundwater" in nature:
+                    page_name = "Groundwater laws"
+                # Initialize dictionary the first time
+                if page_name not in zonelist_per_treatment:
+                    zonelist_per_treatment[page_name] = []
+
+                # Loop over zones and match them to the corresponding page name
+                zone_labels = []
+                for zone in volume_zones:
+                    zone_info = zone.getNature()
+                    if zone_info[nature] != "off":
+                        zone_labels.append(zone.getLabel())
+                zonelist_per_treatment[page_name] += zone_labels
+
+            # Add zones to browser
+            for page_name, zonelist in zonelist_per_treatment.items():
+                self.updateBrowserZones(set(zonelist), page_name)
 
         self.__hideRow()
 
+    def _getSortedZoneLabels(self, case, zone_type):
+        boundary_labels = LocalizationModel(zone_type, case).getLabelsZonesList()
+        boundary_ids = LocalizationModel(zone_type, case).getCodeNumbersList()
+        boundary_ids = map(int, boundary_ids)
+        sorted_labels = [None for i in range(len(boundary_labels))]
+        for unsorted_id, sorted_id in enumerate(boundary_ids):
+            sorted_labels[sorted_id - 1] = boundary_labels[unsorted_id]
+        return sorted_labels
 
     def __hideRow(self):
         """Only for developement purpose"""
-
 
     def tr(self, text):
         """
         Translation
         """
         return QCoreApplication.translate('BrowserView', text)
+
 
 #-------------------------------------------------------------------------------
 # Testing part

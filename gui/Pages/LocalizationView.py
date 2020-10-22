@@ -805,7 +805,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         # Delegates
         delegateLabel = LabelDelegate(self.tableView, self.mdl)
-        delegateCode  = CodeNumberDelegate(self.tableView, self.mdl)
+        delegateCode = CodeNumberDelegate(self.tableView, self.mdl)
         delegateLocal = LocalizationSelectorDelegate(self.tableView, self.mdl)
 
         self.tableView.setItemDelegateForColumn(0, delegateLabel)
@@ -845,7 +845,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         self.case.undoStartGlobal()
 
-
     def slotChangeSelection(self):
         """
         """
@@ -853,7 +852,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         current = self.tableView.currentIndex()
         if current != self.tableView.rootIndex():
             self.pushButtonModify.setEnabled(True)
-
 
     @pyqtSlot()
     def slotAddZone(self):
@@ -1080,7 +1078,7 @@ class VolumeLocalizationView(LocalizationView):
     """
     Define volume regions class.
     """
-    def __init__(self, parent=None, case=None, tree = None):
+    def __init__(self, parent=None, case=None, tree = None, hide_all=False):
         """
         Constructor.
         """
@@ -1092,6 +1090,9 @@ class VolumeLocalizationView(LocalizationView):
 
         title = self.tr("Definition of volume regions")
         self.groupBoxLocalization.setTitle(title)
+
+        if hide_all:
+            self.groupBoxLocalization.hide()
 
         # Delegates
         delegateNature = VolumeNatureDelegate(self.tableView, self.case)

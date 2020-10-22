@@ -43,27 +43,43 @@ typedef struct _cs_paramedmem_remapper_t cs_paramedmem_remapper_t;
  *
  * \param[in] name          name of the remapper
  * \param[in] sel_criteria  cells selection criteria
- * \param[in] fileName      med file name
- * \param[in] meshName      name of the mesh in the med file
+ * \param[in] file_name     med file name
+ * \param[in] mesh_name     name of the mesh in the med file
+ * \param[in] center        center of bounding sphere
+ * \param[in] radius        radius of bounding sphere
  *
  * \return  cs_paramedmem_remapper_t struct
  */
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_remapper_t *
-cs_paramedmem_remapper_create(char       *name,
-                              const char *sel_criteria,
-                              char        *fileName,
-                              char        *meshName,
-                              cs_real_t   center[3],
-                              cs_real_t   radius);
+cs_paramedmem_remapper_create(char        *name,
+                              const char  *sel_criteria,
+                              char        *file_name,
+                              char        *mesh_name,
+                              cs_real_t    center[3],
+                              cs_real_t    radius);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief get a remapper by its name
+ *
+ * \param[in] name  name of the remapper
+ *
+ * \return  pointer to cs_paramedmem_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_paramedmem_remapper_t *
+cs_paramedmem_remapper_by_name_try(const char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Interpolate a given field on the local mesh for a given time
  *
  * \param[in] r             pointer to cs_paramedmem_remapper_t struct
- * \param[in] fieldName     name of the field to remap from the file
+ * \param[in] field_name    name of the field to remap from the file
+ * \param[in] default_val  default value for unmapped elements
  * \param[in] time_choice   Choice of the time interpolation.
  *                          0: Value of field interpolated at t=tval from the
  *                          med file.
@@ -82,23 +98,31 @@ cs_paramedmem_remapper_create(char       *name,
 
 cs_real_t *
 cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
-                          char                     *fieldName,
-                          cs_real_t                 dval,
+                          char                     *field_name,
+                          cs_real_t                 default_val,
                           int                       time_choice,
                           double                    tval);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief get a remapper by its name
+ * \brief   Remaps a field from the med file to the local mesh for a given time
  *
- * \param[in] name  name of the remapper
+ * \param[in] r           pointer to cs_paramedmem_remapper_t struct
+ * \param[in] field_name  name of the field to remap from the file
+ * \param[in] default_val default value for unmapped elements
+ * \param[in] dt          time value to use from the file
+ * \param[in] it          time iteration to use from the file
  *
- * \return  pointer to cs_paramedmem_remapper_t struct
+ * \return  cs_real_t pointer containing the new values on target mesh
  */
 /*----------------------------------------------------------------------------*/
 
-cs_paramedmem_remapper_t *
-cs_paramedmem_remapper_by_name_try(const char *name);
+cs_real_t *
+cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
+                                   char                     *field_name,
+                                   cs_real_t                 default_val,
+                                   int                       dt,
+                                   int                       it);
 
 /*----------------------------------------------------------------------------*/
 /*!

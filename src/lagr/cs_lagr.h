@@ -126,6 +126,22 @@ typedef enum {
   CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
 } cs_lagr_module_status_t;
 
+/*! Particle shape condition types */
+/*---------------------------------*/
+
+typedef enum {
+
+  /*! Impose spherical particles */
+  CS_LAGR_SHAPE_SPHERE_MODEL = 0,
+
+  /*! Impose spheroids (stochastic model for transport) */
+  CS_LAGR_SHAPE_SPHEROID_STOC_MODEL = 1,
+
+  /*< Impose spheroids (Jeffery equations for transport) */
+  CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL = 2,
+
+} cs_lagr_module_shape_t;
+
 /*! Lagrangian additional physical model */
 /*---------------------------------------*/
 
@@ -173,8 +189,8 @@ typedef struct {
          (influence of the particles on the dynamics of the continuous phase).
          Dynamics, temperature and mass may be coupled independently.
      - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
-         continuous phase. This option
-         only only be used in case of a calculation restart. All the
+         continuous phase. This option may
+         only be used in the case of a calculation restart. All the
          Eulerian fields are frozen (including the scalar fields).
          This option automatically implies \ref iccvfg = 1 */
   int  iilagr;
@@ -183,7 +199,8 @@ typedef struct {
       continuous phase flow
       in particular, \ref isttio = 1 is needed in order to:
       calculate steady statistics in the volume or at the boundaries
-      (starting respectively from the iterations \ref nstist)
+      (starting respectively from the iterations
+      \ref cs_lagr_stat_options_t::nstist "nstist")
       and calculate time-averaged two-way coupling source terms (from the
       time step \ref nstits).
       Useful if \ref iilagr = CS_LAGR_ONEWAY_COUPLING
@@ -194,7 +211,7 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of a Lagrangian calculation restart.
     The calculation restart file read when this option is activated
-    only contains the data related to the particles (see also \ref isuist)
+    only contains the data related to the particles;
     the global calculation must also be a restart calculation
   */
   int  isuila;
@@ -238,14 +255,14 @@ typedef struct {
 
   /*! activates (>0) or deactivates (=0) the physical models associated to the
     particles:
-    - CS_LAGR_PHYS_HEAT: allows to associate with the particles evolution equations on
-         their temperature (in degrees Celsius), their diameter and
-         their mass
+    - CS_LAGR_PHYS_HEAT: allows to associate with the particles evolution
+      equations on  their temperature (in degrees Celsius), their diameter and
+      their mass
     - CS_LAGR_PHYS_COAL: the particles are pulverised coal particles.
-    Evolution equations on temperature (in degree Celsius), mass of
-    reactive coal, mass of char and diameter of the shrinking core are
-    associated with the particles. This option is available only if the
-    continuous phase represents a pulverised coal flame. */
+      Evolution equations on temperature (in degree Celsius), mass of
+      reactive coal, mass of char and diameter of the shrinking core are
+      associated with the particles. This option is available only if the
+      continuous phase represents a pulverised coal flame. */
   int  physical_model;
   int  n_temperature_layers;
 
@@ -559,8 +576,9 @@ typedef struct {
     - 1 imposed temperature */
   int         temperature_profile;
 
-  int         coal_number;          /*!< particle coal number
-                                      (if \ref physical_model=2) */
+  int         coal_number;          /*!< particle coal number (if
+                                      \ref cs_lagr_model_t::physical_model "physical_model"
+                                      =2) */
 
   int         cluster;              /*!< statistical cluster id */
 
@@ -576,19 +594,19 @@ typedef struct {
   cs_real_t   diameter_variance;    /*!< particle diameter variance */
 
   cs_real_t   shape;                /*!< particle shape for spheroids
-                                        (if \ref shape_model is activated */
+                                        (if shape model is activated */
   cs_real_t   orientation[3];       /*!< particle orintation for spheroids */
   cs_real_t   radii[3];             /*!< particle radii for ellispoids */
   cs_real_t   angular_vel[3];       /*!< particle angular velocity
-                                         (if \ref shape_model is activated */
+                                         (if shape model is activated */
 
   cs_real_t   euler[4];             /*!< particle four Euler parameters
-                                         (if \ref shape_model is activated */
+                                         (if shape model is activated */
   cs_real_t   shape_param[4];       /*!< particle shape parameters
                                          for ellispoids
                                          (alpha_0, beta_0, gamma_0, chi _0)
                                          in Brenner 1964
-                                         (if \ref shape_model is activated */
+                                         (if shape model is activated */
   cs_real_t   density;              /*!< particle density */
 
   cs_real_t   fouling_index;        /*!< fouling index */
@@ -615,7 +633,8 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
-    \ref physical_model = 1 and \ref impvar = 1 */
+    \ref cs_lagr_model_t::physical_model "physical_model" = 1 and
+    \ref cs_lagr_specific_physics_t::impvar "impvar" = 1 */
   int  ltsmas;
 
   /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
@@ -661,15 +680,16 @@ typedef struct {
   /*! number of absolute time steps (including the restarts)
     after which a time-average of the two-way coupling source terms is
     calculated.
-    indeed, if the flow is steady (\ref isttio=1), the average quantities
-    that appear in the two-way coupling source terms can be calculated over
-    different time steps, in order to get a better precision.
+    Indeed, if the flow is steady (\ref cs_lagr_time_scheme_t::isttio "isttio"=1),
+    the average quantities that appear in the two-way coupling source terms can
+    be calculated over different time steps, in order to get a better precision.
     if the number of absolute time steps is strictly inferior to
     \ref nstits, the code considers that the flow has not yet reached its
     steady state (transition period) and the averages appearing in the source
     terms are reinitialized at each time step, as it is the case for unsteady
-    flows (\ref isttio=0).
-    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref isttio = 1 */
+    flows (\ref cs_lagr_time_scheme_t::isttio "isttio"=0).
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and
+    \ref cs_lagr_time_scheme_t::isttio "isttio"=1 */
   int  nstits;
 
   /*! number of time steps for source terms accumulations */
@@ -802,7 +822,8 @@ typedef struct {
 
   /*! Number of iterations during which steady boundary statistics have
     been accumulated.
-    Useful if \ref isttio=1 and \ref nstist inferior
+    Useful if \ref cs_lagr_time_scheme_t::isttio "isttio"=1 and
+    \ref cs_lagr_stat_options_t::nstist "nstist" inferior
     or equal to the current time step.
     \ref npstf is initialized and updated automatically by the code,
     its value is not to be modified by the user */
@@ -867,7 +888,7 @@ typedef struct {
   /*!  name of the boundary statistics, displayed in the log
     and the post-processing files.
     Warning: this name is also used to reference information in the restart
-    file (\ref isuist =1). If the name of a variable is changed between two
+    file. If the name of a variable is changed between two
     calculations, it will not be possible to read its value from the restart
     file */
   char  **nombrd;

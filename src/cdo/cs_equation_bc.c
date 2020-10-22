@@ -292,7 +292,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
       case CS_XDEF_BY_VALUE:
         {
-          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+          const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
           switch (eqp->dim) {
 
@@ -322,14 +322,14 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
         {
-          cs_xdef_analytic_input_t  *anai =
-            (cs_xdef_analytic_input_t *)def->input;
+          cs_xdef_analytic_context_t  *ac =
+            (cs_xdef_analytic_context_t *)def->context;
 
-          anai->func(t_eval,
-                     z->n_elts, z->elt_ids, cdoq->b_face_center,
-                     false,       /* compacted output ? */
-                     anai->input,
-                     values);
+          ac->func(t_eval,
+                   z->n_elts, z->elt_ids, cdoq->b_face_center,
+                   false,       /* compacted output ? */
+                   ac->input,
+                   values);
         }
         break;
 
@@ -661,7 +661,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
     case CS_XDEF_BY_VALUE:
       _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
-                                  (const cs_real_t *)def->input,
+                                  (const cs_real_t *)def->context,
                                   true, /* is constant for all vertices ? */
                                   bcvals,
                                   counter);
@@ -679,7 +679,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                           connect,
                                           quant,
                                           t_eval,
-                                          def->input,
+                                          def->context,
                                           eval);
 
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
@@ -702,7 +702,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                              connect,
                                              quant,
                                              t_eval,
-                                             def->input,
+                                             def->context,
                                              eval);
 
         _assign_vb_dirichlet_values(eqp->dim, n_vf, lst,
@@ -823,7 +823,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
       case CS_XDEF_BY_VALUE:
         {
-          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+          const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
           if (def->dim ==  1) {
 
@@ -849,17 +849,15 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
       case CS_XDEF_BY_ARRAY:
         {
-          cs_xdef_array_input_t  *array_input
-            = (cs_xdef_array_input_t *)def->input;
+          cs_xdef_array_context_t  *ac =
+            (cs_xdef_array_context_t *)def->context;
 
           assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
           assert(bz->n_elts == quant->n_b_faces);
-          assert(array_input->stride == eqp->dim);
-          assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+          assert(ac->stride == eqp->dim);
+          assert(cs_flag_test(ac->loc, cs_flag_primal_face));
 
-          memcpy(values, array_input->values,
-                 sizeof(cs_real_t)*bz->n_elts*eqp->dim);
-
+          memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
         }
         break;
 
@@ -875,7 +873,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                               connect,
                                               quant,
                                               t_eval,
-                                              def->input,
+                                              def->context,
                                               values);
           break;
 
@@ -887,7 +885,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                                   connect,
                                                   quant,
                                                   t_eval,
-                                                  def->input,
+                                                  def->context,
                                                   def->qtype,
                                                   def->dim,
                                                   values);
@@ -1087,42 +1085,42 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval, def->input, neu_values);
+    cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval, def->context, neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_at_vtx_by_analytic(cm,
                                             f,
                                             t_eval,
-                                            def->input,
+                                            def->context,
                                             def->qtype,
                                             neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_input_t  *array_input
-        = (cs_xdef_array_input_t *)def->input;
+      cs_xdef_array_context_t  *ac
+        = (cs_xdef_array_context_t *)def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
-      assert(array_input->stride == 3);
+      assert(ac->stride == 3);
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(array_input->loc, cs_flag_primal_face))
+      if (cs_flag_test(ac->loc, cs_flag_primal_face))
         cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval,
-                                           array_input->values + 3*bf_id,
+                                           ac->values + 3*bf_id,
                                            neu_values);
 
-      else if (cs_flag_test(array_input->loc, cs_flag_dual_closure_byf)) {
+      else if (cs_flag_test(ac->loc, cs_flag_dual_closure_byf)) {
 
-        assert(array_input->index != NULL);
+        assert(ac->index != NULL);
 
         /* Retrieve the bf2v->idx stored in the cs_cdo_connect_t structure */
-        cs_lnum_t  shift = array_input->index[bf_id];
+        cs_lnum_t  shift = ac->index[bf_id];
         for (short int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++)
-          neu_values[cm->f2v_ids[iv]] = array_input->values[shift++];
+          neu_values[cm->f2v_ids[iv]] = ac->values[shift++];
 
       }
       else
@@ -1178,9 +1176,11 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_VALUE:
     if (eqp->dim == 1)
-      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, def->input, neu_values);
+      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, def->context, neu_values);
     else if (eqp->dim == 3)
-      cs_xdef_cw_eval_tensor_flux_by_val(cm, f, t_eval, def->input, neu_values);
+      cs_xdef_cw_eval_tensor_flux_by_val(cm, f, t_eval,
+                                         def->context,
+                                         neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1188,31 +1188,31 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
       cs_xdef_cw_eval_flux_by_analytic(cm,
                                        f,
                                        t_eval,
-                                       def->input,
+                                       def->context,
                                        def->qtype,
                                        neu_values);
     else if (eqp->dim == 3)
       cs_xdef_cw_eval_tensor_flux_by_analytic(cm,
                                               f,
                                               t_eval,
-                                              def->input,
+                                              def->context,
                                               def->qtype,
                                               neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_input_t  *array_input
-        = (cs_xdef_array_input_t *)def->input;
+      cs_xdef_array_context_t  *ac
+        = (cs_xdef_array_context_t *)def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
-      assert(array_input->stride == 3);
-      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+      assert(ac->stride == 3);
+      assert(cs_flag_test(ac->loc, cs_flag_primal_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      cs_real_t  *face_val = array_input->values + 3*bf_id;
+      cs_real_t  *face_val = ac->values + 3*bf_id;
 
       cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, face_val, neu_values);
     }
@@ -1263,7 +1263,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_VALUE:
     {
-      const cs_real_t  *parameters = (cs_real_t *)def->input;
+      const cs_real_t  *parameters = (cs_real_t *)def->context;
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];
@@ -1274,13 +1274,13 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
       cs_real_3_t  parameters = {0, 0, 0};
-      cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+      cs_xdef_analytic_context_t  *ac =
+        (cs_xdef_analytic_context_t *)def->context;
 
-      anai->func(t_eval, 1, NULL,
-                 cm->face[f].center,
-                 true, /* compacted output ? */
-                 anai->input,
-                 (cs_real_t *)parameters);
+      ac->func(t_eval, 1, NULL,
+               cm->face[f].center, true, /* compacted output ? */
+               ac->input,
+               (cs_real_t *)parameters);
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];
@@ -1290,16 +1290,15 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_input_t  *array_input
-        = (cs_xdef_array_input_t *)def->input;
+      cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
-      assert(array_input->stride == 3);
-      assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+      assert(c->stride == 3);
+      assert(cs_flag_test(c->loc, cs_flag_primal_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
-      cs_real_t  *parameters = array_input->values + 3*bf_id;
+      cs_real_t  *parameters = c->values + 3*bf_id;
 
       rob_values[3*f  ] = parameters[0];
       rob_values[3*f+1] = parameters[1];

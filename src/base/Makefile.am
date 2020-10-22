@@ -85,6 +85,7 @@ cs_1d_wall_thermal.h \
 cs_1d_wall_thermal_check.h \
 cs_ale.h \
 cs_all_to_all.h \
+cs_array.h \
 cs_array_reduce.h \
 cs_assert.h \
 cs_ast_coupling.h \
@@ -122,6 +123,7 @@ cs_log.h \
 cs_log_iteration.h \
 cs_log_setup.h \
 cs_map.h \
+cs_mass_source_terms.h \
 cs_math.h \
 cs_measures_util.h \
 cs_rank_neighbors.h \
@@ -172,11 +174,11 @@ cs_tree.h \
 cs_turbomachinery.h \
 cs_vof.h \
 cs_volume_zone.h \
+cs_volume_mass_injection.h \
 cs_wall_functions.h \
 cs_zone.h \
 cs_base_headers.h \
-cs_headers.h \
-cs_mass_source_terms.h
+cs_headers.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += cs_base_cuda.h
@@ -233,8 +235,6 @@ c_h_to_t.f90 \
 calhyd.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \
-catsmv.f90 \
-catsmt.f90 \
 clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
@@ -249,6 +249,7 @@ covofv.f90 \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \
+cs_array.c \
 cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
@@ -331,6 +332,7 @@ cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_vof.c \
+cs_volume_mass_injection.c \
 cs_volume_zone.c \
 cs_wall_functions.c \
 cs_internal_coupling.c \
@@ -412,10 +414,10 @@ pkglib_LTLIBRARIES =
 
 pkginclude_HEADERS += \
 cs_medcoupling_utils.hxx \
-cs_medcoupling_remapper.hxx \
-cs_medcoupling_intersector.hxx \
-cs_paramedmem_coupling.hxx \
-cs_paramedmem_remapper.hxx
+cs_medcoupling_remapper.h \
+cs_medcoupling_intersector.h \
+cs_paramedmem_coupling.h \
+cs_paramedmem_remapper.h
 
 if HAVE_PLUGIN_MEDCOUPLING
 

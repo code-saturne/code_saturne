@@ -154,6 +154,7 @@ cs_numbering_create_vectorized(cs_lnum_t  n_elts,
  * \brief Create a default numbering information structure
  *        in case of threading.
  *
+ * \param[in]  n_threads    number of threads
  * \param[in]  n_groups     number of groups
  * \param[in]  group_index  group_index[thread_id*group_id*2 + group_id*2] and
  *                          group_index[thread_id*group_id*2 + group_id*2 +1]

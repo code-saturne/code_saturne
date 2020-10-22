@@ -163,6 +163,7 @@ cs_gwf_parameters_define_field_keys(void)
                              &_gwf_soilwater_partition,
                              _log_func_gwf_soilwater_partition,
                              _log_func_default_gwf_soilwater_partition,
+                             NULL,
                              sizeof(cs_gwf_soilwater_partition_t),
                              0);
 

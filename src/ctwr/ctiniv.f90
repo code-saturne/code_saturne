@@ -27,18 +27,16 @@
 !>
 !> Initialise for example the meteorological field for each cell of
 !> the domain by interpolation of the data from the meteo file
+!> First stage.
 !
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   nvar        total number of variables
-!> \param[in]   nscal       total number of scalars
-!> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine ctiniv(nvar   , nscal  , dt)
+subroutine ctiniv0
 
 !===============================================================================
 ! Module files
@@ -63,18 +61,12 @@ use atincl, only : iymw
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
-integer          iel, ifac, f_id
-integer          iflmas, iflmab
+integer          iel
 
 double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
 double precision, dimension(:), pointer :: cvar_ymw
-double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 ! 1. Initialization
@@ -98,7 +90,6 @@ if (isuite.eq.0) then
     ! using 'cs_user_f_initialization'
     cvar_templ(iel) = cvar_temp(iel)
     cvar_yml(iel) = 0.0
-
   enddo
 
   call synsca(cvar_temp)
@@ -109,8 +100,9 @@ if (isuite.eq.0) then
   ! Diffusivities of the dry air and the injected liquid
   ! Note: this comes after 'cs_user_cooling_towers' so it will overwrite
   !       what users may have specified there
-  visls0(iymw) = 1.d-12
-  visls0(iyml) = 1.d-12
+
+  call field_set_key_double(ivarfl(isca(iymw)), kvisl0, 1.d-12)
+  call field_set_key_double(ivarfl(isca(iyml)), kvisl0, 1.d-12)
 
   ! initialise:
   !   - the enthalpies, which are the solution variables
@@ -125,35 +117,91 @@ if (isuite.eq.0) then
   if (cp_l.le.0.0 .or. lambda_l.le.0.0) then
     !!FIXME - stop the code and publish an error message
   else
-    visls0(ihml) = lambda_l/cp_l
+    call field_set_key_double(ivarfl(isca(ihml)), kvisl0, lambda_l/cp_l)
   endif
 
 else
 
-   !! Add - NAT
-   !! Restarts
+  !! TODO Add restarts
 
-   ! Diffusivities of the dry air and the injected liquid
-   visls0(iymw) = 1.d-12
-   visls0(iyml) = 1.d-12
+  ! Diffusivities of the dry air and the injected liquid
+  call field_set_key_double(ivarfl(isca(iymw)), kvisl0, 1.d-12)
+  call field_set_key_double(ivarfl(isca(iyml)), kvisl0, 1.d-12)
 
-   !! Restarts - recompute the required properties based on the
-   !! saved solution variables: for example, the humidty, liquid
-   !! vertical velocity, etc.
-   call cs_ctwr_restart_field_vars(ro0,t0,p0,humidity0,molmass_rat)
+  !! Restarts - recompute the required properties based on the
+  !! saved solution variables: for example, the humidty, liquid
+  !! vertical velocity, etc.
+  call cs_ctwr_restart_field_vars(ro0,t0,p0,humidity0,molmass_rat)
 
 endif
 
+!----
+! End
+!----
+
+return
+
+end subroutine
+
+!-------------------------------------------------------------------------------
+!> \file ctiniv.f90
+!> \brief Initialisation of calculation variables for the cooling tower module,
+!> it is the counterpart of usiniv.f90.
+!>
+!> Second stage
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!-------------------------------------------------------------------------------
+
+subroutine ctiniv1
+
 !===============================================================================
-! 3. User initialization
+! Module files
 !===============================================================================
 
-call cs_user_f_initialization &
-( nvar   , nscal  ,                                            &
-  dt     )
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppppar
+use ppthch
+use ctincl
+use ppincl
+use field
+use mesh
+use cs_c_bindings
+use atincl, only : iymw
 
 !===============================================================================
-! 5. Imposed injected liquid mass flux in packing zones
+
+implicit none
+
+! Local variables
+
+integer          ifac, f_id
+integer          iflmas, iflmab
+
+double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
+double precision, dimension(:), pointer :: cvar_ymw
+double precision, dimension(:), pointer :: bmasfl, imasfl
+
+!===============================================================================
+! 1. Initialization
+!===============================================================================
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+call field_get_val_s(ivarfl(isca(iyml)), cvar_yml)
+call field_get_val_s(ivarfl(isca(iymw)), cvar_ymw)
+call field_get_val_s(itml, cvar_templ)
+
+!===============================================================================
+! 2. Imposed injected liquid mass flux in packing zones
 !===============================================================================
 
 f_id = ivarfl(isca(iyml))
@@ -181,7 +229,6 @@ call synsca(cvar_yml)
 do ifac = 1, nfabor
   bmasfl(ifac) = 0.d0
 enddo
-
 
 !--------
 ! Formats

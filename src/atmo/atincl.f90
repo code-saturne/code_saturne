@@ -82,16 +82,16 @@ double precision, allocatable, dimension(:,:) :: ttmet
 !> meteo specific humidity profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: qvmet
 
-!> meteo specific drplet number profile (read in the input meteo file)
+!> meteo specific droplet number profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ncmet
 
 !> Sea level pressure (read in the input meteo file)
 double precision, allocatable, dimension(:) :: pmer
 
-!> X axis cooordinates of the meteo profile (read in the input meteo file)
+!> X axis coordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: xmet
 
-!> Y axis cooordinates of the meteo profile (read in the input meteo file)
+!> Y axis coordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ymet
 
 !   Arrays specific to values calculated from the meteo file (cf atlecm.f90):
@@ -170,7 +170,7 @@ integer, save :: initmeteo
 
 !> add a momentum source term based on the meteo profile
 !> for automatic open boundaries
-integer, save :: iatmst
+integer(c_int), pointer, save :: iatmst
 
 !> flag for meteo velocity field interpolation
 !> - 0: linear interpolation of the meteo profile
@@ -397,7 +397,7 @@ integer, save :: kopint
 
     subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
         longitude, latitude,                                            &
-        compute_z_ground,                                               &
+        compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
@@ -406,7 +406,8 @@ integer, save :: kopint
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
+      type(c_ptr), intent(out) :: compute_z_ground, iatmst
+      type(c_ptr), intent(out) :: ichemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: subgrid_model
@@ -418,6 +419,26 @@ integer, save :: kopint
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
     end subroutine cs_f_atmo_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Initialize meteo profiles if no meteo file is given
+
+    subroutine cs_atmo_init_meteo_profiles() &
+        bind(C, name='cs_atmo_init_meteo_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_init_meteo_profiles
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute meteo profiles if no meteo file is given
+
+    subroutine cs_atmo_compute_meteo_profiles() &
+        bind(C, name='cs_atmo_compute_meteo_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_compute_meteo_profiles
 
     !---------------------------------------------------------------------------
 
@@ -549,7 +570,7 @@ contains
     implicit none
 
     ! Local variables
-    type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
+    type(c_ptr) :: c_compute_z_ground, c_iatmst, c_model, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
@@ -562,7 +583,7 @@ contains
     call cs_f_atmo_get_pointers(                  &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
-      c_compute_z_ground,                         &
+      c_compute_z_ground, c_iatmst,               &
       c_sedimentation_model, c_deposition_model,  &
       c_nucleation_model, c_subgrid_model,        &
       c_model, c_nespg, c_nrg, c_chem_with_photo, &
@@ -582,6 +603,7 @@ contains
     call c_f_pointer(c_latitude, xlat)
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
+    call c_f_pointer(c_iatmst, iatmst)
 
     call c_f_pointer(c_sedimentation_model, modsedi)
     call c_f_pointer(c_deposition_model, moddep)
@@ -628,6 +650,9 @@ integer(c_int),   dimension(2) :: dim_hyd_p_met
 
 if (imeteo.gt.0) then
   call atlecm(0)
+endif
+if (imeteo.eq.2) then
+  call cs_atmo_init_meteo_profiles()
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_temp_met, c_time_met,     &
@@ -774,7 +799,7 @@ subroutine mo_phim_s (z,dlmo,coef)
   b=2.5d0
   x=z * dlmo
 
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
 
 end subroutine mo_phim_s
 
@@ -790,7 +815,7 @@ subroutine mo_phih_s (z,dlmo,coef)
   b=1.1d0
   x=z * dlmo
 
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
 
 end subroutine mo_phih_s
 
@@ -973,11 +998,14 @@ end subroutine mo_psih_n
 
 ! Derivative function
 
-subroutine mo_phim (z,dlmo,coef)
+function cs_mo_phim(z,dlmo) result(coef) &
+    bind(C, name='cs_mo_phim')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,dlmo,coef
+  real(c_double), value :: z,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -988,13 +1016,16 @@ subroutine mo_phim (z,dlmo,coef)
     call mo_phim_u(z,dlmo,coef)
   endif
 
-end subroutine mo_phim
+end function cs_mo_phim
 
-subroutine mo_phih (z,dlmo,coef)
+function cs_mo_phih(z,dlmo) result(coef) &
+    bind(C, name='cs_mo_phih')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,dlmo,coef
+  real(c_double), value :: z,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1005,15 +1036,18 @@ subroutine mo_phih (z,dlmo,coef)
     call mo_phih_u(z,dlmo,coef)
   endif
 
-end subroutine mo_phih
+end function cs_mo_phih
 
 ! Integrated version from z0 to z
 
-subroutine mo_psim (z,z0,dlmo,coef)
-
+function cs_mo_psim(z,z0,dlmo) result(coef) &
+    bind(C, name='cs_mo_psim')
+  use, intrinsic :: iso_c_binding
   implicit none
+  real(c_double), value :: z,z0,dlmo
+  real(c_double) :: coef
 
-  double precision z,z0,dlmo,coef
+  ! Local variable
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1024,13 +1058,16 @@ subroutine mo_psim (z,z0,dlmo,coef)
     call mo_psim_u(z,z0,dlmo,coef)
   endif
 
-end subroutine mo_psim
+end function cs_mo_psim
 
-subroutine mo_psih (z,z0,dlmo,coef)
+function cs_mo_psih (z,z0,dlmo) result(coef) &
+    bind(C, name='cs_mo_psih')
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
-  double precision z,z0,dlmo,coef
+  real(c_double), value :: z,z0,dlmo
+  real(c_double) :: coef
   double precision :: dlmoneutral = 1.d-12
 
   if (abs(dlmo).lt.dlmoneutral) then
@@ -1041,7 +1078,7 @@ subroutine mo_psih (z,z0,dlmo,coef)
     call mo_psih_u(z,z0,dlmo,coef)
   endif
 
-end subroutine mo_psih
+end function cs_mo_psih
 
 !---------------------------------------------------------------------------
 
@@ -1074,6 +1111,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   double precision coef_mom
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
+  double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
@@ -1092,7 +1130,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   endif
 
   ! Call universal functions
-  call mo_psim(z+z0,z0,dlmo,coef_mom)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
 
   ! Initial ustar and tstar
   ustar = xkappa * du / coef_mom
@@ -1117,13 +1155,13 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   endif
 
   ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
-  if (abs(dlmo).ge.0.05d0) then
-    if (dlmo.ge.0.d0) dlmo=0.05d0
-    if (dlmo.le.0.d0) dlmo=-0.05d0
+  if (abs(dlmo).ge.dlmoclip) then
+    if (dlmo.ge.0.d0) dlmo =   dlmoclip
+    if (dlmo.le.0.d0) dlmo = - dlmoclip
   endif
 
   ! Evaluate universal functions
-  call mo_psim (z+z0,z0,dlmo,coef_mom)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
 
   ! Update ustar,tstar
   ustar = xkappa*du/coef_mom
@@ -1176,6 +1214,8 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   double precision coef_mom,coef_moh
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
+  real(c_double) :: zref
+  double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
@@ -1194,8 +1234,9 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   endif
 
   ! Call universal functions
-  call mo_psim(z+z0,z0,dlmo,coef_mom)
-  call mo_psih(z+z0,z0,dlmo,coef_moh)
+  zref = z+z0
+  coef_mom = cs_mo_psim(zref,z0,dlmo)
+  coef_moh = cs_mo_psih(zref,z0,dlmo)
 
   ! Initial ustar and tstar
   ustar = xkappa * du / coef_mom
@@ -1224,15 +1265,15 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
     dlmo = 0.d0 !FIXME
   endif
 
-  ! Clipping LMO
-  if (abs(dlmo).ge.0.05d0) then
-    if (dlmo.ge.0.d0) dlmo= 0.05d0
-    if (dlmo.le.0.d0) dlmo=-0.05d0
+  ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
+  if (abs(dlmo).ge.dlmoclip) then
+    if (dlmo.ge.0.d0) dlmo =   dlmoclip
+    if (dlmo.le.0.d0) dlmo = - dlmoclip
   endif
 
   ! Evaluate universal functions
-  call mo_psim (z+z0,z0,dlmo,coef_mom)
-  call mo_psih (z+z0,z0,dlmo,coef_moh)
+  coef_mom = cs_mo_psim((z+z0),z0,dlmo)
+  coef_moh = cs_mo_psih(z+z0,z0,dlmo)
 
   ! Update ustar,tstar
   ustar = xkappa*du/coef_mom

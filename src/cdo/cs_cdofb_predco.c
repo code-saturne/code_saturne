@@ -243,7 +243,6 @@ static const cs_matrix_structure_t  *cs_shared_pre_ms;
  *
  * \param[in]      sc          pointer to a cs_cdofb_predco_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in]      diff_pty    pointer to \ref cs_property_data_t for diffusion
@@ -255,7 +254,6 @@ static const cs_matrix_structure_t  *cs_shared_pre_ms;
 static void
 _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
                         const cs_equation_param_t     *eqp,
-                        const cs_cdofb_scaleq_t       *eqc,
                         const cs_cell_mesh_t          *cm,
                         const cs_boundary_type_t      *bf_type,
                         const cs_property_data_t      *diff_pty,
@@ -319,9 +317,6 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
       /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop on boundary faces */
-
-    if (cs_equation_param_has_convection(eqp)) /* Always weakly enforced */
-      eqc->adv_func_bc(eqp, cm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -467,7 +462,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
                                               connect,
                                               quant,
                                               time_eval,
-                                              pdef->input,
+                                              pdef->context,
                                               cc->bdy_pressure_incr);
           break;
 
@@ -479,7 +474,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
                                                   connect,
                                                   quant,
                                                   time_eval,
-                                                  pdef->input,
+                                                  pdef->context,
                                                   pdef->qtype,
                                                   pdef->dim,
                                                   cc->bdy_pressure_incr);
@@ -1136,7 +1131,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _predco_apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
+      _predco_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type,
                               diff_hodge->pty_data, csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME

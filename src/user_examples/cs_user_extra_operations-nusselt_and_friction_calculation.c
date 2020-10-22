@@ -103,7 +103,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
     = (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
 
   cs_field_t *f = cs_thermal_model_field();
-  const double visls0
+  const double visls_0
     = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
@@ -172,7 +172,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
       // Compute the Nusselt number
       cs_real_t tfac = f_b_temp[f_id];
       loc_nusselt[ielt] =   boundary_flux[f_id] * length_ref
-                          / (visls0 * (tfac-temp_ref));
+                          / (visls_0 * (tfac-temp_ref));
 
       // Compute the friction coefficient
       srfbn = surfbn[f_id];

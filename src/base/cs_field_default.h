@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_equation_param.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -93,6 +94,46 @@ cs_variable_field_create(const char  *name,
                          const char  *label,
                          int          location_id,
                          int          dim);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Access a field's equation parameters for read only.
+ *
+ * If the equation parameters were never initialized, they will be initialized
+ * based on the current defaults.
+ *
+ * If the field does not have associated equaton paremeters (i.e. is not
+ * a variable field or is a CDO field (which is referenced by but does not
+ * directly reference equations), NULL is returned.
+ *
+ * \param[in, out]  f  pointer to associated field
+ *
+ * \return  pointer to field's equation parameters, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_field_get_equation_param(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Access a field's equation parameters.
+ *
+ * If the equation parameters were never initialized, the currect default
+ * parameters will be returned instead.
+ *
+ * If the field does not have associated equaton paremeters (i.e. is not
+ * a variable field or is a CDO field (which is referenced by but does not
+ * directly reference equations), NULL is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return  const-qaulified pointer to field's equation parameters, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_equation_param_t *
+cs_field_get_equation_param_const(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 

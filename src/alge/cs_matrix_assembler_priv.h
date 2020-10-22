@@ -181,7 +181,7 @@ struct _cs_matrix_assembler_values_t {
 
 #endif
 
-  /* Matching strcuture and function pointers; some function type may not be
+  /* Matching structure and function pointers; some function type may not be
      useful for certain matrix structures or libraries. */
 
   void                                 *matrix;          /* pointer to

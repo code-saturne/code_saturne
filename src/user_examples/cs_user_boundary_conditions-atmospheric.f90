@@ -62,8 +62,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -131,6 +130,7 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, ii
 integer          izone
 integer          ilelt, nlelt
+integer          f_id_rough, f_id_t_rough
 double precision d2s3
 double precision zref, xuref
 double precision ustar, rugd, rugt
@@ -138,6 +138,8 @@ double precision zent, xuent, xvent
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: bpro_roughness
+double precision, dimension(:), pointer :: bpro_roughness_t
 !< [loc_var_dec]
 
 !===============================================================================
@@ -172,7 +174,6 @@ rugt = rugd
 
 !< [example_1]
 call getfbr('11',nlelt,lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1
@@ -209,7 +210,6 @@ enddo
 
 !< [example_2]
 call getfbr('21',nlelt,lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1
@@ -240,7 +240,6 @@ enddo
 
 !< [example_3]
 call getfbr('31',nlelt,lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1
@@ -261,11 +260,11 @@ do ilelt = 1, nlelt
   ! - Dynamical variables are prescribed with a rough log law
   zent=cdgfbo(3,ifac)
 
-  ustar=xkappa*xuref/log((zref+rugd)/rugd)
-  xuent=ustar/xkappa*log((zent+rugd)/rugd)
+  ustar = xkappa*xuref/log((zref+rugd)/rugd)
+  xuent = ustar/xkappa*log((zent+rugd)/rugd)
   xvent = 0.d0
-  xkent=ustar**2/sqrt(cmu)
-  xeent=ustar**3/xkappa/(zent+rugd)
+  xkent = ustar**2/sqrt(cmu)
+  xeent = ustar**3/xkappa/(zent+rugd)
 
   itypfb(ifac) = ientre
 
@@ -308,11 +307,10 @@ do ilelt = 1, nlelt
   endif
 
 enddo
-!< [example_3]
 
+!< [example_3]
 ! --- Prescribe at boundary faces of color '12' an outlet for all phases
 call getfbr('12', nlelt, lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1
@@ -332,10 +330,14 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Prescribe at boundary faces of color 15 a rough wall for all phases
+! --- Prescribe at boundary faces of color 15 a rough wall
 !< [example_4]
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bpro_roughness)
+call field_get_id_try("boundary_thermal_roughness", f_id_t_rough)
+if (f_id_t_rough.ge.0) call field_get_val_s(f_id_t_rough, bpro_roughness_t)
+
 call getfbr('15', nlelt, lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1
@@ -353,13 +355,13 @@ do ilelt = 1, nlelt
   itypfb(ifac)   = iparug
 
   ! Roughness for velocity: rugd
-  rcodcl(ifac,iu,3) = rugd
+  bpro_roughness(ifac) = rugd
 
-  ! Roughness for scalars:
-  rcodcl(ifac,iv,3) = rugt
+  ! Roughness for scalars (if required)
+  if (f_id_rough.ge.0) &
+    bpro_roughness_t(ifac) = 0.01d0
 
   ! By default zero flux for scalars
-
 
 enddo
 !< [example_4]
@@ -367,7 +369,6 @@ enddo
 ! --- Prescribe at boundary faces of color 4 a symmetry for all phases
 !< [example_5]
 call getfbr('4', nlelt, lstelt)
-!==========
 
 ! Get a new zone number (1 <= izone <= nozppm)
 izone = maxval(izfppp) + 1

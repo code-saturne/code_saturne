@@ -586,7 +586,7 @@ elseif (ixyzp0.lt.0.and.ntcabs.eq.ntpabs+1) then
 
   ifadir = -1
   do ifac = 1, nfabor
-    if (icodcl(ifac,ipr).eq.1) then
+    if (abs(icodcl(ifac,ipr)).eq.1) then
       d0 =   (cdgfbo(1,ifac)-xyzp0(1))**2  &
            + (cdgfbo(2,ifac)-xyzp0(2))**2  &
            + (cdgfbo(3,ifac)-xyzp0(3))**2

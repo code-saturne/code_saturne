@@ -120,7 +120,7 @@ cs_meg_initialization(const cs_zone_t *zone,
 'ibm':"""void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  const char  *object_name,
-                                 cs_real_3_t  xyz,
+                                 cs_real_t    xyz[3],
                                  cs_real_t    t)
 {
 """,
@@ -1700,9 +1700,11 @@ class meg_to_c_interpreter:
                     # Thermal
                     node_t = im.node_scalartherm.xmlGetNode('variable')
                     if node_t:
-                        exp, req, sym = im.getThermalFormulaComponents(z_id)
-                        self.init_block('ini', zone_name, 'thermal',
-                                        exp, req, sym, [])
+                        th_formula = im.getThermalFormula(z_id)
+                        if th_formula:
+                            exp, req, sym = im.getThermalFormulaComponents(z_id)
+                            self.init_block('ini', zone_name, 'thermal',
+                                            exp, req, sym, [])
 
                     # HydraulicHead
                     if im.node_veloce.xmlGetNode('variable', name = 'hydraulic_head'):

@@ -80,9 +80,8 @@ cs_user_solver_set(void)
 /*!
  * \brief Main call to user solver
  *
- * \param[in] mesh pointer to a cs_mesh_t structure
- * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
- *
+ * \param[in]     mesh             pointer to a cs_mesh_t structure
+ * \param[in,out] mesh_quantities  pointer to a cs_mesh_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -94,7 +93,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
 
   int         i, iter, n_iter;
 
-  cs_real_t   x0, xL, t0, tL, L;
+  cs_real_t   x0, xL, t0, tL;
   cs_real_t   r;
 
   cs_real_t  *t = NULL, *t_old = NULL, *t_sol = NULL;
@@ -125,8 +124,6 @@ cs_user_solver(const cs_mesh_t             *mesh,
     if (x_face < x0) x0 = x_face;
     if (x_face > xL) xL = x_face;
   }
-
-  L = xL - x0; /* it is assumed that dx is constant and x0 = 0, XL =1 */
 
   t0 = 0.;
   tL = 0.;

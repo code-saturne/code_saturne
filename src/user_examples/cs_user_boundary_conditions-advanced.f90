@@ -60,8 +60,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -124,13 +123,14 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iel, ii, ivar
 integer          izone
 integer          ilelt, nlelt
+integer          f_id_rough
 double precision uref2, d2s3
 double precision rhomoy, xdh, xustar2
 double precision xitur
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer :: boundary_roughness
+double precision, dimension(:), pointer :: bpro_roughness
 !< [loc_var_dec]
 
 !===============================================================================
@@ -257,9 +257,13 @@ enddo
 
 ! Example of wall boundary condition with automatic continuous switch
 ! between rough and smooth.
+! Here the boundary_roughness is the length scale so that
+! "y+ = log (y/boundary_roughness)" in rough regime.
+! So different from the Sand grain roughness
 
 !< [example_4]
-call field_get_val_s_by_name("boundary_roughness", boundary_roughness)
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bpro_roughness)
 
 call getfbr('6789', nlelt, lstelt)
 !==========
@@ -273,7 +277,7 @@ do ilelt = 1, nlelt
   itypfb(ifac) = iparoi
 
   ! Boundary roughtness (in meter)
-  boundary_roughness(ifac) = 0.05
+  bpro_roughness(ifac) = 0.05
 
 enddo
 !< [example_4]

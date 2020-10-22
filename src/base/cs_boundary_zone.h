@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @defgroup volume_zone_flags Flags specifying general boundary zone type
+ * @defgroup boundary_zone_flags Flags specifying general boundary zone type
  *
  * @{
  */

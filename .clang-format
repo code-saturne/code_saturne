@@ -1,0 +1,137 @@
+---
+Language:        Cpp
+# BasedOnStyle:  GNU
+AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+#v4 AlignConsecutiveMacros: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+#v4 AlignEscapedNewlines: Right
+AlignOperands: true
+AlignTrailingComments: true
+#v4 AllowAllArgumentsOnNextLine: true
+#v4 AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+#4 AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+#v4 AllowShortLambdasOnASingleLine: All
+#v4 AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakAfterReturnType: AllDefinitions
+AlwaysBreakBeforeMultilineStrings: false
+#v4 AlwaysBreakTemplateDeclarations: MultiLine
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  #v4 AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: true
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  #v4 AfterExternBlock: true
+  BeforeCatch:     true
+  BeforeElse:      true
+  IndentBraces:    true
+  #v4 SplitEmptyFunction: true
+  #v4 SplitEmptyRecord: true
+  #v4 SplitEmptyNamespace: true
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Stroustrup
+#v4 BreakBeforeInheritanceComma: false
+#v4 BreakInheritanceList: BeforeColon
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: false
+#v4 BreakConstructorInitializers: BeforeColon
+BreakAfterJavaFieldAnnotations: false
+BreakStringLiterals: true
+ColumnLimit:     80
+CommentPragmas:  '^ IWYU pragma:'
+#v4 CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+Cpp11BracedListStyle: false
+#v4 DeriveLineEnding: true
+DerivePointerAlignment: false
+DisableFormat:   false
+ExperimentalAutoDetectBinPacking: false
+#v4 FixNamespaceComments: false
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+#v4 IncludeBlocks:   Preserve
+IncludeCategories:
+  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
+    Priority:        2
+    #v4 SortPriority:    0
+  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
+    Priority:        3
+    #v4 SortPriority:    0
+  - Regex:           '.*'
+    Priority:        1
+    #v4 SortPriority:    0
+IncludeIsMainRegex: '(Test)?$'
+#v4 IncludeIsMainSourceRegex: ''
+IndentCaseLabels: false
+#v4 IndentGotoLabels: true
+#v4 IndentPPDirectives: None
+IndentWidth:     2
+IndentWrappedFunctionNames: false
+JavaScriptQuotes: Leave
+JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+MacroBlockBegin: ''
+MacroBlockEnd:   ''
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+#v4 ObjCBinPackProtocolList: Auto
+#v4 ObjCBlockIndentWidth: 2
+#v4 ObjCSpaceAfterProperty: false
+#v4 ObjCSpaceBeforeProtocolList: true
+#v4 PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+#v4 PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 60
+PointerAlignment: Right
+ReflowComments:  true
+SortIncludes:    true
+#v4 SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+#v4 SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+#v4 SpaceBeforeCpp11BracedList: false
+#v4 SpaceBeforeCtorInitializerColon: true
+#v4 SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+#v4 SpaceBeforeRangeBasedForLoopColon: true
+#v4 SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:  false
+#v4 SpacesInConditionalStatement: false
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+#v4 SpaceBeforeSquareBrackets: false
+#v4 Standard:        c++03
+#v4 StatementMacros:
+#v4   - Q_UNUSED
+#v4   - QT_REQUIRE_VERSION
+TabWidth:        8
+#v4 UseCRLF:         false
+UseTab:          Never
+...
+

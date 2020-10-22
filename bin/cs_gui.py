@@ -197,8 +197,12 @@ def main(argv, pkg):
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
-    from code_saturne.Base.MainView import MainView
-    mv = MainView(cmd_package = pkg, cmd_case = case)
+    if os.path.split(case)[1] == "run.cfg":
+        from code_saturne.Base.QCouplingEditorView import QCouplingEditor
+        mv = QCouplingEditor(cfgfile=case, standalone_mode=True)
+    else:
+        from code_saturne.Base.MainView import MainView
+        mv = MainView(cmd_package = pkg, cmd_case = case)
 
     try:
         mv.show()

@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdo_bc.h"
+#include "cs_flag.h"
 #include "cs_property.h"
 #include "cs_math.h"
 #include "cs_scheme_geometry.h"
@@ -1138,8 +1139,105 @@ cs_cdo_advection_get_cip_coef(void)
  * \brief   Build the cellwise advection operator for CDO-Fb schemes
  *          The local matrix related to this operator is stored in cb->loc
  *
+ *          Case of an advection term without a diffusion operator. In this
+ *          situation, a numerical issue may arise if an internal or a border
+ *          face is such that there is no advective flux. A specil treatment
+ *          is performed to tackle this issue.
+ *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys        pointer to a cs_cell_sys_t structure
+ * \param[in]      build_func  pointer to the function building the system
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
+                                      const cs_cell_mesh_t        *cm,
+                                      const cs_cell_sys_t         *csys,
+                                      cs_cdofb_advection_t        *build_func,
+                                      cs_cell_builder_t           *cb)
+{
+  /* Sanity checks */
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
+
+  /* Initialize the local matrix structure */
+  cs_sdm_t  *adv = cb->loc;
+  cs_sdm_square_init(cm->n_fc + 1, adv);
+
+  if (cb->cell_flag & CS_FLAG_SOLID_CELL)
+    return;         /* Nothing to do. No advection in the current cell volume */
+
+  /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
+  cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
+                                  cb->adv_fluxes);
+
+  /* Define the local operator for advection. Boundary conditions are also
+     treated here since there are always weakly enforced */
+  build_func(eqp->dim, cm, csys, cb, adv);
+
+  /* Handle the specific case where there is no diffusion and no advection
+   * flux. In this case, a zero row may appear leading to the divergence of
+   * linear solver. To circumvent this issue, one set the boundary face value
+   * to the cell value. */
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+
+    for (int f = 0; f < cm->n_fc; f++) {
+
+      if (fabs(cb->adv_fluxes[f]) < cs_math_zero_threshold) {
+
+        cs_real_t  *f_row = adv->val + f*adv->n_rows;
+
+        f_row[cm->n_fc] += -1;
+        f_row[f]        +=  1;
+
+      }
+
+    } /* Loop on cell faces */
+
+  } /* One may have to tackle an issue */
+
+  /* Multiply by a scaling property if needed */
+  if (eqp->adv_scaling_property != NULL) {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_scale(scaling, adv);
+    }
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection fluxes");
+    cs_log_printf(CS_LOG_DEFAULT, "\n beta_fluxes>>");
+    for (int f = 0; f < cm->n_fc; f++)
+      cs_log_printf(CS_LOG_DEFAULT, "f%d;% -5.3e|",
+                    cm->f_ids[f], cb->adv_fluxes[f]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
+    cs_sdm_dump(cm->c_id, NULL, NULL, adv);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build the cellwise advection operator for CDO-Fb schemes
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ *          A diffusion term is present so that there is no need to perform
+ *          additional checkings.
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys        pointer to a cs_cell_sys_t structure
  * \param[in]      build_func  pointer to the function building the system
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  */
@@ -1148,6 +1246,7 @@ cs_cdo_advection_get_cip_coef(void)
 void
 cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
                          const cs_cell_mesh_t        *cm,
+                         const cs_cell_sys_t         *csys,
                          cs_cdofb_advection_t        *build_func,
                          cs_cell_builder_t           *cb)
 {
@@ -1159,616 +1258,273 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   cs_sdm_t  *adv = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, adv);
 
+  if (cb->cell_flag & CS_FLAG_SOLID_CELL)
+    return;         /* Nothing to do. No advection in the current cell volume */
+
   /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
   cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
                                   cb->adv_fluxes);
 
-  /* Define the local operator for advection */
-  build_func(cm, cb->adv_fluxes, adv);
+  /* Define the local operator for advection. Boundary conditions are also
+     treated here since there are always weakly enforced */
+  build_func(eqp->dim, cm, csys, cb, adv);
+
+  /* Multiply by a scaling property if needed */
+  if (eqp->adv_scaling_property != NULL) {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_scale(scaling, adv);
+    }
+
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, NULL)) {
+  if (cs_dbg_cw_test(eqp, cm, csys)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection fluxes");
     cs_log_printf(CS_LOG_DEFAULT, "\n beta_fluxes>>");
     for (int f = 0; f < cm->n_fc; f++)
       cs_log_printf(CS_LOG_DEFAULT, "f%d;% -5.3e|",
                     cm->f_ids[f], cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, NULL, NULL, cb->loc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, adv);
   }
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion)
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - non-conservative formulation beta \cdot \grad
+ *         - upwind scheme
+ *         Rely on the work performed during R. Milani's PhD
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_bc(const cs_equation_param_t   *eqp,
-                       const cs_cell_mesh_t        *cm,
-                       cs_cell_builder_t           *cb,
-                       cs_cell_sys_t               *csys)
+cs_cdo_advection_fb_upwnoc(int                        dim,
+                           const cs_cell_mesh_t      *cm,
+                           const cs_cell_sys_t       *csys,
+                           cs_cell_builder_t         *cb,
+                           cs_sdm_t                  *adv)
 {
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(csys->n_dofs == cm->n_fc + 1);
-
   const cs_real_t  *fluxes = cb->adv_fluxes;
 
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
+  /* Access the row containing current cell */
+  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
+  double  *c_row = adv->val + c*adv->n_rows;
 
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != NULL) {
 
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
+    /* There is at least one boundary face associated to this cell */
 
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+      const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
+      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
+
+      /* access the row containing the current face */
+      double  *f_row = adv->val + f*adv->n_rows;
+
+      f_row[f] += beta_plus;
+      f_row[c] -= beta_plus;
+      c_row[f] -= beta_minus;
+      c_row[c] += beta_minus;
+
+      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
+        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
+
+          /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
+          f_row[f] += beta_minus;
+
+          /* Weak enforcement of the Dirichlet BCs.
+             Update RHS for faces attached to a boundary face */
+          for (int k = 0; k < dim; k++)
+            csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
+
+        }
+      }
+
+    } /* Loop on cell faces */
+
+  }
+  else {
+
+    /* There is no boundary face associated to this cell */
+
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+      const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
+      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
+
+      /* access the row containing the current face */
+      double  *f_row = adv->val + f*adv->n_rows;
+
+      f_row[f] += beta_plus;
+      f_row[c] -= beta_plus;
+      c_row[f] -= beta_minus;
+      c_row[c] += beta_minus;
+
+    } /* Loop on cell faces */
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation div(\beta )
+ *         - upwind scheme
+ *         Rely on the work performed during R. Milani's PhD
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_upwcsv(int                        dim,
+                           const cs_cell_mesh_t      *cm,
+                           const cs_cell_sys_t       *csys,
+                           cs_cell_builder_t         *cb,
+                           cs_sdm_t                  *adv)
+{
+  const cs_real_t  *fluxes = cb->adv_fluxes;
+
+  /* Access the row containing current cell */
+  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
+  double  *c_row = adv->val + c*adv->n_rows;
+
+  cs_real_t  div_c = 0;
+
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != NULL) {
+
+    /* There is at least one boundary face associated to this cell */
+
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+
+      div_c += beta_flx;
 
       const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-      const cs_real_t  beta_plus =  0.5*(fabs(beta_flx) + beta_flx);
+      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
 
-      /* Outward flux */
+      /* access the row containing the current face */
+      double  *f_row = adv->val + f*adv->n_rows;
+
+
       f_row[f] += beta_plus;
+      f_row[c] -= beta_plus;
+      c_row[f] -= beta_minus;
+      c_row[c] += beta_minus;
 
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-         to a boundary face */
-      csys->rhs[f] += beta_minus * csys->dir_values[f];
+      if (csys->bf_ids[f] > -1) { /* This is a boundary face */
+        if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
+          /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
+          f_row[f] += beta_minus;
 
-      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+          /* Weak enforcement of the Dirichlet BCs.
+             Update RHS for faces attached to a boundary face */
+          for (int k = 0; k < dim; k++)
+            csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
 
-        f_row[f]     += 1.0;
-        csys->rhs[f] += csys->dir_values[f];
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        f_row[cm->n_fc] += -1;
-        f_row[f]        +=  1;
-
+        }
       }
 
-    }
+    } /* Loop on cell faces */
 
-  } /* Loop on border faces */
+    c_row[c] += div_c;
 
-}
+  }
+  else {
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion)
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
+    /* There is no boundary face associated to this cell */
 
-void
-cs_cdo_advection_fb_bc_cen(const cs_equation_param_t   *eqp,
-                           const cs_cell_mesh_t        *cm,
-                           cs_cell_builder_t           *cb,
-                           cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
+    for (short int f = 0; f < cm->n_fc; f++) {
 
-  /* Sanity checks */
-  assert(csys->n_dofs == cm->n_fc + 1);
+      const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
 
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
-
-    if (fabs(beta_flx) > eps) {
-
-      const cs_real_t  _A_minus = - 0.5 * beta_flx;
-      const cs_real_t  _A_plus =  + 0.5 * beta_flx;
-
-      /* Outward flux */
-      f_row[f] += _A_plus;
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-         to a boundary face */
-      csys->rhs[f] += _A_minus * csys->dir_values[f];
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (   (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-          || (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET)) {
-
-        f_row[f]     += 1.0;
-        csys->rhs[f] += csys->dir_values[f];
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        f_row[cm->n_fc] += -1;
-        f_row[f]        +=  1;
-
-      }
-
-    }
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion).  Vector-valued case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_cen_v(const cs_equation_param_t   *eqp,
-                             const cs_cell_mesh_t        *cm,
-                             cs_cell_builder_t           *cb,
-                             cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    if (fabs(beta_flx) > eps) {
-
-      const cs_real_t  _A_minus = - 0.5 * beta_flx;
-      const cs_real_t  _A_plus =  + 0.5 * beta_flx;
-
-      for (short int k = 0; k < 3; k++) {
-        /* Outward flux */
-        ff_bl[4*k] += _A_plus;
-
-        /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-           to a boundary face */
-        csys->rhs[3*f+k] += _A_minus * csys->dir_values[3*f+k];
-      } /* Loop on k */
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (   (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-          || (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET)) {
-
-        for (short int k = 0; k < 3; k++) {
-          ff_bl[4*k]       += 1.0;
-          csys->rhs[3*f+k] += csys->dir_values[3*f+k];
-        } /* Loop on k */
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
-
-        for (short int k = 0; k < 3; k++) {
-          fc_bl[4*k] += -1;
-          ff_bl[4*k] +=  1;
-        } /* Loop on k */
-
-      }
-
-    }
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated)
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
-                           const cs_cell_mesh_t        *cm,
-                           cs_cell_builder_t           *cb,
-                           cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-  /* Sanity checks */
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == cm->n_fc + 1);
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
-
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-    const cs_real_t  beta_plus =  0.5*(fabs(beta_flx) + beta_flx);
-
-    /* Outward flux */
-    if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-      f_row[f] += beta_minus;
-    else
-      f_row[f] += beta_plus;
-
-    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-       to a boundary face */
-    csys->rhs[f] += beta_minus * csys->dir_values[f];
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion). Vector-valued case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_v(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         cs_cell_builder_t           *cb,
-                         cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
+      div_c += beta_flx;
 
       const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-      const cs_real_t  beta_plus =  0.5*(fabs(beta_flx) + beta_flx);
+      const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
 
-      for (short int k = 0; k < 3; k++) {
-        /* Outward flux */
-        ff_bl[4*k] += beta_plus; /* Diagonal terms */
-        /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-           to a boundary face */
-        csys->rhs[3*f+k] += beta_minus * csys->dir_values[3*f+k];
-      } /* Loop on k */
+      /* access the row containing the current face */
+      double  *f_row = adv->val + f*adv->n_rows;
 
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
-
-        for (short int k = 0; k < 3; k++) {
-          /* Diagonal terms */
-          ff_bl[4*k]       += 1.0;
-          csys->rhs[3*f+k] += csys->dir_values[3*f+k];
-        }
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
-
-        for (short int k = 0; k < 3; k++) {
-          /* Diagonal terms */
-          fc_bl[4*k]  = -1.0;
-          ff_bl[4*k] +=  1.0;
-        } /* Loop on k */
-
-      }
-
-    }
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated). Vector-valued
- *          case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_wdi_v(const cs_equation_param_t   *eqp,
-                             const cs_cell_mesh_t        *cm,
-                             cs_cell_builder_t           *cb,
-                             cs_cell_sys_t               *csys)
-{
-  /* Sanity checks */
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-    const cs_real_t  beta_plus =  0.5*(fabs(beta_flx) + beta_flx);
-
-    /* Outward flux */
-    if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-      for (short int k = 0; k < 3; k++)
-        ff_bl[4*k] += beta_minus;
-    else
-      for (short int k = 0; k < 3; k++)
-        ff_bl[4*k] += beta_plus;
-
-    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-       to a boundary face */
-    for (short int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += beta_minus * csys->dir_values[3*f+k];
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated)
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_cen_wdi(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_cell_builder_t           *cb,
-                               cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == cm->n_fc + 1);
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
-
-    const cs_real_t  _A_minus = - 0.5 * beta_flx;
-    const cs_real_t  _A_plus =  + 0.5 * beta_flx;
-
-    /* Outward flux */
-    if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-      f_row[f] += _A_minus;
-    else
-      f_row[f] += _A_plus;
-
-    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-       to a boundary face */
-    csys->rhs[f] += _A_minus * csys->dir_values[f];
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated). Vector-valued
- *          case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_cen_wdi_v(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_cell_builder_t           *cb,
-                                 cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    const cs_real_t  _A_minus = - 0.5 * beta_flx;
-    const cs_real_t  _A_plus =  + 0.5 * beta_flx;
-
-    /* Outward flux */
-    if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-      for (short int k = 0; k < 3; k++)
-        ff_bl[4*k] += _A_minus;
-    else
-      for (short int k = 0; k < 3; k++)
-        ff_bl[4*k] += _A_plus;
-
-    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-       to a boundary face */
-    for (short int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += _A_minus * csys->dir_values[3*f+k];
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - upwind scheme
- *         - no diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
-                           cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[c] += beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_minus;
+      f_row[f] += beta_plus;
+      f_row[c] -= beta_plus;
       c_row[f] -= beta_minus;
       c_row[c] += beta_minus;
 
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
+    } /* Loop on cell faces */
 
-      if (! cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
+    c_row[c] += div_c;
 
-    }
-
-  } /* Loop on cell faces */
+  }
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
+ *         face-based scheme
+ *         - non-conservative formulation beta.grad
  *         - centered scheme
- *         - no diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
+ *         Rely on the work performed during R. Milani's PhD
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cencsv(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
+cs_cdo_advection_fb_cennoc(int                        dim,
+                           const cs_cell_mesh_t      *cm,
+                           const cs_cell_sys_t       *csys,
+                           cs_cell_builder_t         *cb,
                            cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
+  const cs_real_t  *fluxes = cb->adv_fluxes;
 
   /* Access the row containing current cell */
   double  *c_row = adv->val + c*adv->n_rows;
@@ -1776,92 +1532,29 @@ cs_cdo_advection_fb_cencsv(const cs_cell_mesh_t      *cm,
   /* Loop on cell faces */
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  _A_minus = - 0.5 * beta_flx;
+    const cs_real_t  half_beta_flx = 0.5*cm->f_sgn[f]*fluxes[f];
 
     /* access the row containing the current face */
     double  *f_row = adv->val + f*adv->n_rows;
 
-    if (fabs(beta_flx) > eps) {
+    f_row[c] -= half_beta_flx;
+    f_row[f] += half_beta_flx;  /* Could be avoided:
+                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
+    c_row[f] += half_beta_flx;
+    c_row[c] -= half_beta_flx;
 
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[c] += beta_flx; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
+    /* Apply boundary conditions */
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
-      /* Stabilization part */
-      f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-      f_row[c] -= _A_minus;
-      c_row[f] -= _A_minus;
-      c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
+      const cs_real_t  beta_minus = 0.5*fabs(fluxes[f]) - half_beta_flx;
 
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (! cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
-
-    }
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - upwind scheme
- *         - diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwcsv_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[c] += beta_flx;
-
-      /* Stabilization part */
+      /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
       f_row[f] += beta_minus;
-      f_row[c] -= beta_minus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
+
+      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
+         a boundary face */
+      for (int k = 0; k < dim; k++)
+        csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
 
     }
 
@@ -1872,86 +1565,35 @@ cs_cdo_advection_fb_upwcsv_di(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
+ *         face-based scheme
+ *         - conservative formulation div(beta )
  *         - centered scheme
- *         - diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
+ *         Rely on the work performed during R. Milani's PhD
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cencsv_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  _A_minus = - 0.5 * beta_flx;
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[c] += beta_flx; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
-
-      /* Stabilization part */
-      f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-      f_row[c] -= _A_minus;
-      c_row[f] -= _A_minus;
-      c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
-
-    }
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the non-conservative formulation
- *         - upwind scheme
- *         - no diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] cb        pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
+cs_cdo_advection_fb_cencsv(int                        dim,
+                           const cs_cell_mesh_t      *cm,
+                           const cs_cell_sys_t       *csys,
+                           cs_cell_builder_t         *cb,
                            cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
+  const cs_real_t  *fluxes = cb->adv_fluxes;
+
+  cs_real_t  div_c = 0;
 
   /* Access the row containing current cell */
   double  *c_row = adv->val + c*adv->n_rows;
@@ -1959,773 +1601,37 @@ cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
   /* Loop on cell faces */
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
+    const cs_real_t  half_beta_flx = 0.5*cm->f_sgn[f]*fluxes[f];
+
+    div_c += half_beta_flx;
 
     /* access the row containing the current face */
     double  *f_row = adv->val + f*adv->n_rows;
 
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
+    f_row[c] -= half_beta_flx;
+    f_row[f] += half_beta_flx;  /* Could be avoided:
+                                   \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
+    c_row[f] += half_beta_flx;
+    c_row[c] -= half_beta_flx;
 
-      /* Consistent part */
-      f_row[c] -= beta_flx;
+    /* Apply boundary conditions */
+    if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
 
-      /* Stabilization part */
+      const cs_real_t  beta_minus = 0.5*fabs(fluxes[f]) - half_beta_flx;
+
+      /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
       f_row[f] += beta_minus;
-      f_row[c] -= beta_minus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
 
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (!cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
+      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached to
+         a boundary face */
+      for (int k = 0; k < dim; k++)
+        csys->rhs[dim*f+k] += beta_minus * csys->dir_values[dim*f+k];
 
     }
 
   } /* Loop on cell faces */
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the non-conservative formulation
- *         - centered scheme
- *         - no diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] cb        pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_cennoc(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
-                           cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  _A_minus = - 0.5 * beta_flx;
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-      f_row[c] -= _A_minus;
-      c_row[f] -= _A_minus;
-      c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (!cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
-
-    }
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the non-conservative formulation
- *         - upwind scheme
- *         - diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] cb        pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwnoc_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > cs_math_zero_threshold) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += beta_minus;
-      f_row[c] -= beta_minus;
-      c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
-
-    }
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the non-conservative formulation
- *         - centered scheme
- *         - diffusion is present
- *         Rely on the article: Di Pietro, Droniou, Ern (2015)
- *         A discontinuous-skeletal method for advection-diffusion-reaction on
- *         general meshes
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] cb        pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_cennoc_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  _A_minus =  - 0.5 * beta_flx;
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
-      f_row[c] -= _A_minus;
-      c_row[f] -= _A_minus;
-      c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
-                               u_c v_c \int_c div(\beta) = 0 */
-
-    }
-
-  } /* Loop on cell faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - upwind scheme
- *         - no diffusion is present
- *         Rely on the article: Botti, Di Pietro, Droniou (2018)
- *         A Hybrid High-Order method for the incompressible Navier-Stokes
- *         equations based on Temam's device
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwskw(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
-                           cs_sdm_t                  *adv)
-
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-  cs_real_t div_beta = 0.;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = 0.5 * cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_abs = fabs(beta_flx);
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[f] += beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += beta_abs;
-      f_row[c] -= beta_abs;
-      c_row[f] -= beta_abs;
-      c_row[c] += beta_abs;
-
-      div_beta += beta_flx;
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (! cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
-
-    }
-
-  } /* Loop on cell faces */
-
-  /* Divergence part */
-  c_row[c] += div_beta;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - upwind scheme
- *         - diffusion is present
- *         Rely on the article: Botti, Di Pietro, Droniou (2018)
- *         A Hybrid High-Order method for the incompressible Navier-Stokes
- *         equations based on Temam's device
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_upwskw_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-  cs_real_t div_beta = 0.;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = 0.5 * cm->f_sgn[f]*fluxes[f];
-    const cs_real_t  beta_abs = fabs(beta_flx);
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[f] += beta_flx;
-
-      /* Stabilization part */
-      f_row[f] += beta_abs;
-      f_row[c] -= beta_abs;
-      c_row[f] -= beta_abs;
-      c_row[c] += beta_abs;
-
-      div_beta += beta_flx;
-
-    }
-
-  } /* Loop on cell faces */
-
-  /* Divergence part */
-  c_row[c] += div_beta;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - centered scheme
- *         - no diffusion is present
- *         Rely on the article: Botti, Di Pietro, Droniou (2018)
- *         A Hybrid High-Order method for the incompressible Navier-Stokes
- *         equations based on Temam's device
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_censkw(const cs_cell_mesh_t      *cm,
-                           const cs_real_t            fluxes[],
-                           cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-  cs_real_t div_beta = 0.;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = 0.5 * cm->f_sgn[f]*fluxes[f];
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[f] += beta_flx;
-
-      /* Stabilization part */
-      /* NO STABILIZATION */
-
-      div_beta += beta_flx;
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (! cs_cell_mesh_is_boundary_face(cm, f)) {
-        f_row[c] += -1.0;
-        f_row[f] +=  1.0;
-      }
-
-    }
-
-  } /* Loop on cell faces */
-
-  /* Divergence part */
-  c_row[c] += div_beta;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme in the conservative formulation
- *         - centered scheme
- *         - diffusion is present
- *         Rely on the article: Botti, Di Pietro, Droniou (2018)
- *         A Hybrid High-Order method for the incompressible Navier-Stokes
- *         equations based on Temam's device
- *         The local matrix related to this operator is stored in cb->loc
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes    array of computed fluxes across cell faces
- * \param[in, out] adv       pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_censkw_di(const cs_cell_mesh_t      *cm,
-                              const cs_real_t            fluxes[],
-                              cs_sdm_t                  *adv)
-{
-  const short int  c = cm->n_fc;  /* current cell's location in the matrix */
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  /* Access the row containing current cell */
-  double  *c_row = adv->val + c*adv->n_rows;
-  cs_real_t div_beta = 0.;
-
-  /* Loop on cell faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const cs_real_t  beta_flx = 0.5 * cm->f_sgn[f]*fluxes[f];
-
-    /* access the row containing the current face */
-    double  *f_row = adv->val + f*adv->n_rows;
-
-    if (fabs(beta_flx) > eps) {
-
-      /* Consistent part */
-      f_row[c] -= beta_flx;
-      c_row[f] += beta_flx;
-
-      /* Stabilization part */
-      /* NO STABILIZATION */
-
-      div_beta += beta_flx;
-
-    }
-
-  } /* Loop on cell faces */
-
-  /* Divergence part */
-  c_row[c] += div_beta;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion)
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_skw(const cs_equation_param_t   *eqp,
-                           const cs_cell_mesh_t        *cm,
-                           cs_cell_builder_t           *cb,
-                           cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(csys->n_dofs == cm->n_fc + 1);
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
-
-    if (fabs(beta_flx) > eps) {
-
-      const cs_real_t beta_abs = fabs(beta_flx);
-
-      /* Outward flux */
-      switch (eqp->adv_scheme) {
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        /* Nothing to be done */
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        f_row[f] += 0.5 * beta_abs;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " %s: Invalid advection scheme.\n",
-                  __func__);
-        break;
-      } /* Switch */
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-         to a boundary face */
-      //               beta_minus
-      csys->rhs[f] += 0.5 * (beta_abs - beta_flx) * csys->dir_values[f];
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
-
-        f_row[f]     += 1.0;
-        csys->rhs[f] += csys->dir_values[f];
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        f_row[cm->n_fc] += -1;
-        f_row[f]        +=  1;
-
-      }
-
-    }
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated)
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_skw_wdi(const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               cs_cell_builder_t           *cb,
-                               cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(csys->n_dofs == cm->n_fc + 1);
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t  *f_row = csys->mat->val + f*csys->n_dofs;
-
-    const cs_real_t beta_abs = fabs(beta_flx);
-
-    /* Outward flux */
-    switch (eqp->adv_scheme) {
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-      /* Nothing to be done */
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-      f_row[f] += 0.5 * beta_abs;
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Invalid advection scheme.\n",
-                __func__);
-      break;
-    } /* Switch */
-
-    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-       to a boundary face */
-    //               beta_minus
-    csys->rhs[f] += 0.5 * (beta_abs - beta_flx) * csys->dir_values[f];
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (without diffusion). Vector-valued case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_skw_v(const cs_equation_param_t   *eqp,
-                             const cs_cell_mesh_t        *cm,
-                             cs_cell_builder_t           *cb,
-                             cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    if (fabs(beta_flx) > eps) {
-
-      const cs_real_t beta_abs = fabs(beta_flx);
-
-      /* Outward flux */
-      switch (eqp->adv_scheme) {
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        /* Nothing to be done */
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        for (short int k = 0; k < 3; k++)
-          ff_bl[4*k] += 0.5 * beta_abs;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " %s: Invalid advection scheme.\n",
-                  __func__);
-        break;
-      } /* Switch */
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-         to a boundary face */
-      for (short int k = 0; k < 3; k++)
-        //                      beta_minus
-        csys->rhs[3*f+k] += 0.5 * (beta_abs - beta_flx)
-                            * csys->dir_values[3*f+k];
-
-    }
-    else { /* If non diffusion, add this term to avoid a singularity in the
-              linear system. Set the value at the current face as the mean value
-              of the two adjacent cells */
-
-      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
-
-        for (short int k = 0; k < 3; k++) {
-          /* Diagonal terms */
-          ff_bl[4*k]       += 1.0;
-          csys->rhs[3*f+k] += csys->dir_values[3*f+k];
-        }
-
-      }
-      else { /* The convective flux is equal to beta.pot. Since beta is equal to
-                zero, pot_f = pot_c */
-
-        cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
-
-        for (short int k = 0; k < 3; k++) {
-          /* Diagonal terms */
-          fc_bl[4*k]  = -1.0;
-          ff_bl[4*k] +=  1.0;
-        } /* Loop on k */
-
-      }
-
-    }
-
-  } /* Loop on border faces */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add the contribution of the boundary conditions to the local system
- *          in CDO-Fb schemes (with a diffusion term activated). Vector-valued
- *          case.
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
- * \param[in, out] csys    cell-wise structure storing the local system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_advection_fb_bc_skw_wdi_v(const cs_equation_param_t   *eqp,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_cell_builder_t           *cb,
-                                 cs_cell_sys_t               *csys)
-{
-  CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-  assert(csys->n_dofs == 3*(cm->n_fc + 1));
-
-  const cs_real_t  *fluxes = cb->adv_fluxes;
-  const cs_real_t eps = cs_math_get_machine_epsilon();
-
-  for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-    const short int  f = csys->_f_ids[i];
-    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
-
-    if (fabs(beta_flx) > eps) {
-
-      const cs_real_t beta_abs = fabs(beta_flx);
-
-      /* Outward flux */
-      switch (eqp->adv_scheme) {
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        /* Nothing to be done */
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        for (short int k = 0; k < 3; k++)
-          ff_bl[4*k] += 0.5 * beta_abs;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " %s: Invalid advection scheme.\n",
-                  __func__);
-        break;
-      } /* Switch */
-
-      /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
-         to a boundary face */
-      for (short int k = 0; k < 3; k++)
-        //                      beta_minus
-        csys->rhs[3*f+k] += 0.5 * (beta_abs - beta_flx)
-                            * csys->dir_values[3*f+k];
-
-    }
-
-  } /* Loop on border faces */
-
+  c_row[c] += 2*div_c; /* since half_beta_flx has been considered */
 }
 
 /*----------------------------------------------------------------------------*/

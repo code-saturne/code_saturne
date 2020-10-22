@@ -972,7 +972,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
   } /* End if gcell_face_idx and gcell_faces_lst != NULL */
 
-  /* Destroy the lookup table strcuture */
+  /* Destroy the lookup table structure */
 
   _vtx_lookup_destroy(&vtx_lookup);
 
@@ -1638,7 +1638,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
     = N_("Repeated inconsistency in the halo construction.\n"
          "Several local points have the same distant correspondant;\n"
          "this is probably a side effect of a poor quality joining\n"
-         "or periodicity.\n"
+         "or periodicity, or of a partitioning with periodicity issue.\n"
          "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e].");
 
   _define_vtx_interface_idx(ifs,

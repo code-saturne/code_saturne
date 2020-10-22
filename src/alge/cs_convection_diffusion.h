@@ -121,7 +121,7 @@ cs_sync_scalar_halo(const cs_mesh_t  *m,
 
 inline static cs_real_t *
 cs_get_v_slope_test(int                       f_id,
-                  const cs_var_cal_opt_t    var_cal_opt)
+                    const cs_var_cal_opt_t    var_cal_opt)
 {
   const int iconvp = var_cal_opt.iconv;
   const int isstpp = var_cal_opt.isstpc;
@@ -5516,8 +5516,8 @@ cs_face_convection_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
- * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
+ * \param[in]     b_secvis      secondary viscosity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -5541,8 +5541,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               const cs_real_t             secvif[],
-                               const cs_real_t             secvib[],
+                               const cs_real_t             i_secvis[],
+                               const cs_real_t             b_secvis[],
                                cs_real_3_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/
@@ -5795,7 +5795,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -5814,7 +5814,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_real_33_t          cofbfv[],
                                      const cs_real_33_t          i_visc[],
                                      const cs_real_t             b_visc[],
-                                     const cs_real_t             secvif[],
+                                     const cs_real_t             i_secvis[],
                                      cs_real_3_t       *restrict rhs);
 
 /*-----------------------------------------------------------------------------*/
@@ -5987,7 +5987,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -6023,7 +6022,6 @@ cs_face_diffusion_potential(const int                 f_id,
                             int                       iwarnp,
                             double                    epsrgp,
                             double                    climgp,
-                            double                    extrap,
                             cs_real_3_t     *restrict frcxt,
                             cs_real_t       *restrict pvar,
                             const cs_real_t           coefap[],
@@ -6084,7 +6082,6 @@ cs_face_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
@@ -6125,7 +6122,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                         int                       iwarnp,
                                         double                    epsrgp,
                                         double                    climgp,
-                                        double                    extrap,
                                         cs_real_3_t     *restrict frcxt,
                                         cs_real_t       *restrict pvar,
                                         const cs_real_t           coefap[],
@@ -6181,7 +6177,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -6216,7 +6211,6 @@ cs_diffusion_potential(const int                 f_id,
                        int                       iwarnp,
                        double                    epsrgp,
                        double                    climgp,
-                       double                    extrap,
                        cs_real_3_t     *restrict frcxt,
                        cs_real_t       *restrict pvar,
                        const cs_real_t           coefap[],
@@ -6278,7 +6272,6 @@ cs_diffusion_potential(const int                 f_id,
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
  *                               the gradient
- * \param[in]     extrap        coefficient for extrapolation of the gradient
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
@@ -6318,7 +6311,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    int                       iwarnp,
                                    double                    epsrgp,
                                    double                    climgp,
-                                   double                    extrap,
                                    cs_real_3_t     *restrict frcxt,
                                    cs_real_t       *restrict pvar,
                                    const cs_real_t           coefap[],

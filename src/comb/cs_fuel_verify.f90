@@ -63,6 +63,7 @@ use coincl
 use cpincl
 use cs_fuel_incl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -100,11 +101,11 @@ endif
 
 ! --> Diffusivite dynamique en kg/(m s) : DIFTL0
 
-if( diftl0.lt.0d0) then
+if (diftl0.lt.0d0) then
   write(nfecra,3010)'diftl0 ', diftl0
   iok = iok + 1
 else
-  visls0(iscalt) = diftl0
+  call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, diftl0)
 endif
 
 !--------

@@ -1141,7 +1141,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
       /* Inlet: data for ATMOSPHERIC FLOWS */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-        if (cs_glob_atmo_option->imeteo) {
+        if (cs_glob_atmo_option->meteo_profile == 1) {
           cs_gui_node_get_child_status_int
             (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
           cs_gui_node_get_child_status_int
@@ -1474,7 +1474,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                                  bz->elt_ids);
     else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       if (boundaries->rough[izone] >= 0.0)
-        wall_type = 6;
+        wall_type = 6;//TODO remove and use all roughness wall function
       else
         wall_type = 5;
     }
@@ -2232,25 +2232,22 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       int iwall = CS_SMOOTHWALL;
 
       if (boundaries->rough[izone] >= 0.0) {
-        const cs_field_t  *fv = cs_field_by_name_try("velocity");
-        const int var_key_id = cs_field_key_id("variable_id");
-        int ivarv = cs_field_get_key_int(fv, var_key_id) -1;
 
         iwall = CS_ROUGHWALL;
+        cs_field_t *f_roughness = cs_field_by_name_try("boundary_roughness");
+        cs_field_t *f_roughness_t
+          = cs_field_by_name_try("boundary_thermal_roughness");
 
-        /* Roughness value is stored in Velocity_U (z0) */
-        /* Remember: rcodcl(elt_id, ivar, 1) -> rcodcl[k][j][i]
-           = rcodcl[ k*dim1*dim2 + j*dim1 + i] */
+        /* Roughness value (z0) */
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
           cs_lnum_t face_id = bz->elt_ids[elt_id];
-          cs_lnum_t idx = 2 * n_b_faces * (*nvar) + ivarv * n_b_faces + face_id;
-          rcodcl[idx] = boundaries->rough[izone];
+          assert(f_roughness != NULL);
+          f_roughness->val[face_id] = boundaries->rough[izone];
 
-          /* Roughness value is also stored in Velocity_V for eventual scalar
-           * (even if there is no scalar). In this case rugd = rugt. */
-          cs_lnum_t idx2 = 2 * n_b_faces * (*nvar)
-                         + (ivarv + 1) * n_b_faces + face_id;
-          rcodcl[idx2] = boundaries->rough[izone];
+          /* Thermal Roughness value.
+           * In this case thermal roughness is equal to the roughness. */
+          if (f_roughness_t != NULL)
+            f_roughness_t->val[face_id] = boundaries->rough[izone];
         }
       }
 
@@ -2658,12 +2655,16 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
  * \brief Define boundary conditions based on setup file.
  *
  * \param[in, out]  bdy   boundaries structure to update
+ *                        (if NULL, default to cs_glob_domain->boundaries)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 {
+  if (bdy == NULL)
+    bdy = cs_glob_domain->boundaries;
+
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
                                            "boundary_conditions");
 
@@ -2784,8 +2785,15 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
             && wall_fnt->iwallf != CS_WALL_F_2SCALES_CONTINUOUS) {
           cs_real_t roughness = -1.;
           cs_gui_node_get_child_real(tn_vp, "roughness", &roughness);
-          if (roughness > 0)
+          if (roughness > 0) {
             bc_type |= CS_BOUNDARY_ROUGH_WALL;
+            /* Create roughness field if needed */
+            cs_field_find_or_create("boundary_roughness",
+                                    CS_FIELD_INTENSIVE + CS_FIELD_PROPERTY,
+                                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                                    1, /* dim */
+                                    false); /* has previous */
+          }
         }
 
       }

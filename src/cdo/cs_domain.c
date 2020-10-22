@@ -189,7 +189,6 @@ cs_domain_create(void)
   /* Default initialization of the time step */
   domain->only_steady = true;
   domain->is_last_iter = false;
-  domain->time_step_def = NULL;
 
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
@@ -241,7 +240,6 @@ cs_domain_free(cs_domain_t   **p_domain)
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
 
-  domain->time_step_def = cs_xdef_free(domain->time_step_def);
   domain->time_step = NULL;
 
   if (domain->cdo_context != NULL)
@@ -369,83 +367,6 @@ cs_domain_needs_log(const cs_domain_t      *domain)
     return true;
 
   return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the current time step for this new time iteration
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_define_current_time_step(cs_domain_t   *domain)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  if (domain->only_steady)
-    return;
-
-  cs_time_step_t  *ts = domain->time_step;
-  cs_xdef_t  *ts_def = domain->time_step_def;
-
-  if (ts_def == NULL) {
-
-    if (ts->dt_ref < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Please check your settings.\n"
-                " Unsteady computation but no current time step defined.\n",
-                __func__);
-    else {
-
-
-    }
-
-  } /* No definition (Settings is perhaps done using the GUI) */
-
-  const double  t_cur = ts->t_cur;
-  const int  nt_cur = ts->nt_cur;
-
-  if (ts_def->type != CS_XDEF_BY_VALUE) { /* dt_cur may change */
-
-    ts->dt[2] = ts->dt[1];
-    ts->dt[1] = ts->dt[0];
-
-    if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
-
-      /* Compute current time step */
-      cs_xdef_time_func_input_t  *param
-        = (cs_xdef_time_func_input_t *)ts_def->input;
-      param->func(nt_cur, t_cur, param->input, &(ts->dt[0]));
-
-      /* Update time_options */
-      double  dtmin = CS_MIN(domain->time_options.dtmin, ts->dt[0]);
-      double  dtmax = CS_MAX(domain->time_options.dtmax, ts->dt[0]);
-
-      domain->time_options.dtmin = dtmin;
-      domain->time_options.dtmax = dtmax;
-
-      /* TODO: Check how the following value is set in FORTRAN
-       * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
-      if (ts->dt_ref < 0) /* Should be the initial val. */
-        ts->dt_ref = ts->dt[0];
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid way of defining the current time step.\n"
-                " Please modify your settings.", __func__);
-
-  }
-
-  /* Check if this is the last iteration */
-  if (ts->t_max > 0) /* t_max has been set */
-    if (t_cur + ts->dt[0] > ts->t_max)
-      domain->is_last_iter = true;
-  if (ts->nt_max > 0) /* nt_max has been set */
-    if (nt_cur + 1 > ts->nt_max)
-      domain->is_last_iter = true;
 }
 
 /*----------------------------------------------------------------------------*/

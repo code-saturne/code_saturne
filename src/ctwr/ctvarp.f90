@@ -156,13 +156,11 @@ iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
 call field_set_key_int(f_id, keydri, iscdri)
 
 ifcvsl = -1 ! Set constant diffusivity for the injected liquid mass fraction
-            ! The diffusivity used in the transport equation will be
-            ! the value of visls0(iy_p_l)
 call field_set_key_int(f_id, kivisl, ifcvsl)
 
 ! Transport and solve for the temperature of the liquid - with the same drift
 ! as the mass fraction Y_l in rain zones
-! NB: Temperature of the liquidus must be transported after the bulk enthalpy
+! NB: Temperature of the liquid must be transported after the bulk enthalpy
 call add_model_scalar_field('y_p_t_l', 'Tp liq', it_p_l)
 f_id = ivarfl(isca(it_p_l))
 
@@ -268,7 +266,7 @@ call field_set_key_int(f_id, keyccl, icla)
 
 ifcvsl = -1 ! Set constant diffusivity for the dry air mass fraction
             ! The diffusivity used in the transport equation will be
-            ! the value of visls0 of f_id
+            ! the value of "diffusivity_ref" of field f_id.
 call field_set_key_int(f_id, kivisl, ifcvsl)
 
 ! Activate the drift for all scalars with key "drift" > 0

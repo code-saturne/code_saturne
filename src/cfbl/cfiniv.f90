@@ -48,13 +48,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step (per cell)
 !______________________________________________________________________________
 
-subroutine cfiniv &
- ( nvar   , nscal  , dt     )
+subroutine cfiniv
 
 !===============================================================================
 ! Module files
@@ -79,24 +75,11 @@ use cs_cf_bindings
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, mix_mol_mas
 
 !===============================================================================
-
-!===============================================================================
-! User initialisation of the variables only if this not a resumed computation
-! and if it has not already been done in gas mix initialization
-!===============================================================================
-
-if (isuite.eq.0.and.ippmod(igmix).lt.0) then
-  call cs_user_f_initialization(nvar, nscal, dt)
-endif
 
 !===============================================================================
 ! Computation of variable Cv in order to have a correct initialization

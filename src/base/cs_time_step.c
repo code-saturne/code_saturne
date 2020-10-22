@@ -168,6 +168,7 @@ BEGIN_C_DECLS
         Time step type: constant, adaptive, or steady algorithm variants.
         If the numerical scheme is a second-order in time, only the
         option CS_TIME_STEP_CONSTANT is allowed.
+        \anchor idtvar
 
   \var  cs_time_step_t::dt_ref
         Reference time step.\n
@@ -176,7 +177,7 @@ BEGIN_C_DECLS
         uniform and constant time step, i.e. \ref idtvar =CS_TIME_STEP_CONSTANT
         (restart calculation or not). It is the value used to initialize the
         time step in the case of an initial calculation run with a non-constant
-        time step(\ref idtvar=CS_TIME_STEP_ADAPTATIVE or CS_TIME_STEP_LOCAL).
+        time step (\ref idtvar=CS_TIME_STEP_ADAPTATIVE or CS_TIME_STEP_LOCAL).
         It is also the value used to initialise the time step in the case of
         a restart calculation in which the type of time step has been changed
         (for instance, \ref idtvar=CS_TIME_STEP_ADAPTATIVE in the new calculation
@@ -424,10 +425,11 @@ _update_kahan_compensation(double  *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to cs_glob_time_step
+ * \brief Provide read/write access to cs_glob_time_step
  *
- * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ * \return  pointer to global time step structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_time_step_t *
 cs_get_glob_time_step(void)
@@ -437,10 +439,11 @@ cs_get_glob_time_step(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to cs_glob_time_step_options
+ * \brief Provide read/write access to cs_glob_time_step_options
  *
- * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ * \return  pointer to global time step options structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_time_step_options_t *
 cs_get_glob_time_step_options(void)

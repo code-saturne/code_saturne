@@ -3,6 +3,26 @@ Master (not on release branches yet)
 
 User changes:
 
+- When no boundary condition is provided for some boundary faces, a default
+  (wall or symmetry) is used. This can be set using `cs_boundary_set_default`.
+
+- Modify the way the code is handling input file.
+  * If no xml file is provided by the 'run.cfg' file and a 'setup.xml' exists,
+    the latter is used (previous behaviour). If it does not exist, the
+    code prints a warning message indicating that no xml was found.
+  * If an input file, other than 'setup.xml', is provided using the 'run.cfg'
+    or '-p' option (for code_saturne run only), and a 'setup.xml' exists inside
+    the DATA folder, the provided input file is used. Before this change
+    'setup.xml' was the one used. A warning is printed to warn the user that
+    having the two is against code_saturne BPG.
+
+- Modify available C-API for usage of ParaMEDMEM coupling (MEDCoupling MPI).
+  Specific user functions are added (cs_user_paramedmem_coupling.c) to allow
+  an easier definitions of coupling. Examples are provided in the
+  'cs_user_paramedmem_coupling-base.c' user_example file.
+  Send/recieve operations still need to be done by the user, but are simplified
+  by allowing send/recv based on a cs_field_t pointer.
+
 - GUI: present volume and boundary conditions using sub-nodes in the
   left-hand tree for the appropriate zones. This is a first step in
   a change of zone setup presentation.
@@ -10,6 +30,19 @@ User changes:
 Bug fixes:
 
 - GUI: Fix backward compatibility update function for NCFD v6.1 and later.
+
+Numerics and physical modelling:
+
+- Remove "extrag" option for the pressure gradient, as its use was
+  limited to orthogonal meshes and was long superceded by the
+  `iphydr=1` option.
+
+Architectural changes:
+
+- Add AmgX library support for linear system resolution on NVIDIA GPU's.
+  * Associated matrices should be forced in CSR format.
+  * In parallel, Mesh renumbering should be set
+    to use `CS_RENUMBER_ADJACENT_LOW`.
 
 Release 6.2.0 (August 27 2020)
 --------------------------
@@ -21,7 +54,7 @@ User changes:
   functions.
   * Previous definitions remain compatible but are deprecated.
   * Using the legacy mathod, if at least one zone is defined using
-    the CS_VOLUME_ZONE_MASS_SOURCE_TERM flag, these zones will be used
+    the `CS_VOLUME_ZONE_MASS_SOURCE_TERM` flag, these zones will be used
     and the first 2 calls to cs_user_mass_source_terms are not needed.
 
 - Add possibility to edit coupling parameters in the GUI using an editor.

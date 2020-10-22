@@ -408,6 +408,42 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     BFT_FREE(selected_cells);
   }
   /*! [mesh_modify_refine_1] */
+
+  /* Remove cells from a selection
+   * Note: if present, remove periodicity info first */
+  /*! [mesh_modify_remove_cells] */
+  {
+    cs_lnum_t   n_selected_elts = 0;
+    cs_lnum_t  *selected_elts = NULL;
+
+    const char criteria[] = "box[-250, -250, 0, 250, 250, 100]";
+
+    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_elts,
+                              selected_elts);
+
+    char *flag;
+    BFT_MALLOC(flag, mesh->n_cells, char);
+
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      flag[i] = 0;
+    }
+
+    for (cs_lnum_t i = 0; i < n_selected_elts; i++) {
+      flag[selected_elts[i]] = 1;
+    }
+
+    cs_mesh_remove_cells(mesh, flag, "[Building]");
+
+    BFT_FREE(selected_elts);
+    BFT_FREE(flag);
+
+    mesh->modified = 1;
+  }
+  /*! [mesh_modify_remove_cells] */
+
 }
 
 /*----------------------------------------------------------------------------*/

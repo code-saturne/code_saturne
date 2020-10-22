@@ -1189,7 +1189,6 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
  * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *         structure
  *
- * \param[in]       label    label to identify the error message
  * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in]       key      key related to the member of eq to set
  * \param[in]       keyval   accessor to the value to set
@@ -1197,11 +1196,11 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_key(const char            *label,
-         cs_equation_param_t   *eqp,
+_set_key(cs_equation_param_t   *eqp,
          cs_equation_key_t      key,
          const char            *keyval)
 {
+  const char  *eqname = eqp->name;
   const char  emsg[] = " %s: %s equation --> Invalid key value %s for"
     " keyword %s.\n";
 
@@ -1217,7 +1216,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_FORMULATION");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_FORMULATION");
     }
     break;
 
@@ -1246,7 +1245,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_SCHEME");
     }
     break;
 
@@ -1282,7 +1281,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_AMG_TYPE");
+                emsg, __func__, eqname, _val, "CS_EQKEY_AMG_TYPE");
     }
     break;
 
@@ -1298,7 +1297,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_BC_ENFORCEMENT");
+                emsg, __func__, eqname, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
     break;
 
@@ -1317,7 +1316,7 @@ _set_key(const char            *label,
       else {
         const char *_val = keyval;
         bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, label, _val, "CS_EQKEY_BC_QUADRATURE");
+                  emsg, __func__, eqname, _val, "CS_EQKEY_BC_QUADRATURE");
       }
 
       for (int i = 0; i < eqp->n_bc_defs; i++)
@@ -1359,7 +1358,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_DOF_REDUCTION");
+                emsg, __func__, eqname, _val, "CS_EQKEY_DOF_REDUCTION");
     }
     break;
 
@@ -1375,7 +1374,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_EXTRA_OP");
+                emsg, __func__, eqname, _val, "CS_EQKEY_EXTRA_OP");
     }
     break;
 
@@ -1395,7 +1394,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
     }
     break;
 
@@ -1422,7 +1421,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_TIME_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_TIME_ALGO");
     }
     break;
 
@@ -1434,7 +1433,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_REAC_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_REAC_ALGO");
     }
     break;
 
@@ -1466,44 +1465,66 @@ _set_key(const char            *label,
     }
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
+
     else if (strcmp(keyval, "mumps") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
-      /* Modify the default */
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+
+      /* Modify the default and check availability of MUMPS solvers */
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS ||
+          eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
 #if defined(HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#endif
-#endif
+#else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Error detected while setting \"%s\" key for eq. %s\n"
+                  " MUMPS is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, "CS_EQKEY_ITSOL", eqname);
+#endif  /* PETSC_HAVE_MUMPS */
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
       }
       assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+
     }
     else if (strcmp(keyval, "mumps_ldlt") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+
       /* Modify the default */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
 #if defined(HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#endif
-#endif
+#else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Error detected while setting \"%s\" key for eq. %s\n"
+                  " MUMPS is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, "CS_EQKEY_ITSOL", eqname);
+#endif  /* PETSC_HAVE_MUMPS */
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
       }
       assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_NONE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ITSOL");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL");
     }
     break;
 
@@ -1530,7 +1551,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
     }
     break;
 
@@ -1542,7 +1563,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
+                emsg, __func__, eqname, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
     }
     break;
 
@@ -1641,7 +1662,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_PRECOND");
+                emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND");
     }
     break;
 
@@ -1661,7 +1682,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SOLVER_FAMILY");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SOLVER_FAMILY");
     }
     break;
 
@@ -1723,7 +1744,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SPACE_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SPACE_SCHEME");
     }
     break;
 
@@ -1749,7 +1770,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_TIME_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_TIME_SCHEME");
     }
     break;
 
@@ -1764,7 +1785,7 @@ _set_key(const char            *label,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid key for setting the equation %s."),
-              __func__, label);
+              __func__, eqname);
 
   } /* Switch on keys */
 
@@ -1926,6 +1947,11 @@ cs_equation_create_param(const char            *name,
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
+  /* Mass injection in the volume term (always in the right-hand side)
+     No volume mass injection term by default */
+  eqp->n_volume_mass_injections = 0;
+  eqp->volume_mass_injections = NULL;
+
   /* Members of the structure to handle the enforcement of (internal) DoFs */
   eqp->enforcement_type = 0;
   BFT_MALLOC(eqp->enforcement_ref_value, eqp->dim, cs_real_t);
@@ -1945,7 +1971,7 @@ cs_equation_create_param(const char            *name,
 
     .verbosity = 0,                         /* SLES verbosity */
     .field_id = -1,                         /* associated field id */
-    .solver_class = CS_PARAM_SLES_CLASS_CS, /* in-house solverq */
+    .solver_class = CS_PARAM_SLES_CLASS_CS, /* built-in solver */
     .precond = CS_PARAM_PRECOND_DIAG,       /* preconditioner */
     .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
     .amg_type = CS_PARAM_AMG_NONE,          /* no predefined AMG type */
@@ -2073,6 +2099,15 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   for (int i = 0; i < dst->n_source_terms; i++)
     dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
 
+  /* Mass injection term */
+  dst->n_volume_mass_injections = ref->n_volume_mass_injections;
+  BFT_MALLOC(dst->volume_mass_injections,
+             dst->n_volume_mass_injections,
+             cs_xdef_t *);
+  for (int i = 0; i < dst->n_volume_mass_injections; i++)
+    dst->volume_mass_injections[i]
+      = cs_xdef_copy(ref->volume_mass_injections[i]);
+
   /* No enforcement of internal DoFs */
   dst->enforcement_type = ref->enforcement_type;
   BFT_MALLOC(dst->enforcement_ref_value, dst->dim, cs_real_t);
@@ -2130,19 +2165,23 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_equation_param_t
+ * \brief  Free the contents of a \ref cs_equation_param_t
  *
- * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
+ * The cs_equation_param_t structure itself is not freed, but all its
+ * sub-structures are freed.
  *
- * \return a NULL pointer
+ * This is useful for equation parameters which are accessed through
+ * field keywords.
+ *
+ * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_param_t *
-cs_equation_free_param(cs_equation_param_t     *eqp)
+void
+cs_equation_param_clear(cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
-    return NULL;
+    return;
 
   /* Information related to the definition of the boundary conditions */
   if (eqp->n_bc_defs > 0) {
@@ -2171,6 +2210,16 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
 
   }
 
+  /* Information related to the definition of mass injection terms */
+  if (eqp->n_volume_mass_injections > 0) {
+
+    for (int i = 0; i < eqp->n_volume_mass_injections; i++)
+      eqp->volume_mass_injections[i]
+        = cs_xdef_free(eqp->volume_mass_injections[i]);
+    BFT_FREE(eqp->volume_mass_injections);
+
+  }
+
   /* Information related to the enforcement of internal DoFs */
   BFT_FREE(eqp->enforcement_ref_value);
 
@@ -2196,6 +2245,26 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
   }
 
   BFT_FREE(eqp->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a \ref cs_equation_param_t
+ *
+ * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_free_param(cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return NULL;
+
+  cs_equation_param_clear(eqp);
+
   BFT_FREE(eqp);
 
   return NULL;
@@ -2235,7 +2304,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
   val[strlen(keyval)] = '\0';
 
   /* Set the couple (key,keyval) */
-  _set_key(eqp->name, eqp, key, val);
+  _set_key(eqp, key, val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2877,14 +2946,16 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
                                         0, // state flag
                                         meta_flag,
-                                        &anai);
+                                        &ac);
 
   int  new_id = eqp->n_ic_defs;
   eqp->n_ic_defs += 1;
@@ -3009,19 +3080,22 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
          cs_flag_test(loc, cs_flag_primal_vtx)  ||
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
   /* Add a new cs_xdef_t structure */
-  cs_xdef_array_input_t  input = {.stride = eqp->dim,
-                                  .loc = loc,
-                                  .values = array,
-                                  .index = index,
-                                  .is_owner = is_owner};
+  cs_xdef_array_context_t  input = {.z_id = z_id,
+                                    .stride = eqp->dim,
+                                    .loc = loc,
+                                    .values = array,
+                                    .index = index,
+                                    .is_owner = is_owner};
 
   cs_flag_t  state_flag = 0;
   if (loc == cs_flag_primal_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
+  if (bc_type == CS_PARAM_BC_NEUMANN ||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
@@ -3036,7 +3110,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
-                                          cs_get_bdy_zone_id(z_name),
+                                          z_id,
                                           state_flag,
                                           cs_cdo_bc_get_flag(bc_type), // meta
                                           (void *)&input);
@@ -3076,12 +3150,10 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_input_t  anai = {.func = analytic,
-                                    .input = input };
-
+  /* Set the value for dim */
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN||
+
+  if (bc_type == CS_PARAM_BC_NEUMANN ||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
@@ -3104,12 +3176,20 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = analytic,
+                                     .input = input,
+                                     .free_input = NULL };
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
-                                          cs_get_bdy_zone_id(z_name),
+                                          z_id,
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta
-                                          &anai);
+                                          &ac);
 
   int  new_id = eqp->n_bc_defs;
   eqp->n_bc_defs += 1;
@@ -3425,23 +3505,26 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  /* Add a new cs_xdef_t structure */
-  int z_id = cs_get_vol_zone_id(z_name);
-
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
+  int z_id = cs_get_vol_zone_id(z_name);
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_analytic_input_t  ana_input = {.func = func, .input = input };
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
+
+  /* Add a new cs_xdef_t structure */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &ana_input);
+                                        &ac);
 
   /* Default setting for quadrature is different in this case */
   cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
@@ -3490,9 +3573,10 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_input_t  context = { .func = func,
-                                   .input = input,
-                                   .loc = loc_flag };
+  cs_xdef_dof_context_t  context = { .func = func,
+                                     .input = input,
+                                     .free_input = NULL,
+                                     .loc = loc_flag };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim,
@@ -3556,23 +3640,172 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_array_input_t  input = {.stride = eqp->dim,
-                                  .loc = loc,
-                                  .values = array,
-                                  .is_owner = is_owner,
-                                  .index = index };
+  cs_xdef_array_context_t  ctxt = {.z_id = z_id,
+                                   .stride = eqp->dim,
+                                   .loc = loc,
+                                   .values = array,
+                                   .is_owner = is_owner,
+                                   .index = index };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)&input);
+                                        (void *)&ctxt);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
   BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant value.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
+                                               const char           *z_name,
+                                               double               *val)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t state_flag = 0, meta_flag = 0;
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        val);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant quantity
+ *         distributed over the associated zone's volume.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      quantity  pointer to quantity to distribute over the zone
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
+                                             const char           *z_name,
+                                             double               *quantity)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t state_flag = 0, meta_flag = 0;
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        quantity);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using an analytical function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      func      pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
+                                                  const char            *z_name,
+                                                  cs_analytic_func_t    *func,
+                                                  void                  *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
+                                     .func = func,
+                                     .input = input,
+                                     .free_input = NULL };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &ac);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
 
   return d;
 }
@@ -3676,11 +3909,11 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforce_by_cell_selection(cs_equation_param_t    *eqp,
-                                      cs_lnum_t               n_elts,
-                                      const cs_lnum_t         elt_ids[],
-                                      const cs_real_t         ref_value[],
-                                      const cs_real_t         elt_values[])
+cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
+                                            cs_lnum_t             n_elts,
+                                            const cs_lnum_t       elt_ids[],
+                                            const cs_real_t       ref_value[],
+                                            const cs_real_t       elt_values[])
 {
   if (n_elts < 1)
     return; /* Nothing to do */

@@ -1578,7 +1578,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
                                   0,
                                   max_gnum);
 
-  cs_lnum_t block_size;
+  cs_lnum_t block_size = 0;
   if (bi.gnum_range[1] > bi.gnum_range[0])
     block_size = bi.gnum_range[1] - bi.gnum_range[0];
 

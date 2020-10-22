@@ -394,7 +394,7 @@ cs_interpol_grid_create(const char   *name)
  * Create interpolation grid.
  *
  * parameters:
- *   ig        <-- pointer to an interpol grid strcuture
+ *   ig        <-- pointer to an interpol grid structure
  *   nb_points <-- number of considered points
  *   coord     <-- coordonates of considered points
  *----------------------------------------------------------------------------*/

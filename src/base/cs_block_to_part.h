@@ -86,7 +86,7 @@ BEGIN_C_DECLS
  * \param[in]   stride             stride of adjacency array (1 or 2)
  * \param[in]   adjacency          entity adjacency (1 to n numbering)
  * \param[in]   adjacent_ent_rank  destination rank for adjacent entities, or
- * \param[in]                      NULL if based on block size and range only.
+ *                                 NULL if based on block size and range only.
  * \param[in]   default_rank       default rank in case there is no adjacency,
  *                                 or NULL
  * \param[out]  n_part_elts        number of elements in partition, or NULL

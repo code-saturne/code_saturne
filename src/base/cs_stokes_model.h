@@ -63,6 +63,10 @@ typedef struct {
                                  - 0: false */
   double        arak;         /* Arakawa multiplicator for the Rhie and Chow
                                  filter (1 by default) */
+  int           mass_preconditioner;
+                              /* Indicates if the correction step is done with:
+                                 - 0: (u^{n+1} - u*)/dt (default)
+                                 - 1: A_u * (u^{n+1} - u*) */
   int           ipucou;       /* pseudo coupled pressure-velocity solver
                                  - 1: true (default)
                                  - 0: false */

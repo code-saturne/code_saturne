@@ -103,7 +103,7 @@ integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
 integer          iviext
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrgp, climgp, relaxp, extrap
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision d2s3
@@ -112,6 +112,7 @@ double precision fhomog
 double precision hint
 double precision l2, time_scale
 double precision normp
+double precision sigmak
 
 double precision rvoid(1)
 
@@ -141,6 +142,8 @@ type(var_cal_opt) :: vcopt
 ! 1. Initialization
 !===============================================================================
 
+extrap = 0
+
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
@@ -159,6 +162,7 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
+call field_get_key_double(ivarfl(ik), ksigmas, sigmak)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if (iturb.eq.50) then
@@ -367,7 +371,6 @@ iwgrp  = vcopt%iwgrec
 iwarnp = vcopt%iwarni
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 iphydp = 0
 
 call itrgrp &
@@ -478,7 +481,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -494,7 +496,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
@@ -788,7 +790,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -804,7 +805,7 @@ call codits &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

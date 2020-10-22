@@ -78,7 +78,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         self.__verifyZone(zone)
         node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="pressure")
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
 
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
@@ -93,7 +93,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         self.__verifyZone(zone)
         node = self.XMLvariables.xmlGetNode('variable', field_id="none", name="pressure")
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
@@ -271,7 +271,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
-            msg = "There is an error: this node " + str(node) + " should be existed"
+            msg = "There is an error: this node " + str(node) + " should be present"
             raise ValueError(msg)
 
         n = node.xmlInitChildNode('initial_type', zone_id=zone)
@@ -294,7 +294,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
-            msg = "There is an error: this node " + str(node) + " should be existed"
+            msg = "There is an error: this node " + str(node) + " should be present"
             raise ValueError(msg)
 
         nodem = node.xmlGetChildNode('initial_type', zone_id=zone)

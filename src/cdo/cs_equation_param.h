@@ -130,7 +130,7 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_ENFORCE_BY_CELLS
  * \brief Definition of a selection of DoFs to enforce using a cell selection
  *
- * \def CS_EQUATION_ENFORCE_BY_DOFs
+ * \def CS_EQUATION_ENFORCE_BY_DOFS
  * \brief Definition of a selection of DoFs
  *
  * \def CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
@@ -260,7 +260,7 @@ typedef struct {
    * (0: false / 1: true). Indeed, in such a case, the matrix for the general
    * advection/diffusion equation is singular. A slight shift in the diagonal
    * will make it invertible again.
-   * By default, \ref dircl is set to 1 for all the unknowns, except
+   * By default, \ref idircl is set to 1 for all the unknowns, except
    * \f$\overline{f}\f$ in the v2f model (whose equation already contain another
    * diagonal term).
    * \remark this code is defined automatically based on the
@@ -388,7 +388,8 @@ typedef struct {
    * - 0.5: second-order \n
    * For the pressure, \ref thetav is always 1. For  the other variables,
    * \ref thetav = 0.5 is used when the  second-order time scheme is activated
-   * (\ref ischtp = 2, standard for LES calculations), otherwise \ref thetav = 1.
+   * (\ref optcal::ischtp "ischtp = 2", standard for LES calculations),
+   * otherwise \ref thetav = 1.
    *
    * \var blencv
    * Proportion of second-order convective scheme (0 corresponds to an upwind
@@ -428,29 +429,20 @@ typedef struct {
    * \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
    * \var extrag
-   * For the pressure variable, extrapolation  coefficient of the gradients at
-   * the boundaries. It applies only to the Neumann condition areas.
-   * The only possible values of \ref extrag are:
-   * - 0: homogeneous Neumann calculated at first-order
-   * - 1: gradient extrapolation (gradient at the boundary equal to the gradient
-   *      in the neighbor cell), calculated to the second-order in the case of an
-   *      orthogonal mesh and to the first-order otherwise.
-   * \c extrag may allow to correct the spurious velocities that appear on
-   * horizontal walls when density is variable and there is gravity. It is
-   * strongly advised to keep \ref extrag = 0 for the variables apart from
-   * pressure. See also \ref cs_stokes_model_t::iphydr "iphydr". In practice,
-   * only values 0 and 1 are allowed.
+   * Removed option, has no effect.
 
    * \var relaxv
    * Relaxation coefficient for the associated variable. This relaxation
    * parameter is only useful for the pressure with the unsteady algorithm (so
    * as to improve the convergence in case of meshes of insufficient quality or
-   * of some turbulent models (k-epsilon, v2f, k-omega) and \ref ikecou = 0;
-   * if \ref ikecou = 1, \ref relaxv is ignored.\n
+   * of some turbulent models (k-epsilon, v2f, k-omega) and
+   * \ref cs_turb_rans_model_t::ikecou "ikecou" = 0; if
+   * \ref cs_turb_rans_model_t::ikecou "ikecou" = 1, \ref relaxv is ignored.\n
    * Default values are 0.7 for turbulent variables and 1. for pressure.
    * \ref relaxv also stores the value of the relaxation coefficient when using
-   * the steady algorithm, deduced from the value of \ref relxst (defaulting to
-   * \ref relaxv = 1. - \ref relxst).\n
+   * the steady algorithm, deduced from the value of
+   * \ref cs_time_step_options_t::relxst "relxst" (defaulting to
+   * \ref relaxv = 1. - relxst).\n
    * Used only for the pressure and for turbulent variables
    * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
    * the unsteady algorithm. Always used with the steady algorithm.
@@ -703,6 +695,26 @@ typedef struct {
 
   /*!
    * @}
+   * @name Definition of the related volume mass injection
+   * The contribution of a volume mass injection to the algebraic system
+   * is always at right-hand side whatever is the choice of time scheme,
+   * and is defined in a manner similar to boundary conditions. For
+   * variables whose injection value matches the "ambient" value, no term
+   * needs to be added.
+   * @{
+   *
+   * \var n_volume_mass_injections
+   * Number of volume injections to consider.
+   *
+   * \var volume_mass_injections
+   * List of definitions of injection values
+   */
+
+  int                           n_volume_mass_injections;
+  cs_xdef_t                   **volume_mass_injections;
+
+  /*!
+   * @}
    * @name Enforcement of values inside the computational domain
    *
    * This is different from the enforcement of boundary conditions but rely on
@@ -821,8 +833,8 @@ typedef struct {
  * - "boomer" --> Boomer AMG multigrid from the Hypre library
  * - "gamg" --> GAMG multigrid from the PETSc library
  * - "pcmg" --> MG multigrid as preconditioner from the PETSc library
- * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
- * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
+ * - "v_cycle" --> Code_Saturne's built-in multigrid with a V-cycle strategy
+ * - "k_cycle" --> Code_Saturne's built-in multigrid with a K-cycle strategy
  * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
  * PETSc in this case
  *
@@ -1329,6 +1341,23 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free the contents of a \ref cs_equation_param_t
+ *
+ * The cs_equation_param_t structure itself is not freed, but all its
+ * sub-structures are freed.
+ *
+ * This is useful for equation parameters which are accessed through
+ * field keywords.
+ *
+ * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_clear(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a \ref cs_equation_param_t
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
@@ -1772,6 +1801,66 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant value.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
+                                               const char           *z_name,
+                                               double               *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant quantity
+ *         distributed over the associated zone's volume.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      quantity  pointer to quantity to distribute over the zone
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
+                                             const char           *z_name,
+                                             double               *quantity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using an analytical function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      func      pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
+                                                  const char             *z_name,
+                                                  cs_analytic_func_t     *func,
+                                                  void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add an enforcement of the value of degrees of freedom located at
  *         mesh vertices.
  *         The spatial discretization scheme for the given equation has to be
@@ -1814,11 +1903,11 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforce_by_cell_selection(cs_equation_param_t    *eqp,
-                                      cs_lnum_t               n_elts,
-                                      const cs_lnum_t         elt_ids[],
-                                      const cs_real_t         ref_value[],
-                                      const cs_real_t         elt_values[]);
+cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
+                                            cs_lnum_t             n_elts,
+                                            const cs_lnum_t       elt_ids[],
+                                            const cs_real_t       ref_value[],
+                                            const cs_real_t       elt_values[]);
 
 /*----------------------------------------------------------------------------*/
 

@@ -63,6 +63,7 @@
 #include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_partition.h"
+#include "cs_porous_model.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_preprocessor_data.h"
@@ -412,6 +413,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
 
   /* If fluid_solid mode is activate: disable solid cells for the dynamics */
+  cs_porous_model_init_disable_flag();
   if (stokes->fluid_solid)
     cs_internal_coupling_tag_disable_cells(cs_glob_mesh, cs_glob_mesh_quantities);
 

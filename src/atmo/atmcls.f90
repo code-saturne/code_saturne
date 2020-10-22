@@ -29,14 +29,19 @@
 ! mode               name       role                                           !
 !______________________________________________________________________________!
 !> \param[in]     ifac          treated boundary face
-!> \param[in]     utau          tangential mean
-!> \param[in]     yplus         adim distance to he boundary faces
+!> \param[in]     utau          tangential mean velocity
+!> \param[in]     rough_d       roughness z0
+!> \param[in]     duplus        1 over dimensionless velocity in neutral
+!>                              conditions
+!> \param[in]     dtplus        1 over dimensionless temperature in neutral
+!>                              conditions
+!> \param[in]     yplus_t       thermal dimensionless wall distance
 !> \param[out]    uet           friction velocity
 !> \param[out]    gredu         reduced gravity for non horizontal wall
-!> \param[out]    cfnnu         non neutral correction coefficients for profiles of wind
 !> \param[out]    cfnns         non neutral correction coefficients for profiles of scalar
 !> \param[out]    cfnnk         non neutral correction coefficients for profiles of k
 !> \param[out]    cfnne         non neutral correction coefficients for profiles of eps
+!> \param[out]    dlmo          inverse Monin Obukhov length (for log only)
 !> \param[in]     temp          potential temperature in boundary cell
 !> \param[in]     totwt         total water content in boundary cell
 !> \param[in]     liqwt         liquid water content in boundary cell
@@ -61,8 +66,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -74,11 +78,13 @@
 
 subroutine atmcls &
  ( ifac   ,                                                       &
-   utau   , yplus  ,                                              &
+   utau   , rough_d , duplus , dtplus ,                           &
+   yplus_t,                                                       &
    uet    ,                                                       &
    gredu  ,                                                       &
-   cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
-   temp  ,  totwt  , liqwt  ,                                     &
+   cfnns  , cfnnk   , cfnne  ,                                    &
+   dlmo   ,                                                       &
+   temp   ,  totwt  , liqwt  ,                                    &
    icodcl ,                                                       &
    rcodcl )
 
@@ -113,9 +119,11 @@ integer          ifac
 
 integer          icodcl(nfabor,nvar)
 
-double precision utau, yplus, uet
+double precision utau, rough_d, duplus, dtplus, uet
+double precision yplus_t
 double precision gredu
-double precision cfnnu, cfnns, cfnnk,cfnne
+double precision cfnns, cfnnk,cfnne
+double precision dlmo
 double precision temp, totwt, liqwt
 double precision rcodcl(nfabor,nvar,3)
 
@@ -124,9 +132,9 @@ double precision rcodcl(nfabor,nvar,3)
 double precision rib, q0
 double precision tpot1, tpot2, tpotv1, tpotv2
 double precision rscp1, rscp2
-double precision actu, actt, b, c, d
+double precision b, c, d
 double precision fm, fh, fmden1, fmden2, fhden
-double precision rugd, rugt, distbf
+double precision distbf
 
 !===============================================================================
 
@@ -138,12 +146,7 @@ b = 5.d0
 c = 5.d0
 d = 5.d0
 
-rugd = rcodcl(ifac,iu,3)
-distbf = yplus*rugd
-rugt = rcodcl(ifac,iv,3)
-! 1/U+
-actu = xkappa/log((distbf+rugd)/rugd)
-actt = xkappa/log((distbf+rugt)/rugt)
+distbf = distb(ifac)
 
 ! Take into account humidity in ratio r/cp
 if (ippmod(iatmos).eq.2) then
@@ -176,9 +179,9 @@ if (ntcabs.eq.1) tpotv2 = tpotv1
 
 ! NB: rib = 0 if thermal flux conditions are imposed and tpot1 not defined
 if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt)).eq.3) then
- rib = 0.d0
+  rib = 0.d0
 else
- rib = 2.d0*gredu*distbf*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)/utau/utau
+  rib = 2.d0*gredu*distbf*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)/utau/utau
 endif
 
 ! Compute correction factors based on ECMWF parametrisation
@@ -190,18 +193,16 @@ if (rib.ge.epzero) then
   fh = 1.d0/(1.d0 + 3.d0*b*rib*sqrt(1.d0 + d*rib))
 else
   ! Unstable case
-  fmden1 = (distbf + rugt)*abs(rib)/rugt
-  fmden2 = 1.d0 + 3.d0*b*c*actu*actt*sqrt(fmden1)
+  fmden1 = (yplus_t + 1.d0)*abs(rib)
+  fmden2 = 1.d0 + 3.d0*b*c*duplus*dtplus*sqrt(fmden1)
   fm = 1.d0 - 2.d0*b*rib/fmden2
-  fhden = 3.d0*b*c*actu*actt*sqrt((distbf + rugt)/rugt)
+  fhden = 3.d0*b*c*duplus*dtplus*sqrt(yplus_t + 1.d0)
   fh = 1.d0 - (3.d0*b*rib)/(1.d0 + fhden*sqrt(abs(rib)))
 endif
 
 if (fm.le.epzero) fm = epzero
 if (abs(fh).le.epzero) fh = epzero
 
-cfnnu = 1.d0/sqrt(fm)
-cfnns = fh/sqrt(fm)
 if ((1.d0-rib).gt.epzero)then
   cfnnk = sqrt(1.d0 - rib)  ! +correction with turbulent Prandtl
   cfnne = (1.d0-rib)/sqrt(fm)
@@ -210,11 +211,20 @@ else
   cfnne = 1.d0
 endif
 
-! Compute friction velocity  uet
-uet = actu * utau * sqrt(fm)
+! Note: non neutral correction coefficients for profiles of wind
+! (Re) compute friction velocity uet (for non neutral)
+! uet = U/U^+ = U / U^{+,n} * sqrt(fm)
+uet = duplus * utau * sqrt(fm)
 
 ! Compute surface sensible heat flux q0
-q0 = (tpot1-tpot2) * uet * actt * fh / sqrt(fm)
+! Note: non-consistent with two velocity scales
+q0 = (tpot1-tpot2) * uet * dtplus * fh / sqrt(fm) !FIXME it is cfnns factor
+cfnns = fh / sqrt(fm)
+!FIXME tet should be output as uet is...
+
+! Compute local Monin-Obukhov inverse length for log
+! 1/L =  Ri / (z Phim)
+dlmo = rib * sqrt(fm) / (distbf + rough_d)
 
 !----
 ! End

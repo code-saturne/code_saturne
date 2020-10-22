@@ -86,7 +86,7 @@ integer          iviext, iscacp
 integer          iroext
 integer          ivisext
 double precision scmaxp, scminp
-double precision turb_schmidt
+double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -817,8 +817,9 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8000)t0,p0
     iok = iok + 1
   endif
-  if (visls0(itempk).le.0.d0) then
-    write(nfecra,8010) visls0(itempk)
+  call field_get_key_double(ivarfl(isca(itempk)), kvisl0, visls_0)
+  if (visls_0.le.0.d0) then
+    write(nfecra,8010) visls_0
     iok = iok + 1
   endif
   if (viscv0.lt.0.d0) then
@@ -882,16 +883,13 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a33,                          ' MUST BE AN INTEGER',    /,&
-'@    LARGER OR EQUAL TO  1 or EQUAL TO  -1',                   /,&
-'@   IT HAS VALUE', i10,                                        /,&
+'@ @@  ERROR:   STOP WHILE READING INPUT DATA',                 /,&
+'@     =====',                                                  /,&
+'@',  a33, ' must be an integer',                               /,&
+'@    larger than 0 or equal to  -1',                           /,&
+'@    it has value', i10,                                       /,&
 '@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -899,16 +897,13 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER',                               /,&
-'@      STRICTLY POSITIVE AND LESS THAN or EGAL TO',i10,        /,&
-'@   IT HAS VALUE', i10,                                        /,&
+'@ @@  ERROR:   STOP WHILE READING INPUT DATA',                 /,&
+'@     =====',                                                  /,&
+'@',  a6, ' must be an integer',                                /,&
+'@    larger than 0 or less than or equal to ', i10,            /,&
+'@    it has value', i10,                                       /,&
 '@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -916,8 +911,8 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
+'@ @@ WARNING:      WHEN READING INPUT DATA',                   /,&
+'@    =======',                                                 /,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
 '@',                                                            /,&
 '@   ORDER 2 IN TIME or LES',                                   /,&
@@ -927,9 +922,7 @@ endif
 '@',                                                            /,&
 '@  computation will go on',                                    /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -937,12 +930,12 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@ ERROR :      WHEN READING INPUT DATA',                    /,&
-'@    ========',                                                /,&
+'@ @@ ERROR:       WHEN READING INPUT DATA',                    /,&
+'@    =====',                                                   /,&
 '@   CHOICE OF TIME-SCHEME ISCHTP = 2 IS NOT COMPATIBLE WITH',  /,&
 '@   IBDTSO > 1',                                               /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -967,7 +960,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
  2132 format(                                                     &
@@ -991,7 +983,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
  2133 format(                                                     &
@@ -1010,7 +1001,6 @@ endif
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1251,8 +1241,7 @@ endif
 '@       THETSN    ISNO2T      THETST    ISTO2T',               /,&
 '@',      e12.4,      i10,      e12.4,      i10,                /,&
 '@',                                                            /,&
-'@  (other termes sources could be second order in time',       /,&
-'@             )',                                              /,&
+'@  (other source terms could be second order in time)',        /,&
 '@',                                                            /,&
 '@  Verify   the parameters.',                                  /,&
 '@  and cs_user_lagr_model.',                                   /,&
@@ -1277,12 +1266,10 @@ endif
 '@       THETSS    ISSO2T',                                     /,&
 '@',      e12.4,      i10,                                      /,&
 '@',                                                            /,&
-'@  (Les autres termes sources pourraient etre traites a',      /,&
-'@   l''ordre 2)',                                              /,&
+'@  (other source terms could be second order in time)',        /,&
 '@',                                                            /,&
 '@  Verify   the parameters given by the interface,',           /,&
 '@  cs_user_parameters.f90, and', a6,                           /,&
-'@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

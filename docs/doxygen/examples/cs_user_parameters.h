@@ -496,6 +496,29 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_view
 
+  \subsection cs_user_parameters_h_sles_amgx Using AmgX
+
+  The AmgX library provides advanced solvers targeting NVIDIA GPUs.
+
+  As described in its documentation, AmgX solvers can be configured
+  either using a configuration string (containing key/value pairs),
+  or \c .json formatted files.
+
+  The following example shows how to setup a solver to use the AmgX
+  library, if the code was built with AmgX support. In this example,
+  a configuration file (which must be present in the case's \c DATA
+  directory) is used.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_amgx
+
+  To set options using a string, the \ref cs_sles_amgx_set_config
+  function may be used intead of \ref cs_sles_amgx_set_config_file.
+  If neither is called, a defaut configuration is used.
+
+  The \ref cs_sles_amgx_set_pin_memory and \ref cs_sles_amgx_set_use_device
+  functions may also be called to modify default behavior relative to
+  using pinned memory and running on the device or host.
+
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
   Code_Saturne allows the calculation of temporal means or variances,

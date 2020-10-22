@@ -106,7 +106,7 @@ integer          ifcsii, iflpst, itplus, iprev, f_id
 
 double precision rbid(1)
 double precision vr(3)
-double precision cvisls0
+double precision visls_0
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp
@@ -522,12 +522,12 @@ if (numtyp.eq.-1) then
           tracel(3 + (iloc-1)*idimt) = -cvisii(iel)*grad(3,iel)
         enddo
       else
-        call field_get_key_double(f_id, kvisl0, cvisls0)
+        call field_get_key_double(f_id, kvisl0, visls_0)
         do iloc = 1, ncelps
           iel = lstcel(iloc)
-          tracel(1 + (iloc-1)*idimt) = -cvisls0*grad(1,iel)
-          tracel(2 + (iloc-1)*idimt) = -cvisls0*grad(2,iel)
-          tracel(3 + (iloc-1)*idimt) = -cvisls0*grad(3,iel)
+          tracel(1 + (iloc-1)*idimt) = -visls_0*grad(1,iel)
+          tracel(2 + (iloc-1)*idimt) = -visls_0*grad(2,iel)
+          tracel(3 + (iloc-1)*idimt) = -visls_0*grad(3,iel)
         enddo
       endif
 

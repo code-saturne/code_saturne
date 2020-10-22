@@ -30,10 +30,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_boundary.h"
+#include "cs_cdo_turbulence.h"
 #include "cs_equation_param.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
-#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -115,6 +115,8 @@ typedef cs_flag_t  cs_navsto_param_model_t;
  * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
  * Navier-Stokes equations: mass and momentum with a constant mass density
  *
+ * ----------------------------------------------------------------------------
+ *
  * \var CS_NAVSTO_MODEL_GRAVITY_EFFECTS
  * Take into account the gravity effects (add a constant source term equal to
  * rho*vect(g))
@@ -122,20 +124,31 @@ typedef cs_flag_t  cs_navsto_param_model_t;
  * \var CS_NAVSTO_MODEL_CORIOLIS_EFFECTS
  * Take into account the Coriolis effects (add a source term)
  *
+ * \var CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER
+ * An additional equation is created involving the thermal equation.
+ * The advection field is automatically set as the mass flux. By default,
+ * the temperature is solved in Celsius and homogeneous Neumann boundary
+ * conditions (no flux) are set.
+ *
  * \var CS_NAVSTO_MODEL_BOUSSINESQ
- * Gravity effects are taken into account as well as the effect of small
- * variation of temperatures.
- * The gradient of temperature is assumed to have a small norm and the mass
- * density variates in a small range. In this case, an additional equation
- * related to the temperature is considered and momentum source term is added.
+ * An additional equation is created involving the thermal equation. The
+ * advection field is automatically set as the mass flux. By default, the
+ * temperature is solved in Celsius and homogeneous Neumann boundary conditions
+ * (no flux) are set.  The variation of mass density around a reference value is
+ * related to the variation of temperature w.r.t. a reference temperature and it
+ * plays a role in the gravity effects (rho.vect(g)) The gradient of temperature
+ * is assumed to have a small norm and the mass density variates in a small
+ * range. In this case, an additional momentum source term is added.
  *
  * \var CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ
- * Gravity effects are taken into account as well as the effect of small
- * variation of temperatures and that of alloy concentrations. The gradient of
- * temperature/alloy concentrations is assumed to have a small norm and the mass
- * density variates in a small range. In this case, additional equations related
- * to the temperature/alloy concetrations are considered.
- * A momentum source term is added wich is managed by the solidification module.
+ * This option is similar to \ref CS_NAVSTO_MODEL_BOUSSINESQ. The difference is
+ * that the variation of mass density relies not only on the temperature but
+ * also the alloy concentration(s). The gradient of temperature/alloy
+ * concentrations is assumed to have a small norm and the mass density variates
+ * in a small range. In this case, additional equations related to the
+ * temperature/alloy concetrations are considered. A momentum source term is
+ * added wich is managed by the solidification module.
+ *
  */
 
 typedef enum {
@@ -152,8 +165,9 @@ typedef enum {
 
   CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<3, /* =   8 */
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<4, /* =  16 */
-  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<5, /* =  32 */
-  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<6, /* =  64 */
+  CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER          = 1<<5, /* =  32 */
+  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<6, /* =  64 */
+  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<7, /* = 128 */
 
 } cs_navsto_param_model_bit_t;
 
@@ -222,8 +236,8 @@ typedef enum {
  * normalization
  *
  *
- * \var CS_NAVSTO_SLES_GKB
- * Associated keyword: "gkb"
+ * \var CS_NAVSTO_SLES_GKB_PETSC
+ * Associated keyword: "gkb_petsc"
  *
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
@@ -248,7 +262,7 @@ typedef enum {
  * PETSc library up to now.
  *
  * \var CS_NAVSTO_SLES_GKB_SATURNE
- * Associated keyword: "gkb_saturne"
+ * Associated keyword: "gkb" or "gkb_saturne"
  *
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
@@ -305,7 +319,7 @@ typedef enum {
   CS_NAVSTO_SLES_BY_BLOCKS,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
-  CS_NAVSTO_SLES_GKB,
+  CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
@@ -511,27 +525,17 @@ typedef struct {
   cs_property_t              *lami_viscosity;
 
   /*!
-   * @}
    * @name Turbulence modelling
    * Set of parameters to handle turbulence modelling.
    * @{
    */
 
-  /*! \var turbulence
-   * Main set of parameters to handle turbulence modelling. This
-   * structure is shared with the legacy part.
+  /*! \var turbulence_struct
+   *  Structure storing all information needed to set up and solve the equations
+   *  related to the tubulence modelling
    */
 
-  cs_turb_model_t            *turbulence;
-
-  /*! \var rans_modelling
-   * Main set of parameters to handle RANS modelling. This
-   * structure is shared with the legacy part.
-   * RANS means Reynolds Average Navier-Stokes
-   */
-
-  cs_turb_rans_model_t       *rans_modelling;
-
+  cs_cdo_turbulence_t        *turbulence_struct;
 
   /*!
    * @name Numerical options
@@ -591,11 +595,24 @@ typedef struct {
    */
   cs_quadrature_type_t          qtype;
 
-
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
    */
   cs_navsto_param_sles_t        sles_param;
+
+  /*! \var delta_thermal_tolerance
+   * Value under which one considers that the thermal equation is converged
+   * max_{c \in Cells} |T_c - T_{ref}|/|T_{ref}| < eps => stop iteration
+   */
+  cs_real_t                     delta_thermal_tolerance;
+
+  /*! \var n_max_outer_iter
+   * Stopping crierion related to the maximum number of outer iterations
+   * allowed. This outer iteration encompasses the Navier-Stokes system,
+   * and (according to the case settings) the turbulence system and/or
+   * the thermal system.
+   */
+  int                           n_max_outer_iter;
 
   /*!
    * @}
@@ -762,6 +779,10 @@ typedef struct {
  * Set the maximal number of Picard iterations for solving the non-linearity
  * arising from the advection form
  *
+ * \var CS_NSKEY_MAX_OUTER_ITER
+ * Set the maximal number of outer iterations for solving the full system
+ * including the turbulence modelling or the thermal system for instance
+ *
  * \var CS_NSKEY_NL_ALGO
  * Type of algorithm to consider to solve the non-linearity arising from the
  * Navier-Stokes system
@@ -793,6 +814,10 @@ typedef struct {
  * Numerical scheme for the space discretization. Available choices are:
  * - "cdo_fb"  for CDO face-based scheme
  *
+ * \var CS_NSKEY_THERMAL_TOLERANCE
+ * Value of the tolerance criterion under which one stops iterating on
+ * the Navier-Stokes and thermal systems
+ *
  * \var CS_NSKEY_TIME_SCHEME
  * Numerical scheme for the time discretization
  *
@@ -818,6 +843,7 @@ typedef enum {
   CS_NSKEY_IL_ALGO_VERBOSITY,
   CS_NSKEY_MAX_IL_ALGO_ITER,
   CS_NSKEY_MAX_NL_ALGO_ITER,
+  CS_NSKEY_MAX_OUTER_ITER,
   CS_NSKEY_NL_ALGO,
   CS_NSKEY_NL_ALGO_ATOL,
   CS_NSKEY_NL_ALGO_DTOL,
@@ -826,6 +852,7 @@ typedef enum {
   CS_NSKEY_QUADRATURE,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
+  CS_NSKEY_THERMAL_TOLERANCE,
   CS_NSKEY_TIME_SCHEME,
   CS_NSKEY_TIME_THETA,
   CS_NSKEY_VERBOSITY,

@@ -592,10 +592,10 @@ _absorb(cs_real_t  ts,
  *        composition of products in co2, h2o and soot
  *        using linear regressions established by Modak.
  *
- * \param[out] ck     coefficient d'absorption du milieu (nul si transparent)
- * \param[in]  pco2   pression partielle de co2
- * \param[in]  pco2   pression partielle de h2o
- * \param[in]  fv     fraction volumique de suies
+ * \param[out] ck     medium's absorbtion coefficient (0 if transparent)
+ * \param[in]  pco2   CO2 partial pressure
+ * \param[in]  ph2o   H2O partial pressure
+ * \param[in]  fv     soot volume fraction
  * \param[in]  temp   temperature
  */
 /*----------------------------------------------------------------------------*/

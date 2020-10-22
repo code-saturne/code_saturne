@@ -4458,6 +4458,7 @@ cs_lagr_stat_initialize(void)
             || attr_id == CS_LAGR_PRED_VELOCITY
             || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
             || attr_id == CS_LAGR_ORIENTATION
+            || attr_id == CS_LAGR_QUATERNION
             || attr_id == CS_LAGR_RADII
             || attr_id == CS_LAGR_ANGULAR_VEL)
           dim = 3;

@@ -138,6 +138,10 @@ cs_lagr_car(int              iprev,
   /* Initialization
      ---------------*/
 
+  bool turb_disp_model = false;
+  if (   cs_glob_lagr_model->modcpl == 1)
+    turb_disp_model = true;
+
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
   cs_real_t bbi[3] = {0.0, 0.0, 0.0};
@@ -356,7 +360,7 @@ cs_lagr_car(int              iprev,
           vflui[i] = part_vel_seen[i];
         }
 
-        if (cs_glob_lagr_model->modcpl == 1) {
+        if (turb_disp_model) {
 
           int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
@@ -386,7 +390,7 @@ cs_lagr_car(int              iprev,
 
         uvwdif = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
 
-        if (cs_glob_lagr_model->modcpl == 1) {
+        if (turb_disp_model) {
 
           /* relative main direction */
           cs_real_3_t vrn, n_dir;
@@ -496,7 +500,7 @@ cs_lagr_car(int              iprev,
   /* Compute Pii
      ----------- */
 
-  if (cs_glob_lagr_model->modcpl == 1) {
+  if (turb_disp_model) {
 
     int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 

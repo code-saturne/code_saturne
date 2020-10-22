@@ -206,7 +206,7 @@ _hho_add_tetra_by_val(cs_real_t                        const_val,
  *         defined by an analytical expression depending on the location and
  *         the current time
  *
- * \param[in]       anai      pointer to an analytical definition
+ * \param[in]       ac        pointer to an analytical definition
  * \param[in]       cbf       pointer to a structure for face basis functions
  * \param[in]       xv1       first vertex
  * \param[in]       xv2       second vertex
@@ -220,16 +220,16 @@ _hho_add_tetra_by_val(cs_real_t                        const_val,
 /*----------------------------------------------------------------------------*/
 
 static void
-_hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
-                      const cs_basis_func_t           *cbf,
-                      const cs_real_3_t                xv1,
-                      const cs_real_3_t                xv2,
-                      const cs_real_3_t                xv3,
-                      const cs_real_3_t                xv4,
-                      const double                     vol,
-                      cs_real_t                        time_eval,
-                      cs_cell_builder_t               *cb,
-                      cs_real_t                        array[])
+_hho_add_tetra_by_ana(const cs_xdef_analytic_context_t   *ac,
+                      const cs_basis_func_t              *cbf,
+                      const cs_real_3_t                   xv1,
+                      const cs_real_3_t                   xv2,
+                      const cs_real_3_t                   xv3,
+                      const cs_real_3_t                   xv4,
+                      const double                        vol,
+                      cs_real_t                           time_eval,
+                      cs_cell_builder_t                  *cb,
+                      cs_real_t                           array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
   cs_real_t  *gw = cb->values;
@@ -240,8 +240,8 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true,
-             anai->input, ana_eval);
+  ac->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true,
+           ac->input, ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
 
@@ -261,30 +261,30 @@ _hho_add_tetra_by_ana(const cs_xdef_analytic_input_t  *anai,
  *         defined by an analytical expression depending on the location and
  *         the current time. This is the vector case.
  *
- * \param[in]       anai      pointer to an analytical definition
- * \param[in]       cbf       pointer to a structure for cell basis functions
- * \param[in]       xv1       first vertex
- * \param[in]       xv2       second vertex
- * \param[in]       xv3       third vertex
- * \param[in]       xv4       third vertex
- * \param[in]       vol       volume of the tetrahedron
- * \param[in]       time_eval physical time at which one evaluates the term
- * \param[in, out]  cb        pointer to a cs_cell_builder_structure_t
- * \param[in, out]  array     array storing values to compute
+ * \param[in]       ac         pointer to an analytical definition
+ * \param[in]       cbf        pointer to a structure for cell basis functions
+ * \param[in]       xv1        first vertex
+ * \param[in]       xv2        second vertex
+ * \param[in]       xv3        third vertex
+ * \param[in]       xv4        third vertex
+ * \param[in]       vol        volume of the tetrahedron
+ * \param[in]       time_eval  physical time at which one evaluates the term
+ * \param[in, out]  cb         pointer to a cs_cell_builder_structure_t
+ * \param[in, out]  array      array storing values to compute
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_hho_add_tetra_by_ana_vd(const cs_xdef_analytic_input_t  *anai,
-                         const cs_basis_func_t           *cbf,
-                         const cs_real_3_t                xv1,
-                         const cs_real_3_t                xv2,
-                         const cs_real_3_t                xv3,
-                         const cs_real_3_t                xv4,
-                         const double                     vol,
-                         cs_real_t                        time_eval,
-                         cs_cell_builder_t               *cb,
-                         cs_real_t                        array[])
+_hho_add_tetra_by_ana_vd(const cs_xdef_analytic_context_t  *ac,
+                         const cs_basis_func_t             *cbf,
+                         const cs_real_3_t                  xv1,
+                         const cs_real_3_t                  xv2,
+                         const cs_real_3_t                  xv3,
+                         const cs_real_3_t                  xv4,
+                         const double                       vol,
+                         cs_real_t                          time_eval,
+                         cs_cell_builder_t                 *cb,
+                         cs_real_t                          array[])
 {
   cs_real_3_t  *gpts = cb->vectors;
 
@@ -301,8 +301,8 @@ _hho_add_tetra_by_ana_vd(const cs_xdef_analytic_input_t  *anai,
   cs_quadrature_tet_15pts(xv1, xv2, xv3, xv4, vol, gpts, gw);
 
   /* Evaluate the analytical function at the Gauss points */
-  anai->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true, anai->input,
-             ana_eval);
+  ac->func(time_eval, 15, NULL, (const cs_real_t *)gpts, true, ac->input,
+           ana_eval);
 
   for (short int gp = 0; gp < 15; gp++) {
 
@@ -927,8 +927,8 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
   assert(mass_hodge != NULL);
   assert(mass_hodge->matrix != NULL);
 
-  const cs_real_t *s_input = (const cs_real_t *)source->input;
-  const cs_real_t  pot_value = s_input[0];
+  const cs_real_t *s_values = (const cs_real_t *)source->context;
+  const cs_real_t  pot_value = s_values[0];
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
@@ -980,14 +980,15 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   assert(mass_hodge != NULL);
   assert(mass_hodge->matrix != NULL);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true, /* compacted output ? */
-             anai->input,
-             eval);
+  ac->func(time_eval, cm->n_vc, NULL, cm->xv,
+           true, /* compacted output ? */
+           ac->input,
+           eval);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
@@ -1031,8 +1032,8 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_real_t *s_input = (const cs_real_t *)source->input;
-  const cs_real_t  density_value = s_input[0];
+  const cs_real_t *s_values = (const cs_real_t *)source->context;
+  const cs_real_t  density_value = s_values[0];
 
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += density_value * cm->wvc[v] * cm->vol_c;
@@ -1072,7 +1073,7 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_real_t *st_vect = (const cs_real_t *)source->input;
+  const cs_real_t *st_vect = (const cs_real_t *)source->context;
 
   for (int v = 0; v < cm->n_vc; v++)
     for (int k = 0; k < 3; k++)
@@ -1113,12 +1114,12 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_xdef_array_input_t  *ai =
-    (const cs_xdef_array_input_t *)source->input;
+  const cs_xdef_array_context_t  *ac =
+    (const cs_xdef_array_context_t *)source->context;
 
-  assert(cs_flag_test(ai->loc, cs_flag_primal_vtx));
+  assert(cs_flag_test(ac->loc, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
-    values[v] += ai->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
+    values[v] += ac->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1155,16 +1156,16 @@ cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_xdef_dof_input_t  *context = (cs_xdef_dof_input_t *)source->input;
+  const cs_xdef_dof_context_t  *dc = (cs_xdef_dof_context_t *)source->context;
 
   /* Up to now this should be the only location allowed */
-  assert(cs_flag_test(context->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(dc->loc, cs_flag_primal_cell));
 
   /* Call the DoF function to evaluate the function at xc */
   double  cell_eval;
-  context->func(1, &(cm->c_id), true,  /* compacted output ? */
-                context->input,
-                &cell_eval);
+  dc->func(1, &(cm->c_id), true,  /* compacted output ? */
+           dc->input,
+           &cell_eval);
 
   cell_eval *= cm->vol_c;
   for (int v = 0; v < cm->n_vc; v++)
@@ -1209,7 +1210,8 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  |
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PEC));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Compute the barycenter of each portion of dual cells */
   double  *vol_vc = cb->values;
@@ -1267,10 +1269,10 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
 
   /* Call the analytic function to evaluate the function at xgv */
   double  *eval_xgv = vol_vc + cm->n_vc;
-  anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xgv,
-             true, /* compacted output ? */
-             anai->input,
-             eval_xgv);
+  ac->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xgv,
+           true, /* compacted output ? */
+           ac->input,
+           eval_xgv);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] = vol_vc[v] * eval_xgv[v];
@@ -1314,7 +1316,8 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1341,10 +1344,10 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
-      anai->func(time_eval, 2, NULL, (const cs_real_t *)xg,
-                 true, /* compacted output ? */
-                 anai->input,
-                 eval_xg);
+      ac->func(time_eval, 2, NULL, (const cs_real_t *)xg,
+               true, /* compacted output ? */
+               ac->input,
+               eval_xg);
 
       const double  half_pef_vol = cm->tef[i]*hf_coef;
       values[v1] += half_pef_vol * eval_xg[0];
@@ -1395,7 +1398,8 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
                        CS_FLAG_COMP_PEQ));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Temporary buffers */
   double  *contrib = cb->values; /* size n_vc */
@@ -1404,17 +1408,17 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 
   /* Cell evaluation */
   double  eval_c;
-  anai->func(time_eval, 1, NULL, cm->xc,
-             true, /* compacted output ? */
-             anai->input,
-             &eval_c);
+  ac->func(time_eval, 1, NULL, cm->xc,
+           true, /* compacted output ? */
+           ac->input,
+           &eval_c);
 
   /* Contributions related to vertices */
   double  *eval_v = cb->values + cm->n_vc; /* size n_vc */
-  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true,  /* compacted output ? */
-             anai->input,
-             eval_v);
+  ac->func(time_eval, cm->n_vc, NULL, cm->xv,
+           true,  /* compacted output ? */
+           ac->input,
+           eval_v);
 
   cs_real_3_t  *xvc = cb->vectors;
   for (short int v = 0; v < cm->n_vc; v++) {
@@ -1423,10 +1427,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   }
 
   double  *eval_vc = cb->values + 2*cm->n_vc; /* size n_vc */
-  anai->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xvc,
-             true,  /* compacted output ? */
-             anai->input,
-             eval_vc);
+  ac->func(time_eval, cm->n_vc, NULL, (const cs_real_t *)xvc,
+           true,  /* compacted output ? */
+           ac->input,
+           eval_vc);
 
   for (short int v = 0; v < cm->n_vc; v++) {
 
@@ -1452,10 +1456,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   /* Evaluate the analytic function at xe and xec */
   double  *eval_e = cb->values + cm->n_vc; /* size=n_ec (overwrite eval_v) */
   double  *eval_ec = eval_e + cm->n_ec;    /* size=n_ec (overwrite eval_vc) */
-  anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
-             true,  /* compacted output ? */
-             anai->input,
-             eval_e);
+  ac->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+           true,  /* compacted output ? */
+           ac->input,
+           eval_e);
 
   /* xev (size = 2*n_ec) */
   cs_real_3_t  *xve = cb->vectors; /* size=2*n_ec (overwrite xe and xec) */
@@ -1475,10 +1479,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   } /* Loop on edges */
 
   double  *eval_ve = eval_ec + cm->n_ec; /* size = 2*n_ec */
-  anai->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
-             true,  /* compacted output ? */
-             anai->input,
-             eval_ve);
+  ac->func(time_eval, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+           true,  /* compacted output ? */
+           ac->input,
+           eval_ve);
 
   /* 3) Main loop on faces */
   double  *pvf_vol = eval_ve + 2*cm->n_ec;  /* size n_vc */
@@ -1504,10 +1508,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       cs_real_3_t  xef;
       cs_real_t  eval_ef;
       for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
-      anai->func(time_eval, 1, NULL, xef,
-                 true,  /* compacted output ? */
-                 anai->input,
-                 &eval_ef);
+      ac->func(time_eval, 1, NULL, xef,
+               true,  /* compacted output ? */
+               ac->input,
+               &eval_ef);
 
       /* 1/5 (EF + EC) -1/20 * (E) */
       const double  common_ef_contrib =
@@ -1536,10 +1540,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     }
 
     double  *eval_vfc = pvf_vol + cm->n_vc; /* size=n_vf + 2 */
-    anai->func(time_eval, 2+n_vf, NULL, (const cs_real_t *)xvfc,
-               true,  /* compacted output ? */
-               anai->input,
-               eval_vfc);
+    ac->func(time_eval, 2+n_vf, NULL, (const cs_real_t *)xvfc,
+             true,  /* compacted output ? */
+             ac->input,
+             eval_vfc);
 
     for (short int i = 0; i < n_vf; i++) {
       short int  v = cb->ids[i];
@@ -1598,7 +1602,8 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ));
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Temporary buffers */
   double  *contrib = cb->values;
@@ -1622,10 +1627,10 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              half_pef_vol,
                              gauss_pts, weights);
 
-      anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
-                 true,  /* compacted output ? */
-                 anai->input,
-                 results);
+      ac->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
+               true,  /* compacted output ? */
+               ac->input,
+               results);
 
       sum = 0.;
       for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
@@ -1636,10 +1641,10 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              half_pef_vol,
                              gauss_pts, weights);
 
-      anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
-                 true,  /* compacted output ? */
-                 anai->input,
-                 results);
+      ac->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
+               true,  /* compacted output ? */
+               ac->input,
+               results);
 
       sum = 0.;
       for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
@@ -1692,8 +1697,8 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
   assert(mass_hodge != NULL);
   assert(mass_hodge->matrix != NULL);
 
-  const cs_real_t *s_input = (const cs_real_t *)source->input;
-  const cs_real_t  pot_value = s_input[0];
+  const cs_real_t *s_values = (const cs_real_t *)source->context;
+  const cs_real_t  pot_value = s_values[0];
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
@@ -1745,20 +1750,21 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
   assert(mass_hodge != NULL);
   assert(mass_hodge->matrix != NULL);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
 
-  anai->func(time_eval, cm->n_vc, NULL, cm->xv,
-             true,  /* compacted output ? */
-             anai->input,
-             eval);
+  ac->func(time_eval, cm->n_vc, NULL, cm->xv,
+           true,  /* compacted output ? */
+           ac->input,
+           eval);
 
-  anai->func(time_eval, 1, NULL, cm->xc,
-             true,  /* compacted output ? */
-             anai->input,
-             eval + cm->n_vc);
+  ac->func(time_eval, 1, NULL, cm->xc,
+           true,  /* compacted output ? */
+           ac->input,
+           eval + cm->n_vc);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
@@ -1802,9 +1808,9 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
 
-  const cs_real_t *s_input = (const cs_real_t *)source->input;
+  const cs_real_t *s_values = (const cs_real_t *)source->context;
 
-  values[cm->n_fc] += s_input[0] * cm->vol_c;
+  values[cm->n_fc] += s_values[0] * cm->vol_c;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1838,7 +1844,7 @@ cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  cs_xdef_dof_input_t  *context = (cs_xdef_dof_input_t *)source->input;
+  cs_xdef_dof_context_t  *context = (cs_xdef_dof_context_t *)source->context;
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
@@ -1886,7 +1892,7 @@ cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  cs_xdef_dof_input_t  *context = (cs_xdef_dof_input_t *)source->input;
+  cs_xdef_dof_context_t  *context = (cs_xdef_dof_context_t *)source->context;
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
@@ -1939,7 +1945,7 @@ cs_source_term_pcvd_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
 
-  const cs_real_t *v_input = (const cs_real_t *)source->input;
+  const cs_real_t *v_input = (const cs_real_t *)source->context;
   for (int k = 0; k < source->dim; k++)
     values[source->dim*cm->n_fc + k] = v_input[k] * cm->vol_c;
 }
@@ -1980,14 +1986,15 @@ cs_source_term_pcsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Call the analytic function to evaluate the function at xc */
   double  eval_xc;
-  anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
-             true,  /* compacted output ? */
-             anai->input,
-             &eval_xc);
+  ac->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
+           true,  /* compacted output ? */
+           ac->input,
+           &eval_xc);
 
   values[cm->n_fc] += cm->vol_c * eval_xc;
 }
@@ -2028,7 +2035,6 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   assert(source->dim == 1);
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   if (source->qtype == CS_QUADRATURE_BARY)
     cs_source_term_pcsd_bary_by_analytic(source, cm, time_eval, cb, input,
@@ -2039,8 +2045,12 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
     const cs_real_t *xv = cm->xv;
 
     double  cell_values  = 0.0;
+
     cs_quadrature_tetra_integral_t  *qfunc =
       cs_quadrature_get_tetra_integral(1, source->qtype);
+
+    cs_xdef_analytic_context_t *ac =
+      (cs_xdef_analytic_context_t *)source->context;
 
     /* Switch according to the cell type: optimised version for tetra */
     switch (cm->type) {
@@ -2048,8 +2058,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
     case FVM_CELL_TETRA:
       {
         assert(cm->n_fc == 4 && cm->n_vc == 4);
-        qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c,
-              anai->func, anai->input,
+        qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c, ac->func, ac->input,
               &cell_values);
       }
       break;
@@ -2079,7 +2088,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
 
             qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
                   hf_coef*pfq.meas,
-                  anai->func, anai->input,
+                  ac->func, ac->input,
                   &cell_values);
           }
           break;
@@ -2096,7 +2105,8 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
               const double  *xv1 = xv + 3*cm->e2v_ids[2*e0+1];
 
               qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
-                    hf_coef*tef[e], anai->func, anai->input, &cell_values);
+                    hf_coef*tef[e], ac->func, ac->input, &cell_values);
+
             }
           }
           break;
@@ -2152,7 +2162,8 @@ cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
 
-  const cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)source->input;
+  const cs_xdef_array_context_t  *ai =
+    (cs_xdef_array_context_t *)source->context;
 
   assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
   values[cm->n_fc] += ai->values[cm->c_id];
@@ -2195,14 +2206,15 @@ cs_source_term_pcvd_bary_by_analytic(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(source->dim == 3);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
 
   /* Call the analytic function to evaluate the function at xc */
   double  eval_xc[3];
-  anai->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
-             true,  /* compacted output ? */
-             anai->input,
-             eval_xc);
+  ac->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
+           true,  /* compacted output ? */
+           ac->input,
+           eval_xc);
 
   cs_real_t  *c_val = values + 3*cm->n_fc;
   for (int k = 0; k < source->dim; k++)
@@ -2246,8 +2258,6 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
   assert(source->dim == 3);
 
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
-
   if (source->qtype == CS_QUADRATURE_BARY)
     cs_source_term_pcvd_bary_by_analytic(source, cm, time_eval, cb, input,
                                          values);
@@ -2257,8 +2267,12 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
     const cs_real_t *xv = cm->xv;
 
     cs_real_3_t  cell_values = {0.0, 0.0, 0.0};
+
     cs_quadrature_tetra_integral_t  *qfunc =
       cs_quadrature_get_tetra_integral(3, source->qtype);
+
+    cs_xdef_analytic_context_t  *ac =
+      (cs_xdef_analytic_context_t *)source->context;
 
     /* Switch according to the cell type: optimized version for tetra */
     switch (cm->type) {
@@ -2267,7 +2281,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
       {
         assert(cm->n_fc == 4 && cm->n_vc == 4);
         qfunc(time_eval, xv, xv+3, xv+6, xv+9, cm->vol_c,
-              anai->func, anai->input,
+              ac->func, ac->input,
               cell_values);
       }
       break;
@@ -2297,7 +2311,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
 
             qfunc(time_eval, cm->xc, xv+3*v0, xv+3*v1, xv+3*v2,
                   hf_coef*pfq.meas,
-                  anai->func, anai->input,
+                  ac->func, ac->input,
                   cell_values);
           }
           break;
@@ -2315,7 +2329,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
 
               qfunc(time_eval, cm->xc, pfq.center, xv0, xv1,
                     hf_coef*tef[e],
-                    anai->func, anai->input,
+                    ac->func, ac->input,
                     cell_values);
             }
           }
@@ -2376,8 +2390,10 @@ cs_source_term_pcvd_by_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(source->dim == 3);
 
-  const cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)source->input;
+  const cs_xdef_array_context_t  *ai =
+    (cs_xdef_array_context_t *)source->context;
   const double  *arr = ai->values + 3*cm->c_id;
+
   assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
 
   double  *val_c = values + 3*cm->n_fc;
@@ -2419,7 +2435,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
 
-  const cs_real_t  *const_val = (const cs_real_t *)source->input;
+  const cs_real_t  *const_val = (const cs_real_t *)source->context;
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_real_t  *cell_values = values + cm->n_fc * hhob->face_basis[0]->size;
@@ -2436,7 +2452,6 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
     break;
 
   default:
-
     /* Reset cell values */
     memset(cell_values, 0, sizeof(cs_real_t)*cbf->size);
 
@@ -2477,7 +2492,6 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
                                     cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2,
                                     cm->xc,
                                     hf_coef * pfq.meas, cb, cell_values);
-
             }
             break;
 
@@ -2554,7 +2568,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
   cs_real_t  *cell_values = values + cm->n_fc * hhob->face_basis[0]->size;
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
@@ -2568,7 +2583,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
   case FVM_CELL_TETRA:
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
-      _hho_add_tetra_by_ana(anai, cbf,
+      _hho_add_tetra_by_ana(ac, cbf,
                             cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
                             cm->vol_c, time_eval,
                             cb, cell_values);
@@ -2597,11 +2612,10 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          _hho_add_tetra_by_ana(anai, cbf,
+          _hho_add_tetra_by_ana(ac, cbf,
                                 cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2, cm->xc,
                                 hf_coef * pfq.meas, time_eval,
                                 cb, cell_values);
-
         }
         break;
 
@@ -2616,7 +2630,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _hho_add_tetra_by_ana(anai, cbf,
+            _hho_add_tetra_by_ana(ac, cbf,
                                   xv0, xv1, pfq.center, cm->xc,
                                   hf_coef*tef[e], time_eval,
                                   cb, cell_values);
@@ -2674,13 +2688,13 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
-  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
   cs_real_t  *cell_values = values + 3*cm->n_fc * hhob->face_basis[0]->size;
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
 
-  /* Reset cell values:
-     JB<integration> *3 ? */
+  /* Reset cell values */
   memset(cell_values, 0, 3*sizeof(cs_real_t)*cbf->size);
 
   /* Switch according to the cell type: optimised version for tetra */
@@ -2689,7 +2703,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
   case FVM_CELL_TETRA:
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
-      _hho_add_tetra_by_ana_vd(anai, cbf,
+      _hho_add_tetra_by_ana_vd(ac, cbf,
                                cm->xv, cm->xv+3, cm->xv+6, cm->xv+9,
                                cm->vol_c, time_eval,
                                cb, cell_values);
@@ -2718,7 +2732,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
           short int  v0, v1, v2;
           cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-          _hho_add_tetra_by_ana_vd(anai, cbf,
+          _hho_add_tetra_by_ana_vd(ac, cbf,
                                    cm->xv+3*v0, cm->xv+3*v1, cm->xv+3*v2,
                                    cm->xc, hf_coef * pfq.meas, time_eval,
                                    cb, cell_values);
@@ -2736,7 +2750,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
-            _hho_add_tetra_by_ana_vd(anai, cbf,
+            _hho_add_tetra_by_ana_vd(ac, cbf,
                                      xv0, xv1, pfq.center, cm->xc,
                                      hf_coef*tef[e], time_eval,
                                      cb, cell_values);
@@ -2792,13 +2806,12 @@ cs_source_term_dfsf_by_value(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DFQ));
 
-  const cs_real_t *vector = (const cs_real_t *)source->input;
+  const cs_real_t *vector = (const cs_real_t *)source->context;
 
   /* Retrieve the values of the normal flux for each dual face */
   for (short int e = 0; e < cm->n_ec; e++)
     values[e] = cm->dface[e].meas *
       cs_math_3_dot_product(vector, cm->dface[e].unitv);
-
 }
 
 /*----------------------------------------------------------------------------*/

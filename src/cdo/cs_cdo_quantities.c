@@ -520,7 +520,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
   /* Allocate and initialize array
    * a) Compute the two vector areas composing each dual face
-   * b) Compute the volume associated to eachedge in a cell
+   * b) Compute the volume associated to each edge in a cell
    */
   BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
   BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
@@ -537,11 +537,11 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
       const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-      /* Initialize sface */
+      /* Initialize cell_dface */
       cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
       memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
 
-      /* Get cell center */
+      /* Get the cell center */
       const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
@@ -567,7 +567,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
             xexc[k] = xc[k] - xe[k];
           cs_math_3_cross_product(xfxc, xexc, tria_vect);
 
-          /* Find the corresponding local cell edge */
+          /* Find the corresponding local id for this cell edge */
           short int e = n_ec;
           for (short int _e = 0; _e < n_ec; _e++) {
             if (c2e_ids[_e] == e_id) {
@@ -577,14 +577,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
           }
           CS_CDO_OMP_ASSERT(e < n_ec);
 
-          /* One should have (normal_tria, tangent_e) > 0 */
+          /* One should have (tria.unitv, edge.unitv) > 0 */
           cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
           cs_nvec3_t  tria;
           cs_nvec3(tria_vect, &tria);
           const double  orient = _dp3(tria.unitv, edge.unitv);
           CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
-          /* Store the computed data */
+          /* Store this portion of dual face area at the right place */
           cs_real_t  *_dface = cell_dface + 3*e;
           if (orient < 0)
             for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];

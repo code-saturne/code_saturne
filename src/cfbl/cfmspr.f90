@@ -141,9 +141,10 @@ double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 type(var_cal_opt) :: vcopt_p
 
 !===============================================================================
-!===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+extrap = 0
 
 ! Allocate temporary arrays for the mass resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -343,7 +344,6 @@ epsilp = vcopt_p%epsilo
 epsrsp = vcopt_p%epsrsm
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-extrap = vcopt_p%extrag
 relaxp = vcopt_p%relaxv
 thetv  = vcopt_p%thetav
 icvflb = 0
@@ -354,7 +354,7 @@ call codits                                                                    &
   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
   iwarnp , normp  ,                                                            &
-  blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                        &
+  blencp , epsilp , epsrsp , epsrgp , climgp ,                                 &
   relaxp , thetv  ,                                                            &
   cvara_pr        , cvara_pr        ,                                          &
   wbfa   , wbfb   ,                                                            &

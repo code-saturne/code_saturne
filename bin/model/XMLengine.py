@@ -104,7 +104,6 @@ class Dico:
         self.data['relevant_subdir']  = "no"
         self.data['case_path']        = ""
         self.data['job_model']        = None
-        self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
         self.data['module']           = None
         self.data['package']          = None

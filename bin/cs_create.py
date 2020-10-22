@@ -182,27 +182,6 @@ def unset_executable(path):
     return
 
 #-------------------------------------------------------------------------------
-# Build lines necessary to import SYRTHES packages
-#-------------------------------------------------------------------------------
-
-def syrthes_path_line(pkg):
-    """
-    Build lines necessary to import SYRTHES packages
-    """
-
-    line = None
-
-    config = configparser.ConfigParser()
-    config.read(pkg.get_configfiles())
-
-    if config.has_option('install', 'syrthes'):
-        syr_datapath = os.path.join(config.get('install', 'syrthes'),
-                                    os.path.join('share', 'syrthes'))
-        line = 'sys.path.insert(1, \'' + syr_datapath + '\')\n'
-
-    return line
-
-#-------------------------------------------------------------------------------
 # Create local launch script
 #-------------------------------------------------------------------------------
 
@@ -407,28 +386,8 @@ class study:
 
         solver_name = self.package.code_name
 
-        header = \
-"""# -*- coding: utf-8 -*-
+        coupled_domains = []
 
-#===============================================================================
-# User variable settings to specify a coupling computation environnement.
-
-# A coupling case is defined by a dictionnary, containing the following:
-
-# Solver type ('Code_Saturne', 'SYRTHES', or 'NEPTUNE_CFD')
-# Domain directory name
-# Run parameter setting file
-# Number of processors (or None for automatic setting)
-# Optional command line parameters. If not useful = None
-#===============================================================================
-"""
-
-        dict_str = \
-"""
-# Define coupled domains
-
-domains = [
-"""
         sep = ""
 
         for c in self.cases:
@@ -436,63 +395,32 @@ domains = [
             c = os.path.normpath(c)
             base_c = os.path.basename(c)
 
-            template = sep + \
-"""
-    {'solver': 'PACKAGE',
-     'domain': 'DOMAIN',
-     'n_procs_weight': None,
-     'n_procs_min': 1,
-     'n_procs_max': None}
-"""
-            template = re.sub(e_pkg, solver_name, template)
-            template = re.sub(e_dom, base_c, template)
-
-            dict_str += template
-
-            if sep == "":
-                sep = \
-"""
-    ,"""
-
+            coupled_domains.append({'solver': solver_name,
+                                    'domain': base_c,
+                                    'n_procs_weight': 'None'})
 
         for c in self.syr_case_names:
 
             c = os.path.normpath(c)
             base_c = os.path.basename(c)
 
-            template = \
-"""
-    ,
-    {'solver': 'SYRTHES',
-     'domain': 'DOMAIN',
-     'param': 'syrthes_data.syd',
-     'n_procs_weight': None,
-     'n_procs_min': 1,
-     'n_procs_max': None,
-     'opt' : ''}               # Additional SYRTHES options
-                               # (ex.: postprocessing with '-v ens' or '-v med')
-"""
-            template = re.sub(e_dom, base_c, template)
-            dict_str += template
+            coupled_domains.append({'solver': 'SYRTHES',
+                                    'domain': base_c,
+                                    'param': 'syrthes_data.syd',
+                                    'n_procs_weight': 'None',
+                                    'opt': ''})
+            # Last entry is for additional SYRTHES options
+            # (ex.: postprocessing with '-v ens' or '-v med')
 
         if self.cat_case_name is not None:
 
             c = os.path.normpath(self.cat_case_name)
             base_c = os.path.basename(c)
 
-            template = \
-"""
-    ,
-    {'solver': 'CATHARE',
-     'domain': 'DOMAIN',
-     'cathare_case_file': 'jdd_case.dat',
-     'neptune_cfd_domain': 'NEPTUNE'}
-"""
-
-            template = re.sub(e_pkg, solver_name, template)
-            template = re.sub(e_dom, base_c, template)
-
-            dict_str += template
+            coupled_domains.append({'solver': 'CATHARE',
+                                    'domain': base_c,
+                                    'cathare_case_file':' jdd_case.dat',
+                                    'neptune_cfd_domain': 'NEPTUNE'})
 
 
         if self.py_case_name is not None:
@@ -500,28 +428,13 @@ domains = [
             c = os.path.normpath(self.py_case_name)
             base_c = os.path.basename(c)
 
-            template = \
-"""
-    ,
-    {'solver': 'PYTHON_CODE',
-     'domain': 'DOMAIN',
-     'script': 'pycode.py',
-     'command_line': '',
-     'n_procs_weight': None,
-     'n_procs_min': 1,
-     'n_procs_max': 1}
-"""
+            coupled_domains.append({'solver': 'PYTHON_CODE',
+                                    'domain': self.py_case_name,
+                                    'script': 'pycode.py',
+                                    'command_line': '',
+                                    'n_procs_weight': None,
+                                    'n_procs_max': None})
 
-            template = re.sub(e_dom, self.py_case_name, template)
-            dict_str += template
-
-        # Now finish building dictionnary string
-
-        dict_str += \
-"""
-    ]
-
-"""
         # Result directory for coupling execution
 
         resu = os.path.join(repbase, 'RESU_COUPLING')
@@ -529,19 +442,6 @@ domains = [
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-        coupling_base = 'coupling_parameters.py'
-        coupling = os.path.join(repbase, coupling_base)
-
-        fd = open(coupling, 'w')
-        fd.write(header)
-
-        if len(self.syr_case_names) > 0:
-            syrthes_insert = syrthes_path_line(self.package)
-            if syrthes_insert:
-                fd.write("\n# Ensure the correct SYRTHES install is used.\n")
-                fd.write(syrthes_insert)
-
-        fd.write(dict_str)
 
         if self.cat_case_name is not None:
             config = configparser.ConfigParser()
@@ -552,8 +452,10 @@ domains = [
 
         self.__build_run_cfg__(distrep = repbase,
                                casename = 'coupling',
-                               coupling = coupling_base,
                                cathare_path = cathare_libpath)
+
+        self.__coupled_run_cfg__(distrep = repbase,
+                                 coupled_domains = coupled_domains)
 
 
     def create_case(self, casename):
@@ -636,9 +538,12 @@ domains = [
             shutil.copytree(user_examples_distpath, user_examples)
 
             add_datadirs = []
-            if self.package.name == 'neptune_cfd' :
-                add_datadirs.append(os.path.join(self.package.get_dir("datadir"),
-                                                 self.package.name))
+
+            # If neptune_cfd is present, copy user functions to EXAMPLES folder
+            ncfd_user_examples = os.path.join(self.package.get_dir("datadir"),
+                                              "neptune_cfd")
+            if os.path.isdir(ncfd_user_examples):
+                add_datadirs.append(ncfd_user_examples)
 
             for d in add_datadirs:
                 user_distpath = os.path.join(d, 'user')
@@ -727,11 +632,40 @@ domains = [
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
+    def __coupled_run_cfg__(self,
+                          distrep,
+                          coupled_domains=[]):
+        """
+        """
+        if len(coupled_domains) == 0:
+            return
+
+        run_conf_path = os.path.join(distrep, 'run.cfg')
+        run_conf = cs_run_conf.run_conf(run_conf_path,
+                                        package=self.package,
+                                        create_if_missing=True)
+
+        domains = ""
+
+        for i, dom in enumerate(coupled_domains):
+            dom_name = dom["domain"]
+            if i != 0:
+                domains+=":"
+
+            domains+=dom_name
+
+            for key in dom.keys():
+                run_conf.set(dom_name, key, dom[key])
+
+
+        if domains != "":
+            run_conf.set('setup', 'coupled_domains', domains)
+
+        run_conf.save()
 
     def __build_run_cfg__(self,
                           distrep,
                           casename,
-                          coupling=None,
                           cathare_path=None):
         """
         Retrieve batch file for the current system
@@ -752,9 +686,6 @@ domains = [
         run_conf = cs_run_conf.run_conf(run_conf_path,
                                         package=self.package,
                                         create_if_missing=True)
-
-        if coupling:
-            run_conf.set('setup', 'coupling', coupling)
 
         # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
         # This modification is needed for the dlopen of the cathare .so file

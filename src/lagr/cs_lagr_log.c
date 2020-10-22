@@ -235,13 +235,13 @@ _log_setup_injection(cs_log_t  log)
                       zis->diameter, zis->diameter_variance, zis->density);
 
 
-        if (cs_glob_lagr_model->shape == 1) {
+        if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
           cs_log_printf(log,
                         _("    shape parameter: %g\n"),
                         zis->shape);
         }
 
-        if (cs_glob_lagr_model->shape == 2) {
+        if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
           cs_log_printf(log,
                         _("    ellipsoid radii: [%g, %g, %g]\n"),
                         zis->radii[0], zis->radii[1], zis->radii[2]);

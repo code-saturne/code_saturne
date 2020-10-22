@@ -85,6 +85,12 @@ using namespace MEDCoupling;
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
 static const cs_lnum_t _perm_tri[3]  = {0, 2, 1};
 static const cs_lnum_t _perm_quad[4] = {0, 3, 2, 1};
 static const cs_lnum_t _perm_pent[5] = {0, 4, 3, 2, 1};
@@ -93,17 +99,18 @@ static const cs_lnum_t _perm_pent[5] = {0, 4, 3, 2, 1};
  * Private function definitions
  *============================================================================*/
 
-/* -------------------------------------------------------------------------- */
-/*! \brief Get permutation array for a face given its number of vertices.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get permutation array for a face given its number of vertices.
  *
  * \param[in] n_face_vertices number of vertices of the face
  *
  * \return    pointer to the permutation array
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static inline const cs_lnum_t *
-_get_face_vertices_permutation(int  n_face_vertices)
+_get_face_vertices_permutation(cs_lnum_t  n_face_vertices)
 {
   const cs_lnum_t *perm = NULL;
 
@@ -127,7 +134,7 @@ _get_face_vertices_permutation(int  n_face_vertices)
 
 #if defined(HAVE_MEDCOUPLING)
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Assign vertex coordinates to a MEDCoupling mesh structure
  *
@@ -136,9 +143,8 @@ _get_face_vertices_permutation(int  n_face_vertices)
  * \param[in] vtx_id    pointer to vertices id's used for assigning
  * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the
  *                      coordinates
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static void
 _assign_vertex_coords(const cs_mesh_t    *mesh,
@@ -146,9 +152,7 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
                       const cs_lnum_t    *vtx_id,
                       MEDCouplingUMesh   *med_mesh)
 {
-  int  i, j;
-
-  const int  dim = mesh->dim;
+  const cs_lnum_t  dim = mesh->dim;
   const cs_coord_t  *vertex_coords = mesh->vtx_coord;
 
   assert(med_mesh != NULL);
@@ -160,28 +164,26 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
   med_coords->alloc(n_vtx, dim);
 
   if (vtx_id != NULL) {
-    for (i = 0; i < mesh->n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
       if (vtx_id[i] > -1) {
-        for (j = 0; j < dim; j++) {
+        for (cs_lnum_t j = 0; j < dim; j++) {
           med_coords->setIJ(vtx_id[i], j, vertex_coords[i*dim + j]);
         }
       }
     }
   }
   else {
-    for (i = 0; i < mesh->n_vertices; i++) {
-      for (j = 0; j < dim; j++)
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+      for (cs_lnum_t j = 0; j < dim; j++)
         med_coords->setIJ(i, j, vertex_coords[i*dim + j]);
     }
   }
 
   med_mesh->setCoords(med_coords);
   med_coords->decrRef();
-
-  return;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Assign boundary faces to a MEDCoupling mesh structure
  *
@@ -189,9 +191,8 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
  * \param[in] n_elts    number of faces to copy
  * \param[in] elts_list list of faces to copy
  * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the faces
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static void
 _assign_face_mesh(const cs_mesh_t   *mesh,
@@ -199,12 +200,10 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
                   const cs_lnum_t   *elts_list,
                   MEDCouplingUMesh  *med_mesh)
 {
-  cs_lnum_t i, j;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = -1;
-  int elt_buf_size = 4;
-  int *elt_buf = NULL;
+  cs_lnum_t elt_buf_size = 4;
   cs_lnum_t *vtx_id = NULL;
 
   /* Mark and renumber vertices */
@@ -212,16 +211,16 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
 
   /* Initialize the value of vtx_id */
-  for (i = 0; i < mesh->n_vertices; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
     vtx_id[i] = -1;
 
   /* Case with filter list */
 
   if (elts_list != NULL) {
 
-    for (i = 0; i < n_elts; i++) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t eid = elts_list[i];
-      for (j = mesh->b_face_vtx_idx[eid];
+      for (cs_lnum_t j = mesh->b_face_vtx_idx[eid];
            j < mesh->b_face_vtx_idx[eid+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
@@ -230,10 +229,11 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       }
     }
 
-  } else {
+  }
+  else {
 
-    for (i = 0; i < n_elts; i++) {
-      for (j = mesh->b_face_vtx_idx[i];
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t j = mesh->b_face_vtx_idx[i];
            j < mesh->b_face_vtx_idx[i+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
@@ -250,31 +250,32 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 
   /* Assign faces */
 
-  BFT_MALLOC(elt_buf, elt_buf_size, int);
+  mcIdType *elt_buf = NULL;
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
   med_mesh->allocateCells(n_elts);
 
-  for (i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t eid = (elts_list != NULL) ? elts_list[i] : i;
 
     assert(eid >= 0 && eid < mesh->n_b_faces);
 
-    cs_lnum_t n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
+    mcIdType n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
 
     cs_lnum_t connect_start = mesh->b_face_vtx_idx[eid];
 
     if (n_vtx > elt_buf_size) { /* reallocate buffer if required */
       elt_buf_size *= 2;
-      BFT_REALLOC(elt_buf, elt_buf_size, int);
+      BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
     }
 
     const cs_lnum_t *_perm_face = _get_face_vertices_permutation(n_vtx);
     if (_perm_face != NULL) {
-      for (j = 0; j < n_vtx; j++)
+      for (cs_lnum_t j = 0; j < n_vtx; j++)
         elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + _perm_face[j]]];
     }
     else {
-      for (j = 0; j < n_vtx; j++)
+      for (cs_lnum_t j = 0; j < n_vtx; j++)
         elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j]];
     }
     switch(n_vtx) {
@@ -299,7 +300,7 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   BFT_FREE(vtx_id);
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Assign cells to a MEDCoupling mesh structure
  *
@@ -310,23 +311,20 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
  * \param[in] new_to_old  indirection array between local mesh connectivity
  *                        and MEDCouplingUMesh connectivity
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 static void
 _assign_cell_mesh(const cs_mesh_t   *mesh,
                   cs_lnum_t          n_elts,
-                  const cs_lnum_t   *elts_list,
+                  const cs_lnum_t    elts_list[],
                   MEDCouplingUMesh  *med_mesh,
-                  int               *new_to_old)
+                  cs_lnum_t          new_to_old[])
 {
-  cs_lnum_t i, j, k;
-  cs_lnum_t  c_id, c_id1, c_id2, face_id;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = 0, cell_count = 0;
 
-  int elt_buf_size = 8;
-  int *elt_buf = NULL;
+  cs_lnum_t  elt_buf_size = 8;
   cs_lnum_t *vtx_id = NULL;
   cs_lnum_t *cell_id = NULL;
   cs_lnum_t *cell_faces_idx = NULL, *cell_faces_num = NULL;
@@ -334,27 +332,28 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   /* Build old->new cell id indirection */
 
   BFT_MALLOC(cell_id, mesh->n_cells, cs_lnum_t);
-  for (i = 0; i < mesh->n_cells; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     cell_id[i] = -1;
 
-  for (i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
     cell_id[elts_list[i]] = cell_count++;
   }
-  for (int ii = 0; ii < n_elts; ii++) {
+
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
     new_to_old[cell_id[elts_list[ii]]] = elts_list[ii];
   }
 
   /* Mark and renumber vertices */
 
   BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
-  for (int vid = 0; vid < mesh->n_vertices; vid++) {
+  for (cs_lnum_t vid = 0; vid < mesh->n_vertices; vid++) {
     vtx_id[vid] = -1;
   }
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-    c_id = cell_id[mesh->b_face_cells[face_id]];
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+    cs_lnum_t c_id = cell_id[mesh->b_face_cells[face_id]];
     if (c_id > -1) {
-      for (j = mesh->b_face_vtx_idx[face_id];
+      for (cs_lnum_t j = mesh->b_face_vtx_idx[face_id];
            j < mesh->b_face_vtx_idx[face_id+1];
            j++) {
         cs_lnum_t vid = mesh->b_face_vtx_lst[j];
@@ -364,13 +363,13 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
     }
   }
 
-  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-    c_id1 = mesh->i_face_cells[face_id][0];
-    c_id2 = mesh->i_face_cells[face_id][1];
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+    cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
+    cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
     c_id1 = (c_id1 < mesh->n_cells) ? cell_id[c_id1] : -1;
     c_id2 = (c_id2 < mesh->n_cells) ? cell_id[c_id2] : -1;
     if (c_id1 > -1 || c_id2 > -1) {
-      for (j = mesh->i_face_vtx_idx[face_id];
+      for (cs_lnum_t j = mesh->i_face_vtx_idx[face_id];
            j < mesh->i_face_vtx_idx[face_id+1];
            j++) {
         cs_lnum_t vid = mesh->i_face_vtx_lst[j];
@@ -396,16 +395,16 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
   /* Now loop on cells */
 
-  const cs_lnum_t  face_num_shift[2] = {0,
-                                        mesh->n_b_faces};
+  const cs_lnum_t  face_num_shift[2] = {0, mesh->n_b_faces};
 
   const cs_lnum_t  *face_vertices_idx[2] = {mesh->b_face_vtx_idx,
                                             mesh->i_face_vtx_idx};
   const cs_lnum_t  *face_vertices_num[2] = {mesh->b_face_vtx_lst,
                                             mesh->i_face_vtx_lst};
 
-  BFT_MALLOC(elt_buf, elt_buf_size, int);
-  for (int ii = 0; ii < elt_buf_size; ii++)
+  mcIdType *elt_buf = NULL;
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
+  for (cs_lnum_t  ii = 0; ii < elt_buf_size; ii++)
     elt_buf[ii] = -1;
 
   /* Allocate the cells array */
@@ -413,10 +412,11 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
   for (cs_lnum_t ic = 0; ic < n_elts; ic++) {
 
-    int n_vtx;
+    mcIdType  n_vtx;
     cs_lnum_t cell_vtx[8];
 
-    i = ic;
+    cs_lnum_t i = ic;
+
     fvm_element_t fvm_type = fvm_nodal_from_desc_cell(i,
                                                       2,
                                                       face_num_shift,
@@ -474,19 +474,19 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
     default:
       type = INTERP_KERNEL::NORM_POLYHED;
 
-      int connect_size = 0;
-
       n_vtx = 0;
 
       cs_lnum_t s_id = cell_faces_idx[i] - 1;
       cs_lnum_t e_id = cell_faces_idx[i+1] -1;
 
-      for (j = s_id; j < e_id; j++) {
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
         int face_sgn = 0;
+        cs_lnum_t face_id;
         if (cell_faces_num[j] > 0) {
           face_id  = cell_faces_num[j] - 1;
           face_sgn = 1;
-        } else {
+        }
+        else {
           face_id  = -cell_faces_num[j] - 1;
           face_sgn = -1;
         }
@@ -498,37 +498,41 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
         cs_lnum_t v_id_start = face_vertices_idx[fl][face_id];
         cs_lnum_t v_id_end   = face_vertices_idx[fl][face_id + 1];
-        int n_face_vertices  = v_id_end - v_id_start;
+        cs_lnum_t n_face_vertices  = v_id_end - v_id_start;
 
         while (n_vtx + n_face_vertices + 1 > elt_buf_size) {
           elt_buf_size *= 2;
-          BFT_REALLOC(elt_buf, elt_buf_size, int);
+          BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
         }
 
         /* Add separator after first face */
         if (j > s_id)
           elt_buf[n_vtx++] = -1;
 
-        const int        *_face_perm    = NULL;
-          _get_face_vertices_permutation(n_face_vertices);
+        const cs_lnum_t *_face_perm = NULL;
+        _get_face_vertices_permutation(n_face_vertices);
         if (_face_perm != NULL) {
-          for (int ik = 0; ik < n_face_vertices; ik++) {
-            int iik = _face_perm[ik];
-            int l = v_id_start
-                  + (n_face_vertices + (iik*face_sgn))%n_face_vertices;
-            int vid = face_vertices_num[fl][l];
+          for (cs_lnum_t  ik = 0; ik < n_face_vertices; ik++) {
+            cs_lnum_t iik = _face_perm[ik];
+            cs_lnum_t l =   v_id_start
+                          + (  n_face_vertices
+                             + (iik*face_sgn))%n_face_vertices;
+            cs_lnum_t vid = face_vertices_num[fl][l];
             elt_buf[n_vtx++] = vtx_id[vid];
           }
-        } else {
-          for (int ik = 0; ik < n_face_vertices; ik++) {
-            int l = v_id_start
-                  + (n_face_vertices + (ik*face_sgn))%n_face_vertices;
-            int vid = face_vertices_num[fl][l];
+        }
+        else {
+          for (cs_lnum_t ik = 0; ik < n_face_vertices; ik++) {
+            cs_lnum_t l =   v_id_start
+                          + (  n_face_vertices
+                             + (ik*face_sgn))%n_face_vertices;
+            cs_lnum_t vid = face_vertices_num[fl][l];
             elt_buf[n_vtx++] = vtx_id[vid];
           }
         }
       } /* Loop on j (cell faces) */
     } /* switch on cell_type */
+
     med_mesh->insertNextCell(type, n_vtx, elt_buf);
   } /* Loop on cells */
 
@@ -542,11 +546,13 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
 #endif /* HAVE_MEDCOUPLING - BEGINNING OF PRIVATE FUNCTIONS */
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*=============================================================================
  * Public functions
  *============================================================================*/
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   create a new cs_medcoupling_mesh_t instance
  *
@@ -558,11 +564,11 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
-                           const char  *select_criteria,
+                           const char  *selection_criteria,
                            int          elt_dim)
 {
   cs_medcoupling_mesh_t *m = NULL;
@@ -574,9 +580,14 @@ cs_medcoupling_mesh_create(const char  *name,
 #else
 
   BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
-  BFT_MALLOC(m->sel_criteria, strlen(select_criteria)+1, char);
-  strcpy(m->sel_criteria, select_criteria);
 
+  if (selection_criteria != NULL) {
+    BFT_MALLOC(m->sel_criteria, strlen(selection_criteria)+1, char);
+    strcpy(m->sel_criteria, selection_criteria);
+  } else {
+    BFT_MALLOC(m->sel_criteria, strlen("all[]")+1, char);
+    strcpy(m->sel_criteria, "all[]");
+  }
   m->elt_dim  = elt_dim;
   m->n_elts   = 0;
   m->elt_list = NULL;
@@ -594,7 +605,7 @@ cs_medcoupling_mesh_create(const char  *name,
   return m;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief copy a cs_mesh_t into a cs_medcoupling_mesh_t
  *
@@ -604,9 +615,8 @@ cs_medcoupling_mesh_create(const char  *name,
  *                      for interpolation to reduce the matrix sice.
  *                      0: Do not use a reduced bbox
  *                      1: Use a reduced bbox
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
@@ -630,7 +640,7 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
 
     BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
 
-    BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, int);
+    BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
     _assign_cell_mesh(csmesh,
                       pmmesh->n_elts,
@@ -665,24 +675,19 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
 
   }
 #endif
-
-  return;
-
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy a cs_medcoupling_mesh_t
  *
  * \param[in] mesh  cs_medcoupling_mesh_t pointer
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh)
+cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh)
 {
-
   BFT_FREE(mesh->sel_criteria);
   BFT_FREE(mesh->elt_list);
   BFT_FREE(mesh->new_to_old);
@@ -693,67 +698,90 @@ cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh)
 #endif
 
   BFT_FREE(mesh);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
-
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's spatial dimension
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated spatial dimension
+ */
 /*----------------------------------------------------------------------------*/
-int
-cs_medcoupling_mesh_get_dim(cs_medcoupling_mesh_t *m)
-{
 
+int
+cs_medcoupling_mesh_get_dim(cs_medcoupling_mesh_t  *m)
+{
   int retval = -1;
   if (m != NULL)
     retval = m->elt_dim;
 
   return retval;
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's number of elements
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return associated number of elements
+ */
+/*----------------------------------------------------------------------------*/
+
 cs_lnum_t
-cs_medcoupling_mesh_get_n_elts(cs_medcoupling_mesh_t *m)
+cs_medcoupling_mesh_get_n_elts(cs_medcoupling_mesh_t  *m)
 {
-
   cs_lnum_t retval = 0;
   if (m != NULL)
     retval = m->n_elts;
 
   return retval;
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-cs_lnum_t *
-cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t *m)
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated elements, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t  *m)
 {
-
-  cs_lnum_t *retval = NULL;
+  const cs_lnum_t *retval = NULL;
 
   if (m != NULL)
     retval = m->elt_list;
 
   return retval;
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-int *
-cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t *m)
+/*!
+ * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ * \return ids of associated elements, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m)
 {
-
-  int *retval = NULL;
+  const cs_lnum_t *retval = NULL;
 
   if (m != NULL)
     retval = m->new_to_old;
 
   return retval;
 }
-/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -398,7 +398,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
     /* calculate the physical pressure 'pphy' */
 
-    if (cs_glob_atmo_option->imeteo == 0) {
+    if (cs_glob_atmo_option->meteo_profile == 0) {
       cs_atmo_profile_std(cell_cen[c_id][2], &pphy, &dum, &dum);
     }
     else {

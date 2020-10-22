@@ -124,10 +124,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function which defines the evolution of a quantity according to the
- *         number of iteration already done, the current time and any structure
- *         given as a parameter
+ *         current time and any structure given as a parameter
  *
- * \param[in]   time_iter   current number of iterations
  * \param[in]   time        value of the time at the end of the last iteration
  * \param[in]   input       pointer to a structure cast on-the-fly
  * \param[in]   retval      result of the evaluation
@@ -135,8 +133,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_time_func_t) (int           time_iter,
-                  double        time,
+(cs_time_func_t) (double        time,
                   void         *input,
                   cs_real_t    *retval);
 
@@ -433,7 +430,8 @@ typedef enum {
  * \var CS_PARAM_SLES_CLASS_MUMPS
  * Solvers available with MUMPS (without the PETSc interface)
  *
- * \var CS_PARAM_SLES_CLASS_PETSC Solvers available in PETSc. Please notice that
+ * \var CS_PARAM_SLES_CLASS_PETSC
+ * Solvers available in PETSc. Please notice that
  * the MUMPS solver can be handled within PETSc if the installation of PETSc
  * includes the MUMPS library
  *
@@ -488,7 +486,7 @@ typedef enum {
  *
  * \var CS_PARAM_PRECOND_AMG
  * Algebraic multigrid preconditioner (additional options may be set using
- * \ref \cs_param_amg_type_t)
+ * \ref cs_param_amg_type_t)
  *
  * \var CS_PARAM_PRECOND_AMG_BLOCK
  * Algebraic multigrid preconditioner by block (useful in case of vector
@@ -566,7 +564,7 @@ typedef enum {
  *
  * \var CS_PARAM_ITSOL_AMG
  *  Algebraic multigrid solver (additional options may be set using
- *  \ref \cs_param_amg_type_t)
+ *  \ref cs_param_amg_type_t)
  *
  * \var CS_PARAM_ITSOL_BICG
  *  Bi-Conjuguate gradient (useful for non-symmetric systems)

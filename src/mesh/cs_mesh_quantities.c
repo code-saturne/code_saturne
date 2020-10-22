@@ -2260,13 +2260,13 @@ cs_mesh_quantities_create(void)
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_quantities_t *
-cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq)
 {
-  cs_mesh_quantities_free_all(mesh_quantities);
+  cs_mesh_quantities_free_all(mq);
 
-  BFT_FREE(mesh_quantities);
+  BFT_FREE(mq);
 
-  return (mesh_quantities);
+  return (mq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2569,17 +2569,17 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->cell_f_vol = mq->cell_vol;
 
   /* Porous models */
-  if (mq->has_disable_flag == 1) {
-    cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-    if (mq->c_disable_flag == NULL)
-      BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-      mq->c_disable_flag[cell_id] = 0;
-  }
-  else {
-    if (mq->c_disable_flag == NULL)
-      BFT_REALLOC(mq->c_disable_flag, 1, int);
-    mq->c_disable_flag[0] = 0;
+  if (mq->c_disable_flag == NULL) {
+    if (mq->has_disable_flag == 1) {
+      cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+      BFT_MALLOC(mq->c_disable_flag, n_cells_ext, int);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+        mq->c_disable_flag[cell_id] = 0;
+    }
+    else {
+      BFT_MALLOC(mq->c_disable_flag, 1, int);
+      mq->c_disable_flag[0] = 0;
+    }
   }
 
   mq->min_f_vol = mq->min_vol;
@@ -2610,8 +2610,11 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   if (mq->djjpf == NULL)
     BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
 
-  if (mq->b_sym_flag == NULL)
+  if (mq->b_sym_flag == NULL) {
     BFT_MALLOC(mq->b_sym_flag, n_b_faces, int);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      mq->b_sym_flag[i] = 1;
+  }
 
   /* Compute some distances relative to faces and associated weighting */
 

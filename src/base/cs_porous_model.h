@@ -71,6 +71,15 @@ cs_porous_model_set_model(int  porous_model);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize disable_flag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_init_disable_flag(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set (unset) has_disable_flag
  *
  * \param[in]  flag   1: on, 0: off
@@ -88,6 +97,17 @@ cs_porous_model_set_has_disable_flag(int  flag);
 
 void
 cs_porous_model_init_fluid_quantities(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic computation of the face porosity and factors.
+ *
+ * This is useful for the integral porous model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_auto_face_porosity(void);
 
 /*----------------------------------------------------------------------------*/
 

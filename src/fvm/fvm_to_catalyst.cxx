@@ -75,6 +75,9 @@
 #include <vtkCPInputDataDescription.h>
 #include <vtkCPProcessor.h>
 #include <vtkCPPythonScriptPipeline.h>
+#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
+#include <vtkCPPythonScriptV2Pipeline.h>
+#endif
 #include <vtkSmartPointer.h>
 
 #include <vtkXMLUnstructuredGridWriter.h>
@@ -192,7 +195,7 @@ MPI_Comm  _reference_comm = MPI_COMM_NULL;  /* Reference communicator */
 /*----------------------------------------------------------------------------
  * Check if a script is a Catalyst script
  *
- * The script only does cursury checks, so may return false positives
+ * The script only does cursory checks, so may return false positives
  * in some cases, but using "incorrect" scripts for Catalyst only
  * leads to extra warnings, which should be ok pending a more general
  * file checker.
@@ -342,7 +345,7 @@ _add_script(const char         *path)
 
   if (pipeline->Initialize(path) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error initializing pipeline from \"%s\":\n\n"), path);
+              _("Error initializing pipeline from \"%s\""), path);
 
   /* pipeline->SetGhostLevel(1); */
   _processor->AddPipeline(pipeline);
@@ -350,6 +353,60 @@ _add_script(const char         *path)
 
   return id;
 }
+
+#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
+
+/*----------------------------------------------------------------------------
+ * Add a Catalyst V2 pipeline if not already present.
+ *
+ * parameters:
+ *   path <-- V2 pipeline ".zip" file path
+ *
+ * returns:
+ *   id of pipeline script in list, or -1 if not valid
+ *----------------------------------------------------------------------------*/
+
+static int
+_add_v2_pipeline(const char  *path)
+{
+  assert(path != NULL);
+
+  /* Check that we did not already add this file */
+
+  for (int i = 0; i < _n_scripts; i++) {
+    if (strcmp(_scripts[i], path) == 0)
+      return i;
+  }
+
+  /* Create Catalyst pipeline and check the file is valid */
+
+  vtkNew<vtkCPPythonScriptV2Pipeline> pipeline;
+  if (pipeline->InitializeFromZIP(path) == false) {
+    bft_printf(_("\nFile \"%s\"\n"
+                 "does not seem to contain a Catalyst Python pipeline.\n"),
+               path);
+    pipeline->Delete();
+    return -1;
+  }
+
+  int id = _n_scripts;
+  _n_scripts += 1;
+
+  BFT_REALLOC(_scripts, _n_scripts, char *);
+
+  size_t l = strlen(path);
+  BFT_MALLOC(_scripts[id], l+1, char);
+  strncpy(_scripts[id], path, l);
+  _scripts[id][l] = '\0';
+
+  /* pipeline->SetGhostLevel(1); */
+  _processor->AddPipeline(pipeline);
+  pipeline->Delete();
+
+  return id;
+}
+
+#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
 
 /*----------------------------------------------------------------------------
  * Add Catalyst scripts from directoty if not already present.
@@ -367,19 +424,47 @@ _add_dir_scripts(const char  *dir_path)
   char **dir_files = cs_file_listdir(dir_path);
 
   for (int i = 0; dir_files[i] != NULL; i++) {
-    size_t l = strlen(dir_files[i]);
-    /* Filter: Python files only */
-    if (l > 4) {
-      if (strncmp(dir_files[i] + l - 3, ".py", 3) == 0) {
-        char *tmp_name = NULL;
-        BFT_MALLOC(tmp_name,
-                   strlen(dir_path) + 1 + strlen(dir_files[i]) + 1,
-                   char);
-        sprintf(tmp_name, "%s/%s", dir_path, dir_files[i]);
-        _add_script(tmp_name);
-        BFT_FREE(tmp_name);
+
+    const char *file_name = dir_files[i];
+    const char *ext = NULL;
+    int l_ext = 0;
+
+    /* Find extension */
+    for (int j = strlen(file_name) - 1; j > -1; j--) {
+      l_ext++;
+      if (file_name[j] == '.') {
+        ext = file_name + j;
+        break;
       }
     }
+    if (ext == NULL)
+      continue;
+
+    /* Filter: Python files only */
+    if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
+        char *tmp_name = NULL;
+      BFT_MALLOC(tmp_name,
+                 strlen(dir_path) + 1 + strlen(file_name) + 1,
+                 char);
+      sprintf(tmp_name, "%s/%s", dir_path, file_name);
+      _add_script(tmp_name);
+      BFT_FREE(tmp_name);
+    }
+
+#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
+
+    /* Filter: Catalyst V2 pipline ".zip" files only */
+    else if (l_ext == 4 && strncmp(ext, ".zip", 4) == 0) {
+      char *tmp_name = NULL;
+      BFT_MALLOC(tmp_name,
+                 strlen(dir_path) + 1 + strlen(file_name) + 1,
+                 char);
+      sprintf(tmp_name, "%s/%s", dir_path, file_name);
+      _add_v2_pipeline(tmp_name);
+      BFT_FREE(tmp_name);
+    }
+#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
+
     BFT_FREE(dir_files[i]);
   }
 

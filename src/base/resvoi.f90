@@ -101,7 +101,7 @@ integer          icvflb, kiflux, kbflux, icflux_id, bcflux_id
 integer          ivoid(1)
 integer          kscmin, kscmax, iclmin(1), iclmax(1)
 
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp, epsrsp, thetap
+double precision blencp, epsilp, epsrgp, climgp, relaxp, epsrsp, thetap
 
 double precision rvoid(1)
 double precision vmin(1), vmax(1)
@@ -184,19 +184,19 @@ thetv = vcopt%thetav
 ! --- Initialization
 
 do iel = 1, ncel
-   smbrs(iel) = 0.d0
+  smbrs(iel) = 0.d0
 enddo
 
 do iel = 1, ncel
-   rovsdt(iel) = 0.d0
+  rovsdt(iel) = 0.d0
 enddo
 
 ! Arbitrary initialization (no diffusion for void fraction)
 do ifac = 1, nfac
-   viscf(ifac) = 1.d0
+  viscf(ifac) = 1.d0
 enddo
 do ifac = 1, nfabor
-   viscb(ifac) = 1.d0
+  viscb(ifac) = 1.d0
 enddo
 
 ! Initialize void fraction convection flux
@@ -340,7 +340,6 @@ epsilp = vcopt%epsilo
 epsrsp = vcopt%epsrsm
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
@@ -348,12 +347,11 @@ icvflb = 0
 normp = -1.d0
 
 call codits &
-!==========
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    cvara_voidf     , cvara_voidf     ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

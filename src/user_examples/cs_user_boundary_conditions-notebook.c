@@ -44,10 +44,6 @@
 
 #include "cs_headers.h"
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
-#include "cs_medcoupling_remapper.hxx"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -96,9 +92,8 @@ cs_user_boundary_conditions(int         nvar,
   /*! [bc_param] */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const int keyvar = cs_field_key_id("variable_id");
   cs_field_t *scalar = cs_field_by_name_try("scalar1");
-  int iscal = cs_field_get_key_int(scalar, keyvar) - 1;
+  int var_id = cs_field_get_key_int(scalar, cs_field_key_id("variable_id")) - 1;
 
   cs_lnum_t  nelts = 0;
   cs_lnum_t *lstelt = NULL;
@@ -111,14 +106,30 @@ cs_user_boundary_conditions(int         nvar,
   cs_selector_get_b_face_list("inlet", &nelts, lstelt);
 
   for (cs_lnum_t ielt = 0; ielt < nelts; ielt++) {
-    cs_lnum_t f_id = lstelt[ielt];
+    cs_lnum_t face_id = lstelt[ielt];
 
-    icodcl[iscal*n_b_faces + f_id] = 1;
-    rcodcl[iscal*n_b_faces + f_id] = t_bnd;
+    icodcl[var_id*n_b_faces + face_id] = 1;
+    rcodcl[var_id*n_b_faces + face_id] = t_bnd;
   }
 
   BFT_FREE(lstelt);
   /*! [apply_bc] */
+  /* Use boundary zones */
+  const cs_zone_t *z = cs_boundary_zone_by_name("seine");
+
+  /* Get the fluid mesure (i.e. surface) of the zone */
+  cs_real_t flux = 1. / z->f_measure;
+
+  for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+    cs_lnum_t face_id = z->elt_ids[elt_id];
+
+    /* Imposed a normalised flux on the scalar */
+    icodcl[var_id*n_b_faces + face_id] = 3;
+    rcodcl[2 * n_b_faces * nvar +  var_id*n_b_faces + face_id] = flux;
+  }
+
+
+
 }
 
 /*----------------------------------------------------------------------------*/

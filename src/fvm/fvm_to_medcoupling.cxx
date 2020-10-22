@@ -620,11 +620,11 @@ _write_connect_block(fvm_element_t      type,
                      MEDCouplingUMesh  *med_mesh)
 {
   int vertex_order[8];
-  int elt_buf[8];
+  mcIdType elt_buf[8];
   cs_lnum_t  i;
   int  j;
 
-  const int  stride = fvm_nodal_n_vertices_element[type];
+  const mcIdType  stride = fvm_nodal_n_vertices_element[type];
   INTERP_KERNEL::NormalizedCellType med_type = _get_norm_elt_type(type);
 
   _get_vertex_order(med_type, vertex_order);
@@ -656,16 +656,16 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
   cs_lnum_t  face_length, face_id;
 
   int elt_buf_size = 8;
-  int *elt_buf = NULL;
+  mcIdType *elt_buf = NULL;
 
-  BFT_MALLOC(elt_buf, elt_buf_size, int);
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
   /* Write cell/vertex connectivity */
   /*--------------------------------*/
 
   for (i = 0; i < section->n_elements; i++) {
 
-    int  m = 0;
+    mcIdType  m = 0;
 
     /* Loop on cell faces */
 
@@ -689,7 +689,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
 
       while (m + face_length + 1 > elt_buf_size) {
         elt_buf_size *= 2;
-        BFT_REALLOC(elt_buf, elt_buf_size, int);
+        BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
       }
 
       if (j >  section->face_index[i])
@@ -727,21 +727,21 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
   cs_lnum_t   i, j;
 
   int elt_buf_size = 8;
-  int *elt_buf = NULL;
+  mcIdType *elt_buf = NULL;
 
-  BFT_MALLOC(elt_buf, elt_buf_size, int);
+  BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
   /* Loop on all polygonal faces */
   /*-----------------------------*/
 
   for (i = 0; i < section->n_elements; i++) {
 
-    int k = 0;
+    mcIdType k = 0;
 
     int face_size = section->vertex_index[i+1] - section->vertex_index[i];
     while (elt_buf_size < face_size) {
       elt_buf_size *= 2;
-      BFT_REALLOC(elt_buf, elt_buf_size, int);
+      BFT_REALLOC(elt_buf, elt_buf_size, mcIdType);
     }
 
     for (j = section->vertex_index[i];

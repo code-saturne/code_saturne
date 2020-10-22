@@ -61,8 +61,8 @@
 #include "cs_lagr.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
-#include "cs_math.h"
 #include "cs_mass_source_terms.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
@@ -120,26 +120,24 @@ BEGIN_C_DECLS
  * Solve the \f$ k - \omega \f$ SST for incompressible flows
  * or slightly compressible flows for one time step.
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     ncepdp        number of cells with head loss
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
- *                              (cf. cs_user_mass_source_terms)
+ *                              size: [nvar][ncesmp]
  * \param[in]     dt            time step (per cell)
  * \param[in]     smacel        values of the variables associated to the
- *                              mass source
- *                              (for ivar=ipr, smacel is the mass flux)
+ *                              mass source (for the pressure variable,
+ *                              smacel is the mass flux)
+ *                              size: [nvar][ncesmp]
  */
- /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw(int              nvar,
-                 int              ncesmp,
-                 int              icetsm[],
-                 int              itypsm[nvar][ncesmp],
+cs_turbulence_kw(cs_lnum_t        ncesmp,
+                 cs_lnum_t        icetsm[],
+                 int              itypsm[],
                  const cs_real_t  dt[],
-                 cs_real_t        smacel[nvar][ncesmp])
+                 cs_real_t        smacel[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -257,18 +255,16 @@ cs_turbulence_kw(int              nvar,
   cs_real_t *coefaf_o = (cs_real_t *)f_omg->bc_coeffs->af;
   cs_real_t *coefbf_o = (cs_real_t *)f_omg->bc_coeffs->bf;
 
-  cs_var_cal_opt_t vcopt_k;
-  cs_field_get_key_struct(f_k, key_cal_opt_id, &vcopt_k);
+  cs_var_cal_opt_t *vcopt_k
+    = cs_field_get_key_struct_ptr(f_k, key_cal_opt_id);
 
-  cs_var_cal_opt_t vcopt_w;
-  cs_field_get_key_struct(f_omg, key_cal_opt_id, &vcopt_w);
+  cs_var_cal_opt_t *vcopt_w
+    = cs_field_get_key_struct_ptr(f_omg, key_cal_opt_id);
 
-  cs_var_cal_opt_t vcopt_k_loc;
-  cs_field_get_key_struct(f_k, key_cal_opt_id, &vcopt_k_loc);
+  cs_var_cal_opt_t vcopt_k_loc = *vcopt_k;
   vcopt_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
-  cs_var_cal_opt_t vcopt_w_loc;
-  cs_field_get_key_struct(f_omg, key_cal_opt_id, &vcopt_w_loc);
+  cs_var_cal_opt_t vcopt_w_loc = *vcopt_w;
   vcopt_w_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
   cs_var_cal_opt_t vcopt_u;
@@ -314,7 +310,7 @@ cs_turbulence_kw(int              nvar,
 
   const cs_real_t *w_dist =  cs_field_by_name("wall_distance")->val;
 
-  if (vcopt_k.iwarni >= 1)
+  if (vcopt_k->verbosity >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n"
                   "  ** Solving k-omega\n"
@@ -354,8 +350,8 @@ cs_turbulence_kw(int              nvar,
 
   if (istprv >= 0) {
 
-    cs_real_t thetak = vcopt_k.thetav;
-    cs_real_t thetaw = vcopt_w.thetav;
+    cs_real_t thetak = vcopt_k->thetav;
+    cs_real_t thetaw = vcopt_w->thetav;
     cs_real_t tuexpk;
     cs_real_t tuexpw;
 
@@ -595,8 +591,8 @@ cs_turbulence_kw(int              nvar,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
-    tinstk[c_id] += vcopt_k.istat*romvsd;
-    tinstw[c_id] += vcopt_w.istat*romvsd;
+    tinstk[c_id] += vcopt_k->istat*romvsd;
+    tinstw[c_id] += vcopt_w->istat*romvsd;
   }
 
   /* Compute production terms
@@ -727,7 +723,7 @@ cs_turbulence_kw(int              nvar,
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-      cs_gradient_type_by_imrgra(vcopt_k.imrgra,
+      cs_gradient_type_by_imrgra(vcopt_k->imrgra,
                                  &gradient_type,
                                  &halo_type);
 
@@ -736,15 +732,14 @@ cs_turbulence_kw(int              nvar,
                          halo_type,
                          1,     /* inc */
                          true,  /* iccocg */
-                         vcopt_k.nswrgr,
+                         vcopt_k->nswrgr,
                          0,
                          0,
                          1,             /* w_stride */
-                         vcopt_k.iwarni,
-                         vcopt_k.imligr,
-                         vcopt_k.epsrgr,
-                         vcopt_k.extrag,
-                         vcopt_k.climgr,
+                         vcopt_k->verbosity,
+                         vcopt_k->imligr,
+                         vcopt_k->epsrgr,
+                         vcopt_k->climgr,
                          NULL,
                          bromo,
                          viscb,
@@ -994,49 +989,38 @@ cs_turbulence_kw(int              nvar,
 
   if (ncesmp > 0) {
 
-    int itypsm_k[ncesmp];
-    int itypsm_omg[ncesmp];
-    cs_real_t smacel_k[ncesmp];
-    cs_real_t smacel_omg[ncesmp];
-    cs_real_t smacel_p[ncesmp];
-    for (int ii = 0; ii < ncesmp; ii++) {
-      itypsm_k[ii] = itypsm[ii][ivar_k];
-      itypsm_omg[ii] = itypsm[ii][ivar_omg];
-      smacel_k[ii] = smacel[ii][ivar_k];
-      smacel_omg[ii] = smacel[ii][ivar_omg];
-      smacel_p[ii] = smacel[ii][ivar_p];
-    }
-
     cs_real_t *gamk;
     cs_real_t *gamw;
     BFT_MALLOC(gamk, n_cells_ext, cs_real_t);
     BFT_MALLOC(gamw, n_cells_ext, cs_real_t);
 
-    /* On incremente SMBRS par -Gamma.var_prev et ROVSDT par Gamma */
+    /* We increment SMBRS by -Gamma.var_prev and ROVSDT by Gamma */
     /* ivar = k; */
 
-    cs_mass_source_terms(ncesmp,
+    cs_mass_source_terms(1,
                          1,
+                         ncesmp,
                          icetsm,
-                         itypsm_k,
+                         itypsm + ncesmp*ivar_k,
                          cell_f_vol,
                          cvara_k,
-                         smacel_k,
-                         smacel_p,
+                         smacel + ncesmp*ivar_k,
+                         smacel + ncesmp*ivar_p,
                          smbrk,
                          tinstk,
                          gamk);
 
     /* ivar = omg; */
 
-    cs_mass_source_terms(ncesmp,
+    cs_mass_source_terms(1,
                          1,
+                         ncesmp,
                          icetsm,
-                         itypsm_omg,
+                         itypsm + ncesmp*ivar_omg,
                          cell_f_vol,
                          cvara_omg,
-                         smacel_omg,
-                         smacel_p,
+                         smacel + ncesmp*ivar_omg,
+                         smacel + ncesmp*ivar_p,
                          smbrw,
                          tinstw,
                          gamw);
@@ -1127,12 +1111,12 @@ cs_turbulence_kw(int              nvar,
 
     /* Handle k */
 
-    if (vcopt_k.idiff >=  1) {
+    if (vcopt_k->idiff >=  1) {
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         xxf1 = xf1[c_id];
         sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
-        w7[c_id] = viscl[c_id] + vcopt_k.idifft*cvisct[c_id]/sigma;
+        w7[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
       }
 
       cs_face_viscosity(m,
@@ -1178,7 +1162,7 @@ cs_turbulence_kw(int              nvar,
                       NULL,
                       w5);
 
-    if (vcopt_k.iwarni >= 2) {
+    if (vcopt_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_k),
@@ -1187,11 +1171,11 @@ cs_turbulence_kw(int              nvar,
 
     /* Handle omega */
 
-    if (vcopt_w.idiff >= 1) {
+    if (vcopt_w->idiff >= 1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         xxf1 = xf1[c_id];
         sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
-        w7[c_id] = viscl[c_id] + vcopt_w.idifft*cvisct[c_id]/sigma;
+        w7[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
       }
 
       cs_face_viscosity(m,
@@ -1237,7 +1221,7 @@ cs_turbulence_kw(int              nvar,
                       NULL,
                       w6);
 
-    if (vcopt_w.iwarni >= 2) {
+    if (vcopt_w->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_omg),
@@ -1322,12 +1306,12 @@ cs_turbulence_kw(int              nvar,
      ---------------------------------- */
 
   /* Face viscosity */
-  if (vcopt_k.idiff >= 1) {
+  if (vcopt_k->idiff >= 1) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       xxf1 = xf1[c_id];
       sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
-      w1[c_id] = viscl[c_id] + vcopt_k.idifft*cvisct[c_id]/sigma;
+      w1[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
     }
 
     cs_face_viscosity(m,
@@ -1385,11 +1369,11 @@ cs_turbulence_kw(int              nvar,
   /* Solve for Omega */
 
   /* Face viscosity */
-  if (vcopt_w.idiff >=  1) {
+  if (vcopt_w->idiff >=  1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       xxf1 = xf1[c_id];
       sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
-      w1[c_id] = viscl[c_id] + vcopt_w.idifft*cvisct[c_id]/sigma;
+      w1[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
     }
 
     cs_face_viscosity(m,

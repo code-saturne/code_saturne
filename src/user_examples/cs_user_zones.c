@@ -48,6 +48,96 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Example function for advanced selection of cells adjacent to a boundary
+ * group named "G3".
+ *
+ * If non-empty and not containing all elements, a list of elements
+ * of the parent mesh belonging to the location should be allocated
+ * (using BFT_MALLOC) and defined by this function when called.
+ * This list's lifecycle is then managed by the mesh location object.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   input       <-- pointer to optional (untyped) value or structure.
+ *   m           <-- pointer to associated mesh structure.
+ *   location_id <-- id of associated location.
+ *   n_elts      --> number of selected elements
+ *   elt_ids     --> list of selected elements (0 to n-1 numbering).
+ *----------------------------------------------------------------------------*/
+
+/*! [select_func_vol2] */
+static void
+_g3_boundary_cells(void              *input,
+                   const cs_mesh_t   *m,
+                   int                location_id,
+                   cs_lnum_t         *n_elts,
+                   cs_lnum_t        **elt_ids)
+{
+  CS_UNUSED(input);
+  CS_UNUSED(location_id);
+
+  /* Allocate selection list */
+
+  cs_lnum_t n_b_faces = 0;
+  cs_lnum_t *b_face_ids = NULL;
+
+  BFT_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
+
+  cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids);
+
+  char *cell_flag;
+  BFT_MALLOC(cell_flag, m->n_cells, char);
+
+  for (cs_lnum_t i = 0; i < m->n_cells; i++)
+    cell_flag[i] = 0;
+
+  /* Now that flag is built, test for adjacency */
+
+  for (cs_lnum_t i= 0; i < n_b_faces; i++) {
+    cs_lnum_t face_id = b_face_ids[i];
+    cs_lnum_t c_id = m->b_face_cells[face_id];
+    cell_flag[c_id] = 1;
+  }
+
+  /* Now build list from flag */
+
+  cs_lnum_t _n_elts = 0;
+  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+    if (cell_flag[i] != 0)
+      _n_elts++;
+  }
+
+  cs_lnum_t *_elt_ids;
+  BFT_MALLOC(_elt_ids, _n_elts, cs_lnum_t);
+
+  _n_elts = 0;
+  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+    if (cell_flag[i] != 0) {
+      _elt_ids[_n_elts] = i;
+      _n_elts++;
+    }
+  }
+
+  /* Free memory */
+
+  BFT_FREE(b_face_ids);
+  BFT_FREE(cell_flag);
+
+  /* Set return values */
+
+  *n_elts = _n_elts;
+  *elt_ids = _elt_ids;
+}
+/*! [select_func_vol2] */
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -93,6 +183,23 @@ cs_user_zones(void)
     }
   }
   /*! [user_zones_volume_1] */
+
+  /*! [user_zones_volume_2] */
+  {
+    char name[128], criteria[128];
+
+    for (int i = 0; i < 3; i++) {
+
+      double s_coords[] = {0, 0, 2.0*i};
+
+      snprintf(name, 127, "source_%d", i);
+      snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
+               s_coords[0], s_coords[1], s_coords[2]);
+
+      cs_volume_zone_define_by_func("G3_B", _g3_boundary_cells, NULL, 0);
+    }
+  }
+  /*! [user_zones_volume_2] */
 
    /* Example:
      Define zones from a text file defining turbines modelled

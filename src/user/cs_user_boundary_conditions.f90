@@ -123,9 +123,9 @@
 !>                  - \c rcodcl(ifac, iv, 1) = fluid velocity in the y direction
 !>                  - \c rcodcl(ifac, iw, 1) = fluid velocity in the z direction
 !>    - Value of the dynamic roughness height to specify in
-!>                  - \c rcodcl(ifac, iu, 3)
+!>                  - \c boundary_roughness field
 !>    - Value of the scalar roughness height (if required) to specify in
-!>                  - \c rcodcl(ifac, iv, 3) (values for iw are not used)
+!>                  - \c boundary_thermal_roughness
 !>    - Specific code and prescribed temperature value at wall if applicable:
 !>                  - \c icodcl(ifac, ivar)    = 6
 !>                  - \c rcodcl(ifac, ivar, 1) = prescribed temperature
@@ -235,12 +235,12 @@
 !>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad F).n
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 6:
-!>      Roughness for the rough wall law
+!>      Roughness lenght scale for the rough wall law
 !>     - For velocities U, dynamic roughness
-!>         \c rcodcl(ifac, iu, 3) = roughd
+!>         \c boundary_roughness field contains the dynamic roughness length scale
 !>     - For other scalars, thermal roughness
-!>         \c rcodcl(ifac, iv, 3) = rough
-!>
+!>         \c boundary_thermal_roughness field contains the scalar roughness
+!>            length scale
 !>
 !> Note that if the user assigns a value to \c itypfb equal to \c ientre, \c isolib,
 !> \c isymet, \c iparoi, or \c iparug and does not modify \c icodcl (zero value by
@@ -382,8 +382,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t

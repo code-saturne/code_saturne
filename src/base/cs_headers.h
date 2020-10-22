@@ -45,6 +45,7 @@
 #include "cs_atmo_headers.h"
 #include "cs_cfbl_headers.h"
 #include "cs_cdo_headers.h"
+#include "cs_cogz_headers.h"
 #include "cs_ctwr_headers.h"
 #include "cs_darc_headers.h"
 #include "cs_elec_headers.h"
@@ -52,6 +53,7 @@
 #include "cs_lagr_headers.h"
 #include "cs_pprt_headers.h"
 #include "cs_rad_headers.h"
+#include "cs_turbulence_headers.h"
 
 /*----------------------------------------------------------------------------*/
 

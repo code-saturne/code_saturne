@@ -107,19 +107,21 @@ module optcal
   integer(c_int), pointer, save :: isto2t
 
   !> for each scalar, \ref isso2t specifies the time scheme activated
-  !> for the source terms of the equation for the scalar, apart from convection and
-  !> diffusion (for instance: variance production, user-specified terms, ...).
+  !> for the source terms of the equation for the scalar, apart from convection
+  !> and diffusion (for instance: variance production, user-specified terms,
+  !> ...).
   !> - 0: "standard" first-order: the terms which are linear
   !> functions of the solved variable are implicit and the others are explicit
   !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
   !> linear functions of the solved variable \f$\phi\f$ are expressed
   !> as second-order terms by interpolation (according to the formula
-  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetav associated with the variable \f$\phi\f$);
+  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetav associated with
+  !> the variable \f$\phi\f$);
   !> the other terms \f$S_e\f$ are expressed as second-order terms by
   !> extrapolation (according to the formula
-  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of \ref thetss (iscal) = 0.5)
+  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetss (iscal) = 0.5)
   !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same way as
   !> when \ref isso2t = 1; the other terms \f$S_e\f$ are extrapolated
   !> according to the same formula as when \ref isso2t = 1, but with
@@ -179,8 +181,8 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "total viscosity" when the extrapolation
-  !> has been activated (see \ref time_extrapolated key word), according to the formula
-  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> has been activated (see \ref time_extrapolated key word), according to the
+  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of \f$\theta\f$ = \ref thetvi is deduced from the value
   !> chosen for \ref time_extrapolated key word for the viscosity.
   !> Generally, only the value 0.5 is used.
@@ -191,10 +193,10 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "specific heat" when the extrapolation
-  !> has been activated (see \ref time_extrapolated field key int), according to the
-  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
-  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen for
-  !> the specific heat. Generally, only the value 0.5 is used.
+  !> has been activated (see \ref time_extrapolated field key int), according to
+  !> the formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen
+  !> for the specific heat. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -202,10 +204,11 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "diffusivity" when the extrapolation has
-  !> been activated (see \ref time_extrapolated key word), according to the formula
-  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> been activated (see \ref time_extrapolated key word), according to the
+  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of\f$\theta\f$ = \ref thetvs is deduced from the value
-  !> chosen for \ref time_extrapolated key word. Generally, only the value 0.5 is used.
+  !> chosen for \ref time_extrapolated key word. Generally, only the value 0.5
+  !> is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -429,13 +432,13 @@ module optcal
   !>    - for k,e     the same value is taken (value of k)
   !>    - for Rij, e  the same value is taken (value of r11)\n
   !> Hence, the time step used when solving the evolution equation for
-  !> the variable is the time step used for the dynamic equations (velocity/pressure)
-  !> multiplied by \ref cdtvar.
-  !> The size of the array \ref cdtvar is \ref dimens::nvar "nvar". For instance, the
-  !> multiplicative coefficient applied to the scalar 2 is cdtvar(isca(2))). Yet, the
-  !> value of cdtvar for the velocity components and the pressure is not used. Also,
-  !> although it is possible to change the value of \ref cdtvar for the turbulent
-  !> variables, it is highly not recommended.
+  !> the variable is the time step used for the dynamic equations
+  !> (velocity/pressure) multiplied by \ref cdtvar.
+  !> The size of the array \ref cdtvar is \ref dimens::nvar "nvar". For instance,
+  !> the multiplicative coefficient applied to the scalar 2 is cdtvar(isca(2))).
+  !> Yet, the value of cdtvar for the velocity components and the pressure is
+  !> not used. Also, although it is possible to change the value of \ref cdtvar
+  !> for the turbulent variables, it is highly not recommended.
   double precision, save :: cdtvar(nvarmx)
 
   !> relaxation coefficient for the steady algorithm
@@ -531,7 +534,8 @@ module optcal
   !> Activation of Hybrid RANS/LES model (only valid for iturb equal to 60)
   integer(c_int), pointer, save :: hybrid_turb
 
-  !> Activation of rotation/curvature correction for eddy viscosity turbulence models
+  !> Activation of rotation/curvature correction for eddy viscosity turbulence
+  !> models
   !>    - 0: false
   !>    - 1: true
   integer(c_int), pointer, save :: irccor
@@ -554,7 +558,10 @@ module optcal
   !>  - 2: one scale of friction velocities (log law)
   !>  - 3: two scales of friction velocities (log law)
   !>  - 4: two scales of friction velocities (log law) (scalable wall functions)
-  !>  - 5: two scales of friction velocities (mixing length based on V. Driest analysis)\n
+  !>  - 5: two scales of friction velocities (mixing length based on V. Driest
+  !>       analysis)
+  !>  - 6: wall function unifying rough and smooth friction regimes
+  !>  - 7: All \f$ y^+ \f$  for low Reynolds models\n
   !>  \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
   !>  (mixing length, LES and Spalart Allmaras).\n
   !>  \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
@@ -569,9 +576,9 @@ module optcal
   !>  two-scales model is usually at least as satisfactory as the one-scale
   !>  model.\n
   !>  The scalable wall function allows to virtually shift the wall when
-  !>  necessary in order to be always in a logarithmic layer. It is used to make up for
-  !>  the problems related to the use of High-Reynolds models on very refined
-  !>  meshes.\n
+  !>  necessary in order to be always in a logarithmic layer. It is used to make
+  !>  up for the problems related to the use of High-Reynolds models on very
+  !>  refined meshes.\n
   !>  Useful if \ref iturb is different from 50.
   integer(c_int), pointer, save :: iwallf
 
@@ -678,14 +685,15 @@ module optcal
   !> LRR).\n It is not recommended to take these terms into account:
   !> they have an influence only near the walls, their expression is hardly
   !> justifiable according to some authors and, in the configurations
-  !> studied with Code_Saturne, they did not bring any improvement in the results.\n
+  !> studied with code_saturne, they did not bring any improvement in
+  !> the results.\n
   !> In addition, their use induces an increase in the calculation time.\n
   !> The wall echo terms imply the calculation of the distance to the wall
   !> for every cell in the domain. See \ref icdpar for potential restrictions
   !> due to this.
   integer(c_int), pointer, save :: irijec
 
-  !> whole treatment of the diagonal part of the dissusion tensor of
+  !> whole treatment of the diagonal part of the diffusion tensor of
   !> \f$ \tens{R} \f$ and \f$ \varepsilon \f$
   !>    - 1: true (default)
   !>    - 0: simplified treatment
@@ -783,6 +791,11 @@ module optcal
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   real(c_double), pointer, save :: arak
 
+  !> Preconditioner for mass:
+  !>    - 0: dt (default)
+  !>    - 1: 1/A_u
+  integer(c_int), pointer, save :: mass_preconditioner
+
   !> indicates the algorithm for velocity/pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
@@ -838,17 +851,14 @@ module optcal
   !> improve static pressure algorithm
   !>    - 1: impose the equilibrium of the static part of the pressure
   !>         with any external force, even head losses
-  !>    - 2: compute an hydrostatic pressure due to buoyancy forces before
-  !>         the prediction step
   !>    - 0: no treatment (default)
   !>        When the density effects are important, the choice of \ref iphydr = 1
   !>        allows to improve the interpolation of the pressure and correct the
   !>        non-physical velocities which may appear in highly stratified areas
-  !>        or near horizontal walls (thus avoiding the use of
-  !>        \ref cs_var_cal_opt_t::extrag "extrag"
-  !>        if the non-physical velocities are due only to gravity effects).\n
-  !>        The improved algorithm also allows eradicating the velocity oscillations
-  !>        which tend to appear at the frontiers of areas with high head losses.\n
+  !>        or near horizontal walls.\n
+  !>        The improved algorithm also allows eradicating the velocity
+  !>        oscillations which tend to appear at the frontiers of areas with
+  !>        high head losses.\n
   !>        In the case of a stratified flow, the calculation cost is higher when
   !>        the improved algorithm is used (about 30\% depending on the case)
   !>        because the hydrostatic pressure must be recalculated at the outlet
@@ -894,8 +904,8 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: icalhy
 
-  !> use interpolated face diffusion coefficient instead of cell diffusion coefficient
-  !> for the mass flux reconstruction for the non-orthogonalities
+  !> use interpolated face diffusion coefficient instead of cell diffusion
+  !> coefficient for the mass flux reconstruction for the non-orthogonalities
   !>    - 1: true
   !>    - 0: false (default)
   integer(c_int), pointer, save :: irecmf
@@ -932,7 +942,8 @@ module optcal
   !>    - 1: the wall temperature is computed with a 0-D thermal model
   !>         with explicit numerical scheme
   !>    - 0: the wall temperature is imposed as constant by the user (default)
-  !>         and past to the copain correlation to evaluate the exchange coefficient
+  !>         and past to the copain correlation to evaluate the exchange
+  !>         coefficient
   integer, save :: itagms
 
 
@@ -1029,7 +1040,8 @@ module optcal
   ! Numerical parameters for the wall distance calculation
   !----------------------------------------------------------------------------
 
-  !> \defgroup num_wall_distance Numerical parameters for the wall distance calculation
+  !> \defgroup num_wall_distance Numerical parameters for the wall distance
+  !> calculation
 
   !> \addtogroup num_wall_distance
   !> \{
@@ -1053,28 +1065,34 @@ module optcal
   !> of the distance to the wall in case of calculation restart
   !> - 2: former algorithm (based on geometrical considerations), with
   !> reading of the distance to the wall from the restart file if possible\n
-  !> - -2: former algorithm (based on geometrical considerations) with systematic
-  !> recalculation of the distance to the wall in case of calculation restart.\n\n
-  !> In case of restart calculation, if the position of the walls haven’t changed,
-  !> reading the distance to the wall from the restart file can save a fair amount
-  !> of CPU time.\n Useful in \f$ R_{ij}-\epsilon \f$ model with wall echo
+  !> - -2: former algorithm (based on geometrical considerations) with
+  !> systematic recalculation of the distance to the wall in case of
+  !> calculation restart.\n\n
+  !> In case of restart calculation, if the position of the walls haven’t
+  !> changed, reading the distance to the wall from the restart file can save
+  !> a fair amount of computational time.\n Useful in \f$ R_{ij}-\epsilon \f$
+  !> model with wall echo
   !> (\ref iturb=30 and \ref irijec=1), in LES with van Driest damping
-  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST (\ref iturb=60).
-  !> By default, \ref icdpar is initialised to -1, in case there has been a change
-  !> in the definition of the boundary conditions between two computations (change
-  !> in the number or the positions of the walls). Yet, with the \f$k-\omega\f$ SST model,
-  !> the distance to the wall is needed to calculate the turbulent viscosity, which is
-  !> done before the calculation of the distance to the wall. Hence, when this model
-  !> is used (and only in that case), \ref icdpar is set to 1 by default, to ensure
-  !> total continuity of the calculation at restart. As a consequence, with the
-  !> \f$k-\omega\f$ SST model, if the number and positions of the walls are changed
+  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST
+  !> (\ref iturb=60).
+  !> By default, \ref icdpar is initialised to -1, in case there has been a
+  !> change in the definition of the boundary conditions between two
+  !> computations (change in the number or the positions of the walls).
+  !> Yet, with the \f$k-\omega\f$
+  !> SST model, the distance to the wall is needed to calculate the turbulent
+  !> viscosity, which is done before the calculation of the distance to the wall.
+  !> Hence, when this model is used (and only in that case), \ref icdpar is set
+  !> to 1 by default, to ensure total continuity of the calculation at restart.
+  !> As a consequence, with the \f$k-\omega\f$ SST model, if the number and
+  !> positions of the walls are changed
   !> at a calculation restart, it is mandatory for the user to set \ref icdpar
-  !> explicitly to -1, otherwise the distance to the wall used will not correspond
-  !> to the actual position of the walls.\n The former algorithm is not compatible
-  !> with parallelism nor periodicity. Also, whatever the value chosen for \ref icdpar,
-  !> the calculation of the distance to the wall is made at the most once for all at the
-  !> beginning of the calculation; it is therefore not compatible with moving walls.
-  !> Please contact the development team if you need to override this limitation.
+  !> explicitly to -1, otherwise the distance to the wall used will not
+  !> correspond to the actual position of the walls.\n The former algorithm
+  !> is not compatible with parallelism nor periodicity. Also, whatever the
+  !> value chosen for \ref icdpar, the calculation of the distance to the wall
+  !> is made at the most> once for all at the beginning of the calculation; it
+  !> is therefore not compatible with moving walls. Please contact the
+  !> development team if you need to override this limitation.
   integer, save :: icdpar
 
   !> \}
@@ -1099,8 +1117,8 @@ module optcal
   !> - 0: clipping to 0 for the lower range of values
   !> - 1: clipping to 0 for the lower range of values and to
   !> \f$(f-f_{min})(f_{max}-f)\f$ for higher values, where \f$f\f$ is
-  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and maximum
-  !> values specified by the user (i.e. scamin (ii) and scamax (ii))
+  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and
+  !> maximum values specified by the user (i.e. scamin (ii) and scamax (ii))
   !> - 2: clipping to max(0,scamin(iscal)) for lower values and to
   !>  scamax(iscal) for higher values.scamin and scamax are limits
   !> specified by the user.\n Useful for the scalars iscal for
@@ -1109,29 +1127,6 @@ module optcal
 
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
-
-  !> reference molecular diffusivity related to the scalar J (\f$kg.m^{-1}.s^{-1}\f$).\n
-  !>
-  !> Negative value: not initialised\n
-  !> Useful if 1\f$\leqslant\f$J\f$\leqslant\f$ \ref dimens::nscal "nscal",
-  !> unless the user specifies the molecular diffusivity in the appropriate
-  !> user subroutine (\ref cs_user_physical_properties for the standard
-  !> physics) (field_get_key_id (ivarfl(isca(iscal)),kivisl,...)
-  !> \f$>\f$ -1)\n Warning: \ref visls0 corresponds to the diffusivity.
-  !> For the temperature, it is therefore defined as \f$\lambda/C_p\f$
-  !> where \f$\lambda\f$ and \f$C_p\f$ are the conductivity and specific
-  !> heat. When using the Graphical Interface, \f$\lambda\f$ and \f$C_p\f$
-  !> are specified separately, and \ref visls0 is calculated automatically.\n
-  !> With the compressible module, \ref visls0 (given in \ref uscfx2) is
-  !> directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n With gas or
-  !> coal combustion, the molecular diffusivity of the enthalpy
-  !> (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
-  !> \ref ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
-  !> With the electric module, for the Joule effect, the diffusivity is
-  !> specified by the user in \ref cs_user_physical_properties.c (even if
-  !> it is constant). For the electric arcs, it is calculated from the
-  !> thermochemical data file.
-  double precision, save :: visls0(nscamx)
 
   !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
   !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$
@@ -1344,7 +1339,8 @@ module optcal
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
-      type(c_ptr), intent(out) :: igrake, igrari, ikecou, reinit_turb, irijco, irijnu, irijrb
+      type(c_ptr), intent(out) :: igrake, igrari, ikecou, reinit_turb, irijco
+      type(c_ptr), intent(out) :: irijnu, irijrb
       type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
 
@@ -1380,14 +1376,17 @@ module optcal
     ! Stokes options structure
 
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
-                                                arak  ,ipucou, iccvfg,         &
+                                                arak  , mass_preconditioner,   &
+                                                ipucou, iccvfg,                &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
-                                                iifren, icalhy, irecmf, fluid_solid)&
+                                                iifren, icalhy, irecmf,        &
+                                                fluid_solid)                   &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
+      type(c_ptr), intent(out) :: mass_preconditioner
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
       type(c_ptr), intent(out) :: fluid_solid
@@ -1429,9 +1428,9 @@ module optcal
 
     subroutine cs_f_elec_model_get_pointers(ngazge, ielcor, pot_diff, coejou,  &
                                             elcou, couimp, irestrike, ntdcla,  &
-                                            restrike_point_x,                  &
-                                            restrike_point_y,                  &
-                                            restrike_point_z)                  &
+                                            restrike_point_x,  &
+                                            restrike_point_y,  &
+                                            restrike_point_z)  &
       bind(C, name='cs_f_elec_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1490,6 +1489,25 @@ contains
     endif
 
   end function iscavr
+
+  !> \brief If scalar iscal represents the mean of the square of a scalar
+  !> k, return k; otherwise, return 0.
+
+  function visls0(iscal) result(visls_0)
+
+    use field
+    use numvar
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: iscal
+    double precision    :: visls_0
+
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+
+  end function visls0
 
   !> \brief Initialize Fortran time step API.
   !> This maps Fortran pointers to global C structure members.
@@ -1631,7 +1649,8 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok, c_igrake
-    type(c_ptr) :: c_igrari, c_ikecou, c_reinit_turb, c_irijco, c_irijnu, c_irijrb, c_irijec, c_idifre
+    type(c_ptr) :: c_igrari, c_ikecou, c_reinit_turb, c_irijco, c_irijnu
+    type(c_ptr) :: c_irijrb, c_irijec, c_idifre
     type(c_ptr) :: c_iclsyr, c_iclptr
 
     call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
@@ -1691,13 +1710,15 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
+    type(c_ptr) :: c_mass_preconditioner
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
 
     call cs_f_porous_model_get_pointers(c_iporos)
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_ipucou, c_iccvfg,  &
+                                          c_arak  , c_mass_preconditioner, &
+                                          c_ipucou, c_iccvfg,  &
                                           c_idilat, c_epsdp , c_itbrrb,  &
                                           c_iphydr, c_igprij, c_igpust,  &
                                           c_iifren, c_icalhy, c_irecmf,  &
@@ -1708,6 +1729,7 @@ contains
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )
     call c_f_pointer(c_arak  , arak  )
+    call c_f_pointer(c_mass_preconditioner, mass_preconditioner)
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_iccvfg, iccvfg)
     call c_f_pointer(c_idilat, idilat)
@@ -1799,9 +1821,9 @@ contains
     type(c_ptr) :: c_elcou, c_irestrike, c_ntdcla, c_restrike_point_x
     type(c_ptr) :: c_restrike_point_y, c_restrike_point_z
 
-    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff,          &
-                                      c_coejou, c_elcou, c_couimp,             &
-                                      c_irestrike, c_ntdcla,                   &
+    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff,  &
+                                      c_coejou, c_elcou, c_couimp,  &
+                                      c_irestrike, c_ntdcla,  &
                                       c_restrike_point_x, c_restrike_point_y,  &
                                       c_restrike_point_z)
 

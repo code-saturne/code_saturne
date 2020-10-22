@@ -54,12 +54,20 @@ integer          f_id, idim1, ityloc, itycat
 !===============================================================================
 
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES
-!    Atmospheric modules:  dry and humid atmosphere
+! 1. Atmospheric modules properties (mainly dry and humid atmosphere)
 !===============================================================================
 
-! Temperature (ippmod(iatmos) = 1 or 2)
+! Roughness length scales
 
+! boundary roughness
+call add_boundary_property_field_owner('boundary_roughness',  &
+                                       'Boundary Roughness', f_id)
+
+! boundary thermal roughness
+call add_boundary_property_field_owner('boundary_thermal_roughness',  &
+                                       'Boundary Thermal Roughness', f_id)
+
+! Temperature (ippmod(iatmos) = 1 or 2)
 if (ippmod(iatmos).ge.1) then
   call add_property_field_1d('real_temperature', 'RealTemp', itempc)
 
@@ -82,13 +90,6 @@ if (ippmod(iatmos).eq.2) then
     ! wall friction velocity if not already created
     call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
 
-    ! boundary roughness
-    call add_boundary_property_field_owner('boundary_roughness',  &
-                                           'Boundary Roughness', f_id)
-
-    ! boundary thermal roughness
-    call add_boundary_property_field_owner('boundary_thermal_roughness',  &
-                                           'Boundary Thermal Roughness', f_id)
   endif
 endif
 

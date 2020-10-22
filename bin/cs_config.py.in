@@ -92,7 +92,7 @@ class config:
                         'catalyst', 'melissa',          # co-processing libraries
                         'medcoupling',                  # MED coupling
                         'mumps',                        # Sparse direct solver
-                        'petsc',                        # Linear algebra
+                        'amgx', 'petsc',                # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
                         'cuda',                         # CUDA
@@ -320,6 +320,13 @@ class config:
                          flags = {'cppflags': "@MUMPS_CPPFLAGS@",
                                   'ldflags': "@MUMPS_LDFLAGS@",
                                   'libs': "@MUMPS_LIBS@"})
+
+        self.libs['amgx'] = \
+            prerequisite("Amgx",
+                         have = "@cs_have_amgx@",
+                         flags = {'cppflags': "@AMGX_CPPFLAGS@",
+                                  'ldflags': "@AMGX_LDFLAGS@",
+                                  'libs': "@AMGX_LIBS@"})
 
         self.libs['petsc'] = \
             prerequisite("PETSc",

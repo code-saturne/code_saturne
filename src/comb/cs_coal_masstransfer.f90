@@ -85,7 +85,7 @@ integer          icha, ifcvsl
 double precision xx2     , xch    , xck    , xash   , xnp , xuash
 double precision pparo2 , xdfchi , xdfext , xdftot0 , xdftot1
 double precision devto1(ncharm)  , devto2(ncharm) , coxck ,  den
-double precision diacka
+double precision diacka, visls_0
 double precision dp , lv, yvs, yv , tebl , shrd , xmeau, xmgaz
 double precision xnuss, tlimit , tmini
 double precision tmin, tmax, yvmin, yvmax, yymax
@@ -512,6 +512,8 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
   if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
+  call field_get_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
+
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
       if (icp.ge.0) then
@@ -521,14 +523,14 @@ if ( ippmod(iccoal) .ge. 1 ) then
       endif
     else
       if (icp.ge.0) then
-        w1(iel) = visls0(iscalt) * cpro_cp(iel)
+        w1(iel) = visls_0 * cpro_cp(iel)
       else
-        w1(iel) = visls0(iscalt) * cp0
+        w1(iel) = visls_0 * cp0
       endif
     endif
   enddo
 
-  if(ntlist.gt.0) then
+  if (ntlist.gt.0) then
     modntl = mod(ntcabs,ntlist)
   elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
     modntl = 0

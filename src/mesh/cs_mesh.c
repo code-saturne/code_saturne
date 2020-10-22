@@ -1971,26 +1971,6 @@ void CS_PROCF(synsce, SYNSCE)
 }
 
 /*----------------------------------------------------------------------------
- * Update a scalar array in case of parallelism and/or periodicity,
- * ignoring periodicity of rotation
- *
- * Fortran interface:
- *
- * subroutine syncmp(var)
- * *****************
- *
- * var   : <-> : scalar array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(syncmp, SYNCMP)
-(
- cs_real_t  var[]
-)
-{
-  cs_mesh_sync_var_component(var);
-}
-
-/*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * Fortran interface:

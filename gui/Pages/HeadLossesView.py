@@ -64,61 +64,13 @@ log = logging.getLogger("HeadLossesView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# StandarItemModel class to display Head Losses Zones in a QTreeView
-#-------------------------------------------------------------------------------
-
-
-class StandardItemModelHeadLosses(QStandardItemModel):
-    def __init__(self):
-        QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Label"), self.tr("Zone"),
-                        self.tr("Selection criteria")]
-        self.setColumnCount(len(self.headers))
-        self.dataHeadLossesZones = []
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        if role == Qt.DisplayRole:
-            return self.dataHeadLossesZones[index.row()][index.column()]
-        return None
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
-
-
-    def setData(self, index, value, role):
-        self.dataChanged.emit(index, index)
-        return True
-
-
-    def insertItem(self, label, name, local):
-        line = [label, name, local]
-        self.dataHeadLossesZones.append(line)
-        row = self.rowCount()
-        self.setRowCount(row+1)
-
-
-    def getItem(self, row):
-        return self.dataHeadLossesZones[row]
-
-
-#-------------------------------------------------------------------------------
 # Main view class
 #-------------------------------------------------------------------------------
 
 class HeadLossesView(QWidget, Ui_HeadLossesForm):
+    # TODO : unify redundant methods slotKxx, ... slotKzz, slotA11, ..., slotA33
 
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, zone_name):
         """
         Constructor
         """
@@ -130,14 +82,18 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.case = case
         self.case.undoStopGlobal()
 
-        # Create the Page layout.
+        self.zoneLabel.setText(zone_name)
+        self.zone = None
+        localization_model = LocalizationModel("VolumicZone", self.case)
+        for zone in localization_model.getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
 
-        # Model and QTreeView for Head Losses
-        self.modelHeadLosses = StandardItemModelHeadLosses()
-        self.treeView.setModel(self.modelHeadLosses)
+        self.model = HeadLossesModel(self.case)
+
+        self.selectHeadLossesZones()
 
         # Connections
-        self.treeView.clicked[QModelIndex].connect(self.slotSelectHeadLossesZones)
         self.groupBox_3.clicked[bool].connect(self.slotTransfoMatrix)
 
         self.lineEdit.textChanged[str].connect(self.slotKxx)
@@ -187,36 +143,22 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.lineEdit_10.setValidator(validator_10)
 
         # Initialize Widgets
-
-        self.entriesNumber = 0
-        d = HeadLossesModel(self.case).getNameAndLocalizationZone()
-        liste=[]
-        liste=list(d.items())
-        t=[]
-        for t in liste :
-            NamLoc=t[1]
-            Lab=t[0 ]
-            self.modelHeadLosses.insertItem(Lab, NamLoc[0],NamLoc[1])
-        self.forgetStandardWindows()
-
         self.case.undoStartGlobal()
 
-
-    @pyqtSlot("QModelIndex")
-    def slotSelectHeadLossesZones(self, index):
-        model = HeadLossesModel(self.case)
-        label, name, local = self.modelHeadLosses.getItem(index.row())
+    def selectHeadLossesZones(self):
+        label = self.zone.getLabel()
+        name = self.zone.getCodeNumber()
 
         if hasattr(self, "modelScalars"): del self.modelScalars
-        log.debug("slotSelectHeadLossesZones label %s " % label )
+        log.debug("slotSelectHeadLossesZones label %s " % label)
         self.groupBoxDef.show()
         self.groupBox_3.show()
-        kxx,kyy,kzz = model.getKCoefficients(name)
+        kxx, kyy, kzz = self.model.getKCoefficients(name)
         self.lineEdit.setText(str(kxx))
         self.lineEdit_2.setText(str(kyy))
         self.lineEdit_3.setText(str(kzz))
 
-        if model.getMatrixChoice(name,'choice') == 'on':
+        if self.model.getMatrixChoice(name, 'choice') == 'on':
             self.groupBox_3.setChecked(True)
             checked = True
         else:
@@ -225,178 +167,127 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
 
         self.slotTransfoMatrix(checked)
 
-
-    def forgetStandardWindows(self):
-        """
-        For forget standard windows
-        """
-        self.groupBoxDef.hide()
-        self.groupBox_3.hide()
-
-
-
     @pyqtSlot(str)
     def slotKxx(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setCoefficient(name,'kxx',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'kxx', value)
 
     @pyqtSlot(str)
     def slotKyy(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_2.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setCoefficient(name,'kyy',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'kyy', value)
 
     @pyqtSlot(str)
     def slotKzz(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_3.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setCoefficient(name,'kzz',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'kzz', value)
 
     @pyqtSlot(bool)
     def slotTransfoMatrix(self,  checked):
         self.groupBox_3.setFlat(not checked)
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
+        zone_id = self.zone.getCodeNumber()
 
-            if checked:
-                model.setMatrixChoice(name,'choice','on')
-                self.groupBox_3.setChecked(True)
-                self.frameTransfo.show()
-                a11, a12, a13, a21, a22, a23, a31, a32, a33 = model.getMatrix(name)
-            else:
-                model.setMatrixChoice(name,'choice','off')
-                self.frameTransfo.hide()
-                a11, a12, a13, a21, a22, a23, a31, a32, a33 = 1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0
-                self.groupBox_3.setChecked(False)
+        if checked:
+            self.model.setMatrixChoice(zone_id, 'choice', 'on')
+            self.groupBox_3.setChecked(True)
+            self.frameTransfo.show()
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = self.model.getMatrix(zone_id)
+        else:
+            self.model.setMatrixChoice(zone_id, 'choice', 'off')
+            self.frameTransfo.hide()
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+            self.groupBox_3.setChecked(False)
 
-            self.lineEdit_4.setText(str(a11))
-            self.lineEdit_5.setText(str(a12))
-            self.lineEdit_6.setText(str(a13))
-            self.lineEdit_8.setText(str(a21))
-            self.lineEdit_9.setText(str(a22))
-            self.lineEdit_7.setText(str(a23))
-            self.lineEdit_11.setText(str(a31))
-            self.lineEdit_12.setText(str(a32))
-            self.lineEdit_10.setText(str(a33))
-
+        self.lineEdit_4.setText(str(a11))
+        self.lineEdit_5.setText(str(a12))
+        self.lineEdit_6.setText(str(a13))
+        self.lineEdit_8.setText(str(a21))
+        self.lineEdit_9.setText(str(a22))
+        self.lineEdit_7.setText(str(a23))
+        self.lineEdit_11.setText(str(a31))
+        self.lineEdit_12.setText(str(a32))
+        self.lineEdit_10.setText(str(a33))
 
     @pyqtSlot(str)
     def slotA11(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_4.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a11',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a11', value)
 
     @pyqtSlot(str)
     def slotA12(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_5.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a12',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a12', value)
 
     @pyqtSlot(str)
     def slotA13(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_6.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a13',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a13', value)
 
     @pyqtSlot(str)
     def slotA21(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_8.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a21',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a21', value)
 
     @pyqtSlot(str)
     def slotA22(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_9.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a22',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a22', value)
 
     @pyqtSlot(str)
     def slotA23(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_7.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a23',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a23', value)
 
     @pyqtSlot(str)
     def slotA31(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_11.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a31',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a31', value)
 
     @pyqtSlot(str)
     def slotA32(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_12.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a32',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a32', value)
 
     @pyqtSlot(str)
     def slotA33(self, text):
-        cindex = self.treeView.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            label, name, local = self.modelHeadLosses.getItem(row)
-            model = HeadLossesModel(self.case)
-            if self.lineEdit_10.validator().state == QValidator.Acceptable:
-                value = from_qvariant(text, float)
-                model.setMatrixComposant(name,'a33',value )
+        zone_id = self.zone.getCodeNumber()
+        model = HeadLossesModel(self.case)
+        if self.lineEdit.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            model.setCoefficient(zone_id, 'a33', value)
 
 
 #-------------------------------------------------------------------------------

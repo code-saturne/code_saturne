@@ -92,7 +92,8 @@ void
 cs_user_head_losses(const  cs_zone_t  *zone,
                     cs_real_t          cku[][6])
 {
-
+  CS_UNUSED(zone);
+  CS_UNUSED(cku);
 }
 
 /*----------------------------------------------------------------------------*/

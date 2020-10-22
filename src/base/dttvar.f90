@@ -114,7 +114,7 @@ integer          f_id
 integer          nbrval, nclptr
 integer          ntcam1
 
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 double precision cfmax,cfmin, w1min, w2min, w3min
 double precision unpvdt, dtloc
 double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
@@ -298,7 +298,6 @@ if (idtvar.ge.0) then
     iwarnp = vcopt_p%iwarni
     epsrgp = vcopt_p%epsrgr
     climgp = vcopt_p%climgr
-    extrap = 0.d0
 
     f_id = -1
     inc   = 1
@@ -306,7 +305,7 @@ if (idtvar.ge.0) then
 
     call gradient_s &
  ( f_id   , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
+   iwarnp , epsrgp , climgp ,                                     &
    crom, brom, coefbr ,                                           &
    grad )
 
@@ -474,7 +473,7 @@ if (idtvar.ge.0) then
     endif
 
     !     En compressible, on prend obligatoirement
-    !     en compte la limitation associee à la masse volumique.
+    !     en compte la limitation associee a la masse volumique.
 
     if (icoucf.eq.1) then
       do iel = 1, ncel
@@ -745,8 +744,8 @@ if (idtvar.ge.0) then
 
     cfmax  = -grand
     cfmin  =  grand
-    icfmax(1) = 0
-    icfmin(1) = 0
+    icfmax(1) = 1
+    icfmin(1) = 1
 
     do iel = 1, ncel
       cpro_four(iel) = w1(iel)*dt(iel)
