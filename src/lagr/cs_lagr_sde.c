@@ -265,8 +265,8 @@ _lages1(cs_real_t           dtp,
 
       /* 1.0 - get rotation matrix */
 
-      if (cs_glob_lagr_model->shape == 2) {
-        
+      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+
         // Use euler angles for spheroids (jeffery)
         cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
 
@@ -281,9 +281,8 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
 
         perform_rotation = true;
-
-      } 
-      else if (cs_glob_lagr_model->shape == 1) {
+      }
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
 
         // Use rotation matrix for stochastic model
         cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
@@ -313,10 +312,9 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
         
         perform_rotation = true;
-
-      } 
-      else if (cs_glob_lagr_model->shape == 0 &&
-               cs_glob_lagr_model->modcpl == 1) {
+      }
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
+               && cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
         // relative particle direction
@@ -353,7 +351,6 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
         perform_rotation = true;
-
       }
 
       if (perform_rotation) {
@@ -380,7 +377,8 @@ _lages1(cs_real_t           dtp,
 
         /* 1.7 - taup  */
 
-        if (cs_glob_lagr_model->shape == 1 || cs_glob_lagr_model->shape == 2) {
+        if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
+            || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
           cs_real_t *radii =
               cs_lagr_particle_attr(particle, p_am, CS_LAGR_RADII);
@@ -394,9 +392,7 @@ _lages1(cs_real_t           dtp,
                       pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
           taup_r[2] = 3.0 / 8.0 * taup[ip]*(radii[2]*radii[2]*s_p[2] + s_p[3]) /
                       pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
-
         }
-
       }
 
       /* =========================================================================
@@ -607,8 +603,8 @@ _lages1(cs_real_t           dtp,
 
       perform_rotation = false;
 
-      if (cs_glob_lagr_model->shape == 0 &&
-          cs_glob_lagr_model->modcpl == 1) {
+      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
+          && cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
         // relative particle direction
@@ -645,9 +641,8 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
         perform_rotation = true;
-
       }
-      else if (cs_glob_lagr_model->shape == 2) {
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
 
@@ -662,9 +657,8 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
 
         perform_rotation = true;
-
       }
-      else if (cs_glob_lagr_model->shape == 1) {
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
 
         // Use rotation matrix for stochastic model
         cs_real_t *orient_loc = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
@@ -694,7 +688,6 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
         perform_rotation = true;
-
       }
 
       if (perform_rotation) {
