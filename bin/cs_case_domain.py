@@ -861,6 +861,19 @@ class domain(base_domain):
         if self.mesh_input:
             return
 
+        # Check if cartesian mesh is to be used
+        if self.param != None:
+            from code_saturne.model.XMLengine import Case
+            from code_saturne.model.SolutionDomainModel import getMeshOriginType
+
+            fp = os.path.join(self.data_dir, self.param)
+            case = Case(package=self.package, file_name=fp)
+            case['xmlfile'] = fp
+            case.xmlCleanAllBlank(case.xmlRootNode())
+
+            if getMeshOriginType(case) == 'mesh_cartesian':
+                return
+
         # Study directory
         study_dir = os.path.split(self.case_root_dir)[0]
 

@@ -352,10 +352,12 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   }
 
   bool partition_preprocess = cs_partition_get_preprocess();
+
   bool need_save = false;
   if (   (cs_glob_mesh->modified > 0 && cs_glob_mesh->save_if_modified > 0)
       || cs_glob_mesh->save_if_modified > 1)
     need_save = true;
+
 
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
@@ -365,6 +367,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       }
       else
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
+
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
       cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
       cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);

@@ -53,6 +53,7 @@
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
+#include "cs_mesh_cartesian.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_boundary.h"
@@ -609,6 +610,100 @@ cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Define if cartesian mesh is to be built through GUI.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_mesh_build_cartesian(void)
+{
+  int retval = 0;
+  cs_tree_node_t *tn =
+    cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_origin");
+
+  const char *choice = cs_tree_node_get_child_value_str(tn, "choice");
+  if (choice != NULL) {
+    if (strcmp(choice, "mesh_cartesian") == 0)
+      retval = 1;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Get cartesian mesh parameters defined with GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_get_cartesian_parameters(int       idim,
+                                     int       *ip,
+                                     cs_real_t *rp)
+{
+
+  cs_tree_node_t *tn0 =
+    cs_tree_get_node(cs_glob_tree,"solution_domain/mesh_cartesian");
+
+  if (tn0 != NULL) {
+
+    cs_tree_node_t *tn;
+    if (idim == 0)
+      tn = cs_tree_node_get_child(tn0, "x_direction");
+    else if (idim == 1)
+      tn = cs_tree_node_get_child(tn0, "y_direction");
+    else if (idim == 2)
+      tn = cs_tree_node_get_child(tn0, "z_direction");
+
+    const char *law = cs_gui_node_get_tag(tn, "law");
+    if (strcmp(law, "constant") == 0)
+      ip[0] = 0;
+    else if (strcmp(law, "geometric") == 0)
+      ip[0] = 1;
+    else if (strcmp(law, "parabolic") == 0)
+      ip[0] = 2;
+
+    cs_gui_node_get_child_int(tn, "ncells", ip + 1);
+
+    cs_gui_node_get_child_real(tn, "min",  rp);
+    cs_gui_node_get_child_real(tn, "max",  rp + 1);
+    cs_gui_node_get_child_real(tn, "prog", rp + 2);
+
+  } else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: There is no cartesian mesh defined by the XML file.\n"));
+
+}
+
+/*----------------------------------------------------------------------------
+ * Read cartesian mesh parameters defined with GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_cartesian_define(void)
+{
+
+  cs_mesh_cartesian_create();
+  for (int idim = 0; idim < 3; idim++) {
+    int       iparams[2] = {0,0};
+    cs_real_t rparams[3] = {0., 0., 0.};
+    cs_gui_mesh_get_cartesian_parameters(idim, iparams, rparams);
+
+    cs_mesh_cartesian_law_t law = CS_MESH_CARTESIAN_CONSTANT_LAW;
+    if (iparams[0] == 0)
+      law = CS_MESH_CARTESIAN_CONSTANT_LAW;
+    else if (iparams[0] == 1)
+      law = CS_MESH_CARTESIAN_GEOMETRIC_LAW;
+    else if (iparams[0] == 2)
+      law = CS_MESH_CARTESIAN_PARABOLIC_LAW;
+
+    cs_mesh_cartesian_define_dir_params(idim,
+                                        law,
+                                        iparams[1],
+                                        rparams[0],
+                                        rparams[1],
+                                        rparams[2]);
+  }
+
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

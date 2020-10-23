@@ -98,6 +98,28 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh);
 void
 cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------
+ * Define if cartesian mesh is to be built through GUI.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_mesh_build_cartesian(void);
+
+/*----------------------------------------------------------------------------
+ * Get cartesian mesh parameters defined with GUI for a direction
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_get_cartesian_parameters(int       idim,
+                                     int       *ip,
+                                     cs_real_t *rp);
+
+/*----------------------------------------------------------------------------
+ * Read cartesian mesh parameters defined with GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_cartesian_define(void);
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

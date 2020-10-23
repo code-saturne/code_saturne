@@ -56,6 +56,7 @@
 #include "cs_file.h"
 #include "cs_interface.h"
 #include "cs_mesh.h"
+#include "cs_mesh_cartesian.h"
 #include "cs_mesh_from_builder.h"
 #include "cs_mesh_group.h"
 #include "cs_parall.h"
@@ -67,6 +68,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_preprocessor_data.h"
+#include "cs_mesh_cartesian.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -704,8 +706,6 @@ _read_dimensions(cs_mesh_t          *mesh,
 
   /* Initialize reading of Preprocessor output */
 
-  bft_printf(_(" Reading metadata from file: \"%s\"\n"), f->filename);
-
 #if defined(HAVE_MPI)
   pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
@@ -1044,6 +1044,84 @@ _read_dimensions(cs_mesh_t          *mesh,
 
   f->offset = cs_io_get_offset(pp_in);
   cs_io_finalize(&pp_in);
+}
+
+/*----------------------------------------------------------------------------
+ * Get dimensions of cartesian mesh mesh
+ *
+ * This function updates the information in the mesh
+ *
+ * parameters
+ *   mesh     <-> pointer to mesh structure
+ *   mb       <-> pointer to mesh builder helper structure
+ *----------------------------------------------------------------------------*/
+
+void
+_read_cartesian_dimensions(cs_mesh_t         *mesh,
+                           cs_mesh_builder_t *mb)
+{
+
+  cs_gnum_t _nx = cs_mesh_cartesian_get_ncells(0);
+  cs_gnum_t _ny = cs_mesh_cartesian_get_ncells(1);
+  cs_gnum_t _nz = cs_mesh_cartesian_get_ncells(2);
+  cs_gnum_t n_elts = _nx * _ny * _nz;
+
+  /* Get total number of cells */
+  mesh->n_g_cells = _nx * _ny * _nz;
+
+  /* Total number of faces */
+  mb->n_g_faces = 3 * _nx * _ny * _nz
+                + _nx * _ny
+                + _nx * _nz
+                + _ny * _nz;
+
+  /* Vertices */
+  mesh->n_g_vertices = (_nx + 1) * (_ny + 1) * (_nz + 1);
+
+  /* Face to vertices connectivity.
+   * Quadrangles means we have 4 vertices per face.
+   */
+  mb->n_g_face_connect_size = 4 * mb->n_g_faces;
+
+  /* One family */
+  mesh->n_families = 7;
+  mesh->n_max_family_items = 1;
+  if (mesh->family_item == NULL)
+    BFT_MALLOC(mesh->family_item, mesh->n_families, int);
+  for (int i = 0; i < mesh->n_families - 1; i++)
+    mesh->family_item[i] = -(i+1);
+
+  mesh->family_item[mesh->n_families - 1] = 0;
+
+  /* Add groups : 6 boundary face */
+  mesh->n_groups = 6;
+  BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+  mesh->group_idx[0] = 0;
+  for (int i = 0; i < mesh->n_groups; i++)
+    mesh->group_idx[i+1] = mesh->group_idx[i] + 3;
+
+  BFT_REALLOC(mesh->group, 19, char);
+
+  for (int i = 0; i < mesh->n_groups; i++) {
+    int i0 = 3*i;
+    char *_buf = mesh->group + i0;
+    if (i == 0)
+      strcpy(_buf, "X0");
+    if (i == 1)
+      strcpy(_buf, "X1");
+    if (i == 2)
+      strcpy(_buf, "Y0");
+    if (i == 3)
+      strcpy(_buf, "Y1");
+    if (i == 4)
+      strcpy(_buf, "Z0");
+    if (i == 5)
+      strcpy(_buf, "Z1");
+
+    _buf[2] = '\0';
+  }
+  mesh->group[18] = '\0';
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2037,6 +2115,10 @@ int
 cs_preprocessor_check_perio(void)
 {
   int retval;
+
+  if (cs_mesh_cartesian_need_build())
+    return 0;
+
   _mesh_reader_t *mr = NULL;
 
   int perio_flag = 0;
@@ -2078,21 +2160,27 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
 {
   int file_id;
 
-  _mesh_reader_t *mr = NULL;
-
   /* Initialize reading of Preprocessor output */
 
-  _set_default_input_if_needed();
+  if (cs_mesh_cartesian_need_build()) {
 
-  _cs_glob_mesh_reader = _mesh_reader_create(&_n_mesh_files,
-                                             &_mesh_file_info);
+    _read_cartesian_dimensions(mesh, mesh_builder);
 
-  _n_max_mesh_files = 0;
+  } else {
+    _mesh_reader_t *mr = NULL;
 
-  mr = _cs_glob_mesh_reader;
+    _set_default_input_if_needed();
 
-  for (file_id = 0; file_id < mr->n_files; file_id++)
-    _read_dimensions(mesh, mesh_builder, mr, file_id);
+    _cs_glob_mesh_reader = _mesh_reader_create(&_n_mesh_files,
+                                               &_mesh_file_info);
+
+    _n_max_mesh_files = 0;
+
+    mr = _cs_glob_mesh_reader;
+
+    for (file_id = 0; file_id < mr->n_files; file_id++)
+      _read_dimensions(mesh, mesh_builder, mr, file_id);
+  }
 
   /* Return values */
 
@@ -2181,11 +2269,16 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   else
     _set_block_ranges(mesh, mesh_builder);
 
-  for (file_id = 0; file_id < mr->n_files; file_id++)
-    _read_data(file_id, mesh, mesh_builder, mr, echo);
-
-  if (mr->n_files > 1)
+  if (cs_mesh_cartesian_need_build()) {
+    cs_mesh_cartesian_connectivity(mesh_builder, echo);
     mesh->modified = 1;
+  }else{
+    for (file_id = 0; file_id < mr->n_files; file_id++)
+      _read_data(file_id, mesh, mesh_builder, mr, echo);
+
+    if (mr->n_files > 1)
+      mesh->modified = 1;
+  }
 
   /* Partition data */
 
@@ -2201,7 +2294,8 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 
   /* Free temporary memory */
 
-  _mesh_reader_destroy(&mr);
+  if (mr != NULL)
+    _mesh_reader_destroy(&mr);
   _cs_glob_mesh_reader = mr;
 
   /* Remove family duplicates */

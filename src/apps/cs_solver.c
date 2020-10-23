@@ -66,6 +66,7 @@
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_conjugate_heat_transfer.h"
+#include "cs_gui_mesh.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
@@ -204,6 +205,10 @@ _run(void)
   cs_preprocess_mesh_define();
 
   cs_turbomachinery_define();
+
+  /* Check if an internally generated cartesian mesh is used */
+  if (cs_gui_mesh_build_cartesian())
+    cs_gui_mesh_cartesian_define();
 
   /* Call main calculation initialization function or help */
 
