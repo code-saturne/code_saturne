@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Preprocessor: fix handling of "--log" option in next-to last position
+  (could overwrite mesh, but issue only if called outside scripts).
+
 - Fix GUI crash when inserting a comment in formula
 
 - Fix handling of alternate compute versions with relocatable builds
