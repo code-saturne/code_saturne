@@ -101,11 +101,17 @@ double precision w1min,w1max,w2min,w2max
 double precision r1,r2,tseuil,dum
 
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpro_met_p
 
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+
+if (imeteo.eq.2) then
+  call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
+endif
+
 
 !     ==========================
 !     1) initialisations locales
@@ -202,10 +208,14 @@ do isol = 1, nfmodsol
 
     if (imeteo.eq.0) then
       call atmstd(zreel,pres1,dum,dum)
-    else
+
+
+    else if (imeteo.eq.1) then
       call intprf                                                       &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+        (nbmett, nbmetm,                                               &
+        ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+    else
+      pres1 = cpro_met_p(iel)
     endif
 
     tsplus = tmer + tkelvi
@@ -224,10 +234,12 @@ do isol = 1, nfmodsol
 
     if (imeteo.eq.0) then
       call atmstd(zreel,pres1,dum,dum)
+    else if (imeteo.eq.1) then
+      call intprf &
+        (nbmett, nbmetm,                                               &
+        ztmet, tmmet, phmet, zreel, ttcabs, pres1)
     else
-      call intprf                                                       &
-         (nbmett, nbmetm,                                               &
-          ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+      pres1 = cpro_met_p(iel)
     endif
 
     tpot1 = solution_sol(isol)%tempp
