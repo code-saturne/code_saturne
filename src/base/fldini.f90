@@ -250,6 +250,15 @@ do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kimasf, f_id)
 enddo
 
+! Rusanov flux
+if (irijnu.eq.2) then
+  ityloc = 2 ! inner faces
+  call field_create('i_rusanov_diff', itycat, ityloc, idim1, inoprv, f_id)
+
+  ityloc = 3 ! boundary faces
+  call field_create('b_rusanov_diff', itycat, ityloc, idim1, inoprv, f_id)
+endif
+
 ! Boundary Mass flux field
 !-------------------------
 

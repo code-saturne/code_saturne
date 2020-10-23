@@ -100,7 +100,7 @@ endif
 ! 6. Force Rij Matrix stabilisation for all atmospheric models
 !===============================================================================
 
-if (itytur.eq.3) irijnu = 1
+if (itytur.eq.3.and.irijnu.eq.0) irijnu = 1
 
 !===============================================================================
 ! 7. Some allocation and mapping for meteo...

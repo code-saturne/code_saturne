@@ -105,6 +105,8 @@ integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision xk, xe, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
+double precision r_nn_i, r_nn_j
+double precision n(3)
 double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), ttke, visls_0
@@ -113,6 +115,7 @@ double precision trrij,rottke
 double precision alpha3, xrnn
 double precision s, s11, s22, s33, delta, c_epsilon
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
+double precision rnn
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_nusa
@@ -120,6 +123,8 @@ double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
+double precision, dimension(:), pointer :: ipro_mass_fl, ipro_rusanov
+double precision, dimension(:), pointer :: bpro_mass_fl, bpro_rusanov
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
@@ -716,6 +721,66 @@ call usvist &
   icepdc , icetsm , itypsm ,                                     &
   dt     ,                                                       &
   ckupdc , smacel )
+
+!==============================================================================
+! Rusanov flux
+!==============================================================================
+
+if (irijnu.eq.2) then
+  call field_get_val_s_by_name('i_rusanov_diff', ipro_rusanov)
+  call field_get_val_s_by_name('b_rusanov_diff', bpro_rusanov)
+  call field_get_val_s_by_name('inner_mass_flux', ipro_mass_fl)
+  call field_get_val_s_by_name('boundary_mass_flux', bpro_mass_fl)
+  call field_get_val_v(ivarfl(irij), cvar_rij)
+
+  ! TODO put it in a function, depends on the turbulence model...
+  do ifac = 1, nfac
+    n(1) = surfac(1,ifac) ! Not normalise, to have surface in it
+    n(2) = surfac(2,ifac)
+    n(3) = surfac(3,ifac)
+    ii = ifacel(1, ifac)
+    jj = ifacel(2, ifac)
+    r_nn_i = &
+        n(1) * cvar_rij(1, ii) * n(1) + n(1) * cvar_rij(4, ii) * n(2) + n(1) * cvar_rij(6, ii) * n(3) &
+      + n(2) * cvar_rij(4, ii) * n(1) + n(2) * cvar_rij(2, ii) * n(2) + n(2) * cvar_rij(5, ii) * n(3) &
+      + n(3) * cvar_rij(6, ii) * n(1) + n(3) * cvar_rij(5, ii) * n(2) + n(3) * cvar_rij(3, ii) * n(3)
+    r_nn_i = r_nn_i * crom(ii)**2 ! to have rho in it
+    r_nn_j = &
+        n(1) * cvar_rij(1, jj) * n(1) + n(1) * cvar_rij(4, jj) * n(2) + n(1) * cvar_rij(6, jj) * n(3) &
+      + n(2) * cvar_rij(4, jj) * n(1) + n(2) * cvar_rij(2, jj) * n(2) + n(2) * cvar_rij(5, jj) * n(3) &
+      + n(3) * cvar_rij(6, jj) * n(1) + n(3) * cvar_rij(5, jj) * n(2) + n(3) * cvar_rij(3, jj) * n(3)
+    r_nn_j = r_nn_j * crom(jj)**2
+
+    rnn = max(abs(r_nn_i), abs(r_nn_j))
+    if (min(r_nn_i, r_nn_j) .lt. 0.d0) then
+      write(nfecra,*) "Warning, rnn <0 at internal face: ", min(r_nn_i, r_nn_j)
+    endif
+    ! The part of U.n is already in the material upwind scheme
+    ipro_rusanov(ifac) = sqrt(2.d0 * rnn)
+  enddo
+
+  do ifac = 1, nfabor
+    n(1) = surfbo(1,ifac) / surfbn(ifac) ! WARNING Normalised here
+    n(2) = surfbo(2,ifac) / surfbn(ifac)
+    n(3) = surfbo(3,ifac) / surfbn(ifac)
+    if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.isymet) then
+      ii = ifabor(ifac)
+
+      r_nn_i = &
+          n(1) * cvar_rij(1, ii) * n(1) + n(1) * cvar_rij(4, ii) * n(2) + n(1) * cvar_rij(6, ii) * n(3) &
+        + n(2) * cvar_rij(4, ii) * n(1) + n(2) * cvar_rij(2, ii) * n(2) + n(2) * cvar_rij(5, ii) * n(3) &
+        + n(3) * cvar_rij(6, ii) * n(1) + n(3) * cvar_rij(5, ii) * n(2) + n(3) * cvar_rij(3, ii) * n(3)
+      r_nn_i = r_nn_i * crom(ii)**2 ! to have rho in it
+      ! The part of U.n is already in the material upwind scheme
+      bpro_rusanov(ifac) = sqrt(abs(r_nn_i))
+      if (r_nn_i.lt. 0.d0) then
+        write(nfecra,*) "Warning, rnn <0  at boundary: ", r_nn_i
+      endif
+    else
+      bpro_rusanov(ifac) = 0.d0
+    endif
+  enddo
+endif
 
 !===============================================================================
 ! Checking of the user values and put turbulent viscosity to 0 in

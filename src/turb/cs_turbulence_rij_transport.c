@@ -854,44 +854,81 @@ _solve_rit(const cs_field_t     *f,
   const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
   /* Symmetric tensor diffusivity (GGDH) */
-  if (eqp_ut->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+  if (eqp_ut->idiff > 0) {
+    if (eqp_ut->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
 
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      cs_real_t prdtl = viscl[c_id]*xcpp[c_id]/viscls[l_viscls*c_id];
+#     pragma omp parallel if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t prdtl = viscl[c_id]*xcpp[c_id]/viscls[l_viscls*c_id];
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        viscce[c_id][i] =   0.5*(viscl[c_id]*(1.+1./prdtl))
-                          + mdifft*ctheta*visten[c_id][i]/cs_turb_csrij;
-      for (cs_lnum_t i = 3; i < 6; i++)
-        viscce[c_id][i] = mdifft*ctheta*visten[c_id][i]/cs_turb_csrij;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          viscce[c_id][i] =   0.5*(viscl[c_id]*(1.+1./prdtl))
+                            + mdifft*ctheta*visten[c_id][i]/cs_turb_csrij;
+        for (cs_lnum_t i = 3; i < 6; i++)
+          viscce[c_id][i] = mdifft*ctheta*visten[c_id][i]/cs_turb_csrij;
+      }
+
+      cs_face_anisotropic_viscosity_scalar(m,
+                                           fvq,
+                                           viscce,
+                                           eqp->iwarni,
+                                           weighf,
+                                           weighb,
+                                           viscf,
+                                           viscb);
     }
 
-    cs_face_anisotropic_viscosity_scalar(m,
-                                         fvq,
-                                         viscce,
-                                         eqp->iwarni,
-                                         weighf,
-                                         weighb,
-                                         viscf,
-                                         viscb);
-  }
+    /* Scalar diffusivity */
+    else {
 
-  /* Scalar diffusivity */
+#     pragma omp parallel if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        w1[c_id] = viscl[c_id] + mdifft*(ctheta*visct[c_id]/cs_turb_cmu);
+      }
+
+      cs_face_viscosity(m,
+                        fvq,
+                        eqp->imvisf,
+                        w1,
+                        viscf,
+                        viscb);
+    }
+  }
+  /* No diffusion */
   else {
-
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      w1[c_id] = viscl[c_id] + mdifft*(ctheta*visct[c_id]/cs_turb_cmu);
-    }
-
-    cs_face_viscosity(m,
-                      fvq,
-                      eqp->imvisf,
-                      w1,
-                      viscf,
-                      viscb);
+    cs_array_set_value_real(n_i_faces, 1, 0., viscf);
+    cs_array_set_value_real(n_b_faces, 1, 0., viscb);
   }
+
+  cs_real_3_t  *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
+  cs_real_33_t *coefbp = (cs_real_33_t *)f_ut->bc_coeffs->b;
+  cs_real_3_t  *cofafp = (cs_real_3_t *)f_ut->bc_coeffs->af;
+  cs_real_33_t *cofbfp = (cs_real_33_t *)f_ut->bc_coeffs->bf;
+
+  /* Add Rusanov fluxes */
+  if (cs_glob_turb_rans_model->irijnu == 2) {
+     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+       viscf[face_id] += ipro_rusanov[face_id];
+     }
+
+     const cs_real_3_t *restrict b_face_normal
+       = (const cs_real_3_t *restrict)fvq->b_face_normal;
+     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+
+     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+       cs_real_t n[3];
+       cs_math_3_normalize(b_face_normal[face_id], n); /* Warning: normalized here */
+
+       for (cs_lnum_t i = 0; i < 3; i++) {
+         for (cs_lnum_t j = 0; j < 3; j++) {
+           cofbfp[face_id][i][j] +=  2. * bpro_rusanov[face_id] * n[i]*n[j];
+           //TODO ?cofafp[face_id][i] -= bf[i][j] * coefap[face_id][j];
+         }
+       }
+
+     }
+   }
 
   /* Vectorial solving of the turbulent thermal fluxes
    * ------------------------------------------------- */
@@ -907,14 +944,7 @@ _solve_rit(const cs_field_t     *f,
     }
   }
 
-  const cs_real_3_t  *coefav = (const cs_real_3_t *)f_ut->bc_coeffs->a;
-  const cs_real_33_t *coefbv = (const cs_real_33_t *)f_ut->bc_coeffs->b;
-  const cs_real_3_t  *cofafv = (const cs_real_3_t *)f_ut->bc_coeffs->af;
-  const cs_real_33_t *cofbfv = (const cs_real_33_t *)f_ut->bc_coeffs->bf;
-
   cs_equation_param_t eqp_loc = *eqp;
-  eqp_loc.istat  = -1;
-  eqp_loc.idifft = -1;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
   eqp_loc.thetav = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
@@ -928,10 +958,10 @@ _solve_rit(const cs_field_t     *f,
                                      &eqp_loc,
                                      xuta,
                                      xuta,
-                                     coefav,
-                                     coefbv,
-                                     cofafv,
-                                     cofbfv,
+                                     coefap,
+                                     coefbp,
+                                     cofafp,
+                                     cofbfp,
                                      imasfl,
                                      bmasfl,
                                      viscf,

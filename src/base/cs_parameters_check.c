@@ -1772,7 +1772,7 @@ cs_parameters_check(void)
                                   _("while reading input data"),
                                   "cs_glob_turb_rans_model->irijnu",
                                   cs_glob_turb_rans_model->irijnu,
-                                  0, 2);
+                                  0, 3);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),

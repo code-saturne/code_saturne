@@ -2388,6 +2388,8 @@ _solve_epsilon(cs_lnum_t        ncesmp,
                       viscb);
   }
 
+
+
   /* Solving
    * ------- */
 
@@ -2398,7 +2400,7 @@ _solve_epsilon(cs_lnum_t        ncesmp,
       rhs[c_id] += thetp1*c_st_prv[c_id];
   }
 
-  /* Translate coefa into cofaf and coefb into cofbf */
+  /* Get boundary conditions coefficients */
 
   cs_real_t *coefap = CS_F_(eps)->bc_coeffs->a;
   cs_real_t *coefbp = CS_F_(eps)->bc_coeffs->b;
@@ -3056,6 +3058,53 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
                     weighf, weighb);
    }
 
+   cs_real_6_t  *coefap = (cs_real_6_t *)f_rij->bc_coeffs->a;
+   cs_real_66_t *coefbp = (cs_real_66_t *)f_rij->bc_coeffs->b;
+   cs_real_6_t  *cofafp = (cs_real_6_t *)f_rij->bc_coeffs->af;
+   cs_real_66_t *cofbfp = (cs_real_66_t *)f_rij->bc_coeffs->bf;
+
+   /* Add Rusanov fluxes */
+   if (cs_glob_turb_rans_model->irijnu == 2) {
+     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+       viscf[face_id] += ipro_rusanov[face_id];
+     }
+
+     const cs_real_3_t *restrict b_face_normal
+       = (const cs_real_3_t *restrict)fvq->b_face_normal;
+     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+
+     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+       cs_real_t n[3];
+       cs_math_3_normalize(b_face_normal[face_id], n);
+       cs_real_66_t bf;
+
+       for (cs_lnum_t i = 0; i < 6; i++) {
+         for (cs_lnum_t j = 0; j < 6; j++) {
+           bf[i][j] = 0.0;
+         }
+       }
+       bf[4-1][4-1] += 2. * bpro_rusanov[face_id] * (1. - n[3-1]*n[3-1]);
+       bf[5-1][4-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[3-1]);
+       bf[4-1][5-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[3-1]);
+       bf[5-1][5-1] += 2. * bpro_rusanov[face_id] * (1. - n[1-1]*n[1-1]);
+       bf[6-1][5-1] += 2. * bpro_rusanov[face_id] * (   - n[1-1]*n[2-1]);
+       bf[5-1][6-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[1-1]);
+       bf[6-1][6-1] += 2. * bpro_rusanov[face_id] * (1. - n[2-1]*n[2-1]);
+       bf[6-1][4-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[3-1]);
+       bf[4-1][6-1] += 2. * bpro_rusanov[face_id] * (   - n[2-1]*n[3-1]);
+
+       for (cs_lnum_t i = 0; i < 6; i++) {
+         for (cs_lnum_t j = 0; j < 6; j++) {
+           cofbfp[face_id][i][j] +=  bf[i][j];
+           cofafp[face_id][i] -= bf[i][j] * coefap[face_id][j];
+         }
+       }
+
+     }
+
+   }
+
    /* Solve Rij
     * --------- */
 
@@ -3070,11 +3119,6 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
    /* All boundary convective flux with upwind */
    int icvflb = 0;
 
-   const cs_real_6_t  *coefa_rij = (const cs_real_6_t *)f_rij->bc_coeffs->a;
-   const cs_real_66_t *coefb_rij = (const cs_real_66_t *)f_rij->bc_coeffs->b;
-   const cs_real_6_t  *cofaf_rij = (const cs_real_6_t *)f_rij->bc_coeffs->af;
-   const cs_real_66_t *cofbf_rij = (const cs_real_66_t *)f_rij->bc_coeffs->bf;
-
    cs_equation_param_t eqp_loc = *eqp;
    eqp_loc.istat  = -1;
    eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
@@ -3087,10 +3131,10 @@ cs_turbulence_rij(cs_lnum_t    ncesmp,
                                       &eqp_loc,
                                       cvara_rij,
                                       cvara_rij,
-                                      coefa_rij,
-                                      coefb_rij,
-                                      cofaf_rij,
-                                      cofbf_rij,
+                                      coefap,
+                                      coefbp,
+                                      cofafp,
+                                      cofbfp,
                                       imasfl,
                                       bmasfl,
                                       viscf,

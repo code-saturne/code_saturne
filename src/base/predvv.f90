@@ -174,6 +174,7 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
 double precision dvol
+double precision n(3)
 double precision tensor(6)
 double precision rscp, tref
 
@@ -222,6 +223,8 @@ double precision, dimension(:), pointer :: cpro_beta, cvar_t
 double precision, dimension(:), allocatable, target :: cpro_rho_tc
 double precision, dimension(:), pointer :: cpro_rho_mass
 double precision, dimension(:,:), allocatable, target :: stf
+double precision, dimension(:), pointer :: ipro_rusanov
+double precision, dimension(:), pointer :: bpro_rusanov
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 type(var_cal_opt), target :: vcopt_loc
@@ -257,6 +260,11 @@ endif
 ! Density at time (n-1) if needed
 if (idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3.or.irovar.eq.1) then
   call field_get_val_prev2_s(icrom, cromaa)
+endif
+
+! Add Rusanov
+if (irijnu.eq.2) then
+  call field_get_val_s_by_name('i_rusanov_diff', ipro_rusanov)
 endif
 
 ! Density for the unsteady term (at time n)
@@ -1160,7 +1168,7 @@ if (vcopt_u%idiff.ge. 1) then
 
     ! When using Rij-epsilon model with the option irijnu=1, the face
     ! viscosity for the Matrix (viscfi and viscbi) is increased
-    if(itytur.eq.3.and.irijnu.eq.1) then
+    if (itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
         w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
@@ -1170,6 +1178,7 @@ if (vcopt_u%idiff.ge. 1) then
    ( imvisp ,                                                       &
      w1     ,                                                       &
      viscfi , viscbi )
+
     endif
 
   ! Tensorial diffusion of the velocity (in case of tensorial porosity)
@@ -1191,7 +1200,7 @@ if (vcopt_u%idiff.ge. 1) then
 
     ! When using Rij-epsilon model with the option irijnu=1, the face
     ! viscosity for the Matrix (viscfi and viscbi) is increased
-    if(itytur.eq.3.and.irijnu.eq.1) then
+    if (itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
         w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
@@ -1214,6 +1223,7 @@ if (vcopt_u%idiff.ge. 1) then
     endif
   endif
 
+
 ! --- If no diffusion, viscosity is set to 0.
 else
 
@@ -1233,6 +1243,27 @@ else
     enddo
   endif
 
+endif
+
+if (irijnu.eq.2) then
+  ! Add Rusanov
+  do ifac = 1, nfac
+    viscf(ifac) = viscf(ifac) + ipro_rusanov(ifac)
+  enddo
+
+  call field_get_val_s_by_name('b_rusanov_diff', bpro_rusanov)
+  do ifac = 1, nfabor
+    n(1) = surfbo(1,ifac) / surfbn(ifac) ! WARNING Normalised here
+    n(2) = surfbo(2,ifac) / surfbn(ifac)
+    n(3) = surfbo(3,ifac) / surfbn(ifac)
+
+    do isou = 1, 3
+      do jsou = 1, 3
+        cofbfv(jsou, isou, ifac) = cofbfv(jsou, isou, ifac) &
+          + 2.d0 * bpro_rusanov(ifac) * n(isou)*n(jsou)
+      enddo
+    enddo
+  enddo
 endif
 
 !-------------------------------------------------------------------------------
