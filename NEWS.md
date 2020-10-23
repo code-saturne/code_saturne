@@ -3,6 +3,9 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Preprocessor: fix handling of "--log" option in next-to last position
+  (could overwrite mesh, but issue only if called outside scripts).
+
 - Enforce consistency of "stage" and "id" run configuration options.
 
 - Fix GUI handling of batch job name.

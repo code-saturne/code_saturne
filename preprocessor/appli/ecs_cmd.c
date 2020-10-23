@@ -965,7 +965,7 @@ ecs_cmd__lit_arg(int    argc,
       else
         ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
 
-      if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
+      if (argc - 2 > iarg && strncmp(argv[iarg + 1], "-", 1))
         outfic = argv[++iarg];
       else
         outfic = "preprocessor.log";
