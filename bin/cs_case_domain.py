@@ -1416,7 +1416,19 @@ class syrthes_domain(base_domain):
 
         compile_logname = os.path.join(self.exec_dir, 'compile.log')
 
+        # Try to work around syrthes detection issue in some environments.
+        path_save = os.getenv('PATH')
+        if path_save:
+            for p in sys.path:
+                f = os.path.join(p, 'syrthes4_create_case')
+                if os.path.isfile(f):
+                    os.environ['PATH'] = p + ':' + path_save
+                    break
+
         retval = self.syrthes_case.prepare_run(exec_srcdir, compile_logname)
+
+        if path_save:
+            os.environ['PATH'] = path_save
 
         self.copy_result(compile_logname)
 
