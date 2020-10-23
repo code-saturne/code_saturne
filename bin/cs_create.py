@@ -108,7 +108,7 @@ def process_cmd_line(argv, pkg):
                       help="create a new Python script case.")
 
     parser.set_defaults(use_ref=True)
-    parser.set_defaults(study_name=os.path.basename(os.getcwd()))
+    parser.set_defaults(study_name=None)
     parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
     parser.set_defaults(verbose=1)
@@ -239,7 +239,7 @@ class study:
 
     def __init__(self,
                  package,
-                 name,
+                 study_name,
                  cases=[],
                  syr_case_names=[],
                  cat_case_name=None,
@@ -255,7 +255,7 @@ class study:
 
         self.package = package
 
-        self.name = name
+        self.study_name = study_name
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
@@ -281,12 +281,13 @@ class study:
         Create a study.
         """
 
-        if self.name != os.path.basename(os.getcwd()):
+        cur_dir = os.getcwd()
 
+        if self.study_name:
             if self.verbose > 0:
-                sys.stdout.write("  o Creating study '%s'...\n" % self.name)
-            os.mkdir(self.name)
-            os.chdir(self.name)
+                sys.stdout.write("  o Creating study '%s'...\n" % self.study_name)
+            os.mkdir(self.study_name)
+            os.chdir(self.study_name)
             os.mkdir('MESH')
             os.mkdir('POST')
 
@@ -319,6 +320,9 @@ class study:
            or self.cat_case_name or self.py_case_name:
             self.create_coupling(repbase)
             create_local_launcher(self.package, repbase)
+
+        if repbase != cur_dir:
+            os.chdir(cur_dir)
 
 
     def create_syrthes_cases(self, repbase):
@@ -465,17 +469,17 @@ class study:
 
         casedirname = casename
 
-        if self.verbose > 0:
-            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
-
         datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
 
-        try:
-            os.mkdir(casedirname)
-        except:
-            sys.exit(1)
+        if os.path.exists(casedirname):
+            sys.stdout.write("  o Case  '%s' already exists\n" % casename)
+            return
 
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
+
+        os.mkdir(casedirname)
         os.chdir(casedirname)
 
         if self.copy is not None:
@@ -708,7 +712,12 @@ class study:
         """
 
         print()
-        print("Name  of the study:", self.name)
+
+        name = self.study_name
+        if not name:
+            name = os.path.basename(os.getcwd())
+
+        print("Name  of the study:", name)
         print("Names of the cases:", self.cases)
         if self.copy is not None:
             print("Copy from case:", self.copy)
