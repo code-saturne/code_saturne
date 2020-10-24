@@ -735,8 +735,7 @@ if (ippmod(idarcy).eq.1) then
 endif
 
 !===============================================================================
-! 8.  CALCUL DU NOMBRE DE COURANT ET DE FOURIER
-!     CALCUL DU PAS DE TEMPS SI VARIABLE
+! 8. Compute time step if variable
 !===============================================================================
 
 if (vcopt_u%iwarni.ge.1) then
@@ -1213,6 +1212,16 @@ enddo
 
 100 continue
 
+!===============================================================================
+! Compute Courant and Fourier number for log
+!===============================================================================
+
+if (vcopt_u%iwarni.ge.1) then
+  write(nfecra,1021)
+endif
+
+call cs_compute_courant_fourier()
+
 ! DARCY : the hydraulic head, identified with the pressure,
 ! has been updated by the call to Richards.
 ! As diffusion of scalars depends on hydraulic head in the
@@ -1477,8 +1486,15 @@ endif
  1020 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&
-'  COMPUTATION OF CFL, FOURIER AND VARIABLE DT                ',/,&
-'  ===========================================                ',/)
+'  COMPUTATION OF CFL, FOURIER AND VARIABLE DT'                ,/,&
+'  ==========================================='                ,/)
+
+ 1021 format(/,                                                   &
+' ------------------------------------------------------------',/,&
+                                                              /,/,&
+'  COMPUTATION OF CFL AND FOURIER',/,&
+'  ==============================',/)
+
  1030 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&
