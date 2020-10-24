@@ -193,7 +193,7 @@ noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)
 libcsexample_la_LDFLAGS = -no-undefined
 
-exampledir = $(pkgdatadir)/user_examples
+exampledir = $(pkgdatadir)/user_sources/EXAMPLES
 example_DATA = $(examplefiles)
 
 clean-local:
@@ -207,14 +207,14 @@ install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c* 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
 	h_user_files=`ls ${top_srcdir}/src/user_examples/*.h 2>/dev/null`; \
 	for f in $${h_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
-	cd $(DESTDIR)$(pkgdatadir)/user_examples && \
+	cd $(DESTDIR)$(exampledir) && \
 	f90_user_examples=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \

@@ -206,7 +206,7 @@ cs_f_user_source_terms.lo cs_f_user_boundary_conditions.lo \
 cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
-userdir = $(pkgdatadir)/user
+userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_parameters.f90 \
@@ -228,9 +228,9 @@ install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(pkgdatadir)/user/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
 	done ; \
-	cd $(DESTDIR)$(pkgdatadir)/user && \
+	cd $(DESTDIR)$(userdir) && \
 	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \

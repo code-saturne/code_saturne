@@ -275,6 +275,7 @@ class study:
 
         self.py_case_name = py_case_name
 
+    #---------------------------------------------------------------------------
 
     def create(self):
         """
@@ -324,6 +325,7 @@ class study:
         if repbase != cur_dir:
             os.chdir(cur_dir)
 
+    #---------------------------------------------------------------------------
 
     def create_syrthes_cases(self, repbase):
         """
@@ -344,6 +346,7 @@ class study:
 
         os_environ = os_env_save
 
+    #---------------------------------------------------------------------------
 
     def create_cathare_case(self, repbase, cathare_path):
         """
@@ -353,6 +356,7 @@ class study:
         os.chdir(repbase)
         self.create_case(self.cat_case_name)
 
+    #---------------------------------------------------------------------------
 
     def create_python_case(self, repbase):
         """
@@ -376,6 +380,7 @@ class study:
             if not os.path.isdir(d):
                 os.mkdir(d)
 
+    #---------------------------------------------------------------------------
 
     def create_coupling(self, repbase):
         """
@@ -446,7 +451,6 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-
         if self.cat_case_name is not None:
             config = configparser.ConfigParser()
             config.read(self.package.get_configfiles())
@@ -461,6 +465,7 @@ class study:
         self.__coupled_run_cfg__(distrep = repbase,
                                  coupled_domains = coupled_domains)
 
+    #---------------------------------------------------------------------------
 
     def create_case(self, casename):
         """
@@ -529,43 +534,13 @@ class study:
         # User source files directory
 
         src = 'SRC'
-        os.mkdir(src)
 
         if self.use_ref:
-
-            user_distpath = os.path.join(datadir, 'user')
-            user_examples_distpath = os.path.join(datadir, 'user_examples')
-
-            user = os.path.join(src, 'REFERENCE')
-            user_examples = os.path.join(src, 'EXAMPLES')
-            shutil.copytree(user_distpath, user)
-            shutil.copytree(user_examples_distpath, user_examples)
-
-            add_datadirs = []
-
-            # If neptune_cfd is present, copy user functions to EXAMPLES folder
-            ncfd_user_examples = os.path.join(self.package.get_dir("datadir"),
-                                              "neptune_cfd")
-            if os.path.isdir(ncfd_user_examples):
-                add_datadirs.append(ncfd_user_examples)
-
-            for d in add_datadirs:
-                user_distpath = os.path.join(d, 'user')
-                user_examples_distpath = os.path.join(d, 'user_examples')
-
-                if os.path.isdir(user_distpath):
-                    s_files = os.listdir(user_distpath)
-                    for f in s_files:
-                        shutil.copy(os.path.join(user_distpath, f), user)
-
-                if os.path.isdir(user_examples_distpath):
-                    s_files = os.listdir(user_examples_distpath)
-                    for f in s_files:
-                        shutil.copy(os.path.join(user_examples_distpath, f),
-                                    user_examples)
-
-            unset_executable(user)
-            unset_executable(user_examples)
+            user_distpath = os.path.join(datadir, 'user_sources')
+            shutil.copytree(user_distpath, src)
+            unset_executable(src)
+        else:
+            os.mkdir(src)
 
         # Copy data and source files from another case
 
@@ -636,6 +611,8 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
+    #---------------------------------------------------------------------------
+
     def __coupled_run_cfg__(self,
                           distrep,
                           coupled_domains=[]):
@@ -666,6 +643,8 @@ class study:
             run_conf.set('setup', 'coupled_domains', domains)
 
         run_conf.save()
+
+    #---------------------------------------------------------------------------
 
     def __build_run_cfg__(self,
                           distrep,
@@ -705,6 +684,7 @@ class study:
 
         run_conf.save()
 
+    #---------------------------------------------------------------------------
 
     def dump(self):
         """
@@ -733,7 +713,6 @@ class study:
             for c in self.py_case_name:
                 print("  " + c)
         print()
-
 
 #-------------------------------------------------------------------------------
 # Creation of the case of study directory tree
