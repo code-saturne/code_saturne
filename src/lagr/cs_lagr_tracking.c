@@ -1635,6 +1635,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       particle_velocity_seen[k] -= tmp * face_norm[k];
 
     event_flag = event_flag | CS_EVENT_REBOUND;
+
   }
 
   else if (b_type == CS_LAGR_FOULING) {

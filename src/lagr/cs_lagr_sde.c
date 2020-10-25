@@ -189,8 +189,11 @@ _lages1(cs_real_t           dtp,
   cs_real_t tbrix1, tbrix2, tbriu;
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
+
+  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
+  const cs_thermal_model_variable_t t_var = cs_glob_thermal_model->itherm;
+
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
@@ -209,420 +212,405 @@ _lages1(cs_real_t           dtp,
     cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                   CS_LAGR_CELL_ID);
 
-    if (cell_id >= 0) {
+    if (cell_id < 0)
+      continue;
 
-      /* Get particle coordinates, velocity and velocity seen*/
-      cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_VELOCITY);
-      cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_VELOCITY_SEEN);
-      cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_COORDS);
-      cs_real_t *part_vel          = cs_lagr_particle_attr(particle, p_am,
+    /* Get particle coordinates, velocity and velocity seen*/
+
+    cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                            CS_LAGR_VELOCITY);
-      cs_real_t *part_vel_seen     = cs_lagr_particle_attr(particle, p_am,
+    cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                            CS_LAGR_VELOCITY_SEEN);
-      cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
+    cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                            CS_LAGR_COORDS);
-
-      /* Initialize (without change of frame)*/
-
-      cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
-      cs_real_t old_part_vel_r[3] = {old_part_vel[0],
-                                     old_part_vel[1],
-                                     old_part_vel[2]};
-      cs_real_t part_vel_seen_r[3] = {part_vel_seen[0],
-                                      part_vel_seen[1],
-                                      part_vel_seen[2]};
-      cs_real_t old_part_vel_seen_r[3] = {old_part_vel_seen[0],
-                                          old_part_vel_seen[1],
-                                          old_part_vel_seen[2]};
-      cs_real_t fluid_vel_r[3] = {cvar_vel[cell_id][0],
-                                  cvar_vel[cell_id][1],
-                                  cvar_vel[cell_id][2]};
-      cs_real_t force_p_r[3] = {force_p[ip][0], force_p[ip][1], force_p[ip][2]};
-      cs_real_t piil_r[3] = {piil[ip][0], piil[ip][1], piil[ip][2]};
-      cs_real_t tlag_r[3] = {tlag[ip][0], tlag[ip][1], tlag[ip][2]};
-      cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
-      cs_real_t displ_r[3];
-
-
-      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL
-       || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL ) {
-        /* ===========================================================================
-         * 1bis. Reference frame change:
-         * --------------------------
-         * global reference frame --> local reference frame for ellipsoids
-         * ======================================================================== */
-
-        /* 1.0 - get rotation matrix */
-        cs_real_33_t trans_m;
-        if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL ) {
-          // Use euler angles for spheroids (jeffery)
-          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-              CS_LAGR_EULER);
-
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (0,1) */
-          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (0,2) */
-          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (1,0) */
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (1,2) */
-          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (2,0) */
-          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (2,1) */
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
-        }
-        else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL ) {
-          // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
-          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
-          // Get vector for rotation
-          cs_real_t n_rot[3];
-          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
-          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
-          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
-          cs_math_3_normalise(n_rot, n_rot);
-          // Compute rotation angle
-          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
-                                    + orient_loc[1]*axe_singularity[1]
-                                    + orient_loc[2]*axe_singularity[2]);
-          // Compute the rotation matrix
-          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [0][1]
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [0][2]
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [1][0]
-          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [1][2]
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [2][0]
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [2][1]
-          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
-        }
-        /* 1.1 - particle velocity */
-
-        cs_math_33_3_product(trans_m, old_part_vel, old_part_vel_r);
-
-        /* 1.2 - flow-seen velocity  */
-
-        cs_math_33_3_product(trans_m, old_part_vel_seen, old_part_vel_seen_r);
-
-        /* 1.4 - flow velocity  */
-
-        cs_math_33_3_product(trans_m, cvar_vel[cell_id], fluid_vel_r);
-
-        /* 1.5 Particle force: - pressure gradient/romp + external force + g   */
-
-        cs_math_33_3_product(trans_m, force_p[ip], force_p_r);
-
-        /* 1.6 - "piil" term    */
-
-        cs_math_33_3_product(trans_m, piil[ip], piil_r);
-
-        /* 1.7 - taup  */
-
-        cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_RADII);
-
-        cs_real_t *s_p = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_SHAPE_PARAM);
-
-        taup_r[0] = 3.0 / 8.0 * taup[ip] * (radii[0]*radii[0]*s_p[0]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
-        taup_r[1] = 3.0 / 8.0 * taup[ip] * (radii[1]*radii[1]*s_p[1]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
-        taup_r[2] = 3.0 / 8.0 * taup[ip] * (radii[2]*radii[2]*s_p[2]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
-
-      }
-
-      /* =========================================================================
-       * 2. Integration of the EDS on the particles
-       * =========================================================================*/
-
-      for (cs_lnum_t id = 0; id < 3; id++) {
-
-        /* --> (2.1) Calcul preliminaires :    */
-        /* ----------------------------   */
-        /* calcul de II*TL+<u> et [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
-
-        cs_real_t tci = piil_r[id] * tlag_r[id] + fluid_vel_r[id];
-        cs_real_t force = force_p_r[id];
-
-        /* --> (2.2) Calcul des coefficients/termes deterministes */
-        /* ----------------------------------------------------    */
-
-        aux1 = exp(-dtp / taup_r[id]);
-        aux2 = exp(-dtp / tlag_r[id]);
-        aux3 = tlag_r[id] / (tlag_r[id] - taup_r[id]);
-        aux4 = tlag_r[id] / (tlag_r[id] + taup_r[id]);
-        aux5 = tlag_r[id] * (1.0 - aux2);
-        aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag_r[id];
-        aux7 = tlag_r[id] - taup_r[id];
-        aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
-
-        /* --> trajectory terms */
-        cs_real_t aa = taup_r[id] * (1.0 - aux1);
-        cs_real_t bb = (aux5 - aa) * aux3;
-        cs_real_t cc = dtp - aa - bb;
-
-        ter1x = aa * old_part_vel_r[id];
-        ter2x = bb * old_part_vel_seen_r[id];
-        ter3x = cc * tci;
-        ter4x = (dtp - aa) * force;
-
-        /* --> flow-seen velocity terms   */
-        ter1f = old_part_vel_seen_r[id] * aux2;
-        ter2f = tci * (1.0 - aux2);
-
-        /* --> termes pour la vitesse des particules     */
-        cs_real_t dd = aux3 * (aux2 - aux1);
-        cs_real_t ee = 1.0 - aux1;
-
-        ter1p = old_part_vel_r[id] * aux1;
-        ter2p = old_part_vel_seen_r[id] * dd;
-        ter3p = tci * (ee - dd);
-        ter4p = force * ee;
-
-        /* --> integrale sur la vitesse du fluide vu     */
-        gama2  = 0.5 * (1.0 - aux2 * aux2);
-        p11   = sqrt(gama2 * aux6);
-        ter3f = p11 * vagaus[ip][id][0];
-
-        /* --> integral for the particles velocity  */
-        aux9  = 0.5 * tlag_r[id] * (1.0 - aux2 * aux2);
-        aux10 = 0.5 * taup_r[id] * (1.0 - aux1 * aux1);
-        aux11 =   taup_r[id] * tlag_r[id]
-                * (1.0 - aux1 * aux2)
-                / (taup_r[id] + tlag_r[id]);
-
-        grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-        gagam = (aux9 - aux11) * (aux8 / aux3);
-
-        if (CS_ABS(p11) > cs_math_epzero) {
-
-          p21 = gagam / p11;
-          p22 = grga2 - cs_math_pow2(p21);
-          p22 = sqrt(CS_MAX(0.0, p22));
-
-        }
-        else {
-
-          p21 = 0.0;
-          p22 = 0.0;
-
-        }
-
-        ter5p = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
-
-        /* --> (2.3) Calcul des coefficients pour les integrales stochastiques :  */
-        /* --> integrale sur la position des particules  */
-        gaome = ( (tlag_r[id] - taup_r[id]) * (aux5 - aa)
-                  - tlag_r[id] * aux9
-                  - taup_r[id] * aux10
-                  + (tlag_r[id] + taup_r[id]) * aux11)
-                * aux8;
-        omegam = aux3 * ( (tlag_r[id] - taup_r[id]) * (1.0 - aux2)
-                          - 0.5 * tlag_r[id] * (1.0 - aux2 * aux2)
-                          + cs_math_pow2(taup_r[id]) / (tlag_r[id] + taup_r[id]) * (1.0 - aux1 * aux2)
-                          ) * aux6;
-        omega2 =   aux7 * (aux7 * dtp - 2.0 * (tlag_r[id] * aux5 - taup_r[id] * aa))
-                 + 0.5 * tlag_r[id] * tlag_r[id] * aux5 * (1.0 + aux2)
-                 + 0.5 * taup_r[id] * taup_r[id] * aa * (1.0 + aux1)
-                 - 2.0 * aux4 * tlag_r[id] * taup_r[id] * taup_r[id] * (1.0 - aux1* aux2);
-        omega2 = aux8 * omega2;
-
-        if (p11 > cs_math_epzero)
-          p31 = omegam / p11;
-        else
-          p31 = 0.0;
-
-        if (p22 > cs_math_epzero)
-          p32 = (gaome - p31 * p21) / p22;
-        else
-          p32 = 0.0;
-
-        p33 = omega2 - cs_math_pow2(p31) - cs_math_pow2(p32);
-        p33 = sqrt(CS_MAX(0.0, p33));
-        ter5x = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
-
-        /* --> (2.3) Calcul des Termes dans le cas du mouvement Brownien :   */
-        if (cs_glob_lagr_brownian->lamvbr == 1) {
-
-          /* Calcul de la temperature du fluide en fonction du type  */
-          /* d'ecoulement    */
-          cs_real_t tempf;
-          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-              || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
-            tempf = extra->t_gaz->val[cell_id];
-
-          else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-                   || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-                   || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-                   || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
-            tempf = extra->temperature->val[cell_id];
-
-          else if (   cs_glob_thermal_model->itherm ==
-                              CS_THERMAL_MODEL_TEMPERATURE
-                   && cs_glob_thermal_model->itpscl ==
-                              CS_TEMPERATURE_SCALE_CELSIUS)
-            tempf = extra->scal_t->val[cell_id] + tkelvi;
-
-          else if (   cs_glob_thermal_model->itherm ==
-                              CS_THERMAL_MODEL_TEMPERATURE
-                   && cs_glob_thermal_model->itpscl ==
-                              CS_TEMPERATURE_SCALE_KELVIN)
-            tempf = extra->scal_t->val[cell_id];
-
-          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
-
-            int mode  = 1;
-            CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
-
-            tempf = tempf + tkelvi;
-
-          }
-
-          else
-            tempf = cs_glob_fluid_properties->t0;
-
-          cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-
-          cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[id]));
-
-          cs_real_t tix2 =   cs_math_pow2((taup_r[id] * ddbr))
-                           * (dtp - taup_r[id] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
-          cs_real_t tiu2 =   ddbr * ddbr * taup_r[id]
-                           * (1.0 - exp(-2.0 * dtp / taup_r[id])) / 2.0;
-
-          cs_real_t tixiu  = cs_math_pow2((ddbr * taup_r[id] * (1.0 - aux1))) / 2.0;
-
-          tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
-
-          if (tbrix2 > 0.0)
-            tbrix2    = sqrt(tbrix2) * brgaus[ip * 6 + id];
-          else
-            tbrix2    = 0.0;
-
-          if (tiu2 > 0.0)
-            tbrix1    = tixiu / sqrt(tiu2) * brgaus[ip * 6 + id + 3];
-          else
-            tbrix1    = 0.0;
-
-          if (tiu2 > 0.0) {
-
-            tbriu      = sqrt(tiu2) * brgaus[ip * 6 + id + 3];
-            terbru[ip] = sqrt(tiu2);
-
-          }
-          else {
-
-            tbriu     = 0.0;
-            terbru[ip]  = 0.0;
-
-          }
-
-        }
-        else {
-
-          tbrix1  = 0.0;
-          tbrix2  = 0.0;
-          tbriu   = 0.0;
-
-        }
-
-        /* Finalisation des ecritures */
-
-        /* --> trajectory  */
-        displ_r[id] = ter1x + ter2x + ter3x + ter4x + ter5x + tbrix1 + tbrix2;
-
-        /* --> flow-seen velocity    */
-        part_vel_seen_r[id] = ter1f + ter2f + ter3f;
-
-        /* --> particles velocity    */
-        part_vel_r[id] = ter1p + ter2p + ter3p + ter4p + ter5p + tbriu;
-
-      }
-
-      /* ===========================================================================
-       * 3. Reference frame change:
+    cs_real_t *part_vel          = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_VELOCITY);
+    cs_real_t *part_vel_seen     = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_COORDS);
+
+    /* Initialize (without change of frame)*/
+
+    cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
+    cs_real_t old_part_vel_r[3] = {old_part_vel[0],
+                                   old_part_vel[1],
+                                   old_part_vel[2]};
+    cs_real_t part_vel_seen_r[3] = {part_vel_seen[0],
+                                    part_vel_seen[1],
+                                    part_vel_seen[2]};
+    cs_real_t old_part_vel_seen_r[3] = {old_part_vel_seen[0],
+                                        old_part_vel_seen[1],
+                                        old_part_vel_seen[2]};
+    cs_real_t fluid_vel_r[3] = {cvar_vel[cell_id][0],
+                                cvar_vel[cell_id][1],
+                                cvar_vel[cell_id][2]};
+    cs_real_t force_p_r[3] = {force_p[ip][0], force_p[ip][1], force_p[ip][2]};
+    cs_real_t piil_r[3] = {piil[ip][0], piil[ip][1], piil[ip][2]};
+    cs_real_t tlag_r[3] = {tlag[ip][0], tlag[ip][1], tlag[ip][2]};
+    cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
+    cs_real_t displ_r[3];
+
+    if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL
+        || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
+
+      /* Reference frame change:
        * --------------------------
-       * local reference frame for ellipsoids --> global reference frame
-       * NB: Inverse transformation: transpose of trans_m
-       * ======================================================================== */
+       * global reference frame --> local reference frame for ellipsoids
+       * =============================================================== */
 
-      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL) {
-        /* For spherical particles, no change of frame*/
-        for (cs_lnum_t id = 0; id < 3; id++) {
-          part_coords[id] = old_part_coords[id] + displ_r[id];
-          part_vel[id] = part_vel_r[id];
-          part_vel_seen[id] = part_vel_seen_r[id];
-        }
+      /* Compute rotation matrix */
+      cs_real_t trans_m[3][3];
+
+      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL ) {
+        // Use Euler angles for spheroids (jeffery)
+        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
+                                                 CS_LAGR_EULER);
+
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5); /* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);     /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);     /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);     /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5); /* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);     /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);     /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);     /* (2,1) */
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
       }
 
-      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
-            || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
+        // Use rotation matrix for stochastic model
+        cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_ORIENTATION);
+        cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
+        // Get vector for rotation
+        cs_real_t n_rot[3];
+        cs_math_3_cross_product(orient_loc, singularity_axis, n_rot);
+        cs_math_3_normalize(n_rot, n_rot);
+        // Compute rotation angle
+        cs_real_t cosa = cs_math_3_dot_product(orient_loc, singularity_axis);
+        cs_real_t sina = sin(acos(cosa));
 
-        /* 3.0 - get rotation matrix */
-        cs_real_33_t trans_m;
-        if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
-          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                   CS_LAGR_EULER);
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (0,1) */
-          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (0,2) */
-          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (1,0) */
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (1,2) */
-          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (2,0) */
-          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (2,1) */
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+        // Compute the rotation matrix
+        trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina; // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina; // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina; // [1][0]
+        trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina; // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina; // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina; // [2][1]
+        trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);     // [2][2]
+      }
+
+      /* 1.1 - particle velocity */
+
+      cs_math_33_3_product(trans_m, old_part_vel, old_part_vel_r);
+
+      /* 1.2 - flow-seen velocity  */
+
+      cs_math_33_3_product(trans_m, old_part_vel_seen, old_part_vel_seen_r);
+
+      /* 1.4 - flow velocity  */
+
+      cs_math_33_3_product(trans_m, cvar_vel[cell_id], fluid_vel_r);
+
+      /* 1.5 Particle force: - pressure gradient/romp + external force + g   */
+
+      cs_math_33_3_product(trans_m, force_p[ip], force_p_r);
+
+      /* 1.6 - "piil" term    */
+
+      cs_math_33_3_product(trans_m, piil[ip], piil_r);
+
+      /* 1.7 - taup  */
+
+      cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
+                                               CS_LAGR_RADII);
+
+      cs_real_t *s_p = cs_lagr_particle_attr(particle, p_am,
+                                             CS_LAGR_SHAPE_PARAM);
+
+      taup_r[0] = 3.0 / 8.0 * taup[ip] * (radii[0]*radii[0]*s_p[0]+ s_p[3])
+                  / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
+      taup_r[1] = 3.0 / 8.0 * taup[ip] * (radii[1]*radii[1]*s_p[1]+ s_p[3])
+                  / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
+      taup_r[2] = 3.0 / 8.0 * taup[ip] * (radii[2]*radii[2]*s_p[2]+ s_p[3])
+                  / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
+
+    }
+
+    /* Integration of the SDE on the particles
+     * ======================================= */
+
+    for (cs_lnum_t id = 0; id < 3; id++) {
+
+      /* Preliminary computation:
+         ------------------------
+         compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
+
+      cs_real_t tci = piil_r[id] * tlag_r[id] + fluid_vel_r[id];
+      cs_real_t force = force_p_r[id];
+
+      /* Compute deterministic coefficients/terms
+         ---------------------------------------- */
+
+      aux1 = exp(-dtp / taup_r[id]);
+      aux2 = exp(-dtp / tlag_r[id]);
+      aux3 = tlag_r[id] / (tlag_r[id] - taup_r[id]);
+      aux4 = tlag_r[id] / (tlag_r[id] + taup_r[id]);
+      aux5 = tlag_r[id] * (1.0 - aux2);
+      aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag_r[id];
+      aux7 = tlag_r[id] - taup_r[id];
+      aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
+
+      /* --> trajectory terms */
+      cs_real_t aa = taup_r[id] * (1.0 - aux1);
+      cs_real_t bb = (aux5 - aa) * aux3;
+      cs_real_t cc = dtp - aa - bb;
+
+      ter1x = aa * old_part_vel_r[id];
+      ter2x = bb * old_part_vel_seen_r[id];
+      ter3x = cc * tci;
+      ter4x = (dtp - aa) * force;
+
+      /* Flow-seen velocity terms */
+      ter1f = old_part_vel_seen_r[id] * aux2;
+      ter2f = tci * (1.0 - aux2);
+
+      /* Terms for particle velocity */
+      cs_real_t dd = aux3 * (aux2 - aux1);
+      cs_real_t ee = 1.0 - aux1;
+
+      ter1p = old_part_vel_r[id] * aux1;
+      ter2p = old_part_vel_seen_r[id] * dd;
+      ter3p = tci * (ee - dd);
+      ter4p = force * ee;
+
+      /* Integral on flow velocity seen */
+      gama2  = 0.5 * (1.0 - aux2 * aux2);
+      p11   = sqrt(gama2 * aux6);
+      ter3f = p11 * vagaus[ip][id][0];
+
+      /* Integral for the particles velocity */
+      aux9  = 0.5 * tlag_r[id] * (1.0 - aux2 * aux2);
+      aux10 = 0.5 * taup_r[id] * (1.0 - aux1 * aux1);
+      aux11 =   taup_r[id] * tlag_r[id]
+        * (1.0 - aux1 * aux2)
+        / (taup_r[id] + tlag_r[id]);
+
+      grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
+      gagam = (aux9 - aux11) * (aux8 / aux3);
+
+      if (CS_ABS(p11) > cs_math_epzero) {
+        p21 = gagam / p11;
+        p22 = grga2 - cs_math_pow2(p21);
+        p22 = sqrt(CS_MAX(0.0, p22));
+      }
+      else {
+        p21 = 0.0;
+        p22 = 0.0;
+      }
+
+      ter5p = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
+
+      /* --> (2.3) Calcul des coefficients pour les integrales stochastiques:  */
+      /* --> integrale sur la position des particules  */
+      gaome = ( (tlag_r[id] - taup_r[id]) * (aux5 - aa)
+                - tlag_r[id] * aux9
+                - taup_r[id] * aux10
+                + (tlag_r[id] + taup_r[id]) * aux11)
+        * aux8;
+      omegam = aux3 * ( (tlag_r[id] - taup_r[id]) * (1.0 - aux2)
+                        - 0.5 * tlag_r[id] * (1.0 - aux2 * aux2)
+                        + cs_math_pow2(taup_r[id]) / (tlag_r[id] + taup_r[id]) * (1.0 - aux1 * aux2)
+                        ) * aux6;
+      omega2 =   aux7 * (aux7 * dtp - 2.0 * (tlag_r[id] * aux5 - taup_r[id] * aa))
+        + 0.5 * tlag_r[id] * tlag_r[id] * aux5 * (1.0 + aux2)
+        + 0.5 * taup_r[id] * taup_r[id] * aa * (1.0 + aux1)
+        - 2.0 * aux4 * tlag_r[id] * taup_r[id] * taup_r[id] * (1.0 - aux1* aux2);
+      omega2 = aux8 * omega2;
+
+      if (p11 > cs_math_epzero)
+        p31 = omegam / p11;
+      else
+        p31 = 0.0;
+
+      if (p22 > cs_math_epzero)
+        p32 = (gaome - p31 * p21) / p22;
+      else
+        p32 = 0.0;
+
+      p33 = omega2 - cs_math_pow2(p31) - cs_math_pow2(p32);
+      p33 = sqrt(CS_MAX(0.0, p33));
+      ter5x = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
+
+      /* --> (2.3) Calcul des Termes dans le cas du mouvement Brownien :   */
+      if (cs_glob_lagr_brownian->lamvbr == 1) {
+
+        /* Calcul de la temperature du fluide en fonction du type  */
+        /* d'ecoulement    */
+        cs_real_t tempf;
+        if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+               || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
+          tempf = extra->t_gaz->val[cell_id];
+
+        else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+                 || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+                 || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+                 || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
+          tempf = extra->temperature->val[cell_id];
+
+        else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
+                 && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          tempf = extra->scal_t->val[cell_id] + tkelvi;
+
+        else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
+                 && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
+          tempf = extra->scal_t->val[cell_id];
+
+        else if (t_var == CS_THERMAL_MODEL_ENTHALPY) {
+
+          int mode  = 1;
+          CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
+
+          tempf = tempf + tkelvi;
 
         }
-        else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
-          // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
-          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
-          // Get vector for rotation
-          cs_real_t n_rot[3];
-          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
-          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
-          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
-          cs_math_3_normalise(n_rot, n_rot);
-          // Compute rotation angle
-          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
-                                    + orient_loc[1]*axe_singularity[1]
-                                    + orient_loc[2]*axe_singularity[2]);
-          // Compute the rotation matrix
-          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [0][1]
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [0][2]
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [1][0]
-          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [1][2]
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [2][0]
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [2][1]
-          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
+        else
+          tempf = cs_glob_fluid_properties->t0;
+
+        cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+
+        cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[id]));
+
+        cs_real_t tix2 =   cs_math_pow2((taup_r[id] * ddbr))
+          * (dtp - taup_r[id] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+        cs_real_t tiu2 =   ddbr * ddbr * taup_r[id]
+          * (1.0 - exp(-2.0 * dtp / taup_r[id])) / 2.0;
+
+        cs_real_t tixiu  = cs_math_pow2((ddbr * taup_r[id] * (1.0 - aux1))) / 2.0;
+
+        tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
+
+        if (tbrix2 > 0.0)
+          tbrix2    = sqrt(tbrix2) * brgaus[ip * 6 + id];
+        else
+          tbrix2    = 0.0;
+
+        if (tiu2 > 0.0)
+          tbrix1    = tixiu / sqrt(tiu2) * brgaus[ip * 6 + id + 3];
+        else
+          tbrix1    = 0.0;
+
+        if (tiu2 > 0.0) {
+          tbriu      = sqrt(tiu2) * brgaus[ip * 6 + id + 3];
+          terbru[ip] = sqrt(tiu2);
         }
-
-        /* 3.1 - Displacement   */
-
-        cs_real_t displ[3];
-
-        cs_math_33t_3_product(trans_m, displ_r, displ);
-        for (cs_lnum_t id = 0; id < 3; id++)
-          part_coords[id] = old_part_coords[id] + displ[id];
-
-        /* 3.2 - Particle velocity   */
-
-        cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
-
-        /* 3.3 - flow-seen velocity  */
-
-        cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
+        else {
+          tbriu     = 0.0;
+          terbru[ip]  = 0.0;
+        }
 
       }
+      else {
+        tbrix1  = 0.0;
+        tbrix2  = 0.0;
+        tbriu   = 0.0;
+      }
+
+      /* Finalize output */
+
+      /* trajectory  */
+      displ_r[id] = ter1x + ter2x + ter3x + ter4x + ter5x + tbrix1 + tbrix2;
+
+      /* flow-seen velocity */
+      part_vel_seen_r[id] = ter1f + ter2f + ter3f;
+
+      /* particles velocity */
+      part_vel_r[id] = ter1p + ter2p + ter3p + ter4p + ter5p + tbriu;
+
+    }
+
+    /* ===========================================================================
+     * 3. Reference frame change:
+     * --------------------------
+     * local reference frame for ellipsoids --> global reference frame
+     * NB: Inverse transformation: transpose of trans_m
+     * ======================================================================== */
+
+    if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL) {
+      /* For spherical particles, no change of frame*/
+      for (cs_lnum_t id = 0; id < 3; id++) {
+        part_coords[id] = old_part_coords[id] + displ_r[id];
+        part_vel[id] = part_vel_r[id];
+        part_vel_seen[id] = part_vel_seen_r[id];
+      }
+    }
+
+    else if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
+             || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+
+      /* 3.0 - get rotation matrix */
+      cs_real_33_t trans_m;
+      if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
+                                                 CS_LAGR_EULER);
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5); /* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);     /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);     /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);     /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5); /* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);     /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);     /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);     /* (2,1) */
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+
+      }
+      else if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
+
+        // Use rotation matrix for stochastic model
+        cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_ORIENTATION);
+        cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
+        // Get vector for rotation
+        cs_real_t n_rot[3];
+        cs_math_3_cross_product(orient_loc, singularity_axis, n_rot);
+        cs_math_3_normalize(n_rot, n_rot);
+
+        // Compute rotation angle
+        cs_real_t cosa = cs_math_3_dot_product(orient_loc, singularity_axis);
+        cs_real_t sina = sin(acos(cosa));
+
+        // Compute the rotation matrix
+        trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina; // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina; // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina; // [1][0]
+        trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina; // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina; // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina; // [2][1]
+        trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);     // [2][2]
+
+      }
+
+      /* 3.1 - Displacement   */
+
+      cs_real_t displ[3];
+
+      cs_math_33t_3_product(trans_m, displ_r, displ);
+      for (cs_lnum_t id = 0; id < 3; id++)
+        part_coords[id] = old_part_coords[id] + displ[id];
+
+      /* 3.2 - Particle velocity   */
+
+      cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
+
+      /* 3.3 - flow-seen velocity  */
+
+      cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
 
     }
 
@@ -675,26 +663,24 @@ _lages2(cs_real_t           dtp,
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  /* ==============================================================================*/
-  /* 1. Initialisations                                                            */
-  /* ==============================================================================*/
+  /* Initializations
+     ===========================================================================*/
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
   cs_real_t *auxl;
   BFT_MALLOC(auxl, p_set->n_particles*6, cs_real_t);
 
-  /* =============================================================================
-   * 2. Integration of the SDE on partilces
-   * =============================================================================*/
+  /* Integration of the SDE on partilces
+     ===========================================================================*/
 
-  /* =============================================================================
-   * 2.1 CALCUL A CHAQUE SOUS PAS DE TEMPS
-   * ==============================================================================*/
-  /* --> Compute tau_p*A_p and II*TL+<u> :
-   *     -------------------------------------*/
+  /* Computation each sub-time step
+     ---------------------------------------------------------------------------*/
+  /* Compute tau_p*A_p and II*TL+<u>:
+   * ------------------------------- */
 
   cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+
   for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
 
     if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
@@ -717,13 +703,12 @@ _lages2(cs_real_t           dtp,
 
   }
 
-  /* ==============================================================================*/
-  /* 2.2 ETAPE DE PREDICTION : */
-  /* ==============================================================================*/
+  /* Prediction step
+     ===========================================================================*/
 
   if (nor == 1) {
 
-    /* --> Save tau_p^n */
+    /* Save tau_p^n */
     for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
 
       if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
@@ -733,7 +718,7 @@ _lages2(cs_real_t           dtp,
 
     }
 
-    /* --> Save coupling */
+    /* Save coupling */
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
@@ -907,7 +892,7 @@ _lages2(cs_real_t           dtp,
         else
           tbriu = 0.0;
 
-        /* finalise writing */
+        /* finalize writing */
 
         part_vel[id] = pred_part_vel[id] + ter1 + ter2 + ter3 + ter4 + tbriu;
 
@@ -1164,7 +1149,7 @@ _lagesd(cs_real_t             dtp,
   cs_lnum_t marko  = cs_lagr_particle_get_lnum(particle, p_am,
                                                CS_LAGR_MARKO_VALUE);
   cs_real_t interf = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF);
-  cs_real_3_t depl;
+  cs_real_t depl[3];
 
   cs_lagr_deposition(dtp,
                      &marko,
@@ -1518,7 +1503,7 @@ _lagesd(cs_real_t             dtp,
 
             adhes_torque[id]  = - cs_lagr_particle_get_real(particle, p_am,
                                                             CS_LAGR_ADHESION_TORQUE)
-              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
           }
 
           cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
@@ -2146,28 +2131,39 @@ _lagesd(cs_real_t             dtp,
                                                              CS_LAGR_HEIGHT);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_stay);
 
-                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-                  cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
-                  * 0.25 / mq->b_f_face_surf[n_f_id];
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+                  -= cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_f_face_surf[n_f_id];
 
-                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-                  cs_math_pow2(cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id]);
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
+                  -= cs_math_pow2(cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
+                    * 0.25 / mq->b_f_face_surf[n_f_id]);
 
-                cs_real_t nb_stay =
-                  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) -
-                  cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART);
+                cs_real_t nb_stay
+                  =   cs_lagr_particle_get_real(particle, p_am,
+                                                CS_LAGR_CLUSTER_NB_PART)
+                    - cs_lagr_particle_get_real(new_part, p_am,
+                                                CS_LAGR_CLUSTER_NB_PART);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, nb_stay);
 
-                cs_real_t mp_stay = p_mass - cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_MASS);
+                cs_real_t mp_stay
+                  = p_mass - cs_lagr_particle_get_real(new_part, p_am,
+                                                       CS_LAGR_MASS);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mp_stay);
 
                 /* The new particle starts rolling */
-                cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
-                cs_lagr_particles_set_flag(p_set, ip, CS_LAGR_PART_ROLLING);
-                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
-                cs_lagr_particle_set_lnum(new_part, p_am, CS_LAGR_N_SMALL_ASPERITIES, CS_MAX(1,ncont_pp));
-                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_TORQUE, adhes_force * d_resusp * 0.5);
+                cs_lagr_particles_unset_flag(p_set, ip,
+                                             CS_LAGR_PART_DEPOSITION_FLAGS);
+                cs_lagr_particles_set_flag(p_set, ip,
+                                           CS_LAGR_PART_ROLLING);
+                cs_lagr_particle_set_real(new_part, p_am,
+                                          CS_LAGR_ADHESION_FORCE, adhes_force);
+                cs_lagr_particle_set_lnum(new_part, p_am,
+                                          CS_LAGR_N_SMALL_ASPERITIES,
+                                          CS_MAX(1,ncont_pp));
+                cs_lagr_particle_set_real(new_part, p_am,
+                                          CS_LAGR_ADHESION_TORQUE,
+                                          adhes_force * d_resusp * 0.5);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_DEPO_TIME, 0.0);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
 
@@ -2194,7 +2190,7 @@ _lagesd(cs_real_t             dtp,
     }
 
   }
-  /* if ireent.eq.0 --> Motionless deposited particle  */
+  /* if ireent.eq.0 --> Motionless deposited particle */
   else {
 
     if (cs_lagr_particles_get_flag(p_set, ip,
@@ -2300,6 +2296,9 @@ _lagdep(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
+  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
+  const cs_thermal_model_variable_t t_var = cs_glob_thermal_model->itherm;
+
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
@@ -2363,20 +2362,20 @@ _lagdep(cs_real_t           dtp,
                || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
         tempf = extra->temperature->val[cell_id];
 
-      else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-               && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+      else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
+               && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
         tempf = extra->scal_t->val[cell_id] + tkelvi;
 
-      else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-               && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
+      else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
+               && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->scal_t->val[cell_id];
 
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+      else if (t_var == CS_THERMAL_MODEL_ENTHALPY) {
 
         int mode  = 1;
-        CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
+        CS_PROCF(usthht,USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
-        tempf = tempf + tkelvi;
+        tempf += tkelvi;
 
       }
 
@@ -2407,15 +2406,15 @@ _lagdep(cs_real_t           dtp,
 
           vitf = cvar_vel[cell_id][id];
 
-          /* --> (2.1) Calcul preliminaires :    */
-          /* ----------------------------   */
-          /* compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
+          /* Preliminary computations
+             ------------------------
+             compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
           cs_real_t tci = piil[ip][id] * tlag[ip][id] + vitf;
           cs_real_t force = force_p[ip][id];
 
-          /* --> (2.2) Calcul des coefficients/termes deterministes */
-          /* ----------------------------------------------------    */
+          /* Compute deterministic coefficients/terms
+             ---------------------------------------- */
 
           aux1 = exp(-dtp / taup[ip]);
           aux2 = exp(-dtp / tlag[ip][id]);
@@ -2449,8 +2448,8 @@ _lagdep(cs_real_t           dtp,
           ter3p = tci * (ee - dd);
           ter4p = force * ee;
 
-          /* --> (2.3) Coefficients computation for the stochastic integral    */
-          /* --> Integral for particles position */
+          /* Coefficients computation for the stochastic integral */
+          /* Integral for particles position */
           gama2  = 0.5 * (1.0 - aux2 * aux2);
           omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
                                   - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)

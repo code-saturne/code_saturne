@@ -195,7 +195,6 @@ cs_lagr_car(int              iprev,
     cs_real_t fdr;
     if (rep <= rec)
       fdr = 18.0 * xnul * (1.0 + 0.15 * pow (rep, 0.687)) / d2;
-
     else
       fdr = 0.44 * 3.0 / 4.0 * rel_vel_norm / p_diam;
 
@@ -264,26 +263,22 @@ cs_lagr_car(int              iprev,
 
   if (cs_glob_lagr_model->idistu == 1) {
 
-    cs_real_t  *energi = NULL, * dissip = NULL;
+    cs_real_t  *energi = NULL, *dissip = NULL;
     BFT_MALLOC(energi, ncel, cs_real_t);
     BFT_MALLOC(dissip, ncel, cs_real_t);
 
     if (extra->itytur == 2 || extra->iturb == 50) {
 
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-
         energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
         dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
-
       }
 
     }
-
     else if (extra->itytur == 3) {
 
       if (extra->cvar_rij == NULL) {
         /* Deprecated irijco = 0 */
-
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
           energi[cell_id] = 0.5 * (  extra->cvar_r11->vals[iprev][cell_id]
@@ -292,7 +287,8 @@ cs_lagr_car(int              iprev,
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
 
         }
-      } else {
+      }
+      else {
         /* irijco = 1 */
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
@@ -304,18 +300,15 @@ cs_lagr_car(int              iprev,
         }
       }
     }
-
     else if (extra->iturb == 60) {
 
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
         energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
         dissip[cell_id] = extra->cmu * energi[cell_id]
                                      * extra->cvar_omg->vals[iprev][cell_id];
-
       }
 
     }
-
     else {
 
       bft_error
@@ -331,7 +324,7 @@ cs_lagr_car(int              iprev,
 
     }
 
-    /* -> Calcul de TL et BX     */
+    /* -> Calculation of TL and BX     */
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
@@ -360,10 +353,8 @@ cs_lagr_car(int              iprev,
         tl  = CS_MAX(tl, cs_math_epzero);
 
         for (cs_lnum_t i = 0; i < 3; i++) {
-
           vpart[i] = part_vel[i];
           vflui[i] = part_vel_seen[i];
-
         }
 
         if (turb_disp_model) {
@@ -477,16 +468,15 @@ cs_lagr_car(int              iprev,
               cs_real_t r11  = extra->cvar_rij->vals[iprev][6*cell_id    ];
               cs_real_t r22  = extra->cvar_rij->vals[iprev][6*cell_id + 1];
               cs_real_t r33  = extra->cvar_rij->vals[iprev][6*cell_id + 2];
-
               ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
                          / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
             }
 
           }
-
           else if (   extra->itytur == 2
-                   || extra->iturb == 50 || extra->iturb == 60)
+                   || extra->iturb == 50 || extra->iturb == 60) {
             ktil = energi[cell_id];
+          }
 
           for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -502,19 +492,16 @@ cs_lagr_car(int              iprev,
           }
 
         }
-
         else {
 
           for (cs_lnum_t id = 0; id < 3; id++)
             tlag[ip][id] = tl;
 
           if (cs_glob_lagr_model->idiffl == 0) {
-
             uvwdif      = sqrt(uvwdif);
             tlag[ip][0] = tl / (1.0 + cb * uvwdif);
             tlag[ip][1] = tlag[ip][0];
             tlag[ip][2] = tlag[ip][0];
-
           }
 
           bx[ip][0][nor-1] = sqrt (c0 * dissip[cell_id]);
@@ -529,8 +516,8 @@ cs_lagr_car(int              iprev,
 
     BFT_FREE(energi);
     BFT_FREE(dissip);
-  }
 
+  }
   else {
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -540,10 +527,8 @@ cs_lagr_car(int              iprev,
         continue;
 
       for (cs_lnum_t id = 0; id < 3; id++ ) {
-
         tlag[ip][id] = cs_math_epzero;
         bx[ip][id][nor-1] = 0.0;
-
       }
 
     }
@@ -584,11 +569,9 @@ cs_lagr_car(int              iprev,
         if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
           for (cs_lnum_t i = 0; i < 3; i++) {
-
             cs_real_t vpm   = stat_vel->val[cell_id*3 + i];
             cs_real_t vflui = extra->vel->vals[iprev][cell_id*3 + i];
             piil[ip][id] += gradvf[cell_id][id][i] * (vpm - vflui);
-
           }
 
         }
@@ -596,7 +579,6 @@ cs_lagr_car(int              iprev,
       }
     }
   }
-
   else {
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
