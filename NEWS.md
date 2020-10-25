@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+-GUI: user source file editor can now also use reference files from the
+  installation directory.
+
 - code_saturne mesh format (.csm) is now treated in the same way as external
   formats.
   * Multiple meshes can be added in the "Mesh" page.

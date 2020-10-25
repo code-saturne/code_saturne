@@ -918,8 +918,10 @@ class MainView(object):
             QMessageBox.warning(self, title, msg)
             return
 
+        reference_dir = os.path.join(self.package.get_dir("pkgdatadir"), 'user_sources')
         fileEditor = QFileEditor(parent=self,
                                  case_dir=self.case['case_path']+'/SRC',
+                                 reference_dir=reference_dir,
                                  noOpen=True)
         fileEditor.show()
 
