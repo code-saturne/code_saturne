@@ -122,7 +122,7 @@ _code_saturne() {
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --syrthes|--aster|--cathare) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
-                *) cmdOpts="-s --study -c --case --noref --copy-from \
+                *) cmdOpts="-s --study -c --case --noref --copy-ref --copy-from \
                      --syrthes --cathare --python -q --quiet -v --verbose";;
             esac
             ;;

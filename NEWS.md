@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- When creating a case with `code_saturne create`, the `--noref` option is
+  enabled by default. It can be cancelled using the `--copy-ref` option.
+
 -GUI: user source file editor can now also use reference files from the
   installation directory.
 

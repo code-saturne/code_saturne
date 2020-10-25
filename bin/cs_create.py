@@ -87,6 +87,10 @@ def process_cmd_line(argv, pkg):
                       action="store_false",
                       help="don't copy references")
 
+    parser.add_option("--copy-ref", dest="use_ref",
+                      action="store_true",
+                      help="don't copy references")
+
     parser.add_option("-q", "--quiet",
                       action="store_const", const=0, dest="verbose",
                       help="do not output any information")
@@ -107,7 +111,7 @@ def process_cmd_line(argv, pkg):
                       metavar="<py_case>",
                       help="create a new Python script case.")
 
-    parser.set_defaults(use_ref=True)
+    parser.set_defaults(use_ref=False)
     parser.set_defaults(study_name=None)
     parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
