@@ -59,7 +59,7 @@
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
 !> \param[in]     velk          velocity at the previous sub iteration (or vela)
-!> \param[in,out] da_u          inverse of diagonal part of velocity matrix
+!> \param[in,out] da_u          diagonal part of velocity matrix
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -191,6 +191,8 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
 double precision dvol
+double precision eigen_vals(3)
+double precision tensor(6)
 
 double precision rvoid(1)
 
@@ -200,6 +202,7 @@ double precision, allocatable, dimension(:,:), target :: grad
 double precision, allocatable, dimension(:,:), target :: hl_exp
 double precision, dimension(:,:), allocatable :: smbr
 double precision, dimension(:,:,:), allocatable :: fimp
+double precision, dimension(:,:,:), allocatable :: fimpcp
 double precision, dimension(:,:), allocatable :: gavinj
 double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
@@ -296,6 +299,7 @@ endif
 ! Allocate temporary arrays
 allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
+allocate(fimpcp(3,3,ncelet))
 allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
@@ -1649,6 +1653,14 @@ endif
 
 if (iappel.eq.1) then
 
+  do iel = 1, ncel
+    do isou = 1, 3
+      do jsou = 1, 3
+        fimpcp(jsou,isou,iel) = fimp(jsou,isou,iel)
+      enddo
+    enddo
+  enddo
+
   iescap = iescal(iespre)
 
   ! Warning: in case of convergence estimators, eswork give the estimator
@@ -1671,22 +1683,28 @@ if (iappel.eq.1) then
    vel    ,                                                       &
    eswork )
 
+  ! Store inverse of the diagonal velocity matrix for the
+  ! correction step if needed (otherwise dt is used)
+  if (rcfact.eq.0) then
+    do iel = 1, ncel
+      da_u(iel) = dt(iel)
+    enddo
 
- ! Store inverse of the diagonal velocity matrix for the
- ! correction step if needed (otherwise dt is used)
- if (mass_preconditioner.eq.0) then
-   do iel = 1, ncel
-     da_u(iel) = dt(iel)
-   enddo
+  else
+    do iel = 1, ncel
+      tensor(1) = fimp(1,1,iel)
+      tensor(2) = fimp(2,2,iel)
+      tensor(3) = fimp(3,3,iel)
+      tensor(4) = fimp(1,2,iel)
+      tensor(5) = fimp(2,3,iel)
+      tensor(6) = fimp(1,3,iel)
+      call calc_symtens_eigvals(tensor,eigen_vals)
+      da_u(iel) = crom(iel)*cell_f_vol(iel)                         &
+                  / minval(eigen_vals(1:3))
+    enddo
+  endif
 
- else
-   do iel = 1, ncel
-     da_u(iel) = (3.d0* crom(iel)*cell_f_vol(iel)) &
-       / (fimp(1,1,iel) + fimp(2,2,iel) + fimp(3,3,iel))
-   enddo
- endif
-
- call synsca(da_u)
+  call synsca(da_u)
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized
@@ -1727,7 +1745,7 @@ if (iappel.eq.1) then
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , ivoid  ,                                              &
-   fimp   ,                                                       &
+   fimpcp ,                                                       &
    smbr   ,                                                       &
    vect   ,                                                       &
    rvoid  )
@@ -1860,6 +1878,7 @@ endif
 !------------
 deallocate(smbr)
 deallocate(fimp)
+deallocate(fimpcp)
 deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
