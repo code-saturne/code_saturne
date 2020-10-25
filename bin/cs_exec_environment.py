@@ -862,7 +862,6 @@ def source_syrthes_env(pkg):
 
     # Now source environment if not done already or different
 
-    print(syrthes_home, env_syrthes_home)
     if syrthes_home != env_syrthes_home:
         syr_profile = os.path.join(config.get('install', 'syrthes'),
                                    'bin', 'syrthes.profile')
@@ -879,7 +878,6 @@ def source_syrthes_env(pkg):
         if sys.path.count(p) > 0:
             sys.path.remove(p)
         sys.path.insert(0, p)
-
 
 #-------------------------------------------------------------------------------
 
