@@ -135,15 +135,13 @@ endif
 ! 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
 !===============================================================================
 
-if (imeteo.gt.0) then
-
+! Meteo file
+if (imeteo.eq.1) then
   imode = 1
-  call atlecm &
-  !==========
-  ( imode )
+  call atlecm(imode)
 
-endif
-if (imeteo.eq.2) then
+! Recomputed from cs_glog_atmo_option values
+else if (imeteo.eq.2) then
   call cs_atmo_compute_meteo_profiles()
 endif
 

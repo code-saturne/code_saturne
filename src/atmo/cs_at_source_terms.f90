@@ -106,7 +106,7 @@ if (iatmst.eq.1) then
 
 ! Variable in z
 else
-  n_level = nbmetd
+  n_level = max(nbmetd, 1)
 endif
 
 allocate(tot_vol(n_level))
@@ -136,17 +136,19 @@ enddo
 
 do iel = 1, ncel
 
+  level_id = 1
   ! Get level id (nearest)
   zent = xyzcen(3,iel)
-  dist_min = abs(zent - zdmet(1))
-  level_id = 1
-  do id = 2, n_level
-    dist_ent = abs(zent -zdmet(id))
-    if (dist_ent.lt.dist_min) then
-      level_id = id
-      dist_min = dist_ent
-    endif
-  enddo
+  if (nbmetd.gt.0) then
+    dist_min = abs(zent - zdmet(1))
+    do id = 2, n_level
+      dist_ent = abs(zent -zdmet(id))
+      if (dist_ent.lt.dist_min) then
+        level_id = id
+        dist_min = dist_ent
+      endif
+    enddo
+  endif
 
   if (theo_interp.eq.1.or.imeteo.eq.2) then
 
@@ -196,15 +198,17 @@ do iel = 1, ncel
 
   ! Get level id (nearest)
   zent = xyzcen(3,iel)
-  dist_min = abs(zent - zdmet(1))
   level_id = 1
-  do id = 2, n_level
-    dist_ent = abs(zent -zdmet(id))
-    if (dist_ent.lt.dist_min) then
-      level_id = id
-      dist_min = dist_ent
-    endif
-  enddo
+  if (nbmetd.gt.0) then
+    dist_min = abs(zent - zdmet(1))
+    do id = 2, n_level
+      dist_ent = abs(zent -zdmet(id))
+      if (dist_ent.lt.dist_min) then
+        level_id = id
+        dist_min = dist_ent
+      endif
+    enddo
+  endif
 
   mom(1, level_id) = mom(1, level_id) + crom(iel) * cell_f_vol(iel)*vel(1,iel)
   mom(2, level_id) = mom(2, level_id) + crom(iel) * cell_f_vol(iel)*vel(2,iel)

@@ -154,6 +154,11 @@ static cs_atmo_option_t  _atmo_option = {
   .diag_neb  = NULL
 };
 
+/* global atmo constants structure */
+static cs_atmo_constants_t _atmo_constants = {
+  .ps = 1.e5
+};
+
 /* atmo chemistry options structure */
 static cs_atmo_chemistry_t _atmo_chem = {
   .model = 0,
@@ -179,6 +184,8 @@ static cs_atmo_chemistry_t _atmo_chem = {
  *============================================================================*/
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
+
+cs_atmo_constants_t *cs_glob_atmo_constants = &_atmo_constants;
 
 cs_atmo_chemistry_t *cs_glob_atmo_chemistry = &_atmo_chem;
 
@@ -216,7 +223,8 @@ void
 cs_atmo_compute_meteo_profiles(void);
 
 void
-cs_f_atmo_get_pointers(int                    **syear,
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
                        int                    **squant,
                        int                    **shour,
                        int                    **smin,
@@ -276,7 +284,8 @@ cs_f_atmo_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_pointers(int                    **syear,
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
                        int                    **squant,
                        int                    **shour,
                        int                    **smin,
@@ -305,6 +314,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        int                    **nbmetm,
                        int                    **nbmaxt)
 {
+  *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
   *squant    = &(_atmo_option.squant);
   *shour     = &(_atmo_option.shour);
@@ -462,6 +472,20 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t kappa = cs_turb_xkappa;
 
   cs_atmo_option_t *aopt = &_atmo_option;
+  cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+
+  /* potential temp at ref */
+  cs_real_t pref = cs_glob_atmo_constants->ps;
+  cs_real_t rair = phys_pro->r_pg_cnst;
+  cs_real_t cp0 = phys_pro->cp0;
+  cs_real_t rscp = rair/cp0;
+  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  /* Reference fluid properties set from meteo values */
+  phys_pro->p0 = aopt->meteo_psea;
+  phys_pro->t0 = theta0; /* ref potential temp theta0*/
+
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
   if (aopt->meteo_ustar0 < 0. && aopt->meteo_uref < 0.)
@@ -488,15 +512,6 @@ cs_atmo_init_meteo_profiles(void)
       * cs_mo_psim(zref + z0,
                    z0,
                    aopt->meteo_dlmo);
-
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-  /* potential temp at ref */
-  cs_real_t pref = 1.e5;
-  cs_real_t rair = phys_pro->r_pg_cnst;
-  cs_real_t cp0 = phys_pro->cp0;
-  cs_real_t rscp = rair/cp0;
-  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
@@ -561,7 +576,7 @@ cs_atmo_compute_meteo_profiles(void)
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* potential temp at ref */
-  cs_real_t pref = 1.e5;
+  cs_real_t pref = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;

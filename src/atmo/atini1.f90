@@ -74,14 +74,6 @@ endif
 ! 1. INFORMATIONS GENERALES
 !===============================================================================
 
-!--> constants used in the atmospheric physics module
-!    (see definition in atincl.h):
-
-ps = 1.0d5
-cpvcpa = 1.866d0
-gammat = -6.5d-03
-rvap = rvsra*rair
-
 ! Density and viscosity
 
 irovar = 0

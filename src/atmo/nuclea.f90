@@ -93,6 +93,7 @@ double precision ugauss2,sursat2,smax2,nuc2
 double precision ugauss3,sursat3,smax3,nuc3
 double precision nuc1snc,nuc2snc,nuc3snc
 double precision numcb,dencb
+double precision rvap
 
 double precision , parameter :: rhowater=1000. ! kg/m**3
 ! FIXME should be set somewhere else
@@ -106,6 +107,7 @@ constc = 0.d0
 constk = 0.d0
 fbeta  = 0.d0
 nuc    = 0.d0
+rvap   = rair * rvsra
 
 if (modnuc.eq.1) then
   !  Constants for the model of Pruppacher and Klett (1997)

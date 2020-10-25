@@ -59,11 +59,6 @@ implicit none
 !--> constants used in the atmospheric physics module
 !    (see definition in atincl.f90):
 
-ps = 1.0d5
-cpvcpa = 1.866d0
-gammat = -6.5d-03
-rvap = rvsra*rair
-
 p0 = 1.01325d5
 t0 = 288.15d0
 
@@ -177,7 +172,6 @@ soldu = 1
 initmeteo = 1
 
 call usati1
-!==========
 
 ! Atmospheric gaseous chemistry
 ! Do not change this order

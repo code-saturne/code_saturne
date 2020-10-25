@@ -45,8 +45,8 @@ use ppthch
 use ppincl
 use atincl
 use atsoil
+use ctincl, only: cp_a, cp_v
 use mesh
-
 
 implicit none
 
@@ -57,11 +57,14 @@ implicit none
 integer          ifac,iphysi
 double precision rscp
 double precision esaini,qsaini,huini,psini
+double precision cpvcpa
 
 !===============================================================================
 
 !     1 - initialisation du tableau solva
 !     -----------------------------------
+
+cpvcpa = cp_v / cp_a
 
 !  initialisation de t et qv en z0
 

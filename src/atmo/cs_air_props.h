@@ -50,9 +50,9 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_real_t   humidity0;       /* Reference humidity */
-  cs_real_t   cp_a;            /* Capacite calorifique de l air */
-  cs_real_t   cp_v;            /* Capacite calorifique de la vapeur */
-  cs_real_t   cp_l;            /* Capacite calorifique de l eau */
+  cs_real_t   cp_a;            /* Specific heat of dry air */
+  cs_real_t   cp_v;            /* Specific heat of vapor */
+  cs_real_t   cp_l;            /* Specific heat of liquid water */
   cs_real_t   hv0;             /* Chaleur latente */
   cs_real_t   rho_l;           /* Masse volumique de l eau */
   cs_real_t   lambda_h;        /* Humid air conductivity */

@@ -78,8 +78,9 @@ use ppincl
 use cs_c_bindings
 use mesh
 use field
-use atincl, only: kmx, cpvcpa, nbmett, sigc, squant, xlat, xlon, soldu, sold, &
+use atincl, only: kmx, nbmett, sigc, squant, xlat, xlon, soldu, sold, &
                   solu
+use ctincl, only: cp_a, cp_v
 use cstnum, only: epzero, pi
 use radiat
 
@@ -119,6 +120,7 @@ double precision rabara,rabar2a,rbara,raero
 double precision niaer,nraer
 double precision s3,gama1,gama2,kt,gas,fas
 double precision omega, var, zent
+double precision cpvcpa
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
@@ -176,6 +178,7 @@ endif
 ! 1 - local initializations
 ! ===========================
 
+cpvcpa = cp_v / cp_a
 inua = 0
 iaer = 0
 ibase = 0

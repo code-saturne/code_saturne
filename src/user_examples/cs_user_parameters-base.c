@@ -1122,19 +1122,19 @@ cs_user_parameters(cs_domain_t *domain)
    * in Code_Saturne (2) */
   cs_glob_atmo_option->meteo_profile = 2;
 
-  /* Inverse LMO length */
+  /* Inverse LMO length (m^-1) */
   cs_glob_atmo_option->meteo_dlmo = 0.;
-  /* Large scale roughness */
+  /* Large scale roughness (m) */
   cs_glob_atmo_option->meteo_z0 = 0.1;
-  /* Elevation for reference velocity */
+  /* Elevation for reference velocity (m) */
   cs_glob_atmo_option->meteo_zref = 10.;
-  /* Friction velocity */
+  /* Friction velocity (m/s) */
   cs_glob_atmo_option->meteo_ustar0 = 1.;
-  /* Velocity direction */
+  /* Velocity direction (degrees from North) */
   cs_glob_atmo_option->meteo_angle = 270.;
-  /* Temperature at 2m */
+  /* Temperature at 2m (K) */
   cs_glob_atmo_option->meteo_t0 = 288.;
-  /* Pressure at sea level */
+  /* Pressure at sea level (Pa) */
   cs_glob_atmo_option->meteo_psea = 1.01325e5;
 
   /* Option to compute ground elevation in the domain */

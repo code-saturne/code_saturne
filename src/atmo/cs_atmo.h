@@ -93,7 +93,7 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  /* Space and tim reference of the run */
+  /* Space and time reference of the run */
   /*! Starting year */
   int syear;
   /*! Starting quantile */
@@ -189,6 +189,17 @@ typedef struct {
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------
+ * Atmospheric model constants descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  /* Space and tim reference of the run */
+  /*! Reference pressure (to compute potential temp: 1.0e+5) */
+  cs_real_t ps;
+
+} cs_atmo_constants_t;
+
+/*----------------------------------------------------------------------------
  * Atmospheric chemistry options descriptor
  *----------------------------------------------------------------------------*/
 
@@ -240,7 +251,10 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to atmo options structure */
-extern cs_atmo_option_t        *cs_glob_atmo_option;
+extern cs_atmo_option_t *cs_glob_atmo_option;
+
+/* Pointer to atmo constants structure */
+extern cs_atmo_constants_t *cs_glob_atmo_constants;
 
 /* Pointer to atmo chemistry structure */
 extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;

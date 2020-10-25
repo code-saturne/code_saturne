@@ -108,6 +108,7 @@ use ppincl
 use mesh
 use field
 use atincl
+use ctincl, only: cp_a, cp_v
 
 !===============================================================================
 
@@ -135,6 +136,7 @@ double precision rscp1, rscp2
 double precision b, c, d
 double precision fm, fh, fmden1, fmden2, fhden
 double precision distbf
+double precision cpvcpa
 
 !===============================================================================
 
@@ -147,6 +149,8 @@ c = 5.d0
 d = 5.d0
 
 distbf = distb(ifac)
+
+cpvcpa = cp_v / cp_a
 
 ! Take into account humidity in ratio r/cp
 if (ippmod(iatmos).eq.2) then

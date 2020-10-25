@@ -1443,14 +1443,17 @@ subroutine potential_temperature_and_density
 use cstphy, only: rair
 use cstphy, only: tkelvi
 use cstphy, only: cp0
+use ctincl, only: cp_a, cp_v
 use atincl
 implicit none
 double precision rhum! I prefer bourbon
 integer ih2o
 data ih2o/0/
 save ih2o
-double precision rscp
+double precision rscp, cpvcpa
 integer i,j,k
+
+cpvcpa = cp_v / cp_a
 
 if (.not.allocated(theta)) then
   allocate(theta(thermal_profile_dim,sections_per_file,number_of_files))

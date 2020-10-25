@@ -43,6 +43,7 @@ use cstphy
 use ppppar
 use optcal
 use atincl
+use ctincl, only: cp_a, cp_v
 use cs_c_bindings
 
 !===============================================================================
@@ -67,6 +68,7 @@ double precision sjday, jday
 double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
+double precision cpvcpa
 
 character(len=80) :: ccomnt,oneline
 character(len=1)  :: csaute
@@ -93,6 +95,8 @@ rewind(unit=impmet, err=99)
 
 itp=0
 ih2o = 0
+
+cpvcpa = cp_v / cp_a
 
 if (imode.eq.1) then
   rscp=rair/cp0

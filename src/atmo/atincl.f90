@@ -183,16 +183,7 @@ integer, save :: theo_interp
 !-------------------------------------------------------------------------------
 
 !> reference pressure (to compute potential temp: 1.0d+5)
-double precision, save:: ps
-
-!> ratio Cp h2o/ dry air: 1.866d0
-double precision, save:: cpvcpa
-
-!> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
-double precision, save:: gammat
-
-!> rvsra*rair
-double precision, save:: rvap
+real(c_double), pointer, save:: ps
 
 ! 2.2. Space and time reference of the run
 !-------------------------------------------------------------------------------
@@ -395,7 +386,8 @@ integer, save :: kopint
 
     !> \brief Return pointers to atmo includes
 
-    subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
+    subroutine cs_f_atmo_get_pointers(ps,                               &
+        syear, squant, shour, smin, ssec,                               &
         longitude, latitude,                                            &
         compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
@@ -406,6 +398,7 @@ integer, save :: kopint
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
+      type(c_ptr), intent(out) :: ps
       type(c_ptr), intent(out) :: compute_z_ground, iatmst
       type(c_ptr), intent(out) :: ichemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
@@ -570,6 +563,7 @@ contains
     implicit none
 
     ! Local variables
+    type(c_ptr) :: c_ps
     type(c_ptr) :: c_compute_z_ground, c_iatmst, c_model, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
@@ -580,7 +574,7 @@ contains
     type(c_ptr) :: c_imeteo
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt
 
-    call cs_f_atmo_get_pointers(                  &
+    call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
       c_compute_z_ground, c_iatmst,               &
@@ -593,6 +587,7 @@ contains
       c_nsize, c_imeteo,                          &
       c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt)
 
+    call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
     call c_f_pointer(c_squant, squant)
     call c_f_pointer(c_shour, shour)
@@ -640,15 +635,16 @@ use atsoil
 
 implicit none
 
-integer :: imode, ifac
 ! Local variables
+integer :: imode, ifac, n_level
+
 type(c_ptr) :: c_z_temp_met, c_time_met
 type(c_ptr) :: c_frac_neb, c_diag_neb
 type(c_ptr) :: c_hyd_p_met
 
 integer(c_int),   dimension(2) :: dim_hyd_p_met
 
-if (imeteo.gt.0) then
+if (imeteo.eq.1) then
   call atlecm(0)
 endif
 if (imeteo.eq.2) then
@@ -672,9 +668,14 @@ if (imeteo.gt.0) then
   ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
   !           rmet,tpmet,phmet
   allocate(zdmet(nbmetd))
-  allocate(dpdt_met(nbmetd))
-  allocate(mom(3, nbmetd))
-  allocate(mom_met(3, nbmetd))
+
+  if (iatmst.ge.1) then
+    n_level = max(1, nbmetd)
+    allocate(dpdt_met(n_level))
+    allocate(mom(3, n_level))
+    allocate(mom_met(3, n_level))
+  endif
+
   allocate(umet(nbmetd,nbmetm), vmet(nbmetd,nbmetm), wmet(nbmetd,nbmetm))
   allocate(ekmet(nbmetd,nbmetm), epmet(nbmetd,nbmetm))
   allocate(ttmet(nbmaxt,nbmetm), qvmet(nbmaxt,nbmetm), ncmet(nbmaxt,nbmetm))
@@ -739,7 +740,9 @@ call cs_f_atmo_finalize()
 if (imeteo.gt.0) then
 
   deallocate(zdmet)
-  deallocate(mom, mom_met, dpdt_met)
+  if (allocated(mom)) then
+    deallocate(mom, mom_met, dpdt_met)
+  endif
   deallocate(umet, vmet, wmet)
   deallocate(ekmet, epmet)
   deallocate(ttmet, qvmet, ncmet)
