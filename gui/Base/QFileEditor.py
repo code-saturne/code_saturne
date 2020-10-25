@@ -485,7 +485,7 @@ class Explorer():
 
     # ---------------------------------------------------------------
     def __init__(self, parent=None, root_dir=None, dir_type=None,
-                 readOnly=False):
+                 case_name=None, readOnly=False):
 
         self.parent = parent
 
@@ -497,7 +497,7 @@ class Explorer():
 
         # Explorer
         self.explorer = self._initFileExplorer()
-        self._initExplorerActions()
+        self._initExplorerActions(case_name)
 
     # ---------------------------------------------------------------
 
@@ -510,7 +510,7 @@ class Explorer():
 
         if self.dir_type == 'SHARE':
             name = 'Reference'
-        elif self.dir_type == 'SRC':
+        elif self.dir_type in ('SRC', 'DATA'):
             name = 'User files'
         else:
             name = 'Name'
@@ -545,10 +545,15 @@ class Explorer():
 
 
     # ---------------------------------------------------------------
-    def _initExplorerActions(self):
+    def _initExplorerActions(self, case_name=None):
         """
         Create explorer actions dictionary
         """
+
+        if case_name:
+            case_dir_name = str(case_name)
+        else:
+            case_dir_name = 'SRC'
 
         _editAction = QAction(self.explorer.model())
         _editAction.setText('Edit file')
@@ -559,15 +564,15 @@ class Explorer():
         _viewAction.triggered.connect(self.parent._viewSelectedFile)
 
         _copyAction = QAction(self.explorer.model())
-        _copyAction.setText('Copy to SRC')
+        _copyAction.setText('Copy to ' + case_dir_name)
         _copyAction.triggered.connect(self.parent._copySelectedFile)
 
         _deleteAction = QAction(self.explorer.model())
-        _deleteAction.setText('Remove from SRC')
+        _deleteAction.setText('Remove from ' + case_dir_name)
         _deleteAction.triggered.connect(self.parent._removeSelectedFile)
 
         _undraftAction = QAction(self.explorer.model())
-        _undraftAction.setText('Move to SRC')
+        _undraftAction.setText('Move to ' + case_dir_name)
         _undraftAction.triggered.connect(self.parent._unDraftSelectedFile)
 
         self._explorerActions = {'edit':_editAction,
@@ -667,6 +672,20 @@ class Explorer():
                     self._contextMenu.addAction(self._explorerActions['edit'])
                     self._contextMenu.addAction(self._explorerActions['remove'])
                 elif ps in ['EXAMPLES', 'REFERENCE']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['copy'])
+                elif ps in ['DRAFT']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['undraft'])
+        elif pe == 'DATA':
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                if ps == 'DATA':
+                    if fname not in ('setup.xml', 'run.cfg'):
+                        self._contextMenu.addAction(self._explorerActions['edit'])
+                        self._contextMenu.addAction(self._explorerActions['remove'])
+                    else:
+                        self._contextMenu.addAction(self._explorerActions['view'])
+                elif ps in ['REFERENCE']:
                     self._contextMenu.addAction(self._explorerActions['view'])
                     self._contextMenu.addAction(self._explorerActions['copy'])
                 elif ps in ['DRAFT']:
@@ -805,14 +824,16 @@ class QFileEditor(QMainWindow):
         # Explorer
         self.explorer = Explorer(parent=self,
                                  root_dir=self.case_dir,
-                                 dir_type=self.case_name)
+                                 dir_type=self.case_name,
+                                 case_name=self.case_name)
 
         # Explorer
         self.explorer_ref = None
         if reference_dir:
             self.explorer_ref = Explorer(parent=self,
                                          root_dir=reference_dir,
-                                         dir_type='SHARE')
+                                         dir_type='SHARE',
+                                         case_name=self.case_name)
 
         # Editor
         self.textEdit = self._initFileEditor()
@@ -1020,14 +1041,14 @@ class QFileEditor(QMainWindow):
                                 self._currentSelection['subpath'],
                                 self._currentSelection['filename'])
 
-        if self.case_name == 'SRC':
+        if self.case_name in ('SRC', 'DATA'):
             trg_path = os.path.join(self.case_dir,
                                     self._currentSelection['filename'])
         else:
             sp = self._currentSelection['subpath']
             while '/' in sp and len(sp) > 3:
                 e1, e2 = os.path.split(sp)
-                if e2 == 'SRC':
+                if e2 in ('SRC', 'DATA'):
                     break
                 else:
                     sp = e1

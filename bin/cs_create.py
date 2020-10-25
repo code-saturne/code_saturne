@@ -503,18 +503,9 @@ class study:
             unset_executable(data)
 
         if self.use_ref:
-
-            thch_distpath = os.path.join(data_distpath, 'thch')
+            thch_distpath = os.path.join(data_distpath, 'user')
             ref           = os.path.join(data, 'REFERENCE')
-            os.mkdir(ref)
-            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_C4P', 'dp_ELE',
-                      'dp_FUE', 'dp_transformers', 'meteo']:
-                abs_f = os.path.join(thch_distpath, f)
-                if os.path.isfile(abs_f):
-                    shutil.copy(abs_f, ref)
-                    unset_executable(ref)
-            abs_f = os.path.join(datadir, 'cs_user_scripts.py')
-            shutil.copy(abs_f, ref)
+            shutil.copytree(thch_distpath, ref)
             unset_executable(ref)
 
         # Write a wrapper for code and launching

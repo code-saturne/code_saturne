@@ -384,7 +384,6 @@ bin/model/XMLvariables.py
 salomesysconfdir = ${sysconfdir}/salome
 
 dist_pkgdata_DATA = \
-bin/cs_user_scripts.py \
 COPYING
 
 dist_pkgdata_SCRIPTS = \
@@ -393,19 +392,22 @@ bin/runcase_mpi_rank
 # Install thermochemistry and other data files
 
 nobase_dist_pkgdata_DATA = \
-data/thch/dp_C3P \
-data/thch/dp_C3PSJ \
-data/thch/dp_C4P \
-data/thch/dp_ELE \
-data/thch/dp_FUE \
+data/thch/dp_C3P_auto \
 data/thch/dp_radiat_ADF50 \
 data/thch/dp_radiat_ADF8 \
+data/thch/dp_radiat_MFS.tar.xz \
 data/thch/dp_radiat_Planck_CO2 \
 data/thch/dp_radiat_Planck_H2O \
 data/thch/dp_radiat_wave \
-data/thch/dp_transformers \
 data/thch/JANAF \
-data/thch/meteo \
+data/user/cs_user_scripts.py \
+data/user/dp_C3P \
+data/user/dp_C3PSJ \
+data/user/dp_C4P \
+data/user/dp_ELE \
+data/user/dp_FUE \
+data/user/dp_transformers \
+data/user/meteo \
 data/setup.xml
 
 # Install batch cards for cluster management
