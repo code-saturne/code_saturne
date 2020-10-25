@@ -567,19 +567,24 @@ class Explorer():
         _copyAction.setText('Copy to ' + case_dir_name)
         _copyAction.triggered.connect(self.parent._copySelectedFile)
 
+        _removeAction = QAction(self.explorer.model())
+        _removeAction.setText('Remove from ' + case_dir_name)
+        _removeAction.triggered.connect(self.parent._removeSelectedFile)
+
+        _restoreAction = QAction(self.explorer.model())
+        _restoreAction.setText('Move to ' + case_dir_name)
+        _restoreAction.triggered.connect(self.parent._restoreSelectedFile)
+
         _deleteAction = QAction(self.explorer.model())
-        _deleteAction.setText('Remove from ' + case_dir_name)
-        _deleteAction.triggered.connect(self.parent._removeSelectedFile)
+        _deleteAction.setText('Delete')
+        _deleteAction.triggered.connect(self.parent._deleteSelectedFile)
 
-        _undraftAction = QAction(self.explorer.model())
-        _undraftAction.setText('Move to ' + case_dir_name)
-        _undraftAction.triggered.connect(self.parent._unDraftSelectedFile)
-
-        self._explorerActions = {'edit':_editAction,
-                                 'view':_viewAction,
-                                 'copy':_copyAction,
-                                 'remove':_deleteAction,
-                                 'undraft':_undraftAction}
+        self._explorerActions = {'edit': _editAction,
+                                 'view': _viewAction,
+                                 'copy': _copyAction,
+                                 'remove': _removeAction,
+                                 'restore': _restoreAction,
+                                 'delete': _deleteAction}
     # ---------------------------------------------------------------
 
 
@@ -676,7 +681,8 @@ class Explorer():
                     self._contextMenu.addAction(self._explorerActions['copy'])
                 elif ps in ['DRAFT']:
                     self._contextMenu.addAction(self._explorerActions['view'])
-                    self._contextMenu.addAction(self._explorerActions['undraft'])
+                    self._contextMenu.addAction(self._explorerActions['restore'])
+                    self._contextMenu.addAction(self._explorerActions['delete'])
         elif pe == 'DATA':
             if not os.path.isdir(os.path.join(path2file, fname)):
                 if ps == 'DATA':
@@ -690,7 +696,8 @@ class Explorer():
                     self._contextMenu.addAction(self._explorerActions['copy'])
                 elif ps in ['DRAFT']:
                     self._contextMenu.addAction(self._explorerActions['view'])
-                    self._contextMenu.addAction(self._explorerActions['undraft'])
+                    self._contextMenu.addAction(self._explorerActions['restore'])
+                    self._contextMenu.addAction(self._explorerActions['delete'])
         else:
             if not os.path.isdir(os.path.join(path2file, fname)):
                 self._contextMenu.addAction(self._explorerActions['view'])
@@ -942,59 +949,6 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def _initExplorerActions(self):
-        """
-        Create explorer actions dictionary
-        """
-
-        _editAction = QAction(self.explorer.model())
-        _editAction.setText('Edit file')
-        _editAction.triggered.connect(self._editSelectedFile)
-
-        _viewAction = QAction(self.explorer.model())
-        _viewAction.setText('View file')
-        _viewAction.triggered.connect(self._viewSelectedFile)
-
-        _copyAction = QAction(self.explorer.model())
-        _copyAction.setText('Copy to SRC')
-        _copyAction.triggered.connect(self._copySelectedFile)
-
-        _deleteAction = QAction(self.explorer.model())
-        _deleteAction.setText('Remove from SRC')
-        _deleteAction.triggered.connect(self._removeSelectedFile)
-
-        _undraftAction = QAction(self.explorer.model())
-        _undraftAction.setText('Move to SRC')
-        _undraftAction.triggered.connect(self._unDraftSelectedFile)
-
-        self._explorerActions = {'edit':_editAction,
-                                 'view':_viewAction,
-                                 'copy':_copyAction,
-                                 'remove':_deleteAction,
-                                 'undraft':_undraftAction}
-    # ---------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------
-    def _initRefExplorerActions(self):
-        """
-        Create reference explorer actions dictionary
-        """
-
-        _viewAction = QAction(self.explorer_ref.model())
-        _viewAction.setText('View file')
-        _viewAction.triggered.connect(self._viewSelectedFile)
-
-        _copyAction = QAction(self.explorer_ref.model())
-        _copyAction.setText('Copy to SRC')
-        _copyAction.triggered.connect(self._copySelectedFile)
-
-        self._explorerRefActions = {'view':_viewAction,
-                                    'copy':_copyAction}
-    # ---------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------
     def _editSelectedFile(self):
         """
         Edit action for mouse right-click
@@ -1095,7 +1049,6 @@ class QFileEditor(QMainWindow):
                 if choice2 == QMessageBox.No:
                     return
 
-
             shutil.move(fn, fn2)
         else:
             pass
@@ -1103,7 +1056,7 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def _unDraftSelectedFile(self):
+    def _restoreSelectedFile(self):
         """
         Move a file from DRAFT to the SRC folder
         """
@@ -1133,6 +1086,44 @@ class QFileEditor(QMainWindow):
 
             shutil.move(fn, fn2)
 
+        else:
+            pass
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _deleteSelectedFile(self):
+        """
+        Remove a file from the SRC dir
+        """
+
+        title = "Delete file"
+        question = "Really delete %s ?" % (self._currentSelection['filename'])
+
+        choice = QMessageBox.question(self,
+                                      title,
+                                      question,
+                                      QMessageBox.Yes | QMessageBox.No)
+
+        if choice == QMessageBox.Yes:
+            fn = os.path.join(self.case_dir,
+                              self._currentSelection['subpath'],
+                              self._currentSelection['filename'])
+
+            try:
+                os.remove(fn)
+            except Exception:
+                # TODO add error popup
+                pass
+
+            d = os.path.split(fn)[0]
+            if os.path.basename(d) in ('DRAFT', 'STASH'):
+                l = os.listdir(d)
+                if len(l) < 1:
+                    try:
+                        os.rmdir(d)
+                    except Exception:
+                        pass
         else:
             pass
     # ---------------------------------------------------------------
