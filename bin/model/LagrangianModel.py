@@ -93,10 +93,7 @@ class LagrangianModel(Model):
         default['dynamic']                             = "off"
         default['mass']                                = "off"
         default['scheme_order']                        = 1
-        default['turbulent_dispersion']                = "on"
-        default['fluid_particles_turbulent_diffusion'] = "off"
-        default['complete_model_iteration']            = 0
-        default['complete_model_direction']            = 4
+        default['regular_particles']                   = 1
 
         return default
 
@@ -586,96 +583,26 @@ class LagrangianModel(Model):
 
 
     @Variables.undoLocal
-    def setTurbulentDispersion(self, status):
+    def setRegularParticles(self, value):
         """
-        Update the status markup for turbulent dispersion status from the XML document.
-        """
-        self.isOnOff(status)
-        node_turb = self.node_lagr.xmlInitChildNode('turbulent_dispersion', 'status')
-        node_turb['status'] = status
-
-
-    @Variables.noUndo
-    def getTurbulentDispersion(self):
-        """
-        Return status of turbulent dispersion status.
-        """
-        node_turb = self.node_lagr.xmlInitChildNode('turbulent_dispersion', 'status')
-        status = node_turb['status']
-        if not status:
-            status = self.defaultParticlesValues()['turbulent_dispersion']
-            self.setTurbulentDispersion(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setTurbulentDiffusion(self, status):
-        """
-        Update the status markup for turbulent diffusion status from the XML document.
-        """
-        self.isOnOff(status)
-        node_turb = self.node_lagr.xmlInitChildNode('fluid_particles_turbulent_diffusion', 'status')
-        node_turb['status'] = status
-
-
-    @Variables.noUndo
-    def getTurbulentDiffusion(self):
-        """
-        Return status of turbulent diffusion status.
-        """
-        node_turb = self.node_lagr.xmlInitChildNode('fluid_particles_turbulent_diffusion', 'status')
-        status = node_turb['status']
-        if not status:
-            status = self.defaultParticlesValues()['fluid_particles_turbulent_diffusion']
-            self.setTurbulentDiffusion(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setCompleteModelStartIteration(self, iteration):
-        """
-        Set value for complete model start iteration.
-        """
-        self.isInt(iteration)
-        self.isGreaterOrEqual(iteration, 0)
-        self.node_lagr.xmlSetData('complete_model', iteration)
-
-
-    @Variables.noUndo
-    def getCompleteModelStartIteration(self):
-        """
-        Return value for complete model iteration.
-        """
-        iteration = self.node_lagr.xmlGetInt('complete_model')
-        if iteration == None:
-            iteration = self.defaultParticlesValues()['complete_model_iteration']
-            self.setCompleteModelStartIteration(iteration)
-        return iteration
-
-
-    @Variables.undoLocal
-    def setCompleteModelDirection(self, value):
-        """
-        Set value for complete model direction.
+        Set value for regular particles
         """
         self.isInt(value)
-        self.isInList(value, (1,2,3,4))
-        node_direction = self.node_lagr.xmlInitChildNode('complete_model_direction', 'choice')
-        node_direction['choice'] = value
+        self.isInList(value, (0, 1))
+        self.node_lagr.xmlSetData('regular_particles', value)
 
 
     @Variables.noUndo
-    def getCompleteModelDirection(self):
+    def getRegularParticles(self):
         """
-        Return value for complete model direction.
+        Return value for regular particles
         """
-        node_direction = self.node_lagr.xmlInitChildNode('complete_model_direction', 'choice')
-        if node_direction:
-            val = node_direction['choice']
-            if val == "":
-                val = self.defaultParticlesValues()['complete_model_direction']
-                self.setCompleteModelDirection(val)
-        return val
+        value = self.node_lagr.xmlGetInt('regular_particles')
+        if value == None:
+            value = self.defaultParticlesValues()['regular_particles']
+            self.setRegularParticles(value)
+        return value
+
 
 #-------------------------------------------------------------------------------
 # Lagrangian test case
@@ -994,74 +921,6 @@ class LagrangianTestCase(ModelTest):
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
              'Could not get default values for scheme order.'
-
-
-    def checkTurbulentDispersion(self):
-        """Check whether the turbulent dispersion could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getTurbulentDispersion()
-
-        assert status == mdl.defaultParticlesValues()['turbulent_dispersion'], \
-            'Could not get default values for turbulent dispersion status.'
-
-        mdl.setTurbulentDispersion('on')
-        doc = """<lagrangian model="off">
-                     <turbulent_dispersion status="on"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for turbulent dispersion status.'
-
-
-    def checkTurbulentDiffusion(self):
-        """Check whether the turbulent diffusion could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getTurbulentDiffusion()
-
-        assert status == mdl.defaultParticlesValues()['fluid_particles_turbulent_diffusion'], \
-            'Could not get default values for turbulent diffusion status.'
-
-        mdl.setTurbulentDiffusion('on')
-        doc = """<lagrangian model="off">
-                     <fluid_particles_turbulent_diffusion status="on"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for turbulent diffusion status.'
-
-
-    def checkCompleteModelStartIteration(self):
-        """Check whether the complete model start iteration could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getCompleteModelStartIteration()
-
-        assert status == mdl.defaultParticlesValues()['complete_model_iteration'], \
-            'Could not get default values for complete model start iteration.'
-
-        mdl.setCompleteModelStartIteration(1234)
-        doc = """<lagrangian model="off">
-                     <complete_model>1234</complete_model>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for complete model start iteration.'
-
-
-    def checkCompleteModelDirection(self):
-        """Check whether the complete model direction could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getCompleteModelDirection()
-
-        assert status == mdl.defaultParticlesValues()['complete_model_direction'], \
-            'Could not get default values for complete model direction.'
-
-        mdl.setCompleteModelDirection(2)
-        doc = """<lagrangian model="off">
-                    <complete_model_direction choice="2"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for complete model direction.'
 
 
 def suite():

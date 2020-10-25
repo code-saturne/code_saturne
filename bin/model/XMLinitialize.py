@@ -1905,6 +1905,15 @@ class XMLinit(BaseXmlInit):
         """
         Change XML in order to ensure backward compatibility.
         """
+        XMLLagrangianNode = self.case.xmlGetNode('lagrangian')
+        if XMLLagrangianNode:
+            for attr in ('complete_model',
+                         'complete_model_direction choice',
+                         'turbulent_dispersion',
+                         'fluid_particles_turbulent_diffusion'):
+                node = XMLLagrangianNode.xmlGetNode(attr)
+                if node:
+                    node.xmlRemoveNode()
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

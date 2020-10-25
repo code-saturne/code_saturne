@@ -266,35 +266,30 @@ typedef struct {
   int  physical_model;
   int  n_temperature_layers;
 
-  /*! activates (>0) or not (=0) the complete turbulent dispersion model.
-    When \ref modcpl is strictly positive, its value is interpreted as the
-    absolute Lagrangian time step number (including restarts) after which the
-    complete model is applied.
-    Since the complete model uses volume statistics, this is only effective
-    once the time step reaches \ref cs_lagr_stat_options_t::idstnt "idstnt". */
+  /*! Activates (1) or not (0) the assumption that we have regular particles.
+    When set to, 0 then the particles are assumed to be fluid particles
+    (and the turbulence dispersion model is disabled by default).
+    Since this model uses volume statistics, is use forces their
+    activation even if not otherwise requested
+    (see \ref cs_lagr_stat_options_t::idstnt "idstnt"). */
   int modcpl;
 
-  /*!  direction (1=x, 2=y, 3=z) of the complete model.
-    It corresponds to the mean relative directions of the flow.
-    Useful only if \ref modcpl > 0
-    0 proposes an isotropic Lagrangian timescale.
-    4 proposes the local mean direction.
-    */
-  int idirla;
-
-  /*!  activation (=1) or not (=0) of the particle turbulent dispersion.
-    The turbulent dispersion is compatible only with the RANS turbulent models
-    (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$).
-    (\ref iturb=20, 21, 30, 31, 50 or 60). */
+  /*! Activation of the turbulent dispersion (on: 1; off).
+     Default is on if \ref modcpl = 1, off if \ref modcpl = 0);
+     This is compatible only with the RANS turbulent models
+     (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$). */
   int idistu;
 
-  /*! \ref idiffl=1 suppresses the crossing trajectory effect, making
+  /*! Suppress the crossing trajectory effect (if set to 1), making
     turbulent dispersion for the particles identical to the turbulent
     diffusion of fluid particles.
-    Useful if \ref idistu=1 */
+    Default is off if \ref modcpl = 1, on if \ref modcpl = 0). */
   int idiffl;
 
+  /*!- 0: no deposition model
+     - 1: depositionion model */
   int  deposition;
+
   int  dlvo;
 
   /*! - 0: no DLVO conditions with roughness surface

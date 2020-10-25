@@ -308,10 +308,6 @@ cs_gui_particles_model(void)
     cs_glob_lagr_time_scheme->t_order = atoi(choice);
 
   cs_gui_node_get_status_int
-    (cs_tree_node_get_child(tn_lagr, "turbulent_dispersion"),
-     &(cs_glob_lagr_model->idistu));
-
-  cs_gui_node_get_status_int
     (cs_tree_node_get_child(tn_lagr, "fluid_particles_turbulent_diffusion"),
      &(cs_glob_lagr_model->idiffl));
 
@@ -319,14 +315,8 @@ cs_gui_particles_model(void)
                                                     "deposition_submodel"),
                              &(cs_glob_lagr_model->deposition));
 
-  cs_gui_node_get_child_int(tn_lagr, "complete_model",
+  cs_gui_node_get_child_int(tn_lagr, "regular_particles",
                             (&cs_glob_lagr_model->modcpl));
-
-  choice = cs_tree_node_get_tag(cs_tree_node_get_child
-                                  (tn_lagr, "complete_model_direction"),
-                                "choice");
-  if (choice != NULL)
-    cs_glob_lagr_model->idirla = atoi(choice);
 
   /* Output */
 
@@ -440,9 +430,8 @@ cs_gui_particles_model(void)
    * statistics.
    */
   if (cs_glob_lagr_model->modcpl > 0)
-    cs_glob_lagr_model->modcpl =
-      CS_MAX(cs_glob_lagr_model->modcpl, cs_glob_lagr_stat_options->idstnt);
-
+    cs_glob_lagr_model->modcpl
+      = CS_MAX(cs_glob_lagr_model->modcpl, cs_glob_lagr_stat_options->idstnt);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -486,7 +475,6 @@ cs_gui_particles_model(void)
   bft_printf("--idistu = %i\n", cs_glob_lagr_model->idistu);
   bft_printf("--idiffl = %i\n", cs_glob_lagr_model->idiffl);
   bft_printf("--modcpl = %i\n", cs_glob_lagr_model->modcpl);
-  bft_printf("--idirla = %i\n", cs_glob_lagr_model->idirla);
 
   bft_printf("--isuist = %i\n", cs_glob_lagr_stat_options->isuist);
   bft_printf("--nbclst = %i\n", cs_glob_lagr_model->n_stat_classes);

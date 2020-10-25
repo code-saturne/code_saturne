@@ -435,51 +435,19 @@ cs_user_lagr_model(void)
   /* Options concerning the numerical treatment of the dispersed phase
    * ================================================================= */
 
-  /* Integration order of the stochastic differential equations   */
-  /* (default 2; acceptable values 1 or 2)    */
+  /* Integration order of the stochastic differential equations */
 
   cs_glob_lagr_time_scheme->t_order = 1;
 
   /* Options concerning the treatment of the dispersed phase
    * ======================================================= */
 
-  /*  Caution: In this version, the turbulent dispersion works only if
-               the continuous phase is calculated with a k-eps or
-               a Rij-eps model
+  /* A value of 1 sets the assumption that we have regular particles.
+     Since the turbulent dispersion model uses volume statistics,
+     When modcpl=0 then the particles are assumed to be fluid particles
+     and the turbulence dispersion model is disabled. */
 
-      Activation of the turbulent dispersion
-      (default on: 1 ; off: 0) */
-
-  cs_glob_lagr_model->idistu = 1;
-
-  /* Turbulent dispersion imposed to the fluid one.
-
-     If activated, then particle turbulent dispersion is
-     equal to the fluid-particle one. The crossing-trajectory effects
-     are suppressed ; it is then a case of turbulent diffusion. If the
-     simulated particle density is equal to the fluid density, then
-     we are simulating the displacement of fluid particles.
-     (default off: 0 ; on: 1) */
-
-  cs_glob_lagr_model->idiffl = 0;
-
-  /* modcpl :
-     = 0 for the incomplete model (default value)
-     > 0 for the full model, is equal the absolute number
-     of time steps from which the full model is activated
-     modcpl must not be larger than idstnt */
-
-  cs_glob_lagr_model->modcpl = 0;
-
-  /* idirla (=1 or 2 or 3) : x, y or z direction of the full model.
-   * Corresponds to the main direction of the flow.
-   * Allow to calculate a non-isotropic Lagrangian timescale (default idirla=0)
-   * 4 stands for a local direction
-   * 0 stand for an isotropic Lagrangian timescale.
-   * */
-
-  if (cs_glob_lagr_model->modcpl > 0)
-    cs_glob_lagr_model->idirla = 1;
+  cs_glob_lagr_model->modcpl = 1;
 
   /*! [dispersed_phases_treatment] */
 
@@ -488,11 +456,10 @@ cs_user_lagr_model(void)
   /* Options concerning the treatment of specific forces
    * =================================================== */
 
-  /* idlvo = 0
-     = 1 dlvo deposition conditions are activated for the
-     wall with appropriate conditions idepfa (see cs_user_lag2.c) */
+  /* If dlvo = 1, DLVO deposition conditions are activated for the
+     wall with appropriate condition type \ref CS_LAGR_DEPO_DLVO. */
 
-  cs_glob_lagr_model->dlvo  = 0;
+  cs_glob_lagr_model->dlvo = 0;
 
   if (cs_glob_lagr_model->dlvo == 1) {
     /* Constants for the van der Waals forces
@@ -676,13 +643,13 @@ cs_user_lagr_model(void)
   cs_glob_lagr_model->precipitation = 0;
 
   /* Diameter of particles formed by precipitation */
-  cs_glob_lagr_precipitation_model->diameter  = 2e-06;
+  cs_glob_lagr_precipitation_model->diameter = 2e-06;
 
   /* Diameter of particles formed by precipitation */
-  cs_glob_lagr_precipitation_model->rho       = 5200.0;
+  cs_glob_lagr_precipitation_model->rho = 5200.0;
 
   /* Number of particle classes */
-  cs_glob_lagr_precipitation_model->nbrclas   = 2;
+  cs_glob_lagr_precipitation_model->nbrclas = 2;
 
   /*! [precipitation_disolution_model_activation] */
 

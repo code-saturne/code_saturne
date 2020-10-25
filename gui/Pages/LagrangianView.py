@@ -25,7 +25,6 @@
 """
 This module contains the following classes and function:
 - LabelDelegate
-- LagrangianAdvancedOptionsDialogForm
 - StandardItemModelCoals
 - LagrangianView
 """
@@ -52,7 +51,6 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.LagrangianForm import Ui_LagrangianForm
-from code_saturne.Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
@@ -63,163 +61,6 @@ from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 logging.basicConfig()
 log = logging.getLogger("LagrangianView")
 log.setLevel(GuiParam.DEBUG)
-
-#-------------------------------------------------------------------------------
-# Popup advanced options
-#-------------------------------------------------------------------------------
-
-class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent, case, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_LagrangianAdvancedOptionsDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.case = case
-        self.case.undoStopGlobal()
-
-        self.setWindowTitle(self.tr("Advanced options"))
-        self.default = default
-        self.result  = self.default.copy()
-
-        # Combo model
-        self.modelNORDRE = ComboModel(self.comboBoxNORDRE, 2, 1)
-        self.modelNORDRE.addItem(self.tr("first-order scheme"),  "1")
-        self.modelNORDRE.addItem(self.tr("second-order scheme"), "2")
-
-        self.modelIDIRLA = ComboModel(self.comboBoxIDIRLA, 3, 1)
-        self.modelIDIRLA.addItem(self.tr("X"), "1")
-        self.modelIDIRLA.addItem(self.tr("Y"), "2")
-        self.modelIDIRLA.addItem(self.tr("Z"), "3")
-        self.modelIDIRLA.addItem(self.tr("Local projection"), "4")
-
-        # Connections
-        self.comboBoxNORDRE.activated[str].connect(self.slotNORDRE)
-        self.checkBoxIDISTU.clicked.connect(self.slotIDISTU)
-        self.checkBoxIDIFFL.clicked.connect(self.slotIDIFFL)
-        self.groupBoxModel.clicked[bool].connect(self.slotModel)
-        self.lineEditMODCPL.textChanged[str].connect(self.slotMODCPL)
-        self.comboBoxIDIRLA.activated[str].connect(self.slotIDIRLA)
-
-        validatorMODCPL = IntValidator(self.lineEditMODCPL, min=1)
-        self.lineEditMODCPL.setValidator(validatorMODCPL)
-
-        # initialize Widgets
-        order = str(self.result['scheme_order'])
-        self.modelNORDRE.setItem(str_model=order)
-
-        if self.result['turbulent_dispertion'] == "on":
-            self.checkBoxIDISTU.setChecked(True)
-        else:
-            self.checkBoxIDISTU.setChecked(False)
-
-        if self.result['fluid_particles_turbulent_diffusion'] == "on":
-            self.checkBoxIDIFFL.setChecked(True)
-        else:
-            self.checkBoxIDIFFL.setChecked(False)
-
-        value = self.result['complete_model_iteration']
-        if value > 0:
-            self.lineEditMODCPL.setText(str(value))
-
-            direction = self.result['complete_model_direction']
-            self.modelIDIRLA.setItem(str_model=str(direction))
-        else:
-            self.groupBoxModel.setChecked(False)
-
-        self.case.undoStartGlobal()
-
-
-    @pyqtSlot(str)
-    def slotNORDRE(self, text):
-        """
-        Input NORDRE.
-        """
-        value = self.modelNORDRE.dicoV2M[str(text)]
-        self.result['scheme_order'] = value
-
-
-    @pyqtSlot()
-    def slotIDISTU(self):
-        """
-        Input IDISTU.
-        """
-        if self.checkBoxIDISTU.isChecked():
-            status = "on"
-        else:
-            status = "off"
-        self.result['turbulent_dispertion'] = status
-
-
-    @pyqtSlot()
-    def slotIDIFFL(self):
-        """
-        Input IDIFFL.
-        """
-        if self.checkBoxIDIFFL.isChecked():
-            status = "on"
-        else:
-            status = "off"
-        self.result['fluid_particles_turbulent_diffusion'] = status
-
-
-    @pyqtSlot(bool)
-    def slotModel(self, checked):
-        if checked:
-             value = self.default['complete_model_iteration']
-             if value == 0:
-                 value = 1
-             self.result['complete_model_iteration'] = value
-             self.lineEditMODCPL.setText(str(value))
-        else:
-             self.result['complete_model_iteration'] = 0
-
-
-    @pyqtSlot(str)
-    def slotMODCPL(self, text):
-        """
-        Input MODCPL.
-        """
-        if self.lineEditMODCPL.validator().state == QValidator.Acceptable:
-            self.result['complete_model_iteration'] = from_qvariant(text, int)
-
-
-    @pyqtSlot(str)
-    def slotIDIRLA(self, text):
-        """
-        Input IDIRLA.
-        """
-        value = self.modelIDIRLA.dicoV2M[str(text)]
-        self.result['complete_model_direction'] = value
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        self.result = self.default.copy()
-        QDialog.reject(self)
-
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label
@@ -396,6 +237,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.case.undoStopGlobal()
         self.model = LagrangianModel(self.case)
 
+        # Default settings
+        self.default = {}
+        self.default['scheme_order'] = self.model.getSchemeOrder()
+        self.default['regular_particles'] = self.model.getRegularParticles()
+        self.result = self.default.copy()
+
         # Combo model
         self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,2,1)
         self.modelIPHYLA.addItem(self.tr("No model"), 'off')
@@ -403,11 +250,17 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
             self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
+        # Combo SDEs scheme
+        self.modelNORDRE = ComboModel(self.comboBoxNORDRE, 2, 1)
+        self.modelNORDRE.addItem(self.tr("first-order scheme"),  "1")
+        self.modelNORDRE.addItem(self.tr("second-order scheme"), "2")
+
         # Connections
         self.checkBoxISUILA.clicked.connect(self.slotISUILA)
         self.checkBoxISTTIO.clicked.connect(self.slotISTTIO)
         self.checkBoxIDEPST.clicked.connect(self.slotIDEPST)
         self.comboBoxIPHYLA.activated[str].connect(self.slotIPHYLA)
+        self.comboBoxNORDRE.activated[str].connect(self.slotNORDRE)
         self.checkBoxITPVAR.clicked.connect(self.slotITPVAR)
         self.checkBoxIMPVAR.clicked.connect(self.slotIMPVAR)
         self.checkBoxIENCRA.clicked.connect(self.slotIENCRA)
@@ -416,7 +269,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.checkBoxLTSDYN.clicked.connect(self.slotLTSDYN)
         self.checkBoxLTSMAS.clicked.connect(self.slotLTSMAS)
         self.checkBoxLTSTHE.clicked.connect(self.slotLTSTHE)
-        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
+        #
+        self.checkBoxMODCPL.clicked.connect(self.slotMODCPL)
 
         # Validators
         validatorNSTITS = IntValidator(self.lineEditNSTITS)
@@ -443,6 +297,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.checkBoxIDEPST.setChecked(True)
         else:
             self.checkBoxIDEPST.setChecked(False)
+
+        order = str(self.result['scheme_order'])
+        self.modelNORDRE.setItem(str_model=order)
 
         if ( model == "frozen" ):
             self.labelISTTIO.setDisabled(True)
@@ -489,7 +346,32 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIPHYLA.setItem(str_model=part_model)
         self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
 
+        regular_particles = self.model.getRegularParticles()
+        if regular_particles >= 1:
+            self.checkBoxMODCPL.setChecked(False)
+        else:
+            self.checkBoxMODCPL.setChecked(True)
+
         self.case.undoStartGlobal()
+
+    @pyqtSlot(str)
+    def slotNORDRE(self, text):
+        """
+        Input NORDRE.
+        """
+        value = self.modelNORDRE.dicoV2M[str(text)]
+        self.model.setSchemeOrder(int(value))
+
+
+    @pyqtSlot()
+    def slotMODCPL(self):
+        """
+        Input MODCPL.
+        """
+        if self.checkBoxMODCPL.isChecked():
+            self.model.setRegularParticles(0)
+        else:
+            self.model.setRegularParticles(1)
 
 
     @pyqtSlot()
@@ -670,27 +552,18 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingTemperature("off")
 
 
-    @pyqtSlot()
-    def slotAdvancedOptions(self):
+    def get_result(self):
         """
-        Ask one popup for advanced specifications
+        Method to get the result
         """
-        default = {}
-        default['scheme_order']                        = self.model.getSchemeOrder()
-        default['turbulent_dispertion']                = self.model.getTurbulentDispersion()
-        default['fluid_particles_turbulent_diffusion'] = self.model.getTurbulentDiffusion()
-        default['complete_model_iteration']            = self.model.getCompleteModelStartIteration()
-        default['complete_model_direction']            = self.model.getCompleteModelDirection()
+        return self.result
 
-        dialog = LagrangianAdvancedOptionsDialogView(self, self.case, default)
-        if dialog.exec_():
-            result = dialog.get_result()
-            self.model.setSchemeOrder(int(result['scheme_order']))
-            self.model.setTurbulentDispersion(result['turbulent_dispertion'])
-            self.model.setTurbulentDiffusion(result['fluid_particles_turbulent_diffusion'])
-            self.model.setCompleteModelStartIteration(result['complete_model_iteration'])
-            self.model.setCompleteModelDirection(int(result['complete_model_direction']))
 
+    def tr(self, text):
+        """
+        Translation
+        """
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part
