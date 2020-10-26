@@ -337,7 +337,7 @@ p++;                      // point to next value
 x = *p;                   // same as a[1]
 ```
 
-### Remarks on pointers}
+### Remarks on pointers
 
 Character strings do not have a dedicated type in C:
 - Strings are simply arrays or pointers to characters.

@@ -212,6 +212,22 @@ interface
 
   !=============================================================================
 
+  subroutine cs_les_synthetic_eddy_restart_read()  &
+    bind(C, name='cs_les_synthetic_eddy_restart_read')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_synthetic_eddy_restart_read
+
+  !=============================================================================
+
+  subroutine cs_les_synthetic_eddy_restart_write()  &
+    bind(C, name='cs_les_synthetic_eddy_restart_write')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_synthetic_eddy_restart_write
+
+  !=============================================================================
+
   subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
@@ -644,7 +660,7 @@ if (isuite.eq.1) then
   endif
 
   if (isuisy.eq.1) then
-    call lecsyn('les_inflow.csc'//c_null_char)
+    call cs_les_synthetic_eddy_restart_read
   endif
 
   ! TODO
@@ -1027,7 +1043,7 @@ if (iisuit.eq.1) then
   endif
 
   if (nent.gt.0) then
-    call ecrsyn('les_inflow.csc'//c_null_char)
+    call cs_les_synthetic_eddy_restart_write
   endif
 
   if (iilagr.gt.0) then

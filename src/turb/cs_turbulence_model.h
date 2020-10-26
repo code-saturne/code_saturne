@@ -454,7 +454,8 @@ cs_turb_constants_log_setup(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_clip_turbulent_fluxes(int flux_id, int ivartt);
+cs_clip_turbulent_fluxes(int  flux_id,
+                         int  ivartt);
 
 /*----------------------------------------------------------------------------*/
 

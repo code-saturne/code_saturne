@@ -1043,21 +1043,16 @@ void CS_PROCF(synthe, SYNTHE)
 
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Read the restart file of the LES inflow module
- *
- * Fortran interface:
- *
- * SUBROUTINE LECSYN
- * *****************
- *
- * character(kind=c_char)  filename : <-- : Name of the restart file
+ * Read the restart file of les inflow module.
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(lecsyn, LECSYN)
-(
- const char  *filename
-)
+void
+cs_les_synthetic_eddy_restart_read(void)
 {
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   int                 indfac, ierror;
@@ -1069,6 +1064,8 @@ void CS_PROCF(lecsyn, LECSYN)
   ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
+  const char filename[] = "les_inflow.csc";
+
   _inflow_restart
     = cs_restart_create(filename, NULL, CS_RESTART_MODE_READ);
 
@@ -1387,20 +1384,11 @@ void CS_PROCF(lecsyn, LECSYN)
 }
 
 /*----------------------------------------------------------------------------
- * Write the restart file of les inflow module
- *
- * Fortran interface:
- *
- * SUBROUTINE ECRSYN
- * *****************
- *
- * character(kind=c_char)  filename : <-- : Name of the restart file
+ * Write the restart file of les inflow module.
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(ecrsyn, ECRSYN)
-(
- const char  *filename
-)
+void
+cs_les_synthetic_eddy_restart_write(void)
 {
   int   inlet_id;
 
@@ -1412,6 +1400,8 @@ void CS_PROCF(ecrsyn, ECRSYN)
   bft_printf(_("\n Writing the LES inflow module restart file...\n"));
 
   /* Open the restart file */
+  const char filename[] = "les_inflow.csc";
+
   _inflow_restart
     = cs_restart_create(filename, NULL, CS_RESTART_MODE_WRITE);
 
@@ -1589,10 +1579,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
 
   bft_printf(_(" ...completed\n"));
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Destroy cs_inlet_t structures

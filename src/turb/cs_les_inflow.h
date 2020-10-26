@@ -141,41 +141,23 @@ void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
        cs_real_t         epsent[]  /* <-- turb. dissipation at the inlet faces*/
 );
 
-/*----------------------------------------------------------------------------
- * Read the restart file of the LES inflow module
- *
- * Fortran interface:
- *
- * SUBROUTINE LECSYN
- * *****************
- *
- * character(kind=c_char)  filename : <-- : Name of the restart file
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(lecsyn, LECSYN)
-(
- const char  *filename
-);
-
-/*----------------------------------------------------------------------------
- * Write the restart file of les inflow module
- *
- * Fortran interface:
- *
- * SUBROUTINE ECRSYN
- * *****************
- *
- * character(kind=c_char)  filename : <-- : Name of the restart file
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(ecrsyn, ECRSYN)
-(
- const char  *filename
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Read the restart file of les inflow module.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_les_synthetic_eddy_restart_read(void);
+
+/*----------------------------------------------------------------------------
+ * Write the restart file of les inflow module.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_les_synthetic_eddy_restart_write(void);
 
 /*----------------------------------------------------------------------------
  * Finalize turbulent inflow generation API.
