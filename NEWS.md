@@ -3,6 +3,17 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add possibility to generate a cartesian mesh on the fly
+  * The GUI now allows to define a cartesian mesh which will be
+    generated during runtime.
+  * Needed parameters are minimal and maximal values for X,Y and Z
+    coordinates, and number of cells per direction.
+  * User can define the progression law for cells' size :
+    - Constant step
+    - Geometric step
+    - Parabolic step (Geometric step with a symmetry w.r.t center-coordinate
+      of the direction)
+
 - When creating a case with `code_saturne create`, the `--noref` option is
   enabled by default. It can be cancelled using the `--copy-ref` option.
 
