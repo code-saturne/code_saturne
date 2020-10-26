@@ -199,6 +199,17 @@ typedef struct {
 
 } cs_piso_t;
 
+/*----------------------------------------------------------------------------
+ * Auxiliary checkpoint/restart file parameters
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int     read_auxiliary;   /* Activate reading of auxiliary restart file */
+  int     write_auxiliary;  /* Activate output of auxiliary restart file */
+
+} cs_restart_auxiliary_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -214,6 +225,10 @@ extern const cs_time_scheme_t  *cs_glob_time_scheme;
 /* Pointer to PISO options structure */
 
 extern const cs_piso_t  *cs_glob_piso;
+
+/* Pointer to auxiliary checkpoint/restart file parameters */
+
+extern cs_restart_auxiliary_t  *cs_glob_restart_auxiliary;
 
 /*============================================================================
  * Global variables

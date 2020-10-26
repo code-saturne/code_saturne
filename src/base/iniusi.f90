@@ -239,7 +239,7 @@ endif
 
 ! Restart, read auxiliary file, frozen velocity field
 
-call csisui(ntsuit, ileaux, iccvfg)
+call csisui(ntsuit, iccvfg)
 
 ! Time step (only ntmabs, dtref)
 call cstime()

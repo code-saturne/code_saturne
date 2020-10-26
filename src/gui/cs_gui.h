@@ -164,13 +164,11 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
  * *****************
  *
  * INTEGER          NTSUIT  -->   checkpoint frequency
- * INTEGER          ILEAUX  -->   restart with auxiliary
  * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csisui, CSISUI) (int *ntsuit,
-                                int *ileaux,
+void CS_PROCF (csisui, CSISUI) (int *ileaux,
                                 int *iccvfg);
 
 /*----------------------------------------------------------------------------

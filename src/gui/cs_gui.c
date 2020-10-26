@@ -1650,12 +1650,10 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp)
  * *****************
  *
  * INTEGER          NTSUIT  -->   checkpoint frequency
- * INTEGER          ILEAUX  -->   restart with auxiliary
  * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csisui, CSISUI) (int *ntsuit,
-                                int *ileaux,
                                 int *iccvfg)
 {
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree,
@@ -1663,7 +1661,10 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
 
   cs_gui_node_get_child_int(tn, "restart_rescue", ntsuit);
 
-  cs_gui_node_get_child_status_int(tn, "restart_with_auxiliary", ileaux);
+  cs_gui_node_get_child_status_int
+    (tn, "restart_with_auxiliary",
+     &(cs_glob_restart_auxiliary->read_auxiliary));
+
   cs_gui_node_get_child_status_int(tn, "frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
