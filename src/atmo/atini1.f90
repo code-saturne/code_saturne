@@ -166,6 +166,27 @@ endif
 
 if (itytur.eq.3) irijnu = 1
 
+!===============================================================================
+! 7. Some initialization for meteo...
+!===============================================================================
+
+if (ippmod(iatmos).ge.0) then
+
+  call init_meteo
+
+  if (imbrication_flag) then
+    call activate_imbrication
+  endif
+
+  call cs_at_data_assim_build_ops
+
+  if (ifilechemistry.ge.1) then
+    call init_chemistry
+  endif
+
+endif
+
+
 !--------
 ! FORMATS
 !--------

@@ -563,14 +563,14 @@ cs_atprke(cs_real_t  tinstk[],
   /* Compute potential temperature derivatives
      ======================================== */
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 1)
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY)
     _dry_atmosphere(cromo,
                     cpro_pcvto,
                     tinstk,
                     smbrk,
                     smbre);
 
-  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2)
+  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     _humid_atmosphere(cromo,
                       cpro_pcvto,
                       tinstk,

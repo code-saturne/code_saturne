@@ -150,7 +150,7 @@ else
     call csexit (1)
   endif
 
-  ! --> if the date and time are not completed in usati1.f90 nor and if no meteo
+  ! --> if the date and time are not completed in usppmo/cs_user_model if no meteo
   ! --> file is given,
   ! --> the date and time of the first concentration profile are taken as the
   !     starting time of the simulation

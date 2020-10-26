@@ -57,6 +57,19 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Atmospheric models
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_ATMO_OFF = -1,
+  CS_ATMO_CONSTANT_DENSITY = 0,
+  CS_ATMO_DRY = 1,
+  CS_ATMO_HUMID = 2,
+
+} cs_atmo_model_t;
+
+/*----------------------------------------------------------------------------
  * Atmospheric nucleation models
  *----------------------------------------------------------------------------*/
 
@@ -135,6 +148,9 @@ typedef struct {
    *  - 1: use a meteo file
    *  - 2: directly enter values */
   int meteo_profile;
+
+  /*! Meteo file */
+  char *meteo_file_name;
 
   /*! Meteo Monin obukhov inverse length */
   cs_real_t meteo_dlmo;
@@ -262,6 +278,17 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the meteo file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_meteo_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

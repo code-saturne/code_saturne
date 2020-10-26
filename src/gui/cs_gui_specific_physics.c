@@ -524,6 +524,38 @@ _get_nox_reburning(cs_tree_node_t  *tn_nox,
     *keyword = 2;
 }
 
+/*----------------------------------------------------------------------------
+ * Atmospheric flows: read of meteorological file of data
+ *----------------------------------------------------------------------------*/
+
+void
+_gui_atmo_get_set_meteo_file(void)
+{
+  const char path_af[] = "thermophysical_models/atmospheric_flows";
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_af);
+
+  if (tn == NULL)
+    return;
+
+  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
+
+  if (cs_glob_atmo_option->meteo_profile == 1) {
+
+    const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
+
+    /* Copy string */
+    if (cstr != NULL)
+      cs_atmo_set_meteo_file_name(cstr);
+
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
+#endif
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -583,62 +615,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
   bft_printf("==> %s\n", __func__);
   bft_printf("--toxy  = %f\n", *toxy);
   bft_printf("--tfuel  = %f\n", *tfuel);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Atmospheric flows: read of meteorological file of data
- *
- * Fortran Interface:
- *
- * subroutine uiati1
- * *****************
- * char(*)         fmeteo   <--   meteo file name
- * int             len      <--   meteo file name destination string length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiati1, UIATI1) (char          *fmeteo,
-                                int           *len
-                                CS_ARGF_SUPP_CHAINE)
-{
-  const char path_af[] = "thermophysical_models/atmospheric_flows";
-
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_af);
-
-  if (tn == NULL)
-    return;
-
-  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
-
-  if (cs_glob_atmo_option->meteo_profile) {
-
-    const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
-
-    /* Copy string */
-
-    if (cstr != NULL) {
-
-      /* Compute string length (removing start or end blanks) */
-
-      int l = strlen(cstr);
-      if (l > *len)
-        l = *len;
-
-      for (int i = 0; i < l; i++)
-        fmeteo[i] = cstr[i];
-
-      /* Pad with blanks if necessary */
-
-      for (int i = l; i < *len; i++)
-        fmeteo[i] = ' ';
-
-    }
-
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
 #endif
 }
 
@@ -1315,15 +1291,19 @@ cs_gui_physical_model_select(void)
     }
     else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
       if (cs_gui_strcmp(vars->model_value, "constant"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 0;
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_CONSTANT_DENSITY;
       else if (cs_gui_strcmp(vars->model_value, "dry"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 1;
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
       else if (cs_gui_strcmp(vars->model_value, "humid"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 2;
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_HUMID;
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid atmospheric flow model: %s."),
                   vars->model_value);
+
+      /* Get and set meteo file if given */
+      _gui_atmo_get_set_meteo_file();
+
     }
     else if (cs_gui_strcmp(vars->model, "joule_effect")) {
       if (cs_gui_strcmp(vars->model_value, "joule")) {

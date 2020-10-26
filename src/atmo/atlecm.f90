@@ -59,6 +59,8 @@ integer           imode
 
 ! Local variables
 
+character(len=80) :: ficmet
+
 integer itp, ii, ios, k
 integer year, quant,hour,minute, month, day
 integer ih2o
@@ -88,6 +90,8 @@ endif
 CSAUTE = '/'
 
 ! --> Opens the meteo file
+call atmo_get_meteo_file_name(ficmet)
+
 open (unit=impmet, file=ficmet,                                  &
      status='old', form='formatted', access='sequential',       &
      iostat=ios, err=99)
@@ -153,7 +157,7 @@ else
     call csexit (1)
   endif
 
-  ! --> if the date and time are not completed in usati1.f90,
+  ! --> if the date and time are not completed in usppmo / cs_user_model
   !     the date and time of the first meteo profile are taken as the
   !     starting time of the simulation
 

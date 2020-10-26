@@ -124,6 +124,7 @@ static cs_atmo_option_t  _atmo_option = {
   .nucleation_model = 0,
   .subgrid_model = 0,
   .meteo_profile = 0, /* no meteo profile */
+  .meteo_file_name = NULL,
   .meteo_dlmo = 0.,
   .meteo_z0 = -1.,
   .meteo_zref = -1.,
@@ -223,6 +224,11 @@ void
 cs_atmo_compute_meteo_profiles(void);
 
 void
+cs_f_atmo_get_meteo_file_name(int           name_max,
+                              const char  **name,
+                              int          *name_len);
+
+void
 cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **syear,
                        int                    **squant,
@@ -278,6 +284,35 @@ cs_f_atmo_finalize(void);
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return the name meteo file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_meteo_file_name(int           name_max,
+                              const char  **name,
+                              int          *name_len)
+{
+  *name = _atmo_option.meteo_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving meteo file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_option.meteo_file_name, name_max, *name, *name_len);
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Get pointer
@@ -425,6 +460,7 @@ cs_f_atmo_chem_finalize(void)
 void
 cs_f_atmo_finalize(void)
 {
+  BFT_FREE(_atmo_option.meteo_file_name);
   BFT_FREE(_atmo_option.z_temp_met);
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
@@ -527,17 +563,6 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t corio_f = 4. * cs_math_pi / 86164.
     * sin(aopt->latitude * cs_math_pi / 180.);
   aopt->meteo_zi = zi_coef * ustar0 / corio_f;
-
-  bft_printf("\n"
-             " Meteo profile information\n"
-             "  roughness = %f\n"
-             "  ground ustar = %f\n"
-             "  uref = %f\n"
-             "  zref = %f\n"
-             "  tstar = %f\n"
-             "  1/LMO = %f\n"
-             "  zi = %f\n",
-             z0, ustar0, aopt->meteo_uref, zref, tstar, dlmo, aopt->meteo_zi);
 
 }
 
@@ -829,6 +854,55 @@ cs_atmo_z_ground_compute(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function computes hydrostatic profiles of density and pressure
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \divs \left( \grad \varia \right)
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
+ *  is the potential temperature.
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *  \f]
+ *  and Neumann elsewhere.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_hydrostatic_profiles_compute(void)
+{
+ //TODO
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the meteo file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_meteo_file_name(const char *file_name)
+{
+  if (file_name == NULL) {
+    return;
+  }
+
+  BFT_MALLOC(_atmo_option.meteo_file_name,
+             strlen(file_name) + 1,
+             char);
+
+  sprintf(_atmo_option.meteo_file_name, "%s", file_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function set the file name of the SPACK file.
  *
  * \param[in] file_name  name of the file.
@@ -1087,7 +1161,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 void
 cs_atmo_log_setup(void)
 {
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -1096,17 +1170,17 @@ cs_atmo_log_setup(void)
                   "--------------------------\n\n"));
 
   switch(cs_glob_physical_model_flag[CS_ATMOSPHERIC]) {
-    case 0:
+    case CS_ATMO_CONSTANT_DENSITY:
       /* Constant density */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Constant density\n\n"));
       break;
-    case 1:
+    case CS_ATMO_DRY:
       /* Dry */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Dry atmosphere\n\n"));
       break;
-    case 2:
+    case CS_ATMO_HUMID:
       /* Humid */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Humid atmosphere\n\n"));
@@ -1151,6 +1225,14 @@ cs_atmo_log_setup(void)
        "    longitude: %6f\n\n"),
      cs_glob_atmo_option->latitude,
      cs_glob_atmo_option->longitude);
+
+  if (cs_glob_atmo_option->meteo_profile == 1) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Large scale Meteo file: %s\n\n"),
+       cs_glob_atmo_option->meteo_file_name);
+  }
+
 
   if (cs_glob_atmo_option->meteo_profile == 2) {
     cs_log_printf

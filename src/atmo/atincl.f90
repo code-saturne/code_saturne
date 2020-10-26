@@ -177,6 +177,7 @@ integer(c_int), pointer, save :: iatmst
 !> - 1: the user can directly impose the exact meteo velocity
 !> by declaring the 'meteo_velocity' field
 !> Useful for iatmst = 1
+!> Note: deprecated, imeteo=2 can be used instead.
 integer, save :: theo_interp
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
@@ -384,6 +385,19 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a meteo file name
+
+    subroutine cs_f_atmo_get_meteo_file_name(f_name_max, f_name, f_name_len)  &
+      bind(C, name='cs_f_atmo_get_meteo_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_atmo_get_meteo_file_name
+
+    !---------------------------------------------------------------------------
+
     !> \brief Return pointers to atmo includes
 
     subroutine cs_f_atmo_get_pointers(ps,                               &
@@ -549,6 +563,44 @@ integer, save :: kopint
 
 contains
 
+    !=============================================================================
+
+    !> \brief Return meteo file name
+
+    !> \param[out]  name   meteo file name
+
+    subroutine atmo_get_meteo_file_name(name)
+
+      use, intrinsic :: iso_c_binding
+      implicit none
+
+      ! Arguments
+
+      character(len=*), intent(out) :: name
+
+      ! Local variables
+
+      integer :: i
+      integer(c_int) :: name_max, c_name_len
+      type(c_ptr) :: c_name_p
+      character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
+      name_max = len(name)
+
+      call cs_f_atmo_get_meteo_file_name(name_max, c_name_p, c_name_len)
+      call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+      do i = 1, c_name_len
+        name(i:i) = c_name(i)
+      enddo
+      do i = c_name_len + 1, name_max
+        name(i:i) = ' '
+      enddo
+
+      return
+
+    end subroutine atmo_get_meteo_file_name
+
   !=============================================================================
 
   !> \brief Map fortran to C variables
@@ -636,7 +688,7 @@ use atsoil
 implicit none
 
 ! Local variables
-integer :: imode, ifac, n_level
+integer :: imode, n_level, n_times, n_level_t
 
 type(c_ptr) :: c_z_temp_met, c_time_met
 type(c_ptr) :: c_frac_neb, c_diag_neb
@@ -667,28 +719,23 @@ if (imeteo.gt.0) then
 
   ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
   !           rmet,tpmet,phmet
-  allocate(zdmet(nbmetd))
+  n_level = max(1, nbmetd)
+  n_times = max(1, nbmetm)
+  n_level_t = max(1, nbmaxt)
+  allocate(zdmet(n_level))
 
   if (iatmst.ge.1) then
-    n_level = max(1, nbmetd)
     allocate(dpdt_met(n_level))
     allocate(mom(3, n_level))
     allocate(mom_met(3, n_level))
   endif
 
-  allocate(umet(nbmetd,nbmetm), vmet(nbmetd,nbmetm), wmet(nbmetd,nbmetm))
-  allocate(ekmet(nbmetd,nbmetm), epmet(nbmetd,nbmetm))
-  allocate(ttmet(nbmaxt,nbmetm), qvmet(nbmaxt,nbmetm), ncmet(nbmaxt,nbmetm))
-  allocate(pmer(nbmetm))
-  allocate(xmet(nbmetm), ymet(nbmetm))
-  allocate(rmet(nbmaxt,nbmetm), tpmet(nbmaxt,nbmetm))
-
-  ! Allocate and initialize auto inlet/outlet flag
-
-  allocate(iautom(nfabor))
-  do ifac = 1, nfabor
-    iautom(ifac) = 0
-  enddo
+  allocate(umet(n_level,n_times), vmet(n_level,n_times), wmet(n_level,n_times))
+  allocate(ekmet(n_level,n_times), epmet(n_level,n_times))
+  allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times), ncmet(n_level_t,n_times))
+  allocate(pmer(n_times))
+  allocate(xmet(n_times), ymet(n_times))
+  allocate(rmet(n_level_t,n_times), tpmet(n_level_t,n_times))
 
   ! Allocate additional arrays for 1D radiative model
 
@@ -724,6 +771,33 @@ if (imeteo.gt.0) then
 endif
 
 end subroutine init_meteo
+
+!===============================================================================
+
+!> \brief Initialisation of meteo data
+subroutine init_atmo_autom(nfabor)
+
+use cs_c_bindings
+
+implicit none
+
+integer nfabor
+
+! Local variables
+integer :: ifac
+
+! Allocate additional arrays for Water Microphysics
+if (imeteo.gt.0) then
+
+  ! Allocate and initialize auto inlet/outlet flag
+  allocate(iautom(nfabor))
+  do ifac = 1, nfabor
+    iautom(ifac) = 0
+  enddo
+
+endif
+
+end subroutine init_atmo_autom
 
 !=============================================================================
 

@@ -60,6 +60,7 @@ use cs_nz_condensation, only: nzones
 use ctincl
 use cfpoin
 use vof
+use cs_c_bindings
 
 !===============================================================================
 
@@ -183,7 +184,7 @@ indjon = 1
 
 ! ---> Fichiers module atmospherique
 impmet = 26
-ficmet = 'meteo'
+call atmo_set_meteo_file_name('meteo')
 
 ! ---> Fichiers historiques
 

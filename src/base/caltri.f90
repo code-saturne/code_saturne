@@ -432,19 +432,7 @@ call init_aux_arrays(ncelet, nfabor)
 call turbomachinery_init
 
 if (ippmod(iatmos).ge.0) then
-
-  call init_meteo
-
-  if (imbrication_flag) then
-    call activate_imbrication
-  endif
-
-  call cs_at_data_assim_build_ops
-
-  if (ifilechemistry.ge.1) then
-    call init_chemistry
-  endif
-
+  call init_atmo_autom(nfabor)
 endif
 
 if (ippmod(icompf).ge.0) then
