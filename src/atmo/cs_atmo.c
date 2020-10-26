@@ -59,6 +59,7 @@
 
 #include "fvm_nodal_extract.h"
 
+#include "cs_atmo_profile_std.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -547,6 +548,9 @@ cs_atmo_compute_meteo_profiles(void)
     (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
   cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
   cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
+  cs_real_t *cpro_met_p = cs_field_by_name("meteo_pressure")->val;
+  cs_real_t *cpro_met_rho = cs_field_by_name("meteo_density")->val;
+  cs_real_t *cpro_met_t = cs_field_by_name("meteo_temperature")->val;
 
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
@@ -574,6 +578,7 @@ cs_atmo_compute_meteo_profiles(void)
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
+    //TODO reference altitude or use z_ground?
     cs_real_t z = cell_cen[cell_id][2];
 
     /* Velocity profile */
@@ -597,6 +602,13 @@ cs_atmo_compute_meteo_profiles(void)
     /* epsilon profile */
     cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
       * cs_mo_phim(z+z0, dlmo)*(1.-ri_f); //FIXME min (1, ri_f) ?
+
+    /* TODO compute hydrostatic pressure and density profiles
+     * with Laplace integration  (see atlecm.f90) */
+    cs_atmo_profile_std((z+z0),
+                        &(cpro_met_p[cell_id]),
+                        &(cpro_met_t[cell_id]),
+                        &(cpro_met_rho[cell_id]));
 
   }
 

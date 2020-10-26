@@ -53,7 +53,8 @@
     <addaction name="separator"/>
     <addaction name="displayCaseAction"/>
     <addaction name="separator"/>
-    <addaction name="openTextEditorAction"/>
+    <addaction name="openDataEditorAction"/>
+    <addaction name="openSrcEditorAction"/>
     <addaction name="testUserCompilationAction"/>
     <addaction name="separator"/>
     <addaction name="runOrSubmitAction"/>
@@ -186,7 +187,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="openTextEditorAction"/>
+   <addaction name="openDataEditorAction"/>
+   <addaction name="openSrcEditorAction"/>
    <addaction name="testUserCompilationAction"/>
    <addaction name="openResultsFileAction"/>
   </widget>
@@ -326,7 +328,22 @@
     <string>Ctrl+P</string>
    </property>
   </action>
-  <action name="openTextEditorAction">
+  <action name="openDataEditorAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Manage data files</string>
+   </property>
+   <property name="toolTip">
+    <string>Manage files within the DATA folder</string>
+   </property>
+   <property name="statusTip">
+    <string>Manage files within the DATA folder</string>
+   </property>
+  </action>
+  <action name="openSrcEditorAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
      <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>

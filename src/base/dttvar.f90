@@ -639,250 +639,12 @@ if (idtvar.ge.0) then
   endif
 
 !===============================================================================
-! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
+! Compute CFL constraint for compressible flow for log
 !===============================================================================
-
-  if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
-
-    idiff0 = 0
-    cnom   =' COURANT'
-
-    ! CONSTRUCTION DE U/DX           (COURANT       ) =W1
-
-    ! MATRICE A PRIORI NON SYMETRIQUE
-
-    isym = 2
-
-    call matrdt &
-    !==========
- (vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, &
-  viscf, viscb, dam)
-
-    do iel = 1, ncel
-      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
-    enddo
-
-    ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
-
-    cfmax = -grand
-    cfmin =  grand
-    icfmax(1)= 1
-    icfmin(1)= 1
-
-    do iel = 1, ncel
-      cpro_cour(iel) = w1(iel)*dt(iel)
-    enddo
-
-    if (iwarnp.ge.2) then
-
-      do iel = 1, ncel
-        if (cpro_cour(iel).le.cfmin) then
-          cfmin  = cpro_cour(iel)
-          icfmin(1) = iel
-        endif
-        if (cpro_cour(iel).ge.cfmax) then
-          cfmax  = cpro_cour(iel)
-          icfmax(1) = iel
-        endif
-      enddo
-
-      xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
-      xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
-      xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
-      xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
-      xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
-      xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
-
-      if (irangp.ge.0) then
-        nbrval = 3
-        call parmnl (nbrval, cfmin, xyzmin)
-        call parmxl (nbrval, cfmax, xyzmax)
-      endif
-
-      if (icfmin(1).gt.0) then
-        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      else
-        write(nfecra,*) cnom, "Too big to be displayed"
-      endif
-
-      if (icfmax(1).gt.0) then
-        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-      else
-        write(nfecra,*) cnom, "Too big to be displayed"
-      endif
-
-    endif
-
-  endif
-
-!===============================================================================
-! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
-!===============================================================================
-
-  if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
-
-    iconv0 = 0
-    cnom   =' FOURIER'
-
-    !                              2
-    ! CONSTRUCTION DE      +2.NU/DX  (       FOURIER) =W1
-
-    ! MATRICE A PRIORI SYMETRIQUE
-
-    isym = 1
-
-    call matrdt &
-    !==========
- (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
-  viscf, viscb, dam)
-
-    do iel = 1, ncel
-      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
-    enddo
-
-    ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
-
-    cfmax  = -grand
-    cfmin  =  grand
-    icfmax(1) = 1
-    icfmin(1) = 1
-
-    do iel = 1, ncel
-      cpro_four(iel) = w1(iel)*dt(iel)
-    enddo
-
-    if (iwarnp.ge.2) then
-
-      do iel = 1, ncel
-        if (cpro_four(iel).le.cfmin) then
-          cfmin  = cpro_four(iel)
-          icfmin(1) = iel
-        endif
-        if (cpro_four(iel).ge.cfmax) then
-          cfmax  = cpro_four(iel)
-          icfmax(1) = iel
-        endif
-      enddo
-
-      xyzmin(1) = xyzcen(1,icfmin(1))
-      xyzmin(2) = xyzcen(2,icfmin(1))
-      xyzmin(3) = xyzcen(3,icfmin(1))
-      xyzmax(1) = xyzcen(1,icfmax(1))
-      xyzmax(2) = xyzcen(2,icfmax(1))
-      xyzmax(3) = xyzcen(3,icfmax(1))
-
-      if (irangp.ge.0) then
-        nbrval = 3
-        call parmnl (nbrval, cfmin, xyzmin)
-        !==========
-        call parmxl (nbrval, cfmax, xyzmax)
-        !==========
-      endif
-
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-
-    endif
-
-  endif
-
-!===============================================================================
-! 4.4  CALCUL DU NOMBRE DE COURANT/FOURIER POUR AFFICHAGE
-!===============================================================================
-
-!     En incompressible uniquement (en compressible, on preferera
-!       afficher la contrainte liee a la masse volumique)
-
-  if (      (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1) &
-      .and. (ippmod(icompf).lt.0)) then
-
-    cnom   =' COU/FOU'
-
-    !                              2
-    ! CONSTRUCTION DE U/DX +2.NU/DX  (COURANT +FOURIER) =W1
-
-    ! MATRICE A PRIORI NON SYMETRIQUE
-
-    isym = 1
-    if (vcopt_u%iconv.gt.0) isym = 2
-
-    call matrdt &
-    !==========
- (vcopt_u%iconv, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
-  viscf, viscb, dam)
-
-    do iel = 1, ncel
-      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
-    enddo
-
-    ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
-
-    cfmax  = -grand
-    cfmin  =  grand
-    icfmax(1) = 0
-    icfmin(1) = 0
-
-    do iel = 1, ncel
-      w2(iel) = w1(iel)*dt(iel)
-    enddo
-
-    call log_iteration_add_array('Courant/Fourier', 'criterion',    &
-                                 MESH_LOCATION_CELLS, .true.,       &
-                                 1, w2)
-
-    if (iwarnp.ge.2) then
-
-      do iel = 1, ncel
-        if (w2(iel).le.cfmin) then
-          cfmin  = w2(iel)
-          icfmin(1) = iel
-        endif
-        if (w2(iel).ge.cfmax) then
-          cfmax  = w2(iel)
-          icfmax(1) = iel
-        endif
-      enddo
-
-      xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
-      xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
-      xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
-      xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
-      xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
-      xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
-
-      if (irangp.ge.0) then
-        nbrval = 3
-        call parmnl (nbrval, cfmin, xyzmin)
-        call parmxl (nbrval, cfmax, xyzmax)
-      endif
-
-      if (icfmin(1).gt.0) then
-        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      else
-        write(nfecra,*) cnom, "Too big to be displayed"
-      endif
-
-      if (icfmax(1).gt.0) then
-        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-      else
-        write(nfecra,*) cnom, "Too big to be displayed"
-      endif
-
-    endif
-
-  endif
-
-!===============================================================================
-! 4.5  CALCUL DE LA CONTRAINTE CFL DE LA MASSE VOL. POUR AFFICHAGE
-!===============================================================================
-
-  ! En Compressible uniquement
 
   if (ippmod(icompf).ge.0) then
 
     cnom =' CFL/MAS'
-
-    ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
 
     cfmax  = -grand
     cfmin  =  grand
@@ -982,4 +744,405 @@ deallocate(w1, w2, w3)
 
 return
 
-end subroutine
+end subroutine dttvar
+
+!===============================================================================
+! Purpose:
+! -------
+
+!> \brief Compute the local the Courant and Fourier number to the log.
+!>
+!> This function has access to the boundary face type, except for the first time
+!> step.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
+
+subroutine cs_compute_courant_fourier()
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use cplsat
+use cstnum
+use cstphy
+use optcal
+use entsor
+use parall
+use ppppar
+use ppthch
+use ppincl
+use mesh
+use field
+use cs_c_bindings
+use turbomachinery
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+! Local variables
+
+character(len=8) :: cnom
+
+integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym
+integer          modntl
+integer          iflmas, iflmab
+integer          nbrval
+
+double precision cfmax,cfmin
+double precision xyzmax(3), xyzmin(3)
+double precision hint
+double precision mult
+
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:) :: wcf
+double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: w1, w2
+double precision, dimension(:), pointer :: dt
+double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
+
+type(var_cal_opt) :: vcopt_u
+
+!===============================================================================
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+! Pointers to the mass fluxes
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+call field_get_val_s_by_name('dt', dt)
+
+! Allocate temporary arrays for the time-step resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet))
+allocate(cofbft(nfabor), coefbt(nfabor))
+
+! Allocate work arrays
+allocate(w1(ncelet))
+
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icour, cpro_cour)
+call field_get_val_s(ifour, cpro_four)
+
+if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+  modntl = 0
+else
+  modntl = 1
+endif
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+
+!===============================================================================
+! Compute the diffusivity at the faces
+!===============================================================================
+
+if (vcopt_u%idiff.ge.1) then
+  do iel = 1, ncel
+    w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
+  enddo
+  call viscfa(imvisf, w1, viscf, viscb)
+
+else
+  do ifac = 1, nfac
+    viscf(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    viscb(ifac) = 0.d0
+  enddo
+endif
+
+!===============================================================================
+! Boundary condition for matrdt
+!===============================================================================
+
+if (idtvar.ge.0) then
+
+  do ifac = 1, nfabor
+
+    if (bmasfl(ifac).lt.0.d0) then
+      iel = ifabor(ifac)
+      hint = vcopt_u%idiff*(  viscl(iel)                         &
+        + vcopt_u%idifft*visct(iel))/distb(ifac)
+      coefbt(ifac) = 0.d0
+      cofbft(ifac) = hint
+    else
+      coefbt(ifac) = 1.d0
+      cofbft(ifac) = 0.d0
+    endif
+  enddo
+
+else
+
+  ! TODO for steady algorithm, check if using the third of the trace
+  !      is appropriate, or if a better solution is available
+  !      (algorithm was probably broken since velocity components are
+  !      coupled)
+
+  mult = 1.d0 / 3.d0
+
+  call field_get_coefb_v (ivarfl(iu), coefbv)
+  call field_get_coefbf_v(ivarfl(iu), cofbfv)
+
+  do ifac = 1, nfabor
+    coefbt(ifac) = (coefbv(1,1,ifac)+coefbv(2,2,ifac)+coefbv(3,3,ifac)) * mult
+    cofbft(ifac) = (cofbfv(1,1,ifac)+cofbfv(2,2,ifac)+cofbfv(3,3,ifac)) * mult
+  enddo
+
+endif
+
+!===============================================================================
+! Compute Courant number for log
+!===============================================================================
+
+if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
+
+  idiff0 = 0
+  cnom   =' COURANT'
+
+  ! Build matrix of  U/DX(Courant) = w1
+
+  ! Non symmetric matrix
+  isym = 2
+
+  call matrdt &
+    (vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, &
+    viscf, viscb, dam)
+
+  ! Compute min and max Courant numbers
+  cfmax = -grand
+  cfmin =  grand
+  icfmax(1)= 1
+  icfmin(1)= 1
+
+  do iel = 1, ncel
+    cpro_cour(iel) = dam(iel)/(crom(iel)*volume(iel)) * dt(iel)
+  enddo
+
+  if (vcopt_u%iwarni.ge.2) then
+    do iel = 1, ncel
+      if (cpro_cour(iel).le.cfmin) then
+        cfmin  = cpro_cour(iel)
+        icfmin(1) = iel
+      endif
+      if (cpro_cour(iel).ge.cfmax) then
+        cfmax  = cpro_cour(iel)
+        icfmax(1) = iel
+      endif
+    enddo
+
+    xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+    xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+    xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+    xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+    xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+    xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
+
+    if (irangp.ge.0) then
+      nbrval = 3
+      call parmnl(nbrval, cfmin, xyzmin)
+      call parmxl(nbrval, cfmax, xyzmax)
+    endif
+
+    if (icfmin(1).gt.0) then
+      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+    if (icfmax(1).gt.0) then
+      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+  endif
+
+endif
+
+!===============================================================================
+! Compute Fourier number for log
+!===============================================================================
+
+if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
+
+  iconv0 = 0
+  cnom = ' FOURIER'
+
+  !                      2
+  ! Build matrix +2.NU/DX (Fourier)=w1
+
+  ! Symmetric matrix
+  isym = 1
+
+  call matrdt &
+    (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+    viscf, viscb, dam)
+
+  ! Compute min/max of Fourier number
+  cfmax  = -grand
+  cfmin  =  grand
+  icfmax(1) = 1
+  icfmin(1) = 1
+
+  do iel = 1, ncel
+    cpro_four(iel) = dam(iel)/(crom(iel)*volume(iel)) * dt(iel)
+  enddo
+
+  if (vcopt_u%iwarni.ge.2) then
+
+    do iel = 1, ncel
+      if (cpro_four(iel).le.cfmin) then
+        cfmin  = cpro_four(iel)
+        icfmin(1) = iel
+      endif
+      if (cpro_four(iel).ge.cfmax) then
+        cfmax  = cpro_four(iel)
+        icfmax(1) = iel
+      endif
+    enddo
+
+    xyzmin(1) = xyzcen(1,icfmin(1))
+    xyzmin(2) = xyzcen(2,icfmin(1))
+    xyzmin(3) = xyzcen(3,icfmin(1))
+    xyzmax(1) = xyzcen(1,icfmax(1))
+    xyzmax(2) = xyzcen(2,icfmax(1))
+    xyzmax(3) = xyzcen(3,icfmax(1))
+
+    if (irangp.ge.0) then
+      nbrval = 3
+      call parmnl (nbrval, cfmin, xyzmin)
+      call parmxl (nbrval, cfmax, xyzmax)
+    endif
+
+    write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+    write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+
+  endif
+
+endif
+
+!===============================================================================
+! Compute Courant/Fourier ratio for log
+!===============================================================================
+
+! For incompressible flows only (for compressible we prefer log for
+! the constraint on density)
+
+if ((vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1) &
+  .and. (ippmod(icompf).lt.0)) then
+
+  cnom   =' COU/FOU'
+
+  !                              2
+  ! Build matrix    U/DX +2.NU/DX  (COURANT +FOURIER) =w1
+
+  ! Non-symmetric matrix
+  isym = 1
+  if (vcopt_u%iconv.gt.0) isym = 2
+
+  call matrdt &
+    (vcopt_u%iconv, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+    viscf, viscb, dam)
+
+  ! Compute Courant/Fourier min and max
+  cfmax  = -grand
+  cfmin  =  grand
+  icfmax(1) = 0
+  icfmin(1) = 0
+
+  do iel = 1, ncel
+    w1(iel) = dam(iel)/(crom(iel)*volume(iel)) * dt(iel)
+  enddo
+
+  call log_iteration_add_array('Courant/Fourier', 'criterion',    &
+    MESH_LOCATION_CELLS, .true.,       &
+    1, w1)
+
+  if (vcopt_u%iwarni.ge.2) then
+
+    do iel = 1, ncel
+      if (w1(iel).le.cfmin) then
+        cfmin  = w1(iel)
+        icfmin(1) = iel
+      endif
+      if (w1(iel).ge.cfmax) then
+        cfmax  = w1(iel)
+        icfmax(1) = iel
+      endif
+    enddo
+
+    xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+    xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+    xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+    xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+    xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+    xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
+
+    if (irangp.ge.0) then
+      nbrval = 3
+      call parmnl (nbrval, cfmin, xyzmin)
+      call parmxl (nbrval, cfmax, xyzmax)
+    endif
+
+    if (icfmin(1).gt.0) then
+      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+    if (icfmax(1).gt.0) then
+      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+    else
+      write(nfecra,*) cnom, "Too big to be displayed"
+    endif
+
+  endif
+
+endif
+
+! Free memory
+deallocate(w1)
+deallocate(viscf, viscb)
+deallocate(dam)
+deallocate(cofbft, coefbt)
+
+!--------
+! Formats
+!--------
+
+ 1001 format (/,a8,' MAX= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
+ 1002 format (  a8,' MIN= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
+
+!----
+! End
+!----
+
+end subroutine cs_compute_courant_fourier

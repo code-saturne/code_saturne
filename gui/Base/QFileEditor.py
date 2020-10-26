@@ -390,6 +390,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 #-------------------------------------------------------------------------------
 # QMessageBox which expands
 #-------------------------------------------------------------------------------
+
 class QExpandingMessageBox(QMessageBox):
     """
     A QMessageBox which expands.
@@ -429,6 +430,7 @@ class QExpandingMessageBox(QMessageBox):
 #-------------------------------------------------------------------------------
 # QFileEditor class
 #-------------------------------------------------------------------------------
+
 class FormWidget(QtWidgets.QWidget):
     """
     Main widget used to include both the browser and the editor zone
@@ -438,14 +440,269 @@ class FormWidget(QtWidgets.QWidget):
     def __init__(self, parent, wlist):
         super(FormWidget, self).__init__(parent)
 
-        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout = QtWidgets.QGridLayout(self)
 
-        for w in wlist:
-            if w == wlist[0]:
+        n = len(wlist) - 1
+        for i, w in enumerate(wlist):
+            if i < n:
                 w.setMaximumWidth(400)
-            self.layout.addWidget(w)
+                self.layout.addWidget(w, i, 0)
+            else:
+                self.layout.addWidget(w, 0, 1, 2, 1)
 
         self.setLayout(self.layout)
+    # ---------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# QFileSystemModel with modified header
+#-------------------------------------------------------------------------------
+
+class FileSystemModel(QtWidgets.QFileSystemModel):
+
+    def __init__(self, title):
+        """
+        """
+        QtWidgets.QFileSystemModel.__init__(self)
+        self.title = title
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            if section == 0:
+                return self.tr(self.title)
+        return None
+
+
+#-------------------------------------------------------------------------------
+# Explorer class
+#-------------------------------------------------------------------------------
+
+class Explorer():
+    """
+    Editor class. Used for file editing and/or viewing
+    """
+
+    # ---------------------------------------------------------------
+    def __init__(self, parent=None, root_dir=None, dir_type=None,
+                 case_name=None, readOnly=False):
+
+        self.parent = parent
+
+        self.root_dir = root_dir
+        self.dir_type = dir_type
+
+        self.readOnly = readOnly
+        self.readerMode = readOnly
+
+        # Explorer
+        self.explorer = self._initFileExplorer()
+        self._initExplorerActions(case_name)
+
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _initFileExplorer(self):
+        """
+        Create the File explorer object based on the QFileSystemModel widget.
+        """
+
+        if self.dir_type == 'SHARE':
+            name = 'Reference'
+        elif self.dir_type in ('SRC', 'DATA'):
+            name = 'User files'
+        else:
+            name = 'Name'
+
+        model = FileSystemModel(name)
+        if self.root_dir:
+            model.setRootPath(self.root_dir)
+
+        tree = QtWidgets.QTreeView(None)
+
+        tree.setModel(model)
+        tree.setSortingEnabled(True)
+        tree.setWindowTitle('Explorer')
+        if self.root_dir:
+            tree.setRootIndex(model.index(self.root_dir))
+
+        # Hide unnecessary columns
+        nc = tree.header().count()
+
+        for i in range(1, nc):
+            tree.hideColumn(i)
+
+        # Right click menu
+        tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        tree.customContextMenuRequested.connect(self.explorerContextMenu)
+
+        # Double click
+        tree.doubleClicked.connect(self._explorerDoubleClick)
+
+        return tree;
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _initExplorerActions(self, case_name=None):
+        """
+        Create explorer actions dictionary
+        """
+
+        if case_name:
+            case_dir_name = str(case_name)
+        else:
+            case_dir_name = 'SRC'
+
+        _editAction = QAction(self.explorer.model())
+        _editAction.setText('Edit file')
+        _editAction.triggered.connect(self.parent._editSelectedFile)
+
+        _viewAction = QAction(self.explorer.model())
+        _viewAction.setText('View file')
+        _viewAction.triggered.connect(self.parent._viewSelectedFile)
+
+        _copyAction = QAction(self.explorer.model())
+        _copyAction.setText('Copy to ' + case_dir_name)
+        _copyAction.triggered.connect(self.parent._copySelectedFile)
+
+        _removeAction = QAction(self.explorer.model())
+        _removeAction.setText('Remove from ' + case_dir_name)
+        _removeAction.triggered.connect(self.parent._removeSelectedFile)
+
+        _restoreAction = QAction(self.explorer.model())
+        _restoreAction.setText('Move to ' + case_dir_name)
+        _restoreAction.triggered.connect(self.parent._restoreSelectedFile)
+
+        _deleteAction = QAction(self.explorer.model())
+        _deleteAction.setText('Delete')
+        _deleteAction.triggered.connect(self.parent._deleteSelectedFile)
+
+        self._explorerActions = {'edit': _editAction,
+                                 'view': _viewAction,
+                                 'copy': _copyAction,
+                                 'remove': _removeAction,
+                                 'restore': _restoreAction,
+                                 'delete': _deleteAction}
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _updateCurrentSelection(self):
+        """
+        Update the current selection
+        """
+        # Find file position (SRC, REFERENCE, EXAMPLES, other)
+        path2file = ''
+        for idx in self.explorer.selectedIndexes():
+            fname = idx.data(QtCore.Qt.DisplayRole)
+            c = idx
+            p = c.parent()
+            ps = p.data(QtCore.Qt.DisplayRole)
+            while True:
+                ctxt = c.data(QtCore.Qt.DisplayRole)
+                ptxt = p.data(QtCore.Qt.DisplayRole)
+                if ptxt in [None, self.parent.case_name]:
+                    pe = ptxt
+                    break
+                path2file = ptxt + '/' + path2file
+                c = p
+                p = c.parent()
+
+        self.parent._currentSelection = {'filename':fname,
+                                         'subpath' :path2file,
+                                         'filedir' :ps,
+                                         'origdir' :pe}
+
+        return
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _explorerDoubleClick(self):
+        """
+        Double click action
+        """
+
+        self._updateCurrentSelection()
+
+        clicked = os.path.join(self.parent._currentSelection['subpath'],
+                               self.parent._currentSelection['filename'])
+
+        # To ensure that os.path.isdir works correctly we use the full path
+        # to the object which is selected in the menu
+        if self.root_dir:
+            clicked = os.path.join(self.root_dir, clicked)
+
+        edit_list = ['SRC']
+
+        if not os.path.isdir(clicked):
+            if self.parent._currentSelection['filedir'] in edit_list:
+                self.parent._editSelectedFile()
+            else:
+                self.parent._viewSelectedFile()
+
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def explorerContextMenu(self, position):
+        """
+        Custom menu for the mouse right-click.
+        Depends on whether the file is in the SRC, SRC/subfolder
+        or RESU/subfolder.
+        Possible actions are 'edit', 'view' and 'copy' (to SRC)
+        """
+
+        self._updateCurrentSelection()
+
+        path2file = self.parent._currentSelection['subpath']
+        fname     = self.parent._currentSelection['filename']
+        pe        = self.parent._currentSelection['origdir']
+        ps        = self.parent._currentSelection['filedir']
+
+        self._contextMenu = QMenu()
+
+        if (path2file == '' or path2file == None ) and self.root_dir:
+            path2file = self.root_dir
+
+        if self.dir_type == 'SHARE':
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                self._contextMenu.addAction(self._explorerActions['view'])
+                self._contextMenu.addAction(self._explorerActions['copy'])
+        elif pe == 'SRC':
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                if ps == 'SRC':
+                    self._contextMenu.addAction(self._explorerActions['edit'])
+                    self._contextMenu.addAction(self._explorerActions['remove'])
+                elif ps in ['EXAMPLES', 'REFERENCE']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['copy'])
+                elif ps in ['DRAFT']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['restore'])
+                    self._contextMenu.addAction(self._explorerActions['delete'])
+        elif pe == 'DATA':
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                if ps == 'DATA':
+                    if fname not in ('setup.xml', 'run.cfg'):
+                        self._contextMenu.addAction(self._explorerActions['edit'])
+                        self._contextMenu.addAction(self._explorerActions['remove'])
+                    else:
+                        self._contextMenu.addAction(self._explorerActions['view'])
+                elif ps in ['REFERENCE']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['copy'])
+                elif ps in ['DRAFT']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['restore'])
+                    self._contextMenu.addAction(self._explorerActions['delete'])
+        else:
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                self._contextMenu.addAction(self._explorerActions['view'])
+
+        self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
     # ---------------------------------------------------------------
 
 
@@ -459,7 +716,7 @@ class QFileEditor(QMainWindow):
     """
 
     # ---------------------------------------------------------------
-    def __init__(self, parent=None, case_dir=None,
+    def __init__(self, parent=None, case_dir=None, reference_dir=None,
                  readOnly=False, noOpen=False, useHighlight=True):
         super(QFileEditor, self).__init__(parent)
         self.setGeometry(50, 50, 500, 300)
@@ -481,8 +738,6 @@ class QFileEditor(QMainWindow):
 
         self.opened = False
         self.saved  = True
-
-        self.dialog = QFileDialog(self)
 
         # Open file action
         open_img_path = ":/icons/22x22/document-open.png"
@@ -526,7 +781,6 @@ class QFileEditor(QMainWindow):
         self.saveFileAsAction = QAction(icon_saveas, "Save as", self)
         self.saveFileAsAction.setStatusTip('Save file as')
         self.saveFileAsAction.triggered.connect(self.saveFileAs)
-
 
         # Close file action
         close_img_path = ":/icons/22x22/process-stop.png"
@@ -575,8 +829,18 @@ class QFileEditor(QMainWindow):
         self.fileMenu.addAction(self.quitAction)
 
         # Explorer
-        self.explorer = self._initFileExplorer()
-        self._initExplorerActions()
+        self.explorer = Explorer(parent=self,
+                                 root_dir=self.case_dir,
+                                 dir_type=self.case_name,
+                                 case_name=self.case_name)
+
+        # Explorer
+        self.explorer_ref = None
+        if reference_dir:
+            self.explorer_ref = Explorer(parent=self,
+                                         root_dir=reference_dir,
+                                         dir_type='SHARE',
+                                         case_name=self.case_name)
 
         # Editor
         self.textEdit = self._initFileEditor()
@@ -594,12 +858,18 @@ class QFileEditor(QMainWindow):
             self.restoreGeometry(settings.value("MainWindow/Geometry").toByteArray())
             self.restoreState(settings.value("MainWindow/State").toByteArray())
 
-
         # file attributes
         self.filename = ""
         self.file_extension  = ""
 
-        self.mainWidget = FormWidget(self, [self.explorer, self.textEdit])
+        if self.explorer_ref:
+            self.mainWidget = FormWidget(self, [self.explorer.explorer,
+                                                self.explorer_ref.explorer,
+                                                self.textEdit])
+        else:
+            self.mainWidget = FormWidget(self, [self.explorer.explorer,
+                                                self.textEdit])
+
         self.setCentralWidget(self.mainWidget)
     # ---------------------------------------------------------------
 
@@ -639,12 +909,13 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def _initFileExplorer(self, base_dir=None):
+    def _initFileExplorer(self, base_dir=None, name="User Files"):
         """
         Create the File explorer object based on the QFileSystemModel widget.
         """
 
-        model = QtWidgets.QFileSystemModel()
+        #model = QtWidgets.QFileSystemModel()
+        model = FileSystemModel(name)
         rootp = ''
         if base_dir:
             rootp = base_dir
@@ -662,6 +933,7 @@ class QFileEditor(QMainWindow):
 
         # Hide unnecessary columns
         nc = tree.header().count()
+
         for i in range(1, nc):
             tree.hideColumn(i)
 
@@ -673,40 +945,6 @@ class QFileEditor(QMainWindow):
         tree.doubleClicked.connect(self._explorerDoubleClick)
 
         return tree;
-    # ---------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------
-    def _initExplorerActions(self):
-        """
-        Create explorer actions dictionary
-        """
-
-        _editAction = QAction(self.explorer.model())
-        _editAction.setText('Edit file')
-        _editAction.triggered.connect(self._editSelectedFile)
-
-        _viewAction = QAction(self.explorer.model())
-        _viewAction.setText('View file')
-        _viewAction.triggered.connect(self._viewSelectedFile)
-
-        _copyAction = QAction(self.explorer.model())
-        _copyAction.setText('Copy to SRC')
-        _copyAction.triggered.connect(self._copySelectedFile)
-
-        _deleteAction = QAction(self.explorer.model())
-        _deleteAction.setText('Remove from SRC')
-        _deleteAction.triggered.connect(self._removeSelectedFile)
-
-        _undraftAction = QAction(self.explorer.model())
-        _undraftAction.setText('Move to SRC')
-        _undraftAction.triggered.connect(self._unDraftSelectedFile)
-
-        self._explorerActions = {'edit':_editAction,
-                                 'view':_viewAction,
-                                 'copy':_copyAction,
-                                 'remove':_deleteAction,
-                                 'undraft':_undraftAction}
     # ---------------------------------------------------------------
 
 
@@ -757,14 +995,14 @@ class QFileEditor(QMainWindow):
                                 self._currentSelection['subpath'],
                                 self._currentSelection['filename'])
 
-        if self.case_name == 'SRC':
+        if self.case_name in ('SRC', 'DATA'):
             trg_path = os.path.join(self.case_dir,
                                     self._currentSelection['filename'])
         else:
             sp = self._currentSelection['subpath']
             while '/' in sp and len(sp) > 3:
                 e1, e2 = os.path.split(sp)
-                if e2 == 'SRC':
+                if e2 in ('SRC', 'DATA'):
                     break
                 else:
                     sp = e1
@@ -811,7 +1049,6 @@ class QFileEditor(QMainWindow):
                 if choice2 == QMessageBox.No:
                     return
 
-
             shutil.move(fn, fn2)
         else:
             pass
@@ -819,7 +1056,7 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def _unDraftSelectedFile(self):
+    def _restoreSelectedFile(self):
         """
         Move a file from DRAFT to the SRC folder
         """
@@ -855,100 +1092,40 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def _updateCurrentSelection(self):
+    def _deleteSelectedFile(self):
         """
-        Update the current selection
-        """
-        # Find file position (SRC, REFERENCE, EXAMPLES, other)
-        path2file = ''
-        for idx in self.explorer.selectedIndexes():
-            fname = idx.data(QtCore.Qt.DisplayRole)
-            c = idx
-            p = c.parent()
-            ps = p.data(QtCore.Qt.DisplayRole)
-            while True:
-                ctxt = c.data(QtCore.Qt.DisplayRole)
-                ptxt = p.data(QtCore.Qt.DisplayRole)
-                if ptxt in [None, self.case_name]:
-                    pe = ptxt
-                    break
-                path2file = ptxt + '/' + path2file
-                c = p
-                p = c.parent()
-
-        self._currentSelection = {'filename':fname,
-                                  'subpath' :path2file,
-                                  'filedir' :ps,
-                                  'origdir' :pe}
-
-        return
-    # ---------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------
-    def _explorerDoubleClick(self):
-        """
-        Double click action
+        Remove a file from the SRC dir
         """
 
-        self._updateCurrentSelection()
+        title = "Delete file"
+        question = "Really delete %s ?" % (self._currentSelection['filename'])
 
-        clicked = os.path.join(self._currentSelection['subpath'],
-                               self._currentSelection['filename'])
+        choice = QMessageBox.question(self,
+                                      title,
+                                      question,
+                                      QMessageBox.Yes | QMessageBox.No)
 
-        # To ensure that os.path.isdir works correctly we use the full path
-        # to the object which is selected in the menu
-        if self.case_dir:
-            clicked = os.path.join(self.case_dir, clicked)
+        if choice == QMessageBox.Yes:
+            fn = os.path.join(self.case_dir,
+                              self._currentSelection['subpath'],
+                              self._currentSelection['filename'])
 
-        edit_list = ['SRC']
+            try:
+                os.remove(fn)
+            except Exception:
+                # TODO add error popup
+                pass
 
-        if not os.path.isdir(clicked):
-            if self._currentSelection['filedir'] in edit_list:
-                self._editSelectedFile()
-            else:
-                self._viewSelectedFile()
-
-    # ---------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------
-    def explorerContextMenu(self, position):
-        """
-        Custom menu for the mouse right-click.
-        Depends on whether the file is in the SRC, SRC/subfolder
-        or RESU/subfolder.
-        Possible actions are 'edit', 'view' and 'copy' (to SRC)
-        """
-
-        self._updateCurrentSelection()
-
-        path2file = self._currentSelection['subpath']
-        fname     = self._currentSelection['filename']
-        pe        = self._currentSelection['origdir']
-        ps        = self._currentSelection['filedir']
-
-        self._contextMenu = QMenu()
-
-        if (path2file == '' or path2file == None ) and self.case_dir:
-            path2file = self.case_dir
-
-        if pe == 'RESU':
-            if not os.path.isdir(os.path.join(path2file, fname)):
-                self._contextMenu.addAction(self._explorerActions['view'])
-        elif pe == 'SRC':
-            if not os.path.isdir(os.path.join(path2file, fname)):
-                if ps == 'SRC':
-                    self._contextMenu.addAction(self._explorerActions['edit'])
-                    self._contextMenu.addAction(self._explorerActions['remove'])
-                elif ps in ['EXAMPLES', 'REFERENCE']:
-                    self._contextMenu.addAction(self._explorerActions['view'])
-                    self._contextMenu.addAction(self._explorerActions['copy'])
-                elif ps in ['DRAFT']:
-                    self._contextMenu.addAction(self._explorerActions['view'])
-                    self._contextMenu.addAction(self._explorerActions['undraft'])
-
-        self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
+            d = os.path.split(fn)[0]
+            if os.path.basename(d) in ('DRAFT', 'STASH'):
+                l = os.listdir(d)
+                if len(l) < 1:
+                    try:
+                        os.rmdir(d)
+                    except Exception:
+                        pass
+        else:
+            pass
     # ---------------------------------------------------------------
 
 
@@ -975,15 +1152,17 @@ class QFileEditor(QMainWindow):
         if fn:
             self.filename = fn
         else:
-            self.filename = self.dialog.getOpenFileName(self, 'Open File', self.last_dir)
+            self.filename = QFileDialog.getOpenFileName(self, 'Open File',
+                                                        self.last_dir)
 
-        self.last_dir = os.path.split(self.filename)[0]
+        if self.filename:
+            self.last_dir = os.path.split(self.filename)[0]
 
         self.textEdit.setReadOnly(self.readOnly)
         self.saveFileAction.setEnabled(not self.readOnly)
 
         if self.filename != None and self.filename != '':
-            file = open(self.filename,'r')
+            file = open(self.filename, 'r')
             self.file_extension = self.filename.split('.')[-1]
 
             self.newFile()
@@ -991,7 +1170,10 @@ class QFileEditor(QMainWindow):
                 text = file.read()
                 self.textEdit.setPlainText(text)
                 self.updateFileState(True)
+    # ---------------------------------------------------------------
 
+
+    # ---------------------------------------------------------------
     def openFileForAction(self, fn = None):
 
         if self.readOnly != self.readerMode:
@@ -1044,7 +1226,7 @@ class QFileEditor(QMainWindow):
         if not self.opened:
             return
 
-        self.filename = self.dialog.getSaveFileName(self, 'Save File')
+        self.filename = QFileDialog.getSaveFileName(self, 'Save File')
         self.last_dir = os.path.split(self.filename)[0]
 
         if self.filename != None and self.filename != '':
@@ -1104,6 +1286,7 @@ class QFileEditor(QMainWindow):
         else:
             return 1
     # ---------------------------------------------------------------
+
 
     # ---------------------------------------------------------------
     def closeEvent(self, event):

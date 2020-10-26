@@ -378,8 +378,8 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
                 print(msg, file = sys.stderr)
 
     # Check that an XML file was provided
-    if not r_c['param']:
-        msg += 'Remark:\n'
+    if not r_c['param'] and setup_default_path:
+        msg  = 'Remark:\n'
         msg += '  No setup.xml file was provided in the DATA folder.\n'
         msg += '  Default settings will be used.\n'
         print(msg, file = sys.stderr)

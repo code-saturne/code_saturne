@@ -107,6 +107,7 @@ class MeshModel:
         """
         self.ext = {'case':'ensight',
                     'cgns':'cgns',
+                    'csm':'code_saturne',
                     'des':'des',
                     'med':'med',
                     'msh':'gmsh',
@@ -164,14 +165,15 @@ class MeshModel:
         @return: List of number, format and description for view of popup.
         @rtype: C{List} of C{2-tuple}
         """
-        lst = [('ensight', 'EnSight',          ' (*.case)' ),
-               ('cgns',    'CGNS',             ' (*.cgns)' ),
-               ('des',     'Simail/NOPO',      ' (*.des)'  ),
-               ('med',     'MED',              ' (*.med)'  ),
-               ('gmsh',    'Gmsh',             ' (*.msh)'  ),
-               ('gambit',  'GAMBIT Neutral',   ' (*.neu)'  ),
-               ('ccm',     'STAR-CCM+',        ' (*.ccm)'  ),
-               ('ideas',   'I-deas universal', ' (*.unv)'  )]
+        lst = [('ensight',      'EnSight',           ' (*.case)' ),
+               ('cgns',         'CGNS',              ' (*.cgns)' ),
+               ('code_saturne', 'code_saturne mesh', ' (*.csm)'  ),
+               ('des',          'Simail/NOPO',       ' (*.des)'  ),
+               ('med',          'MED',               ' (*.med)'  ),
+               ('gmsh',         'Gmsh',              ' (*.msh)'  ),
+               ('gambit',       'GAMBIT Neutral',    ' (*.neu)'  ),
+               ('ccm',          'STAR-CCM+',         ' (*.ccm)'  ),
+               ('ideas',        'I-deas universal',  ' (*.unv)'  )]
 
         return lst
 
@@ -186,6 +188,7 @@ class MeshModel:
         lst = [("All files",                 "*"      ),
                ("EnSight (6 or Gold) files", "*.case" ),
                ("CGNS files",                "*.cgns" ),
+               ("code_saturne mesh files",    "*.csm"  ),
                ("Simail (NOPO) files",       "*.des"  ),
                ("MED files",                 "*.med"  ),
                ("GMSH files",                "*.msh"  ),
@@ -2035,6 +2038,7 @@ class MeshModelTestCase(unittest.TestCase):
         """
         self.files = [ ("toto.case",     "case") ,
                        ("toto.cgns.gz",  "cgns") ,
+                       ("toto.csm.gz",   "csm")  ,
                        ("toto.des",      "des")  ,
                        ("toto.ccm.gz",   "ccm")  ,
                        ("toto.med",      "med")  ,

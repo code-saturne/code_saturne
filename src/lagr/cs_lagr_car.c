@@ -286,8 +286,8 @@ cs_lagr_car(int              iprev,
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
 
         }
-
-      } else {
+      }
+      else {
 
         /* irijco = 1 */
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
@@ -299,7 +299,6 @@ cs_lagr_car(int              iprev,
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
 
         }
-
       }
     }
     else if (extra->iturb == 60) {
@@ -435,9 +434,7 @@ cs_lagr_car(int              iprev,
           }
           else if (   extra->itytur == 2
                    || extra->iturb == 50 || extra->iturb == 60) {
-
-            ktil = energi[cell_id];
-          
+            ktil = energi[cell_id];          
           }
 
           for (cs_lnum_t id = 0; id < 3; id++) {

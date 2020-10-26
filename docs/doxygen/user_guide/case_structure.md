@@ -212,10 +212,12 @@ coupled, so top-level `run.cfg` and `coupling_parameters.py` files and a
 In each case's `DATA` directory, reference (minimal) `setup.xml` and
 `run.cfg` files are generated.
 
-Unless the `--noref` option is used, under `DATA`, a `REFERENCE` sub-directory
-containing a `cs_user_scripts.py` advanced settings template and
+If the `--copy-ref` option is used, under `DATA`, a `REFERENCE` sub-directory
+is created, containing a `cs_user_scripts.py` advanced settings template and
 examples of thermochemical data files used for pulverized coal combustion,
 gas combustion, electric arcs, or a meteorological profile.
+These files are also always available in the installation directory, usually
+in `${install_prefix}/share/code_saturne/data/user`.
 The files to be actually used for the calculation must be copied directly in
 the `DATA` directory and its name may either be unchanged, or be referenced using
 the GUI or using the [cs_user_model](@ref cs_user_model) user function.
@@ -322,16 +324,16 @@ The settings available for a typical calculation are the following:
 ### User-defined function templates and examples
 
 Reference user-defined functions and subroutines may be found in
-the `SRC\REFERENCE subdirectory of a given case, unless it was created
-with the `--noref` option. In this case, they may always be found
+the `SRC\REFERENCE` subdirectory of a given case, if it was created
+with the `--copy-ref` option. Otherwise, they may always be found
 in the code's installation directory, usually under
-`${install_prefix}/share/code_saturne/user`.
+`${install_prefix}/share/code_saturne/user_sources/REFERENCE`.
 
-In a similar manners, examples may be found in
-the `SRC\EXAMPLES subdirectory of a given case, unless it was created
-with the `--noref` option, and may always be found
+In a similar manner, examples may be found in
+the `SRC\EXAMPLES` subdirectory of a given case if it was created
+with the `--copy-ref` option, and may always be found
 in the code's installation directory, usually under
-`${install_prefix}/share/code_saturne/user_examples`.
+`${install_prefix}/share/code_saturne/user_sources/EXAMPLES`.
 
 Note that all C, C++, and Fortran files present directly under a case's
 `SRC` directory will be used when running, while those in subdirectories

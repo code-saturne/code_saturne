@@ -503,6 +503,18 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
 endif
 
 if (imeteo.eq.2) then
+  f_name  = 'meteo_pressure'
+  f_label = 'Meteo pressure'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
+  f_name  = 'meteo_density'
+  f_label = 'Meteo rho'
+  ! Now create matching property
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
+
   f_name  = 'meteo_temperature'
   f_label = 'Meteo Temperature'
   ! Now create matching property
@@ -544,7 +556,6 @@ if (imeteo.eq.2) then
   call field_set_key_int(iflid, keylog, 1)
 
 endif
-
 
 if (compute_porosity_from_scan) then
   f_name  = 'porosity_w_field'

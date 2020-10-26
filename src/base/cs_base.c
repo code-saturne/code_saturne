@@ -153,6 +153,7 @@ static bool _cs_base_sighandlers_set = false;
 static _cs_base_sighandler_t cs_glob_base_sighup_save = SIG_DFL;
 #endif
 
+static _cs_base_sighandler_t cs_glob_base_sigabrt_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigint_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigterm_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigfpe_save = SIG_DFL;
@@ -690,6 +691,10 @@ _cs_base_sig_fatal(int  signum)
                           "--> computation interrupted.\n"));
     break;
 #endif
+
+  case SIGABRT:
+    _cs_base_err_printf(_("SIGABRT signal (abort) intercepted.\n"));
+    break;
 
   case SIGINT:
     _cs_base_err_printf(_("SIGINT signal (Control+C or equivalent) received.\n"
@@ -1543,6 +1548,8 @@ cs_base_error_init(bool  signal_defaults)
     if (cs_glob_rank_id <= 0)
       cs_glob_base_sighup_save  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
+
+    cs_glob_base_sigabrt_save  = signal(SIGABRT, _cs_base_sig_fatal);
 
     if (cs_glob_rank_id <= 0) {
       cs_glob_base_sigint_save  = signal(SIGINT, _cs_base_sig_fatal);

@@ -948,27 +948,41 @@ class domain(base_domain):
 
             # Build command
 
-            cmd = [self.package.get_preprocessor()]
-
-            if (type(m) == tuple):
-                for opt in m[1:]:
-                    cmd.append(opt)
-
+            # Generate output mesh name
             if (mesh_id != None):
                 mesh_id += 1
-                cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
-                cmd = cmd + ['--out', os.path.join('mesh_input',
-                                                   'mesh_%02d.csm' % (mesh_id))]
-                cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
+                _outputmesh = os.path.join('mesh_input',
+                                           'mesh_%02d.csm' % (mesh_id))
             else:
-                cmd = cmd + ['--log']
-                cmd = cmd + ['--out', 'mesh_input.csm']
+                _outputmesh = 'mesh_input.csm'
 
-            cmd.append(mesh_path)
+            # Check if preprocessor is needed or not
+            if mesh_path[-4:] == ".csm":
+                # code_saturne mesh, no need to run preprocessor
+                self.symlink(mesh_path,
+                             os.path.join(self.exec_dir, _outputmesh))
 
-            # Run command
+                retcode = 0
+            else:
+                # run preprocessor if needed
 
-            retcode = run_command(cmd, pkg=self.package)
+                cmd = [self.package.get_preprocessor()]
+
+                if (type(m) == tuple):
+                    for opt in m[1:]:
+                        cmd.append(opt)
+
+                cmd = cmd + ['--out', _outputmesh]
+                if (mesh_id != None):
+                    cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
+                    cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
+                else:
+                    cmd = cmd + ['--log']
+
+                cmd.append(mesh_path)
+
+		# Run command
+                retcode = run_command(cmd, pkg=self.package)
 
             if retcode != 0:
                 err_str = \

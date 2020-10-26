@@ -3,6 +3,20 @@ Master (not on release branches yet)
 
 User changes:
 
+- When creating a case with `code_saturne create`, the `--noref` option is
+  enabled by default. It can be cancelled using the `--copy-ref` option.
+
+-GUI: user source file editor can now also use reference files from the
+  installation directory.
+
+- code_saturne mesh format (.csm) is now treated in the same way as external
+  formats.
+  * Multiple meshes can be added in the "Mesh" page.
+  * Preprocessor (read operation) is not done for these mesh, though mesh
+    modification is.
+  * For back compatibility matters, '.csm' files can still be used as a
+    "mesh_input"
+
 - When no boundary condition is provided for some boundary faces, a default
   (wall or symmetry) is used. This can be set using `cs_boundary_set_default`.
 

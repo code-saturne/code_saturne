@@ -76,6 +76,7 @@ double precision, allocatable, dimension (:) :: tot_vol, dpdtx, dpdty
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel, cpro_momst, cpro_vel_target
 double precision, allocatable, dimension (:,:), target :: wvel_target
+double precision, dimension(:,:), pointer :: cpro_met_vel
 
 !===============================================================================
 ! 1. Initialisation
@@ -147,7 +148,7 @@ do iel = 1, ncel
     endif
   enddo
 
-  if (theo_interp.eq.1) then
+  if (theo_interp.eq.1.or.imeteo.eq.2) then
 
     xuent = cpro_vel_target(1,iel)
     xvent = cpro_vel_target(2,iel)
@@ -155,11 +156,11 @@ do iel = 1, ncel
   else
 
     call intprf &
-    (nbmetd, nbmetm,                                               &
+      (nbmetd, nbmetm,                                               &
       zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
     call intprf &
-    (nbmetd, nbmetm,                                               &
+      (nbmetd, nbmetm,                                               &
       zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
     cpro_vel_target(1,iel) = xuent
