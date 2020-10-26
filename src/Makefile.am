@@ -138,7 +138,7 @@ atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo \
  base/cs_c_bindings.lo atmo/atchem.lo atmo/sshaerosol.lo
 atmo/atchem.lo: pprt/ppppar.lo base/mesh.lo base/entsor.lo base/numvar.lo \
  base/cs_c_bindings.lo
-atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo
+atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo ctwr/ctincl.lo
 atmo/sshaerosol.lo: pprt/ppppar.lo base/cs_c_bindings.lo atmo/atchem.lo \
  base/mesh.lo
 atmo/spefun.lo: base/entsor.lo
