@@ -110,7 +110,7 @@ if (imeteo.ge.2) then
 endif
 
 !===============================================================================
-! 2. Taking into acount radiative forcing for the 1d radiative module
+! 2. Taking into account radiative forcing for the 1d radiative module
 !    (if the 3D module is not activated)
 !===============================================================================
 
