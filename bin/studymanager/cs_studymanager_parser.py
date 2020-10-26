@@ -329,7 +329,7 @@ class Parser(object):
                 d['node']    = node
                 d['label']   = str(node.attributes["label"].value)
                 d['compute'] = str(node.attributes["compute"].value)
-                d['post'] = str(node.attributes["post"].value)
+                d['post']    = str(node.attributes["post"].value)
 
                 try:
                     d['compare'] = str(node.attributes["compare"].value)
@@ -353,23 +353,14 @@ class Parser(object):
                     d['tags'] = None
 
                 try:
-                    d['depends'] = str(node.attributes["depends"].value)
+                    depends = self.getDepends(node)
+                    d['depends'] = str(depends)
                 except:
                     d['depends'] = None
 
-                try:
-                    d['n_iter'] = str(node.attributes["n_iter"].value)
-                except:
-                    d['n_iter'] = None
-
-                try:
-                    d['estim_wtime'] = str(node.attributes["estim_wtime"].value)
-                except:
-                    d['estim_wtime'] = None
-
                 for n in node.childNodes:
                     if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
-                        if n.tagName not in ("compare", "prepro", "script", "data"):
+                        if n.tagName not in ("compare", "prepro", "script", "data", "depends"):
                             d[n.tagName] = n.childNodes[0].data
                 data.append(d)
 
@@ -508,6 +499,25 @@ class Parser(object):
                 dest.append(None)
 
         return script, label, nodes, args, repo, dest
+
+    #---------------------------------------------------------------------------
+
+    def getDepends(self, caseNode):
+        """
+        Read:
+            <study label='STUDY' status='on'>
+                <case label='CASE1' status='on' compute="on" post="on">
+                    <depends args="STUDY/CASE/run_id"/>
+                </case>
+            </study>
+        @type caseNode: C{DOM Element}
+        @param caseNode: node of the current case
+        """
+
+        for node in caseNode.getElementsByTagName("depends"):
+            args = str(node.attributes["args"].value)
+
+        return args
 
     #---------------------------------------------------------------------------
 

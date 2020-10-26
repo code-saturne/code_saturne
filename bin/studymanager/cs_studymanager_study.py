@@ -50,7 +50,6 @@ from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
 from code_saturne.studymanager.cs_studymanager_parser import Parser
 from code_saturne.studymanager.cs_studymanager_texmaker import Report1, Report2
-from code_saturne.studymanager.cs_studymanager_graph import node_case, dependency_graph
 
 try:
     from code_saturne.studymanager.cs_studymanager_drawing import Plotter
@@ -162,12 +161,12 @@ class Case(object):
         self.__log       = rlog
         self.__diff      = diff
         self.__parser    = parser
-        self.__study     = study
         self.__data      = data
         self.__repo      = repo
         self.__dest      = dest
 
-        self.pkg = pkg
+        self.pkg         = pkg
+        self.study       = study
 
         self.node        = data['node']
         self.label       = data['label']
@@ -177,8 +176,6 @@ class Case(object):
         self.tags        = data['tags']
         self.compare     = data['compare']
         self.n_procs     = data['n_procs']
-        self.n_iter      = data['n_iter']
-        self.estim_wtime = data['estim_wtime']
         self.depends     = data['depends']
 
         self.is_compiled = "not done"
@@ -191,6 +188,7 @@ class Case(object):
         self.m_size_eq   = True # mesh sizes equal (in case of comparison)
         self.subdomains  = None
         self.run_dir     = ""
+        self.level       = None # level of the node in the dependency graph
 
         self.resu = 'RESU'
 
@@ -1109,6 +1107,7 @@ class Studies(object):
         self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
+        self.graph   = []
         for l in self.labels:
             self.studies.append( [l, Study(pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
@@ -1253,28 +1252,29 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def create_graph(self):
+    def dump_graph(self, filter_level, filter_n_procs):
         """
-        Create dependency graph based on all studies and all cases.
+        Dump dependency graph based on all studies and all cases.
+        Can be limited to a sub graph is options are given
         """
 
-        self.reporting(' Create dependency graph')
+        self.reporting('  o Dump dependency graph with option : ' + 'level=' + 
+                        str(filter_level) + ' n_procs=' + str(filter_n_procs))
 
         global_graph = dependency_graph()
 
         for l, s in self.studies:
             for case in s.cases:
                 if case.compute:
-                    local_name = l + '/' + case.label + '/' + case.run_id
-                    global_graph.add_node(node_case(local_name, case.n_procs,
-                                                    case.n_iter, case.estim_wtime,
-                                                    case.tags, case.depends))
+                    global_graph.add_node(case)
 
-        print(global_graph)
-
-        sub_graph1 = global_graph.extract_sub_graph(level=1, n_procs=1)
-        print('\ngraph1 with level 1 and n_procs = 1')
-        print(sub_graph1)
+        # generates global graph if no filter is given
+        if filter_level is None and filter_n_procs is None:
+            # the global graph is stored
+            self.graph = global_graph
+        else:
+            # extracts sub graph based on filters
+            self.graph = global_graph.extract_sub_graph(filter_level, filter_n_procs)
 
         self.reporting('')
 
@@ -1312,7 +1312,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def prepro(self, l, s, case):
+    def prepro(self, case):
         """
         Launch external additional scripts with arguments.
         """
@@ -1327,12 +1327,14 @@ class Studies(object):
                 # search if the script is in the MESH directory
                 # if not, the script is searched in the directories
                 # of the current case
-                cmd = os.path.join(self.__dest, l, "MESH", label[i])
+                cmd = os.path.join(self.__dest, case.study, "MESH", label[i])
                 if self.__debug:
                     print("Path to prepro script ", cmd)
                 if not os.path.isfile(cmd):
                     filePath = ""
-                    for root, dirs, fs in os.walk(os.path.join(self.__dest, l, case.label)):
+                    for root, dirs, fs in os.walk(os.path.join(self.__dest,
+                                                               case.study,
+                                                               case.label)):
                         if label[i] in fs:
                             filePath = root
                             break
@@ -1345,9 +1347,10 @@ class Studies(object):
                     set_executable(cmd)
 
                     cmd += " " + args[i]
-                    cmd += " -c " + os.path.join(self.__dest, l, case.label)
+                    cmd += " -c " + os.path.join(self.__dest, case.study,
+                                                 case.label)
                     repbase = os.getcwd()
-                    os.chdir(os.path.join(self.__dest, l, "MESH"))
+                    os.chdir(os.path.join(self.__dest, case.study, "MESH"))
 
                     # Prepro external script often need install python directory
                     # and package python directory: code_saturne or neptune_cfd
@@ -1388,71 +1391,71 @@ class Studies(object):
         Warning, if the markup of the case is repeated in the xml file of parameters,
         the run of the case is also repeated.
         """
-        for l, s in self.studies:
-            self.reporting("  o Prepro scripts and runs for study: " + l)
-            for case in s.cases:
-                self.prepro(l, s, case)
-                if self.__running:
-                    if case.compute == 'on' and case.is_compiled != "KO":
 
-                        if self.__n_iter is not None:
-                            if case.subdomains:
-                                case_dir = os.path.join(self.__dest, s.label, case.label,
+        for case in self.graph.graph_dict:
+            self.prepro(case)
+            if self.__running:
+                if case.compute == 'on' and case.is_compiled != "KO":
+
+                    if self.__n_iter is not None:
+                        if case.subdomains:
+                            case_dir = os.path.join(self.__dest, case.study, case.label,
                                                         case.subdomains[0], "DATA")
-                            else:
-                                case_dir = os.path.join(self.__dest, s.label, case.label, "DATA")
-                            os.chdir(case_dir)
-                            # Create a control_file in each case DATA
-                            if not os.path.exists('control_file'):
-                                control_file = open('control_file','w')
-                                control_file.write("time_step_limit " + str(self.__n_iter) + "\n")
-                                # Flush to ensure that control_file content is seen
-                                # when control_file is copied to the run directory on all systems
-                                control_file.flush()
-                                control_file.close
-
-                        self.reporting('    - running %s ...' % case.label,
-                                       stdout=True, report=False, status=True)
-                        error = case.run()
-                        if case.is_time:
-                            is_time = "%s s" % case.is_time
                         else:
-                            is_time = "existed already"
+                            case_dir = os.path.join(self.__dest, case.study, case.label, "DATA")
+                        os.chdir(case_dir)
+                        # Create a control_file in each case DATA
+                        if not os.path.exists('control_file'):
+                            control_file = open('control_file','w')
+                            control_file.write("time_step_limit " + str(self.__n_iter) + "\n")
+                            # Flush to ensure that control_file content is seen
+                            # when control_file is copied to the run directory on all systems
+                            control_file.flush()
+                            control_file.close
 
-                        if not error:
-                            if not case.run_id:
-                                self.reporting("    - run %s --> Warning suffix"
-                                               " is not read" % case.label)
+                    self.reporting('    - running %s ...' % case.label,
+                                   stdout=True, report=False, status=True)
 
-                            self.reporting('    - run %s --> OK (%s) in %s' \
+                    error = case.run()
+                    if case.is_time:
+                        is_time = "%s s" % case.is_time
+                    else:
+                        is_time = "existed already"
+
+                    if not error:
+                        if not case.run_id:
+                            self.reporting("    - run %s --> Warning suffix"
+                                           " is not read" % case.label)
+
+                        self.reporting('    - run %s --> OK (%s) in %s' \
+                                       % (case.label, \
+                                          is_time, \
+                                          case.run_id))
+                        self.__parser.setAttribute(case.node,
+                                                   "compute",
+                                                   "off")
+
+                        # update dest="" attribute
+                        n1 = self.__parser.getChildren(case.node, "compare")
+                        n2 = self.__parser.getChildren(case.node, "script")
+                        n3 = self.__parser.getChildren(case.node, "data")
+                        n4 = self.__parser.getChildren(case.node, "probe")
+                        n5 = self.__parser.getChildren(case.node, "resu")
+                        n6 = self.__parser.getChildren(case.node, "input")
+                        for n in n1 + n2 + n3 + n4 + n5 + n6:
+                            if self.__parser.getAttribute(n, "dest") == "":
+                                self.__parser.setAttribute(n, "dest", case.run_id)
+                    else:
+                        if not case.run_id:
+                            self.reporting('    - run %s --> FAILED (%s)' \
+                                           % (case.label, is_time))
+                        else:
+                            self.reporting('    - run %s --> FAILED (%s) in %s' \
                                            % (case.label, \
                                               is_time, \
                                               case.run_id))
-                            self.__parser.setAttribute(case.node,
-                                                       "compute",
-                                                       "off")
-
-                            # update dest="" attribute
-                            n1 = self.__parser.getChildren(case.node, "compare")
-                            n2 = self.__parser.getChildren(case.node, "script")
-                            n3 = self.__parser.getChildren(case.node, "data")
-                            n4 = self.__parser.getChildren(case.node, "probe")
-                            n5 = self.__parser.getChildren(case.node, "resu")
-                            n6 = self.__parser.getChildren(case.node, "input")
-                            for n in n1 + n2 + n3 + n4 + n5 + n6:
-                                if self.__parser.getAttribute(n, "dest") == "":
-                                    self.__parser.setAttribute(n, "dest", case.run_id)
-                        else:
-                            if not case.run_id:
-                                self.reporting('    - run %s --> FAILED (%s)' \
-                                               % (case.label, is_time))
-                            else:
-                                self.reporting('    - run %s --> FAILED (%s) in %s' \
-                                               % (case.label, \
-                                                  is_time, \
-                                                  case.run_id))
-
-                        self.__log.flush()
+ 
+                    self.__log.flush()
 
         self.reporting('')
 
@@ -1997,3 +2000,84 @@ class Studies(object):
             pass
 
 #-------------------------------------------------------------------------------
+# class dependency_graph
+#-------------------------------------------------------------------------------
+
+class dependency_graph(object):
+
+    def __init__(self):
+        """ Initializes a dependency graph object to an empty dictionary
+        """
+        self.graph_dict = {}
+
+    def add_dependency(self, dependency):
+        """ Defines dependency between two cases as an edge in the graph
+        """
+        (node1, node2) = dependency
+        # TODO: Add error message as only one dependency is possible
+        if node1 in self.graph_dict:
+            self.graph_dict[node1].append(node2)
+        else:
+            self.graph_dict[node1] = [node2]
+
+    def add_node(self, case):
+        """ Add a case in the graph if not already there.
+            Add a dependency when depends parameters is defined
+        """
+        if case not in self.graph_dict:
+            self.graph_dict[case] = []
+
+            if case.depends:
+                for neighbor in self.graph_dict:
+                    neighbor_name = neighbor.study + '/' + neighbor.label + '/' \
+                                  + neighbor.run_id
+                    if neighbor_name == case.depends:
+                        # cases with dependency are level > 0 and connected to the dependency
+                        self.add_dependency((case, neighbor))
+                        case.level = neighbor.level + 1
+                        break
+                if case.level is None:
+                    msg = "Problem in graph construction : dependency " \
+                          + case.depends + " is not found.\n"
+                    sys.exit(msg)
+            else:
+                # cases with no dependency are level 0
+                case.level = 0
+
+    def nodes(self):
+        """ returns the cases of the dependency graph """
+        return list(self.graph_dict.keys())
+
+    def dependencies(self):
+        """ returns the dependencies between the cases of the graph """
+        dependencies = []
+        for node in self.graph_dict:
+            for neighbor in self.graph_dict[node]:
+                if (neighbor, node) not in dependencies:
+                    dependencies.append((node, neighbor))
+        return dependencies
+
+    def extract_sub_graph(self, filter_level, filter_n_procs):
+        """ extracts a sub_graph based on level and n_procs criteria"""
+        sub_graph = dependency_graph()
+        for node in self.graph_dict:
+            keep_node = True
+            if filter_level is not None:
+                keep_node = node.level is int(filter_level)
+            if filter_n_procs is not None:
+                keep_node = node.n_procs is int(filter_n_procs)
+            if keep_node:
+                sub_graph.add_node(node)
+        return sub_graph
+
+    def __str__(self):
+        res = "\nList of cases: "
+        for node in self.nodes():
+            res += str(node) + " "
+        res += "\nList of dependencies: "
+        for dependency in self.dependencies():
+            (node1, node2) = dependency
+            res += '\n' + str(node1.name) + ' depends on ' + str(node2.name)
+        return res
+
+#------------------------------------------------------------------------------- 
