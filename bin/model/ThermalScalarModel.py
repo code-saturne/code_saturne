@@ -154,19 +154,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
 
         return thermalScalarList
 
-
-    def isSpecificPhysicActiv(self):
-        """
-        """
-        spec = False
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
-            if node != None:
-                if node['model'] != 'off':
-                    spec = True
-
-        return spec
-
-
     def setThermalModelOutputs(self, thermal_scalar):
         """
         Update the thermal model outputs in the XML document.
@@ -180,7 +167,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                      ("boundary_temperature", "Boundary temperature", True),
                      ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
 
-        if thermal_scalar != 'off' or self.isSpecificPhysicActiv():
+        if thermal_scalar != 'off':
             for v in t_outputs:
 
                 n = self.node_therm.xmlGetChildNode('property',
