@@ -116,11 +116,9 @@ static cs_mesh_cartesian_params_t *_mesh_params = NULL;
 cs_mesh_cartesian_params_t *
 _cs_mesh_cartesian_init(int ndir)
 {
-
   if (_mesh_params != NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: cartesian mesh parameters were allready defined!\n"));
-
 
   BFT_MALLOC(_mesh_params, 1, cs_mesh_cartesian_params_t);
 
@@ -151,7 +149,6 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
                                     cs_real_t               smax,
                                     cs_real_t               progression)
 {
-
   _cs_mesh_cartesian_direction_t *dirp = NULL;
 
   if (smax < smin)
@@ -173,8 +170,8 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
     BFT_MALLOC(dirp->s, 1, cs_real_t);
 
     dirp->s[0] = dir_len / dirp->ncells;
-
-  } else if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW) {
+  }
+  else if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW) {
     dirp->progression = progression;
     cs_real_t rho   = dirp->progression;
     cs_real_t rho_n = pow(rho, dirp->ncells);
@@ -189,7 +186,8 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
       dx_cur *= rho;
     }
 
-  } else if (law == CS_MESH_CARTESIAN_PARABOLIC_LAW) {
+  }
+  else if (law == CS_MESH_CARTESIAN_PARABOLIC_LAW) {
     dirp->progression = progression;
 
     BFT_MALLOC(dirp->s, ncells+1, cs_real_t);
@@ -223,19 +221,18 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
       dx_cur *= rho;
     }
 
-  } else {
+  }
+  else {
     bft_error(__FILE__, __LINE__, 0,
               _("Error: Method not yet implemented for '%s'\n"),
               __func__);
-
   }
 
   return dirp;
-
 }
 
 /*============================================================================
- * Public C functions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -253,28 +250,26 @@ cs_mesh_cartesian_get_params(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Create cartesian mesh strucutre
- *
+/*! \brief Create cartesian mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_cartesian_create(void)
 {
-
   _cs_mesh_cartesian_init(3);
 
   _build_mesh_cartesian = 1;
-
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Define a simple cartesian mesh with a constant step in all directions
+/*! \brief Define a simple cartesian mesh with a constant step in all
+ *         directions
  *
- * \param[in] ncells  Array of size 3 containing number of cells in each direction
+ * \param[in] ncells  Array of size 3 containing number of cells in each
+ *                    direction
  * \param[in] xyz     Array of size 6 containing min values, followed by
  *                    max values for the three directions.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -282,7 +277,6 @@ void
 cs_mesh_cartesian_define_simple(int        ncells[3],
                                 cs_real_t  xyz[6])
 {
-
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
   if (mp == NULL)
@@ -295,20 +289,19 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
                                           xyz[idim],
                                           xyz[idim+3],
                                           -1.);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define parameters for a given direction.
  *
  * \param[in] idim         Geometrical direction: 0->X, 1->Y, 2->Z
- * \param[in] law          1D discreization law : constant, geometric or parabolic
+ * \param[in] law          1D discretization law: constant, geometric or
+ *                         parabolic
  * \param[in] ncells       Number of cells for this direction
  * \param[in] smin         Min coordinate value for this direction
  * \param[in] smax         Max coordinate value for this direction
  * \param[in] progression  Progression value, only used for geometric or
  *                         parabolic laws.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -364,11 +357,9 @@ cs_mesh_cartesian_define_dir_params(int                     idim,
 int
 cs_mesh_cartesian_need_build(void)
 {
-
   int retval = _build_mesh_cartesian;
 
   return retval;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -383,9 +374,7 @@ cs_mesh_cartesian_need_build(void)
 int
 cs_mesh_cartesian_get_ncells(int idim)
 {
-
   return _mesh_params->params[idim]->ncells;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -393,7 +382,6 @@ cs_mesh_cartesian_get_ncells(int idim)
  *
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -401,7 +389,6 @@ void
 cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
                                long               echo)
 {
-
   CS_UNUSED(echo);
 
   cs_mesh_cartesian_params_t *mp = _mesh_params;
@@ -505,7 +492,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
         mb->face_vertices[4*f_id + 1] = i0 + i + (j+1)*nxp1 + (k+1)*nxp1*nyp1;
         mb->face_vertices[4*f_id + 0] = i0 + i + (j+1)*nxp1 + k*nxp1*nyp1;
 
-         /* Incerement face index for x-normal faces */
+        /* Incerement face index for x-normal faces */
         f_id += 1;
       }
     }
@@ -554,7 +541,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
         mb->face_vertices[4*f_id + 1] = i0 + (i+1) + j*nxp1 + (k+1)*nxp1*nyp1;
         mb->face_vertices[4*f_id + 0] = i0 + i     + j*nxp1 + (k+1)*nxp1*nyp1;
 
-         /* Incerement face index for y-normal faces */
+        /* Incerement face index for y-normal faces */
         f_id += 1;
       }
     }
@@ -582,7 +569,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
         mb->face_cells[2*f_id]     = c_id1;
         mb->face_cells[2*f_id + 1] = c_id2;
 
-        /*  Connectiviy for z-normal faces:
+        /* Connectiviy for z-normal faces:
          *
          *  Vtx2        Vtx3
          *  (i,j+1)     (i+1,j+1)
@@ -603,7 +590,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
         mb->face_vertices[4*f_id + 1] = i0 + (i+1) + (j+1)*nxp1 + k*nxp1*nyp1;
         mb->face_vertices[4*f_id + 0] = i0 + (i+1) + j*nxp1     + k*nxp1*nyp1;
 
-         /* Incerement face index for y-normal faces */
+        /* Increment face index for y-normal faces */
         f_id += 1;
       }
     }
@@ -648,7 +635,6 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
 void
 cs_mesh_cartesian_params_destroy(void)
 {
-
   if (_mesh_params == NULL)
     return;
 
@@ -659,10 +645,7 @@ cs_mesh_cartesian_params_destroy(void)
 
   BFT_FREE(_mesh_params);
   _mesh_params = NULL;
-
 }
-
-
 
 /*----------------------------------------------------------------------------*/
 

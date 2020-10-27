@@ -32,7 +32,7 @@
 #include "cs_defs.h"
 
 /*============================================================================
- * Structure definitions
+ * Type definitions
  *============================================================================*/
 
 typedef enum {
@@ -41,7 +41,7 @@ typedef enum {
   CS_MESH_CARTESIAN_GEOMETRIC_LAW,
   CS_MESH_CARTESIAN_PARABOLIC_LAW,
   CS_MESH_CARTESIAN_USER_LAW,
-  CS_N_MESH_CARTESIAN_LAW_TYPE
+  CS_MESH_CARTESIAN_N_LAW_TYPES
 
 } cs_mesh_cartesian_law_t;
 
@@ -62,8 +62,7 @@ cs_mesh_cartesian_params_t *
 cs_mesh_cartesian_get_params(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Create cartesian mesh strucutre
- *
+/*! \brief Create cartesian mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -71,12 +70,13 @@ void
 cs_mesh_cartesian_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Define a simple cartesian mesh with a constant step in all directions
+/*! \brief Define a simple cartesian mesh with a constant step in all
+ *         directions
  *
- * \param[in] ncells  Array of size 3 containing number of cells in each direction
+ * \param[in] ncells  Array of size 3 containing number of cells in each
+ *                    direction
  * \param[in] xyz     Array of size 6 containing min values, followed by
  *                    max values for the three directions.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -88,13 +88,13 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
 /*! \brief Define parameters for a given direction.
  *
  * \param[in] idim         Geometrical direction: 0->X, 1->Y, 2->Z
- * \param[in] law          1D discreization law : constant, geometric or parabolic
+ * \param[in] law          1D discretization law: constant, geometric or
+ *                         parabolic
  * \param[in] ncells       Number of cells for this direction
  * \param[in] smin         Min coordinate value for this direction
  * \param[in] smax         Max coordinate value for this direction
  * \param[in] progression  Progression value, only used for geometric or
  *                         parabolic laws.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -133,7 +133,6 @@ cs_mesh_cartesian_get_ncells(int idim);
  *
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
- *
  */
 /*----------------------------------------------------------------------------*/
 
