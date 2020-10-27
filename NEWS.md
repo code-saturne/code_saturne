@@ -13,6 +13,9 @@ User changes:
     - Geometric step
     - Parabolic step (Geometric step with a symmetry w.r.t center-coordinate
       of the direction)
+  * The newly created mesh contains 6 groups for boundary faces: X0, X1, Y0,
+    Y1, Z0 and Z1 for the respectively the min and max coordinate of each
+    direction (X,Y and Z)
 
 - When creating a case with `code_saturne create`, the `--noref` option is
   enabled by default. It can be cancelled using the `--copy-ref` option.
