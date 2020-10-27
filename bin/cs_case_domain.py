@@ -874,6 +874,11 @@ class domain(base_domain):
             if getMeshOriginType(case) == 'mesh_cartesian':
                 return
 
+        # If no mesh is provided return, since user can define mesh_input
+        # using 'cs_user_mesh_input' user function.
+        if len(self.meshes) == 1 and self.meshes[0] == None:
+            return
+
         # Study directory
         study_dir = os.path.split(self.case_root_dir)[0]
 
