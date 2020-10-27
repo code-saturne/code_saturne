@@ -586,6 +586,16 @@ class SolutionDomainModel(MeshModel, Model):
 
 
     @Variables.undoLocal
+    def delMeshInput(self):
+        """
+        Public method. Delete node for mesh_input named "mesh_input" in xml file
+        """
+        node = self.node_ecs.xmlGetNode('mesh_input', 'path')
+        if node != None:
+            node.xmlRemoveNode()
+
+
+    @Variables.undoLocal
     def setMeshInput(self, mesh_input):
         """
         Public method. Add mesh_input path name in xml file.
@@ -2166,8 +2176,3 @@ def runTest():
     runner = unittest.TextTestRunner()
     runner.run(suite1())
     runner.run(suite2())
-
-
-
-
-
