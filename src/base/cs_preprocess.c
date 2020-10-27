@@ -54,6 +54,7 @@
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_mesh.h"
+#include "cs_mesh_cartesian.h"
 #include "cs_mesh_from_builder.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
@@ -384,6 +385,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+
+  /* Destroy cartesian mesh builder if necessary */
+  cs_mesh_cartesian_params_destroy();
 
   /* Renumber mesh based on code options */
 
