@@ -22,10 +22,22 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
 #include <math.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
 #include "bft_error.h"
 #include "bft_mem.h"
 #include "bft_printf.h"
+
+#include "cs_math.h"
+
 #include "cs_mesh_builder.h"
 #include "cs_mesh_cartesian.h"
 
@@ -313,11 +325,33 @@ cs_mesh_cartesian_define_dir_params(int                     idim,
   if (mp == NULL)
     mp = _cs_mesh_cartesian_init(3);
 
-  mp->params[idim] = _cs_mesh_cartesian_create_direction(law,
+  cs_mesh_cartesian_law_t _law = law;
+  cs_real_t _p   = progression;
+
+  /* Sanity check for progression value */
+  if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW ||
+      law == CS_MESH_CARTESIAN_PARABOLIC_LAW) {
+    if (cs_math_fabs(progression - 1.) < 1.e-6) {
+      bft_printf("Warning: \n");
+      if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW)
+        bft_printf("A geometric law was defined ");
+      else
+        bft_printf("A parabolic law was defined ");
+      bft_printf("for direction #%d using a unitary progression (p=%f).\n",
+                 idim+1, progression);
+
+      bft_printf("A constant step law is set for this direction.\n");
+
+      _law = CS_MESH_CARTESIAN_CONSTANT_LAW;
+      _p   = -1.;
+    }
+  }
+
+  mp->params[idim] = _cs_mesh_cartesian_create_direction(_law,
                                                          ncells,
                                                          smin,
                                                          smax,
-                                                         progression);
+                                                         _p);
 }
 
 /*----------------------------------------------------------------------------*/
