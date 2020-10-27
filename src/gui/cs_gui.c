@@ -1670,7 +1670,7 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--ntsuit = %i\n", *ntsuit);
-  bft_printf("--ileaux = %i\n", *ileaux);
+  bft_printf("--ileaux = %i\n", cs_glob_restart_auxiliary->read_auxiliary);
   bft_printf("--iccvfg = %i\n", *iccvfg);
 #endif
 }

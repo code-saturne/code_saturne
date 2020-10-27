@@ -168,7 +168,7 @@ void CS_PROCF (cscfgp, CSCFGP) (int *icfgrp);
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csisui, CSISUI) (int *ileaux,
+void CS_PROCF (csisui, CSISUI) (int *ntsuit,
                                 int *iccvfg);
 
 /*----------------------------------------------------------------------------
