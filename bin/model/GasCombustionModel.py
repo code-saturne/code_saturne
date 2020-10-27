@@ -378,6 +378,34 @@ class GasCombustionModel(Variables, Model):
         """
         self.node_gas.xmlSetData('data_file', name)
 
+    def _defaultValues(self):
+        """
+        default values
+        """
+        self.default = {}
+        self.default['thermodynamical_pressure'] = 'off'
+        return self.default
+
+    @Variables.noUndo
+    def getUniformVariableThermodynamicalPressure(self):
+        """
+        Return status of uniform variable thermodynamical pressure
+        """
+        node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
+        status = node['status']
+        if not status:
+            status = self._defaultValues()['thermodynamical_pressure']
+            self.setUniformVariableThermodynamicalPressure(status)
+        return status
+
+    @Variables.undoLocal
+    def setUniformVariableThermodynamicalPressure(self, status):
+        """
+        Put status of uniform variable thermodynamical pressure
+        """
+        self.isOnOff(status)
+        node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
+        node['status'] = status
 
 #-------------------------------------------------------------------------------
 # Gas combustion test case

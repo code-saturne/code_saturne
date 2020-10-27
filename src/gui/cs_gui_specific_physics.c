@@ -59,6 +59,8 @@
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_selector.h"
+#include "cs_physical_properties.h"
+#include "cs_physical_constants.h"
 #include "cs_elec_model.h"
 #include "cs_gwf_physical_properties.h"
 #include "cs_vof.h"
@@ -1358,6 +1360,11 @@ cs_gui_physical_model_select(void)
           bft_error(__FILE__, __LINE__, 0,
                     _("Invalid gas combustion flow model: %s."),
                     model_value);
+
+        /* Read uniform variable thermodynamical pressure (ipthrm) */
+        cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
+        cs_gui_node_get_child_status_int(tn, "thermodynamical_pressure",
+                                         &(phys_pp->ipthrm));
       }
     }
     else if (cs_gui_strcmp(model_name, "atmospheric_flows")) {
