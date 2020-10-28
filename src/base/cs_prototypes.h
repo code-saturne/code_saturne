@@ -536,6 +536,15 @@ void
 cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
                             cs_mesh_quantities_t  *mesh_quantities);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a cartesian mesh.
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_cartesian_define(void);
+
 /*----------------------------------------------------------------------------
  * Select physical model options, including user fields.
  *

@@ -104,6 +104,7 @@ cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
 cs_user_lagr_particle-coal.c \
 cs_user_mesh-boundary.c \
+cs_user_mesh-cartesian.c \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_mesh-input-save.c \
 cs_user_mesh-joining.c \

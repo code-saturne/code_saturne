@@ -210,6 +210,8 @@ _run(void)
   if (cs_gui_mesh_build_cartesian())
     cs_gui_mesh_cartesian_define();
 
+  cs_user_mesh_cartesian_define();
+
   /* Call main calculation initialization function or help */
 
   cs_io_log_initialize();

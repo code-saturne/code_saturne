@@ -85,6 +85,42 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
                                 cs_real_t  xyz[6]);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Define directions parameters based on a user input
+ *
+ * \param[in] idir       Direction index. 0->X, 1->Y, 2->Z
+ * \param[in] ncells     Number of cells for the direction
+ * \param[in] vtx_coord  Array of size ncells+1 containing 1D coordinate values
+ *                       for vertices on the given direction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_dir_user(int       idir,
+                                  int       ncells,
+                                  cs_real_t vtx_coord[]);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Define a simple cartesian mesh based on a CSV file.
+ *         CSV file needs to contain :
+ *         (1) First line which is empty or contains a header
+ *         (2) Second line containing number of vertices per direction:
+ *             format is 'nx;ny;nz'
+ *         (3) Third line is empty or contains a header
+ *         (4) Fourth line and onwards contains vertices coordinates for each
+ *             direction. Format is "X1[i];X2[i];X3[i]" for index i.
+ *             If current vertex index is beyond max value for a given
+ *             direction, an empty value is expected.
+ *             For example, if for index 'j' the first direction is empty,
+ *             format is : ';X2[j];X3[j]'
+ *
+ * \param[in] csv_file_name  name of CSV file containing mesh information.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_from_csv(const char *csv_file_name);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Define parameters for a given direction.
  *
  * \param[in] idim         Geometrical direction: 0->X, 1->Y, 2->Z

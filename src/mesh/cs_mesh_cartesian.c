@@ -27,6 +27,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -289,6 +291,149 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
                                           xyz[idim],
                                           xyz[idim+3],
                                           -1.);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Define directions parameters based on a user input
+ *
+ * \param[in] idir       Direction index. 0->X, 1->Y, 2->Z
+ * \param[in] ncells     Number of cells for the direction
+ * \param[in] vtx_coord  Array of size ncells+1 containing 1D coordinate values
+ *                       for vertices on the given direction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_dir_user(int       idir,
+                                  int       ncells,
+                                  cs_real_t vtx_coord[])
+{
+
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
+
+  if (mp == NULL)
+    mp = _cs_mesh_cartesian_init(3);
+
+  _cs_mesh_cartesian_direction_t *dirp = NULL;
+  BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
+
+  dirp->ncells = ncells;
+  dirp->law    = CS_MESH_CARTESIAN_USER_LAW;
+
+  BFT_MALLOC(dirp->s, ncells + 1, cs_real_t);
+  for (int i = 0; i < ncells+1; i++)
+    dirp->s[i] = vtx_coord[i];
+
+  dirp->smin = vtx_coord[0];
+  dirp->smax = vtx_coord[ncells];
+
+  dirp->progression = -1.;
+
+  mp->params[idir] = dirp;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Define a simple cartesian mesh based on a CSV file.
+ *         CSV file needs to contain :
+ *         (1) First line which is empty or contains a header
+ *         (2) Second line containing number of vertices per direction:
+ *             format is 'nx;ny;nz'
+ *         (3) Third line is empty or contains a header
+ *         (4) Fourth line and onwards contains vertices coordinates for each
+ *             direction. Format is "X1[i];X2[i];X3[i]" for index i.
+ *             If current vertex index is beyond max value for a given
+ *             direction, an empty value is expected.
+ *             For example, if for index 'j' the first direction is empty,
+ *             format is : ';X2[j];X3[j]'
+ *
+ * \param[in] csv_file_name  name of CSV file containing mesh information.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
+{
+
+  cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
+
+  const int _ndim = 3;
+  if (mp == NULL) {
+    cs_mesh_cartesian_create();
+    mp = cs_mesh_cartesian_get_params();
+  }
+
+  /* Read CSV file */
+  FILE *f = fopen(csv_file_name, "r");
+
+  const char line[128];
+
+  int ln     = 0;
+  int vtx_id = 0;
+
+  cs_real_t *s[3] = {NULL, NULL, NULL};
+  int nc[3] = {0,0,0};
+
+  /* Read the file lines one by one */
+  while (fgets(line, 128, f))
+  {
+    if (ln == 0 || ln == 2) {
+      /* First and third lines contain header or are empty */
+      ln += 1;
+      continue;
+
+    } else if (ln == 1) {
+      /* Second line contains values : <nx>;<ny>;<nz> */
+      sscanf(line, "%d;%d;%d", &nc[0], &nc[1], &nc[2]);
+
+      for (int i = 0; i < _ndim; i++)
+        BFT_MALLOC(s[i], nc[i], cs_real_t);
+
+      ln += 1;
+      continue;
+
+    } else {
+      /* Fourth line and beyond contain values for vertices coordinates */
+
+      char *n = NULL;
+      char *c = line;
+
+      int idim = 0;
+      while (true) {
+        n = strchr(c, ';');
+        if (n != NULL) {
+          size_t lc = strlen(c);
+          size_t ln = strlen(n);
+
+          if (lc > ln) {
+            char tmp[40];
+            memcpy(tmp, c, lc - ln);
+            tmp[lc-ln] = '\0';
+
+           s[idim][vtx_id] = atof(tmp);
+          }
+
+          c = n + 1;
+        } else {
+          if (strlen(c) > 1 && strcmp(c, "\n") && strcmp(c, "\r\n"))
+            s[idim][vtx_id] = atof(c);
+
+          break;
+        }
+        idim += 1;
+      }
+      vtx_id += 1;
+    }
+  }
+
+  for (int i = 0; i < _ndim; i++)
+    cs_mesh_cartesian_define_dir_user(i, nc[i]-1, s[i]);
+
+  for (int i = 0; i < _ndim; i++)
+    BFT_FREE(s[i]);
+
+  fclose(f);
+
 }
 
 /*----------------------------------------------------------------------------*/
