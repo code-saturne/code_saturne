@@ -218,7 +218,7 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
     cs_equation_add_advection(mom_eqp, nsc->adv_field);
 
   /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
+  cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -492,7 +492,7 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
     cs_equation_add_advection(mom_eqp, nsc->adv_field);
 
   /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
+  cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -783,7 +783,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   cs_equation_add_time(u_eqp, nsp->mass_density);
 
   /* All considered models needs a viscous term */
-  cs_equation_add_diffusion(u_eqp, nsp->lami_viscosity);
+  cs_equation_add_diffusion(u_eqp, nsp->tot_viscosity);
 
   /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
    * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the

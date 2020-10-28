@@ -292,7 +292,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->phys_constants = cs_get_glob_physical_constants();
 
   /* Turbulence modelling (pointer to global structures) */
-  param->turbulence_struct = cs_cdo_turbulence_create();
+  param->turbulence = cs_turbulence_param_create();
 
   /* Main set of properties */
   param->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
@@ -300,8 +300,14 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
     param->mass_density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
                                           CS_PROPERTY_ISO);
 
-  param->lami_viscosity = cs_property_add(CS_NAVSTO_LAMINAR_VISCOSITY,
-                                          CS_PROPERTY_ISO);
+  param->lam_viscosity = cs_property_add(CS_NAVSTO_LAM_VISCOSITY,
+                                         CS_PROPERTY_ISO);
+
+  if (param->turbulence->model->iturb == CS_TURB_NONE)
+    param->tot_viscosity = param->lam_viscosity;
+  else
+    param->tot_viscosity = cs_property_add(CS_NAVSTO_TOTAL_VISCOSITY,
+                                           CS_PROPERTY_ISO);
 
   /* Default numerical settings */
   /* -------------------------- */
@@ -425,7 +431,7 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
 
   /* Turbulence modelling */
 
-  cs_cdo_turbulence_free(&(param->turbulence_struct));
+  BFT_FREE(param->turbulence);
 
   /* Velocity initial conditions */
 

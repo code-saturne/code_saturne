@@ -2350,7 +2350,7 @@ cs_solidification_activate(cs_solidification_model_t      model,
   solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   assert(solid->mass_density != NULL);
 
-  solid->lam_viscosity = cs_property_by_name(CS_NAVSTO_LAMINAR_VISCOSITY);
+  solid->lam_viscosity = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
   assert(solid->lam_viscosity != NULL);
 
   /* Activate and default settings for the thermal module */

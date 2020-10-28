@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
+#include "cs_cdo_turbulence.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_param_types.h"
@@ -179,6 +180,13 @@ typedef struct {
    * equations (with the Maxwell system of equations)
    * @{
    */
+
+  /*! \var turbulence
+   *  Structure storing all settings, fields or properties related to the
+   *  turbulence modelling
+   */
+
+  cs_turbulence_t            *turbulence;
 
   /*! \var thm
    *  Structure storing all settings, fields or properties related to the

@@ -342,6 +342,9 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   }
 
+  /* Create the main structure to handle the turbulence modelling */
+  navsto->turbulence = cs_turbulence_create(navsto->param->turbulence);
+
   /* Set the static variable */
   cs_navsto_system = navsto;
 
@@ -398,6 +401,9 @@ cs_navsto_system_destroy(void)
 
   /* Destroy the context related to the discretization scheme */
   navsto->free_scheme_context(navsto->scheme_context);
+
+  /* Free the context and the structure related to the turbulence modelling */
+  cs_turbulence_free(&(navsto->turbulence));
 
   /* Set of numerical parameters */
   navsto->param = cs_navsto_param_free(nsp);
@@ -566,9 +572,6 @@ cs_navsto_system_init_setup(void)
 
   cs_navsto_param_t  *nsp = ns->param;
 
-  /* Set shared pointers for the turbulence modelling */
-  cs_cdo_turbulence_init(nsp->turbulence_struct);
-
   /* Set field metadata */
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
@@ -730,6 +733,9 @@ cs_navsto_system_init_setup(void)
     break;
 
   }
+
+  /* Initialize the turbulence modelling */
+  cs_turbulence_init_setup(ns->turbulence);
 
 }
 
@@ -1067,12 +1073,16 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   } /* Post-processing of the stream function is requested */
 
+  /* Finalize the setting of the turbulence modelling */
+  cs_turbulence_finalize_setup(mesh, connect, quant, time_step,
+                               ns->turbulence);
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context structure used to build the algebraic system
- *         This is done after the setup step.
+ * \brief  Initialize the scheme context structure used to build the algebraic
+ *         system. This is done after the setup step.
  *         Set an initial value for the velocity and pressure field if needed
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
@@ -1127,6 +1137,8 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
     }
 
   } /* Face-based schemes */
+
+  cs_turbulence_initialize(mesh, connect, quant, ts, ns->turbulence);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -44,9 +44,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Manage the naming of properties, variables and equations related to the
- * Navier-Stokes module */
+ * Navier-Stokes module
+ */
 
-#define CS_NAVSTO_LAMINAR_VISCOSITY  "laminar_viscosity"
 #define CS_NAVSTO_STREAM_EQNAME      "streamfunction_eq"
 
 /*!
@@ -284,7 +284,8 @@ typedef enum {
  * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
  * Block 01 is also considered in the block preconditioner.
  * Preconditioner/solver for the block 00 is set using the momentum equation.
- * This option is only available with the support to the PETSc library up to now.
+ * This option is only available with the support to the PETSc library up to
+ * now.
  *
  *
  * \var CS_NAVSTO_SLES_MUMPS
@@ -517,12 +518,19 @@ typedef struct {
 
   cs_property_t              *mass_density;
 
-  /*! \var lami_viscosity
-   *  Laminar viscosity, pointer to \ref cs_property_t associated to the
+  /*! \var tot_viscosity
+   *  Laminar viscosity + if needed the turbulent viscosity
+   *  Pointer to \ref cs_property_t associated to the
    *  diffusion term for the momentum equation
    */
 
-  cs_property_t              *lami_viscosity;
+  cs_property_t              *tot_viscosity;
+
+  /*! \var lami_viscosity
+   *  Laminar viscosity
+   */
+
+  cs_property_t              *lam_viscosity;
 
   /*!
    * @name Turbulence modelling
@@ -530,12 +538,11 @@ typedef struct {
    * @{
    */
 
-  /*! \var turbulence_struct
-   *  Structure storing all information needed to set up and solve the equations
-   *  related to the tubulence modelling
+  /*! \var turbulence
+   *  Structure storing all information needed to set the turbulence modelling
    */
 
-  cs_cdo_turbulence_t        *turbulence_struct;
+  cs_turbulence_param_t      *turbulence;
 
   /*!
    * @name Numerical options
