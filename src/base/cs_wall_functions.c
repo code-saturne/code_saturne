@@ -95,19 +95,26 @@ BEGIN_C_DECLS
         - CS_WALL_F_1SCALE_POWER: one scale of friction velocities (power law)
         - CS_WALL_F_1SCALE_LOG: one scale of friction velocities (log law)
         - CS_WALL_F_2SCALES_LOG: two scales of friction velocities (log law)
-        - CS_WALL_F_SCALABLE_2SCALES_LOG: two scales of friction velocities (log law) (scalable wall functions)
-        - CS_WALL_F_2SCALES_VDRIEST: two scales of friction velocities (mixing length based on V. Driest analysis)
-        - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth friction regimes
+        - CS_WALL_F_SCALABLE_2SCALES_LOG: two scales of friction velocities
+          (log law) (scalable wall functions)
+        - CS_WALL_F_2SCALES_VDRIEST: two scales of friction velocities
+          (mixing length based on V. Driest analysis)
+        - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth
+          friction regimes
         - CS_WALL_F_2SCALES_CONTINUOUS: All \f$ y^+ \f$  for low Reynolds models\n
-        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10, 40, 41 or 70
+        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10,
+          40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
-        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32, 50 or 51\n
-        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref iturb = 20, 21, 30, 31 or 60
-        (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG and
-        \f$k-\omega\f$ SST models).\n
+        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32,
+          50 or 51\n
+        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref iturb = 20,
+          21, 30, 31 or 60
+        (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG
+          and \f$k-\omega\f$ SST models).\n
         The v2f model (\ref iturb=50) is not designed to use wall functions
         (the mesh must be low Reynolds).\n
-        The value \ref iwallf = CS_WALL_F_2SCALES_LOG is not compatible with \ref iturb=0, 10, 40
+        The value \ref iwallf = CS_WALL_F_2SCALES_LOG is not compatible with
+          \ref iturb=0, 10, 40
         or 41 (laminar, mixing length and LES).\n
         Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
         two-scales model is usually at least as satisfactory as the one-scale
@@ -314,10 +321,10 @@ cs_get_glob_wall_functions(void)
  * \param[in]     rough_d       roughness length scale
  *                              (not sand grain roughness)
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
- * \param[in]     kinetic_en    turbulente kinetic energy
- * \param[in]     iuntur        indicator: 0 in the viscous sublayer
- * \param[in]     nsubla        counter of cell in the viscous sublayer
- * \param[in]     nlogla        counter of cell in the log-layer
+ * \param[in]     kinetic_en    turbulent kinetic energy (cell center)
+ * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
+ * \param[in,out] nsubla        counter of cell in the viscous sublayer
+ * \param[in,out] nlogla        counter of cell in the log-layer
  * \param[out]    ustar         friction velocity
  * \param[out]    uk            friction velocity
  * \param[out]    yplus         dimensionless distance to the wall
