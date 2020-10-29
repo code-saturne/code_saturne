@@ -1165,9 +1165,6 @@ class MainView(object):
         self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.jobFileSave()
-        meg_state = self.saveUserFormulaInC()
-        if meg_state == -1:
-            return
 
         # force to blank after save
         self.case['saved'] = 'yes'
