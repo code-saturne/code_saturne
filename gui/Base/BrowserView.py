@@ -482,7 +482,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return ['Preprocessing']
         elif section == 'Calculation features':
             return ['Main fields', 'Deformable mesh', 'Turbulence models',
-                    'Thermal model', 'Body forces', 'Gas combustion',
+                    'Gas combustion', 'Thermal model', 'Body forces',
                     'Pulverized fuel combustion', 'Electrical models',
                     'Conjugate heat transfer', 'Atmospheric flows',
                     'Species transport', 'Turbomachinery', 'Groundwater flows',
