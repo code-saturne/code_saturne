@@ -551,7 +551,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
   /* Compute global values */
   cs_lnum_t ncells = nx * ny * nz;
   cs_lnum_t nvtx   = nxp1 * nyp1 * nzp1;
-  cs_lnum_t nfaces = 3 * ncells + nx*ny + nx*ny + ny*nz;
+  cs_lnum_t nfaces = 3 * ncells + nx*ny + nx*nz + ny*nz;
 
   mb->n_g_faces = nfaces;
   mb->n_g_face_connect_size = nfaces * 2;
