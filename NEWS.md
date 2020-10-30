@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix output of default curvilinear coordinates for profiles in parallel.
+
 - Preprocessor: fix handling of "--log" option in next-to last position
   (could overwrite mesh, but issue only if called outside scripts).
 

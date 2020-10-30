@@ -2941,7 +2941,7 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
                              NULL);
 
   if (auto_curve_coo) {
-    const cs_real_t *s = cs_probe_set_get_curvilinear_abscissa(pset);
+    cs_real_t *s = cs_probe_set_get_loc_curvilinear_abscissa(pset);
     cs_post_write_probe_values(post_mesh->id,
                                CS_POST_WRITER_ALL_ASSOCIATED,
                                "s",
@@ -2952,6 +2952,7 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
                                NULL,
                                s,
                                ts);
+    BFT_FREE(s);
   }
 
   if (auto_cart_coo) {
