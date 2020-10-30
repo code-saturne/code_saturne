@@ -25,6 +25,11 @@ Bug fixes:
 
 - Fix non-wall radiative conditions for combustion (non-atmospheric) cases.
 
+User changes:
+
+- Add `cs_probe_set_get_loc_curvilinear_abscissa` function for use with
+  user-defined profiles.
+
 Release 6.1.2 (August 28 2020)
 ------------------------------
 
