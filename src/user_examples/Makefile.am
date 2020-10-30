@@ -185,6 +185,7 @@ cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_source_terms-base.c \
+cs_user_source_terms-momentum.c \
 cs_user_source_terms-richards.c \
 cs_user_source_terms-scalar_in_a_channel.c \
 cs_user_source_terms-turbulence.c \
