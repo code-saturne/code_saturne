@@ -19,6 +19,11 @@ Bug fixes:
 - Fix use of cs_field_gradient_* operators with fields which are not
   solved variables (such as with property or post-processing fields).
 
+User changes:
+
+- Add `cs_probe_set_get_loc_curvilinear_abscissa` function for use with
+  user-defined profiles.
+
 Release 6.0.5 (August 28 2020)
 ------------------------------
 
