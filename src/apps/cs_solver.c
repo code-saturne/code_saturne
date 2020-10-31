@@ -105,6 +105,7 @@
 #include "cs_random.h"
 #include "cs_restart.h"
 #include "cs_restart_map.h"
+#include "cs_runaway_check.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
@@ -584,6 +585,8 @@ _run(void)
   cs_base_mem_finalize();
 
   cs_log_printf_flush(CS_LOG_N_TYPES);
+
+  cs_runaway_check_finalize();
 }
 
 /*============================================================================

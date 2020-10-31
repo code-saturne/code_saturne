@@ -88,6 +88,7 @@ implicit none
 ! Local variables
 
 logical(kind=c_bool) :: mesh_modified, log_active
+integer(c_int) :: ierr
 
 integer          modhis, iappel, iisuit
 integer          iel
@@ -235,6 +236,15 @@ interface
     integer(kind=c_int), value :: ncetsm
     integer(kind=c_int), dimension(*), intent(out) :: icetsm, izctsm
   end subroutine cs_volume_mass_injection_build_lists
+
+  !=============================================================================
+
+  function cs_runaway_check() result(ierr) &
+    bind(C, name='cs_runaway_check')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: ierr
+  end function cs_runaway_check
 
   !=============================================================================
 
@@ -889,6 +899,9 @@ if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
     .and. (ttmabs.gt.0 .and. ttcabs.ge.ttmabs)) then
   ntmabs = ntcabs
 endif
+
+! Check for runaway (diverging) computation
+ierr = cs_runaway_check()
 
 ! Set default logging (always log 10 first iterations and last one=)
 log_active = .false.

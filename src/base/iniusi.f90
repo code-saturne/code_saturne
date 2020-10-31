@@ -83,7 +83,7 @@ implicit none
 
 integer          nmodpp
 integer          nscmax
-integer          l_size
+integer          l_size, f_id
 double precision relaxp, l_cp(1), l_xmasm(1), l_cv(1)
 
 type(var_cal_opt) :: vcopt
@@ -109,6 +109,14 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_radiative_transfer_parameters
+
+  subroutine cs_runaway_check_define_field_max(f_id, value)  &
+       bind(C, name='cs_runaway_check_define_field_max')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: f_id
+    real(c_double), value :: value
+  end subroutine cs_runaway_check_define_field_max
 
 end interface
 
@@ -195,6 +203,15 @@ nscmax = nscamx
 
 if (ippmod(idarcy).ge.0) then
   call daini1
+endif
+
+call field_get_id_try('velocity', f_id)
+if (f_id .ge. 0) then
+  if (ippmod(icompf).ge.0) then
+    call cs_runaway_check_define_field_max(f_id, 1.0d5)
+  else
+    call cs_runaway_check_define_field_max(f_id, 1.0d4)
+  endif
 endif
 
 !===============================================================================

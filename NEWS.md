@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add `cs_runaway_check` functions to try to detect diverging computations
+  early enough for clean stop.
+  * Default check is on velocity > 1e4 for incompressible computations,
+    1e5 for compressible computations.
+
 - Add possibility to generate a cartesian mesh on the fly
   * The GUI now allows to define a cartesian mesh which will be
     generated during runtime.
