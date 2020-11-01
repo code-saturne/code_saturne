@@ -209,18 +209,18 @@ install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c* 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
 	h_user_files=`ls ${top_srcdir}/src/user_examples/*.h 2>/dev/null`; \
 	for f in $${h_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
 	cd $(DESTDIR)$(exampledir) && \
 	f90_user_examples=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(VERSION)\n"; \
-	version2="\!                      --------------------------"; \
+	version1="\!                      Code_Saturne version $(cs_version_short)\n"; \
+	version2="\!                      ------------------------"; \
 	for file in $${f90_user_examples}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \

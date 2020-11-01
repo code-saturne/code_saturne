@@ -228,13 +228,13 @@ install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
 	done ; \
 	cd $(DESTDIR)$(userdir) && \
 	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(VERSION)\n"; \
-	version2="\!                      --------------------------"; \
+	version1="\!                      code_saturne version $(cs_version_short)\n"; \
+	version2="\!                      ------------------------"; \
 	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
 	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
 	for file in $${f90_user_files}; do \
