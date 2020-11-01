@@ -81,7 +81,7 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         iflmab, iscacp
 
-double precision :: cpp   , srfbn , heq
+double precision :: cpp   , srfbn , heq, denom
 double precision :: flumab, diipbx, diipby, diipbz
 
 double precision, allocatable, dimension(:) :: theipb
@@ -129,8 +129,6 @@ if (iscalt.gt.0) then
 
   call field_get_key_int(f_id, kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
-
-  call field_get_key_int(f_id, kscacp, iscacp)
 
   ! Compute variable values at boundary faces
 

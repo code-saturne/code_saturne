@@ -231,7 +231,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
              flowrate, manometric_head, power, efficiency);
 
   /* Example 2: extraction of a velocity profile in cylindrical coordinates
-     ======================================================================= */
+     ====================================================================== */
 
   /*! [extra_tbm_velocity_cylinder] */
 
