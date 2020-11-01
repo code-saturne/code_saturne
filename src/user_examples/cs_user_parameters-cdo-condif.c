@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,36 +41,10 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_domain_setup.h"
-#include "cs_equation.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_multigrid.h"
-#include "cs_halo.h"
-#include "cs_param.h"
-#include "cs_property.h"
-#include "cs_sles.h"
-#include "cs_time_step.h"
-#include "cs_walldistance.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,11 +52,11 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-base.c
+ * \file cs_user_parameters-cdo-condif.c
  *
  * \brief User functions for input of calculation parameters.
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -99,12 +73,12 @@ BEGIN_C_DECLS
  *         Rely on a generic function pointer for an analytic function
  *
  * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
+ * \param[in]      n_pts      number of elements to consider
  * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
+ * \param[in]      xyz        where ?
  * \param[in]      compact    true:no indirection, false:indirection for filling
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval     result of the function
+ * \param[in, out] res        result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -143,9 +117,9 @@ _define_adv_field(cs_real_t           time,
  *         Rely on a generic function pointer for an analytic function
  *
  * \param[in]      time      when ?
- * \param[in]      n_elts    number of elements to consider
+ * \param[in]      n_pts     number of elements to consider
  * \param[in]      pt_ids    list of elements ids (to access coords and fill)
- * \param[in]      coords    where ?
+ * \param[in]      xyz       where ?
  * \param[in]      compact   true:no indirection, false:indirection for filling
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  * \param[in, out] res       result of the function
@@ -175,7 +149,6 @@ _define_bcs(cs_real_t           time,
     res[ii] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+0.25));
 
   }
-
 }
 
 /*============================================================================
@@ -280,6 +253,7 @@ cs_user_model(void)
 
   /*! [param_cdo_wall_distance] */
   {
+    /*  Activate predefined module as the computation of the wall distance */
     cs_walldistance_activate();
   }
   /*! [param_cdo_wall_distance] */

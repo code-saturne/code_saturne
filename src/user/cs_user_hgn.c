@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -38,22 +38,10 @@
 #include <math.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "cs_base.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -47,33 +47,10 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_domain_setup.h"
-#include "cs_field.h"
-#include "cs_gwf.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_param.h"
-#include "cs_physical_model.h"
-#include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_time_step.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -86,7 +63,7 @@ BEGIN_C_DECLS
  * \brief User functions for setting a calcultion using the groundwater flow
  *        module with CDO schemes
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_domain_t  *domain)
+cs_user_physical_properties(cs_domain_t   *domain)
 {
 
 }

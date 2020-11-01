@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,27 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_volume_zone.h"
-#include "cs_math.h"
-#include "cs_notebook.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_random.h"
-
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_log.h"
-
-#include "cs_lagr.h"
-#include "cs_lagr_new.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -39,25 +39,10 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_time_plot.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,7 +54,7 @@ BEGIN_C_DECLS
  *
  * \brief Set user solver for heat equation.
  *
- * See \subpage user_solver for examples.
+ * See \ref user_solver for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -95,9 +80,8 @@ cs_user_solver_set(void)
 /*!
  * \brief Main call to user solver
  *
- * \param[in] mesh pointer to a cs_mesh_t structure
- * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
- *
+ * \param[in]     mesh             pointer to a cs_mesh_t structure
+ * \param[in,out] mesh_quantities  pointer to a cs_mesh_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -107,7 +91,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
 {
   /*! [local_variables] */
 
-  cs_int_t    i, iter, n_iter;
+  int         i, iter, n_iter;
 
   cs_real_t   x0, xL, t0, tL, L;
   cs_real_t   r;
@@ -117,7 +101,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   cs_restart_t    *restart, *checkpoint;
   cs_time_plot_t  *time_plot;
 
-  const cs_int_t   n = mesh->n_cells;
+  const cs_lnum_t   n = mesh->n_cells;
   const cs_real_t  pi = 4.*atan(1.);
 
   const char  var_name[] = "temperature";

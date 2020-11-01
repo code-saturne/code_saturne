@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -228,8 +228,8 @@ install-data-hook:
 	cd $(DESTDIR)$(pkgdatadir)/user && \
 	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(VERSION)\n"; \
-	version2="\!                      --------------------------"; \
+	version1="\!                      Code_Saturne version $(cs_version_short)\n"; \
+	version2="\!                      ------------------------"; \
 	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
 	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
 	for file in $${f90_user_files}; do \
@@ -239,7 +239,7 @@ install-data-hook:
 	done ;\
 	c_user_files=`ls *.c 2>/dev/null`; \
 	stubvers="\/\* VERS \*\/"; \
-	version="\/\* Code_Saturne version $(VERSION) \*\/"; \
+	version="\/\* Code_Saturne version $(cs_version_short) \*\/"; \
 	comment="\/\* REMOVE_LINE_FOR_USE_OF_SUBROUTINE \*\/"; \
 	for file in $${c_user_files}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" | \

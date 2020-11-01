@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,41 +49,10 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_post_util.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-
-#include "cs_post.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -97,7 +66,7 @@ BEGIN_C_DECLS
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
  *
- * This example is a part of the \subpage turbomachinery example.
+ * This example is a part of the \ref turbomachinery example.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -122,7 +91,7 @@ _findpt_r(cs_domain_t          *domain,
           const cs_rotation_t  *r,
           const cs_real_3_t     coords,
           cs_lnum_t            *node,
-          cs_lnum_t            *rank)
+          int                  *rank)
 {
   cs_real_t d[3];
 
@@ -137,7 +106,7 @@ _findpt_r(cs_domain_t          *domain,
 
   /*! [extra_tbm_get_rotor] */
 
-  const cs_lnum_t *rotor_num = NULL;
+  const int *rotor_num = NULL;
   rotor_num = cs_turbomachinery_get_cell_rotor_num();
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -257,8 +226,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
              "Flowrate [m3/s]","Head [m]", "Power [W]", "Efficiency [1]",
              flowrate, manometric_head, power, efficiency);
 
-  /* Example 2: extraction of a velocity profile in cylindrical corordinates
-     ======================================================================= */
+  /* Example 2: extraction of a velocity profile in cylindrical coordinates
+     ====================================================================== */
 
   if (domain->time_step->nt_cur == domain->time_step->nt_max){
 

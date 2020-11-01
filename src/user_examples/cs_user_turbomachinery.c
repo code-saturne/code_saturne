@@ -10,7 +10,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -43,23 +43,10 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_mesh.h"
-#include "cs_parall.h"
-#include "cs_turbomachinery.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -71,7 +58,7 @@ BEGIN_C_DECLS
  *
  * \brief Definition of turbomachinery related options.
  *
- * See \subpage turbomachinery for examples.
+ * See \ref turbomachinery for examples.
 */
 /*----------------------------------------------------------------------------*/
 

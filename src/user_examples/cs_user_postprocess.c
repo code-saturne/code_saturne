@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,34 +36,10 @@
 #include "string.h"
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_geom.h"
-#include "cs_interpolate.h"
-#include "cs_mesh.h"
-#include "cs_selector.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_post_util.h"
-#include "cs_probe.h"
-#include "cs_time_plot.h"
-
-#include "cs_field_pointer.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_turbulence_model.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -94,8 +70,8 @@ _i_faces_select_example(void         *input,
   CS_UNUSED(input);
 
   cs_lnum_t i, face_id;
-  cs_lnum_t n_families = 0;
-  cs_int_t *family_list = NULL;
+  int n_families = 0;
+  int *family_list = NULL;
   int *family_mask = NULL;
 
   cs_lnum_t n_i_faces = 0;
@@ -109,7 +85,7 @@ _i_faces_select_example(void         *input,
 
   /* Build mask on families matching groups "2" (1), "3" (2) */
 
-  BFT_MALLOC(family_list, m->n_families, cs_int_t);
+  BFT_MALLOC(family_list, m->n_families, int);
   BFT_MALLOC(family_mask, m->n_families, int);
 
   for (i = 0; i < m->n_families; i++)

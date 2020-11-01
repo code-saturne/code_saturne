@@ -84,15 +84,13 @@ cs_user_source_terms(cs_domain_t  *domain,
                      cs_real_t    *st_exp,
                      cs_real_t    *st_imp)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [st_meta] */
   /* field structure */
   const cs_field_t  *f = cs_field_by_id(f_id);
 
   /* mesh quantities */
-  const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_lnum_t  n_cells = domain->mesh->n_cells;
+  const cs_real_t  *cell_f_vol = domain->mesh_quantities->cell_vol;
   /*! [st_meta] */
 
   /* Scalar variance indicator: if var_f_id > -1, the field
