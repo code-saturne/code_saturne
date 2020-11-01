@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
-PROJECT(CoProcessingTest C CXX)
+PROJECT(CoProcessingTest CXX C)
 
-include(CMakeDependentOption)
-find_package(ParaView REQUIRED)
+# include(CMakeDependentOption)
+find_package(MPI COMPONENTS C CXX)
+find_package(ParaView CONFIG COMPONENTS Catalyst PythonCatalyst)
 
 if (NOT TARGET ParaView::PythonCatalyst)
   message(STATUS

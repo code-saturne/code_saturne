@@ -27,6 +27,10 @@ User changes:
 - Add `cs_probe_set_get_loc_curvilinear_abscissa` function for use with
   user-defined profiles.
 
+Architectural changes:
+
+- Improve Catalyst detection robustness for recent ParaView builds.
+
 Release 6.0.5 (August 28 2020)
 ------------------------------
 
