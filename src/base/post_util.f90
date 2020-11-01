@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -81,7 +81,7 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         iflmab
 
-double precision :: cpp   , srfbn , heq
+double precision :: cpp   , srfbn , heq, denom
 double precision :: flumab, diipbx, diipby, diipbz
 
 double precision, allocatable, dimension(:) :: theipb
@@ -100,19 +100,18 @@ logical(c_bool), dimension(:), pointer ::  cpl_faces
 
 if (iscalt.gt.0) then
 
-  ivar   = isca(iscalt)
-
+  ivar = isca(iscalt)
   f_id = ivarfl(ivar)
 
   ! Boundary condition pointers for gradients and advection
 
-  call field_get_coefa_s(ivarfl(ivar), coefap)
-  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefa_s(f_id, coefap)
+  call field_get_coefb_s(f_id, coefbp)
 
   ! Boundary condition pointers for diffusion
 
-  call field_get_coefaf_s(ivarfl(ivar), cofafp)
-  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+  call field_get_coefaf_s(f_id, cofafp)
+  call field_get_coefbf_s(f_id, cofbfp)
 
   ! Boundary condition pointers for diffusion with coupling
 
@@ -127,7 +126,7 @@ if (iscalt.gt.0) then
     call field_get_val_s(icp, cpro_cp)
   endif
 
-  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_key_int(f_id, kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
 
   ! Compute variable values at boundary faces
@@ -205,7 +204,8 @@ if (iscalt.gt.0) then
                 - flumab*cpp/srfbn*(coefap(ifac) + coefbp(ifac)*theipb(ifac))
     ! here bflux = 0 if current face is coupled
 
-    if (vcopt%icoupl.gt.0) then
+    if (vcopt%icoupl.gt.0.and.ntpabs.gt.1) then
+      ! FIXME exchange coefs not computed at start of calculation
       if (cpl_faces(ifac)) then
         heq = hextp(ifac) * hintp(ifac) / ((hextp(ifac) + hintp(ifac))*srfbn)
         bflux(iloc) = heq*(theipb(ifac)-dist_theipb(ifac))
@@ -417,7 +417,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     numer = (cofafp(ifac) + cofbfp(ifac)*theipb(ifac)) * distb(ifac)
     ! here numer = 0 if current face is coupled
 
-    if (vcopt%icoupl.gt.0) then
+    if (vcopt%icoupl.gt.0.and.ntpabs.gt.1) then
+      ! FIXME exchange coefs not computed at start of calculation
       if (cpl_faces(ifac)) then
         heq = hextp(ifac) * hintp(ifac) / ((hextp(ifac) + hintp(ifac))*srfbn)
         numer = heq*(theipb(ifac)-dist_theipb(ifac)) * distb(ifac)

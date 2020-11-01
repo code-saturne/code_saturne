@@ -3,6 +3,9 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Skip Nusselt and thermal flux postprocessing at start of calculation
+  for faces with internal coupling, to avoid division by zero.
+
 - Fix handling of alternate compute versions with relocatable builds
   (i.e. fix access to debug builds in salome_cfd distribution).
 
