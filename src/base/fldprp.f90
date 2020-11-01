@@ -152,7 +152,9 @@ icrom = irom
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
 
-call add_property_field_1d('pressure_increment', 'Pressure increment', iflid)
+! Add pressure increment field; this is not even a true property,
+! as its values at the end of a time step make no sense.
+call field_create('pressure_increment', FIELD_INTENSIVE, 1, 1, .false., iflid)
 call field_set_key_int(iflid, keypid, ivarfl(ipr))
 
 call add_boundary_property_field_owner('boundary_density', 'Boundary Density', &
