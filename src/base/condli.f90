@@ -427,11 +427,7 @@ endif
 ! -- Synthetic Eddy Method en L.E.S. :
 !    (Transfert des structures dans les tableaux rcodcl)
 
-call synthe &
-  ( nvar   , nscal  ,                                              &
-  iu     , iv     , iw     ,                                     &
-  ttcabs , dt     ,                                              &
-  rcodcl )
+call synthe(ttcabs, dt, rcodcl)
 
 ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 

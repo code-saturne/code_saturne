@@ -173,7 +173,7 @@ cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-richards.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
-cs_user_les_inflow-base.f90 \
+cs_user_les_inflow-base.c\
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \

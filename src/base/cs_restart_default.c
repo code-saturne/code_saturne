@@ -47,6 +47,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -1511,6 +1512,9 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
     if (itytur_old != 4) { /* restart from RANS */
 
+      const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+      const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
       cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
 
       cs_real_t *v_k;
@@ -1518,15 +1522,13 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
       bool use_previous_t = false;
       int inc = 1;
-      cs_real_t *v_eps;  /* Will contain the dissipation rate
-                            from the previous simulation */
+      cs_real_t *v_eps;  /* Dissipation rate from the previous simulation */
       BFT_MALLOC(v_eps, n_cells, cs_real_t);
-      cs_real_t *rst;    /* Will contain the Reynolds Stress Tensor
-                            components for each cell */
-      BFT_MALLOC(rst, 6*n_cells , cs_real_t);
-      cs_real_33_t *gradv;  /* Will contain the velocity gradient
-                               for each cell */
+      cs_real_6_t *rst;    /* Reynolds Stress Tensor for each cell */
+      BFT_MALLOC(rst, n_cells , cs_real_6_t);
+      cs_real_33_t *gradv;  /* Velocity gradient for each cell */
       BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
       cs_field_gradient_vector(CS_F_(vel),
                                use_previous_t,
                                inc,
@@ -1550,89 +1552,89 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       warn_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
       warn_sum += _read_turb_array_1d_compat(r, "epsilon", "epsilon",
                                              t_id, v_eps);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
       /* Loop over the  cells to compute each component
          of the Reynolds stress tensor for each cell */
-        cs_real_t divu = gradv[cell_id][0][0] + gradv[cell_id][1][1] +
-                         gradv[cell_id][2][2];
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_real_t divu =   gradv[cell_id][0][0]
+                         + gradv[cell_id][1][1]
+                         + gradv[cell_id][2][2];
         // Turbulent viscosity = Experimental constant (0.09) * k^2 / epsilon
         cs_real_t nut = 0.09*cs_math_pow2(v_k[cell_id])/(v_eps[cell_id]);
 
         // Diagonal of the Reynolds stress tensor
         cs_real_t xdiag = 2. / 3. *(v_k[cell_id]+ nut*divu);
 
-        rst[6*cell_id]   =  xdiag - 2.*nut*gradv[cell_id][0][0];
-        rst[6*cell_id+1] =  xdiag - 2.*nut*gradv[cell_id][1][1];
-        rst[6*cell_id+2] =  xdiag - 2.*nut*gradv[cell_id][2][2];
-        rst[6*cell_id+3] = -nut*(gradv[cell_id][1][0]+gradv[cell_id][0][1]);
-        rst[6*cell_id+4] = -nut*(gradv[cell_id][2][1]+gradv[cell_id][1][2]);
-        rst[6*cell_id+5] = -nut*(gradv[cell_id][2][0]+gradv[cell_id][0][2]);
+        rst[cell_id][0] =  xdiag - 2.*nut*gradv[cell_id][0][0];
+        rst[cell_id][1] =  xdiag - 2.*nut*gradv[cell_id][1][1];
+        rst[cell_id][2] =  xdiag - 2.*nut*gradv[cell_id][2][2];
+        rst[cell_id][3] = -nut*(gradv[cell_id][1][0]+gradv[cell_id][0][1]);
+        rst[cell_id][4] = -nut*(gradv[cell_id][2][1]+gradv[cell_id][1][2]);
+        rst[cell_id][5] = -nut*(gradv[cell_id][2][0]+gradv[cell_id][0][2]);
       }
 
-      /* Synthetic Eddy Method : Eddies generation over the whole domain.
+      /* Synthetic Eddy Method: eddies generation over the whole domain.
          Theory for the signal computation available in
          "A synthetic-eddy-method for generating inflow conditions
           for large-eddy simulations", Jarrin & al., 2006. */
 
-
       int  n_inlets = 0, n_structures = 0, volume_mode = 0;
 
-      CS_PROCF(cs_user_les_inflow_init, CS_USER_LES_INFLOW_INIT)
-        (&n_inlets, &n_structures, &volume_mode);
+      cs_user_les_inflow_init(&n_inlets, &n_structures, &volume_mode);
 
       cs_inflow_sem_t *sem_in;
       BFT_MALLOC(sem_in, 1, cs_inflow_sem_t);
       sem_in->n_structures = n_structures;
       sem_in->volume_mode = volume_mode;
-      BFT_MALLOC(sem_in->position, 3*sem_in->n_structures, cs_real_t);
-      BFT_MALLOC(sem_in->energy, 3*sem_in->n_structures, cs_real_t);
+      BFT_MALLOC(sem_in->position, sem_in->n_structures, cs_real_3_t);
+      BFT_MALLOC(sem_in->energy, sem_in->n_structures, cs_real_3_t);
 
-      cs_real_t  *fluctuations=NULL;
-      /* Fluctuations of speed before modifications with the Lund's method */
-      BFT_MALLOC(fluctuations, 3*n_cells, cs_real_t);
-      for (cs_lnum_t cell_id = 0; cell_id < 3*n_cells ; cell_id++) {
-        fluctuations[cell_id]=0.0;
+      /* Velcocity fluctuations before modifications with the Lund's method */
+      cs_real_3_t  *fluctuations = NULL;
+      BFT_MALLOC(fluctuations, n_cells, cs_real_3_t);
+      cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)fluctuations);
+
+      cs_real_3_t *vel_l = NULL;
+      BFT_MALLOC(vel_l, n_cells, cs_real_3_t);
+      cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)vel_l);
+
+      cs_real_3_t *point_coordinates = NULL;
+      BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          point_coordinates[cell_id][j] = cell_cen[cell_id][j];
       }
 
-      cs_real_t *velocity=NULL;
-      BFT_MALLOC(velocity, 3*n_cells, cs_real_t);
-      for (cs_lnum_t cell_id = 0; cell_id < 3*n_cells ; cell_id++) {
-        velocity[cell_id]=0.0;
-      }
-
-      cs_real_t *point_coordinates=NULL;
-      BFT_MALLOC(point_coordinates, 3*n_cells, cs_real_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells ; cell_id++) {
-        point_coordinates[3*cell_id]=
-        cs_glob_mesh_quantities->cell_cen[3*cell_id];
-        point_coordinates[3*cell_id+1]=
-        cs_glob_mesh_quantities->cell_cen[3*cell_id+1];
-        point_coordinates[3*cell_id+2]=
-        cs_glob_mesh_quantities->cell_cen[3*cell_id+2];
-      }
-
-      cs_real_t *point_ponderation=NULL;
+      cs_real_t *point_weight = NULL;
       int initialize = 1;
       int verbosity = 1;
-      cs_real_t time_step =0;
-      int *n_faces=NULL;
-      int number_faces=1;
+      cs_real_t t_cur = 0;
+      int *n_faces = NULL;
+      int number_faces = 1;
       n_faces = &number_faces;
 
-      cs_les_synthetic_eddy_method(n_cells, n_faces, point_coordinates,
-                                   point_ponderation, initialize, verbosity,
-                                   sem_in, time_step, velocity, rst, v_eps,
+      cs_les_synthetic_eddy_method(n_cells,
+                                   n_faces,
+                                   point_coordinates,
+                                   point_weight,
+                                   initialize, verbosity,
+                                   sem_in,
+                                   t_cur,
+                                   vel_l,
+                                   rst,
+                                   v_eps,
                                    fluctuations);
       cs_les_rescale_fluctuations(n_cells, rst, fluctuations);
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells ; cell_id++) {
-      /* Final update of velocities components unew = urans + u' */
-        v_vel[cell_id][0] += fluctuations[3*cell_id];
-        v_vel[cell_id][1] += fluctuations[3*cell_id+1];
-        v_vel[cell_id][2] += fluctuations[3*cell_id+2];
+        /* Final update of velocities components unew = urans + u' */
+        for (cs_lnum_t j = 0; j < 3; j++)
+          v_vel[cell_id][j] += fluctuations[cell_id][j];
       }
+
       BFT_FREE(fluctuations);
-      BFT_FREE(velocity);
+      BFT_FREE(vel_l);
       BFT_FREE(point_coordinates);
       BFT_FREE(rst);
       BFT_FREE(gradv);

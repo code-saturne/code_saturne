@@ -26,12 +26,12 @@
 
 /*!
   \page les_inflow Generation of synthetic turbulence at LES inlets
- 
+
   \section cs_user_les_infow_intro Introduction
 
-  This example contains 3 subroutines : 
+  This example contains 3 subroutines :
   - cs_user_les_inflow_init: definition of global caracteristics of synthetic turbulence inlets
-  - cs_user_les_inflow_define: definition of the caracteristics of the synthetic turbulence 
+  - cs_user_les_inflow_define: definition of the caracteristics of the synthetic turbulence
   - cs_user_les_inflow_advanced: accurate definition of target statistics at inlet
 
 
@@ -52,10 +52,8 @@
 
   No local variable.
 
-
   \subsection cs_user_les_inflow_init1 Initializations
-  \snippet cs_user_les_inflow-base.f90 init_1
-
+  \snippet cs_user_les_inflow-base.c init_1
 
   \section cs_user_les_inflow_define Caracteristics of one specific inlet
 
@@ -99,13 +97,12 @@
   First synthetic turbulence inlet: the Batten Method is used
   for boundary faces of color '1'.
 
-  \snippet cs_user_les_inflow-base.f90 init_21
+  \snippet cs_user_les_inflow-base.c init_21
 
   Second synthetic turbulence inlet: the Synthetic Eddy Method is used
   for the boundary faces verifying a geometric criterion.
 
-  \snippet cs_user_les_inflow-base.f90 init_22
-
+  \snippet cs_user_les_inflow-base.c init_22
 
   \section cs_user_les_inflow_advanced Accurate specification of target statistics at inlet
 
@@ -113,35 +110,29 @@
 
   Generation of synthetic turbulence at LES inlets.
   Accurate definition of mean velocity, Reynolds stresses and dissipation
-  rate for each boundary faces of the synthetic turbulence inlet 'nument'. 
-
-  Usage:
-   - uvwent(ndim,nfbent) : mean velocity vector
-   - rijent(   6,nfbent) : Reynolds stresses!
-   - epsent(     nfbent) : dissipation rate
-
+  rate for each boundary faces of the synthetic turbulence inlet 'nument'.
 
   \subsection cs_user_les_inflow_loc_var_dec3 Local variables declaration
 
-  \snippet cs_user_les_inflow-base.f90 loc_var_dec3
+  \snippet cs_user_les_inflow-base.c loc_var_dec3
 
   \subsection cs_user_les_inflow_example_1 Example 1
 
   Mean velocity, Reynolds stresses an dissipation are deduced from a wall law for
-  the first synthetic turbulence inlet, 
-  - no refining of the statistics of the flow 
+  the first synthetic turbulence inlet,
+  - no modification of the statistics of the flow
   is provided for the second synthetic turbulence inlet.
-  
-  \snippet cs_user_les_inflow-base.f90 example_1
-  
+
+  \snippet cs_user_les_inflow-base.c example_1
+
   \subsection cs_user_les_inflow_example_2 Example 2
 
    Reynolds stresses and dissipation at the inlet are computed
    using the turbulence intensity and standard laws for
    a circular pipe for the first synthetic turbulence inlet,
-   - no refining of the statistics of the flow is provided for the
+   - no modification of the statistics of the flow is provided for the
    other synthetic turbulence inlet.
-  
-  \snippet cs_user_les_inflow-base.f90 example_2
-  
+
+  \snippet cs_user_les_inflow-base.c example_2
+
 */
