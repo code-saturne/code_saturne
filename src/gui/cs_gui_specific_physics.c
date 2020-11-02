@@ -64,6 +64,7 @@
 #include "cs_elec_model.h"
 #include "cs_gwf_physical_properties.h"
 #include "cs_vof.h"
+#include "cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1365,6 +1366,28 @@ cs_gui_physical_model_select(void)
         cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
         cs_gui_node_get_child_status_int(tn, "thermodynamical_pressure",
                                          &(phys_pp->ipthrm));
+
+        /* Read the soot model (isoot, rosoot, xsoot) */
+        cs_combustion_model_t   *cm = cs_glob_combustion_model;
+        cs_tree_node_t *tn_soot
+        = cs_tree_get_node(cs_glob_tree,
+                           "thermophysical_models/gas_combustion/soot_model");
+
+        const char *model_soot = cs_tree_node_get_child_value_str(tn_soot,
+                                                                  "model");
+
+        if (model_soot != NULL && !cs_gui_strcmp(model_soot, "off")) {
+          if (cs_gui_strcmp(model_soot, "soot_product_fraction")) {
+            cm->isoot = 0;
+            cs_gui_node_get_child_real(tn_soot, "soot_density",
+                                       &(cm->gas.rosoot));
+            cs_gui_node_get_child_real(tn_soot, "soot_fraction",
+                                       &(cm->gas.xsoot));}
+          else if (cs_gui_strcmp(model_soot, "moss")) {
+            cm->isoot = 1;
+            cs_gui_node_get_child_real(tn_soot, "soot_density",
+                                       &(cm->gas.rosoot));}
+        }
       }
     }
     else if (cs_gui_strcmp(model_name, "atmospheric_flows")) {
