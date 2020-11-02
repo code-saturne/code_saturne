@@ -393,9 +393,9 @@ class GasCombustionModel(Variables, Model):
         """
         self.default = {}
         self.default['thermodynamical_pressure'] = 'off'
-        self.default['soot_model']   = 'off'
-        self.default['soot_density']        = 0.0
-        self.default['soot_fraction']        = 0.0
+        self.default['soot_model']               = 'off'
+        self.default['soot_density']             = 0.0
+        self.default['soot_fraction']            = 0.0
         return self.default
 
     @Variables.noUndo
@@ -462,7 +462,8 @@ class GasCombustionModel(Variables, Model):
         Put value of soot density
         """
         self.isPositiveFloat(val)
-        self.node_gas.xmlSetData('soot_density', val)
+        self.node_soot = self.node_gas.xmlGetNode('soot_model')
+        self.node_soot.xmlSetData('soot_density', val)
 
     @Variables.noUndo
     def getSootFraction(self):
@@ -481,7 +482,8 @@ class GasCombustionModel(Variables, Model):
         Put value of soot fraction
         """
         self.isPositiveFloat(val)
-        self.node_gas.xmlSetData('soot_fraction', val)
+        self.node_soot = self.node_gas.xmlGetNode('soot_model')
+        self.node_soot.xmlSetData('soot_fraction', val)
 #-------------------------------------------------------------------------------
 # Gas combustion test case
 #-------------------------------------------------------------------------------
