@@ -256,6 +256,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self.__setRadiation__(model)
 
+        # Soot model
+        #----------------
+
+        self.__setSoot__()
+#        self.__setSoot__(model)
+
         # Undo/redo part
 
         self.case.undoStartGlobal()
@@ -344,6 +350,48 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.slotTypeCoefficient(self.modelAbsorption.dicoM2V[value])
 
         self.lineEditCoeff.setText(str(self.rmdl.getAbsorCoeff()))
+
+
+    def __setSoot__(self):
+        """
+        Update for soot model
+        """
+        self.gas = GasCombustionModel(self.case)
+        self.model = self.gas.getGasCombustionModel()
+
+        if self.model == "off":
+            self.groupBoxSoot.hide()
+            return
+
+        self.groupBoxSoot.show()
+
+        # Combo models
+
+        self.modelSoot   = ComboModel(self.comboBoxSoot, 3, 1)
+
+        self.modelSoot.addItem("None", 'off')
+        self.modelSoot.addItem("constant fraction of fuel", 'soot_fuel_fraction')
+        self.modelSoot.addItem("2 equations model of Moss et al.", 'moss')
+
+        # Connections
+
+        self.comboBoxSoot.activated[str].connect(self.slotSoot)
+        self.lineEditSootDensity.textChanged[str].connect(self.slotSootDensity)
+        self.lineEditSootFraction.textChanged[str].connect(self.slotSootFraction)
+
+        # Validator
+
+        validatorSootDensity = DoubleValidator(self.lineEditSootDensity, min=0.0)
+        self.lineEditSootDensity.setValidator(validatorSootDensity)
+
+        validatorSootFraction = DoubleValidator(self.lineEditSootFraction, min=0.0, max=1.0)
+        self.lineEditSootFraction.setValidator(validatorSootFraction)
+
+        # Initialization
+
+        self.modelSoot.setItem(str_model=self.gas.getSootModel())
+
+        self.slotSoot()
 
 
     @pyqtSlot(str)
@@ -469,6 +517,57 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setTemperatureListing(result['tempP'])
             self.rmdl.setIntensityResolution(result['intensity'])
 
+
+    @pyqtSlot(str)
+    def slotSoot(self):
+        """
+        """
+        model = self.modelSoot.dicoV2M[str(self.comboBoxSoot.currentText())]
+        self.gas.setSootModel(model)
+        if model == 'off':
+            self.labelSootDensity.hide()
+            self.lineEditSootDensity.hide()
+            self.label_4.hide()
+
+            self.labelSootFraction.hide()
+            self.lineEditSootFraction.hide()
+
+        elif model == 'soot_fuel_fraction':
+
+            self.labelSootDensity.show()
+            self.lineEditSootDensity.show()
+            self.lineEditSootDensity.setText(str(self.gas.getSootDensity()))
+            self.label_4.show()
+
+            self.labelSootFraction.show()
+            self.lineEditSootFraction.show()
+            self.lineEditSootFraction.setText(str(self.gas.getSootFraction()))
+
+        elif model == 'moss':
+
+            self.labelSootDensity.show()
+            self.lineEditSootDensity.show()
+            self.lineEditSootDensity.setText(str(self.gas.getSootDensity()))
+            self.label_4.show()
+
+            self.labelSootFraction.hide()
+            self.lineEditSootFraction.hide()
+
+    @pyqtSlot(str)
+    def slotSootDensity(self, text):
+        """
+        """
+        if self.lineEditSootDensity.validator().state == QValidator.Acceptable:
+            c  = from_qvariant(text, float)
+            self.gas.setSootDensity(c)
+
+    @pyqtSlot(str)
+    def slotSootFraction(self, text):
+        """
+        """
+        if self.lineEditSootFraction.validator().state == QValidator.Acceptable:
+            c  = from_qvariant(text, float)
+            self.gas.setSootFraction(c)
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -79,6 +79,8 @@ class GasCombustionModel(Variables, Model):
                          "3-peak_adiabatic", "3-peak_enthalpy",
                          "4-peak_adiabatic", "4-peak_enthalpy")
 
+        self.sootModels = ('off', 'soot_fuel_fraction', 'moss')
+
 
     def defaultGasCombustionValues(self):
         """
@@ -391,6 +393,9 @@ class GasCombustionModel(Variables, Model):
         """
         self.default = {}
         self.default['thermodynamical_pressure'] = 'off'
+        self.default['soot_model']   = 'off'
+        self.default['soot_density']        = 0.0
+        self.default['soot_fraction']        = 0.0
         return self.default
 
     @Variables.noUndo
@@ -414,6 +419,69 @@ class GasCombustionModel(Variables, Model):
         node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
         node['status'] = status
 
+    @Variables.noUndo
+    def getSootModel(self):
+        """
+        Return value of attribute model
+        """
+        node = self.node_gas.xmlInitChildNode('soot_model', 'model')
+        model = node['model']
+        if model not in self.sootModels:
+            model = self._defaultValues()['soot_model']
+            self.setSootModel(model)
+        return model
+
+    @Variables.undoGlobal
+    def setSootModel(self, model):
+        """
+        Put value of attribute model to soot model
+        """
+        self.isInList(model, self.sootModels)
+        node  = self.node_gas.xmlInitChildNode('soot_model', 'model')
+        node['model'] = model
+        if model == 'moss':
+            self.node_gas.xmlRemoveChild('soot_fraction')
+        if model == 'off':
+            self.node_gas.xmlRemoveChild('soot_density')
+            self.node_gas.xmlRemoveChild('soot_fraction')
+
+    @Variables.noUndo
+    def getSootDensity(self):
+        """
+        Return value of soot density
+        """
+        val = self.node_gas.xmlGetDouble('soot_density')
+        if val == None:
+            val = self._defaultValues()['soot_density']
+            self.setSootDensity(val)
+        return val
+
+    @Variables.undoGlobal
+    def setSootDensity(self, val):
+        """
+        Put value of soot density
+        """
+        self.isPositiveFloat(val)
+        self.node_gas.xmlSetData('soot_density', val)
+
+    @Variables.noUndo
+    def getSootFraction(self):
+        """
+        Return value of soot fraction
+        """
+        val = self.node_gas.xmlGetDouble('soot_fraction')
+        if val == None:
+            val = self._defaultValues()['soot_fraction']
+            self.setSootFraction(val)
+        return val
+
+    @Variables.undoGlobal
+    def setSootFraction(self, val):
+        """
+        Put value of soot fraction
+        """
+        self.isPositiveFloat(val)
+        self.node_gas.xmlSetData('soot_fraction', val)
 #-------------------------------------------------------------------------------
 # Gas combustion test case
 #-------------------------------------------------------------------------------
