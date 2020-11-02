@@ -375,8 +375,7 @@ call precli(nvar, icodcl, rcodcl)
 !    -> sera modifie lors de la restructuration des zones de bord
 
 call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
+  ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
@@ -5170,8 +5169,7 @@ call precli(nvar, icodcl, rcodcl)
 !    -> sera modifie lors de la restructuration des zones de bord
 
 call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
+  ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &

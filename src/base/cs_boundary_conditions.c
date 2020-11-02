@@ -57,6 +57,7 @@
 #include "cs_gradient.h"
 #include "cs_gui_util.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_flag_check.h"
 #include "cs_halo.h"
@@ -221,6 +222,139 @@ _inlet_sum(int                          var_id,
   }
 
   cs_parall_sum(dim, CS_REAL_TYPE, inlet_sum);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the homogeneous Dirichlet BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       boundaries  pointer to associated boundaries
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       var_id      matching variable id
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_dirichlet_hmg_bc(const cs_mesh_t            *mesh,
+                          const cs_boundary_t        *boundaries,
+                          const cs_equation_param_t  *eqp,
+                          const cs_xdef_t            *def,
+                          int                         var_id,
+                          int                        *icodcl,
+                          double                     *rcodcl)
+{
+  assert(eqp->dim == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  cs_boundary_type_t boundary_type
+    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+
+  const int wall_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+
+  for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+    int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
+    cs_real_t  *_rcodcl = rcodcl + (var_id+coo_id)*n_b_faces;
+
+    if (face_ids == NULL) {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        _icodcl[i] = wall_type;
+        _rcodcl[i] = 0;
+      }
+    }
+    else {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+        _icodcl[elt_id] = wall_type;
+        _rcodcl[elt_id] = 0;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       boundaries  pointer to associated boundaries
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       var_id      matching variable id
+ * \param[in]       t_eval      time at which one evaluates the boundary cond.
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_dirichlet_bc(const cs_mesh_t            *mesh,
+                      const cs_boundary_t        *boundaries,
+                      const cs_equation_param_t  *eqp,
+                      const cs_xdef_t            *def,
+                      int                         var_id,
+                      cs_real_t                   t_eval,
+                      int                        *icodcl,
+                      double                     *rcodcl)
+{
+  assert(eqp->dim == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  cs_boundary_type_t boundary_type
+    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+
+  const int wall_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
+
+      for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+        int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl = rcodcl + (var_id+coo_id)*n_b_faces;
+
+        if (face_ids == NULL) {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            _icodcl[i] = wall_type;
+            _rcodcl[i] = constant_val[coo_id];
+          }
+        }
+        else {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+            _icodcl[elt_id] = wall_type;
+            _rcodcl[elt_id] = constant_val[coo_id];
+          }
+        }
+
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Unhandled %s definition type."),
+              __func__, cs_xdef_type_get_name(def->type));
+    break;
+
+  }
 }
 
 /*============================================================================
@@ -789,7 +923,6 @@ cs_boundary_conditions_free(void)
 /*!
  * \brief Set convective oulet boundary condition for a scalar.
  *
- * Parameters:
  * \param[out]    coefa         explicit BC coefficient for gradients
  * \param[out]    cofaf         explicit BC coefficient for diffusive flux
  * \param[out]    coefb         implicit BC coefficient for gradients
@@ -816,6 +949,92 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
   /* Flux BCs */
   *cofaf = - hint * *coefa;
   *cofbf =   hint * (1.0 - *coefb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update per variable boundary condition codes.
+ *
+ * \param[in]       nvar             number of variables requiring BC's
+ * \param[in]       itypfb           type of boundary for each face
+ * \param[in, out]  icodcl           boundary condition codes
+ * \param[in, out]  rcodcl           boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_compute(int         nvar,
+                               int        *itypfb,
+                               int        *icodcl,
+                               double     *rcodcl)
+{
+  /* Initialization */
+
+  static int var_id_key = -1;
+  if (var_id_key < 0)
+    var_id_key = cs_field_key_id("variable_id");
+  assert(var_id_key >= 0);
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_boundary_t *boundaries = cs_glob_boundaries;
+  const cs_real_t t_eval = cs_glob_time_step->t_cur;
+
+  /* Loop on fields */
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    const cs_equation_param_t *eqp = NULL;
+    if (f->type & CS_FIELD_VARIABLE)
+      eqp = cs_field_get_equation_param_const(f);
+
+    if (eqp == NULL)
+      continue;
+
+    /* Only handle legacy discretization here */
+
+    if (eqp-> space_scheme != CS_SPACE_SCHEME_LEGACY)
+      continue;
+
+    /* Get associated variable id  */
+
+    int var_id = cs_field_get_key_int(f, var_id_key) - 1;
+    assert(var_id >= 0);
+
+    /* Loop on boundary conditions */
+
+    for (int bc_id = 0; bc_id < eqp->n_bc_defs; bc_id++) {
+      const cs_xdef_t *def = eqp->bc_defs[bc_id];
+      cs_param_bc_type_t bc_type = (cs_param_bc_type_t)(def->meta);
+      switch (bc_type) {
+
+      case CS_PARAM_BC_HMG_DIRICHLET:
+        _compute_dirichlet_hmg_bc(mesh,
+                                  boundaries,
+                                  eqp,
+                                  def,
+                                  var_id,
+                                  icodcl,
+                                  rcodcl);
+        break;
+
+      case CS_PARAM_BC_DIRICHLET:
+        _compute_dirichlet_bc(mesh,
+                              boundaries,
+                              eqp,
+                              def,
+                              var_id,
+                              t_eval,
+                              icodcl,
+                              rcodcl);
+        break;
+
+      default:
+        break;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

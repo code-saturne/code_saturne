@@ -54,6 +54,8 @@
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
+#include "cs_combustion_model.h"
+#include "cs_equation_param.h"
 #include "cs_parameters.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
@@ -61,6 +63,7 @@
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
 #include "cs_thermal_model.h"
@@ -99,7 +102,7 @@ BEGIN_C_DECLS
 /* Enum for boundary conditions */
 
 typedef enum {
-  DIRICHLET,
+  BY_XDEF = -1,           /* to mark usage of newer system */
   DIRICHLET_FORMULA,
   DIRICHLET_IMPLICIT,
   EXCHANGE_COEFF,
@@ -109,7 +112,7 @@ typedef enum {
   NEUMANN,
   NEUMANN_FORMULA,
   NEUMANN_IMPLICIT,
-  TURBULENT_INTENSITY
+  TURBULENT_INTENSITY,
 } cs_boundary_value_t;
 
 typedef struct {
@@ -126,7 +129,6 @@ typedef struct {
 typedef struct {
 
   int            n_zones;  /* number of associated zones */
-  int            n_coals;  /* number of coals defined */
 
   const char   **label;    /* pointer to label for each boundary zone */
   const char   **nature;   /* nature for each boundary zone */
@@ -331,15 +333,17 @@ _mapped_inlet(const char                *label,
  * Value of velocity for sliding wall.
  *
  * parameters:
- *   tn_vp <-- tree node associated with BC velocity/pressure
- *   izone <-- number of zone
+ *   tn_vp  <-- tree node associated with BC velocity/pressure
+ *   z_name <-- zone name
  *----------------------------------------------------------------------------*/
 
 static void
-_sliding_wall(cs_tree_node_t  *tn_vp,
-              int              izone)
+_sliding_wall(cs_tree_node_t   *tn_vp,
+              const char       *z_name)
 {
-  const cs_field_t  *f = cs_field_by_name("velocity");
+  cs_field_t  *f = cs_field_by_name("velocity");
+
+  cs_real_t value[3] = {0, 0, 0};
 
   for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_vp, "dirichlet");
        tn != NULL;
@@ -349,12 +353,16 @@ _sliding_wall(cs_tree_node_t  *tn_vp,
     cs_gui_node_get_child_int(tn, "component", &c_id);
     if (strcmp("velocity", name) == 0 && c_id > -1 && c_id < f->dim) {
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-      if (v != NULL) {
-        boundaries->type_code[f->id][izone] = DIRICHLET;
-        boundaries->values[f->id][f->dim * izone + c_id].val1 = v[0];
-      }
+      if (v != NULL)
+        value[c_id] = v[0];
     }
   }
+
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  cs_equation_add_bc_by_value(eqp,
+                              CS_PARAM_BC_DIRICHLET,
+                              z_name,
+                              value);
 }
 
 /*-----------------------------------------------------------------------------
@@ -410,7 +418,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
                  int              izone,
                  int              f_id)
 {
-  const cs_field_t  *f = cs_field_by_id(f_id);
+  cs_field_t  *f = cs_field_by_id(f_id);
   const int dim = f->dim;
 
   cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_bc, "scalar");
@@ -419,19 +427,39 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   if (dim > 1)
     tn_s = cs_tree_node_get_child(tn_s, "component");
 
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  const char *z_name = boundaries->label[izone];
+  const char *choice = cs_tree_node_get_tag(tn_s, "choice");
+
+  cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  assert(dim <= 9);
+
+  /* FIXME: we should not need a loop over components, but
+     directly use vector values; if we do not yet have
+     multidimensional user variables in the GUI, we can hendle
+     this more cleanly */
+
   for (int i = 0; i < dim; i++) {
 
-    const char *choice = cs_tree_node_get_tag(tn_s, "choice");
+    /* All components should use the same BC type */
+
+    if (i > 0) {
+      const char *choice_c = cs_tree_node_get_tag(tn_s, "choice");
+      if (strcmp(choice, choice_c))
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("%s: for field %s on zone %s,\n"
+             "BC types are mismatched (%s on component 0, %s on component %d."),
+           __func__, f->name, z_name, choice, choice_c, i);
+    }
 
     if (choice != NULL) {
-      if (! strcmp(choice, "dirichlet")) {
 
+      if (! strcmp(choice, "dirichlet")) {
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
         if (v != NULL) {
-          boundaries->type_code[f_id][izone] = DIRICHLET;
-          boundaries->values[f_id][izone * dim + i].val1 = v[0];
+          value[i] = *v;
         }
-
       }
       else if (! strcmp(choice, "neumann")) {
 
@@ -493,6 +521,18 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
     if (f->dim > 1)
       tn_s = cs_tree_node_get_next_of_name(tn_s);
   }
+
+  /* Now define appropriate equation parameters */
+
+  if (choice != NULL) {
+
+    if (! strcmp(choice, "dirichlet"))
+      cs_equation_add_bc_by_value(eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z_name,
+                                  value);
+
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -500,18 +540,17 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
  * for an oxydant, or for oxydant and coal.
  *
  * parameters:
- *   tn_vp   <-- tree node associated with velocity and pressure
- *   izone   <-- associated zone id
- *   ncharb  <-- number of coals (1 to 3)
- *   nclpch  <-- number of class for eah coal
+ *   tn_vp    <-- tree node associated with velocity and pressure
+ *   izone    <-- associated zone id
  *----------------------------------------------------------------------------*/
 
 static void
 _inlet_coal(cs_tree_node_t  *tn_vp,
-            int              izone,
-            const int       *ncharb,
-            const int       *nclpch)
+            int              izone)
 {
+  const int n_coals = cs_glob_combustion_model->coal.n_coals;
+  const int *nclpch = cs_glob_combustion_model->coal.n_classes_per_coal;
+
   int _n_coals = 0;
 
   /* Count coal definitions */
@@ -528,7 +567,7 @@ _inlet_coal(cs_tree_node_t  *tn_vp,
     if (sscanf(name + strlen("coal"), "%d", &icoal) != 1)
       continue;
     icoal -= 1;
-    if (icoal +1 > *ncharb)
+    if (icoal +1 > n_coals)
       continue;
 
     /* mass flow rate of coal */
@@ -566,10 +605,10 @@ _inlet_coal(cs_tree_node_t  *tn_vp,
   else {
     boundaries->ientat[izone] = 0;
     boundaries->ientcp[izone] = 1;
-    if (_n_coals != *ncharb)
+    if (_n_coals != n_coals)
       bft_error(__FILE__, __LINE__, 0,
                 _("Invalid number of coal: %i xml: %i\n"),
-                *ncharb, _n_coals);
+                n_coals, _n_coals);
   }
 }
 
@@ -788,26 +827,11 @@ _get_boundary_faces(const char   *label,
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment: global structure initialization
- *
- * parameters:
- *   n_b_faces            <-- number of boundary faces
- *   nozppm               <-- max number of boundary conditions zone
- *   ncharb               <-- number of simulated coals
- *   nclpch               <-- number of simulated class per coals
- *   ncharb               <-- number of simulated gaz for electrical models
- *   izfppp               <-- zone number for each boundary face
- *   idarcy               <-- darcy module activate or not
  *----------------------------------------------------------------------------*/
 
 static void
-_init_boundaries(const cs_lnum_t   n_b_faces,
-                 const int        *nozppm,
-                 const int        *ncharb,
-                 const int        *nclpch,
-                 int              *izfppp,
-                 const int        *idarcy)
+_init_boundaries(void)
 {
-  cs_lnum_t faces = 0;
   int icharb, iclass;
 
   cs_var_t  *vars = cs_glob_var;
@@ -820,7 +844,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   BFT_MALLOC(boundaries, 1, cs_gui_boundary_t);
 
   boundaries->n_zones = n_zones;
-  boundaries->n_coals = 0;
 
   BFT_MALLOC(boundaries->label,     n_zones,    const char *);
   BFT_MALLOC(boundaries->nature,    n_zones,    const char *);
@@ -845,6 +868,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   BFT_MALLOC(boundaries->preout,    n_zones,    double);
 
   if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+
+    const cs_combustion_model_t *cm = cs_glob_combustion_model;
+
     BFT_MALLOC(boundaries->ientat, n_zones, int);
     BFT_MALLOC(boundaries->inmoxy, n_zones, int);
     BFT_MALLOC(boundaries->timpat, n_zones, double);
@@ -853,15 +879,15 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     BFT_MALLOC(boundaries->timpcp, n_zones, double *);
     BFT_MALLOC(boundaries->distch, n_zones, double **);
 
-    boundaries->n_coals = *ncharb;
     for (int izone=0; izone < n_zones; izone++) {
-      BFT_MALLOC(boundaries->qimpcp[izone], *ncharb, double);
-      BFT_MALLOC(boundaries->timpcp[izone], *ncharb, double);
-      BFT_MALLOC(boundaries->distch[izone], *ncharb, double *);
+      BFT_MALLOC(boundaries->qimpcp[izone], cm->coal.n_coals, double);
+      BFT_MALLOC(boundaries->timpcp[izone], cm->coal.n_coals, double);
+      BFT_MALLOC(boundaries->distch[izone], cm->coal.n_coals, double *);
 
-      for (icharb = 0; icharb < *ncharb; icharb++)
+      for (icharb = 0; icharb < cm->coal.n_coals; icharb++)
         BFT_MALLOC(boundaries->distch[izone][icharb],
-                   nclpch[icharb], double);
+                   cm->coal.n_classes_per_coal[icharb],
+                   double);
     }
   }
   else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
@@ -928,16 +954,18 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     boundaries->locator[izone]   = NULL;
 
     if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      const cs_combustion_model_t *cm = cs_glob_combustion_model;
+
       boundaries->ientat[izone] = 0;
       boundaries->inmoxy[izone] = 1;
       boundaries->ientcp[izone] = 0;
       boundaries->timpat[izone] = 0;
 
-      for (icharb = 0; icharb < *ncharb; icharb++) {
+      for (icharb = 0; icharb < cm->coal.n_coals; icharb++) {
         boundaries->qimpcp[izone][icharb] = 0;
         boundaries->timpcp[izone][icharb] = 0;
 
-        for (iclass = 0; iclass < nclpch[icharb]; iclass++)
+        for (iclass = 0; iclass < cm->coal.n_classes_per_coal[icharb]; iclass++)
           boundaries->distch[izone][icharb][iclass] = 0;
       }
     }
@@ -987,9 +1015,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
   }
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-    izfppp[ifac] = 0;
-
   /* filling of the "boundaries" structure */
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
@@ -1021,11 +1046,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
     const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
 
-    if (strcmp(label, z->name) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Mismatch between GUI-defined zone %d (%s)\n"
-                  "and boundary condition %d (%s), number %d."),
-                z->id, z->name, izone+1, label, bc_num);
+    assert(strcmp(label, z->name) == 0);
 
     /* Note: boundary nature is determined again later for most cases,
        but at least symmetry is only defined here, and ALE can define
@@ -1072,7 +1093,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
       cs_tree_node_t *tn_vp
         = cs_tree_node_get_child(tn, "velocity_pressure");
 
-      if (*idarcy < 0) {
+      if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
 
         const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
         const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
@@ -1128,7 +1149,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           (tn_vp, "temperature", &boundaries->timpat[izone]);
         cs_gui_node_get_child_int
           (tn_vp, "oxydant", &boundaries->inmoxy[izone]);
-        _inlet_coal(tn_vp, izone, ncharb, nclpch);
+        _inlet_coal(tn_vp, izone);
       }
 
       /* Inlet: data for GAS COMBUSTION */
@@ -1165,10 +1186,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         = cs_tree_node_get_child(tn, "velocity_pressure");
 
       if (tn_vp != NULL) {
-        const char *choice = cs_gui_node_get_tag(tn_vp, "choice");
-        if (cs_gui_strcmp(choice, "on"))
-          _sliding_wall(tn_vp, izone);
-
         /* Wall: ROUGH */
         if (   wall_fnt->iwallf != CS_WALL_F_DISABLED
             && wall_fnt->iwallf != CS_WALL_F_1SCALE_POWER
@@ -1270,10 +1287,35 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
 
   }  /* for izones */
+}
+
+/*----------------------------------------------------------------------------
+ * Boundary conditions treatment: initialize and check zone info
+ *
+ * parameters:
+ *   n_b_faces            <-- number of boundary faces
+ *   nozppm               <-- max number of boundary conditions zone
+ *   izfppp               <-- zone number for each boundary face
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_zones(const cs_lnum_t   n_b_faces,
+            const int        *nozppm,
+            int              *izfppp)
+{
+  cs_lnum_t faces = 0;
+
+  assert(boundaries != NULL);
+
+  int n_zones = cs_tree_get_node_count(cs_glob_tree,
+                                       "boundary_conditions/boundary");
+
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+    izfppp[ifac] = 0;
 
   int overlap_error[4] = {0, -1, -1, -1};
 
-  for (izone = 0; izone < n_zones; izone++) {
+  for (int izone = 0; izone < n_zones; izone++) {
 
     int zone_nbr = boundaries->bc_num[izone];
 
@@ -1335,7 +1377,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     cs_boundary_conditions_error(izfppp, _("zone number"));
 
   }
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1354,12 +1395,8 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
  * subroutine uiclim
  * *****************
  *
- * integer          idarcy   <-- darcy module activate or not
  * integer          nozppm   <-- max number of boundary conditions zone
- * integer          ncharm   <-- maximal number of coals
- * integer          ncharb   <-- number of simulated coals
  * integer          nclpch   <-- number of simulated class per coals
- * integer          ngasg    <-- number of simulated gas for electrical models
  * integer          iqimp    <-- 1 if flow rate is applied
  * integer          icalke   <-- 1 for automatic turbulent boundary conditions
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
@@ -1389,11 +1426,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
  * double precision rcodcl   <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
-                               const int  *nozppm,
-                               const int  *ncharm,
-                               const int  *ncharb,
-                               const int  *nclpch,
+void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -1434,11 +1467,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
   const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
 
-  /* First iteration only: memory allocation */
+  const int ncharm = CS_COMBUSTION_MAX_COALS;
 
-  if (boundaries == NULL)
-    _init_boundaries(n_b_faces, nozppm, ncharb, nclpch,
-                     izfppp, idarcy);
+  /* First pass only: initialize izfppp */
+
+  static bool initialized = false;
+  if (initialized == false) {
+    _init_zones(n_b_faces, nozppm, izfppp);
+    initialized = true;
+  }
 
   cs_tree_node_t *tn_bc = cs_tree_get_node(cs_glob_tree,
                                            "boundary_conditions/boundary");
@@ -1494,19 +1531,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 icodcl[(ivar + i)*n_b_faces + face_id] = 3;
                 rcodcl[2 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
                   = boundaries->values[f->id][izone * f->dim + i].val3;
-              }
-            }
-            break;
-
-          case DIRICHLET:
-            {
-              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-                cs_lnum_t face_id = bz->elt_ids[elt_id];
-                for (cs_lnum_t i = 0; i < f->dim; i++) {
-                  icodcl[(ivar + i) * n_b_faces + face_id] = wall_type;
-                  rcodcl[(ivar + i) * n_b_faces + face_id]
-                    = boundaries->values[f->id][izone * f->dim + i].val1;
-                }
               }
             }
             break;
@@ -1657,19 +1681,23 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       icalke[zone_nbr-1] = boundaries->icalke[izone];
 
       if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+        const cs_combustion_model_t *cm = cs_glob_combustion_model;
+
         ientat[zone_nbr-1] = boundaries->ientat[izone];
         inmoxy[zone_nbr-1] = boundaries->inmoxy[izone];
         ientcp[zone_nbr-1] = boundaries->ientcp[izone];
         qimpat[zone_nbr-1] = boundaries->qimp[izone];
         timpat[zone_nbr-1] = boundaries->timpat[izone];
 
-        for (int icharb = 0; icharb < *ncharb; icharb++) {
+        for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
           int ich = icharb *(*nozppm)+zone_nbr-1;
           qimpcp[ich] = boundaries->qimpcp[izone][icharb];
           timpcp[ich] = boundaries->timpcp[izone][icharb];
 
-          for (int iclass = 0; iclass < nclpch[icharb]; iclass++) {
-            int icl = iclass * (*nozppm) * (*ncharm) + ich;
+          for (int iclass = 0;
+               iclass < cm->coal.n_classes_per_coal[icharb];
+               iclass++) {
+            int icl = iclass * (*nozppm) * ncharm + ich;
             distch[icl] = boundaries->distch[izone][icharb][iclass];
           }
         }
@@ -2181,7 +2209,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
             ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
-        for (int icharb = 0; icharb < *ncharb; icharb++) {
+        for (int icharb = 0; icharb < boundaries->n_coals; icharb++) {
           bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
               icharb+1, qimpcp[icharb *(*nozppm)+zone_nbr-1],
               timpcp[icharb *(*nozppm)+zone_nbr-1]);
@@ -2189,7 +2217,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           for (int iclass = 0; iclass < nclpch[icharb]; iclass++)
             bft_printf("-----coal=%i, class=%i, distch=%f \n",
                        icharb+1, iclass+1,
-                       distch[  iclass * (*nozppm) * (*ncharm)
+                       distch[  iclass * (*nozppm) * ncharm
                               + icharb * (*nozppm) +zone_nbr-1]);
         }
       }
@@ -2480,6 +2508,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 #endif
 
   } /*  for (izone=0; izone < boundaries->n_zones; izone++) */
+
+  /* Define boundary conditions based on cs_equation_param_t structures */
+
+  cs_boundary_conditions_compute(*nvar,
+                                 itypfb,
+                                 icodcl,
+                                 rcodcl);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2775,8 +2811,10 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 
       if (tn_vp != NULL) {
         const char *choice = cs_gui_node_get_tag(tn_vp, "choice");
-        if (cs_gui_strcmp(choice, "on"))
+        if (cs_gui_strcmp(choice, "on")) {
           bc_type |= CS_BOUNDARY_SLIDING_WALL;
+          _sliding_wall(tn_vp, label);
+        }
 
         /* check for roughness */
         if (   wall_fnt->iwallf != CS_WALL_F_DISABLED
@@ -2832,6 +2870,12 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 
     cs_boundary_add(bdy, bc_type, z->name);
   }
+
+  /* Definition of the boundaries structure
+     and some equation parameters */
+
+  if (boundaries == NULL)
+    _init_boundaries();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2865,10 +2909,11 @@ cs_gui_boundary_conditions_free_memory(void)
     }
 
     if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      const int n_coals = cs_glob_combustion_model->coal.n_coals;
       for (izone = 0; izone < n_zones; izone++) {
         BFT_FREE(boundaries->qimpcp[izone]);
         BFT_FREE(boundaries->timpcp[izone]);
-        for (icharb = 0; icharb < boundaries->n_coals; icharb++)
+        for (icharb = 0; icharb < n_coals; icharb++)
           BFT_FREE(boundaries->distch[izone][icharb]);
         BFT_FREE(boundaries->distch[izone]);
       }

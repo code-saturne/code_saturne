@@ -641,6 +641,19 @@ cs_xdef_log(const char          *prefix,
             const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the cs_xdef_type's name string
+ *
+ * \param[in] xdef_type  type to query
+ *
+ * \return a pointer to mathing name string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_xdef_type_get_name(cs_xdef_type_t  xdef_type);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

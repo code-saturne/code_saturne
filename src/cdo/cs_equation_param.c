@@ -3028,13 +3028,14 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
-  cs_flag_t  bc_flag = cs_cdo_bc_get_flag(bc_type);
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
                                           cs_get_bdy_zone_id(z_name),
                                           CS_FLAG_STATE_UNIFORM, // state flag
-                                          bc_flag, // meta
+                                          meta_flag,
                                           (void *)values);
 
   int  new_id = eqp->n_bc_defs;
@@ -3108,11 +3109,14 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
                                           z_id,
                                           state_flag,
-                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          meta_flag,
                                           (void *)&input);
 
   int  new_id = eqp->n_bc_defs;
@@ -3184,11 +3188,14 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                      .input = input,
                                      .free_input = NULL };
 
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
                                           z_id,
                                           0, // state
-                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          meta_flag,
                                           &ac);
 
   int  new_id = eqp->n_bc_defs;

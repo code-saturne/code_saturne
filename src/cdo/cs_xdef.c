@@ -64,6 +64,18 @@ BEGIN_C_DECLS
  * Global static variables
  *============================================================================*/
 
+static const char *_xdef_type_name[]
+  = {"CS_XDEF_BY_ANALYTIC_FUNCTION",
+     "CS_XDEF_BY_ARRAY",
+     "CS_XDEF_BY_DOF_FUNCTION",
+     "CS_XDEF_BY_FIELD",
+     "CS_XDEF_BY_FUNCTION",
+     "CS_XDEF_BY_QOV",
+     "CS_XDEF_BY_SUB_DEFINITIONS",
+     "CS_XDEF_BY_TIME_FUNCTION",
+     "CS_XDEF_BY_VALUE",
+     "out of range"};
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -927,6 +939,25 @@ cs_xdef_log(const char          *prefix,
   cs_log_printf(CS_LOG_SETUP, "%s | Quadrature: %s\n",
                 _p, cs_quadrature_get_type_name(d->qtype));
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the cs_xdef_type's name string
+ *
+ * \param[in] xdef_type  type to query
+ *
+ * \return a pointer to mathing name string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_xdef_type_get_name(cs_xdef_type_t  xdef_type)
+{
+  if (xdef_type < 0 || xdef_type >= CS_N_XDEF_TYPES)
+    xdef_type = CS_N_XDEF_TYPES;
+
+  return _xdef_type_name[xdef_type];
 }
 
 /*----------------------------------------------------------------------------*/

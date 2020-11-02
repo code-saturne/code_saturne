@@ -417,6 +417,23 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update per variable boundary condition codes.
+ *
+ * \param[in]       nvar             number of variables requiring BC's
+ * \param[in]       itypfb           type of boundary for each face
+ * \param[in, out]  icodcl           boundary condition codes
+ * \param[in, out]  rcodcl           boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_compute(int         nvar,
+                               int        *itypfb,
+                               int        *icodcl,
+                               double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

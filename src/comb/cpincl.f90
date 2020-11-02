@@ -48,14 +48,14 @@ module cpincl
   ! Data relative to coal
 
   !> Number of coals
-  integer, save :: ncharb
+  integer(c_int), pointer, save :: ncharb
 
   ! By coal (given quantities)
 
   ! Granulometric distribution
 
   !> Number of classes per coal
-  integer, save :: nclpch(ncharm)
+  integer(c_int), pointer, save :: nclpch(:)
 
   !      - Proprietes sur charbon sec
   !        cch(ch)      --> Composition elementaire en C, H, O , S , N sur sec (%)
@@ -291,14 +291,16 @@ real(c_double), pointer, save :: xashch(:)
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_nclacp, p_ichcor,    &
+    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_ncharb, p_nclacp,    &
+                                        p_nclpch, p_ichcor,                    &
                                         p_xashch, p_diam20, p_dia2mn,          &
                                         p_rho20, p_rho2mn,                     &
                                         p_xmp0, p_xmash)                       &
       bind(C, name='cs_f_cpincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_nclacp, p_ichcor,          &
+      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_ncharb, p_nclacp,          &
+                                  p_nclpch, p_ichcor,                          &
                                   p_xashch, p_diam20, p_dia2mn,                &
                                   p_rho20, p_rho2mn,                           &
                                   p_xmp0, p_xmash
@@ -328,19 +330,23 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ico2, p_ih2o, p_nclacp, p_ichcor, p_xashch,             &
-                   p_diam20, p_dia2mn, p_rho20, p_rho2mn, p_xmp0, p_xmash
+    type(c_ptr) :: p_ico2, p_ih2o, p_ncharb, p_nclacp, p_nclpch, p_ichcor, &
+                   p_xashch, p_diam20, p_dia2mn, p_rho20, p_rho2mn, &
+                   p_xmp0, p_xmash
 
-    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_nclacp, p_ichcor,        &
-                                  p_xashch, p_diam20, p_dia2mn,              &
-                                  p_rho20, p_rho2mn,     &
+    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_ncharb, p_nclacp, &
+                                  p_nclpch, p_ichcor, &
+                                  p_xashch, p_diam20, p_dia2mn, &
+                                  p_rho20, p_rho2mn, &
                                   p_xmp0, p_xmash)
 
     call c_f_pointer(p_ico2, ico2)
     call c_f_pointer(p_ih2o, ih2o)
 
+    call c_f_pointer(p_ncharb, ncharb)
     call c_f_pointer(p_nclacp, nclacp)
 
+    call c_f_pointer(p_nclpch, nclpch, [ncharm])
     call c_f_pointer(p_ichcor, ichcor, [nclcpm])
 
     call c_f_pointer(p_xashch, xashch, [ncharm])

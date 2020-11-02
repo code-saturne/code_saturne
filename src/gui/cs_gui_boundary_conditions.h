@@ -61,11 +61,7 @@ BEGIN_C_DECLS
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
-                               const int  *nozppm,
-                               const int  *ncharm,
-                               const int  *ncharb,
-                               const int  *nclpch,
+void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
