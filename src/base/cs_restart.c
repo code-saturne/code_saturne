@@ -532,7 +532,7 @@ _write_ent_values(const cs_restart_t     *r,
   cs_lnum_t  block_buf_size = 0;
 
   cs_datatype_t elt_type = CS_DATATYPE_NULL;
-  size_t      nbr_byte_ent;
+  size_t      nbr_byte_ent = 0;
   cs_byte_t  *buffer = NULL;
 
   cs_block_dist_info_t bi;

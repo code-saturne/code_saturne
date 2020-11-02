@@ -3980,7 +3980,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\nCell global numbering:\n");
     for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
-      bft_printf("   < %7ld >  %12llu\n", i,
+      bft_printf("   < %7ld >  %12llu\n", (long)i,
                  (unsigned long long)(mesh->global_cell_num[i]));
     bft_printf("\n");
 
@@ -4001,7 +4001,8 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("n_std_ghost_cells:        %ld\n",
                (long)halo->n_elts[CS_HALO_STANDARD]);
     bft_printf("n_ext_ghost_cells:        %ld\n",
-               halo->n_elts[CS_HALO_EXTENDED] - halo->n_elts[CS_HALO_STANDARD]);
+               (long)(  halo->n_elts[CS_HALO_EXTENDED]
+                      - halo->n_elts[CS_HALO_STANDARD]));
 
     for (int i = 0; i < halo->n_c_domains; i++) {
 

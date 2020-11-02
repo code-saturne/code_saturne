@@ -501,11 +501,12 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
 
   /* Write header */
   char header[] = "Exported from code_saturne";
-  memcpy(buf, header, 80);
+  memset(buf, 0, 80);
+  memcpy(buf, header, strlen(header));
 
   /* Cut number of triangles in 4 8bytes unsigned int */
   uint32_t ntri = (uint32_t)stl_mesh->n_faces;
-  _cut32(buf+80,ntri);
+  _cut32(buf+80, ntri);
 
   fwrite(buf, 84, 1, fp);
 

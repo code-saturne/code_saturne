@@ -4550,11 +4550,18 @@ _cells_locality_renumbering(cs_mesh_t                 *mesh,
     break;
 
   default:
-    bft_printf
-      (_("\n"
-         " Cell prenumbering of type: %s\n"
-         "   not supported in this build.\n"),
-       _(_cell_renum_name[algorithm]));
+    if (algorithm <= CS_RENUMBER_CELLS_NONE)
+      bft_printf
+        (_("\n"
+           " Cell prenumbering of type: %s\n"
+           "   not supported in this build.\n"),
+         _(_cell_renum_name[algorithm]));
+    else
+      bft_printf
+        (_("\n"
+           " Cell prenumbering of type: %d\n"
+           "   not supported in this build.\n"),
+         (int)algorithm);
 
     retval = -1;
     break;

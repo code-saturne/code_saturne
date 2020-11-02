@@ -528,7 +528,7 @@ _get_nox_reburning(cs_tree_node_t  *tn_nox,
  * Atmospheric flows: read of meteorological file of data
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _gui_atmo_get_set_meteo_file(void)
 {
   const char path_af[] = "thermophysical_models/atmospheric_flows";

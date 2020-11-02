@@ -1055,15 +1055,13 @@ _read_dimensions(cs_mesh_t          *mesh,
  *   mb       <-> pointer to mesh builder helper structure
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _read_cartesian_dimensions(cs_mesh_t         *mesh,
                            cs_mesh_builder_t *mb)
 {
-
   cs_gnum_t _nx = cs_mesh_cartesian_get_ncells(0);
   cs_gnum_t _ny = cs_mesh_cartesian_get_ncells(1);
   cs_gnum_t _nz = cs_mesh_cartesian_get_ncells(2);
-  cs_gnum_t n_elts = _nx * _ny * _nz;
 
   /* Get total number of cells */
   mesh->n_g_cells = _nx * _ny * _nz;
@@ -1120,7 +1118,6 @@ _read_cartesian_dimensions(cs_mesh_t         *mesh,
     _buf[2] = '\0';
   }
   mesh->group[18] = '\0';
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1260,7 +1257,7 @@ _inverse_transf_matrix(double  a[3][4],
 
   double abs_pivot, abs_a_ki, factor;
   double _a[3][4];
-  double _a_swap[3], _b_swap[3];
+  double _a_swap[4], _b_swap[4];
 
   /* Copy array (avoid modifying a), and initialize inverse */
 
