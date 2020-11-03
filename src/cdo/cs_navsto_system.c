@@ -622,19 +622,17 @@ cs_navsto_system_init_setup(void)
   int  p_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
   nsp->post_flag |= CS_NAVSTO_POST_VELOCITY_DIVERGENCE;
-  if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE) {
 
-    ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
-                                                      p_mask,
-                                                      location_id,
-                                                      1, /* dimension */
-                                                      has_previous);
+  /* Always post-process the velocity divergence */
+  ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
+                                                    p_mask,
+                                                    location_id,
+                                                    1, /* dimension */
+                                                    has_previous);
 
-    /* Set default value for keys related to log and post-processing */
-    cs_field_set_key_int(ns->velocity_divergence, log_key, 1);
-    cs_field_set_key_int(ns->velocity_divergence, post_key, field_post_flag);
-
-  }
+  /* Set default value for keys related to log and post-processing */
+  cs_field_set_key_int(ns->velocity_divergence, log_key, 1);
+  cs_field_set_key_int(ns->velocity_divergence, post_key, field_post_flag);
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
