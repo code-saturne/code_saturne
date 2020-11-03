@@ -1186,7 +1186,8 @@ class syrthes_domain(base_domain):
                  n_procs_weight = None,
                  n_procs_min = 1,
                  n_procs_max = None,
-                 n_procs_radiation = None):
+                 n_procs_radiation = None,
+                 verbose = True):
 
         base_domain.__init__(self,
                              package,
@@ -1229,7 +1230,7 @@ class syrthes_domain(base_domain):
 
         ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
 
-        source_syrthes_env(self.package)
+        source_syrthes_env(self.package, verbose)
 
         self.ld_library_path = os.getenv('LD_LIBRARY_PATH')
 

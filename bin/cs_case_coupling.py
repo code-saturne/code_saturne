@@ -175,7 +175,8 @@ def coupling(package,
                                      param = d.get('param'),
                                      n_procs_weight = d.get('n_procs_weight'),
                                      n_procs_min = d.get('n_procs_min'),
-                                     n_procs_max = d.get('n_procs_max'))
+                                     n_procs_max = d.get('n_procs_max'),
+                                     verbose = verbose)
 
             except Exception:
                 err_str = 'Cannot create SYRTHES domain. Opt = ' + d.get('opt') + '\n'
