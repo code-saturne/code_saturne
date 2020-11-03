@@ -75,10 +75,12 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 enum {
+
   CS_TURB_TYPE_NONE = 0,
   CS_TURB_RANS = 1,
   CS_TURB_LES = 2,
   CS_TURB_HYBRID = 3
+
 };
 
 /*----------------------------------------------------------------------------
@@ -86,9 +88,11 @@ enum {
  *----------------------------------------------------------------------------*/
 
 enum {
+
   CS_TURB_ALGEBRAIC = 0,
   CS_TURB_FIRST_ORDER = 1,
   CS_TURB_SECOND_ORDER = 2
+
 };
 
 /*----------------------------------------------------------------------------
@@ -96,10 +100,12 @@ enum {
  *----------------------------------------------------------------------------*/
 
 enum {
+
   CS_HYBRID_NONE = 0,
   CS_HYBRID_DES  = 1,
   CS_HYBRID_DDES = 2,
   CS_HYBRID_SAS  = 3
+
 };
 
 /* turbulence model general options descriptor */
@@ -154,9 +160,11 @@ typedef struct {
 /*------------------------------------------------------------------*/
 
 typedef struct {
+
   double        almax;        /* characteristic macroscopic length of the
                                  domain */
   double        uref;         /* characteristic flow velocity */
+
 } cs_turb_ref_values_t;
 
 /* RANS turbulence model descriptor */

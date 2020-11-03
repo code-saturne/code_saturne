@@ -1451,7 +1451,8 @@ cs_turb_compute_constants(void)
       cs_turb_cddes = 0.65;
     else if (cs_glob_turb_model->hybrid_turb == 1)
       cs_turb_cddes = 0.61;
-  } else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K){
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     cs_turb_cddes = 0.60;
   }
 
