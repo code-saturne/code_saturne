@@ -179,7 +179,7 @@ _inlet_sum(int                          var_id,
            cs_lnum_t                    n_faces,
            const cs_lnum_t             *faces,
            cs_real_t                   *balance_w,
-           int                          nvar,
+           cs_lnum_t                    nvar,
            cs_real_t                    rcodcl[],
            cs_real_t                    inlet_sum[])
 {
@@ -243,7 +243,7 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
                           const cs_boundary_t        *boundaries,
                           const cs_equation_param_t  *eqp,
                           const cs_xdef_t            *def,
-                          int                         var_id,
+                          cs_lnum_t                   var_id,
                           int                        *icodcl,
                           double                     *rcodcl)
 {
@@ -301,7 +301,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
                       const cs_boundary_t        *boundaries,
                       const cs_equation_param_t  *eqp,
                       const cs_xdef_t            *def,
-                      int                         var_id,
+                      cs_lnum_t                   var_id,
                       cs_real_t                   t_eval,
                       int                        *icodcl,
                       double                     *rcodcl)
@@ -375,8 +375,8 @@ static void
 _compute_hmg_neumann_bc(const cs_mesh_t            *mesh,
                         const cs_equation_param_t  *eqp,
                         const cs_xdef_t            *def,
-                        int                         nvar,
-                        int                         var_id,
+                        cs_lnum_t                   nvar,
+                        cs_lnum_t                   var_id,
                         int                        *icodcl,
                         double                     *rcodcl)
 {
@@ -427,8 +427,8 @@ static void
 _compute_neumann_bc(const cs_mesh_t            *mesh,
                     const cs_equation_param_t  *eqp,
                     const cs_xdef_t            *def,
-                    int                         nvar,
-                    int                         var_id,
+                    cs_lnum_t                   nvar,
+                    cs_lnum_t                   var_id,
                     cs_real_t                   t_eval,
                     int                        *icodcl,
                     double                     *rcodcl)
