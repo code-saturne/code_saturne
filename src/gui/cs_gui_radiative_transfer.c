@@ -291,7 +291,7 @@ cs_gui_radiative_transfer_parameters(void)
                               &cs_glob_rad_transfer_params->iimpar);
     cs_gui_node_get_child_int(tn0, "intensity_resolution_listing_printing",
                               &cs_glob_rad_transfer_params->verbosity);
-    if (!cs_gui_get_activ_thermophysical_model()) {
+    if (cs_gui_get_activ_thermophysical_model()) {
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
         cs_glob_rad_transfer_params->imodak = 1;

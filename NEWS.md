@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix GUI handling of radiation + combustion "Modak" parameter
+  (GitHub issue #68).
+
 - Preprocessor: fix handling of "--log" option in next-to last position
   (could overwrite mesh, but issue only if called outside scripts).
 
