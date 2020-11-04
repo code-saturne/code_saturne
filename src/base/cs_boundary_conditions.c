@@ -239,7 +239,7 @@ _inlet_sum(int                          var_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_dirichlet_hmg_bc(const cs_mesh_t            *mesh,
+_compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
                           const cs_boundary_t        *boundaries,
                           const cs_equation_param_t  *eqp,
                           const cs_xdef_t            *def,
@@ -256,26 +256,26 @@ _compute_dirichlet_hmg_bc(const cs_mesh_t            *mesh,
   cs_boundary_type_t boundary_type
     = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
 
-  const int wall_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  const int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
 
   for (int coo_id = 0; coo_id < def->dim; coo_id++) {
 
-    int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
-    cs_real_t  *_rcodcl = rcodcl + (var_id+coo_id)*n_b_faces;
+    int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+    cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
 
     if (face_ids == NULL) {
 #     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-        _icodcl[i] = wall_type;
-        _rcodcl[i] = 0;
+        _icodcl[i]  = bc_type;
+        _rcodcl1[i] = 0;
       }
     }
     else {
 #     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
         const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
-        _icodcl[elt_id] = wall_type;
-        _rcodcl[elt_id] = 0;
+        _icodcl[elt_id]  = bc_type;
+        _rcodcl1[elt_id] = 0;
       }
     }
   }
@@ -315,7 +315,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   cs_boundary_type_t boundary_type
     = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
 
-  const int wall_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  const int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
 
   switch(def->type) {
 
@@ -325,22 +325,150 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 
       for (int coo_id = 0; coo_id < def->dim; coo_id++) {
 
-        int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
-        cs_real_t  *_rcodcl = rcodcl + (var_id+coo_id)*n_b_faces;
+        int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
 
         if (face_ids == NULL) {
 #         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
           for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-            _icodcl[i] = wall_type;
-            _rcodcl[i] = constant_val[coo_id];
+            _icodcl[i]  = bc_type;
+            _rcodcl1[i] = constant_val[coo_id];
           }
         }
         else {
 #         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
           for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
             const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
-            _icodcl[elt_id] = wall_type;
-            _rcodcl[elt_id] = constant_val[coo_id];
+            _icodcl[elt_id]  = bc_type;
+            _rcodcl1[elt_id] = constant_val[coo_id];
+          }
+        }
+
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Unhandled %s definition type."),
+              __func__, cs_xdef_type_get_name(def->type));
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the homogeneous Neumann BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       nvar        number of variables
+ * \param[in]       var_id      matching variable id
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_hmg_neumann_bc(const cs_mesh_t            *mesh,
+                        const cs_equation_param_t  *eqp,
+                        const cs_xdef_t            *def,
+                        int                         nvar,
+                        int                         var_id,
+                        int                        *icodcl,
+                        double                     *rcodcl)
+{
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+    int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+    cs_real_t  *_rcodcl3 = rcodcl + 2*n_b_faces*nvar
+                                  + (var_id+coo_id)*n_b_faces;
+
+    if (face_ids == NULL) {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        _icodcl[i] = 3;
+        _rcodcl3[i] = 0;
+      }
+    }
+    else {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+        _icodcl[elt_id] = 3;
+        _rcodcl3[elt_id] = 0;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       nvar        number of variables
+ * \param[in]       var_id      matching variable id
+ * \param[in]       t_eval      time at which one evaluates the boundary cond.
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_neumann_bc(const cs_mesh_t            *mesh,
+                    const cs_equation_param_t  *eqp,
+                    const cs_xdef_t            *def,
+                    int                         nvar,
+                    int                         var_id,
+                    cs_real_t                   t_eval,
+                    int                        *icodcl,
+                    double                     *rcodcl)
+{
+  assert(eqp->dim*3 == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      /* Vector values per component
+         for CDO, scalar (1st component) for legacy */
+      const int dim = def->dim/3;
+      const cs_real_t *constant_vals = (cs_real_t *)def->context;
+
+      for (int coo_id = 0; coo_id < dim; coo_id++) {
+
+        const cs_real_t value = constant_vals[coo_id*3];
+
+        int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl3 = rcodcl + 2*n_b_faces*nvar
+                                      + (var_id+coo_id)*n_b_faces;
+
+        if (face_ids == NULL) {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            _icodcl[i]  = 3;
+            _rcodcl3[i] = value;
+          }
+        }
+        else {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+            _icodcl[elt_id]  = 3;
+            _rcodcl3[elt_id] = value;
           }
         }
 
@@ -1010,7 +1138,7 @@ cs_boundary_conditions_compute(int         nvar,
       switch (bc_type) {
 
       case CS_PARAM_BC_HMG_DIRICHLET:
-        _compute_dirichlet_hmg_bc(mesh,
+        _compute_hmg_dirichlet_bc(mesh,
                                   boundaries,
                                   eqp,
                                   def,
@@ -1028,6 +1156,27 @@ cs_boundary_conditions_compute(int         nvar,
                               t_eval,
                               icodcl,
                               rcodcl);
+        break;
+
+      case CS_PARAM_BC_HMG_NEUMANN:
+        _compute_hmg_neumann_bc(mesh,
+                                eqp,
+                                def,
+                                nvar,
+                                var_id,
+                                icodcl,
+                                rcodcl);
+        break;
+
+      case CS_PARAM_BC_NEUMANN:
+        _compute_neumann_bc(mesh,
+                            eqp,
+                            def,
+                            nvar,
+                            var_id,
+                            t_eval,
+                            icodcl,
+                            rcodcl);
         break;
 
       default:

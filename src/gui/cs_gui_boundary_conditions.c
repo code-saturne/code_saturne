@@ -109,7 +109,6 @@ typedef enum {
   EXCHANGE_COEFF_FORMULA,
   FLOW1,
   HYDRAULIC_DIAMETER,
-  NEUMANN,
   NEUMANN_FORMULA,
   NEUMANN_IMPLICIT,
   TURBULENT_INTENSITY,
@@ -118,7 +117,6 @@ typedef enum {
 typedef struct {
   double val1;             /* fortran array RCODCL(.,.,1) mapping             */
   double val2;             /* fortran array RCODCL(.,.,2) mapping             */
-  double val3;             /* fortran array RCODCL(.,.,3) mapping             */
 } cs_val_t;
 
 typedef struct {
@@ -154,7 +152,6 @@ typedef struct {
   double        *rhoin;    /* inlet density  (compressible model) */
   double        *tempin;   /* inlet temperature (compressible model) */
   double        *entin;    /* inlet total energy (compressible model) */
-  double        *preout;   /* outlet pressure for subsonic(compressible model)*/
   double        *dh;       /* inlet hydraulic diameter */
   double        *xintur;   /* inlet turbulent intensity */
   int          **type_code;  /* type of boundary for each variable */
@@ -187,6 +184,30 @@ static cs_gui_boundary_t *boundaries = NULL;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to equation parameters based on a field or equation name.
+ *
+ * parameters:
+ *   name <-- field or equation name
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+static cs_equation_param_t *
+_get_equation_param(const char  *name)
+{
+  cs_equation_param_t *eqp = NULL;
+
+  cs_field_t *f = cs_field_by_name_try(name);
+  if (f != NULL)
+    eqp = cs_field_get_equation_param(f);
+
+  /* FIXME: else get by equation name */
+
+  return eqp;
+}
 
 /*----------------------------------------------------------------------------
  * Return a node associated with a given zone's boundary condition definition.
@@ -341,7 +362,8 @@ static void
 _sliding_wall(cs_tree_node_t   *tn_vp,
               const char       *z_name)
 {
-  cs_field_t  *f = cs_field_by_name("velocity");
+  const char f_name[] = "velocity";
+  cs_field_t  *f = cs_field_by_name(f_name);
 
   cs_real_t value[3] = {0, 0, 0};
 
@@ -358,8 +380,7 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
     }
   }
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-  cs_equation_add_bc_by_value(eqp,
+  cs_equation_add_bc_by_value(_get_equation_param(f_name),
                               CS_PARAM_BC_DIRICHLET,
                               z_name,
                               value);
@@ -427,11 +448,13 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   if (dim > 1)
     tn_s = cs_tree_node_get_child(tn_s, "component");
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  cs_equation_param_t *eqp = _get_equation_param(f->name);
   const char *z_name = boundaries->label[izone];
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
 
-  cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  cs_real_t value[27] = {0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0};
   assert(dim <= 9);
 
   /* FIXME: we should not need a loop over components, but
@@ -462,13 +485,12 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
         }
       }
       else if (! strcmp(choice, "neumann")) {
-
+        /* Vector values per component for CDO,
+           scalar (1st component) for legacy */
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
         if (v != NULL) {
-          boundaries->type_code[f_id][izone] = NEUMANN;
-          boundaries->values[f_id][izone * dim + i].val3 = v[0];
+          value[i*3] = *v;
         }
-
       }
       else if (! strcmp(choice, "dirichlet_formula")) {
 
@@ -529,6 +551,12 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
     if (! strcmp(choice, "dirichlet"))
       cs_equation_add_bc_by_value(eqp,
                                   CS_PARAM_BC_DIRICHLET,
+                                  z_name,
+                                  value);
+
+    else if (! strcmp(choice, "neumann"))
+      cs_equation_add_bc_by_value(eqp,
+                                  CS_PARAM_BC_NEUMANN,
                                   z_name,
                                   value);
 
@@ -728,6 +756,8 @@ static void
 _outlet_compressible(cs_tree_node_t  *tn_bc,
                      int              izone)
 {
+  const char *z_name = boundaries->label[izone];
+
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_bc, "compressible_type");
 
   const char *choice = cs_tree_node_get_tag(tn, "choice");
@@ -738,11 +768,20 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
   else if (cs_gui_strcmp(choice, "subsonic_outlet")) {
     boundaries->itype[izone] = CS_SOPCF;
 
+    const char name[] = "pressure";
     tn = cs_tree_node_get_child(tn_bc, "dirichlet");
-    tn = cs_tree_node_get_sibling_with_tag(tn, "name", "pressure");
-    const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-    if (v != NULL)
-      boundaries->preout[izone] = v[0];
+    tn = cs_tree_node_get_sibling_with_tag(tn, "name", name);
+
+    if (tn != NULL) {
+      cs_real_t value = 0;
+      const  cs_real_t *v = cs_tree_node_get_values_real(tn);
+      if (v != NULL)
+        value = v[0];
+      cs_equation_add_bc_by_value(_get_equation_param(name),
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z_name,
+                                  &value);
+    }
   }
 }
 
@@ -758,15 +797,34 @@ static void
 _boundary_darcy(cs_tree_node_t  *tn_bc,
                 int              izone)
 {
+  const char *z_name = boundaries->label[izone];
+
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_bc, "hydraulicHead");
   const char *choice = cs_gui_node_get_tag(tn, "choice");
 
   tn = cs_tree_node_get_child(tn_bc, choice);
   tn = cs_tree_node_get_sibling_with_tag(tn, "name", "hydraulic_head");
 
-  if (   cs_gui_strcmp(choice, "dirichlet")
-      || cs_gui_strcmp(choice, "neumann")) {
-    cs_gui_node_get_real(tn, &boundaries->preout[izone]);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(head));
+  if (eqp == NULL)
+    eqp = _get_equation_param("pressure_head"); /* CDO version */
+
+  if (cs_gui_strcmp(choice, "dirichlet")) {
+    cs_real_t value = 0;
+    cs_gui_node_get_real(tn, &value);
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_DIRICHLET,
+                                z_name,
+                                &value);
+  }
+  else if (cs_gui_strcmp(choice, "neumann")) {
+    /* Vector values per component for CDO, scalar (1st component) for legacy */
+    cs_real_t value[3] = {0, 0, 0};
+    cs_gui_node_get_real(tn, value);
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_NEUMANN,
+                                z_name,
+                                value);
   }
   else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
     if (tn == NULL) { /* compatibility with inconsistant tag */
@@ -787,17 +845,26 @@ _boundary_darcy(cs_tree_node_t  *tn_bc,
  * Get pressure value for imposed pressure boundary
  *
  * parameters:
- *   tn_bc <-- tree node associated with boundary conditions
- *   izone <-- id of the current zone
+ *   tn_bc  <-- tree node associated with boundary conditions
+ *   z_name <-- id of the current zone
  *----------------------------------------------------------------------------*/
 
 static void
 _boundary_imposed_pressure(cs_tree_node_t  *tn_bc,
-                           int              izone)
+                           const char      *z_name)
 {
+  const char name[] = "pressure";
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_bc, "dirichlet");
-  tn = cs_tree_node_get_sibling_with_tag(tn, "name", "pressure");
-  cs_gui_node_get_real(tn, &boundaries->preout[izone]);
+  tn = cs_tree_node_get_sibling_with_tag(tn, "name", name);
+
+  cs_real_t value = 0;
+  cs_gui_node_get_real(tn, &value);
+
+  cs_equation_param_t *eqp = _get_equation_param(name);
+  cs_equation_add_bc_by_value(eqp,
+                              CS_PARAM_BC_DIRICHLET,
+                              z_name,
+                              &value);
 }
 
 /*-----------------------------------------------------------------------------
@@ -865,7 +932,6 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->direction_e, n_zones,  bool);
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
-  BFT_MALLOC(boundaries->preout,    n_zones,    double);
 
   if (cs_gui_strcmp(vars->model, "solid_fuels")) {
 
@@ -950,7 +1016,6 @@ _init_boundaries(void)
     boundaries->velocity_e[izone]  = false;
     boundaries->direction_e[izone] = false;
     boundaries->head_loss_e[izone] = false;
-    boundaries->preout[izone]    = 0;
     boundaries->locator[izone]   = NULL;
 
     if (cs_gui_strcmp(vars->model, "solid_fuels")) {
@@ -1008,7 +1073,6 @@ _init_boundaries(void)
         for (int ii = 0; ii < f->dim; ii++) {
           boundaries->values[i][izone * f->dim + ii].val1 = 1.e30;
           boundaries->values[i][izone * f->dim + ii].val2 = 1.e30;
-          boundaries->values[i][izone * f->dim + ii].val3 = 0.;
           boundaries->scalar_e[i][izone * f->dim + ii] = false;
         }
       }
@@ -1226,7 +1290,7 @@ _init_boundaries(void)
       }
     }
     else if (cs_gui_strcmp(nature, "imposed_p_outlet")) {
-      _boundary_imposed_pressure(tn, izone);
+      _boundary_imposed_pressure(tn, label);
     }
     else if (cs_gui_strcmp(nature, "groundwater")) {
       _boundary_darcy(tn, izone);
@@ -1524,16 +1588,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (f->type & CS_FIELD_VARIABLE) {
         switch (boundaries->type_code[f->id][izone]) {
-          case NEUMANN:
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              for (cs_lnum_t i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i)*n_b_faces + face_id] = 3;
-                rcodcl[2 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
-                  = boundaries->values[f->id][izone * f->dim + i].val3;
-              }
-            }
-            break;
 
           case DIRICHLET_FORMULA:
             {
@@ -2305,17 +2359,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           }
         }
       }
-      else if (cs_gui_strcmp(vars->model, "compressible_model")) {
-        if (boundaries->itype[izone] == CS_SOPCF) {
-          const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
-          const int var_key_id = cs_field_key_id("variable_id");
-          int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            rcodcl[ivar1 * n_b_faces + face_id] = boundaries->preout[izone];
-          }
-        }
-      }
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
@@ -2323,16 +2366,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         cs_lnum_t face_id = bz->elt_ids[elt_id];
         izfppp[face_id] = zone_nbr;
         itypfb[face_id] = CS_OUTLET;
-      }
-
-      /* imposed outlet pressure */
-      const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
-      const int var_key_id = cs_field_key_id("variable_id");
-      int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-        cs_lnum_t face_id = bz->elt_ids[elt_id];
-        icodcl[ivar1 * n_b_faces + face_id] = 1;
-        rcodcl[ivar1 * n_b_faces + face_id] = boundaries->preout[izone];
       }
     }
 
@@ -2411,22 +2444,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         cs_tree_node_t *tn_hh = cs_tree_node_get_child(tn_bc, "hydraulicHead");
         const char *choice_d = cs_gui_node_get_tag(tn_hh, "choice");
 
-        if (cs_gui_strcmp(choice_d, "dirichlet")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            icodcl[ivar1 * n_b_faces + face_id] = 1;
-            rcodcl[ivar1 * n_b_faces + face_id] = boundaries->preout[izone];
-          }
-        }
-        else if (cs_gui_strcmp(choice_d, "neumann")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            icodcl[ivar1 * n_b_faces + face_id] = 3;
-            rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + face_id]
-              = boundaries->preout[izone];
-          }
-        }
-        else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
+        if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
           cs_real_t *new_vals = cs_meg_boundary_function(bz,
                                                          "hydraulic_head",
                                                          "dirichlet_formula");
@@ -2970,7 +2988,6 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->direction_e);
     BFT_FREE(boundaries->scalar_e);
     BFT_FREE(boundaries->head_loss_e);
-    BFT_FREE(boundaries->preout);
     BFT_FREE(boundaries->locator);
 
     BFT_FREE(boundaries);
