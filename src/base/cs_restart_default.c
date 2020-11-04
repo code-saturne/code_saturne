@@ -1579,18 +1579,22 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
          "A synthetic-eddy-method for generating inflow conditions
           for large-eddy simulations", Jarrin & al., 2006. */
 
-      int  n_inlets = 0, n_structures = 0, volume_mode = 0;
+      /* FIXME: it is not clear whether everything is initialized;
+         this code should maybe be moved to a function in cs_les_inflow.c,
+         using the full inflow structure defined for the computation,
+         or else use a specific function from that code with a
+         simpler initialization path. */
 
-      cs_user_les_inflow_init(&n_inlets, &n_structures, &volume_mode);
+      int  n_structures = cs_les_synthetic_eddy_get_n_restart_structures();
 
       cs_inflow_sem_t *sem_in;
       BFT_MALLOC(sem_in, 1, cs_inflow_sem_t);
       sem_in->n_structures = n_structures;
-      sem_in->volume_mode = volume_mode;
+      sem_in->volume_mode = 1;
       BFT_MALLOC(sem_in->position, sem_in->n_structures, cs_real_3_t);
       BFT_MALLOC(sem_in->energy, sem_in->n_structures, cs_real_3_t);
 
-      /* Velcocity fluctuations before modifications with the Lund's method */
+      /* Velocity fluctuations before modifications with Lund's method */
       cs_real_3_t  *fluctuations = NULL;
       BFT_MALLOC(fluctuations, n_cells, cs_real_3_t);
       cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)fluctuations);
@@ -1610,12 +1614,9 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       int initialize = 1;
       int verbosity = 1;
       cs_real_t t_cur = 0;
-      int *n_faces = NULL;
-      int number_faces = 1;
-      n_faces = &number_faces;
 
       cs_les_synthetic_eddy_method(n_cells,
-                                   n_faces,
+                                   NULL,
                                    point_coordinates,
                                    point_weight,
                                    initialize, verbosity,
@@ -1640,6 +1641,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       BFT_FREE(gradv);
       BFT_FREE(v_k);
       BFT_FREE(v_eps);
+      BFT_FREE(sem_in->position);
+      BFT_FREE(sem_in->energy);
       BFT_FREE(sem_in);
 
     }

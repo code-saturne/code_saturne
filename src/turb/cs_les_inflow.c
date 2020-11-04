@@ -51,6 +51,7 @@
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -103,8 +104,8 @@ struct _cs_inlet_t {
 
   /* Geometric informations */
 
-  cs_lnum_t              n_faces;
-  cs_lnum_t             *face_ids;
+  const cs_zone_t       *zone;               /* Pointer to associated
+                                                boundary zone */
 
   cs_real_3_t           *face_center;
   cs_real_t             *face_surface;
@@ -112,8 +113,8 @@ struct _cs_inlet_t {
   /* Mean flow information */
 
   cs_real_t              vel_m[3];           /* Mean velocity */
-  cs_real_t              kinetic_energy;     /* Level of energy */
-  cs_real_t              dissipation_rate;   /* Level of dissipation rate */
+  cs_real_t              k_r;                /* Level of energy */
+  cs_real_t              eps_r;              /* Level of dissipation rate */
 
   /* Counters */
 
@@ -161,6 +162,13 @@ static int            cs_glob_inflow_n_inlets    = 0;
 static cs_inlet_t   **cs_glob_inflow_inlet_array = NULL;
 static cs_restart_t  *_inflow_restart = NULL;
 
+static bool  _allow_restart_read = true;
+static bool  _allow_restart_write = true;
+
+/* SEM when restarting from another turbulence model */
+
+static int   _n_sem_vol_restart_structures = 50;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -196,7 +204,7 @@ _random_method(cs_lnum_t    n_points,
  *   inflow            --> Specific structure for Batten method
  *   time              --> Current time at the present iteration
  *   rij_l             --> Reynolds stresses at each point
- *   dissipation_rate  --> Dissipation rate at each point
+ *   eps_r             --> Dissipation rate at each point
  *   fluctuations      <-- Velocity fluctuations generated at each point
  *----------------------------------------------------------------------------*/
 
@@ -207,7 +215,7 @@ _batten_method(cs_lnum_t            n_points,
                cs_inflow_batten_t  *inflow,
                cs_real_t            time,
                const cs_real_6_t   *rij_l,
-               const cs_real_t     *dissipation_rate,
+               const cs_real_t     *eps_r,
                cs_real_3_t         *fluctuations)
 {
   cs_lnum_t  point_id;
@@ -306,10 +314,10 @@ _batten_method(cs_lnum_t            n_points,
       -  Lb = Tb * Vb     ( = k^(3/2) / epsilon )
     */
 
-    cs_real_t kinetic_energy = 0.5 * cs_math_6_trace(rij_l[point_id]);
+    cs_real_t k_r = 0.5 * cs_math_6_trace(rij_l[point_id]);
 
-    cs_real_t time_scale     = kinetic_energy / dissipation_rate[point_id];
-    cs_real_t velocity_scale = sqrt(kinetic_energy);
+    cs_real_t time_scale     = k_r / eps_r[point_id];
+    cs_real_t velocity_scale = sqrt(k_r);
     cs_real_t lenght_scale   = time_scale * velocity_scale;
 
     /* Spectral position of the point in space and time */
@@ -373,9 +381,9 @@ _batten_method(cs_lnum_t            n_points,
  *----------------------------------------------------------------------------*/
 
 static void
-_rescale_flowrate(cs_lnum_t     n_points,
-                  cs_lnum_t    *face_ids,
-                  cs_real_3_t  *fluctuations)
+_rescale_flowrate(cs_lnum_t         n_points,
+                  const cs_lnum_t   face_ids[],
+                  cs_real_3_t       fluctuations[])
 {
   /* Compute the mass flow rate of the fluctuating field */
   /* and the area of the inlet */
@@ -460,262 +468,11 @@ _rescale_flowrate(cs_lnum_t     n_points,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Add a new inlet for synthetic turbulence inflow generation
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_inflow_add_inlet(cs_les_inflow_type_t   type,
-                     cs_lnum_t              n_faces,
-                     const cs_lnum_t       *face_ids,
-                     int                    n_entities,
-                     int                    verbosity,
-                     const cs_real_t       *vel_m,
-                     cs_real_t              kinetic_energy,
-                     cs_real_t              dissipation_rate)
-{
-  cs_lnum_t  face_id;
-
-  int       coo_id;
-
-  cs_inlet_t   *inlet = NULL;
-
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
-
-  /* Allocating inlet structures */
-  /*-----------------------------*/
-
-  BFT_REALLOC(cs_glob_inflow_inlet_array,
-              cs_glob_inflow_n_inlets + 1, cs_inlet_t *);
-
-  BFT_MALLOC(inlet, 1, cs_inlet_t);
-
-  /* Mesh */
-
-  inlet->n_faces = n_faces;
-
-  inlet->face_ids  = NULL;
-  inlet->face_center = NULL;
-  inlet->face_surface = NULL;
-
-  if (inlet->n_faces > 0) {
-
-    BFT_MALLOC(inlet->face_ids, inlet->n_faces, cs_lnum_t);
-    for (face_id = 0; face_id < n_faces; face_id++)
-      inlet->face_ids[face_id] = face_ids[face_id];
-
-    BFT_MALLOC(inlet->face_center, inlet->n_faces, cs_real_3_t);
-    for (face_id = 0; face_id < inlet->n_faces; face_id++) {
-      for (coo_id = 0; coo_id < 3; coo_id++)
-        inlet->face_center[face_id][coo_id]
-          = mq->b_face_cog[(face_ids[face_id])*3 + coo_id];
-    }
-
-    BFT_MALLOC(inlet->face_surface, inlet->n_faces, cs_real_t);
-    for (face_id = 0; face_id < inlet->n_faces; face_id++)
-      inlet->face_surface[face_id]
-        = cs_math_3_norm(mq->b_face_normal + face_ids[face_id]*3);
-
-  }
-
-  /* Turbulence level */
-
-  for (coo_id = 0; coo_id < 3; coo_id++)
-    inlet->vel_m[coo_id] = vel_m[coo_id];
-
-  inlet->kinetic_energy   = kinetic_energy;
-  inlet->dissipation_rate = dissipation_rate;
-
-  /* Generation method of synthetic turbulence */
-  /*-------------------------------------------*/
-
-  if (type > 3)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Invalid choice of synthetic turbulence generation method (%d).\n"
-         "Valid choices are:\n"
-         "\t0 -> laminar\n\t1 -> random\n\t2 -> batten\n\t3 -> SEM\n"),
-       type);
-  else
-    inlet->type = type;
-
-  switch(inlet->type) {
-
-  case CS_INFLOW_LAMINAR:
-
-    inlet->inflow = NULL;
-    break;
-
-  case CS_INFLOW_RANDOM:
-
-    inlet->inflow = NULL;
-    break;
-
-  case CS_INFLOW_BATTEN:
-
-    {
-      cs_inflow_batten_t *inflow;
-
-      if (n_entities <= 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The number of modes for the Batten method "
-                    "must be strictly positive. %d is given here.\n"),
-                  n_entities);
-
-      BFT_MALLOC(inflow, 1, cs_inflow_batten_t);
-
-      inflow->n_modes = n_entities;
-
-      BFT_MALLOC(inflow->frequency,     inflow->n_modes, cs_real_t);
-      BFT_MALLOC(inflow->wave_vector,   inflow->n_modes, cs_real_3_t);
-      BFT_MALLOC(inflow->amplitude_cos, inflow->n_modes, cs_real_3_t);
-      BFT_MALLOC(inflow->amplitude_sin, inflow->n_modes, cs_real_3_t);
-
-      inlet->inflow = inflow;
-    }
-    break;
-
-  case CS_INFLOW_SEM:
-
-    {
-      cs_inflow_sem_t *inflow;
-
-      if (n_entities <= 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The number of eddies for the SEM "
-                    "must be strictly positive. %d is given here.\n"),
-                  n_entities);
-
-      BFT_MALLOC(inflow, 1, cs_inflow_sem_t);
-      inflow->volume_mode=0;
-      inflow->n_structures = n_entities;
-
-      BFT_MALLOC(inflow->position, inflow->n_structures, cs_real_3_t);
-      BFT_MALLOC(inflow->energy,   inflow->n_structures, cs_real_3_t);
-
-      inlet->inflow = inflow;
-    }
-    break;
-
-  }
-
-  /* Others */
-  /*--------*/
-
-  inlet->initialize = 1;
-
-  inlet->verbosity = verbosity;
-
-  inlet->wt_tot  = 0.;
-  inlet->cpu_tot = 0.;
-
-  /* Global array of inlets */
-  /*------------------------*/
-
-  cs_glob_inflow_inlet_array[cs_glob_inflow_n_inlets] = inlet;
-  cs_glob_inflow_n_inlets++;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Creation of a structure for the inlets
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(defsyn, DEFSYN)
-(
- int  *n_inlets,                    /* <-- number of inlets                   */
- int  *n_structures,                /* <-- number of structures               */
- int  *volume_mode                  /* <-- Variable to use classic SEM or
-                                           volume SEM                         */
-)
-{
-  int inlet_id;
-
-  /* Definition of the global parameters of the inlets */
-
-  cs_user_les_inflow_init(n_inlets, n_structures, volume_mode);
-
-  for (inlet_id = 0; inlet_id < *n_inlets; inlet_id++) {
-
-    const cs_mesh_t  *mesh = cs_glob_mesh;
-
-    /* Initializations */
-
-    cs_les_inflow_type_t  type = CS_INFLOW_LAMINAR;
-    cs_lnum_t  n_faces = 0;
-    int        n_entities = *n_structures;
-    int        verbosity = 0;
-
-    cs_lnum_t *face_ids = NULL;
-
-    cs_real_t  vel_m[3] = {0., 0., 0.};
-
-    cs_real_t  kinetic_energy = 0.;
-    cs_real_t  dissipation_rate = 0.;
-
-    BFT_MALLOC(face_ids, mesh->n_b_faces, cs_lnum_t);
-
-    for (cs_lnum_t j = 0; j < mesh->n_b_faces; j++)
-      face_ids[j] = 0;
-
-    bft_printf(_(" Definition of the LES inflow boundary \"%d\" \n"),
-               cs_glob_inflow_n_inlets + 1);
-
-    /* User definition of the parameters of the inlet */
-
-    cs_user_les_inflow_define(inlet_id,
-                              &type,
-                              &verbosity,
-                              &n_faces,
-                              face_ids,
-                              vel_m,
-                              &kinetic_energy,
-                              &dissipation_rate);
-
-    cs_gnum_t n_faces_g = n_faces;
-    cs_parall_counter(&n_faces_g, 1);
-
-    if (n_faces_g == 0 && volume_mode ==0)
-      bft_error(__FILE__, __LINE__, 0,
-               _("Abort while defing the LES inlets.\n"
-                 "The LES inlet \"%d\" does not contain any boundary face.\n"
-                 "Verify the definition of the LES inlets "
-                 "(cs_user_les_inflow.f90 file).\n"), inlet_id);
-
-    /* Add an inlet to the global inlets array */
-
-    _cs_inflow_add_inlet(type,
-                         n_faces,
-                         face_ids,
-                         n_entities,
-                         verbosity,
-                         vel_m,
-                         kinetic_energy,
-                         dissipation_rate);
-
-    BFT_FREE(face_ids);
-
-    bft_printf(_("   Method: %d (%s)\n"
-                 "   Number of boundary faces (global): %llu\n"),
-               type, cs_inflow_type_name[type], (unsigned long long)n_faces_g);
-
-    if (type == 2)
-      bft_printf(_("   Number of modes: %d\n\n"),n_entities);
-    else if (type == 3)
-      bft_printf(_("   Number of structures: %d\n\n"),n_entities);
-    else
-      bft_printf(_("   \n"));
-
-  }
-
-  bft_printf(" ------------------------------------------------------------- \n"
-             "\n");
-}
 
 /*----------------------------------------------------------------------------
  * General synthetic turbulence generation
@@ -747,7 +504,7 @@ void CS_PROCF(synthe, SYNTHE)
 
     cs_real_3_t *vel_m_l = NULL;
     cs_real_6_t *rij_l = NULL;
-    cs_real_t   *dissipation_rate = NULL;
+    cs_real_t   *eps_r = NULL;
 
     cs_real_3_t *fluctuations = NULL;
 
@@ -756,60 +513,61 @@ void CS_PROCF(synthe, SYNTHE)
     wt_start  = cs_timer_wtime();
     cpu_start = cs_timer_cpu_time();
 
+    cs_lnum_t n_elts = inlet->zone->n_elts;
+    const cs_lnum_t *elt_ids = inlet->zone->elt_ids;
+
     /* Mean velocity profile, one-point statistics and dissipation rate */
     /*------------------------------------------------------------------*/
 
-    BFT_MALLOC(vel_m_l, inlet->n_faces, cs_real_3_t);
-    BFT_MALLOC(rij_l, inlet->n_faces, cs_real_6_t);
-    BFT_MALLOC(dissipation_rate,    inlet->n_faces, cs_real_t);
+    BFT_MALLOC(vel_m_l, n_elts, cs_real_3_t);
+    BFT_MALLOC(rij_l, n_elts, cs_real_6_t);
+    BFT_MALLOC(eps_r,    n_elts, cs_real_t);
 
     /* Initialization by the turbulence scales given by the user */
 
-    for (cs_lnum_t i = 0; i < inlet->n_faces; i++) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       for (int coo_id = 0; coo_id < 3; coo_id++)
         vel_m_l[i][coo_id] = inlet->vel_m[coo_id];
 
       for (int coo_id = 0; coo_id < 3; coo_id++)
-        rij_l[i][coo_id] = two_third*inlet->kinetic_energy;
+        rij_l[i][coo_id] = two_third*inlet->k_r;
 
       for (int coo_id = 3; coo_id < 6; coo_id++)
         rij_l[i][coo_id] = 0.;
 
-      dissipation_rate[i] = inlet->dissipation_rate;
+      eps_r[i] = inlet->eps_r;
 
     }
 
     /* Modification by the user */
 
-    cs_user_les_inflow_advanced(inlet_id,
-                                inlet->n_faces,
-                                inlet->face_ids,
+    cs_user_les_inflow_advanced(inlet->zone,
                                 vel_m_l,
                                 rij_l,
-                                dissipation_rate);
+                                eps_r);
 
     /* Generation of the synthetic turbulence */
     /*----------------------------------------*/
 
-    BFT_MALLOC(fluctuations, inlet->n_faces, cs_real_3_t);
-    cs_array_set_value_real(inlet->n_faces, 3, 0, (cs_real_t *)fluctuations);
+    BFT_MALLOC(fluctuations, n_elts, cs_real_3_t);
+    cs_array_set_value_real(n_elts, 3, 0, (cs_real_t *)fluctuations);
 
     switch(inlet->type) {
 
     case CS_INFLOW_LAMINAR:
       break;
     case CS_INFLOW_RANDOM:
-      _random_method(inlet->n_faces, fluctuations);
+      _random_method(n_elts, fluctuations);
       break;
     case CS_INFLOW_BATTEN:
-      _batten_method(inlet->n_faces,
+      _batten_method(n_elts,
                      inlet->face_center,
                      inlet->initialize,
                      (cs_inflow_batten_t *) inlet->inflow,
                      *ttcabs,
                      rij_l,
-                     dissipation_rate,
+                     eps_r,
                      fluctuations);
       break;
     case CS_INFLOW_SEM:
@@ -819,16 +577,16 @@ void CS_PROCF(synthe, SYNTHE)
                        "-------------------------------\n\n"
                        "SEM INFO, inlet \"%d\" \n\n"), inlet_id);
 
-        cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *) inlet->inflow;
+        cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
         if (inflowsem->volume_mode == 1){
-          cs_real_t dissiprate = dissipation_rate[0];
+          cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
           cs_real_t *point_weight = NULL;
 
           BFT_REALLOC(rij_l, n_cells, cs_real_6_t);
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
             for (cs_lnum_t j = 0; j < 3; j++)
-              rij_l[cell_id][j] = two_third*inlet->kinetic_energy;
+              rij_l[cell_id][j] = two_third*inlet->k_r;
             for (cs_lnum_t j = 3; j < 6; j++)
               rij_l[cell_id][j] = 0.;
           }
@@ -836,8 +594,8 @@ void CS_PROCF(synthe, SYNTHE)
           BFT_REALLOC(vel_m_l, n_cells, cs_real_3_t);
           cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)vel_m_l);
 
-          BFT_REALLOC(dissipation_rate, n_points, cs_real_t);
-          cs_array_set_value_real(n_cells, 1, dissiprate, dissipation_rate);
+          BFT_REALLOC(eps_r, n_points, cs_real_t);
+          cs_array_set_value_real(n_cells, 1, dissiprate, eps_r);
 
           cs_real_3_t *point_coordinates = NULL;
           BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
@@ -850,7 +608,7 @@ void CS_PROCF(synthe, SYNTHE)
           cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)fluctuations);
 
           cs_les_synthetic_eddy_method(cs_glob_mesh->n_cells,
-                                       inlet->face_ids,
+                                       elt_ids,
                                        point_coordinates,
                                        point_weight,
                                        inlet->initialize,
@@ -859,12 +617,12 @@ void CS_PROCF(synthe, SYNTHE)
                                        dt[0],
                                        vel_m_l,
                                        rij_l,
-                                       dissipation_rate,
+                                       eps_r,
                                        fluctuations);
         }
         else {
-          cs_les_synthetic_eddy_method(inlet->n_faces,
-                                       inlet->face_ids,
+          cs_les_synthetic_eddy_method(n_elts,
+                                       elt_ids,
                                        inlet->face_center,
                                        inlet->face_surface,
                                        inlet->initialize,
@@ -873,7 +631,7 @@ void CS_PROCF(synthe, SYNTHE)
                                        dt[0],
                                        vel_m_l,
                                        rij_l,
-                                       dissipation_rate,
+                                       eps_r,
                                        fluctuations);
         }
 
@@ -886,7 +644,7 @@ void CS_PROCF(synthe, SYNTHE)
 
     inlet->initialize = 0;
 
-    BFT_FREE(dissipation_rate);
+    BFT_FREE(eps_r);
 
     /* Rescaling of the synthetic fluctuations by the statistics */
     /*-----------------------------------------------------------*/
@@ -899,14 +657,14 @@ void CS_PROCF(synthe, SYNTHE)
                                     fluctuations);
       }
       else {
-        cs_les_rescale_fluctuations(inlet->n_faces,
+        cs_les_rescale_fluctuations(n_elts,
                                     rij_l,
                                     fluctuations);
       }
     }
 
     else if (inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN){
-      cs_les_rescale_fluctuations(inlet->n_faces,
+      cs_les_rescale_fluctuations(n_elts,
                                   rij_l,
                                   fluctuations);
     }
@@ -917,15 +675,15 @@ void CS_PROCF(synthe, SYNTHE)
     /*---------------------------------*/
 
     if (inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN){
-      _rescale_flowrate(inlet->n_faces,
-                        inlet->face_ids,
+      _rescale_flowrate(n_elts,
+                        elt_ids,
                         fluctuations);
     }
     else if (inlet->type == CS_INFLOW_SEM){
       cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
       if (inflowsem->volume_mode == 1) {
-          _rescale_flowrate(inlet->n_faces,
-                            inlet->face_ids,
+          _rescale_flowrate(n_elts,
+                            elt_ids,
                             fluctuations);
       }
       inflowsem->volume_mode=-1;
@@ -941,8 +699,8 @@ void CS_PROCF(synthe, SYNTHE)
     cs_real_t *rcodclv = rcodclu + n_b_faces;
     cs_real_t *rcodclw = rcodclv + n_b_faces;
 
-    for (cs_lnum_t i = 0; i < inlet->n_faces; i++) {
-      cs_lnum_t face_id = inlet->face_ids[i];
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t face_id = elt_ids[i];
 
       rcodclu[face_id] = vel_m_l[face_id][0] + fluctuations[face_id][0];
       rcodclv[face_id] = vel_m_l[face_id][1] + fluctuations[face_id][1];
@@ -964,6 +722,333 @@ void CS_PROCF(synthe, SYNTHE)
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Creation of structures for the LES inflows
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_initialize(void)
+{
+  /* Definition of the global parameters of the inlets */
+
+  cs_user_les_inflow_define();
+
+  cs_log_separator(CS_LOG_DEFAULT);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize turbulent inflow generation API.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_finalize(void)
+{
+  int coo_id;
+  int inlet_id;
+
+  if (cs_glob_inflow_n_inlets == 0)
+    return;
+
+  /* Destruction of each inlet structure */
+  /*-------------------------------------*/
+
+  for (inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
+
+    cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
+
+    bft_printf(_("\n"
+                 "Summary of synthetic turbulence generation for inlet \"%d\""
+                 " (%s) :\n\n"
+                 "  Accumulated wall-clock time:      %12.3f\n"),
+               inlet_id + 1, cs_inflow_type_name[inlet->type],
+               inlet->wt_tot);
+
+    if (cs_glob_rank_id < 0)
+      bft_printf(_("  Accumulated CPU time:             %12.3f\n"),
+                 inlet->cpu_tot);
+
+#if defined(HAVE_MPI)
+
+    else {
+
+      double cpu_min, cpu_max, cpu_tot;
+      double cpu_loc = inlet->cpu_tot;
+
+      MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
+                    cs_glob_mpi_comm);
+      MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
+                    cs_glob_mpi_comm);
+      MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
+                    cs_glob_mpi_comm);
+
+      bft_printf(_("  Accumulated CPU time:\n"
+                   "    local min:                      %12.3f\n"
+                   "    local max:                      %12.3f\n"
+                   "    mean:                           %12.3f\n"),
+                 cpu_min, cpu_max, cpu_tot/cs_glob_n_ranks);
+
+    }
+
+#endif
+
+    /* Mesh */
+
+    BFT_FREE(inlet->face_center);
+    BFT_FREE(inlet->face_surface);
+
+    /* Turbulence level */
+
+    for (coo_id = 0; coo_id < 3; coo_id++)
+      inlet->vel_m[coo_id] = 0.;
+
+    inlet->k_r   = 0.;
+    inlet->eps_r = 0.;
+
+    /* Generation method of synthetic turbulence */
+
+    inlet->initialize = 0;
+
+    switch(inlet->type) {
+
+    case CS_INFLOW_LAMINAR:
+
+      inlet->inflow = NULL;
+      break;
+
+    case CS_INFLOW_RANDOM:
+
+      inlet->inflow = NULL;
+      break;
+
+    case CS_INFLOW_BATTEN:
+
+      {
+        cs_inflow_batten_t *inflow = (cs_inflow_batten_t *) inlet->inflow;
+
+        BFT_FREE(inflow->frequency);
+        BFT_FREE(inflow->wave_vector);
+        BFT_FREE(inflow->amplitude_cos);
+        BFT_FREE(inflow->amplitude_sin);
+
+        BFT_FREE(inflow);
+
+        inlet->inflow = NULL;
+      }
+      break;
+
+    case CS_INFLOW_SEM:
+
+      {
+        cs_inflow_sem_t *inflow = (cs_inflow_sem_t *) inlet->inflow;
+
+        BFT_FREE(inflow->position);
+        BFT_FREE(inflow->energy);
+
+        BFT_FREE(inflow);
+
+        inlet->inflow = NULL;
+      }
+      break;
+
+    default:
+      break;
+
+    }
+
+    inlet->wt_tot  = 0.;
+    inlet->cpu_tot = 0.;
+
+    BFT_FREE(inlet);
+  }
+
+  /* Global array of inlets */
+  /*------------------------*/
+
+  cs_glob_inflow_n_inlets = 0;
+  BFT_FREE(cs_glob_inflow_inlet_array);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an inlet definition for synthetic turbulence inflow generation.
+ *
+ * For each LES inlet, the following parameters may be defined:
+ *
+ *  \remark:
+ *  - eps_r is used only for CS_INFLOW_BATTEN and CS_INFLOW_SEM types.
+ *  - Strictly positive values are required for k_r and eps_r.
+ *  - Finer definition of the statistics of the flow at the inlet
+ *    can be done later using \ref cs_user_les_inflow_advanced.
+ *
+ * \param[out]  type         type of inflow method at the inlet
+ * \param[out]  volume_mode  if true, generate turbulence over the whole domain
+ *                           (only if type is CS_INFLOW_SEM)
+ * \param[in]   zone         pointer to associated boundary zone
+ * \param[out]  n_entities   number of structures or modes
+ * \param[out]  verbosity    verbosity level
+ * \param[out]  vel_r        reference mean velocity
+ * \param[out]  k_r          reference turbulent kinetic energy
+ * \param[out]  eps_r        reference turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
+                        bool                   volume_mode,
+                        const cs_zone_t       *zone,
+                        int                    n_entities,
+                        int                    verbosity,
+                        const cs_real_t       *vel_r,
+                        cs_real_t              k_r,
+                        cs_real_t              eps_r)
+{
+  cs_inlet_t   *inlet = NULL;
+
+  bft_printf(_(" Definition of the LES inflow for zone \"%s\" \n"),
+             zone->name);
+
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+
+  /* Allocating inlet structures */
+  /*-----------------------------*/
+
+  BFT_REALLOC(cs_glob_inflow_inlet_array,
+              cs_glob_inflow_n_inlets + 1, cs_inlet_t *);
+
+  BFT_MALLOC(inlet, 1, cs_inlet_t);
+
+  /* Mesh */
+
+  cs_lnum_t n_elts = zone->n_elts;
+  const cs_lnum_t *face_ids = zone->elt_ids;
+
+  inlet->face_center = NULL;
+  inlet->face_surface = NULL;
+
+  if (n_elts > 0) {
+
+    BFT_MALLOC(inlet->face_center, n_elts, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+        inlet->face_center[i][coo_id]
+          = mq->b_face_cog[face_ids[i]*3 + coo_id];
+    }
+
+    BFT_MALLOC(inlet->face_surface, n_elts, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      inlet->face_surface[i]
+        = cs_math_3_norm(mq->b_face_normal + face_ids[i]*3);
+
+  }
+
+  /* Turbulence level */
+
+  if (vel_r != NULL) {
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+      inlet->vel_m[coo_id] = vel_r[coo_id];
+  }
+  else {
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+      inlet->vel_m[coo_id] = 0;
+  }
+
+  inlet->k_r   = k_r;
+  inlet->eps_r = eps_r;
+
+  /* Generation method of synthetic turbulence */
+  /*-------------------------------------------*/
+
+  if (type > 3)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Invalid choice of synthetic turbulence generation method (%d).\n"
+         "Valid choices are:\n"
+         "\t0 -> laminar\n\t1 -> random\n\t2 -> batten\n\t3 -> SEM\n"),
+       type);
+  else
+    inlet->type = type;
+
+  switch(inlet->type) {
+
+  case CS_INFLOW_LAMINAR:
+    inlet->inflow = NULL;
+    bft_printf(_("   \n"));
+    break;
+
+  case CS_INFLOW_RANDOM:
+    inlet->inflow = NULL;
+    bft_printf(_("   \n"));
+    break;
+
+  case CS_INFLOW_BATTEN:
+    {
+      if (n_entities <= 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The number of modes for the Batten method "
+                    "must be strictly positive. %d is given here.\n"),
+                  n_entities);
+
+      cs_inflow_batten_t *inflow;
+      BFT_MALLOC(inflow, 1, cs_inflow_batten_t);
+
+      inflow->n_modes = n_entities;
+
+      BFT_MALLOC(inflow->frequency,     inflow->n_modes, cs_real_t);
+      BFT_MALLOC(inflow->wave_vector,   inflow->n_modes, cs_real_3_t);
+      BFT_MALLOC(inflow->amplitude_cos, inflow->n_modes, cs_real_3_t);
+      BFT_MALLOC(inflow->amplitude_sin, inflow->n_modes, cs_real_3_t);
+
+      inlet->inflow = inflow;
+
+      bft_printf(_("   Number of modes: %d\n\n"),n_entities);
+    }
+    break;
+
+  case CS_INFLOW_SEM:
+    {
+      if (n_entities <= 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The number of eddies for the SEM "
+                    "must be strictly positive. %d is given here.\n"),
+                  n_entities);
+
+      cs_inflow_sem_t *inflow;
+      BFT_MALLOC(inflow, 1, cs_inflow_sem_t);
+      inflow->volume_mode = (volume_mode == true) ? 1 : 0;
+      inflow->n_structures = n_entities;
+
+      BFT_MALLOC(inflow->position, inflow->n_structures, cs_real_3_t);
+      BFT_MALLOC(inflow->energy,   inflow->n_structures, cs_real_3_t);
+
+      inlet->inflow = inflow;
+
+      bft_printf(_("   Number of structures: %d\n\n"),n_entities);
+    }
+    break;
+
+  }
+
+  /* Others */
+  /*--------*/
+
+  inlet->initialize = 1;
+
+  inlet->verbosity = verbosity;
+
+  inlet->wt_tot  = 0.;
+  inlet->cpu_tot = 0.;
+
+  /* Global array of inlets */
+  /*------------------------*/
+
+  cs_glob_inflow_inlet_array[cs_glob_inflow_n_inlets] = inlet;
+  cs_glob_inflow_n_inlets++;
+}
+
 /*----------------------------------------------------------------------------
  * Read the restart file of les inflow module.
  *----------------------------------------------------------------------------*/
@@ -971,10 +1056,13 @@ void CS_PROCF(synthe, SYNTHE)
 void
 cs_les_synthetic_eddy_restart_read(void)
 {
+  if (_allow_restart_read == false || cs_glob_inflow_n_inlets == 0)
+    return;
+
   bool  corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   int   indfac, ierror;
 
-  cs_restart_t       *suite;
+  cs_restart_t *r;
 
   bft_printf(_(" Reading the LES inflow module restart file...\n"));
 
@@ -994,10 +1082,10 @@ cs_les_synthetic_eddy_restart_read(void)
               filename);
 
   /* Pointer to the global restart structure */
-  suite = _inflow_restart;
+  r = _inflow_restart;
 
   /* Verification of the associated "support" to the restart file */
-  cs_restart_check_base_location(suite, &corresp_cel, &corresp_fac,
+  cs_restart_check_base_location(r, &corresp_cel, &corresp_fac,
                                  &corresp_fbr, &corresp_som);
 
   /* Only boundary faces are of interest */
@@ -1014,7 +1102,7 @@ cs_les_synthetic_eddy_restart_read(void)
     char   nomrub[] = "version_fichier_suite_turbulence_synthetique";
     int    tabvar[1];
 
-    ierror = cs_restart_read_section(suite,
+    ierror = cs_restart_read_section(r,
                                      nomrub,
                                      CS_MESH_LOCATION_NONE,
                                      1,
@@ -1038,7 +1126,7 @@ cs_les_synthetic_eddy_restart_read(void)
     char       nomrub[] = "nb_inlets";
     int        n_inlets = 0;
 
-    ierror = cs_restart_read_section(suite,
+    ierror = cs_restart_read_section(r,
                                      nomrub,
                                      CS_MESH_LOCATION_NONE,
                                      1,
@@ -1081,7 +1169,7 @@ cs_les_synthetic_eddy_restart_read(void)
         cs_les_inflow_type_t type;
 
         snprintf(sec_name, 63, "type_inlet%s", postfix); sec_name[63] = '\0';
-        ierror = cs_restart_read_section(suite,
+        ierror = cs_restart_read_section(r,
                                          sec_name,
                                          CS_MESH_LOCATION_NONE,
                                          1,
@@ -1126,7 +1214,7 @@ cs_les_synthetic_eddy_restart_read(void)
 
             snprintf(sec_name, 63, "batten_number_modes%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              1,
@@ -1152,7 +1240,7 @@ cs_les_synthetic_eddy_restart_read(void)
           { /* frequencies */
             snprintf(sec_name, 63, "batten_frequencies%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              inflow->n_modes,
@@ -1169,7 +1257,7 @@ cs_les_synthetic_eddy_restart_read(void)
             /* wave vector */
             snprintf(sec_name, 63, "batten_wave_vector%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              3*inflow->n_modes,
@@ -1186,7 +1274,7 @@ cs_les_synthetic_eddy_restart_read(void)
             /* amplitude cos */
             snprintf(sec_name, 63, "batten_amplitude_cos%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              3*inflow->n_modes,
@@ -1203,7 +1291,7 @@ cs_les_synthetic_eddy_restart_read(void)
             /* amplitude sin */
             snprintf(sec_name, 63, "batten_amplitude_sin%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              3*inflow->n_modes,
@@ -1225,14 +1313,14 @@ cs_les_synthetic_eddy_restart_read(void)
       case CS_INFLOW_SEM:
 
         {
-          cs_inflow_sem_t *inflow = (cs_inflow_sem_t *) inlet->inflow;
+          cs_inflow_sem_t *inflow = (cs_inflow_sem_t *)inlet->inflow;
 
           { /* number of structures */
             int n_structures = 0;
 
             snprintf(sec_name, 63, "sem_number_structures%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              1,
@@ -1259,7 +1347,7 @@ cs_les_synthetic_eddy_restart_read(void)
 
             snprintf(sec_name, 63, "sem_positions%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              3*inflow->n_structures,
@@ -1276,7 +1364,7 @@ cs_les_synthetic_eddy_restart_read(void)
             /* energies */
             snprintf(sec_name, 63, "sem_energies%s", postfix);
             sec_name[63] = '\0';
-            ierror = cs_restart_read_section(suite,
+            ierror = cs_restart_read_section(r,
                                              sec_name,
                                              CS_MESH_LOCATION_NONE,
                                              3*inflow->n_structures,
@@ -1302,7 +1390,7 @@ cs_les_synthetic_eddy_restart_read(void)
     }
   }
 
-  cs_restart_read_fields(suite, CS_RESTART_LES_INFLOW);
+  cs_restart_read_fields(r, CS_RESTART_LES_INFLOW);
 
   /* Close the restart file and free structures */
   cs_restart_destroy(&_inflow_restart);
@@ -1317,7 +1405,7 @@ cs_les_synthetic_eddy_restart_read(void)
 void
 cs_les_synthetic_eddy_restart_write(void)
 {
-  if (cs_glob_inflow_n_inlets == 0)
+  if (_allow_restart_write == false || cs_glob_inflow_n_inlets == 0)
     return;
 
   bft_printf(_("\n Writing the LES inflow module restart file...\n"));
@@ -1507,154 +1595,13 @@ cs_les_synthetic_eddy_restart_write(void)
   bft_printf(_(" ...completed\n"));
 }
 
-/*----------------------------------------------------------------------------
- * Destroy cs_inlet_t structures
- *----------------------------------------------------------------------------*/
-
-void
-cs_inflow_finalize(void)
-{
-  int coo_id;
-  int inlet_id;
-
-  if (cs_glob_inflow_n_inlets == 0)
-    return;
-
-  /* Destruction of each inlet structure */
-  /*-------------------------------------*/
-
-  for (inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
-
-    cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
-
-    bft_printf(_("\n"
-                 "Summary of synthetic turbulence generation for inlet \"%d\""
-                 " (%s) :\n\n"
-                 "  Accumulated wall-clock time:      %12.3f\n"),
-               inlet_id + 1, cs_inflow_type_name[inlet->type],
-               inlet->wt_tot);
-
-    if (cs_glob_rank_id < 0)
-      bft_printf(_("  Accumulated CPU time:             %12.3f\n"),
-                 inlet->cpu_tot);
-
-#if defined(HAVE_MPI)
-
-    else {
-
-      double cpu_min, cpu_max, cpu_tot;
-      double cpu_loc = inlet->cpu_tot;
-
-      MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
-                    cs_glob_mpi_comm);
-      MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
-                    cs_glob_mpi_comm);
-      MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_mpi_comm);
-
-      bft_printf(_("  Accumulated CPU time:\n"
-                   "    local min:                      %12.3f\n"
-                   "    local max:                      %12.3f\n"
-                   "    mean:                           %12.3f\n"),
-                 cpu_min, cpu_max, cpu_tot/cs_glob_n_ranks);
-
-    }
-
-#endif
-
-    /* Mesh */
-
-    if (inlet->n_faces > 0) {
-      BFT_FREE(inlet->face_ids);
-      BFT_FREE(inlet->face_center);
-      BFT_FREE(inlet->face_surface);
-    }
-
-    inlet->n_faces = 0;
-
-    /* Turbulence level */
-
-    for (coo_id = 0; coo_id < 3; coo_id++)
-      inlet->vel_m[coo_id] = 0.;
-
-    inlet->kinetic_energy   = 0.;
-    inlet->dissipation_rate = 0.;
-
-    /* Generation method of synthetic turbulence */
-
-    inlet->initialize = 0;
-
-    switch(inlet->type) {
-
-    case CS_INFLOW_LAMINAR:
-
-      inlet->inflow = NULL;
-      break;
-
-    case CS_INFLOW_RANDOM:
-
-      inlet->inflow = NULL;
-      break;
-
-    case CS_INFLOW_BATTEN:
-
-      {
-        cs_inflow_batten_t *inflow = (cs_inflow_batten_t *) inlet->inflow;
-
-        inflow->n_modes = 0;
-
-        BFT_FREE(inflow->frequency);
-        BFT_FREE(inflow->wave_vector);
-        BFT_FREE(inflow->amplitude_cos);
-        BFT_FREE(inflow->amplitude_sin);
-
-        BFT_FREE(inflow);
-
-        inlet->inflow = NULL;
-      }
-      break;
-
-    case CS_INFLOW_SEM:
-
-      {
-        cs_inflow_sem_t *inflow = (cs_inflow_sem_t *) inlet->inflow;
-
-        inflow->n_structures = 0;
-        inflow->volume_mode = 0;
-        BFT_FREE(inflow->position);
-        BFT_FREE(inflow->energy);
-
-        BFT_FREE(inflow);
-
-        inlet->inflow = NULL;
-      }
-      break;
-
-    default:
-      break;
-
-    }
-
-    inlet->wt_tot  = 0.;
-    inlet->cpu_tot = 0.;
-
-    BFT_FREE(inlet);
-  }
-
-  /* Global array of inlets */
-  /*------------------------*/
-
-  cs_glob_inflow_n_inlets = 0;
-  BFT_FREE(cs_glob_inflow_inlet_array);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generation of synthetic turbulence via the Synthetic Eddy Method (SEM).
  *
  * \param[in]   n_points            local number of points where
  *                                  turbulence is generated
- * \param[in]   face_ids            local id of inlet boundary faces
+ * \param[in]   elt_ids             local id of inlet boundary faces
  * \param[in]   point_coordinates   point coordinates
  * \param[in]   point_weight        point weights (surface, volume or NULL)
  * \param[in]   initialize          initialization indicator
@@ -1670,7 +1617,7 @@ cs_inflow_finalize(void)
 
 void
 cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
-                             const cs_lnum_t     face_ids[],
+                             const cs_lnum_t     elt_ids[],
                              const cs_real_3_t   point_coordinates[],
                              const cs_real_t    *point_weight,
                              int                 initialize,
@@ -1704,7 +1651,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
-  if (inflow->volume_mode == 1){ //Generate turbulence over the whole domain
+  if (inflow->volume_mode == 1) { //Generate turbulence over the whole domain
 
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
@@ -1736,7 +1683,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   else{
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
-      cs_lnum_t b_face_id = face_ids[point_id];
+      cs_lnum_t b_face_id = elt_ids[point_id];
       cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
@@ -2167,6 +2114,82 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
     fluctuations[point_id][2] = wp_corr;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set number of structures used for volume SEM when
+ *        restarting from another turbulence model.
+ *
+ * By default, a restart file is read if present, and a checkpoint written.
+ * If not read, synthetic fluctuations are re-initialized.
+ *
+ * \param[in]  n_structures  number of structures for initialization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_synthetic_eddy_set_n_restart_structures(int  n_structures)
+{
+  _n_sem_vol_restart_structures = n_structures;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of structures used for volume SEM when
+ *        restarting from another turbulence model.
+ *
+ * \return   number of structures for initialization
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_les_synthetic_eddy_get_n_restart_structures(void)
+{
+  return _n_sem_vol_restart_structures;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query behavior of the LES inflow module in case of restart.
+ *
+ * See \ref cs_les_synthetic_eddy_set_restart for details.
+ *
+ * \param[out]  allow_read   pointer to read flag, or NULL
+ * \param[out]  allow_write  pointer to write flag, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_get_restart(bool  *allow_read,
+                          bool  *allow_write)
+{
+  if (allow_read != NULL)
+    *allow_read = _allow_restart_read;
+  if (allow_write != NULL)
+    *allow_write = _allow_restart_write;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define behavior of the LES inflow module in case of restart.
+ *
+ * By default, a specific file is read if present in the restart folder,
+ * and files written in the checkpoint folder at global checkpoint intervals.
+ *
+ * If not read, synthetic fluctuations are re-initialized.
+ *
+ * \param[in]  allow_read   allow reading a relevant checkpoint if present
+ * \param[in]  allow_write  allow writing a relevant checkpoint if present
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_set_restart(bool  allow_read,
+                          bool  allow_write)
+{
+  _allow_restart_read = allow_read;
+  _allow_restart_write = allow_write;
 }
 
 /*----------------------------------------------------------------------------*/

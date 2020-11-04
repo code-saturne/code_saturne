@@ -68,37 +68,71 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define parameters of synthetic turbulence at LES inflow.
- *
- * \param[out]  n_inlets  n   number of synthetic turbulence inlets
- * \param[out]  n_structures  number of entities of the inflow method
- * \param[out]  volume_mode   use claassical or volume SEM
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_init (int   *n_inlets,
-			 int   *n_structures,
-                         int   *volume_mode)
+cs_user_les_inflow_define(void)
 {
-  /*! [init_11] */
-  *n_inlets = 2;
-  *n_structures = 50;
-  *volume_mode = 0;
-  /*! [init_11] */
+  /*! [set_restart] */
+  cs_les_inflow_set_restart(false,   /* allow_read */
+                            false);  /* allow_write */
+  /*! [set_restart] */
 
-  // FIXME set ISUISY cs_les_synthetic_eddy_restart_read();
+  /* First synthetic turbulence inlet: the Batten Method is used
+     for boundary faces of zone "INLET_1" */
+
+  /*! [init_1] */
+  {
+    /* Number of turbulence structures */
+    int n_entities = 50;
+
+    /* Velocity, turbulent kinetic energy and dissipation rate */
+    cs_real_t vel_r[3] = {18.0, 0, 0};
+    cs_real_t k_r = 4.0;
+    cs_real_t eps_r = 4.0;
+
+    cs_les_inflow_add_inlet(CS_INFLOW_BATTEN,
+                            false,
+                            cs_boundary_zone_by_name("INLET_1"),
+                            n_entities,
+                            0,  /* verbosity */
+                            vel_r,
+                            k_r,
+                            eps_r);
+  }
+  /*! [init_1] */
+
+  /* Second synthetic turbulence inlet: the Synthetic Eddy Method
+     Batten Method is used for boundary faces of zone "INLET_2" */
+
+  /*! [init_2] */
+  {
+    /* Number of turbulence structures */
+    int n_entities = 50;
+
+    /* Velocity, turbulent kinetic energy and dissipation rate */
+    cs_real_t vel_r[3] = {12.0, 0, 0};
+    cs_real_t k_r = 3.0;
+    cs_real_t eps_r = 3.0;
+
+    cs_les_inflow_add_inlet(CS_INFLOW_SEM,
+                            false,  /* volume mode */
+                            cs_boundary_zone_by_name("INLET_2"),
+                            n_entities,
+                            0,  /* verbosity */
+                            vel_r,
+                            k_r,
+                            eps_r);
+  }
+  /*! [init_2] */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Definition of the characteristics of a given synthetic
- *        turbulence inlet.
+ * \brief Update of the characteristics of a given synthetic turbulence inlet.
  *
- * \param[in]   inlet_id   id of the inlet
- * \param[out]  type       type of inflow method at the inlet
- * \param[out]  verbosity  verbosity level
- * \param[out]  n_faces    number of associated of boundary faces
- * \param[out]  face_ids   ids of associated boundary faces
+ * \param[in]   zone       pointer to associated boundary zone
  * \param[out]  vel_r      reference mean velocity
  * \param[out]  k_r        reference turbulent kinetic energy
  * \param[out]  eps_r      reference turbulent dissipation
@@ -106,64 +140,21 @@ cs_user_les_inflow_init (int   *n_inlets,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_define(int                    inlet_id,
-                          cs_les_inflow_type_t  *type,
-                          int                   *verbosity,
-                          cs_lnum_t             *n_faces,
-                          cs_lnum_t              face_ids[],
-                          cs_real_t              vel_r[3],
-                          cs_real_t             *k_r,
-                          cs_real_t             *eps_r)
+cs_user_les_inflow_update(const cs_zone_t  *zone,
+                          cs_real_t         vel_r[3],
+                          cs_real_t        *k_r,
+                          cs_real_t        *eps_r)
 {
-  /* First synthetic turbulence inlet: the Batten Method is used
-     for boundary faces of color '1' */
-
-  /*! [init_21] */
-  if (inlet_id == 0) {
-
-    /* Batten method */
-    *type = CS_INFLOW_BATTEN;
-
-    /* No specific verbosity */
-    *verbosity = 0;
-
-    /* Selection of the boundary faces of group '1' */
-    cs_selector_get_b_face_list("1", n_faces, face_ids);
-
+  /*! [update_1] */
+  if (strcmp(zone->name, "INLET_1") == 0) {
     /* Velocity, turbulent kinetic energy and dissipation rate */
-    vel_r[0] = 18.0;
+    vel_r[0] = 19.0;
     vel_r[1] = 0.0;
     vel_r[2] = 0.0;
-    *k_r = 4.0;
-    *eps_r = 4.0;
-
+    *k_r = 5.0;
+    *eps_r = 5.0;
   }
-  /*! [init_21] */
-
-  /* Second synthetic turbulence inlet: the Synthetic Eddy Method is used
-     for the boundary faces verifying a geometric criterion*/
-
-  /*! [init_22] */
-  if (inlet_id == 0) {
-
-    /* Synthetic Eddy method */
-    *type = CS_INFLOW_SEM;
-
-    /* Details concerning SEM in the log */
-    *verbosity = 1;
-
-    /* Selection of the boundary faces of group
-       using a geometric criterion */
-    cs_selector_get_b_face_list("x < 0.1", n_faces, face_ids);
-
-    /* Velocity, turbulent kinetic energy and dissipation rate */
-    vel_r[0] = 12.0;
-    vel_r[1] = 0.0;
-    vel_r[2] = 0.0;
-    *k_r = 3.0;
-    *eps_r = 3.0;
-  }
-  /*! [init_22] */
+  /*! [update_1] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -176,19 +167,15 @@ cs_user_les_inflow_define(int                    inlet_id,
  * Arrays are pre-initialized before this function is called
  * (see \ref cs_user_les_inflow_define).
  *
- * \param[in]       inlet_id  id of the inlet
- * \param[in]       n_faces   number of associated of boundary faces
- * \param[in]       face_ids  ids of associated boundary faces
- * \param[in, out]  vel_l     velocity a zone faces
- * \param[in, out]  rij_l     reynods stresses at zone faces
- * \param[in, out]  eps_l     reference turbulent dissipation
+ * \param[in]       zone    pointer to associated boundary zone
+ * \param[in, out]  vel_l   velocity a zone faces
+ * \param[in, out]  rij_l   reynods stresses at zone faces
+ * \param[in, out]  eps_l   reference turbulent dissipation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_advanced(const int         inlet_id,
-                            const cs_lnum_t   n_faces,
-                            const cs_lnum_t   face_ids[],
+cs_user_les_inflow_advanced(const cs_zone_t  *zone,
                             cs_real_3_t       vel_l[],
                             cs_real_6_t       rij_l[],
                             cs_real_t         eps_l[])
@@ -200,7 +187,11 @@ cs_user_les_inflow_advanced(const int         inlet_id,
    *     second synthetic turbulence inlet */
 
   /*! [example_1] */
-  if (inlet_id == 0) {
+  if (strcmp(zone->name, "INLET_1") == 0) {
+
+    const cs_lnum_t n_faces = zone->n_elts;
+    const cs_lnum_t *face_ids = zone->elt_ids;
+
     const cs_real_t d2_s3 = 2.0/3.0;
 
     const cs_mesh_t   *m = cs_glob_mesh;
@@ -268,7 +259,10 @@ cs_user_les_inflow_advanced(const int         inlet_id,
 
 
   /*! [example_2] */
-  if (inlet_id == 0) {
+  if (strcmp(zone->name, "INLET_1") == 0) {
+
+    const cs_lnum_t n_faces = zone->n_elts;
+
     const cs_real_t d2_s3 = 2.0/3.0;
 
     for (cs_lnum_t i = 0; i < n_faces; i++) {

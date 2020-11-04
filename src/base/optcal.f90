@@ -297,14 +297,6 @@ module optcal
   !> Useful if nfpt1d > 0
   integer, save :: isuit1
 
-  !> Reading of the LES inflow module restart file.
-  !> -0: not activated
-  !> -1: activated\n
-  !> If \ref isuisy = 1, synthetic fluctuations are
-  !> not re-initialized in case of restart calculation.
-  !> Useful if \ref iturb = 40, 41 or 42
-  integer, save :: isuisy
-
   !----------------------------------------------------------------------------
   ! Time stepping options
   !----------------------------------------------------------------------------

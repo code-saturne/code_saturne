@@ -77,78 +77,33 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define parameters of synthetic turbulence at LES inflow.
- *
- * \param[out]  n_inlets  n   number of synthetic turbulence inlets
- * \param[out]  n_structures  number of entities of the inflow method
- * \param[out]  volume_mode   use claassical or volume SEM
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_les_inflow_init
+#pragma weak cs_user_les_inflow_define
 void
-cs_user_les_inflow_init (int   *n_inlets,
-			 int   *n_structures,
-                         int   *volume_mode)
+cs_user_les_inflow_define(void)
 {
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Definition of the characteristics of a given synthetic
- *        turbulence inlet.
+ * \brief Update of the characteristics of a given synthetic turbulence inlet.
  *
- * For each LES inlet, the following parameters may be defined:
- *
- *  1. Data relatve to the method employed
- *
- *     - typent indicates the synthetic turbulence method:
- *
- *        0: laminar, no turbulent fluctations
- *        1: random gaussian noise
- *        2: Batten method, based on Fourier mode decomposition
- *        3: Synthetic Eddy Method (SEM)
- *
- *     - iverbo indicates the verbosity level (log)
- *
- *  2. Data relative to the LES inflow boundary faces
- *
- *     - nfbent: number of boundary faces of the LES inflow
- *     - lfbent: list of boundary faces of the LES inflow
- *
- *  3. Data relative to the flow
- *
- *     - vitent(3): reference mean velocity vector
- *     - enrent: reference turbulent kinetic energy
- *     - dspent: reference dissipation rate
- *
- *  \remark:
- *  - dspent useful only for typent = 2 (Batten) or typent = 3 (SEM).
- *  - Strictly positive values are required for enrent and dspent.
- *  - Accurate specification of the statistics of the flow at LES inlet
- *    can be made using \ref cs_user_les_inflow_advanced.
- *
- * \param[in]   inlet_id   id of the inlet
- * \param[out]  type       type of inflow method at the inlet
- * \param[out]  verbosity  verbosity level
- * \param[out]  n_faces    number of associated of boundary faces
- * \param[out]  face_ids   ids of associated boundary faces
+ * \param[in]   zone       pointer to associated boundary zone
  * \param[out]  vel_r      reference mean velocity
  * \param[out]  k_r        reference turbulent kinetic energy
  * \param[out]  eps_r      reference turbulent dissipation
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_les_inflow_define
+#pragma weak cs_user_les_inflow_update
 void
-cs_user_les_inflow_define(int                    inlet_id,
-                          cs_les_inflow_type_t  *type,
-                          int                   *verbosity,
-                          cs_lnum_t             *n_faces,
-                          cs_lnum_t              face_ids[],
-                          cs_real_t              vel_r[3],
-                          cs_real_t             *k_r,
-                          cs_real_t             *eps_r)
+cs_user_les_inflow_update(const cs_zone_t  *zone,
+                          cs_real_t         vel_r[3],
+                          cs_real_t        *k_r,
+                          cs_real_t        *eps_r)
 {
 
 }
@@ -177,20 +132,16 @@ cs_user_les_inflow_define(int                    inlet_id,
  *
  * eps_l[face_id] = eps_r
  *
- * \param[in]       inlet_id  id of the inlet
- * \param[in]       n_faces   number of associated of boundary faces
- * \param[in]       face_ids  ids of associated boundary faces
- * \param[in, out]  vel_l     velocity a zone faces
- * \param[in, out]  rij_l     reynods stresses at zone faces
- * \param[in, out]  eps_l     reference turbulent dissipation
+ * \param[in]       zone    pointer to associated boundary zone
+ * \param[in, out]  vel_l   velocity a zone faces
+ * \param[in, out]  rij_l   reynods stresses at zone faces
+ * \param[in, out]  eps_l   reference turbulent dissipation
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_les_inflow_advanced
 void
-cs_user_les_inflow_advanced(const int         inlet_id,
-                            const cs_lnum_t   n_faces,
-                            const cs_lnum_t   face_ids[],
+cs_user_les_inflow_advanced(const cs_zone_t  *zone,
                             cs_real_3_t       vel_l[],
                             cs_real_6_t       rij_l[],
                             cs_real_t         eps_l[])

@@ -1450,7 +1450,7 @@ code execution log.
 {Boundary conditions with LES}
 %===============================================================
 \subsubsubsection{Synthetic Eddy Method}
-The user file \texttt{cs\_user\_les\_inflow.f90} allows to generate the
+The user file \texttt{cs\_user\_les\_inflow.c} allows to generate the
 unsteady boundary conditions for the LES by the Synthetic Eddy
 Method.
 The basic principle of this method is illustrated in figure
@@ -1479,14 +1479,14 @@ mean velocity and target Reynolds stresses at LES inlet.
 {\bf \underline{WARNING}}: As for laminar or RANS inlets, the type of
 boundary for LES inlets is \texttt{ientre}. It has to be specified in
 the GUI or in the \texttt{cs\_user\_boundary\_conditions}
-surboutine. On the contrary, if Dirichlet values are given for these
+subroutine. On the contrary, if Dirichlet values are given for these
 faces in the GUI or in the \texttt{cs\_user\_boundary\_conditions}
 subroutine (\texttt{rcodcl(ifac,ivar,1)} array), they are erased by
 those provided by the Synthetic Eddy Method.
 
 In the current version of \CS, the Synthetic Eddy Method is not
 available through the GUI but only through the
-\texttt{cs\_user\_les\_inflow.f90} user file. The user file contains 3
+\texttt{cs\_user\_les\_inflow.c} user file. The user file contains 3
 subroutines:
 
 \begin{itemize}
@@ -1505,10 +1505,7 @@ some global parameters shared by all LES inlets. These parameters are:
 \item \texttt{nent}: number of LES inlet boundaries
 \item \texttt{isuisy}: in case of a restart calculation, it indicates if
   the synthetic turbulence is re-initialize (0) or read from the
-  previous calculation (1). In that case, the checkpoint folder must
-  contain the \texttt{les\_inflow} restart file. This file is
-  generated during a computation with synthetic turbulence, at the
-  same physical times as the main and auxiliary restart files.
+  previous calculation (1).
 \end{itemize}
 
 \texttt{cs\_user\_les\_inflow\_define}: this subroutine defines

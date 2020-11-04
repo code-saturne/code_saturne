@@ -94,7 +94,6 @@ integer          modhis, iappel, iisuit
 integer          iel
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
-integer          nent   , nstruct, volmode
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
@@ -170,6 +169,14 @@ interface
     implicit none
     real(kind=c_double), value :: dt
   end subroutine cs_time_step_increment
+
+  !=============================================================================
+
+  subroutine cs_les_inflow_initialize()  &
+    bind(C, name='cs_les_inflow_initialize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_inflow_initialize
 
   !=============================================================================
 
@@ -596,8 +603,7 @@ if (nftcdt.gt.0) then
 
   ! the Condensation model coupled with a 0-D thermal model
   ! to take into account the metal mass structures effects.
-  if(itagms.eq.1) then
-
+  if (itagms.eq.1) then
     call init_tagms
   endif
 
@@ -607,10 +613,7 @@ endif
 ! Initialization for the Synthetic turbulence Inlets
 !===============================================================================
 
-nent = 0
-nstruct = 0
-volmode = 0
-call defsyn(nent,nstruct,volmode)
+call cs_les_inflow_initialize
 
 !===============================================================================
 ! Possible restart
@@ -657,9 +660,7 @@ if (isuite.eq.1) then
     call cs_restart_lagrangian_checkpoint_read()
   endif
 
-  if (isuisy.eq.1) then
-    call cs_les_synthetic_eddy_restart_read
-  endif
+  call cs_les_synthetic_eddy_restart_read
 
   ! TODO
   ! cs_restart_map_free may not be called yet, because
@@ -1043,9 +1044,7 @@ if (iisuit.eq.1) then
     call cs_1d_wall_thermal_write
   endif
 
-  if (nent.gt.0) then
-    call cs_les_synthetic_eddy_restart_write
-  endif
+  call cs_les_synthetic_eddy_restart_write
 
   if (iilagr.gt.0) then
     call cs_restart_lagrangian_checkpoint_write()

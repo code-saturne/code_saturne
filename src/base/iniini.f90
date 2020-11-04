@@ -461,7 +461,6 @@ iflxmw = 0
 
 isuite = 0
 isuit1 = -1
-isuisy = -1
 
 ! Time stepping (value not already in C)
 

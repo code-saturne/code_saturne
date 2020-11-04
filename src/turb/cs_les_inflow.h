@@ -35,6 +35,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,7 +70,7 @@ typedef enum {
 /* Inlet definition */
 /*------------------*/
 
-typedef struct _cs_inlet_t       cs_inlet_t;
+typedef struct _cs_inlet_t   cs_inlet_t;
 
 typedef struct {
 
@@ -86,18 +87,6 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Creation of a structure for the inlets
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(defsyn, DEFSYN)
-(
- int  *n_inlets,                   /* <-- number of inlets                    */
- int  *n_structures,               /* <-- number of structures                */
- int  *volume_mode                 /* <-- Variable to use classic SEM or
-                                          volume SEM                          */
-);
-
-/*----------------------------------------------------------------------------
  * General synthetic turbulence generation
  *----------------------------------------------------------------------------*/
 
@@ -111,6 +100,58 @@ void CS_PROCF(synthe, SYNTHE)
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Creation of structures for the LES inflows
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize turbulent inflow generation API.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an inlet definition for synthetic turbulence inflow generation.
+ *
+ * For each LES inlet, the following parameters may be defined:
+ *
+ *  \remark:
+ *  - eps_r is used only for CS_INFLOW_BATTEN and CS_INFLOW_SEM types.
+ *  - Strictly positive values are required for k_r and eps_r.
+ *  - Finer definition of the statistics of the flow at the inlet
+ *    can be done later using \ref cs_user_les_inflow_advanced.
+ *
+ * \param[out]  type         type of inflow method at the inlet
+ * \param[out]  volume_mode  if true, generate turbulence over the whole domain
+ *                           (only if type is CS_INFLOW_SEM)
+ * \param[in]   zone         pointer to associated boundary zone
+ * \param[out]  n_entities   number of structures or modes
+ * \param[out]  verbosity    verbosity level
+ * \param[out]  vel_r        reference mean velocity
+ * \param[out]  k_r          reference turbulent kinetic energy
+ * \param[out]  eps_r        reference turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
+                        bool                   volume_mode,
+                        const cs_zone_t       *zone,
+                        int                    n_entities,
+                        int                    verbosity,
+                        const cs_real_t       *vel_r,
+                        cs_real_t              k_r,
+                        cs_real_t              eps_r);
 
 /*----------------------------------------------------------------------------
  * Read the restart file of les inflow module.
@@ -126,20 +167,13 @@ cs_les_synthetic_eddy_restart_read(void);
 void
 cs_les_synthetic_eddy_restart_write(void);
 
-/*----------------------------------------------------------------------------
- * Finalize turbulent inflow generation API.
- *----------------------------------------------------------------------------*/
-
-void
-cs_inflow_finalize(void);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generation of synthetic turbulence via the Synthetic Eddy Method (SEM).
  *
  * \param[in]   n_points            local number of points where
  *                                  turbulence is generated
- * \param[in]   face_ids            local id of inlet boundary faces
+ * \param[in]   elt_ids             local id of inlet elements
  * \param[in]   point_coordinates   point coordinates
  * \param[in]   point_weight        point weights (surface, volume or NULL)
  * \param[in]   initialize          initialization indicator
@@ -155,7 +189,7 @@ cs_inflow_finalize(void);
 
 void
 cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
-                             const cs_lnum_t     face_ids[],
+                             const cs_lnum_t     elt_ids[],
                              const cs_real_3_t   point_coordinates[],
                              const cs_real_t    *point_weight,
                              int                 initialize,
@@ -187,32 +221,87 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define parameters of synthetic turbulence at LES inflow.
+ * \brief Set number of structures used for volume SEM when
+ *        restarting from another turbulence model.
  *
- * \param[out]  n_inlets  n   number of synthetic turbulence inlets
- * \param[out]  n_structures  number of entities of the inflow method
- * \param[out]  volume_mode   use claassical or volume SEM
+ * By default, a restart file is read if present, and a checkpoint written.
+ * If not read, synthetic fluctuations are re-initialized.
+ *
+ * \param[in]  n_structures  number of structures for initialization
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_init (int   *n_inlets,
-			 int   *n_structures,
-                         int   *volume_mode);
+cs_les_synthetic_eddy_set_n_restart_structures(int  n_structures);
 
-/*----------------------------------------------------------------------------
- * Definition of the characteristics of a given synthetic turbulence inlet.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of structures used for volume SEM when
+ *        restarting from another turbulence model.
+ *
+ * \return   number of structures for initialization
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_les_synthetic_eddy_get_n_restart_structures(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query behavior of the LES inflow module in case of restart.
+ *
+ * See \ref cs_les_synthetic_eddy_set_restart for details.
+ *
+ * \param[out]  allow_read   pointer to read flag, or NULL
+ * \param[out]  allow_write  pointer to write flag, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_define(int                    inlet_id,
-                          cs_les_inflow_type_t  *type,
-                          int                   *verbosity,
-                          cs_lnum_t             *n_faces,
-                          cs_lnum_t              face_ids[],
-                          cs_real_t              vel_r[3],
-                          cs_real_t             *k_r,
-                          cs_real_t             *eps_r);
+cs_les_inflow_get_restart(bool  *allow_read,
+                          bool  *allow_write);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define behavior of the LES inflow module in case of restart.
+ *
+ * By default, a restart file is read if present, and a checkpoint written.
+ * If not read, synthetic fluctuations are re-initialized.
+ *
+ * \param[in]  allow_read   allow reading a relevant checkpoint if present
+ * \param[in]  allow_write  allow writing a relevant checkpoint if present
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_inflow_set_restart(bool  allow_read,
+                          bool  allow_write);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define parameters of synthetic turbulence at LES inflow.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_les_inflow_define(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update of the characteristics of a given synthetic turbulence inlet.
+ *
+ * \param[in]   zone       pointer to associated boundary zone
+ * \param[out]  vel_r      reference mean velocity
+ * \param[out]  k_r        reference turbulent kinetic energy
+ * \param[out]  eps_r      reference turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_les_inflow_update(const cs_zone_t  *zone,
+                          cs_real_t         vel_r[3],
+                          cs_real_t        *k_r,
+                          cs_real_t        *eps_r);
 
 /*----------------------------------------------------------------------------
  * Definition of mean velocity, Reynolds stresses and dissipation rate
@@ -220,9 +309,7 @@ cs_user_les_inflow_define(int                    inlet_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_advanced(const int         inlet_id,
-                            const cs_lnum_t   n_faces,
-                            const cs_lnum_t   face_ids[],
+cs_user_les_inflow_advanced(const cs_zone_t  *zone,
                             cs_real_3_t       vel_l[],
                             cs_real_6_t       rij_l[],
                             cs_real_t         eps_l[]);

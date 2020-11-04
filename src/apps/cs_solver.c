@@ -468,7 +468,7 @@ _run(void)
 
     /* Finalize synthetic inlet condition generation */
 
-    cs_inflow_finalize();
+    cs_les_inflow_finalize();
 
   }
 

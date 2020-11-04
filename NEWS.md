@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- LES inflow synthetic turbulence configuration is now zone-based, with
+  a new, more consistent user API.
+
 - Add `cs_runaway_check` functions to try to detect diverging computations
   early enough for clean stop.
   * Default check is on velocity > 1e4 for incompressible computations,
