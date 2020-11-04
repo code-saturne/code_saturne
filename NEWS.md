@@ -3,6 +3,9 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix GUI handling of radiation + combustion "Modak" parameter
+  (GitHub issue #68).
+
 - Fix output of default curvilinear coordinates for profiles in parallel.
 
 - Preprocessor: fix handling of "--log" option in next-to last position
