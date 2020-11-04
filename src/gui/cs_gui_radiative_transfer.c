@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -163,7 +163,7 @@ _radiative_transfer_type(cs_tree_node_t  *tn_rt,
                          int             *keyword)
 {
   cs_tree_node_t *tn = cs_tree_get_node(tn_rt, param);
-  const char *type = cs_gui_node_get_tag(tn, "type");
+  const char *type = (tn != NULL) ? cs_gui_node_get_tag(tn, "type") : NULL;
 
   if (type != NULL) {
     if (cs_gui_strcmp(type, "constant"))
@@ -294,7 +294,7 @@ cs_gui_radiative_transfer_parameters(void)
                               &cs_glob_rad_transfer_params->iimpar);
     cs_gui_node_get_child_int(tn0, "intensity_resolution_listing_printing",
                               &cs_glob_rad_transfer_params->iimlum);
-    if (!cs_gui_get_activ_thermophysical_model()) {
+    if (cs_gui_get_activ_thermophysical_model()) {
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
         cs_glob_rad_transfer_params->imodak = 1;

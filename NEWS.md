@@ -3,6 +3,9 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix GUI handling of radiation + combustion "Modak" parameter
+  (GitHub issue #68).
+
 - Skip Nusselt and thermal flux postprocessing at start of calculation
   for faces with internal coupling, to avoid division by zero.
 
