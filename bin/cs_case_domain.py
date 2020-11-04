@@ -628,10 +628,14 @@ class domain(base_domain):
             elif module_name == 'neptune_cfd':
                 from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
                 XMLinitNeptune(case).initialize(prepro)
-            case.xmlSaveDocument()
 
-            case['case_path'] = self.exec_dir
-            self.mci = meg_to_c_interpreter(case, module_name=module_name)
+            # Do not call case.xmlSaveDocument() to avoid side effects in case
+            # directory; is not required as meg_to_c_interpreter works from
+            # case in memory
+
+            self.mci = meg_to_c_interpreter(case,
+                                            module_name=module_name,
+                                            wdir = self.exec_dir)
 
             if self.mci.has_meg_code():
                 needs_comp = True

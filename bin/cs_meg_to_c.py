@@ -265,7 +265,11 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, case, create_functions=True, module_name=None):
+    def __init__(self,
+                 case,
+                 create_functions=True,
+                 module_name=None,
+                 wdir=None):
 
         self.case = case
         if module_name:
@@ -273,8 +277,12 @@ class meg_to_c_interpreter:
         else:
             self.module_name = case.module_name()
 
-        self.data_path = os.path.join(case['case_path'], 'DATA')
-        self.tmp_path = os.path.join(self.data_path, 'tmp')
+        if not wdir:
+            data_path = os.path.join(case['case_path'], 'DATA')
+        else:
+            data_path = wdir
+
+        self.tmp_path = os.path.join(data_path, 'tmp')
 
         # function name to file name dictionary
         self.funcs = {'vol': {},
@@ -1972,7 +1980,9 @@ class meg_to_c_interpreter:
 
         from code_saturne import cs_compile
 
+        cwd = os.getcwd()
         os.chdir(self.tmp_path)
+
         out = open('comp.out', 'w')
         err = open('comp.err', 'w')
 
@@ -2002,7 +2012,7 @@ class meg_to_c_interpreter:
                 for i in range(len(errors)):
                     msg += errors[i].strip()+'\n'
 
-        os.chdir(self.data_path)
+        os.chdir(cwd)
 
         return compilation_test, msg, n_errors
 
