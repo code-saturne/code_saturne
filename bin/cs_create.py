@@ -89,7 +89,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--copy-ref", dest="use_ref",
                       action="store_true",
-                      help="don't copy references")
+                      help="copy references and examples")
 
     parser.add_option("-q", "--quiet",
                       action="store_const", const=0, dest="verbose",
