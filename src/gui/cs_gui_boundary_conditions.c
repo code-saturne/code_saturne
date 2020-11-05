@@ -466,14 +466,15 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
     /* All components should use the same BC type */
 
-    if (i > 0) {
+    if (i > 0 && choice != NULL) {
       const char *choice_c = cs_tree_node_get_tag(tn_s, "choice");
-      if (strcmp(choice, choice_c))
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("%s: for field %s on zone %s,\n"
-             "BC types are mismatched (%s on component 0, %s on component %d."),
-           __func__, f->name, z_name, choice, choice_c, i);
+      if (choice_c != NULL)
+        if (strcmp(choice, choice_c))
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("%s: for field %s on zone %s,\n"
+               "BC types are mismatched (%s on component 0, %s on component %d."),
+             __func__, f->name, z_name, choice, choice_c, i);
     }
 
     if (choice != NULL) {
