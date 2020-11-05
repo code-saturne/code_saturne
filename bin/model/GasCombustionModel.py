@@ -79,7 +79,7 @@ class GasCombustionModel(Variables, Model):
                          "3-peak_adiabatic", "3-peak_enthalpy",
                          "4-peak_adiabatic", "4-peak_enthalpy")
 
-        self.sootModels = ('off', 'soot_fuel_fraction', 'moss')
+        self.sootModels = ('off', 'soot_product_fraction', 'moss')
 
 
     def defaultGasCombustionValues(self):

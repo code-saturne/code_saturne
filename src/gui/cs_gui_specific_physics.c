@@ -1327,7 +1327,7 @@ cs_gui_physical_model_select(void)
         const char *model_soot = cs_tree_node_get_child_value_str(tn_soot, "model");
         
         if (model_soot != NULL && !cs_gui_strcmp(model_soot, "off")) {
-          if (cs_gui_strcmp(model_soot, "soot_fuel_fraction")) {
+          if (cs_gui_strcmp(model_soot, "soot_product_fraction")) {
             cm->isoot = 0;
             cs_gui_node_get_child_real(tn_soot, "soot_density", &(cm->gas.rosoot));
             cs_gui_node_get_child_real(tn_soot, "soot_fraction", &(cm->gas.xsoot));}
