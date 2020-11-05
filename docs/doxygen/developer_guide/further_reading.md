@@ -319,7 +319,7 @@ restrictive, or include additional metadata.
 - Array syntax may be used with pointers.
 - Pointer "arithmetic" is based on the pointer's type (unless `void`).
 - A single (but important) difference between pointers and arrays:
-  - An array decaration implies local memory allocation, a pointer does not.
+  - An array declaration implies local memory allocation, a pointer does not.
   - This is reflected by the different behavior of the `sizeof`
 - In addition to the following example, check the tutorial at:
   https://boredzo.org/pointers/
@@ -505,7 +505,7 @@ double f(int n, double x[], double y[]);
 - Only parameter types are required to match in the definition  and prototype,
   so compilers will not complain if names are different
   - But the code maintainers _will_ !
-  - And the documenation generator will emit warnings
+  - And the documentation generator will emit warnings
 
 Prototypes are usually grouped in `header` files, inserted locally using the
 `#include` preprocessor directive.
@@ -570,7 +570,7 @@ void g(void) {
 
   f(x, y);                        /* call to f */
 
-  /* now x = 10, y[] = {1., 5.` */
+  /* now x = 10, y[] = {1., 5.} */
 
   ...
 }
@@ -653,8 +653,8 @@ on several rules.
 
 - code_saturne defines several preprocessor macros, among which the following:
   - \ref CS_ABS(a): absolute value of a
-  - \ref CS_MAX(a, b): maximum a a and b
-  - \ref CS_MIN(a, b): minimul of a and b
+  - \ref CS_MAX(a, b): maximum of a and b
+  - \ref CS_MIN(a, b): minimum of a and b
   - \ref CS_F_(fname): access to field structure of field with
     canonical name `name`.
 - Note: the C language also defines `double fmax(double x, double y)` and
