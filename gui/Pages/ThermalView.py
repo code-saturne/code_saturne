@@ -479,9 +479,13 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.rmdl.setTypeCoeff(typeCoeff)
 
         if typeCoeff == 'constant':
+            self.lineEditCoeff.show()
             self.lineEditCoeff.setEnabled(True)
+            self.label.show()
         elif typeCoeff == 'modak':
+            self.lineEditCoeff.hide()
             self.lineEditCoeff.setDisabled(True)
+            self.label.hide()
         else:
             self.lineEditCoeff.setDisabled(True)
 
