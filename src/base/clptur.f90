@@ -925,6 +925,7 @@ do ifac = 1, nfabor
                                             dlmo,uet)
 
         endif
+        yk = distbf * uk / xnuii
       endif
       ! Dimensionless velocity, recomputed and therefore may take stability
       ! into account
