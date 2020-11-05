@@ -363,7 +363,7 @@ cs_rad_transfer_log_setup(void)
           "                   "
           "   compulsory with transparent media)"),
        N_("1 (conservative radiative S.T. calculation)"),
-       N_("2 (semi-analytic radiative S.T. calculation,"
+       N_("2 (semi-analytic radiative S.T. calculation,\n"
           "                   "
           "   corrected for global conservation)")};
 
