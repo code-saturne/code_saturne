@@ -37,8 +37,8 @@
 
 
 subroutine clpv2f &
- ( ncel   ,                                                       &
-   iwaphi )
+ ( ncel   , iwaphi )                                          &
+  bind(C, name='cs_clip_v2f')
 
 !===============================================================================
 
@@ -46,6 +46,7 @@ subroutine clpv2f &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
 use paramx
 use entsor
 use numvar
@@ -61,8 +62,8 @@ implicit none
 
 ! Arguments
 
-integer          ncel
-integer          iwaphi
+integer(c_int),value :: ncel
+integer(c_int), value :: iwaphi
 
 ! Local variables
 

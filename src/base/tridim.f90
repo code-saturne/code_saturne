@@ -292,6 +292,16 @@ interface
     integer(kind=c_int), dimension(*), intent(in) :: itypfb
   end subroutine cs_turbulence_sa
 
+  subroutine cs_turbulence_v2f &
+       (ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+    bind(C, name='cs_turbulence_v2f')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: dt, smacel, prdv2f
+  end subroutine cs_turbulence_v2f
+
   subroutine cs_volume_mass_injection_eval &
        (nvar, ncesmp, itypsm, smacel) &
     bind(C, name='cs_volume_mass_injection_eval')
@@ -1315,24 +1325,18 @@ if (iccvfg.eq.0) then
     endif
   endif
 
-  ! Si on est en v2f (phi-fbar ou BL-v2/k), on reserve un tableau
-  ! de taille NCELET pour eviter de recalculer la production dans RESV2F
-  if (itytur.eq.5) then
-    allocate(prdv2f(ncelet))
-  endif
-
   if ((itytur.eq.2) .or. (itytur.eq.5)) then
+
+    ! Reserve array to avoid recomputing production in cs_turbulence_v2f
+    if (itytur.eq.5) then
+      allocate(prdv2f(ncelet))
+    endif
 
     call cs_turbulence_ke(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
 
-    if( itytur.eq.5 )  then
+    if (itytur.eq.5)  then
 
-      call resv2f &
-    ( nvar   , ncetsm ,                                            &
-      icetsm , itypsm ,                                            &
-      dt     ,                                                     &
-      smacel ,                                                     &
-      prdv2f )
+      call cs_turbulence_v2f(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
 
       ! Free memory
       deallocate(prdv2f)
