@@ -2921,9 +2921,12 @@ cs_gui_boundary_conditions_free_memory(void)
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        BFT_FREE(boundaries->type_code[f->id]);
-        BFT_FREE(boundaries->values[f->id]);
-        BFT_FREE(boundaries->scalar_e[f->id]);
+        if (boundaries->type_code != NULL)
+          BFT_FREE(boundaries->type_code[f->id]);
+        if (boundaries->values != NULL)
+          BFT_FREE(boundaries->values[f->id]);
+        if (boundaries->scalar_e != NULL)
+          BFT_FREE(boundaries->scalar_e[f->id]);
       }
     }
 
