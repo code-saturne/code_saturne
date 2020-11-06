@@ -321,16 +321,16 @@ The settings available for a typical calculation are the following:
 - Performance settings: advanced parallel computing settings
   (such as partitioning and, IO options).
 
-### User-defined function templates and examples
+### User-defined function templates and examples {#sec_prg_run_udf}
 
 Reference user-defined functions and subroutines may be found in
-the `SRC\REFERENCE` subdirectory of a given case, if it was created
+the `SRC/REFERENCE` subdirectory of a given case, if it was created
 with the `--copy-ref` option. Otherwise, they may always be found
 in the code's installation directory, usually under
 `${install_prefix}/share/code_saturne/user_sources/REFERENCE`.
 
 In a similar manner, examples may be found in
-the `SRC\EXAMPLES` subdirectory of a given case if it was created
+the `SRC/EXAMPLES` subdirectory of a given case if it was created
 with the `--copy-ref` option, and may always be found
 in the code's installation directory, usually under
 `${install_prefix}/share/code_saturne/user_sources/EXAMPLES`.
