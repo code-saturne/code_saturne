@@ -1246,7 +1246,6 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
@@ -1269,9 +1268,9 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.0;
 
-  assert(3*n_vertices == eqc->n_dofs);
+  assert(3*quant->n_vertices == eqc->n_dofs);
   BFT_MALLOC(rhs, eqc->n_dofs, cs_real_t);
-# pragma omp parallel for if  (n_vertices > CS_THR_MIN)
+# pragma omp parallel for if  (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
