@@ -143,7 +143,7 @@
 
   - The *dynamic variables* designation includes velocity, pressure, and
     variables related to the turbulence model (<em>k</em>, <em>ε</em>,
-    <em>R<sub>ij</sub>-ε</em>, <em>ω</em>,<em>ϕ</em>, \f$ \overline{f} \f$,
+    <em>R<sub>ij</sub></em>, <em>ω</em>, <em>ϕ</em>, \f$ \overline{f} \f$,
     <em>α</em>, <em>ν<sub>t</sub></em>). \n
 
   - The designation “scalar” refers to (usually scalar) variables which are

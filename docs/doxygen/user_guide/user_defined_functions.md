@@ -147,6 +147,15 @@ functions which will be able to access those elements.
 
   The equivalent Fortran function is named \ref usppmo.
 
+- \ref cs_user_zones
+
+  Allows defining which zones (based on mesh groups or geometric criteria)
+  will be used for the computation. This allows advanced definitions,
+  such as time-evolving zones based un user callback functions, in
+  addition to the basic definitions provided by the GUI..
+
+  It is called before all physical or numerical oriented user functions.
+
 - \ref cs_user_parameters (in \ref cs_user_parameters.c)
 
   Allows defining most general settings, such as reference physical properties

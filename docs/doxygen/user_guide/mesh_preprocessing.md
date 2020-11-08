@@ -242,7 +242,7 @@ The user may specify faces to be joined, and can also modify basic joining
 parameters.
 
 \anchor fig_joining
-![Defining a mesh joining](gui_mesh_join.png)
+\image html gui_mesh_join.png "Defining a mesh joining"
 
 For a simple mesh, it is rarely useful to specify strict face selection
 criteria, as joining is sufficiently automated to detect which faces
@@ -268,7 +268,7 @@ in the [figure](@ref fig_join_tolerance) below:
    faces, as shown on the right of figure
 
 \anchor fig_join_tolerance
-![Maximum intersection tolerance and faces normal angle](join_tolerance.svg)
+\image html join_tolerance.svg "Maximum intersection tolerance and faces normal angle"
 
 As shown above, verbosity and visualization levels can also be set,
 to obtain more detailed logging of the joining operations, as
@@ -307,7 +307,7 @@ once pre-processed, 2 periodic faces have the same orientation
 (possibly adjusted by periodicity of rotation).
 
 \anchor fig_join_periodic
-![Matching of periodic faces: base principle](join_periodic.svg)
+\image html join_periodic.svg "Matching of periodic faces: base principle"
 
 As with joining, it is recommended to filter boundary faces to process
 using a selection criterion. As many periodicities may be built as desired,
@@ -322,7 +322,7 @@ by user-defined functions, as shown in various
 [examples](@ref cs_user_mesh_h_cs_user_mesh_periodicity).
 
 \anchor fig_periodicities
-![Defining a periodicity relation](gui_mesh_periodicity.png)
+\image html gui_mesh_periodicity.png "Defining a periodicity relation"
 
 Modification of the mesh and geometry
 -------------------------------------
@@ -684,4 +684,3 @@ all matching elements, as they maintain lists of corresponding elements.
 The GUI naturally builds and associates zones for boundary and volume
 conditions. The \ref cs_user_zones user-defined functions (from
 `cs_user_zones.c`) can be used to build such zones.
-

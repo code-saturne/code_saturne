@@ -123,8 +123,6 @@ cs_les_inflow_finalize(void);
 /*!
  * \brief Add an inlet definition for synthetic turbulence inflow generation.
  *
- * For each LES inlet, the following parameters may be defined:
- *
  *  \remark:
  *  - eps_r is used only for CS_INFLOW_BATTEN and CS_INFLOW_SEM types.
  *  - Strictly positive values are required for k_r and eps_r.

@@ -45,7 +45,7 @@ extended neighborhood. Most updates need only to operate on the standard
 halo, requiring less data communication than those on the extended halos.
 
 \anchor fig_halo
-![Parallel domain partitioning: halos](halo.svg)
+\image html halo.svg "Parallel domain partitioning: halos"
 
 Periodicity
 -----------
@@ -61,8 +61,7 @@ In this example, all periodic boundaries match with boundaries on
 the same domain, so halos are either parallel or periodic.
 
 \anchor fig_parperio_pump
-![Combined parallelism and periodicity: halos](rota_perio_parall.jpg)
-
+\image html rota_perio_parall.jpg "Combined parallelism and periodicity: halos" width=380px
 
 Coding operations in parallel mode
 ----------------------------------

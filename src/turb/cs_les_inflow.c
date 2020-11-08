@@ -502,6 +502,11 @@ void CS_PROCF(synthe, SYNTHE)
 
     cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
 
+    cs_user_les_inflow_update(inlet->zone,
+                              inlet->vel_m,
+                              &(inlet->k_r),
+                              &(inlet->eps_r));
+
     cs_real_3_t *vel_m_l = NULL;
     cs_real_6_t *rij_l = NULL;
     cs_real_t   *eps_r = NULL;
@@ -521,7 +526,7 @@ void CS_PROCF(synthe, SYNTHE)
 
     BFT_MALLOC(vel_m_l, n_elts, cs_real_3_t);
     BFT_MALLOC(rij_l, n_elts, cs_real_6_t);
-    BFT_MALLOC(eps_r,    n_elts, cs_real_t);
+    BFT_MALLOC(eps_r, n_elts, cs_real_t);
 
     /* Initialization by the turbulence scales given by the user */
 
@@ -875,8 +880,6 @@ cs_les_inflow_finalize(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add an inlet definition for synthetic turbulence inflow generation.
- *
- * For each LES inlet, the following parameters may be defined:
  *
  *  \remark:
  *  - eps_r is used only for CS_INFLOW_BATTEN and CS_INFLOW_SEM types.
