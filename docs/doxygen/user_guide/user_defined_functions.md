@@ -257,6 +257,19 @@ Functions called during after time stepping
   as some specific post-processing extracts), and possibly cleaning up and freeing
   structures used in the main \ref cs_user_extra_operations function.
 
+User-defined Fortran modules
+----------------------------
+
+When compiling user sources in a case's `SRC` directory, the order
+of compilation is not based on any dependency check. This is not
+an issue for additional user C or C++ code, but can be an issue
+for Fortran code with user-defined modules.
+
+If a file named `cs_user_modules.f90` is present, it
+will be compiled before any other Fortran file. So if needed,
+user-defined modules should be defined in that file, to ensure they
+are available in other user subroutines.
+
 Main variables and structures
 =============================
 

@@ -34,7 +34,7 @@ all the members in the development team.
 This document provides practical information for the usage of \CS.
 For more details about the algorithms and their numerical implementation,
 please refer to the reports
- \cite{ijvf}, \cite{boucker00} and \cite{mechitoua98},
+ \cite{ijvf}, and \cite{mechitoua98},
 and to the theoretical documentation \cite{theory}.
 
 The latest updated version of this document is available on-line with the version of \CS
@@ -79,464 +79,6 @@ In any case, the \textbf{search bar} can be used to look for a specific keyword 
 be a function, a variable, a structure, a type, etc.
 
 %==================================
-%==================================
-\section{Practical information about \CS}
-%==================================
-%==================================
-
-%==================================
-\subsection{User subroutines}
-%==================================
-
-%==================================
-\subsubsection{Main variables}
-%==================================
-
-This section presents a non-exhaustive list of the main variables that
-may be encountered by the user. Most of them should not be modified by the
-user. They are calculated automatically from the data. However it may be
-useful to know what they represent.
-Developers can also refer to \cite{theory}.
-
-These variables are listed in the alphabetical index at the end of this
-document (see \S~\ref{sec:prg_motscles}).
-
-The type of each variable is given: integer [i], real number [r],
-integer array [ia], real array [ra].
-
-%====================================
-\subsubsubsection{Physical variables}
-%====================================
-
-Almost all physical variables\footnote{except some of the properties defined at
-the cell centers} can be accessed via the \texttt{cs\_field} API and are
-available in all the subroutines as fields (either through their name or their
-id). The previous system, which used multidimensional arrays, has been
-progressively replaced by the \texttt{cs\_field} API.
-
-For a thorough description of the user management of all physical
-variables as well as the corresponding syntaxes between the \texttt{cs\_field}
-API (both in C and Fortran) and the previous system, please refer to
-\doxygenfile{field.html}{the dedicated \texttt{Doxygen} documentation}.
-
-Note that local arrays of values of physical variables, retrieved via the
-\texttt{cs\_field} API, follow a naming convention, fully described at
-\doxygenfile{local.html}{this page} of the \texttt{Doxygen} documentation. It
-is highly recommended to follow this convention to ease the comprehension.
-
-\underline{About the solved variables}
-
-The indexes allowing marking out the different solved variables (from 1 to
-\texttt{nvar}) are integers available in a ``module'' called
-\texttt{numvar}.
-
-For example, \texttt{ipr} refers to the variable ``pressure''.
-
-The list of integers referring to solved variables can be accessed through
-the following \doxygenfile{group__main__variables.html}{\texttt{Doxygen} documentation}.
-These variable index-numbers can be used to retrieve the corresponding field indices
-(for instance, \texttt{ivarfl(ipr)} is the field index for the pressure),
-but also for some arrays of variable associated options.
-
-To access the main solved variables, please refer to the following
-\doxygenfile{field.html}{\texttt{Doxygen} documentation}.
-
-\bigskip
-
-Concerning the solved scalar variables (apart from the variables
-pressure, $k$, $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$,
-$\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
-\begin{list}{-}{}
-\item The designation ``scalar'' refers to scalar variables which are
-      solution of an advection equation, apart from the variables of the
-      turbulence model  ($k$, $\varepsilon$, $R_{ij}$, $\omega$,
-      $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$): for instance the
-      temperature, scalars which may be passive or not, ``user'' or not.
-      The mean value of the square of the fluctuations of a ``scalar'' is a
-      ``scalar'', too. The scalars may be divided into two groups:
-      \texttt{nscaus} ``user'' scalars and \texttt{nscapp}
-      ``specific physics'' scalars, with \texttt{nscal=nscaus+nscapp}.
-      \texttt{nscal} must be less than or equal to \texttt{nscamx}.
-\item The \texttt{j}$^{\text{th}}$ user scalar is, in
-      the whole list of the \texttt{nscal} scalars, the scalar number
-      \texttt{j}. In the list of the \texttt{nvar} solved variables, it
-      corresponds to the variable number \texttt{isca(j)}.
-\item The \texttt{j}$^{\text{th}}$ scalar related to a specific physics is, in
-      the whole list of the \texttt{nscal} scalars, the scalar number
-      \texttt{iscapp(j)}. In the list of the \texttt{nvar} solved variables, it
-      corresponds to the variable number
-      \texttt{isca(iscapp(j)})\index{\texttt{iscapp}}.
-
-\item Apart from specific physics, the temperature (or the enthalpy) is the
-      scalar number \texttt{iscalt}\index{iscalt} in the list of the
-      \texttt{nscal} scalars. It corresponds to the variable number
-      \texttt{isca(iscalt)}. if there is no thermal scalar,
-      \texttt{iscalt} is equal to -1.
-\item A ``user'' scalar number \texttt{j} may represent the mean of the
-      square of the fluctuations of a scalar \texttt{k} ({\em i.e.} the average
-      $\overline{\varphi^\prime\varphi^\prime}$ for a fluctuating scalar
-      $\varphi$ ). This can be made either {\em via} the
-      interface or by declaring that scalar using
-      \texttt{cs\_parameters\_add\_variable\_variance} in
-      \texttt{cs\_user\_parameters.c} (if the scalar in question is not a ``user''
-      scalar, the selection is made automatically). For instance, if \texttt{j}
-      and \texttt{k} are ``user'' scalars, the variable $\varphi$ corresponding
-      to \texttt{k} is the variable number
-      \texttt{isca(k)=isca(iscavr(j))}.\footnote{It is really
-      $\overline{\varphi^\prime\varphi^\prime}$, and not
-      $\displaystyle\sqrt{\overline{\varphi^\prime\varphi^\prime}}$}.
-\end{list}
-
-\bigskip
-
-\underline{About the physical properties at the cell centers}\\
-To access the physical properties, please refer to the following
-\doxygenfile{field.html}{\texttt{Doxygen} documentation}. Some
-index numbers are also described in the physical properties
-numbering \doxygenfile{group__physical__prop.html}{\texttt{Doxygen} documentation}.
-
-\minititre{Note: Variable physical properties}\label{provar}
-Some physical properties such as specific heat or diffusivity are often
-constant (choice made by the user).
-In that case, these properties are stored as a simple real numbers
-rather than in a domain-sized array of reals.
-\begin{list}{$\bullet$}{}
-\item This is the case for the specific heat $C_p$.
-\begin{list}{-}{}
-\item If $C_p$ is constant, it can be specified in
-      the interface or by indicating \texttt{icp=0} in \\
-      \texttt{cs\_user\_parameters.f90}, and the property will be stored in
-      the real number \texttt{cp0}.
-\item If $C_p$ is variable, it can be specified in the interface or by
-      indicating \texttt{icp=1} in \\
-      \texttt{cs\_user\_parameters.f90}. The code will then
-      modify this value to make \texttt{icp} refer to the effective
-      property field id corresponding to the specific heat,
-      in a way which is transparent for the user. For each cell
-      \texttt{iel}, the value of $C_p$ can then be defined in \texttt{usphyv}
-      in an array which pointer can be retrieved by calling
-      \texttt{field\_get\_val\_s(icp, cpro\_cp)}.
-\end{list}
-\item This is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
-\begin{list}{-}{}
-\item If $k$ is constant, it can be specified in the interface or by
-      calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, -1)}
-      in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}).
-\item If $k$ is variable, it can be specified in the interface or by
-      calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, 0)}
-      in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}). The code will then
-      modify this key value to make it refer to the effective
-      field id corresponding to the diffusivity of the scalar
-      \texttt{iscal}, in a way which is transparent for the user. For each cell
-      \texttt{iel}, the value of $k$ is then given in \texttt{usphyv} and associated
-      with the field whose id is given by calling
-      \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, ...)}.
-\end{list}
-\end{list}
-
-\bigskip
-
-Two other variables, \texttt{hbord} and \texttt{tbord}, should be noted here,
-although they are relatively local (they appear only in the treatment of the
-boundary conditions) and are used only by developers.
-
-\variab{hbord}{hbord(nfabor)}{ra}{Array of the exchange coefficient for
-temperature (or enthalpy) at the boundary faces. The table is allocated only if
-\texttt{isvhb}\index{\texttt{isvhb}} is set to 1 in the subroutine \texttt{tridim}
-(which is note a user subroutine), which is done automatically, but only if the coupling
-with \syrthes or the 1D thermal wall module are activated.}
-
-\variab{tbord}{tbord(nfabor)}{ra}{Temperature (or enthalpy) at the boundary
-faces\footnote{It is the physical temperature at the boundary faces, not the
-boundary condition for temperature. See \cite{theory} for more details on
-boundary conditions}. The table is allocated only if
-\texttt{isvtb}\index{\texttt{isvtb}} is set to 1 in the subroutine \texttt{tridim}
- (which is note a user subroutine), which is done automatically but only if the
-coupling with \syrthes or the 1D thermal wall module are activated.}
-
-Tables \texttt{hbord} and \texttt{tbord} are of size \texttt{nfabor},
-although they concern only the wall boundary faces.
-
-
-%==================================
-\subsubsubsection{Variables related to the numerical methods}
-%==================================
-
-The main numerical variables and ``pointers'' are described in the
-\texttt{Doxygen} documentation below.
-
-\minititre{Boundary conditions}
-
-\begin{itemize}
-\item \doxygenanchor{group__mesh.html\#ifmfbr}{\texttt{ifmfbr}} and
-\doxygenanchor{group__mesh.html\#isympa}{\texttt{isympa}} arrays.
-
-\item \doxygenanchor{group__coupled__case.html\#itrifb}{\texttt{itrifb}},
-\doxygenanchor{group__coupled__case.html\#itypfb}{\texttt{itypfb}} and
-\doxygenanchor{group__coupled__case.html\#uetbor}{\texttt{uetbor}} arrays.
-\end{itemize}
-
-\minititre{Distance to the wall}
-
-\begin{itemize}
-\item \doxygenanchor{group__auxiliary.html\#dispar}{\texttt{dispar}} and
-\doxygenanchor{group__auxiliary.html\#yplpar}{\texttt{yplpar}} arrays.
-\end{itemize}
-
-\minititre{Pressure drops and porosity}
-
-\begin{itemize}
-\item \doxygenanchor{group__auxiliary.html\#icepdc}{\texttt{icepdc}},
-\doxygenanchor{group__auxiliary.html\#ckupdc}{\texttt{ckupdc}} and
-\doxygenanchor{group__auxiliary.html\#porosi}{\texttt{porosi}} arrays as well as
-\doxygenanchor{group__auxiliary.html\#ncepdc}{\texttt{ncepdc}}\texttt{ncepdc}.
-\end{itemize}
-
-\minititre{Mass sources}
-
-\begin{itemize}
-\item \doxygenanchor{group__auxiliary.html\#icetsm}{\texttt{icetsm}},
-\doxygenanchor{group__auxiliary.html\#itypsm}{\texttt{itypsm}} and
-\doxygenanchor{group__auxiliary.html\#smacel}{\texttt{smacel}} arrays as well as
-\doxygenanchor{group__auxiliary.html\#ncetsm}{\texttt{ncetsm}}.
-\end{itemize}
-
-\minititre{Wall 1D thermal module}
-
-\variab{nfpt1d}{nfpt1d}{i}{Number of boundary faces which are coupled
-with a wall 1D thermal module. See the user subroutine
-\texttt{cs\_user\_1d\_wall\_thermal.c}}
-
-\variab{ifpt1d}{ifpt1d}{ia} {Array allowing marking out the numbers of
-the \texttt{nfpt1d} boundary faces which are coupled with a wall 1D
-thermal module. The numbers of these boundary faces are
-given by \texttt{ifpt1d(ii)}, with
-1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}.
-See the user subroutine \texttt{cs\_user\_1d\_wall\_thermal.c}}
-
-\variab{nppt1d}{nppt1d}{ia}{Number of discretisation cells in the 1D wall for the
-\texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal module. The
-number of cells for these boundary faces is given by
-\texttt{nppt1d(ii)}, with
-1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See
-the user subroutine \texttt{cs\_user\_1d\_wall\_thermal.c}}
-
-\variab{eppt1d}{eppt1d}{ia}{Thickness of the 1D wall for the
-\texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal
-module. The wall thickness for these boundary faces is therefore given
-by \texttt{eppt1d(ii)}, with
-1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See the user subroutine
-\texttt{cs\_user\_1d\_wall\_thermal.c}}
-
-\minititre{Others}
-
-\variab{dt}{dt(ncelet)}{ra}{Value of the time step}
-
-\variab{ifmcel}{ifmcel(ncelet)}{ia}{Family number of the elements. See note 1}
-
-\variab{s2kw}{s2kw(ncelet)}{ra}{Square of the norm of the deviatoric part of the deformation
-rate tensor ($S^2=2S_{ij}^D S_{ij}^D$). This array is defined only
-with the $k-\omega$ (SST) turbulence model}
-
-\variab{divukw}{divukw}{ia}{Divergence of the velocity. More precisely it is the trace of the velocity gradient (and not a finite volume divergence term). In the
-cell \texttt{iel},  $div(\vect{u})$ is given by \texttt{divukw(iel1)}.
-This array is defined only with the $k-\omega$ SST turbulence model
-(because in this case it may be calculated at the same time as $S^2$)}.
-
-\minititre{Note: boundary conditions}
-The \textbf{gradient} boundary conditions in \CS boil down to determine a value for the
-current variable $\varia$ at the boundary faces $\fib$, that is to say $\varia_\fib$,
-value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
-projection of the center of the adjacent cell on the straight line
-perpendicular to the boundary face and crossing its center:
-\begin{equation}
-\varia_\fib=A_{\fib}^g +B_{\fib}^g \varia_{\centip}.
-\end{equation}
-
-For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^g , \, B_{\fib}^g$ is
-may be accessed using the \texttt{field\_get\_coefa\_s} and
-\texttt{field\_get\_coefb\_s} functions, replacing \texttt{s} with \texttt{v}
-for a vector.
-
-The \textbf{flux} boundary conditions in \CS boil down to determine the value of the diffusive
-flux of the
-current variable $\varia$ at the boundary faces $\fib$, that is to say
- $D_{\ib} \left(K_\fib, \, \varia \right)$,
-value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
-projection of the center of the adjacent cell on the straight line
-perpendicular to the boundary face and crossing its center:
-\begin{equation}
-D_{\ib} \left(K_\fib, \, \varia \right) = A_{\fib}^f +B_{\fib}^f \varia_{\centip}.
-\end{equation}
-
-For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$
-may be accessed using the \texttt{field\_get\_coefaf\_s} and
-\texttt{field\_get\_coefbf\_s} functions, replacing \texttt{s} with \texttt{v}
-for a vector.
-
-The \textbf{divergence} boundary conditions in \CS boil down to determine a value for the
-current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary faces $\fib$,
-that is to say $\varia_\fib$,
-value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
-projection of the center of the adjacent cell on the straight line
-perpendicular to the boundary face and crossing its center:
-\begin{equation}
-\varia_\fib=A_{\fib}^d +B_{\fib}^d \varia_{\centip}.
-\end{equation}
-
-For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$
-may be accessed using the \texttt{field\_get\_coefad\_s} and
-\texttt{field\_get\_coefbd\_s} functions, replacing \texttt{s} with \texttt{v}
-for a vector.
-
-\clearpage
-%==================================
-\subsubsubsection{User arrays}
-%==================================
-Modules containing user arrays accessible from all user subroutines may
-be defined in the \texttt{user\_modules.f90} file. This file is
-compiled before any other Fortran user file, to ensure modules
-may be accessed in other user subroutines using the \texttt{use <module>}
-construct. It may contain any routines or variables the user needs,
-and contains no predefined routines or variables (i.e. the only
-specificity of this file is that a file with this name is compiled before
-all others).
-
-%==================================
-\subsubsubsection{Parallelism and periodicity}
-%==================================
-
-The user can check in a subroutine
-\begin{list}{-}{}
-\item that the presence of periodicity is tested with the variable
-      \texttt{iperio} (=1 if periodicity is activated);
-\item that the presence of rotation periodicities is tested with the variable
-      \texttt{iperot} (number of rotation periodicities);
-\item that running of a calculation in parallel is tested for with the
-      variable \texttt{irangp} (\texttt{irangp} is worth -1 in the case of a
-      non-parallel calculation and $p-1$ in the case of a parallel calculation,
-      $p$ being the number of the current processor)
-\end{list}
-
-%==================================
-\subsubsubsection{Variables saved to allow calculation restarts}
-%==================================
-
-The directory \texttt{checkpoint} contains:
-\begin{list}{-}{}
-\item \texttt{main}: main restart file,
-\item \texttt{auxiliary}: auxiliary restart file (see \texttt{ileaux\index{ileaux}},
-                       \texttt{iecaux\index{iecaux}}),
-\item \texttt{radiative\_transfer}: restart file for the radiation module,
-\item \texttt{lagrangian}: main restart file for the Lagrangian module,
-\item \texttt{lagrangian\_stats}: auxiliary restart file for the Lagrangian module (mainly for the statistics),
-\item \texttt{1dwall\_module}: restart file for the 1D wall thermal module,
-\end{list}
-
-The main restart file contains the values in every cell of the mesh for
-pressure, velocity, turbulence variables and all the scalars (user scalars et specific physics scalars.
-Its content is sufficient for a calculation restart, but the complete continuity of the solution at
-restart is not ensured\footnote{In other words, a restart calculation of n time
-steps following a calculation of m time steps will not yield strictly the same
-results as a direct calculation on m+n time steps, whereas it is the case when
-the auxiliary file is used}.
-
-The auxiliary restart file completes the main restart file to ensure
-solution continuity in the case of a calculation restart.
-If the code cannot find one or several pieces of data required for the
-calculation restart in the auxiliary restart file, default values are
-then used. This allows in particular to run calculation restarts even if
-the number of faces has been modified (for instance in case of
-modification of the mesh merging or of periodicity
-conditions\footnote{Imposing a periodicity changes boundary faces into
-internal faces}). More precisely, the auxiliary restart file contains
-the following data:
-
-\begin{list}{-}{}
-\item type and value of the time step, turbulence model,
-\item density value at the cells and boundary faces, if it is variable,
-\item values at the cells of the other variable physical properties,
-when they are extrapolated in time (molecular dynamic viscosity, turbulent or
-sub-grid scale viscosity, specific heat, scalar diffusivity). The specific heat is stored automatically for the Joule
-effect (in case the user should need
-it at restart to calculate the temperature from the enthalpy before the new
-specific heat has been estimated),
-\item time step value at the cells, if it is variable,
-\item mass flow value at the internal and boundary faces (at the last
-time step, and also at the previous time step if required by the time scheme),
-\item boundary conditions,
-\item values at the cells of the source terms when they are extrapolated in time,
-\item number of time-averages, and values at the cells of the associated
-cumulated values,
-\item for each cell, distance to the wall when it is required (and
-index-number of the nearest boundary face, depending on \texttt{icdpar}%
-\index{\texttt{icdpar}}),
-\item values at the cells of the external forces in balance with a part
-of the pressure (hydrostatic, in general),
-\item for the D3P gas combustion model: massic enthalpies and temperatures at entry,
-type of boundary zones and entry indicators,
-\item for the EBU gas combustion model: temperature of the fresh gas, constant
-mixing rate (for the models without mixing rate transport), types of boundary
-zones, entry indicators, temperatures and mixing rates at entry,
-\item for the LWC gas combustion model: the boundaries of the probability
-density functions for enthalpy and mixing rate, types of boundary
-zones, entry indicators, temperatures and mixing rates at entry,
-\item for the pulverised coal combustion: coal density,  types of boundary
-zones, variables \texttt{ientat}, \texttt{ientcp}, \texttt{inmoxy}, \texttt{timpat}, \texttt{x20}
-(in case of coupling with the Lagrangian module, \texttt{iencp} and \texttt{x20}
-are not saved),
-\item for the pulverised fuel combustion: types of boundary
-zones, variables \texttt{ientat}, \texttt{ientfl}, \texttt{inmoxy}, \texttt{timpat}, \texttt{qimpat}
-, \texttt{qimpfl},
-\item for the electric module: the tuned potential difference \texttt{dpot}%
-\index{\texttt{dpot}}
-and, for the electric arcs module, the tuning coefficient \texttt{coejou}%
-\index{\texttt{coejou}}
-(when the boundary conditions are tuned), the Joule source term for the enthalpy
-(when the Joule effect is activated) and the Laplace forces (with the electric
-arc module).
-\end{list}
-
-It should be noted that, if the auxiliary restart file is read, it is
-possible to run calculation restarts with relaxation of the
-density\footnote{Such a relaxation only makes sense for a steady
-calculation}(when it is variable), because this variable is stored in the
-restart file. On the other hand, it is generally not possible to do the
-same with the other physical properties (they are stored in the restart
-file only when they are extrapolated in time, or with the Joule effect for the
-specific heat).
-
-All checkpoint/restart files are binary files. Nonetheless, they may
-be dumped or compared using the \texttt{cs\_io\_dump} tool.
-
-In the case of parallel calculations, it should be noted that all the processors
-will write their restart data in the same files. Hence, for instance, there will
-always be one and only one \texttt{main} file, whatever the number of
-processors used. The data in the file are written according to the initial full
-domain ids for the cells, faces and nodes. This allows in particular
-to restart using {\it p} processors a calculation begun with {\it n} processors,
-or to make the restart files independent of any mesh renumbering that may
-be carried out in each domain.
-
-{\em WARNING: if the mesh is composed of several files, the order
-in which they appear in the launch script or in the Graphical Interface must not
-be modified in case of a calculation restart\footnote{When uncertain, the user
-can check the saved copy of the launch script in the \texttt{RESU} directory, or
-the head of the \texttt{preprocessor*.log} files, which repeat the
-command lines passed to the Preprocessor module}.}
-
-{\em NOTE: when joining of faces or periodicity is used, two nodes closer
-than a certain (small) tolerance will be merged. Hence, due to numerical
-truncation errors, two different machines may yield different results.
-This might change the number of faces in the global
-domain\footnote{The number of cells will not be modified, it is always the sum of the
-number of cells of the different meshes} and make restart files
-incompatible. Should that problem arise when making a calculation restart on a
-different architecture, the solution is to ignore the \texttt{auxiliary}
-file and use only the \texttt{main} file, by setting \texttt{ileaux = 0}
-in \texttt{cs\_user\_parameters.f90}}
-
-%==================================
 \section{Basic modelling setup}
 %==================================
 
@@ -545,8 +87,8 @@ in \texttt{cs\_user\_parameters.f90}}
 %==================================
 
 This operation is done in the Graphical User Interface (GUI) or by using the user subroutines in \\ \texttt{cs\_user\_parameters.f90}.
-In the GUI, the initialisation is performed by filling the parameters displayed in \figurename\ref{fig:gui_calculation_features}
-to \ref{fig:gui_output_profiles}. If the 'Mobile mesh' option is activated,
+In the GUI, the initialisation is performed by filling the parameters displayed in \figurename~\ref{fig:gui_calculation_features}
+to \figurename~\ref{fig:gui_fluid_props}. If the 'Mobile mesh' option is activated,
 please see Section \ref{sec:ALE} for more details. The headings filled for the initialisation of the main parameters
 are the followings:
 \begin{list}{-}{}
@@ -565,15 +107,6 @@ see \S~\ref{sec:prg_usersourceterms} and \S~\ref{sec:prg_headlosses}), initialis
 If the GUI is not used, the \texttt{cs\_user\_boundary\_conditions} file must be used, see \S~\ref{sec:prg_boundaryconditions}.
 \item Numerical parameters: number and type of time steps, and advanced parameters for the numerical solution of the equations,
 see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time_step}.
-\item Calculation control: parameters related to the time averages, the
-      locations of the probes where some variables will be monitored over time
-      (if the GUI is not used, this information is specified in \S~\ref{sec:cs_user_initialization}),
-       the definition of the frequency of the outputs in the calculation
-      log, the post-processing output writer frequency and format options, and
-      the post-processing output meshes and variables selection, see
-      \figurename~\ref{fig:gui_time_averages}, \figurename~\ref{fig:gui_output_log}, \figurename~\ref{fig:gui_output_writers},
-      and \figurename~\ref{fig:gui_output_meshes}. The item ``Profiles'' allows to save, with a
-      frequency defined by the user, 1D profiles on a parametric curve define by its equation, see \figurename\ref{fig:gui_output_profiles}.
 \end{list}
 
 \begin{figure}[!ht]
@@ -663,16 +196,6 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 \label{fig:gui_time_step}
 \end{center}
 \end{figure}
-
-With the GUI, the subroutine \texttt{cs\_user\_parameters.f90} is only
-used to modify high-level parameters which can not be managed by the
-interface. Without the GUI, this
-subroutine is compulsory and some of the headings must be completed (see \S\ref{sec:prg_stepbystepcalculation}).
-\texttt{cs\_user\_parameters.f90}
-is used to indicate the value of different calculation
-basic parameters: constant and uniform physical values, parameters of
-numerical schemes, input-output management...\\
-It is called only during the calculation initialisation.
 
 For more details about the different parameters, please refer to the key
 word list (\S\ref{sec:prg_motscles}).
@@ -995,6 +518,7 @@ variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_cl
 \end{list}
 
 \minititre{Notes}
+
 $\bullet\ $ Whatever is the value of the indicator \texttt{itypfb(ifac)}, if
 the array \texttt{icodcl(ifac,ivar)} is modified by the user ({\em i.e.} filled
 with a non-zero value), the code will not use the default
@@ -1022,6 +546,53 @@ course different from the values \texttt{ientre}, \texttt{iparoi},
 \texttt{iparug}, \texttt{isymet}, \texttt{isolib} and \texttt{iindef} (the values
 of these variables are given in the \texttt{paramx} module). This allows to
 easily isolate some boundary faces, in order for instance to calculate balances.
+
+\minititre{Boundary condition types}
+
+The \textbf{gradient} boundary conditions in \CS boil down to determine a
+value for the current variable $\varia$ at the boundary faces $\fib$, that is to
+say $\varia_\fib$, value expressed as a function of $\varia_{\centip}$, value
+of $\varia$ in $\centip$, projection of the center of the adjacent cell on the
+straight line perpendicular to the boundary face and crossing its center:
+\begin{equation}
+\varia_\fib=A_{\fib}^g +B_{\fib}^g \varia_{\centip}.
+\end{equation}
+
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^g , \, B_{\fib}^g$ is
+may be accessed using the \texttt{field\_get\_coefa\_s} and
+\texttt{field\_get\_coefb\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
+
+The \textbf{flux} boundary conditions in \CS boil down to determine the
+value of the diffusive flux of the
+current variable $\varia$ at the boundary faces $\fib$, that is to say
+ $D_{\ib} \left(K_\fib, \, \varia \right)$,
+value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
+projection of the center of the adjacent cell on the straight line
+perpendicular to the boundary face and crossing its center:
+\begin{equation}
+D_{\ib} \left(K_\fib, \, \varia \right) = A_{\fib}^f +B_{\fib}^f \varia_{\centip}.
+\end{equation}
+
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$
+may be accessed using the \texttt{field\_get\_coefaf\_s} and
+\texttt{field\_get\_coefbf\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
+
+The \textbf{divergence} boundary conditions in \CS boil down to determine a value for the
+current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary
+faces $\fib$, that is to say $\varia_\fib$,
+value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
+projection of the center of the adjacent cell on the straight line
+perpendicular to the boundary face and crossing its center:
+\begin{equation}
+\varia_\fib=A_{\fib}^d +B_{\fib}^d \varia_{\centip}.
+\end{equation}
+
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$
+may be accessed using the \texttt{field\_get\_coefad\_s} and
+\texttt{field\_get\_coefbd\_s} functions, replacing \texttt{s} with \texttt{v}
+for a vector.
 
 %==================================
 \subsubsection{Coding of non-standard boundary conditions}
@@ -1477,7 +1048,7 @@ may produce negative density values).
       temperature) are considered as constant in time and uniform in
       space, with the values \texttt{cp0} and the value associated
       to the field's \texttt{diffusivity\_ref} keyword.
-      specified in the interface or in \texttt{cs\_user\_parameters.c}.\\
+      specified in the interface or in \texttt{cs\_user\_parameters.f90}.\\
 To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       interface (with a user law) or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
       and fill for each cell \texttt{iel} the array \texttt{cpro\_cp} which can be retrieved by calling
@@ -3564,9 +3135,9 @@ effect module) or the current (electric arcs module) from the imposed values
 \item For the electric arcs, the imposed potential difference can be a fixed variable:
  for example, the cathode can be fixed at 0 and the potential at the anode
  contains the variable \texttt{dpot}. This variable is initialised in
-in \texttt{cs\_user\_parameters.c}
+in \texttt{cs\_user\_parameters.90}
  by an estimated potential difference. If \texttt{ielcor}=1 (see
- \texttt{cs\_user\_parameters.c}), \texttt{dpot} is updated automatically during the
+ \texttt{cs\_user\_parameters.f90}), \texttt{dpot} is updated automatically during the
  calculation to obtain the required current.
 \item For the Joule effect module, \texttt{dpot} is again used with the same
  signification as in the electric arcs module. If \texttt{dpot} is not wanted
@@ -3574,7 +3145,7 @@ in \texttt{cs\_user\_parameters.c}
  used. \texttt{coejou} is the coefficient by which the potential difference is
  multiplied to obtain the desired power dissipation. By default this begins at
  1 and is updated automatically. If \texttt{ielcor}=1 (see \texttt
-{cs\_user\_parameters.c}), multiply the imposed potentials in
+{cs\_user\_parameters.f90}), multiply the imposed potentials in
 \texttt{cs\_user\_boundary\_conditions} by \texttt{coejou} at each time step to
 achieve the desired power dissipation.
  \end{list}
@@ -3641,29 +3212,6 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n}$\\
 by a resetting plane is choosen then \texttt{idreca} defines the current density component
 and \texttt{crit\_reca} the plane used for resetting of electromagnetic variables.
 \end{list}
-
-%==================================
-\subsubsection[{\em EnSight} output]
-{Post-processing output}
-%==================================
-
-The algebraic variables related to the electric module are provided by default:
-\begin{list}{-}{}
-\item gradient of real potential in $V m^{-1}$ ($\grad Pot_R = -\vect{E}$)
-\item density of real current in $A m^{-2}$  ($\vect{j}=\sigma \vect{E}$)
-\end{list}
-specifically for the Joule module effect with \texttt{ippmod(ieljou)}=2~:
-\begin{list}{-}{}
-\item gradient of imaginary potential in $V m^{-1}$
-\item density of real current in $A m^{-2}$
-\end{list}
-specifically for the electric arcs module with \texttt{ippmod(ielarc)}=2~:
-\begin{list}{-}{}
-\item magnetic field in $T$ (\vect{B} = \vect{rot}\,\vect{A})
-\end{list}
-
-The post-processing output will be created automatically (on all output volume
-meshes for which the automatic output of main variables is active).
 
 %==================================
 \subsection{\CS-\CS coupling}
