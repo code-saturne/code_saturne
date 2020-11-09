@@ -361,10 +361,95 @@ Turbulence model properties
 Modification of the turbulent viscosity
 ---------------------------------------
 
+The \ref usvist user-defined subroutine can be used to modify the calculation
+of the turbulent viscosity, *i.e.* <em>μ<sub>t</sub></em> in \f$kg.m^{-1}.s^{-1}\f$.
+The correspondig field, `turbulent_viscosity`, can be accessed by calling
+`field_get_val_s(ivisct, cpro_visct)`. The
+subroutine is called at the beginning of every time step, after the
+calculation of the physical parameters of the flow and of the
+"conventional" value of <em>μ<sub>t</sub></em> corresponding to the chosen
+turbulence model.
+
+\warning: The calculation of the turbulent viscosity being a
+particularly sensitive aspect, bad choices here may
+seriously distort the results.
+
 Modification of the variable C of the dynamic LES model
 -------------------------------------------------------
 
-Check [pdf user's guide](../../../user/user.pdf) for details.
+The \ref ussmag user-defined subroutine can be used to modify the calculation
+of the variable *C* of the LES sub-grid scale dynamic model.
+
+It worth recalling that the LES approach introduces the notion of
+filtering between large eddies and small motions. The solved variables
+are said to be filtered in an "implicit" way. Sub-grid scale models
+("dynamic" models) introduce in addition an explicit filtering.
+
+The notations used for the definition of the variable *C* used in the
+dynamic models of code_saturne are specified below. These notations are
+the ones assumed in the document \cite benhamadouche:tr:01.
+
+The value of *a* filtered by the explicit filter (of width
+\f$\widetilde{\overline{\Delta}}\f$) is called \f$\widetilde{a}\f$ and the value
+of *a* filtered by the implicit filter (of width \f$\overline{\Delta}\f$) is
+called \f$\overline{a}\f$.
+We define:
+\f[
+\begin{array}{ll}
+\overline{S}_{ij}=\frac{1}{2}(\frac{\partial \overline{u}_i}{\partial x_j}
+                  +\frac{\partial \overline{u}_j}{\partial x_i})  &
+||\overline{S}||=\sqrt{2 \overline{S}_{ij}\overline{S}_{ij}}\\
+\alpha_{ij}=-2\widetilde{\overline{\Delta}}^2
+             ||\widetilde{\overline{S}}||
+             \widetilde{\overline{S}}_{ij}&
+\beta_{ij}=-2\overline{\Delta}^2
+             ||\overline{S}||
+               \overline{S}_{ij}\\
+L_{ij}=\widetilde{\overline{u}_i\overline{u}_j}-
+ \widetilde{\overline{u}}_i\widetilde{\overline{u}}_j&
+M_{ij}=\alpha_{ij}-\widetilde{\beta}_{ij}\\
+\end{array}
+\f]
+
+In the framework of LES, the total viscosity (molecular + sub-grid) in
+$kg.m^{-1}.s^{-1}$ may be written in \CS:
+\f[
+\begin{array}{llll}
+\mu_{\text{total}}&=&\mu+\mu_{\text{sub-grid}} &
+    \text{\ \ if\ \ }\mu_{\text{sub-grid}}>0\\
+                   &=&\mu                          &
+    \text{\ \ otherwise }\\
+\text{with\ }\mu_{\text{sub-grid}}&=&\rho C \overline{\Delta}^2 ||\overline{S}||
+\end{array}
+\f]
+
+\f$\overline{\Delta}\f$ is the width of the implicit filter, defined at the
+cell \f$\Omega_i\f$ by\n
+\f$\overline{\Delta}=XLESFL*(ALES*|\Omega_i|)^{BLES}\f$
+
+In the case of the Smagorinsky model, *C* is a
+constant which is worth \f$C_s^2\f$. \f$C_s^2\f$ is the so-called Smagorinsky
+constant and is stored in the variable \ref cs_turb_csmago.
+
+In the case of the dynamic model, *C* is variable in
+time and in space. It is determined by
+\f$\displaystyle C=\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}\f$.
+
+In practice, in order to increase the stability, the code does not use the
+value of *C* obtained in each cell, but an average with the values
+obtained in the neighboring cells (this average uses the extended
+neighborhood or other vertex neighbors and corresponds to the explicit
+filter). By default, the value calculated by the code is
+\f[
+C=\frac{\widetilde{M_{ij}L{ij}}}{\widetilde{M_{kl}M_{kl}}}
+\f]
+
+The \ref ussmag subroutine (called at each time step,
+only when this model is active) allows to modify this value. It is for
+example possible to compute the local average after having computed the
+\f[
+C=\widetilde{\left[\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}\right]}
+\f]
 
 <!-- ----------------------------------------------------------------------- -->
 
