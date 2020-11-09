@@ -635,7 +635,7 @@ class domain(base_domain):
 
             self.mci = meg_to_c_interpreter(case,
                                             module_name=module_name,
-                                            wdir = self.exec_dir)
+                                            wdir = os.path.join(self.exec_dir, 'src'))
 
             if self.mci.has_meg_code():
                 needs_comp = True
@@ -683,7 +683,9 @@ class domain(base_domain):
                         self.error_long += " (%d/%d) %s is not provided for %s for zone %s\n" % (i+1, mci_state['nexps'], eme['func'], eme['var'], eme['zone'])
 
                     return
-
+                elif mci_state['state'] == 2:
+                    self.error = 'saving MEG generated sources'
+                    self.error_long = ' Incorrect directory ?'
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')

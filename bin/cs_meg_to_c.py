@@ -272,15 +272,17 @@ class meg_to_c_interpreter:
                  wdir=None):
 
         self.case = case
+        self.wdir = wdir
+
         if module_name:
             self.module_name = module_name
         else:
             self.module_name = case.module_name()
 
-        if not wdir:
+        if not self.wdir:
             data_path = os.path.join(case['case_path'], 'DATA')
         else:
-            data_path = wdir
+            data_path = self.wdir
 
         self.tmp_path = os.path.join(data_path, 'tmp')
 
@@ -2042,13 +2044,24 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def __file_path__(self, c_file_name, hard_path=None):
+
+        # Path based on call options
+        if hard_path != None:
+            fpath = os.path.join(hard_path, c_file_name)
+        elif self.wdir:
+            fpath = os.path.join(self.wdir, c_file_name)
+        else:
+            fpath = os.path.join(self.case['case_path'], 'src', c_file_name)
+
+        return fpath
+
+    #---------------------------------------------------------------------------
+
     def delete_file(self, c_file_name, hard_path=None):
 
         # Copy function file if needed
-        if hard_path:
-            fpath = os.path.join(hard_path, c_file_name)
-        else:
-            fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name);
+        fpath = self.__file_path__(c_file_name, hard_path=hard_path)
 
         if os.path.isfile(fpath):
             os.remove(fpath)
@@ -2061,13 +2074,7 @@ class meg_to_c_interpreter:
             # Try and write the function in the src if in RESU folder
             # For debugging purposes
             try:
-                if hard_path != None:
-                    fpath = os.path.join(hard_path, c_file_name)
-                else:
-                    fpath = os.path.join(self.case['case_path'],
-                                         'src',
-                                         c_file_name)
-
+                fpath = self.__file_path__(c_file_name, hard_path=hard_path)
                 new_file = open(fpath, 'w')
                 new_file.write(code_to_write)
                 new_file.close()
@@ -2157,7 +2164,7 @@ class meg_to_c_interpreter:
         if is_empty == 1:
             state = -1
 
-        ret = {'state':state,
+        ret = {'state':save_status,
                'exps':empty_exps,
                'nexps':len(empty_exps)}
 
