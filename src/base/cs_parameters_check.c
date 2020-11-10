@@ -1680,16 +1680,20 @@ cs_parameters_check(void)
                                 0, 4);
 
   if (cs_glob_porous_model == 3) { /* integral formulation */
-    cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+    const int imrgra_vals[5] ={0, 4, 5, 6, 7};
+
+    cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading porous model,\n"
                                  "integral formulation "
                                  "(cs_glob_porous_model=3) "
-                                 "only compatible \n"
+                                 "not compatible \n"
                                  "with gradient calculation method: "
-                                 "iterative handling of non-orthogonalities"),
+                                 "least squares"),
                                "cs_glob_space_disc->imrgra",
                                cs_glob_space_disc->imrgra,
-                               0);
+                               5,
+                               imrgra_vals,
+                               NULL);
   }
 
   cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);

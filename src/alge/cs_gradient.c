@@ -1363,7 +1363,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
                  * (  (i_face_cog[f_id][0] - cell_cen[jj][0])*f_ext[jj][0]
                     + (i_face_cog[f_id][1] - cell_cen[jj][1])*f_ext[jj][1]
                     + (i_face_cog[f_id][2] - cell_cen[jj][2])*f_ext[jj][2]
-                    - poro[1]);
+                    + poro[1]);
 
           cs_real_t pfacj = pfaci;
 
@@ -1733,6 +1733,26 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
 
+  /*Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  cs_real_t *i_poro_duq_0;
+  cs_real_t *i_poro_duq_1;
+  cs_real_t *b_poro_duq;
+  cs_real_t _f_ext = 0.;
+
+  int is_porous = 0;
+  if (f_i_poro_duq_0 != NULL) {
+    is_porous = 1;
+    i_poro_duq_0 = f_i_poro_duq_0->val;
+    i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name("b_poro_duq")->val;
+  } else {
+    i_poro_duq_0 = &_f_ext;
+    i_poro_duq_1 = &_f_ext;
+    b_poro_duq = &_f_ext;
+  }
+
   /* Reconstruct gradients for non-orthogonal meshes */
   /*-------------------------------------------------*/
 
@@ -1791,6 +1811,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                 / (      weight[f_id]  * c_weight[c_id1]
                   + (1.0-weight[f_id]) * c_weight[c_id2]);
 
+            cs_real_2_t poro = {
+              i_poro_duq_0[is_porous*f_id],
+              i_poro_duq_1[is_porous*f_id]
+            };
+
             // TODO add porous contribution
             fexd[0] = 0.5 * (f_ext[c_id1][0] + f_ext[c_id2][0]);
             fexd[1] = 0.5 * (f_ext[c_id1][1] + f_ext[c_id2][1]);
@@ -1813,12 +1838,14 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                     *(ktpond*f_ext[c_id1][1]-weight[f_id]*fexd[1])
                    + (i_face_cog[f_id][2]-cell_cen[c_id1][2])
                     *(ktpond*f_ext[c_id1][2]-weight[f_id]*fexd[2])
+                   + ktpond*poro[0]
                +     (i_face_cog[f_id][0]-cell_cen[c_id2][0])
                     *((1.0 - ktpond)*f_ext[c_id2][0]-(1.-weight[f_id])*fexd[0])
                    + (i_face_cog[f_id][1]-cell_cen[c_id2][1])
                     *((1.0 - ktpond)*f_ext[c_id2][1]-(1.-weight[f_id])*fexd[1])
                    + (i_face_cog[f_id][2]-cell_cen[c_id2][2])
                     *((1.0 - ktpond)*f_ext[c_id2][2]-(1.-weight[f_id])*fexd[2])
+                   + (1.0 - ktpond)*poro[1]
                + ( dofij[f_id][0] * (grad[c_id1][0]+grad[c_id2][0])
                  + dofij[f_id][1] * (grad[c_id1][1]+grad[c_id2][1])
                  + dofij[f_id][2] * (grad[c_id1][2]+grad[c_id2][2]))*0.5;
@@ -1852,6 +1879,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
             cs_lnum_t c_id = b_face_cells[f_id];
 
+            cs_real_t poro = b_poro_duq[is_porous*f_id];
+
             /*
               Remark: for the cell \f$ \celli \f$ we remove
               \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
@@ -1866,7 +1895,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                       + diipb[f_id][2] * (grad[c_id][2] - f_ext[c_id][2])
                       + (b_face_cog[f_id][0]-cell_cen[c_id][0]) * f_ext[c_id][0]
                       + (b_face_cog[f_id][1]-cell_cen[c_id][1]) * f_ext[c_id][1]
-                      + (b_face_cog[f_id][2]-cell_cen[c_id][2]) * f_ext[c_id][2]);
+                      + (b_face_cog[f_id][2]-cell_cen[c_id][2]) * f_ext[c_id][2]
+                      + poro);
 
             pfac += (coefbp[f_id] -1.0) * pvar[c_id];
 
@@ -3265,7 +3295,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  * (  (i_face_cog[f_id][0] - cell_cen[c_id2][0])*f_ext[c_id2][0]
                     + (i_face_cog[f_id][1] - cell_cen[c_id2][1])*f_ext[c_id2][1]
                     + (i_face_cog[f_id][2] - cell_cen[c_id2][2])*f_ext[c_id2][2]
-                    - poro[1]);
+                    + poro[1]);
 
           cs_real_t pfacj = pfaci;
 
@@ -4076,7 +4106,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                  * (  (i_face_cog[f_id][0] - cell_cen[jj][0])*f_ext[jj][0]
                     + (i_face_cog[f_id][1] - cell_cen[jj][1])*f_ext[jj][1]
                     + (i_face_cog[f_id][2] - cell_cen[jj][2])*f_ext[jj][2]
-                    - poro[1]);
+                    + poro[1]);
           cs_real_t pfacj = pfaci;
 
           pfaci += i_f_var[f_id] - c_var[ii];
