@@ -80,6 +80,7 @@ class NumericalParamGlobalModel(Model):
         self.default['time_scheme_order'] = 1
         self.default['gradient_reconstruction'] = 'default'
         self.default['extended_neighborhood'] = 'default'
+        self.default['algo_density_variation'] = 'default'
         return self.default
 
 
@@ -306,6 +307,30 @@ class NumericalParamGlobalModel(Model):
             self.node_np.xmlSetData('time_scheme_order', 2)
         else:
             self.node_np.xmlRemoveChild('time_scheme_order')
+
+
+    @Variables.noUndo
+    def getDensityVar(self):
+        """
+        Return the algorithm for density variation in time
+        """
+        node = self.node_np.xmlInitNode('algo_density_variation', 'choice')
+        choice = node['choice']
+        if not choice:
+            choice = self._defaultValues()['algo_density_variation']
+        return choice
+
+
+    @Variables.undoLocal
+    def setDensityVar(self, value):
+        """
+        Put the algorithm for density variation in time
+        """
+        node = self.node_np.xmlInitNode('algo_density_variation', 'choice')
+        if value == self._defaultValues()['algo_density_variation']:
+            node.xmlRemoveNode()
+        else:
+            node['choice'] = value
 
 
 #-------------------------------------------------------------------------------

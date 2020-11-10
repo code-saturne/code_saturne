@@ -1892,6 +1892,24 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
   if (_imrgra > -1)
     *imrgra = _imrgra;
 
+  int _idilat = -1;
+
+  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n, "algo_density_variation"),
+                                "choice");
+  if (cs_gui_strcmp(choice, "boussi"))
+    _idilat = 0;
+  else if (cs_gui_strcmp(choice, "dilat_std"))
+    _idilat = 1;
+  else if (cs_gui_strcmp(choice, "dilat_unstd"))
+    _idilat = 2;
+  else if (cs_gui_strcmp(choice, "low_mach"))
+    _idilat = 3;
+  else if (cs_gui_strcmp(choice, "algo_fire"))
+    _idilat = 4;
+
+  if (_idilat > -1)
+    stokes->idilat = _idilat;
+
   _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
   _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
   _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
