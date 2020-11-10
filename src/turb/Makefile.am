@@ -78,6 +78,7 @@ cs_turbulence_inflow.h \
 cs_turbulence_ke.h \
 cs_turbulence_kw.h \
 cs_turbulence_model.h \
+cs_turbulence_sa.h \
 cs_turbulence_headers.h
 
 # Library source files
@@ -94,8 +95,8 @@ cs_turbulence_ke.c \
 cs_turbulence_kw.c \
 cs_turbulence_model.c \
 cs_turbulence_rotation.c \
+cs_turbulence_sa.c \
 cs_clip_ke.c \
-clipsa.f90 \
 clpalp.f90 \
 clprij.f90 \
 clpv2f.f90 \
@@ -112,7 +113,6 @@ resv2f.f90 \
 rijech.f90 \
 rijthe.f90 \
 rijthe2.f90 \
-turbsa.f90 \
 turrij.f90 \
 visdyn.f90 \
 vislmg.f90 \

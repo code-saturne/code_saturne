@@ -281,6 +281,17 @@ interface
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
 
+  subroutine cs_turbulence_sa &
+       (ncesmp, icetsm, itypsm, dt, smacel, itypfb) &
+    bind(C, name='cs_turbulence_sa')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: dt, smacel
+    integer(kind=c_int), dimension(*), intent(in) :: itypfb
+  end subroutine cs_turbulence_sa
+
   subroutine cs_volume_mass_injection_eval &
        (nvar, ncesmp, itypsm, smacel) &
     bind(C, name='cs_volume_mass_injection_eval')
@@ -1381,7 +1392,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.70) then
 
-    call turbsa(nvar, ncetsm, icetsm, itypsm, dt, smacel, itypfb)
+    call cs_turbulence_sa(ncetsm, icetsm, itypsm, dt, smacel, itypfb)
 
     call field_get_val_s(ivarfl(inusa), cvar_nusa)
     call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)

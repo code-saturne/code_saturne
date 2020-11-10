@@ -39,6 +39,7 @@
 #include "cs_turbulence_kw.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_turbulence_sa.h"
 
 /*----------------------------------------------------------------------------*/
 
