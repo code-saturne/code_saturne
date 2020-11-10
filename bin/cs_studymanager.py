@@ -163,7 +163,7 @@ def process_cmd_line(argv, pkg):
                       dest="create_xml", default=False,
                       help="create xml from study (current directory has to be a study)")
 
-    parser.add_option("--create-graph", action="store_true", dest="create_graph", default=False, 
+    parser.add_option("--create-graph", action="store_true", dest="create_graph", default=False,
                       help="create a dependency graph based on all cases from all studies")
 
     if len(argv)==0:

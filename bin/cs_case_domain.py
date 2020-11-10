@@ -1005,7 +1005,7 @@ class domain(base_domain):
 
                 cmd.append(mesh_path)
 
-		# Run command
+                # Run command
                 retcode = run_command(cmd, pkg=self.package)
 
             if retcode != 0:
