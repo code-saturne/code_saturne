@@ -103,6 +103,18 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
                                        'non_ortho_max')
 
+        self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 6, 1)
+        self.modelDensityVar.addItem(self.tr("Automatic"), 'default')
+        self.modelDensityVar.addItem(self.tr("Boussinesq approximation (rho constant except in the buoyant term)"),
+                                       'boussi')
+        self.modelDensityVar.addItem(self.tr("Dilatable steady algorithm"), 'dilat_std')
+        self.modelDensityVar.addItem(self.tr("Dilatable unsteady algorithm"),
+                                       'dilat_unstd')
+        self.modelDensityVar.addItem(self.tr("Low-Mach algorithm"),
+                                       'low_mach')
+        self.modelDensityVar.addItem(self.tr("Algorithm for fire"),
+                                       'algo_fire')
+
         # Connections
         self.checkBoxIVISSE.clicked.connect(self.slotIVISSE)
 
@@ -113,6 +125,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.comboBoxGradientType.activated[str].connect(self.slotGradientType)
         self.comboBoxExtNeighbors.activated[str].connect(self.slotExtNeighbors)
         self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
+        self.comboBoxDensityVar.activated[str].connect(self.slotDensityVar)
 
         # Validators
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
@@ -145,6 +158,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.lineEditRELAXP.setText(str(self.model.getPressureRelaxation()))
         self.modelGradientType.setItem(str_model=str(self.model.getGradientReconstruction()))
         self.modelExtNeighbors.setItem(str_model=str(self.model.getExtendedNeighborType()))
+        self.modelDensityVar.setItem(str_model=str(self.model.getDensityVar()))
 
         if self.model.getGradientReconstruction() == 'green_iter':
             self.labelExtNeighbors.hide()
@@ -177,6 +191,11 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.lineEditRELAXP.show()
             self.labelRELAXP.show()
             self.checkBoxImprovedPressure.show()
+
+        self.modelDensityVar.disableItem(str_model = 'algo_fire')
+        if modl_gas != 'off':
+            self.modelDensityVar.enableItem(str_model = 'algo_fire')
+
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)
@@ -276,6 +295,14 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.model.setExtendedNeighborType(enh_type)
         log.debug("slotExtNeighbors-> %s" % enh_type)
 
+    @pyqtSlot(str)
+    def slotDensityVar(self, text):
+        """
+        Set algorithm for density variation in time
+        """
+        dv_type = self.modelDensityVar.dicoV2M[str(text)]
+        self.model.setDensityVar(dv_type)
+        log.debug("slotDensityVar-> %s" % dv_type)
 
 #-------------------------------------------------------------------------------
 # Testing part
