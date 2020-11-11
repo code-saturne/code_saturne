@@ -1930,7 +1930,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
     MPI_Allreduce(_s, s, 4, CS_MPI_REAL, MPI_SUM, cs_glob_mpi_comm);
 
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      vel_m[coo_id] = s[coo_id] / s[4];
+      vel_m[coo_id] = s[coo_id] / s[3];
 
   }
 

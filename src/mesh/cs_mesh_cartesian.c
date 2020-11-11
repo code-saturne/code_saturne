@@ -98,8 +98,6 @@ static int _build_mesh_cartesian = 0;
 
 static int nvtx_per_face   = 4;
 
-static int nfaces_per_cell = 6;
-
 static cs_mesh_cartesian_params_t *_mesh_params = NULL;
 
 /*============================================================================
@@ -115,7 +113,7 @@ static cs_mesh_cartesian_params_t *_mesh_params = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
-cs_mesh_cartesian_params_t *
+static cs_mesh_cartesian_params_t *
 _cs_mesh_cartesian_init(int ndir)
 {
   if (_mesh_params != NULL)
@@ -144,7 +142,7 @@ _cs_mesh_cartesian_init(int ndir)
  */
 /*----------------------------------------------------------------------------*/
 
-_cs_mesh_cartesian_direction_t *
+static _cs_mesh_cartesian_direction_t *
 _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
                                     int                     ncells,
                                     cs_real_t               smin,
@@ -354,7 +352,6 @@ cs_mesh_cartesian_define_dir_user(int       idir,
 void
 cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
 {
-
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
   const int _ndim = 3;
@@ -366,7 +363,7 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
   /* Read CSV file */
   FILE *f = fopen(csv_file_name, "r");
 
-  const char line[128];
+  char line[128];
 
   int ln     = 0;
   int vtx_id = 0;
@@ -392,7 +389,8 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
       ln += 1;
       continue;
 
-    } else {
+    }
+    else {
       /* Fourth line and beyond contain values for vertices coordinates */
 
       char *n = NULL;
@@ -402,19 +400,20 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
       while (true) {
         n = strchr(c, ';');
         if (n != NULL) {
-          size_t lc = strlen(c);
-          size_t ln = strlen(n);
+          size_t l_c = strlen(c);
+          size_t l_n = strlen(n);
 
-          if (lc > ln) {
+          if (l_c > l_n) {
             char tmp[40];
-            memcpy(tmp, c, lc - ln);
-            tmp[lc-ln] = '\0';
+            memcpy(tmp, c, l_c - l_n);
+            tmp[l_c-l_n] = '\0';
 
-           s[idim][vtx_id] = atof(tmp);
+            s[idim][vtx_id] = atof(tmp);
           }
 
           c = n + 1;
-        } else {
+        }
+        else {
           if (strlen(c) > 1 && strcmp(c, "\n") && strcmp(c, "\r\n"))
             s[idim][vtx_id] = atof(c);
 
@@ -433,7 +432,6 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
     BFT_FREE(s[i]);
 
   fclose(f);
-
 }
 
 /*----------------------------------------------------------------------------*/
