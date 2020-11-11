@@ -3183,10 +3183,10 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
-                                     .func = analytic,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = {.z_id = z_id,
+                                    .func = analytic,
+                                    .input = input,
+                                    .free_input = NULL};
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
@@ -3204,6 +3204,90 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   eqp->bc_defs[new_id] = d;
 
   return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return pointer to existing boundary condition definition structure
+ *         for the given equation param structure and zone.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ *
+ * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_find_bc(cs_equation_param_t   *eqp,
+                    const char            *z_name)
+{
+  if (eqp == NULL)
+    return NULL;
+
+  int z_id = -2;
+
+  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+  if (z != NULL)
+    z_id = z->id;
+
+  /* Search for given BC. */
+  int j = -1;
+  for (int i = 0; i < eqp->n_bc_defs; i++) {
+    if (eqp->bc_defs[i]->z_id == z_id) {
+      return eqp->bc_defs[i];
+    }
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove boundary condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_bc(cs_equation_param_t   *eqp,
+                      const char            *z_name)
+{
+  if (eqp == NULL)
+    return;
+
+  int z_id = -2;
+
+  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+  if (z != NULL)
+    z_id = z->id;
+
+  /* Search for given BC. */
+  int j = -1;
+  for (int i = 0; i < eqp->n_bc_defs; i++) {
+    if (eqp->bc_defs[i]->z_id == z_id) {
+      j = i;
+      break;
+    }
+  }
+
+  /* Remove it if found */
+  if (j > -1) {
+    eqp->bc_defs[j] = cs_xdef_free(eqp->bc_defs[j]);
+    for (int i = j+1; i < eqp->n_bc_defs; i++) {
+      eqp->bc_defs[i-1] = eqp->bc_defs[i];
+    }
+    eqp->n_bc_defs -= 1;
+    BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

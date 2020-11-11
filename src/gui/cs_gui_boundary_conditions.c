@@ -151,7 +151,6 @@ typedef struct {
   double        *prein;    /* inlet pressure (compressible model) */
   double        *rhoin;    /* inlet density  (compressible model) */
   double        *tempin;   /* inlet temperature (compressible model) */
-  double        *entin;    /* inlet total energy (compressible model) */
   double        *dh;       /* inlet hydraulic diameter */
   double        *xintur;   /* inlet turbulent intensity */
   int          **type_code;  /* type of boundary for each variable */
@@ -457,6 +456,8 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
                          0, 0, 0, 0, 0, 0, 0, 0, 0};
   assert(dim <= 9);
 
+  bool possibly_incomplete = false;
+
   /* FIXME: we should not need a loop over components, but
      directly use vector values; if we do not yet have
      multidimensional user variables in the GUI, we can hendle
@@ -484,6 +485,8 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
         if (v != NULL) {
           value[i] = *v;
         }
+        else
+          possibly_incomplete = true;
       }
       else if (! strcmp(choice, "neumann")) {
         /* Vector values per component for CDO,
@@ -549,11 +552,19 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
   if (choice != NULL) {
 
-    if (! strcmp(choice, "dirichlet"))
-      cs_equation_add_bc_by_value(eqp,
-                                  CS_PARAM_BC_DIRICHLET,
-                                  z_name,
-                                  value);
+    if (! strcmp(choice, "dirichlet")) {
+
+      /* Some specific models may have set value already, so
+         if the value here is the default, it should probably be
+         ignored (the XML/tree structure should be improved to
+         avoid this type of problem )*/
+      if (   possibly_incomplete == false
+          || cs_equation_find_bc(eqp, z_name) == NULL)
+        cs_equation_add_bc_by_value(eqp,
+                                    CS_PARAM_BC_DIRICHLET,
+                                    z_name,
+                                    value);
+    }
 
     else if (! strcmp(choice, "neumann"))
       cs_equation_add_bc_by_value(eqp,
@@ -699,12 +710,16 @@ static void
 _inlet_compressible(cs_tree_node_t  *tn_vp,
                     int              izone)
 {
+  const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
+
   bool status;
 
   cs_tree_node_t *tn = cs_tree_get_node(tn_vp, "compressible_type");
   const char *choice = cs_gui_node_get_tag(tn, "choice");
 
   if (cs_gui_strcmp(choice, "imposed_inlet")) {
+
+    cs_real_t te_ind = 0;
 
     boundaries->itype[izone] = CS_ESICF;
 
@@ -730,7 +745,14 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     status = false;
     cs_gui_node_get_status_bool(tn, &status);
     if (status)
-      cs_gui_node_get_real(tn, &boundaries->entin[izone]);
+      cs_gui_node_get_real(tn, &te);
+
+    cs_equation_param_t *eqp = _get_equation_param("total_energy");
+    cs_equation_remove_bc(eqp, z->name);
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_DIRICHLET,
+                                z->name,
+                                &te_in);
 
   }
   else if (cs_gui_strcmp(choice, "subsonic_inlet_PH")) {
@@ -739,8 +761,16 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
 
     cs_gui_node_get_child_real
       (tn_vp, "total_pressure", &boundaries->prein[izone]);
-    cs_gui_node_get_child_real
-      (tn_vp, "enthalpy", &boundaries->entin[izone]);
+
+    cs_real_t h_in = 0;
+    cs_gui_node_get_child_real(tn_vp, "enthalpy", &h_in);
+
+    cs_equation_param_t *eqp = _get_equation_param("total_energy");
+    cs_equation_remove_bc(eqp, z->name);
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_DIRICHLET,
+                                z->name,
+                                &h_in);
 
   }
 }
@@ -970,7 +1000,6 @@ _init_boundaries(void)
     BFT_MALLOC(boundaries->prein,   n_zones, double);
     BFT_MALLOC(boundaries->rhoin,   n_zones, double);
     BFT_MALLOC(boundaries->tempin,  n_zones, double);
-    BFT_MALLOC(boundaries->entin,   n_zones, double);
   }
   else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
     BFT_MALLOC(boundaries->groundwat_e, n_zones, bool);
@@ -1050,7 +1079,6 @@ _init_boundaries(void)
       boundaries->prein[izone]     = 0;
       boundaries->rhoin[izone]     = 0;
       boundaries->tempin[izone]    = 0;
-      boundaries->entin[izone]     = 0;
     }
 
     else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
@@ -1785,17 +1813,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       else if (cs_gui_strcmp(vars->model, "compressible_model")) {
         const int var_key_id = cs_field_key_id("variable_id");
 
-        if (boundaries->itype[izone] == CS_ESICF ||
-            boundaries->itype[izone] == CS_EPHCF) {
+        if (  boundaries->itype[izone] == CS_ESICF
+            ||boundaries->itype[izone] == CS_EPHCF) {
           const cs_field_t  *fp = cs_field_by_name_try("pressure");
           int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
-          const cs_field_t  *fe = cs_field_by_name_try("total_energy");
-          int ivare = cs_field_get_key_int(fe, var_key_id) -1;
 
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
             rcodcl[ivarp * n_b_faces + face_id] = boundaries->prein[izone];
-            rcodcl[ivare * n_b_faces + face_id] = boundaries->entin[izone];
           }
         }
 
@@ -2289,12 +2314,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           bft_printf("-----premin=%g \n",boundaries->prein[zone_nbr-1]);
           bft_printf("-----rhoin=%g \n",boundaries->rhoin[zone_nbr-1]);
           bft_printf("-----tempin=%g \n",boundaries->tempin[zone_nbr-1]);
-          bft_printf("-----entin=%g \n",boundaries->entin[zone_nbr-1]);
         }
         if (boundaries->itype[izone] == CS_EPHCF) {
           bft_printf("-----subsonic_inlet_PH\n");
           bft_printf("-----prein=%g \n",boundaries->prein[zone_nbr-1]);
-          bft_printf("-----entin=%g \n",boundaries->entin[zone_nbr-1]);
         }
       }
       else {
@@ -2960,7 +2983,6 @@ cs_gui_boundary_conditions_free_memory(void)
       BFT_FREE(boundaries->prein);
       BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
-      BFT_FREE(boundaries->entin);
     }
     if (cs_gui_strcmp(vars->model, "groundwater_model")) {
       BFT_FREE(boundaries->groundwat_e);

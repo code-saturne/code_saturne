@@ -1593,6 +1593,41 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return pointer to existing boundary condition definition structure
+ *         for the given equation param structure and zone.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ *
+ * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_find_bc(cs_equation_param_t   *eqp,
+                    const char            *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove boundary condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_bc(cs_equation_param_t   *eqp,
+                      const char            *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to set a sliding boundary
  *         condition related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t
