@@ -3,6 +3,8 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Lagrangian module: fix handling of statistics handled by the GUI.
+
 - Fix GUI handling of radiation + combustion "Modak" parameter
   (GitHub issue #68).
 
