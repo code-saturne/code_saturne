@@ -208,6 +208,10 @@ cs_mo_phim(cs_real_t              z,
            cs_real_t              dlmo);
 
 cs_real_t
+cs_mo_phih(cs_real_t              z,
+           cs_real_t              dlmo);
+
+cs_real_t
 cs_mo_psim(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo);
@@ -615,6 +619,23 @@ cs_atmo_compute_meteo_profiles(void)
   /* Friction temperature */
   cs_real_t tstar = aopt->meteo_tstar;
 
+  /* Variables used for clipping */
+  cs_real_t ri_max=cs_math_big_r;
+  cs_real_t ri_toclip=cs_math_big_r;
+  cs_real_t *dlmo_var=NULL;
+  cs_lnum_t n_cells_to_clip = 0;
+  cs_real_t z_min=cs_math_big_r;
+
+  BFT_MALLOC(dlmo_var, m->n_cells, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    dlmo_var[cell_id]=0.0;
+  }
+
+  if (dlmo>0) {
+    ri_max = 0.75; // Value chosen to limit buoyancy vs shear production
+  }
+
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
@@ -632,7 +653,7 @@ cs_atmo_compute_meteo_profiles(void)
     cpro_met_potemp[cell_id] = theta0 + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
 
     /* Richardson flux number profile */
-    // FIXME Arya 4.37 : z/L * phih/phim^2
+    // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo * phim
     cs_real_t ri_f = (z+z0) * dlmo / cs_mo_phim(z+z0, dlmo);
 
     /* TKE profile */
@@ -650,6 +671,53 @@ cs_atmo_compute_meteo_profiles(void)
                         &(cpro_met_t[cell_id]),
                         &(cpro_met_rho[cell_id]));
 
+
+    /* Very stable cases */
+    if (ri_f > ri_max) {
+      n_cells_to_clip++;
+      if (cell_cen[cell_id][2] < z_min) {
+        //Ri_f is an increasing monotonic function, so the lowest value of
+        //z for which Ri_f>Ri_max is needed
+        z_min = cell_cen[cell_id][2];
+      }
+      if (ri_f < ri_toclip) {  // Get the Ri_f closest to Ri_max actually reached
+        ri_toclip = ri_f;
+      }
+    }
+  }
+
+  /* Very stable cases, corresponding to mode 0 in the Python prepro */
+  if (n_cells_to_clip >= 2) { // Clipping only if there is enough cells to clip
+    bft_printf("Switching to very stable clipping for meteo profile.\n");
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      cs_real_t z = cell_cen[cell_id][2];
+      if (z >= z_min) {
+        /* FIXME Clipping starts at the first point above Ri_max
+         * and not the one before, thus following is slightly modified
+         * compare to meteo_saturne.py. mode = 0 is ustar=cst */
+        dlmo_var[cell_id] = dlmo * (z_min + z0) / (z + z0);
+        /* Velocity profile */
+        // Supposing u_0 = 0 ?
+        cs_real_t u_norm = ustar0 / kappa * cs_mo_phim(z_min, dlmo) * log(z / z0);
+
+        cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
+        cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
+
+
+       /* Potential temperature profile
+        * Note: same roughness as dynamics */
+        cpro_met_potemp[cell_id] = theta0
+          + tstar * z_min / kappa * cs_mo_phih(z_min, dlmo) * (-1./z + 1./z0) ;
+
+       /* TKE profile */
+        cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
+          * sqrt(1. - CS_MIN(ri_toclip, 1.));
+
+        /* epsilon profile */
+        cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / kappa  / dlmo_var[cell_id]
+         * (1- CS_MIN(ri_toclip, 1.)) / CS_MIN(ri_toclip, 1.);
+      }
+    }
   }
 
 }
