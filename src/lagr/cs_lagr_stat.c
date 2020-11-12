@@ -4399,7 +4399,8 @@ cs_lagr_stat_initialize(void)
 
   cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
-  if (lagr_model->physical_model != CS_LAGR_PHYS_COAL || lagr_model->fouling < 1) {
+  if (   lagr_model->physical_model != CS_LAGR_PHYS_COAL
+      || lagr_model->fouling < 1) {
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT);
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_MASS_FLUX);
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_DIAMETER);
