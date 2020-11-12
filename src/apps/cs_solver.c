@@ -250,8 +250,6 @@ _run(void)
     if (cs_file_isreg(default_restart_mesh))
       cs_restart_map_set_mesh_input(default_restart_mesh);
 
-    cs_gui_init();
-
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
     CS_PROCF(initi1, INITI1)();

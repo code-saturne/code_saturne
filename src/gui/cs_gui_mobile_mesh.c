@@ -54,7 +54,6 @@
 #include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
-#include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
 #include "cs_prototypes.h"

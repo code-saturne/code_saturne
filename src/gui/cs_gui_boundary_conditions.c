@@ -60,7 +60,6 @@
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_gui_specific_physics.h"
-#include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -932,12 +931,26 @@ _init_boundaries(void)
 {
   int icharb, iclass;
 
-  cs_var_t  *vars = cs_glob_var;
   assert(boundaries == NULL);
   int n_fields = cs_field_n_fields();
 
   int n_zones = cs_tree_get_node_count(cs_glob_tree,
                                        "boundary_conditions/boundary");
+
+  bool solid_fuels = false;
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+    solid_fuels = true;
+  bool gas_combustion = false;
+  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+       m_type <= CS_COMBUSTION_LW;
+       m_type++) {
+    if (cs_glob_physical_model_flag[m_type] > -1)
+      gas_combustion = true;
+  }
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+    solid_fuels = true;
 
   BFT_MALLOC(boundaries, 1, cs_gui_boundary_t);
 
@@ -947,13 +960,36 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->nature,    n_zones,    const char *);
   BFT_MALLOC(boundaries->bc_num,    n_zones,    int);
 
-  BFT_MALLOC(boundaries->type_code, n_fields,   int *);
-  BFT_MALLOC(boundaries->values,    n_fields,   cs_val_t *);
   BFT_MALLOC(boundaries->iqimp,     n_zones,    int);
-  BFT_MALLOC(boundaries->qimp,      n_zones,    double);
+
+  boundaries->ientfu = NULL;
+  boundaries->ientox = NULL;
+  boundaries->ientgb = NULL;
+  boundaries->ientgf = NULL;
+  boundaries->ientat = NULL;
+  boundaries->ientcp = NULL;
+
   BFT_MALLOC(boundaries->icalke,    n_zones,    int);
+  BFT_MALLOC(boundaries->qimp,      n_zones,    double);
+
+  boundaries->inmoxy = NULL;
+  boundaries->timpat = NULL;
+  boundaries->tkent  = NULL;
+  boundaries->qimpcp = NULL;
+  boundaries->timpcp = NULL;
+  boundaries->fment  = NULL;
+  boundaries->itype = NULL;
+  boundaries->prein = NULL;
+  boundaries->rhoin = NULL;
+  boundaries->tempin = NULL;
+
   BFT_MALLOC(boundaries->dh,        n_zones,    double);
   BFT_MALLOC(boundaries->xintur,    n_zones,    double);
+  BFT_MALLOC(boundaries->type_code, n_fields,   int *);
+  BFT_MALLOC(boundaries->values,    n_fields,   cs_val_t *);
+
+  boundaries->distch = NULL;
+
   BFT_MALLOC(boundaries->rough,     n_zones,    double);
   BFT_MALLOC(boundaries->norm,      n_zones,    double);
   BFT_MALLOC(boundaries->dir,       n_zones,    cs_real_3_t);
@@ -964,7 +1000,10 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
-  if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+  boundaries->groundwat_e = NULL;
+  boundaries->meteo = NULL;
+
+  if (solid_fuels) {
 
     const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
@@ -987,7 +1026,7 @@ _init_boundaries(void)
                    double);
     }
   }
-  else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+  else if (gas_combustion) {
     BFT_MALLOC(boundaries->ientfu,  n_zones, int);
     BFT_MALLOC(boundaries->ientox,  n_zones, int);
     BFT_MALLOC(boundaries->ientgb,  n_zones, int);
@@ -995,31 +1034,17 @@ _init_boundaries(void)
     BFT_MALLOC(boundaries->tkent,   n_zones, double);
     BFT_MALLOC(boundaries->fment,   n_zones, double);
   }
-  else if (cs_gui_strcmp(vars->model, "compressible_model")) {
+  else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
     BFT_MALLOC(boundaries->itype,   n_zones, int);
     BFT_MALLOC(boundaries->prein,   n_zones, double);
     BFT_MALLOC(boundaries->rhoin,   n_zones, double);
     BFT_MALLOC(boundaries->tempin,  n_zones, double);
   }
-  else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
+  else if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
     BFT_MALLOC(boundaries->groundwat_e, n_zones, bool);
   }
-  else {
-    boundaries->ientat = NULL;
-    boundaries->ientfu = NULL;
-    boundaries->ientox = NULL;
-    boundaries->ientgb = NULL;
-    boundaries->ientgf = NULL;
-    boundaries->timpat = NULL;
-    boundaries->tkent  = NULL;
-    boundaries->fment  = NULL;
-    boundaries->ientcp = NULL;
-    boundaries->qimpcp = NULL;
-    boundaries->timpcp = NULL;
-    boundaries->distch = NULL;
-  }
 
-  if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
     BFT_MALLOC(boundaries->meteo, n_zones, cs_meteo_t);
   else
     boundaries->meteo = NULL;
@@ -1048,7 +1073,7 @@ _init_boundaries(void)
     boundaries->head_loss_e[izone] = false;
     boundaries->locator[izone]   = NULL;
 
-    if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+    if (solid_fuels) {
       const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
       boundaries->ientat[izone] = 0;
@@ -1065,7 +1090,7 @@ _init_boundaries(void)
       }
     }
 
-    else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+    else if (gas_combustion) {
       boundaries->ientfu[izone]  = 0;
       boundaries->ientox[izone]  = 0;
       boundaries->ientgb[izone]  = 0;
@@ -1074,18 +1099,18 @@ _init_boundaries(void)
       boundaries->fment[izone]   = 0;
     }
 
-    else if (cs_gui_strcmp(vars->model, "compressible_model")) {
+    else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
       boundaries->itype[izone]     = 0;
       boundaries->prein[izone]     = 0;
       boundaries->rhoin[izone]     = 0;
       boundaries->tempin[izone]    = 0;
     }
 
-    else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
+    else if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
       boundaries->groundwat_e[izone] = false;
     }
 
-    else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+    else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
       boundaries->meteo[izone].read_data = 0;
       boundaries->meteo[izone].automatic = 0;
     }
@@ -1237,7 +1262,7 @@ _init_boundaries(void)
       }
 
       /* Inlet: data for COAL COMBUSTION */
-      if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      if (solid_fuels) {
         cs_gui_node_get_child_real
           (tn_vp, "temperature", &boundaries->timpat[izone]);
         cs_gui_node_get_child_int
@@ -1246,15 +1271,15 @@ _init_boundaries(void)
       }
 
       /* Inlet: data for GAS COMBUSTION */
-      if (cs_gui_strcmp(vars->model, "gas_combustion"))
+      if (gas_combustion)
         _inlet_gas(tn_vp, izone);
 
       /* Inlet: data for COMPRESSIBLE MODEL */
-      if (cs_gui_strcmp(vars->model, "compressible_model"))
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
         _inlet_compressible(tn_vp, izone);
 
       /* Inlet: data for ATMOSPHERIC FLOWS */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         if (cs_glob_atmo_option->meteo_profile == 1) {
           cs_gui_node_get_child_status_int
             (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
@@ -1264,7 +1289,7 @@ _init_boundaries(void)
       }
 
       /* Inlet: data for darcy */
-      if (cs_gui_strcmp(vars->model, "groundwater_model"))
+      if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
         _boundary_darcy(tn, izone);
 
       /* Inlet: turbulence */
@@ -1292,7 +1317,7 @@ _init_boundaries(void)
 
     else if (cs_gui_strcmp(nature, "outlet")) {
       /* Outlet: data for ATMOSPHERIC FLOWS */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         _boundary_status_vp("outlet", label, "meteo_data",
                             &boundaries->meteo[izone].read_data);
         _boundary_status_vp("outlet", label, "meteo_automatic",
@@ -1300,11 +1325,11 @@ _init_boundaries(void)
       }
 
       /* Outlet: data for COMPRESSIBLE MODEL */
-      if (cs_gui_strcmp(vars->model, "compressible_model"))
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
         _outlet_compressible(tn, izone);
 
       /* Inlet: data for darcy */
-      if (cs_gui_strcmp(vars->model, "groundwater_model"))
+      if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
         _boundary_darcy(tn, izone);
     }
 
@@ -1344,7 +1369,7 @@ _init_boundaries(void)
             "thermophysical_models/joule_effect/variable"};
 
       /* Meteo scalars only if required */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows") == 0)
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
         scalar_sections[0] = NULL;
       else {
         if (boundaries->meteo[izone].read_data != 0)
@@ -1352,7 +1377,7 @@ _init_boundaries(void)
       }
 
       /* Electric arc scalars only if required */
-      if (cs_gui_strcmp(vars->model, "joule_effect") == 0)
+      if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] < 0)
         scalar_sections[1] = NULL;
 
       /* Loop on possible specific model scalar sections */
@@ -1549,8 +1574,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 {
   double norm = 0.;
 
-  cs_var_t  *vars = cs_glob_var;
-
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
@@ -1561,6 +1584,18 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   const int n_fields = cs_field_n_fields();
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
+
+  bool solid_fuels = false;
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
+    solid_fuels = true;
+  bool gas_combustion = false;
+  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+       m_type <= CS_COMBUSTION_LW;
+       m_type++) {
+    if (cs_glob_physical_model_flag[m_type] > -1)
+      gas_combustion = true;
+  }
 
   /* First pass only: initialize izfppp */
 
@@ -1689,7 +1724,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       } /* switch */
     } /* Loop on fields */
 
-    if (cs_gui_strcmp(vars->model_value, "joule")) {
+    if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
       if (cs_glob_elec_option->ielcor == 1) {
         const cs_field_t  *f = CS_F_(potr);
         const int var_key_id = cs_field_key_id("variable_id");
@@ -1712,7 +1747,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       }
     }
 
-    if (cs_gui_strcmp(vars->model_value, "arc")) {
+    if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
       const cs_field_t  *f = CS_F_(potr);
       const int var_key_id = cs_field_key_id("variable_id");
       cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
@@ -1763,7 +1798,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       xintur[zone_nbr-1] = boundaries->xintur[izone];
       icalke[zone_nbr-1] = boundaries->icalke[izone];
 
-      if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      if (solid_fuels) {
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
 
         ientat[zone_nbr-1] = boundaries->ientat[izone];
@@ -1785,7 +1820,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           }
         }
       }
-      else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+      else if (gas_combustion) {
         ientfu[zone_nbr-1] = boundaries->ientfu[izone];
         ientox[zone_nbr-1] = boundaries->ientox[izone];
         ientgb[zone_nbr-1] = boundaries->ientgb[izone];
@@ -1810,7 +1845,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           qimp[zone_nbr-1] = boundaries->qimp[izone];
         }
       }
-      else if (cs_gui_strcmp(vars->model, "compressible_model")) {
+      else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         const int var_key_id = cs_field_key_id("variable_id");
 
         if (  boundaries->itype[izone] == CS_ESICF
@@ -1858,7 +1893,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       int inlet_type = CS_INLET;
 
-      if (cs_gui_strcmp(vars->model, "compressible_model"))
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
         inlet_type = boundaries->itype[izone];
       else {
         int convective_inlet = 0;
@@ -1876,7 +1911,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         itypfb[face_id] = inlet_type;
       }
 
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
         if (iprofm[zone_nbr-1] == 1) {
           choice_v = NULL;
@@ -1942,7 +1977,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           }
           BFT_FREE(new_vals);
         }
-        if (cs_gui_strcmp(vars->model, "compressible_model")) {
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
           if (boundaries->itype[izone] == CS_EPHCF) {
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
               cs_lnum_t face_id = bz->elt_ids[elt_id];
@@ -1995,7 +2030,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           BFT_FREE(new_vals);
         }
 
-        if (cs_gui_strcmp(vars->model, "compressible_model")) {
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
           if (boundaries->itype[izone] == CS_EPHCF) {
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
               cs_lnum_t face_id = bz->elt_ids[elt_id];
@@ -2081,7 +2116,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
         BFT_FREE(xvals);
 
-        if (cs_gui_strcmp(vars->model, "compressible_model")) {
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
           if (boundaries->itype[izone] == CS_EPHCF) {
             xvals = cs_meg_boundary_function(bz,
                                              "direction",
@@ -2283,7 +2318,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                    choice_v, boundaries->dir[izone][0],
                    boundaries->dir[izone][1], boundaries->dir[izone][2]);
 
-      if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      if (solid_fuels) {
         bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
             iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
@@ -2301,14 +2336,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                               + icharb * (*nozppm) +zone_nbr-1]);
         }
       }
-      else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+      else if (gas_combustion) {
         bft_printf("-----iqimp=%i \n",
             iqimp[zone_nbr-1]);
         bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
             ientox[zone_nbr-1], ientfu[zone_nbr-1],
             ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
       }
-      else if (cs_gui_strcmp(vars->model, "compressible_model")) {
+      else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         if (boundaries->itype[izone] == CS_ESICF) {
           bft_printf("-----imposed_inlet\n");
           bft_printf("-----premin=%g \n",boundaries->prein[zone_nbr-1]);
@@ -2327,7 +2362,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
                  icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
 
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         bft_printf("-----iprofm=%i, automatic=%i \n",
             iprofm[zone_nbr-1], boundaries->meteo[izone].automatic);
 #endif
@@ -2368,13 +2403,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
         izfppp[face_id] = zone_nbr;
-        if (cs_gui_strcmp(vars->model, "compressible_model"))
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
           itypfb[face_id] = boundaries->itype[izone];
         else
           itypfb[face_id] = CS_OUTLET;
       }
 
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -2636,13 +2671,13 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
     int atmo_auto = 0;
     int compr_auto = 0;
 
-    if (cs_gui_strcmp(cs_glob_var->model, "atmospheric_flows")) {
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
       if (boundaries->meteo[izone].automatic) {
         if (inature == CS_INLET || inature == CS_OUTLET)
           atmo_auto = inature;
       }
     }
-    else if (cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
+    else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
       if (inature == CS_INLET || inature == CS_OUTLET)
         compr_auto = inature;
     }
@@ -2933,8 +2968,6 @@ cs_gui_boundary_conditions_free_memory(void)
   int n_zones;
   int icharb;
 
-  cs_var_t  *vars = cs_glob_var;
-
   /* clean memory for global private structure boundaries */
 
   if (boundaries != NULL) {
@@ -2953,7 +2986,8 @@ cs_gui_boundary_conditions_free_memory(void)
       }
     }
 
-    if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+    if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1
+        || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
       const int n_coals = cs_glob_combustion_model->coal.n_coals;
       for (izone = 0; izone < n_zones; izone++) {
         BFT_FREE(boundaries->qimpcp[izone]);
@@ -2970,24 +3004,25 @@ cs_gui_boundary_conditions_free_memory(void)
       BFT_FREE(boundaries->timpcp);
       BFT_FREE(boundaries->distch);
     }
-    if (cs_gui_strcmp(vars->model, "gas_combustion")) {
-      BFT_FREE(boundaries->ientfu);
-      BFT_FREE(boundaries->ientox);
-      BFT_FREE(boundaries->ientgb);
-      BFT_FREE(boundaries->ientgf);
-      BFT_FREE(boundaries->tkent);
-      BFT_FREE(boundaries->fment);
-    }
-    if (cs_gui_strcmp(vars->model, "compressible_model")) {
+
+    /* Gas combustion */
+    BFT_FREE(boundaries->ientfu);
+    BFT_FREE(boundaries->ientox);
+    BFT_FREE(boundaries->ientgb);
+    BFT_FREE(boundaries->ientgf);
+    BFT_FREE(boundaries->tkent);
+    BFT_FREE(boundaries->fment);
+
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
       BFT_FREE(boundaries->itype);
       BFT_FREE(boundaries->prein);
       BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
     }
-    if (cs_gui_strcmp(vars->model, "groundwater_model")) {
+    if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
       BFT_FREE(boundaries->groundwat_e);
     }
-    if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
       BFT_FREE(boundaries->meteo);
 
     for (izone = 0; izone < n_zones; izone++) {

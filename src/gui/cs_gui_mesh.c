@@ -48,7 +48,6 @@
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
-#include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_join.h"
 #include "cs_join_perio.h"

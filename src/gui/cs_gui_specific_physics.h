@@ -222,15 +222,6 @@ cs_gui_elec_model_rec(void);
 const char *
 cs_gui_get_thermophysical_model(const char  *model_thermo);
 
-/*-----------------------------------------------------------------------------
- * Return 1 if a specific physics model is activated, 0 othewise.
- *
- * Updates the cs_glob_vars global structure.
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_activ_thermophysical_model(void);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -97,17 +97,6 @@ void CS_PROCF (cscpva, CSCPVA) (void);
 void CS_PROCF (csvvva, CSVVVA) (int *iviscv);
 
 /*----------------------------------------------------------------------------
- * User thermal scalar.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UITHSC
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uithsc, UITHSC) (void);
-
-/*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:
@@ -405,13 +394,6 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Initialize GUI reader structures.
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_init(void);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.

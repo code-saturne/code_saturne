@@ -52,7 +52,6 @@
 #include "cs_boundary_zone.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
-#include "cs_gui_variables.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
