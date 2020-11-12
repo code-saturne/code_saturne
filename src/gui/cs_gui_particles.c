@@ -381,15 +381,57 @@ cs_gui_particles_model(void)
 
     cs_gui_node_get_status_bool(tn_vs, &volume_stats);
 
-    if (volume_stats)
+    if (volume_stats) {
+
+      /* Default statistics */
+
+      cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
+      cs_lagr_stat_activate(CS_LAGR_STAT_VOLUME_FRACTION);
+      cs_lagr_stat_activate_attr(CS_LAGR_RESIDENCE_TIME);
+      cs_lagr_stat_activate_attr(CS_LAGR_DIAMETER);
+      cs_lagr_stat_activate_attr(CS_LAGR_MASS);
+      cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
+
+      switch(cs_glob_lagr_model->physical_model) {
+      case CS_LAGR_PHYS_HEAT:
+        cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+        break;
+      case CS_LAGR_PHYS_COAL:
+        cs_lagr_stat_activate_attr(CS_LAGR_WATER_MASS);
+        cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+        cs_lagr_stat_activate_attr(CS_LAGR_COAL_MASS);
+        cs_lagr_stat_activate_attr(CS_LAGR_COKE_MASS);
+        cs_lagr_stat_activate_attr(CS_LAGR_COAL_DENSITY);
+      default:
+        break;
+      }
+
+      /* XML-defined */
       _get_stats_post(tn_vs);
+    }
 
     cs_tree_node_t *tn_bs = cs_tree_node_get_child(tn_s, "boundary");
 
     cs_gui_node_get_status_bool(tn_bs, &boundary_stats);
 
-    if (boundary_stats)
+    if (boundary_stats) {
+
+      /* Default statistics */
+
+      cs_lagr_stat_activate(CS_LAGR_STAT_E_CUMULATIVE_WEIGHT);
+      cs_lagr_stat_activate(CS_LAGR_STAT_MASS_FLUX);
+      cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
+      cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_VELOCITY);
+
+      if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT);
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_MASS_FLUX);
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_DIAMETER);
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_COKE_FRACTION);
+      }
+
       _get_stats_post(tn_bs);
+    }
 
   }
 
