@@ -752,9 +752,6 @@ cs_lagr_options_definition(int         isuite,
 
   else if (lagr_model->modcpl > 0) {
 
-    if (lagr_model->modcpl < cs_glob_lagr_stat_options->idstnt)
-      lagr_model->modcpl = cs_glob_lagr_stat_options->idstnt;
-
     /* Velocity statistics are needed for this model */
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
 
