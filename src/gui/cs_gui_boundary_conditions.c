@@ -719,7 +719,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
 
   if (cs_gui_strcmp(choice, "imposed_inlet")) {
 
-    cs_real_t te_ind = 0;
+    cs_real_t te_in = 0;
 
     boundaries->itype[izone] = CS_ESICF;
 
@@ -745,7 +745,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     status = false;
     cs_gui_node_get_status_bool(tn, &status);
     if (status)
-      cs_gui_node_get_real(tn, &te);
+      cs_gui_node_get_real(tn, &te_in);
 
     cs_equation_param_t *eqp = _get_equation_param("total_energy");
     cs_equation_remove_bc(eqp, z->name);
