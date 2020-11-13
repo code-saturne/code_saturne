@@ -59,6 +59,7 @@
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
+#include "cs_field_pointer.h"
 #include "cs_flag_check.h"
 #include "cs_halo.h"
 #include "cs_math.h"
@@ -101,6 +102,18 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+typedef struct {
+
+  int             bc_location_id;      /* location id of boundary zone */
+  int             source_location_id;  /* location if of source elements */
+  cs_real_t       coord_shift[3];      /* coordinates shift relative to
+                                          selected boundary faces */
+  double          tolerance;           /* search tolerance */
+
+  ple_locator_t  *locator;             /* associated locator */
+
+} cs_bc_map_t;
+
 /*----------------------------------------------------------------------------
  * Local Structure Definitions
  *----------------------------------------------------------------------------*/
@@ -116,6 +129,9 @@ const int *cs_glob_bc_type = NULL;
 static int *_bc_face_zone;
 
 const int *cs_glob_bc_face_zone = NULL;
+
+static int _n_bc_maps = 0;
+static cs_bc_map_t *_bc_maps = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -141,6 +157,53 @@ cs_f_boundary_conditions_get_pointers(int  **itypfb,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build or update map of shifted boundary face coordinates on
+ *        cells or boundary faces for automatic interpolation.
+ *
+ * \warning
+ *
+ * This function does not currently update the location in case of moving
+ * meshes. It could be modifed to do so.
+ *
+ * \param[in]  map_id      id of defined map
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_bc_map(int  map_id)
+{
+  assert(map_id > -1 && map_id < _n_bc_maps);
+
+  cs_bc_map_t *bc_map = _bc_maps + map_id;
+
+  if (bc_map->locator != NULL)
+    return;
+
+  cs_mesh_location_type_t location_type
+    = cs_mesh_location_get_type(bc_map->source_location_id);
+
+  cs_lnum_t n_location_elts
+    = cs_mesh_location_get_n_elts(bc_map->source_location_id)[0];
+  cs_lnum_t n_faces
+    = cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
+
+  const cs_lnum_t *location_elts
+    = cs_mesh_location_get_elt_ids_try(bc_map->source_location_id);
+  const cs_lnum_t *faces
+    = cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
+
+  bc_map->locator = cs_boundary_conditions_map(location_type,
+                                               n_location_elts,
+                                               n_faces,
+                                               location_elts,
+                                               faces,
+                                               &(bc_map->coord_shift),
+                                               0,
+                                               bc_map->tolerance);
+}
 
 /*----------------------------------------------------------------------------
  * Compute balance at inlet
@@ -882,7 +945,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
   assert(sizeof(ple_coord_t) == sizeof(cs_real_t));
 
   if (location_type == CS_MESH_LOCATION_CELLS || interpolate) {
-    /* FIXME: we cheat here with the constedness of the field relative to
+    /* FIXME: we cheat here with the constedness of the field
        for a possible ghost values update, but having a finer control
        of when syncing is required would be preferable */
     cs_field_t *_f = cs_field_by_id(f->id);
@@ -899,7 +962,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
     const cs_field_bc_coeffs_t   *bc_coeffs = f->bc_coeffs;
 
-    /* If no boundary condition coefficients are available */
+    /* If boundary condition coefficients are available */
 
     if (bc_coeffs != NULL) {
 
@@ -1000,7 +1063,60 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create the legacy boundary conditions face type and face zone arrays
+ * \brief Add location of locate shifted boundary face coordinates on
+ *        cells or boundary faces for automatic interpolation.
+ *
+ * \note
+ * This function is currently restricted to mapping of boundary face
+ * locations (usually from boundary zones) to cell of boundary face
+ * locations, but could be extended to other location types in the future.
+ *
+ * \param[in]  bc_location_id      id of selected boundary mesh location;
+ *                                 currently restricted to subsets of
+ *                                 boundary faces (i.e. boundary zone
+ *                                 location ids).
+ * \param[in]  source_location_id  id of selected location  mesh location
+ *                                 (usually CS_MESH_LOCATION_CELLS but can be
+ *                                 a more restricted cell or boundary face zone
+ *                                 location location id).
+ * \param[in]  coord_shift      coordinates shift relative to selected
+ *                              boundary faces
+ * \param[in]  tolerance        relative tolerance for point location.
+ *
+ * \return  id of added map
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_add_map(int         bc_location_id,
+                               int         source_location_id,
+                               cs_real_t   coord_shift[3],
+                               double      tolerance)
+{
+  int map_id = _n_bc_maps;
+
+  BFT_REALLOC(_bc_maps, _n_bc_maps+1, cs_bc_map_t);
+
+  cs_bc_map_t *bc_map = _bc_maps + _n_bc_maps;
+
+  bc_map->bc_location_id = bc_location_id;
+  bc_map->source_location_id = source_location_id;
+
+  for (int i = 0; i < 3; i++)
+    bc_map->coord_shift[i] = coord_shift[i];
+
+  bc_map->tolerance = tolerance;
+
+  bc_map->locator = NULL;
+
+  _n_bc_maps += 1;
+
+  return map_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the legacy boundary conditions face type and face zone arrays.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1036,15 +1152,25 @@ cs_boundary_conditions_create(void)
   cs_glob_bc_face_zone = _bc_face_zone;
 }
 
-/*----------------------------------------------------------------------------
- * Free the boundary conditions face type and face zone arrays
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the boundary conditions face type and face zone arrays.
+ *
+ * This also frees boundary condition mappings which may have been defined.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_free(void)
 {
   BFT_FREE(_bc_type);
   BFT_FREE(_bc_face_zone);
+
+  for (int i = 0; i < _n_bc_maps; i++)
+    ple_locator_destroy((_bc_maps + i)->locator);
+
+  BFT_FREE(_bc_maps);
+  _n_bc_maps = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1098,6 +1224,11 @@ cs_boundary_conditions_compute(int         nvar,
 {
   /* Initialization */
 
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  for (int map_id = 0; map_id < _n_bc_maps; map_id++)
+    _update_bc_map(map_id);
+
   static int var_id_key = -1;
   if (var_id_key < 0)
     var_id_key = cs_field_key_id("variable_id");
@@ -1105,7 +1236,7 @@ cs_boundary_conditions_compute(int         nvar,
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_boundary_t *boundaries = cs_glob_boundaries;
-  const cs_real_t t_eval = cs_glob_time_step->t_cur;
+  const cs_real_t t_eval = ts->t_cur;
 
   /* Loop on fields */
 
@@ -1183,6 +1314,48 @@ cs_boundary_conditions_compute(int         nvar,
         break;
       }
     }
+
+    /* Treatment of mapped inlets */
+
+    for (int map_id = 0; map_id < _n_bc_maps; map_id++) {
+
+      cs_bc_map_t *bc_map = _bc_maps + map_id;
+
+      if (bc_map->locator == NULL || ts->nt_cur <= 1)
+        continue;
+
+      int interpolate = 0;
+      int normalize = 0;
+      if (f == CS_F_(vel))
+        normalize = 1;
+      else {
+        const int keysca = cs_field_key_id("scalar_id");
+        if (cs_field_get_key_int(f, keysca) > 0)
+          normalize = 1;
+      }
+
+      if (f != CS_F_(p)) {
+        cs_mesh_location_type_t location_type
+          = cs_mesh_location_get_type(bc_map->source_location_id);
+        cs_lnum_t n_faces
+          = cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
+        const cs_lnum_t *faces
+          = cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
+
+        cs_boundary_conditions_mapped_set(f,
+                                          bc_map->locator,
+                                          location_type,
+                                          normalize,
+                                          interpolate,
+                                          n_faces,
+                                          faces,
+                                          NULL,
+                                          nvar,
+                                          rcodcl);
+      }
+
+    }
+
   }
 }
 

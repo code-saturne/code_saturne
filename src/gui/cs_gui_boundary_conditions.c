@@ -167,8 +167,6 @@ typedef struct {
 
   cs_meteo_t    *meteo;     /* inlet or outlet info for atmospheric flow */
 
-  ple_locator_t **locator;   /* locator for mapped inlet */
-
 } cs_gui_boundary_t;
 
 /*============================================================================
@@ -288,26 +286,18 @@ _boundary_status_vp(const char  *nature,
 }
 
 /*-----------------------------------------------------------------------------
- * Check if a zone uses a mapped inlet, and return the locator from the
- * associated mapping if this is the case.
+ * Check if a zone uses a mapped inlet, and define the associated mapping
+ * if this is the case.
  *
  * parameters:
  *   label    <-- label of wall boundary condition
- *   n_faces  <-- number of selected boundary faces
- *   faces    <-- list of selected boundary faces (0 to n-1),
- *                or NULL if no indirection is needed
- *
- * returns:
- *   pointer to mapping locator, or NULL
+ *    z       <-- pointer to boundary zone
  *----------------------------------------------------------------------------*/
 
-static  ple_locator_t *
-_mapped_inlet(const char                *label,
-              cs_lnum_t                  n_faces,
-              const cs_lnum_t           *faces)
+static void
+_check_and_add_mapped_inlet(const char       *label,
+                            const cs_zone_t  *z)
 {
-  ple_locator_t *bl = NULL;
-
   int mapped_inlet = 0;
 
   cs_tree_node_t *tn
@@ -325,9 +315,7 @@ _mapped_inlet(const char                *label,
                            "translation_z"};
 
     for (int i = 0; i < 3; i++) {
-
-      cs_tree_node_t *node = NULL;
-      node = cs_tree_get_node(tn, tname[i]);
+      cs_tree_node_t *node = cs_tree_get_node(tn, tname[i]);
 
       const  cs_real_t *v = NULL;
       v = cs_tree_node_get_values_real(node);
@@ -335,17 +323,11 @@ _mapped_inlet(const char                *label,
         coord_shift[i] = v[0];
     }
 
-    bl = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
-                                    cs_glob_mesh->n_cells,
-                                    n_faces,
-                                    NULL,
-                                    faces,
-                                    &coord_shift,
-                                    0,
-                                    0.1);
+    cs_boundary_conditions_add_map(z->location_id,
+                                   CS_MESH_LOCATION_CELLS,
+                                   coord_shift,
+                                   0.1);
   }
-
-  return bl;
 }
 
 /*-----------------------------------------------------------------------------
@@ -993,7 +975,6 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->rough,     n_zones,    double);
   BFT_MALLOC(boundaries->norm,      n_zones,    double);
   BFT_MALLOC(boundaries->dir,       n_zones,    cs_real_3_t);
-  BFT_MALLOC(boundaries->locator,   n_zones,    ple_locator_t *);
 
   BFT_MALLOC(boundaries->velocity_e,  n_zones,  bool);
   BFT_MALLOC(boundaries->direction_e, n_zones,  bool);
@@ -1071,7 +1052,6 @@ _init_boundaries(void)
     boundaries->velocity_e[izone]  = false;
     boundaries->direction_e[izone] = false;
     boundaries->head_loss_e[izone] = false;
-    boundaries->locator[izone]   = NULL;
 
     if (solid_fuels) {
       const cs_combustion_model_t *cm = cs_glob_combustion_model;
@@ -1207,6 +1187,8 @@ _init_boundaries(void)
         continue;
 
     if (cs_gui_strcmp(nature, "inlet")) {
+
+      _check_and_add_mapped_inlet(label, z);
 
       cs_tree_node_t *tn_vp
         = cs_tree_node_get_child(tn, "velocity_pressure");
@@ -1580,7 +1562,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_t   *b_face_surf = mq->b_face_surf;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
-  const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
@@ -1632,12 +1613,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
     /* Mapped inlet? */
 
-    if (   cs_gui_strcmp(boundaries->nature[izone], "inlet")
-        && boundaries->locator[izone] == NULL)
-      boundaries->locator[izone] = _mapped_inlet(boundaries->label[izone],
-                                                 bz->n_elts,
-                                                 bz->elt_ids);
-    else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+    if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       if (boundaries->rough[izone] >= 0.0)
         wall_type = 6;//TODO remove and use all roughness wall function
       else
@@ -2534,35 +2510,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                 boundaries->nature[izone]);
     }
 
-    /* treatment of mapped inlet for each field */
-
-    if (boundaries->locator[izone] != NULL && ts->nt_cur > 1) {
-      icalke[zone_nbr-1] = 0;
-
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-        const cs_field_t  *f = cs_field_by_id(f_id);
-
-        if (f->type & CS_FIELD_VARIABLE) {
-          int interpolate = 0;
-          int normalize = 0;
-          if (f == CS_F_(vel))
-            normalize = 1;
-          else {
-            const int keysca = cs_field_key_id("scalar_id");
-            if (cs_field_get_key_int(f, keysca) > 0)
-              normalize = 1;
-          }
-          if (f != CS_F_(p))
-            cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
-                                              CS_MESH_LOCATION_CELLS,
-                                              normalize, interpolate,
-                                              bz->n_elts, bz->elt_ids,
-                                              NULL, *nvar, rcodcl);
-        }
-
-      }
-    }
-
 #if _XML_DEBUG_
     if (bz->n_elts > 0) {
       cs_lnum_t face_id = bz->elt_ids[0];
@@ -2592,7 +2539,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                  itypfb,
                                  icodcl,
                                  rcodcl);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3025,12 +2971,6 @@ cs_gui_boundary_conditions_free_memory(void)
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
       BFT_FREE(boundaries->meteo);
 
-    for (izone = 0; izone < n_zones; izone++) {
-      if (boundaries->locator[izone] != NULL)
-        boundaries->locator[izone]
-          = ple_locator_destroy(boundaries->locator[izone]);
-    }
-
     BFT_FREE(boundaries->label);
     BFT_FREE(boundaries->nature);
     BFT_FREE(boundaries->bc_num);
@@ -3049,7 +2989,6 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->direction_e);
     BFT_FREE(boundaries->scalar_e);
     BFT_FREE(boundaries->head_loss_e);
-    BFT_FREE(boundaries->locator);
 
     BFT_FREE(boundaries);
   }

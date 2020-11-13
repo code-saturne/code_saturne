@@ -178,6 +178,38 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                                   int                        nvar,
                                   cs_real_t                  rcodcl[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add location of locate shifted boundary face coordinates on
+ *        cells or boundary faces for automatic interpolation.
+ *
+ * \note
+ * This function is currently restricted to mapping of boundary face
+ * locations (usually from boundary zones) to cell of boundary face
+ * locations, but could be extended to other location types in the future.
+ *
+ * \param[in]  bc_location_id      id of selected boundary mesh location;
+ *                                 currently restricted to subsets of
+ *                                 boundary faces (i.e. boundary zone
+ *                                 location ids).
+ * \param[in]  source_location_id  id of selected location  mesh location
+ *                                 (usually CS_MESH_LOCATION_CELLS but can be
+ *                                 a more restricted cell or boundary face zone
+ *                                 location location id).
+ * \param[in]  coord_shift      coordinates shift relative to selected
+ *                              boundary faces
+ * \param[in]  tolerance        relative tolerance for point location.
+ *
+ * \return  id of added map
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_add_map(int         bc_location_id,
+                               int         source_location_id,
+                               cs_real_t   coord_shift[3],
+                               double      tolerance);
+
 /*----------------------------------------------------------------------------
  * Create the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
@@ -186,7 +218,9 @@ void
 cs_boundary_conditions_create(void);
 
 /*----------------------------------------------------------------------------
- * Free the boundary conditions face type and face zone arrays
+ * Free the boundary conditions face type and face zone arrays.
+ *
+ * This also frees boundary condition mappings which may have been defined.
  *----------------------------------------------------------------------------*/
 
 void
