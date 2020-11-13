@@ -803,9 +803,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Groundwater laws'))
         """
-
-        self.setRowShow(self.tr('Boundary zones'), False)
-
         """
         self.setRowClose(self.tr('Boundary_conditions'))
         self.setRowClose(self.tr('Particle boundary conditions'))
