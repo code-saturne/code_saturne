@@ -265,9 +265,9 @@ call field_get_coefa_s(ivarfl(ipr), coefap)
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
+  iel = ifabor(ifac)
 
   if (iprofm(izone).eq.1.and.imeteo.ge.1) then
-
 !     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
 !       ete modifie. Il servira si la face est une face d'entree ou si c'est une
 !       face de sortie (si le flux est rentrant).
