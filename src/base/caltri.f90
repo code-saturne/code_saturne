@@ -1198,9 +1198,9 @@ call turbulence_model_free_bc_ids
 
 call finalize_aux_arrays
 
-if (ippmod(iatmos).ge.0) then
+call finalize_meteo
 
-  call finalize_meteo
+if (ippmod(iatmos).ge.0) then
 
   if(imbrication_flag)then
     call finalize_imbrication
