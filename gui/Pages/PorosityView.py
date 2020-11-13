@@ -98,7 +98,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         if self.zone.isNatureActivated("porosity"):
             self.setViewFromCase()
-        else:
+        else:  # TODO check if content of tab should still be visible or not
             self.displayDefaultView()
             self.setEnabled(False)
 

@@ -95,7 +95,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             self.selectHeadLossesZones()
             self.setConnections()
             self.setValidators()
-        else:
+        else:  # TODO check if content of tab should remain visible
             self.displayDefaultView()
             self.setEnabled(False)
         self.case.undoStartGlobal()

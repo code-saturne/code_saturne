@@ -42,6 +42,9 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.Pages.VolumicConditionsForm import Ui_VolumicConditionsForm
 
+from code_saturne.model.LocalizationModel import LocalizationModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+
 # -------------------------------------------------------------------------------
 # Widgets import
 # -------------------------------------------------------------------------------
@@ -72,6 +75,16 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
         self.zone_name = zone_name
         self.case.undoStopGlobal()
 
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+
+        if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
+            # self.tabWidget.removeTab(4)
+            pass  # TODO
+        else:
+            pass  # TODO
+
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             self.saturneInitializationWidget.hide()
             self.neptuneInitializationWidget.setup(self.case, self.zone_name)
@@ -87,3 +100,14 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
             self.neptuneSourceTermsWidget.hide()
             self.saturneSourceTermsWidget.setup(self.case, self.zone_name)
         self.groundwaterLawPage.setup(self.case, self.zone_name)
+
+        if not (self.zone.isNatureActivated("initialization")):
+            self.tabWidget.setTabEnabled(0, False)
+        if not (self.zone.isNatureActivated("porosity")):
+            self.tabWidget.setTabEnabled(1, False)
+        if not (self.zone.isNatureActivated("head_losses")):
+            self.tabWidget.setTabEnabled(2, False)
+        if not (self.zone.isNatureActivated("source_terms")):
+            self.tabWidget.setTabEnabled(3, False)
+        if not (self.zone.isNatureActivated("groundwater_law")):
+            self.tabWidget.setTabEnabled(4, False)

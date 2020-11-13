@@ -41,7 +41,6 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
-
 from code_saturne.Pages.VolumicNatureForm import Ui_VolumicNatureForm
 
 # -------------------------------------------------------------------------------
