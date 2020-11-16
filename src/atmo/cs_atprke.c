@@ -257,7 +257,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t *cvara_k = NULL, *cvara_ep = NULL;
 
-  if (cs_glob_turb_model->itytur == 2) {
+  if (CS_F_(k) != NULL) {
     cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
     cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
   }
@@ -281,35 +281,31 @@ _dry_atmosphere(const cs_real_t  cromo[],
   /* Production and gravity terms
      TINSTK = P + G et TINSTE = P + (1 - CE3)*G */
 
-  if (cs_glob_turb_model->itytur == 2) {
+  cs_real_t rho, visct, xeps, xk, ttke, gravke;
+  cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
 
-    cs_real_t rho, visct, xeps, xk, ttke, gravke;
-    cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    rho    = cromo[c_id];
+    visct  = cpro_pcvto[c_id];
+    xeps   = cvara_ep[c_id];
+    xk     = cvara_k[c_id];
+    ttke   = xk / xeps;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      rho    = cromo[c_id];
-      visct  = cpro_pcvto[c_id];
-      xeps   = cvara_ep[c_id];
-      xk     = cvara_k[c_id];
-      ttke   = xk / xeps;
+    gravke =
+      cs_math_3_dot_product(grad[c_id], grav) / (cvara_tpp[c_id]*prdtur);
 
-      gravke =
-        cs_math_3_dot_product(grad[c_id], grav) / (cvara_tpp[c_id]*prdtur);
+    /* Implicit part (no implicit part for epsilon because the source
+     * term is positive) */
 
-      /* Implicit part (no implicit part for epsilon because the source
-       * term is positive) */
+    tinstk[c_id] += fmax(-rho*cell_f_vol[c_id]*cs_turb_cmu*ttke*gravke, 0.);
 
-      tinstk[c_id] += fmax(-rho*cell_f_vol[c_id]*cs_turb_cmu*ttke*gravke, 0.);
+    /* Explicit part */
+    smbre[c_id] += visct*fmax(gravke, 0.);
+    smbrk[c_id] += visct*gravke;
 
-      /* Explicit part */
-      smbre[c_id] += visct*fmax(gravke, 0.);
-      smbrk[c_id] += visct*gravke;
-
-      /* Save for post processing */
-      if (f_tke_buoy != NULL)
-        f_tke_buoy->val[c_id] = visct*gravke/rho;
-    }
-
+    /* Save for post processing */
+    if (f_tke_buoy != NULL)
+      f_tke_buoy->val[c_id] = visct*gravke/rho;
   }
 
   BFT_FREE(grad);
@@ -365,7 +361,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t *cvara_k = NULL, *cvara_ep = NULL;
 
-  if (cs_glob_turb_model->itytur == 2) {
+  if (CS_F_(k) != NULL) {
     cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
     cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
   }
@@ -437,19 +433,16 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Now store the production term due to theta_liq in gravke_theta */
 
-  if (cs_glob_turb_model->itytur == 2) {
+  cs_real_t qw, qldia, theta_virt;
 
-    cs_real_t qw, qldia, theta_virt;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    qw         = cvara_qw[c_id];    /* total water content */
+    qldia      = cpro_pcliq[c_id];  /* liquid water content */
+    theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      qw         = cvara_qw[c_id];    /* total water content */
-      qldia      = cpro_pcliq[c_id];  /* liquid water content */
-      theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
-
-      gravke_theta[c_id] =   etheta[c_id]
-                           * (cs_math_3_dot_product(grad[c_id], grav)
-                           / (theta_virt*prdtur));
-    }
+    gravke_theta[c_id] =   etheta[c_id]
+                         * (cs_math_3_dot_product(grad[c_id], grav)
+                         / (theta_virt*prdtur));
   }
 
   /* Gradient of humidity and it's associated production term
@@ -469,19 +462,16 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Store the production term due to qw in gravke_qw */
 
-  if (cs_glob_turb_model->itytur == 2) {
+  cs_real_t qw, qldia, theta_virt;
 
-    cs_real_t qw, qldia, theta_virt;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    qw         = cvara_qw[c_id];    /* total water content*/
+    qldia      = cpro_pcliq[c_id];  /* liquid water content */
+    theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      qw         = cvara_qw[c_id];    /* total water content*/
-      qldia      = cpro_pcliq[c_id];  /* liquid water content */
-      theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
-
-      gravke_qw[c_id] =   eq[c_id]
-                        * (cs_math_3_dot_product(grad[c_id], grav)
-                        / (theta_virt*prdtur));
-    }
+    gravke_qw[c_id] =   eq[c_id]
+                      * (cs_math_3_dot_product(grad[c_id], grav)
+                      / (theta_virt*prdtur));
   }
 
   /* Finalization */
@@ -538,9 +528,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atprke(cs_real_t  tinstk[],
-          cs_real_t  smbrk[],
-          cs_real_t  smbre[])
+cs_atmo_buoyancy_ke_prod(cs_real_t  tinstk[],
+                         cs_real_t  smbrk[],
+                         cs_real_t  smbre[])
 {
   /* Time extrapolation? */
   int key_t_ext_id = cs_field_key_id("time_extrapolated");

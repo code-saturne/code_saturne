@@ -1358,7 +1358,7 @@ cs_parameters_check(void)
   }
 
   /* LES balance */
-  if (   cs_glob_turb_model->itytur != 4
+  if (   cs_glob_turb_model->type != CS_TURB_LES
       && cs_glob_les_balance->i_les_balance != 0) {
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"

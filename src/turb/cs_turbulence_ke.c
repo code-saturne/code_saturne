@@ -856,7 +856,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   if (   cs_glob_turb_rans_model->igrake == 1
       && cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
-    cs_atprke(tinstk, smbrk, smbre);
+    cs_atmo_buoyancy_ke_prod(tinstk, smbrk, smbre);
 
     /* --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
        Here is computed  G =-g.grad(rho)/prdtur/rho */
