@@ -433,12 +433,10 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Now store the production term due to theta_liq in gravke_theta */
 
-  cs_real_t qw, qldia, theta_virt;
-
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    qw         = cvara_qw[c_id];    /* total water content */
-    qldia      = cpro_pcliq[c_id];  /* liquid water content */
-    theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
+    cs_real_t qw         = cvara_qw[c_id];    /* total water content */
+    cs_real_t qldia      = cpro_pcliq[c_id];  /* liquid water content */
+    cs_real_t theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
 
     gravke_theta[c_id] =   etheta[c_id]
                          * (cs_math_3_dot_product(grad[c_id], grav)
@@ -462,12 +460,10 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   /* Store the production term due to qw in gravke_qw */
 
-  cs_real_t qw, qldia, theta_virt;
-
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    qw         = cvara_qw[c_id];    /* total water content*/
-    qldia      = cpro_pcliq[c_id];  /* liquid water content */
-    theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
+    cs_real_t qw         = cvara_qw[c_id];    /* total water content*/
+    cs_real_t qldia      = cpro_pcliq[c_id];  /* liquid water content */
+    cs_real_t theta_virt = cvara_tpp[c_id]*(1. + (rvsra - 1.)*qw - rvsra*qldia);
 
     gravke_qw[c_id] =   eq[c_id]
                       * (cs_math_3_dot_product(grad[c_id], grav)
