@@ -111,32 +111,34 @@ typedef enum {
 
 struct  _cs_crystal_router_t { /* Crystal router information */
 
-  cs_datatype_t   datatype;          /* associated datatype */
-  int             flags;             /* ordering and metadata flags */
+  cs_datatype_t   datatype;           /* associated datatype */
+  int             flags;              /* ordering and metadata flags */
 
-  size_t          stride;            /* stride if strided, 0 otherwise */
+  size_t          stride;             /* stride if strided, 0 otherwise */
 
-  size_t          dest_id_shift;     /* starting byte for destination id */
-  size_t          src_id_shift;      /* starting byte for source id */
-  size_t          n_vals_shift;      /* starting byte for element count
-                                        (for indexed cases) */
-  size_t          elt_shift;         /* starting byte for element data */
+  size_t          dest_id_shift;      /* starting byte for destination id */
+  size_t          src_id_shift;       /* starting byte for source id */
+  size_t          n_vals_shift;       /* starting byte for element count
+                                         (for indexed cases) */
+  size_t          elt_shift;          /* starting byte for element data */
 
-  size_t          elt_size;          /* element size */
-  size_t          comp_size;         /* composite metadata + element size if
-                                        strided, metadata size otherwise */
+  size_t          elt_size;           /* element size */
+  size_t          comp_size;          /* composite metadata + element size if
+                                         strided, metadata size otherwise */
 
-  size_t          dest_id_end;       /* maximum destination id + 1 */
-  size_t          n_elts[2];         /* number of elements in partition */
-  size_t          n_vals[2];         /* number of data values in partition */
-  size_t          buffer_size[2];    /* buffer size values */
+  size_t          dest_id_end;        /* maximum destination id + 1 */
+  size_t          n_elts[2];          /* number of elements in partition */
+  size_t          n_vals[2];          /* number of data values in partition */
+  size_t          buffer_size[2];     /* buffer size values */
+  size_t          buffer_size_max[2]; /* max buffer size values reached */
+  size_t          alloc_tot_max;      /* max total allocation reached */
   unsigned char  *buffer[2];
 
-  MPI_Comm        comm;              /* associated MPI communicator */
-  MPI_Datatype    mpi_type;          /* Associated MPI datatype */
-  size_t          mpi_type_size;     /* Associated MPI datatype size */
-  int             rank_id;           /* local rank id in comm */
-  int             n_ranks;           /* comm size */
+  MPI_Comm        comm;               /* associated MPI communicator */
+  MPI_Datatype    mpi_type;           /* Associated MPI datatype */
+  size_t          mpi_type_size;      /* Associated MPI datatype size */
+  int             rank_id;            /* local rank id in comm */
+  int             n_ranks;            /* comm size */
 
 };
 
@@ -150,6 +152,8 @@ struct  _cs_crystal_router_t { /* Crystal router information */
 
 static size_t              _cr_calls = 0;
 static cs_timer_counter_t  _cr_timers[2];
+
+const float  _realloc_f_threshold = 0.7;
 
 /*============================================================================
  * Local function defintions
@@ -313,8 +317,11 @@ _crystal_create(size_t         n_elts,
   for (int i = 0; i < 2; i++) {
     cr->n_vals[i] = 0;
     cr->buffer_size[i] = 0;
+    cr->buffer_size_max[i] = 0;
     cr->buffer[i] = NULL;
   }
+
+  cr->alloc_tot_max = 0;
 
   return cr;
 }
@@ -367,10 +374,14 @@ _crystal_create_meta_s(size_t         n_elts,
 
   cr->buffer_size[0] = n_elts*cr->comp_size;
   cr->buffer_size[1] = 0;
-  cr->buffer_size[1] = 0;
   BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   memset(cr->buffer[0], 0, cr->buffer_size[0]);
   cr->buffer[1] = NULL;
+
+  cr->buffer_size_max[0] = cr->buffer_size[0];
+  cr->buffer_size_max[1] = 0;
+
+  cr->alloc_tot_max = cr->buffer_size_max[0];
 
   return cr;
 }
@@ -453,6 +464,11 @@ _crystal_create_meta_i(size_t            n_elts,
   BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
   memset(cr->buffer[0], 0, cr->buffer_size[0]);
   cr->buffer[1] = NULL;
+
+  cr->buffer_size_max[0] = cr->buffer_size[0];
+  cr->buffer_size_max[1] = 0;
+
+  cr->alloc_tot_max = cr->buffer_size_max[0];
 
   return cr;
 }
@@ -702,9 +718,15 @@ _crystal_partition_strided(cs_crystal_router_t  *cr,
 
   assert(send_id == 0 || send_id == 1);
 
-  if (cr->buffer_size[1] < cr->buffer_size[0]) {
+  if (   cr->buffer_size[1] < cr->buffer_size[0]
+      || cr->buffer_size[1] > cr->buffer_size[0]*_realloc_f_threshold) {
     cr->buffer_size[1] = cr->buffer_size[0];
     BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+    if (cr->buffer_size[1] > cr->buffer_size_max[1])
+      cr->buffer_size_max[1] = cr->buffer_size[1];
+    size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
+    if (alloc_tot > cr->alloc_tot_max)
+      cr->alloc_tot_max = alloc_tot;
   }
 
   if (id0 == 0) {
@@ -778,9 +800,15 @@ _crystal_partition_indexed(cs_crystal_router_t  *cr,
 
   assert(send_id == 0 || send_id == 1);
 
-  if (cr->buffer_size[1] < cr->buffer_size[0]) {
+  if (   cr->buffer_size[1] < cr->buffer_size[0]
+      || cr->buffer_size[1] > cr->buffer_size[0]*_realloc_f_threshold) {
     cr->buffer_size[1] = cr->buffer_size[0];
     BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+    if (cr->buffer_size[1] > cr->buffer_size_max[1])
+      cr->buffer_size_max[1] = cr->buffer_size[1];
+    size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
+    if (alloc_tot > cr->alloc_tot_max)
+      cr->alloc_tot_max = alloc_tot;
   }
 
   unsigned char *src = cr->buffer[0];
@@ -896,9 +924,15 @@ _crystal_sendrecv(cs_crystal_router_t  *cr,
   size_t loc_size = _data_size(cr, cr->n_elts[0], cr->n_vals[0]);
   for (int i = 0; i < n_recv; i++)
     loc_size += _data_size(cr, recv_size[i*2], recv_size[i*2+1]);
-  if (loc_size > cr->buffer_size[0]) {
+  if (   loc_size > cr->buffer_size[0]
+      || loc_size < cr->buffer_size[0]*_realloc_f_threshold) {
     cr->buffer_size[0] = loc_size;
     BFT_REALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
+    if (cr->buffer_size[0] > cr->buffer_size_max[0])
+      cr->buffer_size_max[0] = cr->buffer_size[0];
+    size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
+    if (alloc_tot > cr->alloc_tot_max)
+      cr->alloc_tot_max = alloc_tot;
   }
 
   MPI_Isend(cr->buffer[1], send_size[1], cr->mpi_type,
@@ -2115,6 +2149,34 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_cr_timers, &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query maximum buffer sizes reached by a Crystal Router.
+ *
+ * Order of data from a same source rank is preserved.
+ *
+ * \param[in]   cr      pointer to associated Crystal Router
+ * \param[out]  max_sizes   pointer to maximum local/receive (max_sizes[0])
+ *                          and send (max_sizes[1]) sizes, or NULL
+ *
+ * \return  maximum total allocated buffer memory
+ */
+/*----------------------------------------------------------------------------*/
+
+size_t
+cs_crystal_router_get_max_sizes(cs_crystal_router_t  *cr,
+                                size_t               *max_sizes)
+{
+  cs_assert(cr != NULL);
+
+  if (max_sizes != NULL) {
+    max_sizes[0] = cr->buffer_size_max[0];
+    max_sizes[1] = cr->buffer_size_max[1];
+  }
+
+  return cr->alloc_tot_max;
 }
 
 #endif /* defined(HAVE_MPI) */

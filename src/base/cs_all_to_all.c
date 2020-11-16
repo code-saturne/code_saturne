@@ -41,14 +41,17 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
+#include "bft_mem_usage.h"
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
 #include "cs_assert.h"
 #include "cs_block_dist.h"
 #include "cs_crystal_router.h"
 #include "cs_log.h"
 #include "cs_order.h"
+#include "cs_rank_neighbors.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -121,6 +124,8 @@ typedef enum {
 
 } cs_all_to_all_timer_t;
 
+/* Base structure for MPI_Alltoall exchanges */
+
 typedef struct {
 
   cs_datatype_t   datatype;          /* associated datatype */
@@ -148,12 +153,49 @@ typedef struct {
 
   MPI_Comm        comm;              /* Associated MPI communicator */
   MPI_Datatype    comp_type;         /* Associated MPI datatype */
-  int             rank_id;           /* local rank id in comm */
 
   int             n_ranks;           /* Number of ranks associated with
                                         communicator */
 
 } _mpi_all_to_all_caller_t;
+
+/* Base structure for cs_rank_neighbors-based exchanges */
+
+typedef struct {
+
+  cs_rank_neighbors_t   *rn_send;    /* rank neighbors structure for sending */
+  cs_rank_neighbors_t   *rn_recv;    /* rank neighbors structure for receiving */
+
+  cs_datatype_t   datatype;          /* associated datatype */
+  cs_datatype_t   dest_id_datatype;  /* type of destination id (CS_LNUM_TYPE,
+                                        or CS_DATATYPE_NULL) */
+
+  size_t          stride;            /* stride if strided, 0 otherwise */
+
+  size_t          elt_shift;         /* starting byte for element data */
+  size_t          comp_size;         /* Composite element size, with padding */
+
+  size_t          send_size;         /* Send buffer element count */
+  size_t          recv_size;         /* Receive buffer element count */
+
+  int            *elt_rank_index;    /* Element rank index matching owner
+                                        rank_index */
+
+  const void     *send_buffer;       /* Send buffer */
+  unsigned char  *_send_buffer;      /* Send buffer */
+
+  int            *send_count;        /* Send counts for MPI_Alltoall */
+  int            *recv_count;        /* Receive counts for MPI_Alltoall */
+  int            *send_displ;        /* Send displs for MPI_Alltoall */
+  int            *recv_displ;        /* Receive displs for MPI_Alltoall */
+
+  int            *recv_count_save;   /* Saved (strided) receive counts for
+                                        MPI_Alltoall for indexed exchanges */
+
+  MPI_Comm        comm;              /* Associated MPI communicator */
+  MPI_Datatype    comp_type;         /* Associated MPI datatype */
+
+} _hybrid_pex_t;
 
 #endif /* defined(HAVE_MPI) */
 
@@ -195,6 +237,7 @@ struct _cs_all_to_all_t {
   /* Sub-structures */
 
   _mpi_all_to_all_caller_t  *dc;       /* Default MPI_Alltoall(v) caller */
+  _hybrid_pex_t             *hc;       /* Hybrid PEX */
   cs_crystal_router_t       *cr;       /* associated crystal-router */
 
   /* MPI data */
@@ -218,12 +261,22 @@ struct _cs_all_to_all_t {
 
 static cs_all_to_all_type_t _all_to_all_type = CS_ALL_TO_ALL_MPI_DEFAULT;
 
+static cs_rank_neighbors_exchange_t _hybrid_meta_type
+  = CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+
 #if defined(HAVE_MPI)
 
 /* Call counter and timer: 0: total, 1: metadata comm, 2: data comm */
 
 static size_t              _all_to_all_calls[3] = {0, 0, 0};
 static cs_timer_counter_t  _all_to_all_timers[3];
+
+/* Instrumentation */
+
+static int        _n_trace = 0;
+static int        _n_trace_max = 0;
+static uint64_t  *_all_to_all_trace = NULL;
+static FILE      *_all_to_all_trace_bt_log = NULL;
 
 #endif /* defined(HAVE_MPI) */
 
@@ -255,10 +308,19 @@ _all_to_all_create_base(size_t    n_elts,
   /* Initialize timers if required */
 
   if (_all_to_all_calls[0] == 0) {
-    int i;
     int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
-    for (i = 0; i < n_timers; i++)
+    for (int i = 0; i < n_timers; i++)
       CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
+
+    const char *p = getenv("CS_ALL_TO_ALL_TRACE");
+    if (p != NULL) {
+      if (atoi(p) > 0) {
+        _n_trace_max = atoi(p);
+        bft_printf(_("\n cs_all_2_all_trace: %d.\n\n"), _n_trace_max);
+        BFT_MALLOC(_all_to_all_trace, _n_trace_max*9, uint64_t);
+        _all_to_all_trace_bt_log = fopen("all_to_all_trace_bt.txt", "w");
+      }
+    }
   }
 
   /* Check flags */
@@ -295,6 +357,7 @@ _all_to_all_create_base(size_t    n_elts,
   d->src_rank = NULL;
 
   d->cr = NULL;
+  d->hc = NULL;
   d->dc = NULL;
 
   d->comm = comm;
@@ -330,7 +393,8 @@ _compute_displ(int        n_ranks,
   for (i = 0; i < n_ranks; i++)
     displ[i+1] = displ[i] + count[i];
 
-  total_count = displ[n_ranks-1] + count[n_ranks-1];
+  if (n_ranks > 0)
+    total_count = displ[n_ranks-1] + count[n_ranks-1];
 
   return total_count;
 }
@@ -367,7 +431,6 @@ _alltoall_caller_create_meta(int        flags,
 
   dc->comm = comm;
 
-  MPI_Comm_rank(comm, &(dc->rank_id));
   MPI_Comm_size(comm, &(dc->n_ranks));
 
   dc->send_buffer = NULL;
@@ -485,11 +548,7 @@ _alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
  * Save partial metadata before indexed MPI_Alltoall(v) call.
  *
  * parameters:
- *   d         <-> pointer to associated all-to-all distributor
- *   dc        <-> associated MPI_Alltoall(v) caller structure
- *   reverse   <-- true if reverse mode
- *   dest_rank <-- destination rank (in direct mode), used here to reorder
- *                 data in reverse mode.
+ *   dc <-> associated MPI_Alltoall(v) caller structure
  *---------------------------------------------------------------------------*/
 
 static  void
@@ -842,6 +901,20 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
 
   cs_timer_t t0 = cs_timer_time();
 
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = 0;
+    _all_to_all_trace[_n_trace*9+6] = 0;
+    _all_to_all_trace[_n_trace*9+7] = 0;
+    _all_to_all_trace[_n_trace*9+8] = 0;
+    _n_trace += 1;
+  }
+
   MPI_Alltoall(dc->send_count, 1, MPI_INT,
                dc->recv_count, 1, MPI_INT,
                dc->comm);
@@ -849,6 +922,22 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_METADATA,
                             &t0, &t1);
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 1;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = 0;
+    _all_to_all_trace[_n_trace*9+6] = 0;
+    _all_to_all_trace[_n_trace*9+7] = 0;
+    _all_to_all_trace[_n_trace*9+8] = 0;
+    _n_trace += 1;
+  }
+
   _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
 
   dc->recv_size = _compute_displ(dc->n_ranks, dc->recv_count, dc->recv_displ);
@@ -893,6 +982,27 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
 
   cs_timer_t t0 = cs_timer_time();
 
+  if (_n_trace < _n_trace_max) {
+    int n_r_send = 0, n_r_recv = 0;
+    for (int i = 0; i < dc->n_ranks; i++) {
+      if (dc->send_count[i] > 0)
+        n_r_send += 1;
+      if (dc->recv_count[i] > 0)
+        n_r_recv += 1;
+    }
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 2;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = dc->send_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = dc->recv_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = n_r_send;
+    _all_to_all_trace[_n_trace*9+8] = n_r_recv;
+    _n_trace += 1;
+  }
+
   MPI_Alltoallv(dc->send_buffer, dc->send_count, dc->send_displ, dc->comp_type,
                 _recv_data, dc->recv_count, dc->recv_displ, dc->comp_type,
                 dc->comm);
@@ -901,6 +1011,28 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
   cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
                             &t0, &t1);
   _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  if (_n_trace < _n_trace_max) {
+    int n_r_send = 0, n_r_recv = 0;
+    for (int i = 0; i < dc->n_ranks; i++) {
+      if (dc->send_count[i] > 0)
+        n_r_send += 1;
+      if (dc->recv_count[i] > 0)
+        n_r_recv += 1;
+    }
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = dc->send_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = dc->recv_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = n_r_send;
+    _all_to_all_trace[_n_trace*9+8] = n_r_recv;
+    _n_trace += 1;
+  }
 
   /* dest id datatype only used for first exchange */
 
@@ -1009,6 +1141,27 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
 
   cs_timer_t t0 = cs_timer_time();
 
+  if (_n_trace < _n_trace_max) {
+    int n_r_send = 0, n_r_recv = 0;
+    for (int i = 0; i < dc->n_ranks; i++) {
+      if (dc->send_count[i] > 0)
+        n_r_send += 1;
+      if (dc->recv_count[i] > 0)
+        n_r_recv += 1;
+    }
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 2;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = dc->send_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = dc->recv_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = n_r_send;
+    _all_to_all_trace[_n_trace*9+8] = n_r_recv;
+    _n_trace += 1;
+  }
+
   MPI_Alltoallv(dc->send_buffer, dc->send_count, dc->send_displ, dc->comp_type,
                 _recv_data, dc->recv_count, dc->recv_displ, dc->comp_type,
                 dc->comm);
@@ -1017,6 +1170,28 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
   cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
                             &t0, &t1);
   _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  if (_n_trace < _n_trace_max) {
+    int n_r_send = 0, n_r_recv = 0;
+    for (int i = 0; i < dc->n_ranks; i++) {
+      if (dc->send_count[i] > 0)
+        n_r_send += 1;
+      if (dc->recv_count[i] > 0)
+        n_r_recv += 1;
+    }
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = dc->send_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = dc->recv_size*dc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = n_r_send;
+    _all_to_all_trace[_n_trace*9+8] = n_r_recv;
+    _n_trace += 1;
+  }
 
   /* Handle main data buffer (reverse implies reordering data) */
 
@@ -1047,6 +1222,914 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
         for (size_t l = 0; l < sub_size; l++)
           _dest_data[w_displ + l] = sp[r_displ + l];
         dc->recv_count[rank_id] += n_sub_recv;
+      }
+    }
+    else {
+      assert(_dest_data == _recv_data);
+    }
+    BFT_FREE(_recv_data);
+  }
+
+  return _dest_data;
+}
+
+/*----------------------------------------------------------------------------
+ * First stage of creation for a hybrid caller for strided data.
+ *
+ * parameters:
+ *   flags     <-- metadata flags
+ *   comm      <-- associated MPI communicator
+ *---------------------------------------------------------------------------*/
+
+static _hybrid_pex_t *
+_hybrid_pex_create_meta(int        flags,
+                        MPI_Comm   comm)
+{
+  _hybrid_pex_t *hc;
+
+  /* Allocate structure */
+
+  BFT_MALLOC(hc, 1, _hybrid_pex_t);
+
+  hc->rn_send = NULL;
+  hc->rn_recv = NULL;
+
+  hc->datatype = CS_DATATYPE_NULL;
+
+  hc->dest_id_datatype = CS_DATATYPE_NULL;
+
+  if (flags & CS_ALL_TO_ALL_USE_DEST_ID)
+    hc->dest_id_datatype = CS_LNUM_TYPE;
+
+  hc->stride = 0;
+
+  hc->send_size = 0;
+  hc->recv_size = 0;
+
+  hc->comm = comm;
+
+  hc->elt_rank_index = NULL;
+
+  hc->send_buffer = NULL;
+  hc->_send_buffer = NULL;
+
+  hc->send_count = NULL;
+  hc->recv_count = NULL;
+  hc->send_displ = NULL;
+  hc->recv_displ = NULL;
+  hc->recv_count_save = NULL;
+
+  /* Compute data size and alignment */
+
+  if (hc->dest_id_datatype == CS_LNUM_TYPE)
+    hc->elt_shift = sizeof(cs_lnum_t);
+  else
+    hc->elt_shift = 0;
+
+  size_t align_size = sizeof(cs_lnum_t);
+
+  if (hc->elt_shift % align_size)
+    hc->elt_shift += align_size - (hc->elt_shift % align_size);
+
+  hc->comp_size = hc->elt_shift;
+
+  hc->comp_type = MPI_BYTE;
+
+  /* Return pointer to structure */
+
+  return hc;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a hybrid caller.
+ *
+ * parameters:
+ *   hc <-> pointer to pointer to MPI_Alltoall(v) caller structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_hybrid_pex_destroy(_hybrid_pex_t **hc)
+{
+  if (hc != NULL) {
+    _hybrid_pex_t *_hc = *hc;
+    if (_hc->comp_type != MPI_BYTE)
+      MPI_Type_free(&(_hc->comp_type));
+    BFT_FREE(_hc->elt_rank_index);
+    BFT_FREE(_hc->_send_buffer);
+    BFT_FREE(_hc->recv_count_save);
+    BFT_FREE(_hc->recv_displ);
+    BFT_FREE(_hc->send_displ);
+    BFT_FREE(_hc->recv_count);
+    BFT_FREE(_hc->send_count);
+
+    cs_rank_neighbors_destroy(&(_hc->rn_send));
+    cs_rank_neighbors_destroy(&(_hc->rn_recv));
+
+    BFT_FREE(*hc);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update all hybrid caller metadata.
+ *
+ * parameters:
+ *   hc        <-> distributor caller
+ *   datatype  <-- associated datatype
+ *   stride    <-- associated stride (0 if indexed)
+ *---------------------------------------------------------------------------*/
+
+static void
+_hybrid_pex_update_meta(_hybrid_pex_t  *hc,
+                        cs_datatype_t   datatype,
+                        int             stride)
+{
+  size_t elt_size = cs_datatype_size[datatype]*stride;
+  size_t align_size = sizeof(int);
+
+  /* Free previous associated datatype if needed */
+
+  if (hc->comp_type != MPI_BYTE)
+    MPI_Type_free(&(hc->comp_type));
+
+  /* Now update metadata */
+
+  hc->datatype = datatype;
+  hc->stride = stride;
+
+  /* Recompute data size and alignment */
+
+  if (hc->dest_id_datatype == CS_LNUM_TYPE) {
+    hc->elt_shift = sizeof(cs_lnum_t);
+    if (sizeof(cs_lnum_t) > align_size)
+      align_size = sizeof(cs_lnum_t);
+  }
+  else
+    hc->elt_shift = 0;
+
+  if (hc->elt_shift % align_size)
+    hc->elt_shift += align_size - (hc->elt_shift % align_size);
+
+  if (stride > 0) {
+    if (cs_datatype_size[datatype] > align_size)
+      align_size = cs_datatype_size[datatype];
+    hc->comp_size = hc->elt_shift + elt_size;
+  }
+  else
+    hc->comp_size = hc->elt_shift + cs_datatype_size[datatype];
+
+  if (elt_size % align_size)
+    hc->comp_size += align_size - (elt_size % align_size);
+
+  /* Update associated MPI datatype */
+
+  MPI_Type_contiguous(hc->comp_size, MPI_BYTE, &(hc->comp_type));
+  MPI_Type_commit(&(hc->comp_type));
+}
+
+/*----------------------------------------------------------------------------
+ * Save partial metadata before indexed hybrid call.
+ *
+ * parameters:
+ *   hc  <-> associated hybrid caller structure
+ *---------------------------------------------------------------------------*/
+
+static  void
+_hybrid_pex_save_meta_i(_hybrid_pex_t  *hc)
+{
+  if (hc->recv_count_save == NULL) {
+    int n_n_ranks = hc->rn_recv->size;
+    BFT_MALLOC(hc->recv_count_save, n_n_ranks, int);
+    memcpy(hc->recv_count_save, hc->recv_count, sizeof(int)*(n_n_ranks));
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Reset metadate to that used for strided exchanges after indexed
+ * hybrid call.
+ *
+ * parameters:
+ *   hc              <-> associated hybrid caller structure
+ *---------------------------------------------------------------------------*/
+
+static  void
+_hybrid_pex_reset_meta_i(_hybrid_pex_t  *hc)
+{
+  int n_s_ranks = hc->rn_send->size;
+  int n_r_ranks = hc->rn_recv->size;
+
+  const int  *dest_rank_index = hc->elt_rank_index;
+
+  /* Re-count values to send */
+  for (int i = 0; i < n_s_ranks; i++)
+    hc->send_count[i] = 0;
+  for (size_t j = 0; j < hc->send_size; j++)
+    hc->send_count[dest_rank_index[j]] += 1;
+
+  /* Revert to saved values for receive */
+  if (hc->recv_count_save != NULL) {
+    memcpy(hc->recv_count, hc->recv_count_save, sizeof(int)*(n_r_ranks));
+    BFT_FREE(hc->recv_count_save);
+  }
+
+  /* Recompute associated displacements */
+  _compute_displ(n_s_ranks, hc->send_count, hc->send_displ);
+  _compute_displ(n_r_ranks, hc->recv_count, hc->recv_displ);
+}
+
+/*----------------------------------------------------------------------------
+ * Swap source and destination ranks of all-to-all distributor.
+ *
+ * parameters:
+ *   d <->  pointer to associated all-to-all distributor
+ *----------------------------------------------------------------------------*/
+
+static void
+_hybrid_pex_swap_src_dest(_hybrid_pex_t  *hc)
+{
+  size_t tmp_size[2] = {hc->send_size, hc->recv_size};
+  int *tmp_count = hc->recv_count;
+  int *tmp_displ = hc->recv_displ;
+  cs_rank_neighbors_t *tmp_rn = hc->rn_send;
+
+  hc->rn_send = hc->rn_recv;
+  hc->rn_recv = tmp_rn;
+
+  hc->send_size = tmp_size[1];
+  hc->recv_size = tmp_size[0];
+
+  hc->recv_count = hc->send_count;
+  hc->recv_displ = hc->send_displ;
+
+  hc->send_count = tmp_count;
+  hc->send_displ = tmp_displ;
+}
+
+/*----------------------------------------------------------------------------
+ * Prepare a hybrid caller for strided data.
+ *
+ * parameters:
+ *   n_elts           <-- number of elements
+ *   stride           <-- number of values per entity (interlaced)
+ *   datatype         <-- type of data considered
+ *   reverse          <-- true if reverse mode
+ *   data             <-- element values
+ *   dest_id          <-- element destination id, or NULL
+ *   recv_id          <-- element receive id (for reverse mode), or NULL
+ *---------------------------------------------------------------------------*/
+
+static void
+_hybrid_pex_prepare_s(_hybrid_pex_t    *hc,
+                      size_t            n_elts,
+                      int               stride,
+                      cs_datatype_t     datatype,
+                      bool              reverse,
+                      const void       *data,
+                      const cs_lnum_t  *dest_id,
+                      const cs_lnum_t  *recv_id)
+{
+  int i;
+
+  size_t elt_size = cs_datatype_size[datatype]*stride;
+
+  unsigned const char *_data = data;
+
+  assert(data != NULL || (n_elts == 0 || stride == 0));
+
+  _hybrid_pex_update_meta(hc, datatype, stride);
+
+  /* Allocate send buffer */
+
+  if (reverse && recv_id == NULL) {
+    BFT_FREE(hc->_send_buffer);
+    hc->send_buffer = data;
+  }
+  else {
+    BFT_REALLOC(hc->_send_buffer, hc->send_size*hc->comp_size, unsigned char);
+    hc->send_buffer = hc->_send_buffer;
+  }
+
+  const int  *dest_rank_index = hc->elt_rank_index;
+
+  /* Copy metadata */
+
+  if (hc->dest_id_datatype == CS_LNUM_TYPE) {
+    unsigned const char *_dest_id = (unsigned const char *)dest_id;
+    const size_t id_size = sizeof(cs_lnum_t);
+    for (size_t j = 0; j < n_elts; j++) {
+      size_t w_displ = hc->send_displ[dest_rank_index[j]]*hc->comp_size;
+      size_t r_displ = j*id_size;
+      hc->send_displ[dest_rank_index[j]] += 1;
+      for (size_t k = 0; k < id_size; k++)
+        hc->_send_buffer[w_displ + k] = _dest_id[r_displ + k];
+    }
+    /* Reset send_displ */
+    int n_s_ranks = hc->rn_send->size;
+    for (i = 0; i < n_s_ranks; i++)
+      hc->send_displ[i] -= hc->send_count[i];
+  }
+
+  /* Copy data; in case of reverse send with destination ids, the
+     matching indirection must be applied here. */
+
+  if (!reverse) {
+    for (size_t j = 0; j < n_elts; j++) {
+      size_t w_displ =   hc->send_displ[dest_rank_index[j]]*hc->comp_size
+                       + hc->elt_shift;
+      size_t r_displ = j*elt_size;
+      hc->send_displ[dest_rank_index[j]] += 1;
+      for (size_t k = 0; k < elt_size; k++)
+        hc->_send_buffer[w_displ + k] = _data[r_displ + k];
+    }
+    /* Reset send_displ */
+    int n_s_ranks = hc->rn_send->size;
+    for (i = 0; i < n_s_ranks; i++)
+      hc->send_displ[i] -= hc->send_count[i];
+  }
+  else if (recv_id != NULL) { /* reverse here */
+    for (size_t j = 0; j < hc->send_size; j++) {
+      size_t w_displ = hc->comp_size*j + hc->elt_shift;
+      size_t r_displ = recv_id[j]*elt_size;
+      for (size_t k = 0; k < elt_size; k++)
+        hc->_send_buffer[w_displ + k] = _data[r_displ + k];
+    }
+  }
+  else { /* If revert and no recv_id */
+    assert(hc->send_buffer == data);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Prepare a hybrid caller for indexed data.
+ *
+ * parameters:
+ *   n_elts           <-- number of elements
+ *   datatype         <-- type of data considered
+ *   reverse          <-- true if reverse mode
+ *   src_index        <-- source index
+ *   dest_index       <-- destination index
+ *   data             <-- element values
+ *   recv_id          <-- element receive id (for reverse mode), or NULL
+ *---------------------------------------------------------------------------*/
+
+static void
+_hybrid_pex_prepare_i(_hybrid_pex_t      *hc,
+                      size_t              n_elts,
+                      cs_datatype_t       datatype,
+                      bool                reverse,
+                      const cs_lnum_t     src_index[],
+                      const cs_lnum_t     dest_index[],
+                      const void         *data,
+                      const cs_lnum_t    *recv_id)
+{
+  int i;
+
+  size_t elt_size = cs_datatype_size[datatype];
+
+  unsigned const char *_data = data;
+
+  _hybrid_pex_update_meta(hc, datatype, 0);
+
+  /* Allocate send buffer */
+
+  if (reverse && recv_id == NULL) {
+    BFT_FREE(hc->_send_buffer);
+    hc->send_buffer = data;
+  }
+  else {
+    size_t n_sub_elts = 0;
+    if (reverse == false || recv_id == NULL)
+      n_sub_elts = src_index[n_elts];
+    else {
+      for (size_t j = 0; j < hc->send_size; j++) {
+        cs_lnum_t k = recv_id[j];
+        n_sub_elts += src_index[k+1] - src_index[k];
+      }
+    }
+    BFT_REALLOC(hc->_send_buffer, n_sub_elts*hc->comp_size, unsigned char);
+    hc->send_buffer = hc->_send_buffer;
+  }
+
+  /* Update send and receive counts and displacements
+     (avoiding additional communication) */
+
+  const int n_s_ranks = hc->rn_send->size;
+  const int n_r_ranks = hc->rn_recv->size;
+
+  for (i = 0; i < n_s_ranks; i++)
+    hc->send_count[i] = 0;
+
+  for (i = 0; i < n_r_ranks; i++)
+    hc->recv_count[i] = 0;
+
+  const int  *dest_rank_index = hc->elt_rank_index;
+
+  if (reverse) {
+    if (recv_id != NULL) {
+      for (i = 0; i < n_s_ranks; i++) {
+        size_t i_s = hc->send_displ[i];
+        size_t i_e = hc->send_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t k = recv_id[j];
+          cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
+          hc->send_count[i] += n_sub_send;
+        }
+      }
+    }
+    else {
+      for (i = 0; i < n_s_ranks; i++) {
+        size_t i_s = hc->send_displ[i];
+        size_t i_e = hc->send_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+          hc->send_count[i] += n_sub_send;
+        }
+      }
+    }
+  }
+  else { /* !reverse */
+    for (size_t j = 0; j < hc->send_size; j++) {
+      cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+      hc->send_count[dest_rank_index[j]] += n_sub_send;
+    }
+  }
+
+  if (reverse) {
+    for (size_t j = 0; j < hc->recv_size; j++) {
+      cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
+      hc->recv_count[dest_rank_index[j]] += n_sub_recv;
+    }
+  }
+  else {
+    if (recv_id != NULL) {
+      for (i = 0; i < n_r_ranks; i++) {
+        size_t i_s = hc->recv_displ[i];
+        size_t i_e = hc->recv_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t k = recv_id[j];
+          cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+          hc->recv_count[i] += n_sub_recv;
+        }
+      }
+    }
+    else {
+      for (i = 0; i < n_r_ranks; i++) {
+        size_t i_s = hc->recv_displ[i];
+        size_t i_e = hc->recv_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
+          hc->recv_count[i] += n_sub_recv;
+        }
+      }
+    }
+  }
+
+  _compute_displ(n_s_ranks, hc->send_count, hc->send_displ);
+  _compute_displ(n_r_ranks, hc->recv_count, hc->recv_displ);
+
+  /* Copy data; in case of reverse send with destination ids, the
+     matching indirection must be applied here. */
+
+  if (!reverse) {
+    for (size_t j = 0; j < n_elts; j++) {
+      cs_lnum_t n_sub_send = src_index[j+1] - src_index[j];
+      size_t w_displ = hc->send_displ[dest_rank_index[j]]*elt_size;
+      size_t r_displ = src_index[j]*elt_size;
+      size_t sub_size = elt_size*n_sub_send;
+      hc->send_displ[dest_rank_index[j]] += n_sub_send;
+      for (size_t l = 0; l < sub_size; l++)
+        hc->_send_buffer[w_displ + l] = _data[r_displ + l];
+    }
+    /* Reset send_displ */
+    for (i = 0; i < n_s_ranks; i++)
+      hc->send_displ[i] -= hc->send_count[i];
+  }
+  else if (recv_id != NULL) { /* reverse here */
+    size_t w_displ = 0;
+    for (size_t j = 0; j < hc->send_size; j++) {
+      cs_lnum_t k = recv_id[j];
+      cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
+      size_t r_displ = src_index[k]*elt_size;
+      size_t sub_size = elt_size*n_sub_send;
+      for (size_t l = 0; l < sub_size; l++)
+        hc->_send_buffer[w_displ + l] = _data[r_displ + l];
+      w_displ += sub_size;
+    }
+
+    /* Recompute associated displacements */
+    _compute_displ(n_s_ranks, hc->send_count, hc->send_displ);
+    _compute_displ(n_r_ranks, hc->recv_count, hc->recv_displ);
+
+
+  }
+  else { /* If revert and no recv_id */
+    assert(hc->send_buffer == data);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Exchange metadata for an hybrid caller.
+ *
+ * Order of data from a same source rank is preserved.
+ *
+ * parameters:
+ *   hc        <-> associated hybrid caller structure
+ *   n_elts    <-- number of elements
+ *   dest_rank <-- destination rank for each element
+ *---------------------------------------------------------------------------*/
+
+static  void
+_hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
+                          size_t          n_elts,
+                          const int       dest_rank[])
+{
+  if (hc->rn_send == NULL) {
+    hc->rn_send = cs_rank_neighbors_create(n_elts, dest_rank);
+
+    BFT_MALLOC(hc->elt_rank_index, n_elts, int);
+    BFT_MALLOC(hc->send_count, hc->rn_send->size, int);
+    BFT_MALLOC(hc->send_displ, hc->rn_send->size + 1, int);
+
+    cs_rank_neighbors_to_index(hc->rn_send,
+                               n_elts,
+                               dest_rank,
+                               hc->elt_rank_index);
+
+  }
+
+  /* Count values to send and receive */
+
+  cs_rank_neighbors_count(hc->rn_send,
+                          n_elts,
+                          hc->elt_rank_index,
+                          hc->send_count);
+
+  hc->send_size = _compute_displ(hc->rn_send->size,
+                                 hc->send_count,
+                                 hc->send_displ);
+
+  /* Exchange counts */
+
+  cs_timer_t t0 = cs_timer_time();
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = 0;
+    _all_to_all_trace[_n_trace*9+6] = 0;
+    _all_to_all_trace[_n_trace*9+7] = 0;
+    _all_to_all_trace[_n_trace*9+8] = 0;
+    _n_trace += 1;
+  }
+
+  assert(hc->rn_recv == NULL);
+
+  if (hc->rn_recv != NULL) {
+    cs_rank_neighbors_destroy(&(hc->rn_recv));
+    BFT_FREE(hc->recv_count);
+    BFT_FREE(hc->recv_displ);
+  }
+
+  cs_rank_neighbors_sync_count_m(hc->rn_send,
+                                 &(hc->rn_recv),
+                                 hc->send_count,
+                                 &(hc->recv_count),
+                                 _hybrid_meta_type,
+                                 hc->comm);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_METADATA,
+                            &t0, &t1);
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 1;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = 0;
+    _all_to_all_trace[_n_trace*9+6] = 0;
+    _all_to_all_trace[_n_trace*9+7] = 0;
+    _all_to_all_trace[_n_trace*9+8] = 0;
+    _n_trace += 1;
+  }
+
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
+
+  BFT_MALLOC(hc->recv_displ, hc->rn_recv->size + 1, int);
+
+  hc->recv_size = _compute_displ(hc->rn_recv->size,
+                                 hc->recv_count,
+                                 hc->recv_displ);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange indexed data with a hybrid caller.
+ *
+ * \param[in]    hc          associated hybrid caller structure
+ * \param[in]    sendbuf     starting address of send buffer.
+ * \param[out]   recvbuf     starting address of receive buffer.
+ */
+/*----------------------------------------------------------------------------*/
+
+static  void
+_hybrid_alltoallv(_hybrid_pex_t   *hc,
+                  const void      *sendbuf,
+                  void            *recvbuf)
+{
+  /* Currently available: MPI_Alltoallv */
+
+  if (true) {
+    int n_ranks;
+    MPI_Comm_size(hc->comm, &n_ranks);
+
+    int  *send_count, *send_displ, *recv_count, *recv_displ;
+
+    BFT_MALLOC(send_count, n_ranks, int);
+    BFT_MALLOC(send_displ, n_ranks+1, int);
+    BFT_MALLOC(recv_count, n_ranks, int);
+    BFT_MALLOC(recv_displ, n_ranks+1, int);
+
+    const int n_s_ranks = hc->rn_send->size;
+    const int n_r_ranks = hc->rn_recv->size;
+    const int *s_rank = hc->rn_send->rank;
+    const int *r_rank = hc->rn_recv->rank;
+
+    for (int i = 0; i < n_ranks; i++) {
+      send_count[i] = 0;
+      recv_count[i] = 0;
+    }
+    for (int i = 0; i < n_s_ranks; i++)
+      send_count[s_rank[i]] = hc->send_displ[i+1] - hc->send_displ[i];
+    for (int i = 0; i < n_r_ranks; i++)
+      recv_count[r_rank[i]] = hc->recv_displ[i+1] - hc->recv_displ[i];
+
+    _compute_displ(n_ranks, send_count, send_displ);
+    _compute_displ(n_ranks, recv_count, recv_displ);
+
+    MPI_Alltoallv(sendbuf, send_count, send_displ, hc->comp_type,
+                  recvbuf, recv_count, recv_displ, hc->comp_type,
+                  hc->comm);
+
+    BFT_FREE(recv_displ);
+    BFT_FREE(recv_count);
+    BFT_FREE(send_displ);
+    BFT_FREE(send_count);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Exchange strided data with a hybrid caller.
+ *
+ * parameters:
+ *   d               <-> pointer to associated all-to-all distributor
+ *   hc              <-> associated hybrid caller structure
+ *   reverse         <-- true if reverse mode
+ *   dest_data       <-> destination data buffer, or NULL
+ *
+ * returns:
+ *   pointer to dest_data, or newly allocated buffer
+ *---------------------------------------------------------------------------*/
+
+static  void *
+_hybrid_pex_exchange_s(cs_all_to_all_t  *d,
+                       _hybrid_pex_t    *hc,
+                       bool              reverse,
+                       void             *dest_data)
+{
+  size_t elt_size = cs_datatype_size[hc->datatype]*hc->stride;
+  unsigned char *_dest_data = dest_data, *_recv_data = dest_data;
+
+  /* Final data buffer */
+
+  if (_dest_data == NULL && hc->recv_size*elt_size > 0)
+    BFT_MALLOC(_dest_data, hc->recv_size*elt_size, unsigned char);
+
+  /* Data buffer for MPI exchange (may merge data and metadata) */
+  if (   hc->dest_id_datatype == CS_LNUM_TYPE || d->recv_id != NULL
+      || reverse)
+    BFT_MALLOC(_recv_data, hc->recv_size*hc->comp_size, unsigned char);
+  else
+    _recv_data = _dest_data;
+
+  cs_timer_t t0 = cs_timer_time();
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 2;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = hc->send_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = hc->recv_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = hc->rn_send->size;
+    _all_to_all_trace[_n_trace*9+8] = hc->rn_recv->size;
+    _n_trace += 1;
+  }
+
+  _hybrid_alltoallv(hc, hc->send_buffer, _recv_data);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = hc->send_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = hc->recv_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = hc->rn_send->size;
+    _all_to_all_trace[_n_trace*9+8] = hc->rn_recv->size;
+    _n_trace += 1;
+  }
+
+  /* dest id datatype only used for first exchange */
+
+  if (hc->dest_id_datatype == CS_LNUM_TYPE) {
+    assert(d->recv_id == NULL);
+    BFT_MALLOC(d->recv_id, d->hc->recv_size, cs_lnum_t);
+    for (size_t i = 0; i < d->hc->recv_size; i++)
+      d->recv_id[i] = -1;
+    const unsigned char *sp = _recv_data;
+    for (size_t i = 0; i < d->hc->recv_size; i++)
+      memcpy(d->recv_id + i,
+             sp + d->hc->comp_size*i,
+             sizeof(cs_lnum_t));
+    hc->dest_id_datatype = CS_DATATYPE_NULL;
+    cs_lnum_t dest_id_max = -1;
+    for (size_t i = 0; i < d->hc->recv_size; i++) {
+      if (d->recv_id[i] > dest_id_max)
+        dest_id_max = d->recv_id[i];
+      d->n_elts_dest = dest_id_max + 1;
+    }
+    d->n_elts_dest_e = d->hc->recv_size;
+  }
+
+  /* Now handle main data buffer (reverse implies reordering data) */
+
+  if (_dest_data != _recv_data) {
+    const unsigned char *sp = _recv_data + d->hc->elt_shift;
+    if (d->recv_id != NULL && !reverse) {
+      for (size_t i = 0; i < d->hc->recv_size; i++) {
+        size_t w_displ = d->recv_id[i]*elt_size;
+        size_t r_displ = d->hc->comp_size*i;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+      }
+    }
+    else if (reverse) {
+      const int n_r_ranks = hc->rn_recv->size;
+      const int *dest_rank_index = hc->elt_rank_index;
+      for (int i = 0; i < n_r_ranks; i++)
+        hc->recv_count[i] = 0;
+      for (size_t i = 0; i < d->hc->recv_size; i++) {
+        int rank_idx = dest_rank_index[i];
+        size_t w_displ = i*elt_size;
+        size_t r_displ = (  hc->recv_displ[rank_idx]
+                          + hc->recv_count[rank_idx])*hc->comp_size;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+        hc->recv_count[rank_idx] += 1;
+      }
+    }
+    else {
+      for (size_t i = 0; i < d->hc->recv_size; i++) {
+        size_t w_displ = i*elt_size;
+        size_t r_displ = hc->comp_size*i;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+      }
+    }
+    BFT_FREE(_recv_data);
+  }
+
+  return _dest_data;
+}
+
+/*----------------------------------------------------------------------------
+ * Exchange indexed data with a hybrid caller.
+ *
+ * parameters:
+ *   d                <-> pointer to associated all-to-all distributor
+ *   hc               <-> associated hybrid caller structure
+ *   reverse          <-- true if reverse mode
+ *   dest_index       <-- destination index
+ *   dest_data        <-> destination data buffer, or NULL
+ *
+ * returns:
+ *   pointer to dest_data, or newly allocated buffer
+ *---------------------------------------------------------------------------*/
+
+static  void *
+_hybrid_pex_exchange_i(cs_all_to_all_t    *d,
+                       _hybrid_pex_t      *hc,
+                       bool                reverse,
+                       const cs_lnum_t     dest_index[],
+                       void               *dest_data)
+{
+  size_t elt_size = cs_datatype_size[hc->datatype];
+  unsigned char *_dest_data = dest_data, *_recv_data = dest_data;
+
+  /* Final data buffer */
+
+  size_t n_elts_dest = (reverse) ? d->n_elts_src : d->n_elts_dest;
+
+  size_t _n_dest_sub = dest_index[n_elts_dest];
+  if (_dest_data == NULL && _n_dest_sub*elt_size > 0)
+    BFT_MALLOC(_dest_data, _n_dest_sub*elt_size, unsigned char);
+
+  /* Data buffer for MPI exchange (may merge data and metadata) */
+
+  if (d->recv_id != NULL || reverse) {
+    int n_r_ranks = hc->rn_recv->size;
+    size_t _n_dest_buf = hc->recv_displ[n_r_ranks] * hc->comp_size;
+    BFT_MALLOC(_recv_data, _n_dest_buf, unsigned char);
+  }
+  else
+    _recv_data = _dest_data;
+
+  cs_timer_t t0 = cs_timer_time();
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] = 0;
+    _all_to_all_trace[_n_trace*9+2] = 2;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = hc->send_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = hc->recv_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = hc->rn_send->size;
+    _all_to_all_trace[_n_trace*9+8] = hc->rn_recv->size;
+    _n_trace += 1;
+  }
+
+  _hybrid_alltoallv(hc, hc->send_buffer, _recv_data);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  if (_n_trace < _n_trace_max) {
+    /* Time to 1-5 s */
+    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                      - _all_to_all_trace[(_n_trace-1)*9];
+    _all_to_all_trace[_n_trace*9+2] = 0;
+    _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+    _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+    _all_to_all_trace[_n_trace*9+5] = hc->send_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+6] = hc->recv_size*hc->comp_size;
+    _all_to_all_trace[_n_trace*9+7] = hc->rn_send->size;
+    _all_to_all_trace[_n_trace*9+8] = hc->rn_recv->size;
+    _n_trace += 1;
+  }
+
+  /* Handle main data buffer (reverse implies reordering data) */
+
+  if (_dest_data != _recv_data) {
+    const unsigned char *sp = _recv_data;
+    if (d->recv_id != NULL && !reverse) {
+      size_t r_displ = 0;
+      for (size_t i = 0; i < hc->recv_size; i++) {
+        cs_lnum_t k = d->recv_id[i];
+        cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+        size_t w_displ = dest_index[k]*elt_size;
+        size_t sub_size = n_sub_recv*elt_size;
+        for (size_t l = 0; l < sub_size; l++)
+          _dest_data[w_displ + l] = sp[r_displ + l];
+        r_displ += sub_size;
+      }
+    }
+    else if (reverse) {
+      const int n_r_ranks = hc->rn_recv->size;
+      const int *dest_rank_index = hc->elt_rank_index;
+      for (int i = 0; i < n_r_ranks; i++)
+        hc->recv_count[i] = 0;
+      for (size_t i = 0; i < d->hc->recv_size; i++) {
+        int rank_idx = dest_rank_index[i];
+        size_t w_displ = dest_index[i]*elt_size;
+        size_t r_displ = (  hc->recv_displ[rank_idx]
+                          + hc->recv_count[rank_idx])*elt_size;
+        cs_lnum_t n_sub_recv = dest_index[i+1] - dest_index[i];
+        size_t sub_size = n_sub_recv*elt_size;
+        for (size_t l = 0; l < sub_size; l++)
+          _dest_data[w_displ + l] = sp[r_displ + l];
+        hc->recv_count[rank_idx] += n_sub_recv;
       }
     }
     else {
@@ -1319,6 +2402,8 @@ cs_all_to_all_create(size_t            n_elts,
 
   if (d->type == CS_ALL_TO_ALL_MPI_DEFAULT)
     d->dc = _alltoall_caller_create_meta(flags, comm);
+  else if (d->type == CS_ALL_TO_ALL_HYBRID)
+    d->hc = _hybrid_pex_create_meta(flags, comm);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
@@ -1408,6 +2493,8 @@ cs_all_to_all_create_from_block(size_t                 n_elts,
 
   if (d->type == CS_ALL_TO_ALL_MPI_DEFAULT)
     d->dc = _alltoall_caller_create_meta(flags, comm);
+  else if (d->type == CS_ALL_TO_ALL_HYBRID)
+    d->hc = _hybrid_pex_create_meta(flags, comm);
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
@@ -1437,9 +2524,10 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
     cs_all_to_all_t *_d = *d;
     if (_d->cr != NULL)
       cs_crystal_router_destroy(&(_d->cr));
-    else if (_d->dc != NULL) {
+    else if (_d->hc != NULL)
+      _hybrid_pex_destroy(&(_d->hc));
+    else if (_d->dc != NULL)
       _alltoall_caller_destroy(&(_d->dc));
-    }
 
     BFT_FREE(_d->src_rank);
     BFT_FREE(_d->src_id);
@@ -1570,6 +2658,26 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
       }
       break;
 
+    case CS_ALL_TO_ALL_HYBRID:
+      {
+        _hybrid_pex_exchange_meta(d->hc,
+                                  d->n_elts_src,
+                                  d->dest_rank);
+        BFT_FREE(d->_dest_rank);
+        if (d->hc->dest_id_datatype == CS_LNUM_TYPE)
+          cs_all_to_all_copy_array(d,
+                                   CS_DATATYPE_NULL,
+                                   0,
+                                   false,
+                                   NULL,
+                                   NULL);
+        else {
+          d->n_elts_dest = d->hc->recv_size;
+          d->n_elts_dest_e = d->hc->recv_size;
+        }
+      }
+      break;
+
     case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
       {
         cs_crystal_router_t *cr
@@ -1585,12 +2693,41 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
 
         cs_timer_t tcr0 = cs_timer_time();
 
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] = 0;
+          _all_to_all_trace[_n_trace*9+2] = 0;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_exchange(cr);
 
         cs_timer_t tcr1 = cs_timer_time();
         cs_timer_counter_add_diff
           (_all_to_all_timers + CS_ALL_TO_ALL_TIME_METADATA, &tcr0, &tcr1);
         _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
+
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                            - _all_to_all_trace[(_n_trace-1)*9];
+          _all_to_all_trace[_n_trace*9+2] = 1;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
 
         d->n_elts_dest = cs_crystal_router_n_elts(cr);
         d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
@@ -1664,6 +2801,13 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 
   void  *_dest_data = NULL;
 
+  if (_n_trace > 0) {
+    fprintf(_all_to_all_trace_bt_log, "\ncs_all_to_all_copy_array: %d\n\n",
+            _n_trace);
+    cs_base_backtrace_dump(_all_to_all_trace_bt_log, 1);
+    bft_printf("cs_all_to_all_copy_array: %d\n", _n_trace);
+  }
+
   cs_timer_t t0, t1;
 
   t0 = cs_timer_time();
@@ -1718,6 +2862,39 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
     }
     break;
 
+  case CS_ALL_TO_ALL_HYBRID:
+    {
+      if (d->n_elts_dest < 0) { /* Exchange metadata if not done yet */
+        _hybrid_pex_exchange_meta(d->hc,
+                                  d->n_elts_src,
+                                  d->dest_rank);
+        BFT_FREE(d->_dest_rank);
+        d->n_elts_dest = d->hc->recv_size;
+        d->n_elts_dest_e = d->hc->recv_size;
+      }
+      size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
+      if (reverse)
+        _hybrid_pex_swap_src_dest(d->hc);
+      _hybrid_pex_prepare_s(d->hc,
+                            n_elts,
+                            stride,
+                            datatype,
+                            reverse,
+                            src_data,
+                            d->dest_id,
+                            d->recv_id);
+      _dest_data = _hybrid_pex_exchange_s(d,
+                                          d->hc,
+                                          reverse,
+                                          dest_data);
+      if (reverse) {
+        _hybrid_pex_swap_src_dest(d->hc);
+        if (d->hc->send_buffer == src_data)
+          d->hc->send_buffer = NULL;
+      }
+    }
+    break;
+
   case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
     {
       _dest_data = dest_data;
@@ -1734,8 +2911,42 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                         d->dest_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] = 0;
+          _all_to_all_trace[_n_trace*9+2] = 0;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          size_t max_sizes[2];
+          cs_crystal_router_get_max_sizes(cr, max_sizes);
+
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                            - _all_to_all_trace[(_n_trace-1)*9];
+          _all_to_all_trace[_n_trace*9+2] = 1;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = max_sizes[0];
+          _all_to_all_trace[_n_trace*9+6] = max_sizes[1];
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         if (d->n_elts_dest_e < 0) {
           d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
           if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
@@ -1764,8 +2975,42 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                         d->src_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] = 0;
+          _all_to_all_trace[_n_trace*9+2] = 0;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          size_t max_sizes[2];
+          cs_crystal_router_get_max_sizes(cr, max_sizes);
+
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                            - _all_to_all_trace[(_n_trace-1)*9];
+          _all_to_all_trace[_n_trace*9+2] = 1;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = max_sizes[0];
+          _all_to_all_trace[_n_trace*9+6] = max_sizes[1];
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_get_data(cr,
                                    NULL,
                                    NULL,
@@ -1823,6 +3068,13 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
                          cs_lnum_t        *dest_index)
 {
   cs_timer_t t0, t1;
+
+  if (_n_trace > 0) {
+    fprintf(_all_to_all_trace_bt_log, "\ncs_all_to_all_copy_index: %d\n\n",
+            _n_trace);
+    cs_base_backtrace_dump(_all_to_all_trace_bt_log, 1);
+    bft_printf("cs_all_to_all_copy_index: %d\n", _n_trace);
+  }
 
   cs_assert(d != NULL);
 
@@ -1921,6 +3173,13 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
 {
   cs_assert(d != NULL);
 
+  if (_n_trace > 0) {
+    fprintf(_all_to_all_trace_bt_log, "\ncs_all_to_all_copy_indexed: %d\n\n",
+            _n_trace);
+    cs_base_backtrace_dump(_all_to_all_trace_bt_log, 1);
+    bft_printf("cs_all_to_all_copy_indexed: %d\n", _n_trace);
+  }
+
   void  *_dest_data = NULL;
 
   cs_timer_t t0, t1;
@@ -1979,6 +3238,41 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
     }
     break;
 
+  case CS_ALL_TO_ALL_HYBRID:
+    {
+      if (d->n_elts_dest < 0) { /* Exchange metadata if not done yet */
+        _hybrid_pex_exchange_meta(d->hc,
+                                  d->n_elts_src,
+                                  d->dest_rank);
+        BFT_FREE(d->_dest_rank);
+        d->n_elts_dest = d->hc->recv_size;
+      }
+      size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
+      _hybrid_pex_save_meta_i(d->hc);
+      if (reverse)
+        _hybrid_pex_swap_src_dest(d->hc);
+      _hybrid_pex_prepare_i(d->hc,
+                            n_elts,
+                            datatype,
+                            reverse,
+                            src_index,
+                            dest_index,
+                            src_data,
+                            d->recv_id);
+      _dest_data = _hybrid_pex_exchange_i(d,
+                                          d->hc,
+                                          reverse,
+                                          dest_index,
+                                          dest_data);
+      if (reverse) {
+        _hybrid_pex_swap_src_dest(d->hc);
+        if (d->hc->send_buffer == src_data)
+          d->hc->send_buffer = NULL;
+      }
+      _hybrid_pex_reset_meta_i(d->hc);
+    }
+    break;
+
   case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
     {
       _dest_data = dest_data;
@@ -1995,8 +3289,42 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
                                         d->dest_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] = 0;
+          _all_to_all_trace[_n_trace*9+2] = 0;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          size_t max_sizes[2];
+          cs_crystal_router_get_max_sizes(cr, max_sizes);
+
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                            - _all_to_all_trace[(_n_trace-1)*9];
+          _all_to_all_trace[_n_trace*9+2] = 1;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = max_sizes[0];
+          _all_to_all_trace[_n_trace*9+6] = max_sizes[1];
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         if (d->n_elts_dest < 0) {
           d->n_elts_dest = cs_crystal_router_n_elts(cr);
           d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
@@ -2022,8 +3350,42 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
                                         d->src_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] = 0;
+          _all_to_all_trace[_n_trace*9+2] = 0;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = 0;
+          _all_to_all_trace[_n_trace*9+6] = 0;
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
+
+        if (_n_trace < _n_trace_max) {
+          size_t max_sizes[2];
+          cs_crystal_router_get_max_sizes(cr, max_sizes);
+
+          /* Time to 1-5 s */
+          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
+                                            - _all_to_all_trace[(_n_trace-1)*9];
+          _all_to_all_trace[_n_trace*9+2] = 1;
+          _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
+          _all_to_all_trace[_n_trace*9+4] = bft_mem_usage_max_pr_size();
+          _all_to_all_trace[_n_trace*9+5] = max_sizes[0];
+          _all_to_all_trace[_n_trace*9+6] = max_sizes[1];
+          _all_to_all_trace[_n_trace*9+7] = 0;
+          _all_to_all_trace[_n_trace*9+8] = 0;
+          _n_trace += 1;
+        }
+
         cs_crystal_router_get_data(cr,
                                    NULL,
                                    NULL,
@@ -2098,13 +3460,23 @@ cs_all_to_all_get_src_rank(cs_all_to_all_t  *d)
 
   case CS_ALL_TO_ALL_MPI_DEFAULT:
     {
-      int i;
-      cs_lnum_t j;
-      _mpi_all_to_all_caller_t *dc = d->dc;
+      const _mpi_all_to_all_caller_t *dc = d->dc;
 
-      for (i = 0; i < dc->n_ranks; i++) {
-        for (j = dc->recv_displ[i]; j < dc->recv_displ[i+1]; j++)
+      for (int i = 0; i < dc->n_ranks; i++) {
+        for (cs_lnum_t j = dc->recv_displ[i]; j < dc->recv_displ[i+1]; j++)
           src_rank[j] = i;
+      }
+    }
+    break;
+
+  case CS_ALL_TO_ALL_HYBRID:
+    {
+      const _hybrid_pex_t *hc = d->hc;
+
+      for (int i = 0; i < hc->rn_recv->size; i++) {
+        int rank_id = hc->rn_recv->rank[i];
+        for (cs_lnum_t j = hc->recv_displ[i]; j < hc->recv_displ[i+1]; j++)
+          src_rank[j] = rank_id;
       }
     }
     break;
@@ -2142,6 +3514,35 @@ cs_all_to_all_get_type(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get current type of hybrid all-to-all distributor parameters.
+ *
+ * \param[out]  rne_type  type of metadata exchange algorithm, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_all_to_all_get_hybrid_parameters(cs_rank_neighbors_exchange_t  *rne_type)
+{
+  if (rne_type != NULL)
+    *rne_type = _hybrid_meta_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set current type of all-to-all distributor algorithm choice.
+ *
+ * \param[in]  rne_type  type of metadata exchange algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_all_to_all_set_hybrid_parameters(cs_rank_neighbors_exchange_t  rne_type)
+{
+  _hybrid_meta_type = rne_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set current type of all-to-all distributor algorithm choice.
  *
  * \param  t  type of all-to-all distributor algorithm choice to select
@@ -2168,53 +3569,117 @@ cs_all_to_all_log_finalize(void)
 
 #if defined(HAVE_MPI)
 
-  int i;
-  size_t name_width = 0;
-
-  const char *method_name[] = {N_("MPI_Alltoall and MPI_Alltoallv"),
-                               N_("Crystal Router algorithm")};
-  const char *timer_name[] = {N_("Total:"),
-                              N_("Metadata exchange:"),
-                              N_("Data exchange:")};
-
   if (_all_to_all_calls[0] <= 0)
     return;
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\nInstrumented all-to-all operations (using %s):\n\n"),
-                _(method_name[_all_to_all_type]));
-
-  /* Determine width */
-
-  for (i = 0; i < 3; i++) {
-    if (_all_to_all_calls[i] > 0) {
-      size_t l = cs_log_strlen(_(timer_name[i]));
-      name_width = CS_MAX(name_width, l);
-    }
+  char method_name[96];
+  switch(_all_to_all_type) {
+  case CS_ALL_TO_ALL_MPI_DEFAULT:
+    snprintf(method_name, 96, N_("MPI_Alltoall and MPI_Alltoallv"));
+    break;
+  case CS_ALL_TO_ALL_HYBRID:
+    snprintf(method_name, 96, N_("Hybrid: %s (metadata), %s (data)"),
+             _(cs_rank_neighbors_exchange_name[_hybrid_meta_type]),
+             "MPI_Alltoallv");
+    break;
+  case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
+    snprintf(method_name, 96, N_("Crystal Router algorithm"));
+    break;
   }
-  name_width = CS_MIN(name_width, 63);
+  method_name[95] = '\0';
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nAll-to-many operations (using %s):\n\n"),
+                method_name);
 
   /* Print times */
 
-  for (i = 0; i < 3; i++) {
+  double wtimes[3] = {0, 0, 0};
+  double wtimes_mean[3], wtimes_max[3], wtimes_min[3];
+  for (int i = 0; i < 3; i++) {
+    if (_all_to_all_calls[i] > 0)
+      wtimes[i] = (_all_to_all_timers[i]).wall_nsec*1e-9;
+    wtimes_mean[i] = wtimes[i];
+    wtimes_max[i] = wtimes[i];
+    wtimes_min[i] = wtimes[i];
+  }
+  if (cs_glob_n_ranks > 1) {
+    MPI_Allreduce(wtimes, wtimes_mean, 3, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(wtimes, wtimes_max, 3, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+    MPI_Allreduce(wtimes, wtimes_min, 3, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
+  }
+  for (int i = 0; i < 3; i++)
+    wtimes_mean[i] /= cs_glob_n_ranks;
 
-    if (_all_to_all_calls[i] > 0) {
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("                          mean           minimum      maximum"
+       "     calls\n"
+       "  Total:             %12.5f s %12.5f %12.5f s   %lu\n"
+       "  Metadata exchange: %12.5f s %12.5f %12.5f s   %lu\n"
+       "  Data exchange:     %12.5f s %12.5f %12.5f s   %lu\n\n"),
+     wtimes_mean[0], wtimes_min[0], wtimes_max[0],
+     (unsigned long)(_all_to_all_calls[0]),
+     wtimes_mean[1], wtimes_min[1], wtimes_max[1],
+     (unsigned long)(_all_to_all_calls[1]),
+     wtimes_mean[2], wtimes_min[2], wtimes_max[2],
+     (unsigned long)(_all_to_all_calls[2]));
 
-      char tmp_s[64];
-      double wtimes = (_all_to_all_timers[i]).wall_nsec*1e-9;
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
-      cs_log_strpad(tmp_s, _(timer_name[i]), name_width, 64);
+  if (cs_glob_n_ranks > 1 && _n_trace > 0) {
+    cs_gnum_t *_all_to_all_sum;
+    BFT_MALLOC(_all_to_all_sum, _n_trace*9, uint64_t);
+    cs_gnum_t *_all_to_all_max;
+    BFT_MALLOC(_all_to_all_max, _n_trace*9, uint64_t);
 
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("  %s %12.5f s, %lu calls\n"),
-                    tmp_s, wtimes, (unsigned long)(_all_to_all_calls[i]));
+    MPI_Allreduce(_all_to_all_trace, _all_to_all_sum, _n_trace*9, MPI_UINT64_T,
+                  MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(_all_to_all_trace, _all_to_all_max, _n_trace*9, MPI_UINT64_T,
+                  MPI_MAX, cs_glob_mpi_comm);
 
+    for (int j = 0; j < _n_trace*9; j++)
+      _all_to_all_sum[j] /= cs_glob_n_ranks;
+
+    if (cs_glob_rank_id < 1) {
+      FILE *f = fopen("all_to_all_trace.csv", "w");
+      fprintf(f, "call, time, dt_mean, dt_max, stage, mem_cur_mean, mem_cur_max,"
+              "mem_max_mean, mem_max, send_size_mean, send_size_max,"
+              "recv_size_mean, recv_size_max, "
+              "send_ranks_mean, send_ranks_max, "
+              "recv_ranks_mean, recv_ranks_max\n");
+      for (int j = 0; j < _n_trace; j++)
+        fprintf(f,
+                "%d, %g, %g, %g, %d,"
+                "%llu, %llu, %llu, %llu, %llu, %llu,"
+                "%llu, %llu, %llu, %llu, %llu, %llu\n",
+                j,
+                (_all_to_all_trace[j*9] - _all_to_all_trace[0])/1.e5,
+                _all_to_all_sum[j*9+1]/1.e5,
+                _all_to_all_max[j*9+1]/1.e5,
+                (int)_all_to_all_trace[j*9+2],
+                (unsigned long long)_all_to_all_sum[j*9+3],
+                (unsigned long long)_all_to_all_max[j*9+3],
+                (unsigned long long)_all_to_all_sum[j*9+4],
+                (unsigned long long)_all_to_all_max[j*9+4],
+                (unsigned long long)_all_to_all_sum[j*9+5]/1000,
+                (unsigned long long)_all_to_all_max[j*9+5]/1000,
+                (unsigned long long)_all_to_all_sum[j*9+6]/1000,
+                (unsigned long long)_all_to_all_max[j*9+6]/1000,
+                (unsigned long long)_all_to_all_sum[j*9+7],
+                (unsigned long long)_all_to_all_max[j*9+7],
+                (unsigned long long)_all_to_all_sum[j*9+8],
+                (unsigned long long)_all_to_all_max[j*9+8]);
+      fclose(f);
+      fclose(_all_to_all_trace_bt_log);
+      _all_to_all_trace_bt_log = NULL;
     }
 
+    BFT_FREE(_all_to_all_sum);
+    BFT_FREE(_all_to_all_max);
+    BFT_FREE(_all_to_all_trace);
   }
 
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-  cs_log_separator(CS_LOG_PERFORMANCE);
 
 #endif /* defined(HAVE_MPI) */
 }

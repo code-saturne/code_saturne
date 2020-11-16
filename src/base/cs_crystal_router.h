@@ -266,6 +266,24 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
                            cs_lnum_t            **data_index,
                            void                 **data);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query maximum buffer sizes reached by a Crystal Router.
+ *
+ * Order of data from a same source rank is preserved.
+ *
+ * \param[in]   cr      pointer to associated Crystal Router
+ * \param[out]  max_sizes   pointer to maximum local/receive (max_sizes[0])
+ *                          and send (max_sizes[1]) sizes, or NULL
+ *
+ * \return  maximum total allocated buffer memory
+ */
+/*----------------------------------------------------------------------------*/
+
+size_t
+cs_crystal_router_get_max_sizes(cs_crystal_router_t  *cr,
+                                size_t               *max_sizes);
+
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
