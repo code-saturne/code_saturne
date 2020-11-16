@@ -450,6 +450,10 @@ call turbomachinery_init
 
 if (ippmod(iatmos).ge.0) then
   call init_atmo_autom(nfabor)
+
+  if (ifilechemistry.ge.1) then
+    call init_chemistry_reacnum
+  endif
 endif
 
 if (ippmod(icompf).ge.0) then

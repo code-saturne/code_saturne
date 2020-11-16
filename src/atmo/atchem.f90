@@ -112,7 +112,7 @@ integer, save :: iprofc(nozppm)
 contains
 
 !=============================================================================
-!> \brief Allocate space
+!> \brief Allocate memory
 subroutine init_chemistry
 
 use mesh, only: ncel
@@ -129,7 +129,6 @@ call atlecc(imode)
 ! Dynamical allocations
 
 allocate(conv_factor_jac(nespg*nespg))
-allocate(reacnum(ncel*nrg))
 allocate(idespgi(nespgi))
 allocate(espnum(nespg*nbchim*nbchmz))
 allocate(zproc(nbchmz))
@@ -142,6 +141,24 @@ allocate(ychem(nbchim))
 !--------
 
 end subroutine init_chemistry
+
+!=============================================================================
+!> \brief Allocate memory relative to mesh size
+subroutine init_chemistry_reacnum
+
+use mesh, only: ncel
+
+implicit none
+
+! Dynamical allocations
+allocate(reacnum(ncel*nrg))
+
+!--------
+! Formats
+!--------
+
+end subroutine init_chemistry_reacnum
+
 
 !=============================================================================
 !> \brief Initialize species_to_field_id
