@@ -212,10 +212,10 @@ interface
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision viscf(nfac), viscb(ndimfb)
     double precision tslagr(ncelet,*)
-    double precision coefav(3  ,ndimfb)
+    double precision coefav(3,ndimfb)
     double precision coefbv(3,3,ndimfb)
-    double precision vel   (3  ,ncelet)
-    double precision da_u  (ncelet)
+    double precision vel(3,ncelet)
+    double precision da_u(ncelet)
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
@@ -747,6 +747,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Resize other arrays related to the velocity-pressure resolution
 
+      call resize_sca_real_array(da_u)
       call resize_vec_real_array(trav)
       call resize_vec_real_array(dfrcxt)
 
