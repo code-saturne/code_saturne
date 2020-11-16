@@ -136,7 +136,7 @@ BEGIN_C_DECLS
         \f$>\f$ 0 and the calculation is a restart.
   \var  cs_stokes_model_t::idilat
         algorithm to take into account the density variation in time
-        - 0: Boussinesq approximation (rho constant expect in the buoyant
+        - 0: Boussinesq approximation (rho constant except in the buoyant
              term where \f$\Delta \rho \vect{g} = - \rho \beta \Delta T \vect{g} \f$
         - 1: dilatable steady algorithm (default)
         - 2: dilatable unsteady algorithm

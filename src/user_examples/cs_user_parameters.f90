@@ -150,7 +150,7 @@ ippmod(icolwc) = -1
 ! =================
 
 !        if = -1   module not activated
-!        if =  0   constant fraction of fuel Xsoot
+!        if =  0   constant fraction of soot
 !        if =  1   2 equations model of Moss et al.
 
 isoot = 0
