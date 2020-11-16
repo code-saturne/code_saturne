@@ -60,7 +60,7 @@ double precision turb_schmidt
 !===============================================================================
 
 !===============================================================================
-! 0. VERIFICATIONS
+! 1. VERIFICATIONS
 !===============================================================================
 
 if (ippmod(iatmos).le.1) then
@@ -69,15 +69,6 @@ if (ippmod(iatmos).le.1) then
     call csexit(1)
   endif
 endif
-
-!===============================================================================
-! 1. INFORMATIONS GENERALES
-!===============================================================================
-
-! Density and viscosity
-
-irovar = 0
-ivivar = 0
 
 !===============================================================================
 ! 2. Transported variables for IPPMOD(IATMOS) = 0, 1 or 2
@@ -161,7 +152,7 @@ if (nscal.gt.0) then
 endif
 
 !===============================================================================
-! 6. Force RIJ Matrix stabilisation for all atmospheric models
+! 6. Force Rij Matrix stabilisation for all atmospheric models
 !===============================================================================
 
 if (itytur.eq.3) irijnu = 1
@@ -188,7 +179,7 @@ endif
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1003 format(                                                     &

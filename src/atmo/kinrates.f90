@@ -185,10 +185,10 @@ do iel = 1, ncel
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 !----
-! END
+! End
 !----
 
 return
