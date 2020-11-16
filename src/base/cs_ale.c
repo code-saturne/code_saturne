@@ -229,11 +229,11 @@ _free_surface(const cs_domain_t  *domain,
       /* g . (x_f - x_N) S_fN  */
       cs_real_t dz_fn = cs_math_3_dot_product(normal, v_cog);
 
-      /* v1 is heigher than x_f */
+      /* v1 is higher than x_f */
       if (dz_fn > 0.)
         _is_loc_min[v_id] = 0.; /* not a min */
 
-      /* x_f is heigher than v1 */
+      /* x_f is higher than v1 */
       if (dz_fn < 0.)
         _is_loc_max[v_id] = 0.; /* not a max */
 
