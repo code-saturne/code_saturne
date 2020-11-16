@@ -103,7 +103,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="labelSootFraction">
           <property name="text">
-           <string>soot fraction production</string>
+           <string>Soot fraction production</string>
           </property>
          </widget>
         </item>
@@ -123,7 +123,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="labelSootDensity">
           <property name="text">
-           <string>soot density</string>
+           <string>Soot density</string>
           </property>
          </widget>
         </item>

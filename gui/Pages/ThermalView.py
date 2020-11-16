@@ -370,7 +370,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.modelSoot   = ComboModel(self.comboBoxSoot, 3, 1)
 
         self.modelSoot.addItem("None", 'off')
-        self.modelSoot.addItem("constant fraction of product", 'soot_product_fraction')
+        self.modelSoot.addItem("Constant fraction of product", 'soot_product_fraction')
         self.modelSoot.addItem("2 equations model of Moss et al.", 'moss')
 
         # Connections

@@ -105,14 +105,14 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         self.modelDensityVar = ComboModel(self.comboBoxDensityVar, 6, 1)
         self.modelDensityVar.addItem(self.tr("Automatic"), 'default')
-        self.modelDensityVar.addItem(self.tr("Boussinesq approximation (rho constant expect in the buoyant term)"),
+        self.modelDensityVar.addItem(self.tr("Boussinesq approximation (rho constant except in the buoyant term)"),
                                        'boussi')
-        self.modelDensityVar.addItem(self.tr("dilatable steady algorithm"), 'dilat_std')
-        self.modelDensityVar.addItem(self.tr("dilatable unsteady algorithm"),
+        self.modelDensityVar.addItem(self.tr("Dilatable steady algorithm"), 'dilat_std')
+        self.modelDensityVar.addItem(self.tr("Dilatable unsteady algorithm"),
                                        'dilat_unstd')
-        self.modelDensityVar.addItem(self.tr("low-Mach algorithm"),
+        self.modelDensityVar.addItem(self.tr("Low-Mach algorithm"),
                                        'low_mach')
-        self.modelDensityVar.addItem(self.tr("algorithm for fire"),
+        self.modelDensityVar.addItem(self.tr("Algorithm for fire"),
                                        'algo_fire')
 
         # Connections
