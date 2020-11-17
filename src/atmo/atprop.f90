@@ -91,6 +91,12 @@ if (ippmod(iatmos).eq.2) then
     call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
 
   endif
+  if (moddis.ge.2) then
+    !> fractional nebulosity
+    call add_property_field_1d('nebulosity_frac', 'Nebulo frac', f_id)
+  endif
+  !> Diagnosed nebulosity
+  call add_property_field_1d('nebulosity_diag', 'Nebulo diag', f_id)
 endif
 
 return

@@ -197,10 +197,6 @@ typedef struct {
   cs_real_t *time_met;
   /* Hydrostatic pressure from Laplace integration */
   cs_real_t *hyd_p_met;
-  /* Fractional nebulosity */
-  cs_real_t *frac_neb;
-  /* Diagnosed nebulosity */
-  cs_real_t *diag_neb;
 
 } cs_atmo_option_t;
 

@@ -150,9 +150,7 @@ static cs_atmo_option_t  _atmo_option = {
   .nbmaxt = 0,
   .z_temp_met = NULL,
   .time_met   = NULL,
-  .hyd_p_met  = NULL,
-  .frac_neb  = NULL,
-  .diag_neb  = NULL
+  .hyd_p_met  = NULL
 };
 
 /* global atmo constants structure */
@@ -267,9 +265,7 @@ void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2],
-                              cs_real_t **frac_neb,
-                              cs_real_t **diag_neb);
+                              int         dim_hyd_p_met[2]);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -407,9 +403,7 @@ void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2],
-                              cs_real_t **frac_neb,
-                              cs_real_t **diag_neb)
+                              int         dim_hyd_p_met[2])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -421,10 +415,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   if (_atmo_option.hyd_p_met == NULL)
     BFT_MALLOC(_atmo_option.hyd_p_met,
                _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
-  if (_atmo_option.frac_neb == NULL)
-    BFT_MALLOC(_atmo_option.frac_neb, n_cells_ext, cs_real_t);
-  if (_atmo_option.diag_neb == NULL)
-    BFT_MALLOC(_atmo_option.diag_neb, n_cells_ext, cs_real_t);
 
   *hyd_p_met       = _atmo_option.hyd_p_met;
   dim_hyd_p_met[0] = _atmo_option.nbmaxt;
@@ -432,8 +422,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
 
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
-  *frac_neb   = _atmo_option.frac_neb;
-  *diag_neb   = _atmo_option.diag_neb;
 }
 
 void
@@ -468,8 +456,6 @@ cs_f_atmo_finalize(void)
   BFT_FREE(_atmo_option.z_temp_met);
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
-  BFT_FREE(_atmo_option.frac_neb);
-  BFT_FREE(_atmo_option.diag_neb);
 }
 
 /*============================================================================

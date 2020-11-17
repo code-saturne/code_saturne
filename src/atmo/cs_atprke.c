@@ -390,6 +390,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t pphy, dum;
 
+  cs_real_t *diag_neb = cs_field_by_name("nebulosity_diag")->val;
+  cs_real_t *frac_neb = cs_field_by_name("nebulosity_frac")->val;
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     /* calculate the physical pressure 'pphy' */
@@ -413,8 +416,8 @@ _humid_atmosphere(const cs_real_t  cromo[],
            cvara_tpp[c_id],
            cvara_qw[c_id],
            cpro_pcliq[c_id],
-           cs_glob_atmo_option->diag_neb[c_id],
-           cs_glob_atmo_option->frac_neb[c_id],
+           diag_neb[c_id],
+           frac_neb[c_id],
            &(etheta[c_id]),
            &(eq[c_id]));
   }

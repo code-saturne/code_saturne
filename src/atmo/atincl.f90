@@ -105,12 +105,6 @@ double precision, allocatable, dimension(:,:) :: tpmet
 !> hydrostatic pressure from Laplace integration
 double precision, dimension(:,:), pointer :: phmet
 
-!> Diagnosed nebulosity
-double precision, dimension(:), pointer :: nebdia
-
-!> fractional nebulosity
-double precision, dimension(:), pointer :: nn
-
 ! 1.2 Pointers for the positions of the variables
 !------------------------------------------------
 !   Variables specific to the atmospheric physics:
@@ -691,7 +685,6 @@ implicit none
 integer :: imode, n_level, n_times, n_level_t
 
 type(c_ptr) :: c_z_temp_met, c_time_met
-type(c_ptr) :: c_frac_neb, c_diag_neb
 type(c_ptr) :: c_hyd_p_met
 
 integer(c_int),   dimension(2) :: dim_hyd_p_met
@@ -704,14 +697,11 @@ if (imeteo.eq.2) then
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_temp_met, c_time_met,     &
-                                   c_hyd_p_met, dim_hyd_p_met,   &
-                                   c_frac_neb, c_diag_neb)
+                                   c_hyd_p_met, dim_hyd_p_met)
 
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
 call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
-call c_f_pointer(c_frac_neb, nn, [ncelet])
-call c_f_pointer(c_diag_neb, nebdia, [ncelet])
 
 ! Allocate additional arrays for Water Microphysics
 

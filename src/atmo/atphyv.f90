@@ -245,6 +245,7 @@ double precision var_tl,var_q,cov_tlq
 double precision q1,qsup, rvap
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: nn, nebdia
 
 rvap = rair*rvsra
 
@@ -262,6 +263,8 @@ call field_gradient_scalar(ivarfl(isca(iymw)), 1, 0, inc, iccocg, dqsd)
 
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
+call field_get_val_s_by_name("nebulosity_frac", nn)
+call field_get_val_s_by_name("nebulosity_diag", nebdia)
 
 ! -------------------------------------------------------------
 ! Gradients are used for estimating standard deviations of the
