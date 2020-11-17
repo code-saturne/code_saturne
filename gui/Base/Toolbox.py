@@ -205,10 +205,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.BoundaryNatureView as Page
         thisPage = Page.BoundaryNatureView(root, case, tree)
 
-    elif page_name == tr("Particle boundary conditions"):
-        import code_saturne.Pages.LagrangianBoundariesView as Page
-        thisPage = Page.LagrangianBoundariesView(root, case)
-
     elif page_name == tr("Time averages"):
         import code_saturne.Pages.TimeAveragesView as Page
         thisPage = Page.TimeAveragesView(root, case, stbar)

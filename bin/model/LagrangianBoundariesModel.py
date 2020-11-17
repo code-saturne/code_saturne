@@ -139,7 +139,6 @@ class LagrangianBoundariesModel(Model):
         self.node_particles['choice'] = value
         self.setCurrentBoundaryNode(nature, labelbc)
 
-
     @Variables.noUndo
     def getBoundaryChoice(self, nature, labelbc):
         """
@@ -211,11 +210,10 @@ class LagrangianBoundariesModel(Model):
             for i in range(value-nnodes):
                 self.newSetNode()
         else:
-            for i in range(nnodes-value):
-                node_list[-1].xmlRemoveNode()
+            for i in range(nnodes - value):
+                node_to_delete = node_list.pop()
+                node_to_delete.xmlRemoveNode()
             # redefine self.node_set
-            self.setCurrentSetNode(labelbc, value)
-
 
     @Variables.noUndo
     def getNumberOfSetsValue(self, labelbc):

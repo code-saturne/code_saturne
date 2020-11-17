@@ -100,28 +100,6 @@ class LagrangianModel(Model):
 
         return default
 
-
-    def lagrangianStatus(self):
-        """
-        Return a tuple with the lagrangian status allowed.
-        """
-        from code_saturne.model.TurbulenceModel import TurbulenceModel
-        model = TurbulenceModel(self.case).getTurbulenceModel()
-        del TurbulenceModel
-        if model not in ('off',
-                         'k-epsilon',
-                         'k-epsilon-PL',
-                         'Rij-epsilon',
-                         'Rij-SSG',
-                         'Rij-EBRSM',
-                         'v2f-BL-v2/k',
-                         'k-omega-SST',
-                         'Spalart-Allmaras'):
-            return ('off',)
-        else:
-            return self.__lagrangianStatus
-
-
     def particlesModels(self):
         """
         Return the list of models associated to the particles.

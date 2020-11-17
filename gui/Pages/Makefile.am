@@ -78,7 +78,7 @@ InitializationView.py \
 InterfacialEnthalpyView.py \
 InterfacialForcesView.py \
 InterfacialAreaView.py \
-LagrangianBoundariesView.py \
+LagrangianBoundaryView.py \
 LagrangianOutputView.py \
 LagrangianStatisticsView.py \
 LagrangianView.py \
@@ -171,7 +171,7 @@ IdentityAndPathesForm.ui \
 ImmersedBoundariesNeptune.ui \
 InitializationForm.ui \
 LagrangianAdvancedOptionsDialogForm.ui \
-LagrangianBoundariesForm.ui \
+LagrangianBoundaryForm.ui \
 LagrangianForm.ui \
 LagrangianOutputForm.ui \
 LagrangianStatisticsForm.ui \

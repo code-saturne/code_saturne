@@ -54,6 +54,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.MobileMeshModel import MobileMeshModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -112,6 +113,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.hydraulicheadWidget.setup(self.case)
         self.pressureWidget.setup(self.case)
         self.externalHeadLossesWidget.setup(self.case)
+        self.particlesWidget.setup(self.case)
 
         self.__hideAllWidgets()
         self.__selectBoundary()
@@ -129,6 +131,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.__hideAllWidgets()
         boundary = Boundary(nature, label, self.case)
 
+        if LagrangianModel(self.case).getLagrangianModel() != 'off':
+            self.particlesWidget.showWidget(self.zone)
         if nature == 'wall':
             self.__selectWallBoundary(boundary)
         elif nature == 'inlet':
@@ -299,6 +303,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.pressureWidget.hideWidget()
         self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
+        self.particlesWidget.hideWidget()
 
 
 #-------------------------------------------------------------------------------
