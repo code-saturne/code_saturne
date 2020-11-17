@@ -1068,24 +1068,34 @@ class case:
             cs_exec_environment.write_prepend_path(s,
                                                    'LD_LIBRARY_PATH',
                                                    mpi_libdir)
+        s.write('\n')
 
         # HANDLE CATHARE COUPLING
+        wrote_cathare_path = False
         if self.domains:
             for d in self.domains:
                 if hasattr(d, "cathare_case_file"):
-                    config = configparser.ConfigParser()
-                    config.read(self.package.get_configfiles())
-                    cathare_path = config.get('install', 'cathare')
-                    for p in ['lib', 'ICoCo/lib']:
-                        lp = os.path.join(cathare_path, p)
-                        cs_exec_environment.write_prepend_path(s,
-                                                               "LD_LIBRARY_PATH",
-                                                               lp)
+                    if not wrote_cathare_path:
+                        cs_exec_environment.write_script_comment(s, \
+                            'Export paths necessary for CATHARE coupling.\n')
+                        config = configparser.ConfigParser()
+                        config.read(self.package.get_configfiles())
+                        cathare_path = config.get('install', 'cathare')
+                        for p in ['lib', 'ICoCo/lib']:
+                            lp = os.path.join(cathare_path, p)
+                            cs_exec_environment.write_prepend_path( \
+                                    s, "LD_LIBRARY_PATH", lp)
+
+                        wrote_cathare_path = True
+                        s.write('\n')
 
         # Handle python coupling
         if self.py_domains:
+            cs_exec_environment.write_script_comment(s, \
+                'Export paths necessary for python coupling.\n')
             pydir = self.package_compute.get_dir("pythondir")
             cs_exec_environment.write_prepend_path(s, "PYTHONPATH", pydir)
+            s.write('\n')
 
         # Handle environment modules if used
 
