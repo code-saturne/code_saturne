@@ -1262,7 +1262,7 @@ _init_boundaries(void)
 
       /* Inlet: data for ATMOSPHERIC FLOWS */
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-        if (cs_glob_atmo_option->meteo_profile == 1) {
+        if (cs_glob_atmo_option->meteo_profile > 0) {
           cs_gui_node_get_child_status_int
             (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
           cs_gui_node_get_child_status_int
