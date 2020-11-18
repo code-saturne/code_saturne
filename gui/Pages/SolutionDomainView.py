@@ -738,6 +738,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         for k in self.cartParams.keys():
             self.cartParams[k].textChanged[str].connect(lambda val,key=k:
                     self.slotSetCartesianParam(val, key))
+            # set validator
+            if k.split("_")[1] == "ncells":
+                _v = IntValidator(self.cartParams[k], min=1)
+                self.cartParams[k].setValidator(_v)
+            else:
+                _v = DoubleValidator(self.cartParams[k])
+                self.cartParams[k].setValidator(_v)
 
         self.cartParams["x_law"] = ComboModel(self.comboBoxXlaw, 3, 1)
         self.cartParams["y_law"] = ComboModel(self.comboBoxYlaw, 3, 1)
@@ -1199,7 +1206,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     def slotSetCartesianParam(self, text, name):
 
         val = text
-        if val == None or val == "":
+        if val == None:
             # defaul values:
             if name in ("x_ncells", "y_ncells", "z_ncells"):
                 val = "1"
