@@ -152,7 +152,19 @@ typedef struct {
    *  logaritmic standard deviation of the log-normal law of the droplet spectrum
    */
   int nucleation_model;
+  /*!  Option for subgrid models
+   *   0: the simplest parameterization (for numerical verifications)
+   *   1: Bechtold et al. 1995 (Luc Musson-Genon)
+   *   2: Bouzereau et al. 2004
+   *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
+   *                 Deardorff 1977
+   */
   int subgrid_model;
+  /*! Option for liquid water content distribution models
+   *  1: all or nothing
+   *  2: Gaussian distribution
+   */
+  int distribution_model;
   /*! Use meteo profile:
    *  - 0: not use
    *  - 1: use a meteo file

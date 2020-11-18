@@ -682,18 +682,6 @@ tmer   = 20.d0   !Sea temperature
 !  -------------------------------------------------------------------------------
 !  Microphysics parameterization options
 !  -------------------------------------------------------------------------------
-!  --> Option for subgrid models
-!  modsub = 0 : the simplest parameterization (for numerical verifications)
-!  modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
-!  modsub = 2 : Bouzereau et al. 2004
-!  modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria
-!               and Deardorff 1977
-modsub = 0
-
-!  --> Option for liquid water content distribution models
-!  moddis = 1 : all or nothing
-!  moddis = 2 : Gaussian distribution
-moddis = 1
 
 ! logaritmic standard deviation of the log-normal law of the droplet spectrum
 ! adimensional

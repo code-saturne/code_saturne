@@ -123,6 +123,7 @@ static cs_atmo_option_t  _atmo_option = {
   .deposition_model = 0,
   .nucleation_model = 0,
   .subgrid_model = 0,
+  .distribution_model = 1, /* all or nothing */
   .meteo_profile = 0, /* no meteo profile */
   .meteo_file_name = NULL,
   .meteo_dlmo = 0.,
@@ -245,6 +246,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **deposition_model,
                        int                    **nucleation_model,
                        int                    **subgrid_model,
+                       int                    **distribution_model,
                        int                    **model,
                        int                    **n_species,
                        int                    **n_reactions,
@@ -333,6 +335,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **deposition_model,
                        int                    **nucleation_model,
                        int                    **subgrid_model,
+                       int                    **distribution_model,
                        int                    **model,
                        int                    **n_species,
                        int                    **n_reactions,
@@ -363,6 +366,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
   *subgrid_model = &(_atmo_option.subgrid_model);
+  *distribution_model = &(_atmo_option.distribution_model);
   *meteo_profile = &(_atmo_option.meteo_profile);
   *nbmetd     = &(_atmo_option.nbmetd);
   *nbmett     = &(_atmo_option.nbmett);

@@ -103,14 +103,31 @@ cs_user_model(void)
 
   /*! [atmo_module] */
 
-  /* Option for nucleation for humide atmosphere
+  /*  Microphysics parameterization options */
+
+  /* Option for nucleation for humid atmosphere
    *  0: without nucleation
    *  1: Pruppacher and Klett 1997
    *  2: Cohard et al. 1998,1999
    *  3: Abdul-Razzak et al. 1998,2000
-   *  logaritmic standard deviation of the log-normal law of the droplet spectrum
+   *  logarithmic standard deviation of the log-normal law of the droplet spectrum
    */
   cs_glob_atmo_option->nucleation_model = 3;
+
+  /* Option for liquid water content distribution models
+   *  1: all or nothing
+   *  2: Gaussian distribution
+   */
+  cs_glob_atmo_option->distribution_model = 1;
+
+  /*  Option for subgrid models
+   *   0: the simplest parameterization (for numerical verifications)
+   *   1: Bechtold et al. 1995 (Luc Musson-Genon)
+   *   2: Bouzereau et al. 2004
+   *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
+   *                 Deardorff 1977
+   */
+  cs_glob_atmo_option->subgrid_model = 0;
 
   /* Sedimentation flag */
   cs_glob_atmo_option->sedimentation_model = 1;

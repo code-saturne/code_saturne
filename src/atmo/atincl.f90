@@ -340,7 +340,7 @@ integer(c_int), pointer, save:: modsub
 !> Option for liquid water content distribution models
 !>  - moddis = 1 : all or nothing
 !>  - moddis = 2 : Gaussian distribution
-integer, save::  moddis
+integer(c_int), pointer, save:: moddis
 
 !> Option for nucleation
 !>  - modnuc = 0 : without nucleation
@@ -423,7 +423,8 @@ double precision, save:: zaero
         longitude, latitude,                                            &
         compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
-        subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
+        subgrid_model, distribution_model,                              &
+        ichemistry, nespg, nrg, chem_with_photo,                        &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
         nbmetd, nbmett, nbmetm, nbmaxt)                                 &
@@ -435,7 +436,7 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: ichemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
-      type(c_ptr), intent(out) :: subgrid_model
+      type(c_ptr), intent(out) :: subgrid_model, distribution_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
       type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
@@ -637,6 +638,7 @@ contains
     type(c_ptr) :: c_compute_z_ground, c_iatmst, c_model, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
+    type(c_ptr) :: c_distribution_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
@@ -650,6 +652,7 @@ contains
       c_compute_z_ground, c_iatmst,               &
       c_sedimentation_model, c_deposition_model,  &
       c_nucleation_model, c_subgrid_model,        &
+      c_distribution_model,                       &
       c_model, c_nespg, c_nrg, c_chem_with_photo, &
       c_modelaero, c_frozen_gas_chem,             &
       c_init_gas_with_lib,                        &
@@ -674,6 +677,7 @@ contains
     call c_f_pointer(c_deposition_model, moddep)
     call c_f_pointer(c_nucleation_model, modnuc)
     call c_f_pointer(c_subgrid_model, modsub)
+    call c_f_pointer(c_distribution_model, moddis)
 
     call c_f_pointer(c_model, ichemistry)
     call c_f_pointer(c_nespg, nespg)
