@@ -102,6 +102,22 @@ cs_user_model(void)
    */
 
   /*! [atmo_module] */
+
+  /* Option for nucleation for humide atmosphere
+   *  0: without nucleation
+   *  1: Pruppacher and Klett 1997
+   *  2: Cohard et al. 1998,1999
+   *  3: Abdul-Razzak et al. 1998,2000
+   *  logaritmic standard deviation of the log-normal law of the droplet spectrum
+   */
+  cs_glob_atmo_option->nucleation_model = 3;
+
+  /* Sedimentation flag */
+  cs_glob_atmo_option->sedimentation_model = 1;
+
+  /* Deposition flag */
+  cs_glob_atmo_option->deposition_model = 1;
+
   /* Read the meteo file (1) or impose directly the input values to compute it
    * in Code_Saturne (2) */
   cs_glob_atmo_option->meteo_profile = 2;

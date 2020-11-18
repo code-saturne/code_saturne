@@ -139,8 +139,18 @@ typedef struct {
   int open_bcs_treatment;
 
   /* Model options */
+  /*! Sedimentation flag */
   int sedimentation_model;
+  /*! Deposition flag */
   int deposition_model;
+  /*!
+   * Option for nucleation
+   *  0: without nucleation
+   *  1: Pruppacher and Klett 1997
+   *  2: Cohard et al. 1998,1999
+   *  3: Abdul-Razzak et al. 1998,2000
+   *  logaritmic standard deviation of the log-normal law of the droplet spectrum
+   */
   int nucleation_model;
   int subgrid_model;
   /*! Use meteo profile:
