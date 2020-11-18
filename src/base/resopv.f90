@@ -814,7 +814,7 @@ endif
 if (idilat.ge.4.or.ivofmt.gt.0) then
   if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     do iel = 1, ncel
-      ardtsr  = arak * viscap(iel)
+      ardtsr  = arak * da_u(iel) / crom(iel)
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
@@ -994,12 +994,23 @@ if (arak.gt.0.d0) then
   allocate(ipro_visc(nfac))
   allocate(bpro_visc(nfabor))
 
-  imvisp = imvisf
+  if (ivofmt.gt.0) then
+    imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
+  else
+    imvisp = imvisf
+  endif
+
   allocate(cpro_visc(ncelet))
 
-  do iel = 1, ncel
-    cpro_visc(iel) = arak * da_u(iel)
-  enddo
+  if (idilat.ge.4.or.ivofmt.gt.0) then
+    do iel = 1, ncel
+      cpro_visc(iel) = arak * da_u(iel) / crom(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      cpro_visc(iel) = arak * da_u(iel)
+    enddo
+  endif
 
   call viscfa &
     !==========
