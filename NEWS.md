@@ -69,6 +69,25 @@ Bug fixes:
 
 Numerics and physical modelling:
 
+- Amtospheric module: Major modification the scheme for Solar radiation done the PhD of
+  L. Asmar.
+
+  In a previous version of the 1D solar radiation scheme of Code_Saturne, the
+  effect of aerosols has been introduced by making the approximation that
+  aerosols are purely diffusive. The same approximation was taken for
+  water vapor absorption in the UV-visible band (O3 band) but with
+  different optical properties.
+
+  In this new version, the aerosols are taken into account as absorbing
+  and diffusive particles characterized by their optical properties:
+  aerosol optical depth, single scattering albedo and asymmetry factor. To
+  do that, the adding method for multiple scattering has been added in the
+  UV-Visible band.
+
+  Other improvements have been made for:  the optical air mass, the
+  Rayleigh diffusion and the direct radiation estimation. In addition,
+  the absorption by minor gases has been introduced.
+
 - Remove "extrag" option for the pressure gradient, as its use was
   limited to orthogonal meshes and was long superceded by the
   `iphydr=1` option.

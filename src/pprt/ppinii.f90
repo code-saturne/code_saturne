@@ -734,8 +734,6 @@ call field_get_key_id("opt_interp_id", kopint)
 
 ! no computation / storage of downward and upward infrared radiative fluxes
 irdu = 1
-! no computation / storage of downward and upward solar radiative fluxes
-soldu = 1
 
 ! initmeteo --> use meteo profile for variables initialization
 !               (0: not used; 1: used )
@@ -772,6 +770,17 @@ enddo
 do izone = 1, nozppm
   iprofa(izone) = 0
 enddo
+
+! Default values (climatic ones) for radiative transfer and
+! aerosols
+aod_o3_tot=0.20d0
+aod_h2o_tot=0.10d0
+gaero_o3=0.66d0
+gaero_h2o=0.64d0
+piaero_o3=0.84d0
+piaero_h2o=0.84d0
+black_carbon_frac=0.d0
+zaero = 6000d0
 
 return
 end subroutine ppinii

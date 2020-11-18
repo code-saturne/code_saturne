@@ -264,11 +264,6 @@ integer, save:: igrid
 !> 1: enabled
 integer, save:: irdu
 
-!> Flag for storage of downward and upward solar radiative fluxes
-!> 0: disabled
-!> 1: enabled
-integer, save:: soldu
-
 ! 2.6 Arrays specific to the 1d atmospheric radiative module
 !-------------------------------------------------------------------------------
 
@@ -371,6 +366,35 @@ integer, save :: init_at_chem
 !> key id for optimal interpolation
 integer, save :: kopint
 
+!> Aerosol optical properties
+
+! Aerosol optical depth
+!> adimensional :  aod_o3_tot=0.2 other referenced values are  0.10, 0.16
+double precision, save:: aod_o3_tot
+!> adimensional :  aod_h2o_tot=0.10 other referenced values are  0.06, 0.08
+double precision, save:: aod_h2o_tot
+
+!> Asymmetry factor for O3 (non-dimensional)
+!> climatic value gaero_o3=0.66
+double precision, save:: gaero_o3
+!> Asymmetry factor for H2O (non-dimensional)
+!> climatic value gaero_h2o=0.64
+double precision, save:: gaero_h2o
+
+!> Single scattering albedo for O3 (non-dimensional)
+!> climatic value piaero_o3=0.84, other referenced values are 0.963
+double precision, save:: piaero_o3
+!> Single scattering albedo for H2O (non-dimensional)
+!> climatic value piaero_h2o=0.84, other referenced values are 0.964
+double precision, save:: piaero_h2o
+
+!> Fraction of Black carbon (non-dimensional): black_carbon_frac=1.d-8 for no BC
+double precision, save:: black_carbon_frac
+
+!> Maximal height for aerosol distribution on the vertical
+!> important should be <= zqq(kmray-1);
+!> in meters : referenced value: zaero=6000
+double precision, save:: zaero
 !> \}
 
 !=============================================================================
@@ -752,9 +776,7 @@ if (imeteo.gt.0) then
       allocate(iru(kmx,nvert), ird(kmx,nvert))
     endif
 
-    if (soldu.eq.1) then
-      allocate(sold(kmx,nvert), solu(kmx,nvert))
-    endif
+    allocate(sold(kmx,nvert), solu(kmx,nvert))
 
   endif
 
@@ -835,9 +857,7 @@ if (imeteo.gt.0) then
       deallocate(iru, ird)
     endif
 
-    if (soldu.eq.1) then
-      deallocate(solu, sold)
-    endif
+    deallocate(solu, sold)
 
   endif
 
