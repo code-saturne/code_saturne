@@ -1491,7 +1491,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2012,7 +2012,7 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2369,7 +2369,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                                                           quant->n_vertices);
 
   /* OpenMP block */
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, pot, eb, _svb_cell_builder)     \
   firstprivate(time_eval, inv_dtcur)
   {
@@ -2709,7 +2709,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   assert(eqc->diffusion_hodge != NULL);
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, vf_flux, pdi,                   \
          _svb_cell_builder)                                             \
   firstprivate(t_eval)
@@ -3224,7 +3224,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   cs_hodge_compute_t  *get_diffusion_hodge =
     cs_hodge_get_func(__func__, eqp->diffusion_hodgep);
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(t_eval, quant, connect, eqp, eqb, diff_flux, values,           \
          get_diffusion_hodge, _svb_cell_builder)
   {

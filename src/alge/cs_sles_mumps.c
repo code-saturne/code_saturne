@@ -134,7 +134,6 @@ typedef struct _cs_sles_mumps_setup_t {
   DMUMPS_STRUC_C      *mumps;           /* Linear solver context: including
                                          * matrix, rhs and settings */
 
-  double               r_norm;          /* residue normalization */
   void                *cctx;            /* convergence context */
 
 } cs_sles_mumps_setup_t;
@@ -613,7 +612,8 @@ cs_sles_mumps_setup(void               *context,
   }
   else {
 
-    bft_error(__FILE__, __LINE__, 0, " Not implemented yet.\n");
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Not implemented yet.\n", __func__);
 
   }
 

@@ -1406,7 +1406,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
          fld, rs, _vcbs_cell_system, _vcbs_cell_builder, cell_values)   \
   firstprivate(time_eval)
@@ -1635,7 +1635,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1866,7 +1866,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2186,7 +2186,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -2561,7 +2561,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, vf_flux, pot_v, pot_c,          \
          _vcbs_cell_builder)                                            \
   firstprivate(t_eval)
@@ -2944,7 +2944,7 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
 
   cs_timer_t  t0 = cs_timer_time();
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                 \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                \
   shared(quant, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
@@ -3042,7 +3042,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
   cs_timer_t  t0 = cs_timer_time();
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                 \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                \
   shared(quant, connect, eqp, eqb, eqc, diff_flux, values,            \
          t_eval, _vcbs_cell_builder)
   {
