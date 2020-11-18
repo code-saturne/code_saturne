@@ -655,8 +655,6 @@ dtchemmax = 10.0d0
 
 ! computation / storage of downward and upward infrared radiative fluxes
 irdu = 1
-! computation / storage of downward and upward solar radiative fluxes
-soldu = 1
 
 !< [usati1]
 
