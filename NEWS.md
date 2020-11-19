@@ -3,6 +3,8 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix crash or possible corruption in cell removal algorithm.
+
 - Fix GUI crash in turbomachinery rotor selection.
 
 - Lagrangian module: fix handling of statistics handled by the GUI.

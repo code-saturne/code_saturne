@@ -216,7 +216,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
     BFT_MALLOC(sel_faces, n_b_add, cs_lnum_t);
     cs_lnum_t k = 0;
     for (cs_lnum_t i = 0; i < n_b_add; i++) {
-      cs_lnum_t j = n_b_add + i;
+      cs_lnum_t j = n_b_faces_ini + i;
       if (m->b_face_family[j] == default_family_id)
         sel_faces[k++] = j;
     }
