@@ -38,11 +38,12 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_block_dist.h"
 #include "cs_math.h"
 
+#include "cs_mesh.h"
 #include "cs_mesh_builder.h"
 #include "cs_mesh_cartesian.h"
-
 
 BEGIN_C_DECLS
 
@@ -95,8 +96,6 @@ struct _cs_mesh_cartesian_params_t {
  *============================================================================*/
 
 static int _build_mesh_cartesian = 0;
-
-static int nvtx_per_face   = 4;
 
 static cs_mesh_cartesian_params_t *_mesh_params = NULL;
 
@@ -231,6 +230,224 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
   return dirp;
 }
 
+/*----------------------------------------------------------------------------*/
+/*! \brief Add a face with x-normal.
+ *
+ * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
+ * \param[in]       f_id  id of added face
+ * \param[in]       nx    number of cells in x direction
+ * \param[in]       ny    number of cells in x direction
+ * \param[in]       nz    number of cells in x direction
+ * \param[in]       i     i index (x) direction
+ * \param[in]       j     j index (x) direction
+ * \param[in]       k     k index (x) direction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_nx_face(cs_mesh_builder_t  *mb,
+             cs_lnum_t           f_id,
+             cs_gnum_t           nx,
+             cs_gnum_t           ny,
+             cs_gnum_t           nz,
+             cs_gnum_t           i,
+             cs_gnum_t           j,
+             cs_gnum_t           k)
+{
+  CS_UNUSED(nz);
+
+  /* Global numbering starts at 1! */
+
+  cs_lnum_t i0 = 1;
+
+  cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
+
+  /* Face to cell connectivity */
+  cs_gnum_t c0 = i + j*nx + k*nx*ny;
+
+  cs_gnum_t c_id1 = 0;
+  cs_gnum_t c_id2 = 0;
+
+  if (i == 0) {
+    c_id2 = c0 + 1;
+    mb->face_gc_id[f_id] = 1;
+  }
+  else if (i == nx) {
+    c_id1 = c0;
+    mb->face_gc_id[f_id] = 2;
+  }
+  else {
+    c_id1 = c0;
+    c_id2 = c0 + 1;
+  }
+  mb->face_cells[2*f_id]     = c_id1;
+  mb->face_cells[2*f_id + 1] = c_id2;
+
+  /*  Connectiviy for x-normal faces:
+   *
+   *  Vtx2        Vtx3
+   *  (j,k+1)     (j+1,k+1)
+   *
+   *   *-----------*       z (k)
+   *   |           |       ^
+   *   |           |       |
+   *   |     *     |       |
+   *   |  (i,j,k)  |       .----->y (j)
+   *   |           |
+   *   *-----------*
+   *  Vtx1        Vtx4
+   * (j,k)        (j+1,k)
+   *
+   */
+  mb->face_vertices[4*f_id + 3] = i0 + i + j*nxp1     + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 2] = i0 + i + j*nxp1     + (k+1)*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 1] = i0 + i + (j+1)*nxp1 + (k+1)*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 0] = i0 + i + (j+1)*nxp1 + k*nxp1*nyp1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Add a face with y-normal.
+ *
+ * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
+ * \param[in]       f_id  id of added face
+ * \param[in]       nx    number of cells in x direction
+ * \param[in]       ny    number of cells in x direction
+ * \param[in]       nz    number of cells in x direction
+ * \param[in]       i     i index (x) direction
+ * \param[in]       j     j index (x) direction
+ * \param[in]       k     k index (x) direction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_ny_face(cs_mesh_builder_t  *mb,
+             cs_lnum_t           f_id,
+             cs_gnum_t           nx,
+             cs_gnum_t           ny,
+             cs_gnum_t           nz,
+             cs_gnum_t           i,
+             cs_gnum_t           j,
+             cs_gnum_t           k)
+{
+  CS_UNUSED(ny);
+  CS_UNUSED(nz);
+
+  /* Global numbering starts at 1! */
+
+  cs_lnum_t i0 = 1;
+
+  cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
+
+  /* Face to cell connectivity */
+
+  cs_gnum_t c_id1 = 0;
+  cs_gnum_t c_id2 = 0;
+
+  if (j == 0) {
+    c_id2 = i0 + i + j*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 3;
+  } else if (j == ny) {
+    c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 4;
+  } else {
+    c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
+    c_id2 = i0 + i + j*nx     + k*nx*ny;
+  }
+
+  mb->face_cells[2*f_id]     = c_id1;
+  mb->face_cells[2*f_id + 1] = c_id2;
+
+  /*  Connectiviy for y-normal faces:
+   *
+   *  Vtx2        Vtx3
+   *  (i+1,k)     (i+1,k+1)
+   *
+   *   *-----------*       x (i)
+   *   |           |       ^
+   *   |           |       |
+   *   |     *     |       |
+   *   |  (i,j,k)  |       .----->z (k)
+   *   |           |
+   *   *-----------*
+   *  Vtx1        Vtx4
+   * (i,k)        (i,k+1)
+   *
+   */
+  mb->face_vertices[4*f_id + 3] = i0 + i     + j*nxp1 + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 2] = i0 + (i+1) + j*nxp1 + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 1] = i0 + (i+1) + j*nxp1 + (k+1)*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 0] = i0 + i     + j*nxp1 + (k+1)*nxp1*nyp1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Add a face with z-normal.
+ *
+ * \param[in, out]  mb    pointer to cs_mesh_builder_t structure
+ * \param[in]       f_id  id of added face
+ * \param[in]       nx    number of cells in x direction
+ * \param[in]       ny    number of cells in x direction
+ * \param[in]       nz    number of cells in x direction
+ * \param[in]       i     i index (x) direction
+ * \param[in]       j     j index (x) direction
+ * \param[in]       k     k index (x) direction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_nz_face(cs_mesh_builder_t  *mb,
+             cs_lnum_t           f_id,
+             cs_gnum_t           nx,
+             cs_gnum_t           ny,
+             cs_gnum_t           nz,
+             cs_gnum_t           i,
+             cs_gnum_t           j,
+             cs_gnum_t           k)
+{
+  /* Global numbering starts at 1! */
+
+  cs_lnum_t i0 = 1;
+
+  cs_gnum_t nxp1 = nx+1, nyp1 = ny+1;
+
+  cs_gnum_t c_id1 = 0;
+  cs_gnum_t c_id2 = 0;
+
+  if (k == 0) {
+    c_id2 = i0 + i + j*nx + k*nx*ny;
+    mb->face_gc_id[f_id] = 5;
+  } else if (k == nz) {
+    c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
+    mb->face_gc_id[f_id] = 6;
+  } else {
+    c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
+    c_id2 = i0 + i + j*nx + k*nx*ny;
+  }
+
+  mb->face_cells[2*f_id]     = c_id1;
+  mb->face_cells[2*f_id + 1] = c_id2;
+
+  /* Connectiviy for z-normal faces:
+   *
+   *  Vtx2        Vtx3
+   *  (i,j+1)     (i+1,j+1)
+   *
+   *   *-----------*       y (j)
+   *   |           |       ^
+   *   |           |       |
+   *   |     *     |       |
+   *   |  (i,j,k)  |       .----->x (i)
+   *   |           |
+   *   *-----------*
+   *  Vtx1        Vtx4
+   * (i,j)        (i+1,j)
+   *
+   */
+  mb->face_vertices[4*f_id + 3] = i0 + i     + j*nxp1     + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 2] = i0 + i     + (j+1)*nxp1 + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 1] = i0 + (i+1) + (j+1)*nxp1 + k*nxp1*nyp1;
+  mb->face_vertices[4*f_id + 0] = i0 + (i+1) + j*nxp1     + k*nxp1*nyp1;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -306,7 +523,6 @@ cs_mesh_cartesian_define_dir_user(int       idir,
                                   int       ncells,
                                   cs_real_t vtx_coord[])
 {
-
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
   if (mp == NULL)
@@ -523,247 +739,167 @@ cs_mesh_cartesian_get_ncells(int idim)
 /*----------------------------------------------------------------------------*/
 /*! \brief Build unstructured connectivity needed for partitionning.
  *
+ * \param[in] m     pointer to cs_mesh_t structure
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
-                               long               echo)
+cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
+                               cs_mesh_builder_t  *mb,
+                               long                echo)
 {
   CS_UNUSED(echo);
 
   cs_mesh_cartesian_params_t *mp = _mesh_params;
 
   /* Number of cells per direction */
-  cs_lnum_t nx = mp->params[0]->ncells;
-  cs_lnum_t ny = mp->params[1]->ncells;
-  cs_lnum_t nz = mp->params[2]->ncells;
+  cs_gnum_t nx = mp->params[0]->ncells;
+  cs_gnum_t ny = mp->params[1]->ncells;
+  cs_gnum_t nz = mp->params[2]->ncells;
 
   /* Number of vertices per direction */
-  cs_lnum_t nxp1 = nx+1;
-  cs_lnum_t nyp1 = ny+1;
-  cs_lnum_t nzp1 = nz+1;
+  cs_gnum_t nxp1 = nx+1;
+  cs_gnum_t nyp1 = ny+1;
+  cs_gnum_t nzp1 = nz+1;
 
-  /* Compute global values */
-  cs_lnum_t ncells = nx * ny * nz;
-  cs_lnum_t nvtx   = nxp1 * nyp1 * nzp1;
-  cs_lnum_t nfaces = 3 * ncells + nx*ny + nx*nz + ny*nz;
+  /* Compute global values and distribution */
+  cs_gnum_t n_g_cells = nx * ny * nz;
+  cs_gnum_t n_g_vtx = nxp1 * nyp1 * nzp1;
+  cs_gnum_t n_g_faces = 3*n_g_cells + nx*ny + nx*nz + ny*nz;
 
-  mb->n_g_faces = nfaces;
-  mb->n_g_face_connect_size = nfaces * 2;
+  mb->n_g_faces = n_g_faces;
+  mb->n_g_face_connect_size = n_g_faces * 2;
 
-  /* Group id */
-  if (mb->cell_gc_id == NULL)
-    BFT_MALLOC(mb->cell_gc_id, ncells, int);
+  m->n_g_cells = n_g_cells;
+  m->n_g_vertices = n_g_vtx;
 
-  for (cs_lnum_t i = 0; i < ncells; i++)
+  cs_mesh_builder_define_block_dist(mb,
+                                    cs_glob_rank_id,
+                                    cs_glob_n_ranks,
+                                    mb->min_rank_step,
+                                    0,
+                                    m->n_g_cells,
+                                    mb->n_g_faces,
+                                    m->n_g_vertices);
+
+  cs_lnum_t n_cells = (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]);
+  cs_lnum_t n_faces = (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]);
+  cs_lnum_t n_vertices = (  mb->vertex_bi.gnum_range[1]
+                          - mb->vertex_bi.gnum_range[0]);
+
+  /* Group ids */
+  BFT_REALLOC(mb->cell_gc_id, n_cells, int);
+  for (cs_lnum_t i = 0; i < n_cells; i++)
     mb->cell_gc_id[i] = 7;
 
-  if (mb->face_gc_id == NULL)
-    BFT_MALLOC(mb->face_gc_id, nfaces, int);
-
-  for (cs_lnum_t i = 0; i < nfaces; i++)
+  BFT_REALLOC(mb->face_gc_id, n_faces, int);
+  for (cs_lnum_t i = 0; i < n_faces; i++)
     mb->face_gc_id[i] = 7;
 
   /* number of vertices per face array */
-  if (mb->face_vertices_idx == NULL)
-    BFT_MALLOC(mb->face_vertices_idx, nfaces+1, cs_lnum_t);
+  BFT_REALLOC(mb->face_vertices_idx, n_faces+1, cs_lnum_t);
 
   mb->face_vertices_idx[0] = 0;
-  for (cs_lnum_t i = 0; i < nfaces; i++)
-    mb->face_vertices_idx[i+1] = mb->face_vertices_idx[i] + nvtx_per_face;
+  for (cs_lnum_t i = 0; i < n_faces; i++)
+    mb->face_vertices_idx[i+1] = mb->face_vertices_idx[i] + 4;
 
   /* Face to cell connectivity using global numbering */
-  if (mb->face_cells == NULL)
-    BFT_MALLOC(mb->face_cells, 2*nfaces, cs_gnum_t);
+  BFT_REALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
+  BFT_REALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
 
-  if (mb->face_vertices == NULL)
-    BFT_MALLOC(mb->face_vertices, 4*nfaces, cs_gnum_t);
-  else
-    BFT_REALLOC(mb->face_vertices, 4*nfaces, cs_gnum_t);
+  /* Global numbering starts at 1! */
 
-  /* Numbering start at 1! */
-  cs_lnum_t i0 = 1;
   cs_lnum_t f_id = 0;
+  cs_gnum_t g_f_num = 1;
 
-  /* X normal faces : (Nx+1)*Ny*Nz faces */
-  for (cs_lnum_t k = 0; k < nz; k++) {
-    for (cs_lnum_t j = 0; j < ny; j++) {
-      for (cs_lnum_t i = 0; i < nxp1; i++) {
+  /* We should find a better way of filtering what is built on the
+     current rank, but currently ignore everything which is out of range */
+  cs_gnum_t g_f_num_min = mb->face_bi.gnum_range[0];
+  cs_gnum_t g_f_num_max = mb->face_bi.gnum_range[1];
 
-        /* Face to cell connectivity */
-        cs_lnum_t c0 = i0 + (i-1) + j*nx + k*nx*ny;
+  /* X normal faces */
 
-        cs_lnum_t c_id1 = 0;
-        cs_lnum_t c_id2 = 0;
+  for (cs_gnum_t k = 0; k < nz && g_f_num < g_f_num_max; k++) {
+    for (cs_gnum_t j = 0; j < ny && g_f_num < g_f_num_max; j++) {
+      for (cs_gnum_t i = 0; i < nxp1 && g_f_num < g_f_num_max; i++) {
 
-        if (i == 0) {
-          c_id2 = c0 + 1;
-          mb->face_gc_id[f_id] = 1;
+        if (g_f_num >= g_f_num_min) {
+          _add_nx_face(mb, f_id, nx, ny, nz, i, j, k);
+          f_id += 1;
         }
-        else if (i == nx) {
-          c_id1 = c0;
-          mb->face_gc_id[f_id] = 2;
-        }
-        else {
-          c_id1 = c0;
-          c_id2 = c0 + 1;
-        }
-        mb->face_cells[2*f_id    ] = c_id1;
-        mb->face_cells[2*f_id + 1] = c_id2;
+        g_f_num += 1;
 
-        /*  Connectiviy for x-normal faces:
-         *
-         *  Vtx2        Vtx3
-         *  (j,k+1)     (j+1,k+1)
-         *
-         *   *-----------*       z (k)
-         *   |           |       ^
-         *   |           |       |
-         *   |     *     |       |
-         *   |  (i,j,k)  |       .----->y (j)
-         *   |           |
-         *   *-----------*
-         *  Vtx1        Vtx4
-         * (j,k)        (j+1,k)
-         *
-         */
-        mb->face_vertices[4*f_id + 3] = i0 + i + j*nxp1     + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 2] = i0 + i + j*nxp1     + (k+1)*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 1] = i0 + i + (j+1)*nxp1 + (k+1)*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 0] = i0 + i + (j+1)*nxp1 + k*nxp1*nyp1;
-
-        /* Incerement face index for x-normal faces */
-        f_id += 1;
       }
     }
   }
 
   /* Y normal faces */
-  for (cs_lnum_t k = 0; k < nz; k++) {
-    for (cs_lnum_t j = 0; j < nyp1; j++) {
-      for (cs_lnum_t i = 0; i < nx; i++) {
+  for (cs_gnum_t k = 0; k < nz && g_f_num < g_f_num_max; k++) {
+    for (cs_gnum_t j = 0; j < nyp1 && g_f_num < g_f_num_max; j++) {
+      for (cs_gnum_t i = 0; i < nx && g_f_num < g_f_num_max; i++) {
 
-        cs_lnum_t c_id1 = 0;
-        cs_lnum_t c_id2 = 0;
-
-        if (j == 0) {
-          c_id2 = i0 + i + j*nx + k*nx*ny;
-          mb->face_gc_id[f_id] = 3;
-        } else if (j == ny) {
-          c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
-          mb->face_gc_id[f_id] = 4;
-        } else {
-          c_id1 = i0 + i + (j-1)*nx + k*nx*ny;
-          c_id2 = i0 + i + j*nx     + k*nx*ny;
+        if (g_f_num >= g_f_num_min) {
+          _add_ny_face(mb, f_id, nx, ny, nz, i, j, k);
+          f_id += 1;
         }
+        g_f_num += 1;
 
-        mb->face_cells[2*f_id]     = c_id1;
-        mb->face_cells[2*f_id + 1] = c_id2;
-
-        /*  Connectiviy for y-normal faces:
-         *
-         *  Vtx2        Vtx3
-         *  (i+1,k)     (i+1,k+1)
-         *
-         *   *-----------*       x (i)
-         *   |           |       ^
-         *   |           |       |
-         *   |     *     |       |
-         *   |  (i,j,k)  |       .----->z (k)
-         *   |           |
-         *   *-----------*
-         *  Vtx1        Vtx4
-         * (i,k)        (i,k+1)
-         *
-         */
-        mb->face_vertices[4*f_id + 3] = i0 + i     + j*nxp1 + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 2] = i0 + (i+1) + j*nxp1 + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 1] = i0 + (i+1) + j*nxp1 + (k+1)*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 0] = i0 + i     + j*nxp1 + (k+1)*nxp1*nyp1;
-
-        /* Incerement face index for y-normal faces */
-        f_id += 1;
       }
     }
   }
 
   /* Z normal faces */
-  for (cs_lnum_t k = 0; k < nzp1; k++) {
-    for (cs_lnum_t j = 0; j < ny; j++) {
-      for (cs_lnum_t i = 0; i < nx; i++) {
+  for (cs_gnum_t k = 0; k < nzp1 && g_f_num < g_f_num_max; k++) {
+    for (cs_gnum_t j = 0; j < ny && g_f_num < g_f_num_max; j++) {
+      for (cs_gnum_t i = 0; i < nx && g_f_num < g_f_num_max; i++) {
 
-        cs_lnum_t c_id1 = 0;
-        cs_lnum_t c_id2 = 0;
-
-        if (k == 0) {
-          c_id2 = i0 + i + j*nx + k*nx*ny;
-          mb->face_gc_id[f_id] = 5;
-        } else if (k == nz) {
-          c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
-          mb->face_gc_id[f_id] = 6;
-        } else {
-          c_id1 = i0 + i + j*nx + (k-1)*nx*ny;
-          c_id2 = i0 + i + j*nx + k*nx*ny;
+        if (g_f_num >= g_f_num_min) {
+          _add_nz_face(mb, f_id, nx, ny, nz, i, j, k);
+          f_id += 1;
         }
+        g_f_num += 1;
 
-        mb->face_cells[2*f_id]     = c_id1;
-        mb->face_cells[2*f_id + 1] = c_id2;
-
-        /* Connectiviy for z-normal faces:
-         *
-         *  Vtx2        Vtx3
-         *  (i,j+1)     (i+1,j+1)
-         *
-         *   *-----------*       y (j)
-         *   |           |       ^
-         *   |           |       |
-         *   |     *     |       |
-         *   |  (i,j,k)  |       .----->x (i)
-         *   |           |
-         *   *-----------*
-         *  Vtx1        Vtx4
-         * (i,j)        (i+1,j)
-         *
-         */
-        mb->face_vertices[4*f_id + 3] = i0 + i     + j*nxp1     + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 2] = i0 + i     + (j+1)*nxp1 + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 1] = i0 + (i+1) + (j+1)*nxp1 + k*nxp1*nyp1;
-        mb->face_vertices[4*f_id + 0] = i0 + (i+1) + j*nxp1     + k*nxp1*nyp1;
-
-        /* Increment face index for y-normal faces */
-        f_id += 1;
       }
     }
   }
 
-  if (mb->vertex_coords == NULL) {
-    cs_lnum_t vc_size = nvtx*3;
-    BFT_MALLOC(mb->vertex_coords, vc_size, cs_real_t);
-  }
+  BFT_REALLOC(mb->vertex_coords, n_vertices*3, cs_real_t);
 
-  /* Vertices coords */
-  for (cs_lnum_t k = 0; k < nzp1; k++) {
-    for (cs_lnum_t j = 0; j < nyp1; j++) {
-      for (cs_lnum_t i = 0; i < nxp1; i++) {
-        cs_lnum_t v_id = i + j*nxp1 + k*nxp1*nyp1;
+  /* We should find a better way of filtering what is built on the
+     current rank, but currently ignore everything which is out of range */
+  cs_gnum_t g_v_num_min = mb->vertex_bi.gnum_range[0];
+  cs_gnum_t g_v_num_max = mb->vertex_bi.gnum_range[1];
 
-        /* X coord */
-        cs_lnum_t ijk[3] = {i,j,k};
-        for (int idim = 0; idim < 3; idim++) {
-          /* Constant step : xyz[idim]  = xyzmin[idim] + ijk*dx[idim] */
-          if (mp->params[idim]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
-            mb->vertex_coords[3*v_id + idim] =
-              mp->params[idim]->smin + ijk[idim] * mp->params[idim]->s[0];
-          } else {
+  /* Vertex coords */
+  cs_lnum_t v_id = 0;
+
+  for (cs_gnum_t k = 0; k < nzp1; k++) {
+    for (cs_gnum_t j = 0; j < nyp1; j++) {
+      for (cs_gnum_t i = 0; i < nxp1; i++) {
+        cs_gnum_t g_v_num = 1 + i + j*nxp1 + k*nxp1*nyp1;
+
+        if (g_v_num >= g_v_num_min && g_v_num <= g_v_num_max) {
+
+          /* X coord */
+          cs_lnum_t ijk[3] = {i,j,k};
+          for (cs_lnum_t idim = 0; idim < 3; idim++) {
+            /* Constant step: xyz[idim] = xyzmin[idim] + ijk*dx[idim] */
+            if (mp->params[idim]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+              mb->vertex_coords[3*v_id + idim]
+                = mp->params[idim]->smin + ijk[idim] * mp->params[idim]->s[0];
+            }
             /* Non constant step: We allready stored the vertices in dx,
-             * since dx[j+1] - dx[j] = dx of cell j
-             */
-            mb->vertex_coords[3*v_id + idim] = mp->params[idim]->s[ijk[idim]];
+             * since dx[j+1] - dx[j] == dx of cell j */
+            else {
+              mb->vertex_coords[3*v_id + idim] = mp->params[idim]->s[ijk[idim]];
+            }
           }
+
+          v_id++;
         }
+
       }
     }
   }
@@ -785,6 +921,7 @@ cs_mesh_cartesian_params_destroy(void)
     BFT_FREE(_mesh_params->params[i]->s);
     BFT_FREE(_mesh_params->params[i]);
   }
+  BFT_FREE(_mesh_params->params);
 
   BFT_FREE(_mesh_params);
   _mesh_params = NULL;

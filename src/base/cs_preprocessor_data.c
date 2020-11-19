@@ -2266,9 +2266,10 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
     _set_block_ranges(mesh, mesh_builder);
 
   if (cs_mesh_cartesian_need_build()) {
-    cs_mesh_cartesian_connectivity(mesh_builder, echo);
+    cs_mesh_cartesian_connectivity(mesh, mesh_builder, echo);
     mesh->modified = 1;
-  }else{
+  }
+  else {
     for (file_id = 0; file_id < mr->n_files; file_id++)
       _read_data(file_id, mesh, mesh_builder, mr, echo);
 

@@ -167,14 +167,16 @@ cs_mesh_cartesian_get_ncells(int idim);
 /*----------------------------------------------------------------------------*/
 /*! \brief Build unstructured connectivity needed for partitionning.
  *
+ * \param[in] m     pointer to cs_mesh_t structure
  * \param[in] mb    pointer to cs_mesh_builder_t structure
  * \param[in] echo  verbosity flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cartesian_connectivity(cs_mesh_builder_t *mb,
-                               long               echo);
+cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
+                               cs_mesh_builder_t  *mb,
+                               long                echo);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Destroy cartesian mesh parameters
