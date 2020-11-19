@@ -333,6 +333,10 @@ def run_studymanager(pkg, options):
     studies.reporting(" Ext. subprocesses logs: " + doc)
     studies.reporting("\n")
 
+    # Create dependency graph based on studies and all cases
+
+    studies.dump_graph()
+
     # Update repository if needed
 
     if options.update:
@@ -361,9 +365,6 @@ def run_studymanager(pkg, options):
 
     if options.compare or options.post or options.runcase:
         studies.create_studies()
-
-    # Create dependency graph based on studies and all cases
-    studies.dump_graph(options.filter_level, options.filter_n_procs)
 
     # Preprocessing and run all cases
     if options.debug:
