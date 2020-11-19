@@ -610,11 +610,13 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t tstar = aopt->meteo_tstar;
 
   /* Variables used for clipping */
-  cs_real_t ri_max=cs_math_big_r;
-  cs_real_t ri_toclip=cs_math_big_r;
-  cs_real_t *dlmo_var=NULL;
-  cs_lnum_t n_cells_to_clip = 0;
-  cs_real_t z_min=cs_math_big_r;
+  cs_real_t ri_max = cs_math_big_r;
+  cs_real_t *dlmo_var = NULL;
+  cs_real_t z_min = cs_math_big_r;
+  if (aopt->compute_z_ground == true){
+    cs_atmo_z_ground_compute();
+  }
+  cs_real_t *z_ground = cs_field_by_name_try("z_ground")->val;
 
   BFT_MALLOC(dlmo_var, m->n_cells, cs_real_t);
 
@@ -630,7 +632,7 @@ cs_atmo_compute_meteo_profiles(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
     //TODO reference altitude or use z_ground?
-    cs_real_t z = cell_cen[cell_id][2];
+    cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
 
     /* Velocity profile */
     cs_real_t u_norm = ustar0 / kappa * cs_mo_psim(z+z0, z0, dlmo);
@@ -664,48 +666,43 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* Very stable cases */
     if (ri_f > ri_max) {
-      n_cells_to_clip++;
-      if (cell_cen[cell_id][2] < z_min) {
+      if (z <= z_min) {
         //Ri_f is an increasing monotonic function, so the lowest value of
         //z for which Ri_f>Ri_max is needed
-        z_min = cell_cen[cell_id][2];
-      }
-      if (ri_f < ri_toclip) {  // Get the Ri_f closest to Ri_max actually reached
-        ri_toclip = ri_f;
+        z_min = z;
       }
     }
   }
 
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
-  if (n_cells_to_clip >= 2) { // Clipping only if there is enough cells to clip
+  if (z_min < cs_math_big_r) { // Clipping only if there are cells to be clipped
     bft_printf("Switching to very stable clipping for meteo profile.\n");
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      cs_real_t z = cell_cen[cell_id][2];
+      cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
       if (z >= z_min) {
-        /* FIXME Clipping starts at the first point above Ri_max
-         * and not the one before, thus following is slightly modified
-         * compare to meteo_saturne.py. mode = 0 is ustar=cst */
+         /* mode = 0 is ustar=cst */
         dlmo_var[cell_id] = dlmo * (z_min + z0) / (z + z0);
+
         /* Velocity profile */
-        // Supposing u_0 = 0 ?
         cs_real_t u_norm = ustar0 / kappa * cs_mo_phim(z_min, dlmo) * log(z / z0);
 
         cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
         cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
-
 
        /* Potential temperature profile
         * Note: same roughness as dynamics */
         cpro_met_potemp[cell_id] = theta0
           + tstar * z_min / kappa * cs_mo_phih(z_min, dlmo) * (-1./z + 1./z0) ;
 
-       /* TKE profile */
+       /* TKE profile
+          ri_max is necessarily lower than 1, but CS_MIN might be useful if
+          that changes in the future */
         cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
-          * sqrt(1. - CS_MIN(ri_toclip, 1.));
+          * sqrt(1. - CS_MIN(ri_max, 1.));
 
         /* epsilon profile */
         cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / kappa  / dlmo_var[cell_id]
-         * (1- CS_MIN(ri_toclip, 1.)) / CS_MIN(ri_toclip, 1.);
+         * (1- CS_MIN(ri_max, 1.)) / CS_MIN(ri_max, 1.);
       }
     }
   }
