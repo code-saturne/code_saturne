@@ -327,7 +327,7 @@ class GasCombustionModel(Variables, Model):
                         NPE.setMinValue(name, 0.)
                         NPE.setMaxValue(name, 1.)
                     elif name == "mixture_fraction_variance":
-                        NPE.setMinValue(name, -1.e+12)
+                        NPE.setMinValue(name, 0.)
                         NPE.setMaxValue(name, 1.e+12)
 
     @Variables.noUndo

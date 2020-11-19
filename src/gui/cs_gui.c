@@ -2111,7 +2111,7 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
     if (f->type & CS_FIELD_VARIABLE) { /* variable ? */
       int i = cs_field_get_key_int(f, keysca) - 1;
       if (i > -1) { /* additional user or model variable ? */
-        if (cs_field_get_key_int(f, kscavr) < 0) { /* not a variance ? */
+//        if (cs_field_get_key_int(f, kscavr) < 0) { /* not a variance ? */
 
           double scal_min = cs_field_get_key_double(f, kscmin);
           double scal_max = cs_field_get_key_double(f, kscmax);
@@ -2139,7 +2139,7 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
 
           }
 
-        }
+//        }
       }
     }
   }
