@@ -3578,7 +3578,7 @@ cs_all_to_all_log_finalize(void)
     snprintf(method_name, 96, N_("MPI_Alltoall and MPI_Alltoallv"));
     break;
   case CS_ALL_TO_ALL_HYBRID:
-    snprintf(method_name, 96, N_("Hybrid: %s (metadata), %s (data)"),
+    snprintf(method_name, 96, N_("Hybrid, %s (metadata), %s (data)"),
              _(cs_rank_neighbors_exchange_name[_hybrid_meta_type]),
              "MPI_Alltoallv");
     break;
@@ -3589,7 +3589,7 @@ cs_all_to_all_log_finalize(void)
   method_name[95] = '\0';
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\nAll-to-many operations (using %s):\n\n"),
+                _("\nAll-to-many operations: (%s):\n\n"),
                 method_name);
 
   /* Print times */
@@ -3613,7 +3613,7 @@ cs_all_to_all_log_finalize(void)
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
-     _("                          mean           minimum      maximum"
+     _("                             mean        minimum      maximum"
        "     calls\n"
        "  Total:             %12.5f s %12.5f %12.5f s   %lu\n"
        "  Metadata exchange: %12.5f s %12.5f %12.5f s   %lu\n"
