@@ -880,7 +880,7 @@ cs_mesh_cartesian_connectivity(cs_mesh_t          *m,
       for (cs_gnum_t i = 0; i < nxp1; i++) {
         cs_gnum_t g_v_num = 1 + i + j*nxp1 + k*nxp1*nyp1;
 
-        if (g_v_num >= g_v_num_min && g_v_num <= g_v_num_max) {
+        if (g_v_num >= g_v_num_min && g_v_num < g_v_num_max) {
 
           /* X coord */
           cs_lnum_t ijk[3] = {i,j,k};
