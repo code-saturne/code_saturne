@@ -560,7 +560,8 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
       /* Evaluating the integrals: the averages will be taken care of at the
        * end when ensuring zero-mean valuedness */
     case CS_XDEF_BY_VALUE:
-      cs_evaluate_density_by_value(dof_flag, def, values);
+      /* When constant mean-value or the value at cell center is the same */
+      cs_evaluate_potential_at_cells_by_value(def, values);
       break;
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -569,15 +570,12 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          /* Forcing BARY so that it is equivalent to DeRham (JB?)*/
-          cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
-          /* Restoring the original */
           cs_xdef_set_quadrature(def, nsp->qtype);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_set_quadrature(def, nsp->qtype);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
+          cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);
           break;
 
         default:
