@@ -1397,8 +1397,8 @@ cs_ale_update_mesh(const int           itrale)
   cs_real_3_t *xyzno0 = (cs_real_3_t *)(cs_field_by_name("vtx_coord0")->val);
 
   /* Update geometry */
-  for (int v_id = 0; v_id < n_vertices; v_id++) {
-    for (int idim = 0; idim < ndim; idim++) {
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    for (cs_lnum_t idim = 0; idim < ndim; idim++) {
       vtx_coord[v_id][idim] = xyzno0[v_id][idim] + disale[v_id][idim];
       disala[v_id][idim] = vtx_coord[v_id][idim] - xyzno0[v_id][idim];
     }
