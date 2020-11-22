@@ -800,17 +800,6 @@ _crystal_partition_indexed(cs_crystal_router_t  *cr,
 
   assert(send_id == 0 || send_id == 1);
 
-  if (   cr->buffer_size[1] < cr->buffer_size[0]
-      || cr->buffer_size[1] > cr->buffer_size[0]*_realloc_f_threshold) {
-    cr->buffer_size[1] = cr->buffer_size[0];
-    BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
-    if (cr->buffer_size[1] > cr->buffer_size_max[1])
-      cr->buffer_size_max[1] = cr->buffer_size[1];
-    size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
-    if (alloc_tot > cr->alloc_tot_max)
-      cr->alloc_tot_max = alloc_tot;
-  }
-
   unsigned char *src = cr->buffer[0];
 
   size_t r0_shift = 0;
@@ -840,6 +829,39 @@ _crystal_partition_indexed(cs_crystal_router_t  *cr,
     }
     n1 = i;
   }
+
+  size_t r0_end = r0_shift;
+  size_t r1_end = r1_shift;
+  cs_lnum_t i_start = i;
+  unsigned char *src_start = src;
+
+  /* Count to minimize memory allocation
+     (extra reads, but hopefully a good tradeoff) */
+
+  while (i < n) {
+    int *r = (int *)src;
+    cs_lnum_t *n_sub = (cs_lnum_t *)(src + n_vals_shift);
+    size_t sub_size = comp_size + n_sub[0]*elt_size;
+    if (r[0] < cutoff) {
+      r0_end += sub_size;
+    }
+    else {
+      r1_end += sub_size;
+    }
+    i++;
+    src += sub_size;
+  }
+
+  cr->buffer_size[1] = (id0 == 0) ? r1_end : r0_end;
+  BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
+  if (cr->buffer_size[1] > cr->buffer_size_max[1])
+    cr->buffer_size_max[1] = cr->buffer_size[1];
+  size_t alloc_tot = cr->buffer_size[0] + cr->buffer_size[1];
+  if (alloc_tot > cr->alloc_tot_max)
+    cr->alloc_tot_max = alloc_tot;
+
+  i = i_start;
+  src = src_start;
 
   while (i < n) {
     int *r = (int *)src;
