@@ -164,7 +164,7 @@ double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visc
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
-double precision, dimension(:,:), pointer :: disala
+double precision, dimension(:,:), pointer :: xyzno0
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
@@ -521,7 +521,8 @@ if (iprco.le.0) then
 
     call field_get_val_v(ivarfl(iuma), mshvel)
 
-    call field_get_val_prev_v(fdiale, disala)
+    call field_get_val_v(fdiale, disale)
+    call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
     if (iflxmw.gt.0) then
       ! One temporary array needed for internal faces, in case some internal vertices
@@ -1187,7 +1188,7 @@ if (iale.ge.1) then
   call field_get_val_v(ivarfl(iuma), mshvel)
 
   call field_get_val_v(fdiale, disale)
-  call field_get_val_prev_v(fdiale, disala)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   if (iflxmw.gt.0) then
     ! One temporary array needed for internal faces, in case some internal vertices

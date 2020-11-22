@@ -329,6 +329,15 @@ if (iale.ge.1) then
 
   call field_set_key_str(fdiale, keylbl, trim(f_label))
 
+  has_previous = .false.
+  idim3 = 3
+  f_name = 'vtx_coord0'
+  type_flag = FIELD_PROPERTY
+  location_id = 4 ! variables defined on vertices
+
+  call field_create(f_name, type_flag, location_id, idim3, &
+                    has_previous, iflid)
+
 endif
 
 

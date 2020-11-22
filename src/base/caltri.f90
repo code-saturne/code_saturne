@@ -109,6 +109,7 @@ double precision, save :: ttchis
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
+double precision, dimension(:,:), pointer :: xyzno0 => null()
 
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
@@ -640,6 +641,7 @@ if (isuite.eq.1) then
   if (iale.ge.1) then
 
     call field_get_val_v(fdiale, disale)
+    call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
     do inod = 1, nnod
       do idim = 1, ndim
@@ -975,7 +977,7 @@ endif
 if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
-    call cs_ale_update_mesh(itrale, xyzno0)
+    call cs_ale_update_mesh(itrale)
   endif
 
 endif

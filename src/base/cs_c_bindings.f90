@@ -2928,12 +2928,11 @@ module cs_c_bindings
 
     ! Interface to C function updating the mesh in the ALE framework.
 
-    subroutine cs_ale_update_mesh(itrale, xyzno0)   &
+    subroutine cs_ale_update_mesh(itrale)   &
       bind(C, name='cs_ale_update_mesh')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: itrale
-      real(kind=c_double), dimension(*), intent(in) :: xyzno0
     end subroutine cs_ale_update_mesh
 
     !---------------------------------------------------------------------------

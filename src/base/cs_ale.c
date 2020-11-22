@@ -1364,13 +1364,11 @@ cs_ale_project_displacement(const int           ale_bc_type[],
  * \brief  Update mesh in the ALE framework.
  *
  * \param[in]       itrale        number of the current ALE iteration
- * \param[in]       xyzno0        nodes coordinates of the initial mesh
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_update_mesh(const int           itrale,
-                   const cs_real_3_t  *xyzno0)
+cs_ale_update_mesh(const int           itrale)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const int  ndim = m->dim;
@@ -1396,6 +1394,7 @@ cs_ale_update_mesh(const int           itrale,
   cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
   cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
   cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
+  cs_real_3_t *xyzno0 = (cs_real_3_t *)(cs_field_by_name("vtx_coord0")->val);
 
   /* Update geometry */
   for (int v_id = 0; v_id < n_vertices; v_id++) {

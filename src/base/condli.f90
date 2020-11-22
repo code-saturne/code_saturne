@@ -233,6 +233,7 @@ double precision sigmae
 character(len=80) :: fname
 
 double precision, dimension(:,:), pointer :: disale
+double precision, dimension(:,:), pointer :: xyzno0
 double precision, allocatable, dimension(:,:) :: velipb
 double precision, pointer, dimension(:,:) :: rijipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -434,6 +435,7 @@ call synthe(ttcabs, dt, rcodcl)
 if (iale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   do ii = 1, nnod
     impale(ii) = 0
@@ -449,6 +451,8 @@ if (iale.ge.1) then
       disale,                            &
       iuma, ivma, iwma,                  &
       rcodcl)
+
+  ! TODO in the future version: remove xyzno0, and disale because they are fields
 
   call usalcl &
     ( itrale ,                                                       &
@@ -645,7 +649,7 @@ if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale , .false. ,                  &
    dt     ,                                                       &
-   rcodcl , xyzno0 )
+   rcodcl )
 endif
 
 if (iturbo.ne.0) then
@@ -5150,6 +5154,7 @@ double precision rcodcl(nfabor,nvar,3)
 integer          iterns, ii
 
 double precision, dimension(:,:), pointer :: disale
+double precision, dimension(:,:), pointer :: xyzno0
 
 !===============================================================================
 ! 0. User calls
@@ -5188,6 +5193,7 @@ call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 if (iale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   do ii = 1, nnod
     impale(ii) = 0
@@ -5236,7 +5242,7 @@ if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale , .true. ,                   &
    dt     ,                                                       &
-   rcodcl , xyzno0 )
+   rcodcl )
 endif
 
 if (iturbo.ne.0) then
