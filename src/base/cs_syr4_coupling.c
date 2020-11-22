@@ -1211,7 +1211,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
              cs_syr4_coupling_tag,
              syr_coupling->comm);
 
-    if (syr_coupling->verbosity > 0)
+    if (syr_coupling->verbosity > 1)
       bft_printf(_(" Global heat flux exchanged with SYRTHES in W: %5.3e\n"),
                  g_flux);
 
@@ -1228,7 +1228,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
 
   /* Print message */
 
-  if (syr_coupling->verbosity > 0)
+  if (syr_coupling->verbosity > 1)
     bft_printf(_(" Correction coefficient used to force conservativity during"
                  " coupling with SYRTHES: %5.3e\n"), coef);
 }
