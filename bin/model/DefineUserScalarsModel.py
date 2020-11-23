@@ -277,6 +277,24 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
+    def getGasCombScalarsNameList(self):
+        node_list = []
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('gas_combustion', 'model')
+        if node == None:
+            return
+
+        model = node['model']
+        list_scalar=[]
+        if model != 'off':
+            node_list = node.xmlGetNodeList('variable')
+            for node_scalar in node_list:
+                list_scalar.append(node_scalar['name'])
+
+        return list_scalar
+
+
+    @Variables.noUndo
     def getElectricalScalarsNameList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
@@ -419,7 +437,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Get turbulent flux model of an additional_scalar with name I{l}.
         """
-        lst = self.getScalarNameList() + self.getThermalScalarName()
+        lst = self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList()
         self.isInList(l, lst)
         n = self.case.xmlGetNode('variable', name=l)
         mdl = n.xmlGetString('turbulent_flux_model')
@@ -433,7 +451,7 @@ class DefineUserScalarsModel(Variables, Model):
     @Variables.undoGlobal
     def setTurbulentFluxModel(self, scalar_name, TurbFlux):
         """Put turbulent flux model of an additional_scalar with name scalar_name"""
-        lst = self.getScalarNameList() + self.getThermalScalarName()
+        lst = self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList()
         self.isInList(scalar_name, lst)
 
         n = self.case.xmlGetNode('variable', name=scalar_name)

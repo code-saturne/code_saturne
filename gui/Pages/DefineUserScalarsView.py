@@ -61,6 +61,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -364,6 +365,19 @@ class StandardItemModelScalars(QStandardItemModel):
         self._data.append(scalar)
 
 
+    def newModelItem(self, existing_name=None):
+        """
+        Add only an item in the table view (do not create a scalar)
+        """
+        row = self.rowCount()
+
+        turbFlux = self.mdl.getTurbulentFluxModel(existing_name)
+        scalar = [existing_name, turbFlux]
+
+        self.setRowCount(row+1)
+        self._data.append(scalar)
+
+
     def getItem(self, row):
         """
         Return the values for an item.
@@ -575,6 +589,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(name)
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
+        for name in self.mdl.getGasCombScalarsNameList():
+            self.modelScalars.newModelItem(name)
 
         if GroundwaterModel(self.case).getGroundwaterModel() != "off":
             self.groupBox_3.hide()
