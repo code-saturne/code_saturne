@@ -346,7 +346,8 @@ class meg_to_c_interpreter:
                    symbols,
                    known_fields,
                    condition = None,
-                   source_type = None):
+                   source_type = None,
+                   element_type= "center"):
 
         # Creating a unique function name based on the zone and variable name
         fkey = '::'.join([zone_name, name])
@@ -361,7 +362,10 @@ class meg_to_c_interpreter:
                                    'sym': symbols,
                                    'knf': known_fields,
                                    'cnd': condition,
-                                   'tpe': source_type}
+                                   'tpe': source_type,
+                                   'elt': element_type}
+        if self.funcs[ftype][fkey]['elt'] not in ('center', 'vertex'):
+            self.funcs[ftype][fkey]['elt'] = 'center'
 
         self.funcs[ftype][fkey]['lines'] = break_expression(expression)
 
@@ -498,6 +502,7 @@ class meg_to_c_interpreter:
         symbols      = func_params['sym']
         known_fields = func_params['knf']
         cname        = func_params['cnd']
+        element_type = func_params['elt']
 
         if type(func_params['req'][0]) == tuple:
             required = [r[0] for r in func_params['req']]
@@ -529,8 +534,35 @@ class meg_to_c_interpreter:
         need_coords = False
 
         # allocate the new array
+
+        val_str    = 'zone->n_elts'
+        ids_str    = 'zone->elt_ids'
+        elt_id_str = 'f_id'
+        if element_type == 'vertex':
+            val_str    = 'n_vtx'
+            ids_str    = 'vtx_ids'
+            elt_id_str = 'v_id'
+
         if need_for_loop:
-            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
+            # If values are stored for vertices, change selectors.
+            if element_type == 'vertex':
+
+                usr_defs += ntabs*tab + 'cs_lnum_t  %s;\n' % (val_str)
+                usr_defs += ntabs*tab + 'cs_lnum_t *%s;\n' % (ids_str)
+                usr_defs += ntabs*tab
+                usr_defs += 'BFT_MALLOC(%s, cs_glob_mesh->n_vertices, cs_lnum_t);\n\n' % (ids_str)
+
+                # Vertices selector function
+                b_f_vtx_sel_fct = 'cs_selector_get_b_face_vertices_list_by_ids'
+                b_f_vtx_sel_tab = ' '*(len(b_f_vtx_sel_fct)+1)
+
+                usr_defs += ntabs*tab + '%s(zone->n_elts,\n' % (b_f_vtx_sel_fct)
+                usr_defs += ntabs*tab + '%szone->elt_ids,\n' % (b_f_vtx_sel_tab)
+                usr_defs += ntabs*tab + '%s&%s,\n' % (b_f_vtx_sel_tab, val_str)
+                usr_defs += ntabs*tab + '%s%s);\n' % (b_f_vtx_sel_tab, ids_str)
+
+            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %s * %d;\n' \
+                    % (val_str, len(required))
         else:
             usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %d;\n' % (len(required))
 
@@ -547,10 +579,15 @@ class meg_to_c_interpreter:
         # Coordinates
         for kc in coords:
             ic = coords.index(kc)
-            loop_tokens[kc] = 'const cs_real_t %s = xyz[f_id][%s];' % (kc, str(ic))
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[%s][%s];' \
+                    % (kc, elt_id_str, str(ic))
 
-        glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;'
+        if element_type == 'vertex':
+            glob_tokens['xyz'] = \
+            'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh->vtx_coord;'
+        else:
+            glob_tokens['xyz'] = \
+            'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;'
 
         # Notebook variables
         for kn in self.notebook.keys():
@@ -562,7 +599,7 @@ class meg_to_c_interpreter:
             glob_tokens[f[0]] = \
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
             loop_tokens[f[0]] = \
-            'const cs_real_t %s = %s_vals[f_id];' % (f[0], f[0])
+            'const cs_real_t %s = %s_vals[%s];' % (f[0], f[0], elt_id_str)
         # ------------------------
 
         if need_for_loop:
@@ -590,13 +627,16 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         if need_for_loop:
-            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t f_id = zone->elt_ids[e_id];\n'
+            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < %s; e_id++) {\n' % (val_str)
+            usr_blck += 3*tab + 'cs_lnum_t %s = %s[e_id];\n' % (elt_id_str, ids_str)
 
         usr_blck += usr_code
 
         if need_for_loop:
             usr_blck += 2*tab + '}\n'
+
+        if element_type == 'vertex':
+            usr_blck += 2*tab + 'BFT_FREE(%s);\n' % ids_str
 
         usr_blck += tab + '}\n'
 
