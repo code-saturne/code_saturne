@@ -598,7 +598,7 @@ cs_boundary_def_wall_zones(cs_boundary_t   *boundaries)
  *         Use in CDO schemes for Navier--Stokes
  *
  * \param[in] n_b_faces    number of border faces
- * \param[in] bf_type      array of types of boundary for each boudary face
+ * \param[in] bf_type      array of types of boundary for each boundary face
  *
  * \return 1 if a pressure rescaling is needed otherwise 0
  */

@@ -117,7 +117,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     const char criteria[] = "outlet";
 
-    /* Select boudary faces */
+    /* Select boundary faces */
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
@@ -225,7 +225,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_lnum_t n_prev_cells = mesh->n_cells ;
 
-    /* Select boudary faces */
+    /* Select boundary faces */
 
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
