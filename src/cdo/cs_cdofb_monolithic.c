@@ -149,11 +149,12 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
+  /* Cell unknows (velocity, pressure, velocity divergence) */
   cs_field_current_to_previous(sc->velocity);
   cs_field_current_to_previous(sc->pressure);
   cs_field_current_to_previous(sc->divergence);
 
-  /* Face velocity arrays */
+  /* Face velocity */
   cs_cdofb_vecteq_t  *mom_eqc
     = (cs_cdofb_vecteq_t *)cc->momentum->scheme_context;
 
@@ -161,10 +162,9 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3 * quant->n_faces * sizeof(cs_real_t));
 
-  /* Mass flux arrays */
+  /* Mass flux */
   memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
          quant->n_faces * sizeof(cs_real_t));
-
 }
 
 /*----------------------------------------------------------------------------*/

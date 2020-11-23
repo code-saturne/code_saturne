@@ -1439,12 +1439,17 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
+      /* Get the current values not the previous one */
       bool  need_prev = false;
-      cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
+
+      /* Mass flux is a scalar associated to each face (first interior faces
+         then border faces */
+      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
+
+      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
+      const cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
       const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
       const cs_real_t  *u_cell = navsto->velocity->val;
-      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
-      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
 
       cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect, ts,
                                adv, mass_flux,
@@ -1517,7 +1522,12 @@ cs_navsto_system_extra_post(void                      *input,
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
       {
-        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(false);
+        /* Get the current values not the previous one */
+        bool  need_prev = false;
+
+        /* Mass flux is a scalar associated to each face (first interior faces
+           then border faces */
+        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
 
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_DEFAULT,

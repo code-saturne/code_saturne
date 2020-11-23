@@ -839,7 +839,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   const cs_boundary_t  *boundaries = nsp->boundaries;
   const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
-  /* 1. Compute for each boundary the integrated flux */
+  /* 1. Compute for each boundary the integrated mass flux to perform mass
+     balance */
   bool  *belong_to_default = NULL;
   BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
 # pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
@@ -863,10 +864,9 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   } /* Loop on domain boundaries */
 
   /* Update the flux through the default boundary */
-  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
+  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
     if (belong_to_default[i])
       boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
-  }
 
   /* Parallel synchronization if needed */
   if (cs_glob_n_ranks > 1)
