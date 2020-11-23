@@ -68,6 +68,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.node_ana    = self.case.xmlInitNode('analysis_control')
         self.node_prof   = self.node_ana.xmlInitNode('profiles')
         self.node_ava    = self.node_ana.xmlInitNode('time_averages')
+        self.gas_node    = self.case.xmlGetNode('gas_combustion')
 
     def defaultScalarValues(self):
         """Return the default values - Method also used by ThermalScalarModel"""
@@ -277,6 +278,24 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
+    def getGasCombScalarsNameList(self):
+        node_list = []
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('gas_combustion', 'model')
+        if node == None:
+            return
+
+        model = node['model']
+        list_scalar=[]
+        if model != 'off':
+            node_list = node.xmlGetNodeList('variable')
+            for node_scalar in node_list:
+                list_scalar.append(node_scalar['name'])
+
+        return list_scalar
+
+
+    @Variables.noUndo
     def getElectricalScalarsNameList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
@@ -419,7 +438,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Get turbulent flux model of an additional_scalar with name I{l}.
         """
-        lst = self.getScalarNameList() + self.getThermalScalarName()
+        lst = self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList()
         self.isInList(l, lst)
         n = self.case.xmlGetNode('variable', name=l)
         mdl = n.xmlGetString('turbulent_flux_model')
@@ -433,7 +452,7 @@ class DefineUserScalarsModel(Variables, Model):
     @Variables.undoGlobal
     def setTurbulentFluxModel(self, scalar_name, TurbFlux):
         """Put turbulent flux model of an additional_scalar with name scalar_name"""
-        lst = self.getScalarNameList() + self.getThermalScalarName()
+        lst = self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList()
         self.isInList(scalar_name, lst)
 
         n = self.case.xmlGetNode('variable', name=scalar_name)
@@ -446,9 +465,12 @@ class DefineUserScalarsModel(Variables, Model):
         Get variance of an additional_scalar with name I{l}.
         Method also used by UserScalarPropertiesView
         """
-        self.isInList(l, self.getScalarNameList())
+        self.isInList(l, self.getScalarNameList() + self.getGasCombScalarsNameList())
 
-        return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
+        if l in self.getScalarNameList():
+            return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
+        elif l in self.getGasCombScalarsNameList():
+            return self.gas_node.xmlGetNode('variable', name=l).xmlGetString('variance')
 
 
     @Variables.undoGlobal
@@ -764,12 +786,14 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName())
-        if scalar_name not in self.getScalarNameList():
+        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList())
+        if scalar_name not in self.getScalarNameList() and scalar_name not in self.getGasCombScalarsNameList():
             node = self.node_therm.xmlGetNode('variable', name=scalar_name)
+        elif scalar_name in self.getGasCombScalarsNameList():
+            node = self.gas_node.xmlGetChildNode('variable', 'type', name=scalar_name)
         else:
             node = self.scalar_node.xmlGetNode('variable', 'type', name=scalar_name)
-        Model().isInList(node['type'], ('user', 'thermal'))
+        Model().isInList(node['type'], ('user', 'thermal', 'var_model'))
         return node['type']
 
 

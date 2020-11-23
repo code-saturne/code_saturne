@@ -307,7 +307,7 @@ class GasCombustionModel(Variables, Model):
 
             for name in new_list:
                 if name not in previous_list:
-                    self.setNewVariable(self.node_gas, name, tpe=model, label=name)
+                    self.setNewVariable(self.node_gas, name, tpe='var_model', label=name)
 
             NPE = NumericalParamEquationModel(self.case)
             for node in self.node_gas.xmlGetChildNodeList('variable'):
@@ -316,13 +316,15 @@ class GasCombustionModel(Variables, Model):
                 NPE.setScheme(name, 'upwind')
                 NPE.setFluxReconstruction(name, 'off')
 
-                if model == "d3p":
+                if self.getGasCombustionModel() == "d3p":
                     if name == "mixture_fraction":
                         NPE.setMinValue(name, 0.)
                         NPE.setMaxValue(name, 1.)
                     elif name == "mixture_fraction_variance":
                         NPE.setMinValue(name, 0.)
                         NPE.setMaxValue(name, 1.e+12)
+                        node.xmlSetData('variance', "mixture_fraction")
+
 
     @Variables.noUndo
     def getNdirac(self):

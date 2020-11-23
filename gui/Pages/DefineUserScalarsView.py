@@ -61,6 +61,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -109,10 +110,11 @@ class NameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
                 default = {}
-                default['name']  = self.old_pname
-                default['list']   = model.mdl.getScalarNameList()
+                default['label']  = self.old_pname
+                default['name']   = self.old_pname
+                default['list'] = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
@@ -120,7 +122,10 @@ class NameDelegate(QItemDelegate):
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
-                    new_pname = result['name']
+                    new_pname = result['label']
+                    result['name'] = new_pname
+                    result['list'] = model.mdl.getScalarNameList()
+                    result['regexp'] = self.regExp
                     log.debug("setModelData -> result = %s" % result)
                 else:
                     new_pname = self.old_pname
@@ -212,8 +217,9 @@ class VarianceNameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
                 default = {}
+                default['label']  = self.old_pname
                 default['name']  = self.old_pname
                 default['list']   = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
@@ -253,6 +259,11 @@ class VarianceDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        if value in index.model().mdl.getGasCombScalarsNameList():
+            self.modelCombo.addItem(value, value)
+            return
         l1 = index.model().mdl.getScalarNameList()
         for label in index.model().mdl.getThermalScalarName():
             l1.append(label)
@@ -330,6 +341,8 @@ class StandardItemModelScalars(QStandardItemModel):
         # Name
         if col == 0:
             old_pname = self._data[row][col]
+            if self.mdl.getScalarType(old_pname) == 'var_model':
+                return
             new_pname = str(from_qvariant(value, to_text_string))
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
@@ -359,6 +372,21 @@ class StandardItemModelScalars(QStandardItemModel):
         name = self.mdl.addUserScalar(existing_name)
         turbFlux = self.mdl.getTurbulentFluxModel(name)
         scalar = [name, turbFlux]
+
+        self.setRowCount(row+1)
+        self._data.append(scalar)
+
+
+    def newModelItem(self, existing_name=None):
+        """
+        Add only an item in the table view (do not create a scalar)
+        """
+        row = self.rowCount()
+        var = self.mdl.getScalarVariance(existing_name)
+        if var not in ("", "no variance", "no_variance"):
+            return
+        turbFlux = self.mdl.getTurbulentFluxModel(existing_name)
+        scalar = [existing_name, turbFlux]
 
         self.setRowCount(row+1)
         self._data.append(scalar)
@@ -441,6 +469,8 @@ class StandardItemModelVariance(QStandardItemModel):
         # name
         if col == 0:
             old_pname = self._data[row][col]
+            if self.mdl.getScalarType(old_pname) == 'var_model':
+                return
             new_pname = str(from_qvariant(value, to_text_string))
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
@@ -451,6 +481,8 @@ class StandardItemModelVariance(QStandardItemModel):
             variance = str(from_qvariant(value, to_text_string))
             self._data[row][col] = variance
             name = self._data[row][0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             self.mdl.setScalarVariance(name, variance)
 
         self.dataChanged.emit(index, index)
@@ -481,6 +513,21 @@ class StandardItemModelVariance(QStandardItemModel):
         if var in ("", "no variance", "no_variance"):
             var = "no"
         scalar = [name, var]
+
+        self.setRowCount(row+1)
+        self._data.append(scalar)
+
+
+    def newModelItem(self, existing_name=None):
+        """
+        Add an item in the table view
+        """
+
+        row = self.rowCount()
+        var = self.mdl.getScalarVariance(existing_name)
+        if var in ("", "no variance", "no_variance"):
+            return
+        scalar = [existing_name, var]
 
         self.setRowCount(row+1)
         self._data.append(scalar)
@@ -575,6 +622,10 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(name)
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
+        if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
+            for name in self.mdl.getGasCombScalarsNameList():
+                self.modelScalars.newModelItem(name)
+                self.modelVariance.newModelItem(name)
 
         if GroundwaterModel(self.case).getGroundwaterModel() != "off":
             self.groupBox_3.hide()
@@ -606,6 +657,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
 
         for row in lst:
             name = self.modelScalars.getItem(row)[0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             if self.mdl.getScalarType(name) == 'user':
                 self.mdl.deleteScalar(name)
                 self.modelScalars.deleteItem(row)
@@ -652,6 +705,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
 
         for row in lst:
             name = self.modelVariance.getItem(row)[0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             self.mdl.deleteScalar(name)
             self.modelVariance.deleteItem(row)
 
