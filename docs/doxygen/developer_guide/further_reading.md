@@ -206,7 +206,6 @@ Variable declaration and initialization
 int i, j,
     k = 0, l = 1;
 double a = 1.;
-}
 ```
 <td>
 ```{.f90}
@@ -517,7 +516,7 @@ Prototypes are usually grouped in `header` files, inserted locally using the
   - Functions with the same name may be used in different files with no risk.
 - Using `static inline`, the function body is copied at each call
   - Avoids call overhead for short functions, leads to larger code.
-  - `static` without `inline` is tricky: see a more complete C course, or avoid it.
+  - `inline` without `static` is tricky: see a more complete C course, or avoid it.
 - In code_saturne, some simple computation functions are defined as
   `static inline`;
   - Their definition appear in header (`.h`) files in this case
@@ -730,7 +729,7 @@ int f(int n, double x[]) {
 
 The C scoping rules also allow definition of global variables.
 
-- Declaring a variable in a source file outside a function makesit _global_
+- Declaring a variable in a source file outside a function makes it _global_
   - It is recommended to add an initialization to the declaration when
     possible, which is safer and simple than requiring additional initialization
     functions
@@ -804,7 +803,6 @@ return x/0; // undefined behavior
 int arr[4] = {0, 1, 2, 3};
 int j = arr[5]; // stack buffer overflow
   ```
-  \end{lstlisting}
 
 - Example: out of scope return value
   ```{.c}

@@ -249,9 +249,9 @@
   The function for selection of boundary faces is simpler, as it simply
   needs to apply the selection criterion for boundary faces:
 
-  \snippet cs_user_postprocess.c post_select_func_1
+  \snippet cs_user_postprocess.c post_select_func_2
 
-  Given these tow functions, the mesh can be defined using the
+  Given these two functions, the mesh can be defined using the
   \ref cs_post_define_surface_mesh_by_func function, passing it the
   user-defined selection functions (actually, function pointers):
 
