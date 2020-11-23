@@ -68,6 +68,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.node_ana    = self.case.xmlInitNode('analysis_control')
         self.node_prof   = self.node_ana.xmlInitNode('profiles')
         self.node_ava    = self.node_ana.xmlInitNode('time_averages')
+        self.gas_node    = self.case.xmlGetNode('gas_combustion')
 
     def defaultScalarValues(self):
         """Return the default values - Method also used by ThermalScalarModel"""
@@ -782,12 +783,14 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName())
-        if scalar_name not in self.getScalarNameList():
+        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList())
+        if scalar_name not in self.getScalarNameList() and scalar_name not in self.getGasCombScalarsNameList():
             node = self.node_therm.xmlGetNode('variable', name=scalar_name)
+        elif scalar_name in self.getGasCombScalarsNameList():
+            node = self.gas_node.xmlGetChildNode('variable', 'type', name=scalar_name)
         else:
             node = self.scalar_node.xmlGetNode('variable', 'type', name=scalar_name)
-        Model().isInList(node['type'], ('user', 'thermal'))
+        Model().isInList(node['type'], ('user', 'thermal', 'var_model'))
         return node['type']
 
 
