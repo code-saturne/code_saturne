@@ -44,6 +44,8 @@ Bug fixes:
 
 Architectural changes:
 
+- In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
+
 - Update Syrthes coupling example from `coupling_parameters.py` to `run.cfg`.
 
 Release 6.2.0 (August 27 2020)
