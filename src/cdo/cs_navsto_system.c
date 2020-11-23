@@ -1503,6 +1503,7 @@ cs_navsto_system_extra_post(void                      *input,
                             const cs_time_step_t      *time_step)
 {
   CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
@@ -1528,6 +1529,7 @@ cs_navsto_system_extra_post(void                      *input,
         /* Mass flux is a scalar associated to each face (first interior faces
            then border faces */
         const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
+        const cs_real_t  *mass_bflux = mass_flux + cs_glob_mesh->n_i_faces;
 
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_DEFAULT,
@@ -1538,7 +1540,7 @@ cs_navsto_system_extra_post(void                      *input,
                           CS_POST_TYPE_cs_real_t,
                           NULL,                   // values on cells
                           NULL,                   // values at internal faces
-                          mass_flux + n_i_faces,  // values at border faces
+                          mass_bflux,             // values at border faces
                           time_step);             // time step management struct.
 
       }
