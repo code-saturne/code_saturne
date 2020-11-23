@@ -94,6 +94,8 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- In-situ postprocessing: add support for ParaVew 5.9/Catalyst 2 pipelines.
+
 - Add AmgX library support for linear system resolution on NVIDIA GPU's.
   * Associated matrices should be forced in CSR format.
   * In parallel, Mesh renumbering should be set

@@ -204,7 +204,8 @@ MPI_Comm  _reference_comm = MPI_COMM_NULL;  /* Reference communicator */
  *   path <-- scripts path
  *
  * returns:
- *   1 if script is a Catalyst script, 0 otherwise
+ *   1 if script is a Catalyst V1, 2 if it seems to be a V2 script,
+ *   script, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 static int
@@ -220,6 +221,7 @@ _check_script_is_catalyst(const char  *path)
 
   int checks[] = {false, false, false};
   int n_checks = 0;
+  bool import_catalyst = false;
 
   const char *check_strings[]
     = {"CreateCoProcessor(",
@@ -238,7 +240,7 @@ _check_script_is_catalyst(const char  *path)
     char *s = fgets(buffer, 1024, fp);
     if (s == NULL) break;
 
-    while (*s == ' ' && *s == '\t')  /* skip initial whitespace */
+    while (s < e && *s == ' ' && *s == '\t')  /* skip initial whitespace */
       s++;
 
     if (strncmp(s, "def", 3) == 0) {
@@ -265,9 +267,35 @@ _check_script_is_catalyst(const char  *path)
 
       }
     }
+    else if (strncmp(s, "from", 4) == 0) {
+
+      /* cleanup whitespace */
+      int n_space = 0;
+      int i = 0;
+      for (int j = 0; j < 1024 && s+j < e; j++) {
+        if (s[j] == ' ' || s[j] == '\t') {
+          if (n_space < 1)
+            s[i++] = ' ';
+          n_space += 1;
+        }
+        else {
+          s[i++] = s[j];
+          n_space = 0;
+        }
+      }
+
+      if (strncmp(s, "from paraview import catalyst", 29) == 0) {
+        import_catalyst = true;
+      }
+
+    }
 
     if (n_checks == 3) {
       retval = 1;
+      break;
+    }
+    else if (import_catalyst) {
+      retval = 2;
       break;
     }
 
@@ -286,6 +314,73 @@ _check_script_is_catalyst(const char  *path)
   fclose(fp);
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Add a Catalyst V2 pipeline if not already present.
+ *
+ * parameters:
+ *   path <-- V2 pipeline file path
+ *
+ * returns:
+ *   id of pipeline script in list, or -1 if not valid
+ *----------------------------------------------------------------------------*/
+
+static int
+_add_v2_pipeline(const char  *path)
+{
+  assert(path != NULL);
+
+  /* Check that we did not already add this file */
+
+  for (int i = 0; i < _n_scripts; i++) {
+    if (strcmp(_scripts[i], path) == 0)
+      return i;
+  }
+
+#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
+
+  /* Create Catalyst pipeline and check the file is valid */
+
+  vtkNew<vtkCPPythonScriptV2Pipeline> pipeline;
+  if (pipeline->Initialize(path) == false) {
+    bft_printf(_("\nFile \"%s\"\n"
+                 "does not seem to contain a Catalyst Python pipeline.\n"),
+               path);
+    pipeline->Delete();
+    return -1;
+  }
+
+  int id = _n_scripts;
+  _n_scripts += 1;
+
+  BFT_REALLOC(_scripts, _n_scripts, char *);
+
+  size_t l = strlen(path);
+  BFT_MALLOC(_scripts[id], l+1, char);
+  strncpy(_scripts[id], path, l);
+  _scripts[id][l] = '\0';
+
+  /* pipeline->SetGhostLevel(1); */
+  _processor->AddPipeline(pipeline);
+  // pipeline->Delete();
+
+  return id;
+
+#else
+
+  bft_printf
+    (_("\nFile \"%s\"\n"
+       "seems to contain a Catalyst V2 Python pipeline but the version.\n"
+       "of Catalyst linked with only supports version 1 pipelines.\n\n"
+       "You may need to use a more recent Catalyst version or downgrade\n"
+       "to earlier V1 pipelines.\n"),
+     path);
+
+  return -1;
+
+#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
+
 }
 
 /*----------------------------------------------------------------------------
@@ -324,6 +419,11 @@ _add_script(const char         *path)
   if (is_catalyst < 1)
     return -1;
 
+  if (is_catalyst == 2) {
+    _add_v2_pipeline(path);
+    return 2;
+  }
+
   for (int i = 0; i < _n_scripts; i++) {
     if (strcmp(_scripts[i], path) == 0)
       return i;
@@ -353,60 +453,6 @@ _add_script(const char         *path)
 
   return id;
 }
-
-#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
-
-/*----------------------------------------------------------------------------
- * Add a Catalyst V2 pipeline if not already present.
- *
- * parameters:
- *   path <-- V2 pipeline ".zip" file path
- *
- * returns:
- *   id of pipeline script in list, or -1 if not valid
- *----------------------------------------------------------------------------*/
-
-static int
-_add_v2_pipeline(const char  *path)
-{
-  assert(path != NULL);
-
-  /* Check that we did not already add this file */
-
-  for (int i = 0; i < _n_scripts; i++) {
-    if (strcmp(_scripts[i], path) == 0)
-      return i;
-  }
-
-  /* Create Catalyst pipeline and check the file is valid */
-
-  vtkNew<vtkCPPythonScriptV2Pipeline> pipeline;
-  if (pipeline->InitializeFromZIP(path) == false) {
-    bft_printf(_("\nFile \"%s\"\n"
-                 "does not seem to contain a Catalyst Python pipeline.\n"),
-               path);
-    pipeline->Delete();
-    return -1;
-  }
-
-  int id = _n_scripts;
-  _n_scripts += 1;
-
-  BFT_REALLOC(_scripts, _n_scripts, char *);
-
-  size_t l = strlen(path);
-  BFT_MALLOC(_scripts[id], l+1, char);
-  strncpy(_scripts[id], path, l);
-  _scripts[id][l] = '\0';
-
-  /* pipeline->SetGhostLevel(1); */
-  _processor->AddPipeline(pipeline);
-  pipeline->Delete();
-
-  return id;
-}
-
-#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
 
 /*----------------------------------------------------------------------------
  * Add Catalyst scripts from directoty if not already present.
@@ -442,7 +488,7 @@ _add_dir_scripts(const char  *dir_path)
 
     /* Filter: Python files only */
     if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
-        char *tmp_name = NULL;
+      char *tmp_name = NULL;
       BFT_MALLOC(tmp_name,
                  strlen(dir_path) + 1 + strlen(file_name) + 1,
                  char);
@@ -453,7 +499,7 @@ _add_dir_scripts(const char  *dir_path)
 
 #if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
 
-    /* Filter: Catalyst V2 pipline ".zip" files only */
+    /* Filter: Catalyst V2 pipeline might be in ".zip" form */
     else if (l_ext == 4 && strncmp(ext, ".zip", 4) == 0) {
       char *tmp_name = NULL;
       BFT_MALLOC(tmp_name,
