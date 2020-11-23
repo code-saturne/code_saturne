@@ -821,7 +821,7 @@ class StandardItemModelClipping(QStandardItemModel):
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return self.toolTipRole[col]
+            return None
         if role == Qt.DisplayRole:
             row = index.row()
             dico = self._data[row]
