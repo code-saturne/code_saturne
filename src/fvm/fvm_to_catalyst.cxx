@@ -238,8 +238,6 @@ _check_script_is_catalyst(const char  *path)
     char *s = fgets(buffer, 1024, fp);
     if (s == NULL) break;
 
-    printf("%s\n", s);
-
     while (s < e && *s == ' ' && *s == '\t')  /* skip initial whitespace */
       s++;
 
