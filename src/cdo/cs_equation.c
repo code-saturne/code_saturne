@@ -374,6 +374,36 @@ cs_equation_by_name(const char    *eqname)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the pointer to a cs_equation_t structure thanks to the field
+ *         name of the variable field associated to a cs_equation_t structure
+ *
+ * \param[in]  field_name       name of the field
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_equation_by_field_name(const char    *field_name)
+{
+  if (field_name == NULL)
+    return NULL;
+
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *eq = _equations[i];
+    assert(eq != NULL);
+
+    if (cs_equation_has_field_name(eq, field_name))
+      return eq;
+
+  } /* Loop on equations */
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if the asociated field to a \ref cs_equation_t structure
  *         has name equal to fld_name
  *
@@ -419,16 +449,38 @@ cs_equation_param_by_name(const char    *eqname)
   if (eqname == NULL)
     return NULL;
 
-  else {
+  cs_equation_t  *eq = cs_equation_by_name(eqname);
 
-    cs_equation_t  *eq = cs_equation_by_name(eqname);
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->param;
+}
 
-    if (eq == NULL)
-      return NULL;
-    else
-      return eq->param;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the cs_equation_param_t structure related to a
+ *         cs_equation_t structure thanks to the field name of the variable
+ *         field associated to a cs_equation_t structure
+ *
+ * \param[in]  field_name       name of the field
+ *
+ * \return a cs_equation_param_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
 
-  }
+cs_equation_param_t *
+cs_equation_param_by_field_name(const char    *field_name)
+{
+  if (field_name == NULL)
+    return NULL;
+
+  cs_equation_t  *eq = cs_equation_by_field_name(field_name);
+
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->param;
 }
 
 /*----------------------------------------------------------------------------*/
