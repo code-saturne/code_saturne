@@ -39,6 +39,10 @@ User changes:
 - Add `cs_probe_set_get_loc_curvilinear_abscissa` function for use with
   user-defined profiles.
 
+Architectural changes:
+
+- In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
+
 Release 6.1.2 (August 28 2020)
 ------------------------------
 
