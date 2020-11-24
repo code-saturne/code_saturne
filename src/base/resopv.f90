@@ -1002,7 +1002,7 @@ if (arak.gt.0.d0) then
 
   allocate(cpro_visc(ncelet))
 
-  if (idilat.ge.4.or.ivofmt.gt.0) then
+  if (idilat.eq.4.or.ivofmt.gt.0) then
     do iel = 1, ncel
       cpro_visc(iel) = arak * da_u(iel) / crom(iel)
     enddo
