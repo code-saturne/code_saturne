@@ -172,6 +172,15 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free allocated structures associated to this file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the

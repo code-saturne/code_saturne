@@ -399,6 +399,9 @@ cs_navsto_system_destroy(void)
     break;
   }
 
+  if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB)
+    cs_cdofb_navsto_finalize();
+
   /* Destroy the context related to the discretization scheme */
   navsto->free_scheme_context(navsto->scheme_context);
 
