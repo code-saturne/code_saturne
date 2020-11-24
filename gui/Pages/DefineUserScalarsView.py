@@ -641,6 +641,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
 
         for row in lst:
             name = self.modelScalars.getItem(row)[0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             if self.mdl.getScalarType(name) == 'user':
                 self.mdl.deleteScalar(name)
                 self.modelScalars.deleteItem(row)
