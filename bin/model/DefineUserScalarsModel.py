@@ -470,10 +470,7 @@ class DefineUserScalarsModel(Variables, Model):
         if l in self.getScalarNameList():
             return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
         elif l in self.getGasCombScalarsNameList():
-            var = self.gas_node.xmlGetNode('variable', name=l).xmlGetString('variance')
-            if var in ("", "no variance", "no_variance"):
-                return self.gas_node.xmlGetNode('variable', name=l).xmlGetString('covariance')
-            return var
+            return self.gas_node.xmlGetNode('variable', name=l).xmlGetString('variance')
 
 
     @Variables.undoGlobal

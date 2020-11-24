@@ -606,9 +606,10 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(name)
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
-        for name in self.mdl.getGasCombScalarsNameList():
-            self.modelScalars.newModelItem(name)
-            self.modelVariance.newModelItem(name)
+        if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
+            for name in self.mdl.getGasCombScalarsNameList(): 
+                self.modelScalars.newModelItem(name)
+                self.modelVariance.newModelItem(name)
 
         if GroundwaterModel(self.case).getGroundwaterModel() != "off":
             self.groupBox_3.hide()
