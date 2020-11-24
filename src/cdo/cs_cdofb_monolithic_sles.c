@@ -1585,7 +1585,8 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter
         = cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          _eqp,
+                                          _eqp->name,
+                                          _eqp->sles_param,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
@@ -1720,7 +1721,8 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter =
         cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                        eqp,
+                                        eqp->name,
+                                        eqp->sles_param,
                                         matrix,
                                         cs_shared_range_set,
                                         normalization,
@@ -2566,7 +2568,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     gkb->info->n_inner_iter
       += (gkb->info->last_inner_iter =
           cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          eqp,
+                                          eqp->name,
+                                          eqp->sles_param,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
@@ -2730,7 +2733,8 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          _eqp,
+                                          _eqp->name,
+                                          _eqp->sles_param,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
                                           normalization,
@@ -2873,7 +2877,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   uza->info->n_inner_iter
     += (uza->info->last_inner_iter =
         cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        _eqp,
+                                        _eqp->name,
+                                        _eqp->sles_param,
                                         msles->block_matrices[0],
                                         cs_shared_range_set,
                                         normalization,
@@ -2923,7 +2928,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp,
+                                          eqp->name,
+                                          eqp->sles_param,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
                                           delta_u_l2, /* normalization */

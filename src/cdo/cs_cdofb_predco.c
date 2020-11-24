@@ -1222,7 +1222,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(3*n_faces,
-                                  mom_eqp,
+                                  mom_eqp->name,
+                                  mom_eqp->sles_param,
                                   matrix,
                                   mom_rs,
                                   normalization,

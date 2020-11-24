@@ -1164,7 +1164,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
   int  n_solver_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                       mom_eqp,
+                                                       mom_eqp->name,
+                                                       mom_eqp->sles_param,
                                                        matrix,
                                                        rs,
                                                        normalization,
@@ -1323,16 +1324,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
-  nl_info->n_inner_iter =
-    (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                          mom_eqp,
-                                                          matrix,
-                                                          rs,
-                                                          normalization,
-                                                          true, /* rhs_redux */
-                                                          sles,
-                                                          vel_f,
-                                                          rhs));
+  nl_info->n_inner_iter = (nl_info->last_inner_iter =
+                           cs_equation_solve_scalar_system(3*n_faces,
+                                                           mom_eqp->name,
+                                                           mom_eqp->sles_param,
+                                                           matrix,
+                                                           rs,
+                                                           normalization,
+                                                           true, /* rhs_redux */
+                                                           sles,
+                                                           vel_f,
+                                                           rhs));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1402,16 +1404,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    nl_info->n_inner_iter =
-      (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                            mom_eqp,
-                                                            matrix,
-                                                            rs,
-                                                            normalization,
-                                                            true, /* rhs_redux */
-                                                            sles,
-                                                            vel_f,
-                                                            rhs));
+    nl_info->n_inner_iter = (nl_info->last_inner_iter =
+                         cs_equation_solve_scalar_system(3*n_faces,
+                                                         mom_eqp->name,
+                                                         mom_eqp->sles_param,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         true, /* rhs_redux */
+                                                         sles,
+                                                         vel_f,
+                                                         rhs));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);

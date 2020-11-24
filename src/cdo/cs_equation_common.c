@@ -529,7 +529,8 @@ cs_equation_prepare_system(int                     stride,
  *         degrees of freedom
  *
  * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
- * \param[in]  eqp            pointer to a cs_equation_param_t structure
+ * \param[in]  eqname         name of the equation to solve
+ * \param[in]  slesp          cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
@@ -544,7 +545,8 @@ cs_equation_prepare_system(int                     stride,
 
 int
 cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
-                                const cs_equation_param_t    *eqp,
+                                const char                   *eqname,
+                                const cs_param_sles_t         slesp,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,
@@ -554,7 +556,6 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                 cs_real_t                    *b)
 {
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-  const cs_param_sles_t  slesp = eqp->sles_param;
 
   /* Set xsol */
   cs_real_t  *xsol = NULL;
@@ -601,7 +602,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   if (slesp.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d | n_iters %d"
                   " residual % -8.4e | normalization % -8.4e | nnz %lu\n",
-                  eqp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm,
+                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm,
                   nnz);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
@@ -614,7 +615,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
-  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+  cs_dbg_fprintf_system(eqname, cs_shared_time_step->nt_cur,
                         slesp.verbosity,
                         x, b, n_scatter_dofs);
 #endif
