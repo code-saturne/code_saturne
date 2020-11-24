@@ -1568,16 +1568,18 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the pressure field on a boundary using a uniform value.
+ * \brief  Set the pressure field on a boundary using a uniform value.
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" all
  *                           boundary faces are considered)
  * \param[in]      value     value to set
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
                                    const char           *z_name,
                                    cs_real_t            *values)
@@ -1626,7 +1628,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   }
 
   /* Add a new cs_xdef_t structure. For the momentum equation, this is a
-   * homogeneous BC for the velocity */
+   * homogeneous Neumann BC for the velocity */
   cs_real_33_t  zero = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
   cs_xdef_t  *du = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
@@ -1645,6 +1647,8 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   cs_equation_param_t *u_eqp = _get_momentum_param(nsp);
   assert(u_eqp != NULL);
   cs_equation_add_xdef_bc(u_eqp, du);
+
+  return dp;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1656,10 +1660,12 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
  * \param[in]      z_name    name of the associated zone (if NULL or "" all
  *                           boundary faces are considered)
  * \param[in]      values    array of three real values
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
                                      const char           *z_name,
                                      cs_real_t            *values)
@@ -1701,6 +1707,8 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
   assert(eqp != NULL);
   cs_equation_add_xdef_bc(eqp, d);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1712,10 +1720,12 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
  * \param[in]      z_name    name of the associated zone (if NULL or "" all
  *                           boundary faces are considered)
  * \param[in]      values    array of three real values
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
                                       const char           *z_name,
                                       cs_real_t            *values)
@@ -1758,6 +1768,8 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
   assert(eqp != NULL);
   cs_equation_add_xdef_bc(eqp, d);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1770,10 +1782,12 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
  *                           boundary faces are considered)
  * \param[in]      ana       pointer to an analytical function
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
                                          const char           *z_name,
                                          cs_analytic_func_t   *ana,
@@ -1825,6 +1839,8 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
   cs_equation_add_xdef_bc(eqp, d);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
