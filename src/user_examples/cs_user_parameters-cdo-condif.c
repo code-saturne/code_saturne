@@ -574,7 +574,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.SG");
 
     /* Copy the settings */
-    cs_equation_param_update_from(eqp_ref, eqp);
+    cs_equation_param_copy_from(eqp_ref, eqp, false);
 
     /* Keep all the settings from "AdvDiff.Upw and then only change the
        advection scheme for the second equation */

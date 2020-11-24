@@ -1990,16 +1990,18 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one
+ *         another one. The name is not copied.
  *
- * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      copy_fid  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_update_from(const cs_equation_param_t   *ref,
-                              cs_equation_param_t         *dst)
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
+                            cs_equation_param_t         *dst,
+                            bool                         copy_fid)
 {
   /* Generic members */
   dst->type = ref->type;
@@ -2148,8 +2150,9 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
   }
 
-  /* Settings for driving the linear algebra.
-     Field id is not copied at this stage. */
+  /* Copy the settings for driving the linear algebra */
+  if (copy_fid)
+    dst->sles_param.field_id = ref->sles_param.field_id;
   dst->sles_param.verbosity = ref->sles_param.verbosity;
   dst->sles_param.solver_class = ref->sles_param.solver_class;
   dst->sles_param.precond = ref->sles_param.precond;

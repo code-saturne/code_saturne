@@ -1328,16 +1328,18 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one
+ *         another one. The name is not copied.
  *
- * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      copy_fid  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_update_from(const cs_equation_param_t   *ref,
-                              cs_equation_param_t         *dst);
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
+                            cs_equation_param_t         *dst,
+                            bool                         copy_fid);
 
 /*----------------------------------------------------------------------------*/
 /*!

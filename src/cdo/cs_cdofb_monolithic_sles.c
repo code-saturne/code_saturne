@@ -1560,9 +1560,8 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   BFT_MALLOC(_eqp, 1, cs_equation_param_t);
   BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
   sprintf(_eqp->name, "%s:gkb_transfo", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
-  cs_equation_param_update_from(eqp, _eqp);
+  cs_equation_param_copy_from(eqp, _eqp, true); /* copy also the field id */
   _eqp->sles_param.eps = nslesp.il_algo_rtol;
 
   if (gkb->gamma > 0) {
@@ -2694,11 +2693,9 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   cs_equation_param_t  *_eqp = NULL;
   BFT_MALLOC(_eqp, 1, cs_equation_param_t);
   BFT_MALLOC(_eqp->name, strlen(eqp->name)+1, char);
-
-  cs_equation_param_update_from(eqp, _eqp);
-
   sprintf(_eqp->name, "%s", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+
+  cs_equation_param_copy_from(eqp, _eqp, true); /* copy also the field id */
 
   while (uza->info->cvg == CS_SLES_ITERATING) {
 
@@ -2861,9 +2858,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(_eqp, 1, cs_equation_param_t);
   BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":alu0") + 1, char);
   sprintf(_eqp->name, "%s:alu0", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
-  cs_equation_param_update_from(eqp, _eqp);
+  cs_equation_param_copy_from(eqp, _eqp, true); /* copy also the field id */
   _eqp->sles_param.eps = nsp->sles_param.il_algo_rtol;
 
   cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
