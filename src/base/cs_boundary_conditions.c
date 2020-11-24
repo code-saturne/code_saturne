@@ -319,7 +319,9 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
   cs_boundary_type_t boundary_type
     = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
 
-  const int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
+    bc_type = 6;
 
   for (int coo_id = 0; coo_id < def->dim; coo_id++) {
 
@@ -378,7 +380,9 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   cs_boundary_type_t boundary_type
     = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
 
-  const int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
+    bc_type = 6;
 
   switch(def->type) {
 
