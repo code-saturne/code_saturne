@@ -159,8 +159,6 @@ typedef struct {
   int                         time_step;       /* Latest time step */
   double                      time_value;      /* Latest time value */
 
-  vtkCPDataDescription       *datadesc;        /* Data description */
-
   char                       *input_name;      /* input name, or NULL for
                                                   default */
   bool                        private_comm;    /* Use private communicator */
@@ -240,13 +238,15 @@ _check_script_is_catalyst(const char  *path)
     char *s = fgets(buffer, 1024, fp);
     if (s == NULL) break;
 
+    printf("%s\n", s);
+
     while (s < e && *s == ' ' && *s == '\t')  /* skip initial whitespace */
       s++;
 
     if (strncmp(s, "def", 3) == 0) {
       s += 3;
       if (*s == ' ' || *s == '\t') {
-        while (*s == ' ' && *s == '\t')
+        while (*s == ' ' && *s == '\t' && *s != '\0')
           s++;
         /* Remove whitespace */
         size_t l = strlen(s);
@@ -272,8 +272,8 @@ _check_script_is_catalyst(const char  *path)
       /* cleanup whitespace */
       int n_space = 0;
       int i = 0;
-      for (int j = 0; j < 1024 && s+j < e; j++) {
-        if (s[j] == ' ' || s[j] == '\t') {
+      for (int j = 0; j < 1024 && s+j < e && s[j] != '\0'; j++) {
+        if (s[j] == ' ' || s[j] == '\t' && s[j] != '\0') {
           if (n_space < 1)
             s[i++] = ' ';
           n_space += 1;
@@ -1529,12 +1529,6 @@ fvm_to_catalyst_init_writer(const char             *name,
   if (_n_scripts < 1)
     _add_dir_scripts(".");
 
-  w->datadesc = vtkCPDataDescription::New();
-  if (w->input_name != NULL)
-    w->datadesc->AddInput(w->input_name);
-  else
-    w->datadesc->AddInput(w->name);
-
   w->modified = true;
 
   return w;
@@ -1574,7 +1568,6 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   _n_writers -= 1;
 
-  w->datadesc->Delete();
   w->mb->Delete();
 
   for (i = 0; i < w->n_fields; i++) {
@@ -1625,7 +1618,6 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
-    w->datadesc->SetTimeData(w->time_value, w->time_step);
   }
 }
 
@@ -1802,7 +1794,6 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
-    w->datadesc->SetTimeData(w->time_value, w->time_step);
   }
 
   /* Get field id */
@@ -1875,18 +1866,25 @@ fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  if (_processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
-    int n = w->datadesc->GetNumberOfInputDescriptions();
+  vtkNew<vtkCPDataDescription> dataDescription;
+  if (w->input_name != NULL)
+    dataDescription->AddInput(w->input_name);
+  else
+    dataDescription->AddInput(w->name);
+  dataDescription->SetTimeData(w->time_value, w->time_step);
+
+  if (_processor->RequestDataDescription(dataDescription) != 0 && w->modified) {
+    int n = dataDescription->GetNumberOfInputDescriptions();
     if (n == 1)
-      w->datadesc->GetInputDescription(0)->SetGrid(w->mb);
+      dataDescription->GetInputDescription(0)->SetGrid(w->mb);
     else {
       if (w->input_name != NULL)
-        w->datadesc->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
+        dataDescription->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
       else
-        w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
+        dataDescription->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
     }
 
-    _processor->CoProcess(w->datadesc);
+    _processor->CoProcess(dataDescription);
     w->modified = false;
   }
 }
