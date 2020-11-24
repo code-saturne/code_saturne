@@ -154,6 +154,10 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
   cs_field_current_to_previous(sc->pressure);
   cs_field_current_to_previous(sc->divergence);
 
+  /* Mass flux */
+  memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
+         quant->n_faces * sizeof(cs_real_t));
+
   /* Face velocity */
   cs_cdofb_vecteq_t  *mom_eqc
     = (cs_cdofb_vecteq_t *)cc->momentum->scheme_context;
@@ -162,9 +166,6 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3 * quant->n_faces * sizeof(cs_real_t));
 
-  /* Mass flux */
-  memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
-         quant->n_faces * sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1894,18 +1895,24 @@ cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp)
 /*!
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
- * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in] bf_type     type of boundary for each boundary face
- * \param[in] cc_context  pointer to a \ref cs_navsto_monolithic_t structure
+ * \param[in] nsp          pointer to a \ref cs_navsto_param_t structure
+ * \param[in] adv_field    pointer to \ref cs_adv_field_t structure
+ * \param[in] mflux        current values of the mass flux across primal faces
+ * \param[in] mflux_pre    current values of the mass flux across primal faces
+ * \param[in] bf_type      type of boundary for each boundary face
+ * \param[in] cc_context   pointer to a \ref cs_navsto_monolithic_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
-                                        cs_boundary_type_t        *bf_type,
-                                        void                      *cc_context)
+cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
+                                        cs_adv_field_t           *adv_field,
+                                        cs_real_t                *mflux,
+                                        cs_real_t                *mflux_pre,
+                                        cs_boundary_type_t       *bf_type,
+                                        void                     *cc_context)
 {
   /* Sanity checks */
   assert(nsp != NULL && cc_context != NULL);
@@ -1923,7 +1930,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
-  sc->coupling_context = cc; /* shared with cs_navsto_system_t */
+  /* Quantities shared with the cs_navsto_system_t structure */
+  sc->coupling_context = cc;
+  sc->adv_field = adv_field;
+  sc->mass_flux_array = mflux;
+  sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");
@@ -2242,7 +2253,8 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   if (nsp->verbosity > 1) {
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2350,15 +2362,16 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
   cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
+                                    sc->mass_flux_array_pre,
+                                    sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
 
@@ -2399,16 +2412,17 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                                           sc->divergence->val);
 
     /* Compute the new mass flux used as the advection field */
-    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+    memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
            n_faces*sizeof(cs_real_t));
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                              sc->mass_flux_array);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      cc->mass_flux_array_pre,
-                                      cc->mass_flux_array,
+                                      sc->mass_flux_array_pre,
+                                      sc->mass_flux_array,
                                       div_l2_norm,
                                       nl_info);
 
@@ -2538,7 +2552,8 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   if (nsp->verbosity > 1) {
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2649,15 +2664,16 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
   cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
+                                    sc->mass_flux_array_pre,
+                                    sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
 
@@ -2697,13 +2713,14 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      cc->mass_flux_array_pre,
-                                      cc->mass_flux_array,
+                                      sc->mass_flux_array_pre,
+                                      sc->mass_flux_array,
                                       div_l2_norm,
                                       nl_info);
 

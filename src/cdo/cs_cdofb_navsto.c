@@ -439,7 +439,7 @@ cs_cdofb_navsto_finalize(void)
  * \param[in]      nsp         set of parameters to define the NavSto system
  * \param[in]      quant       set of additional geometrical quantities
  * \param[in]      face_vel    velocity vectors for each face
- * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ * \param[in, out] mass_flux   array of mass flux values to update (allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -447,19 +447,18 @@ void
 cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *face_vel,
-                          cs_adv_field_t              *adv)
+                          cs_real_t                   *mass_flux)
 {
+  if (mass_flux == NULL)
+    return;
+
   /* Sanity checks */
+  assert(face_vel != NULL);
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
   assert(cs_property_is_uniform(nsp->mass_density));
   assert(nsp->mass_density->n_definitions == 1);
-  assert(face_vel != NULL);
 
   const cs_real_t  rho_val = nsp->mass_density->ref_value;
-  cs_real_t  *mass_flux = cs_xdef_get_array(adv->definition);
-
-  if (mass_flux == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty mass flux", __func__);
 
   /* Define the mass flux. */
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)

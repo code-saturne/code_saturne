@@ -79,22 +79,6 @@ typedef struct {
    */
   cs_property_t   *zeta;
 
-  /*! \var adv_field
-   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
-   *  flux
-   */
-
-  cs_adv_field_t  *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current value of the mass flux
-   * \var mass_flux_array_pre
-   *  Previous value of the mass flux
-   */
-
-  cs_real_t       *mass_flux_array;
-  cs_real_t       *mass_flux_array_pre;
-
 } cs_navsto_ac_t;
 
 /*! \struct cs_navsto_monolithic_t
@@ -105,22 +89,6 @@ typedef struct {
 typedef struct {
 
   cs_equation_t   *momentum; /*!< Momentum equation (vector-valued) */
-
-  /*! \var adv_field
-   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
-   *  flux
-   */
-
-  cs_adv_field_t  *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current value of the mass flux
-   * \var mass_flux_array_pre
-   *  Previous value of the mass flux
-   */
-
-  cs_real_t       *mass_flux_array;
-  cs_real_t       *mass_flux_array_pre;
 
 } cs_navsto_monolithic_t;
 
@@ -154,22 +122,6 @@ typedef struct {
    */
   cs_field_t     *predicted_velocity;
 
-  /*! \var adv_field
-   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
-   *  flux
-   */
-
-  cs_adv_field_t  *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current value of the mass flux
-   * \var mass_flux_array_pre
-   *  Previous value of the mass flux
-   */
-
-  cs_real_t       *mass_flux_array;
-  cs_real_t       *mass_flux_array_pre;
-
 } cs_navsto_projection_t;
 
 /*============================================================================
@@ -181,23 +133,22 @@ typedef struct {
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an Artificial Compressibility approach
  *
- * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
  * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
-                            cs_param_bc_type_t    bc);
+cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
+                            cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free the context structure related to an Artificial Compressibility
  *         approach
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
  * \return a NULL pointer
@@ -205,8 +156,7 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_ac_free_context(const cs_navsto_param_t    *nsp,
-                          void                       *context);
+cs_navsto_ac_free_context(void     *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -214,32 +164,29 @@ cs_navsto_ac_free_context(const cs_navsto_param_t    *nsp,
  *         Artificial Compressibility algorithm is used to coupled the system.
  *         No mesh information is available at this stage.
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      adv_field   pointer to a cs_adv_field_t structure
+ * \param[in, out] context     pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
+                        cs_adv_field_t             *adv_field,
                         void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Finalize the setup for the Navier-Stokes equations when an
  *         Artificial Compressibility algorithm is used to coupled the system.
- *         Connectivity and geometric quantities are available at this stage.
  *
- * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant,
-                        const cs_navsto_param_t     *nsp,
+cs_navsto_ac_last_setup(const cs_navsto_param_t     *nsp,
                         void                        *context);
 
 /*----------------------------------------------------------------------------*/
@@ -258,57 +205,24 @@ cs_navsto_ac_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to the advection field structure playing the
- *         role of the mass flux
- *         Case of artificial compressibility algorithm.
- *
- * \param[in] context  pointer to a context structure cast on-the-fly
- *
- * \return a pointer to a cs_adv_field_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_navsto_ac_get_adv_field(void       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the mass flux array (used as the advection
- *         field).
- *         Case of artificial compressibility algorithm.
- *
- * \param[in] context   pointer to a context structure cast on-the-fly
- * \param[in] previous  true=previous state, false=current state
- *
- * \return a pointer to an array of cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_navsto_ac_get_mass_flux(void       *context,
-                           bool        previous);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using a monolithic approach
  *
- * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ * \param[in]      bc     default \ref cs_param_bc_type_t for the equation
+ * \param[in, out] nsp    pointer to a \ref cs_navsto_param_t structure
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
-                                    cs_param_bc_type_t    bc);
+cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
+                                    cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free the context structure related to a monolithic approach
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
  * \return a NULL pointer
@@ -316,8 +230,7 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_monolithic_free_context(const cs_navsto_param_t    *nsp,
-                                  void                       *context);
+cs_navsto_monolithic_free_context(void             *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -325,34 +238,30 @@ cs_navsto_monolithic_free_context(const cs_navsto_param_t    *nsp,
  *         algorithm is used to coupled the system.
  *         No mesh information is available at this stage
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
+ * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      adv_field  pointer to a cs_adv_field_t structure
+ * \param[in, out] context    pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
+                                cs_adv_field_t             *adv_field,
                                 void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Finalize the setup for the Navier-Stokes equations when a monolithic
  *         algorithm is used to coupled the system.
- *         Connectivity and geometric quantities are available at this stage.
  *
- * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
-                                const cs_cdo_quantities_t   *quant,
-                                const cs_navsto_param_t     *nsp,
+cs_navsto_monolithic_last_setup(const cs_navsto_param_t     *nsp,
                                 void                        *context);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
@@ -369,58 +278,25 @@ cs_navsto_monolithic_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to the advection field structure playing the
- *         role of the mass flux
- *         Case of monolithic algorithm.
- *
- * \param[in] context  pointer to a context structure cast on-the-fly
- *
- * \return a pointer to a cs_adv_field_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_navsto_monolithic_get_adv_field(void       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the mass flux array (used as the advection
- *         field).
- *         Case of monolithic algorithm.
- *
- * \param[in] context   pointer to a context structure cast on-the-fly
- * \param[in] previous  true=previous state, false=current state
- *
- * \return a pointer to an array of cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_navsto_monolithic_get_mass_flux(void       *context,
-                                   bool        previous);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an incremental Projection approach in the
  *         the rotational form (see Minev & Guermond, 2006, JCP)
  *
- * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
  * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
  *
  * \return a pointer to the context structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
-                                    cs_param_bc_type_t    bc);
+cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
+                                    cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free the context structure related to a Projection approach
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
  * \return a NULL pointer
@@ -428,8 +304,7 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
-                                  void                       *context);
+cs_navsto_projection_free_context(void           *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -438,6 +313,7 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
  *         No mesh information is available at this stage.
  *
  * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      adv_field     pointer to a cs_adv_field_t structure
  * \param[in]      loc_id        id related to a mesh location
  * \param[in]      has_previous  values at different time steps (true/false)
  * \param[in, out] context       pointer to a context structure cast on-the-fly
@@ -446,6 +322,7 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
 
 void
 cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
+                                cs_adv_field_t             *adv_field,
                                 int                         loc_id,
                                 bool                        has_previous,
                                 void                       *context);
@@ -456,7 +333,6 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
  *         projection algorithm is used to coupled the system.
  *         Connectivity and geometric quantities are available at this stage.
  *
- * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
  * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
@@ -464,8 +340,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
-                                const cs_cdo_quantities_t  *quant,
+cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
                                 const cs_navsto_param_t    *nsp,
                                 void                       *context);
 
@@ -482,38 +357,6 @@ cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
 
 cs_equation_t *
 cs_navsto_projection_get_momentum_eq(void       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the advection field structure playing the
- *         role of the mass flux
- *         Case of projection algorithm.
- *
- * \param[in] context  pointer to a context structure cast on-the-fly
- *
- * \return a pointer to a cs_adv_field_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_navsto_projection_get_adv_field(void       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the mass flux array (used as the advection
- *         field).
- *         Case of projection algorithm.
- *
- * \param[in] context   pointer to a context structure cast on-the-fly
- * \param[in] previous  true=previous state, false=current state
- *
- * \return a pointer to an array of cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_navsto_projection_get_mass_flux(void       *context,
-                                   bool        previous);
 
 /*----------------------------------------------------------------------------*/
 

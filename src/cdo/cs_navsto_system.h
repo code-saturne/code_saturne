@@ -67,6 +67,9 @@ BEGIN_C_DECLS
  *         with a specified coupling algorithm
  *
  * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      adv_field  pointer to \ref cs_adv_field_t structure
+ * \param[in]      mflux      current values of the mass flux
+ * \param[in]      mflux_pre  current values of the mass flux
  * \param[in]      fb_type    type of boundary for each boundary face
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
@@ -77,6 +80,9 @@ BEGIN_C_DECLS
 
 typedef void *
 (cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
+                                  cs_adv_field_t             *adv_field,
+                                  cs_real_t                  *mflux,
+                                  cs_real_t                  *mflux_pre,
                                   cs_boundary_type_t         *fb_type,
                                   void                       *nscc);
 
@@ -146,6 +152,26 @@ typedef struct {
    *  Set of parameters to handle the Navier-Stokes system
    */
   cs_navsto_param_t          *param;
+
+  /*! \var adv_field
+   *  Pointer to the \ref cs_adv_field_t structure storing the advection
+   *  field used in the Navier-Stokes equations
+   */
+  cs_adv_field_t             *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current values of the mass flux (if this is a CDO Face-based scheme,
+   *  array is allocated to the number of faces; first interior faces then
+   *  boundary faces)
+   */
+  cs_real_t                  *mass_flux_array;
+
+  /*! \var mass_flux_array_pre
+   *  Previous values of the mass flux (if this is a CDO Face-based scheme,
+   *  array is allocated to the number of faces; first interior faces then
+   *  boundary faces)
+   */
+  cs_real_t                  *mass_flux_array_pre;
 
   /*! \var boundary_type
    * Array storing the type of boundary for each boundary face

@@ -156,6 +156,27 @@ typedef struct {
 
   /*!
    * @}
+   * @name Advection quantities
+   * Members related to the advection
+   * @{
+   *
+   *  \var adv_field
+   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
+   */
+  cs_adv_field_t           *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array;
+
+  /*! \var mass_flux_array_pre
+   *  Previous values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array_pre;
+
+  /*!
+   * @}
    * @name Boundary conditions (BC) management
    * Routines and elements used for enforcing the BCs
    * @{
@@ -743,6 +764,9 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
  * \brief  Initialize a \ref cs_cdofb_predco_t structure
  *
  * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in] adv_field   pointer to \ref cs_adv_field_t structure
+ * \param[in] mflux       current values of the mass flux across primal faces
+ * \param[in] mflux_pre   current values of the mass flux across primal faces
  * \param[in] fb_type     type of boundary for each boundary face
  * \param[in] nsc_input   pointer to a \ref cs_navsto_predco_t structure
  *
@@ -751,9 +775,12 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t    *nsp,
-                                    cs_boundary_type_t         *fb_type,
-                                    void                       *nsc_input)
+cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
+                                    cs_adv_field_t            *adv_field,
+                                    cs_real_t                 *mflux,
+                                    cs_real_t                 *mflux_pre,
+                                    cs_boundary_type_t        *fb_type,
+                                    void                      *nsc_input)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
@@ -771,7 +798,11 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t    *nsp,
 
   BFT_MALLOC(sc, 1, cs_cdofb_predco_t);
 
-  sc->coupling_context = cc; /* shared with cs_navsto_system_t */
+  /* Quantities shared with the cs_navsto_system_t structure */
+  sc->coupling_context = cc;
+  sc->adv_field = adv_field;
+  sc->mass_flux_array = mflux;
+  sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");

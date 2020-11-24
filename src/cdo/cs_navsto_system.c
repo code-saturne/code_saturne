@@ -155,6 +155,11 @@ _allocate_navsto_system(void)
   navsto->velocity = NULL;
   navsto->pressure = NULL;
 
+  /* Advection field */
+  navsto->adv_field = NULL;
+  navsto->mass_flux_array = NULL;
+  navsto->mass_flux_array_pre = NULL;
+
   /* Post-processing fields */
   navsto->velocity_divergence = NULL;
   navsto->kinetic_energy = NULL;
@@ -294,20 +299,29 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   } /* End of switch */
 
+  /* Advection field related to the resolved velocity */
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (cs_navsto_param_is_steady(navsto->param))
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  navsto->adv_field = cs_advection_field_add("mass_flux", adv_status);
+
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->coupling_context = cs_navsto_ac_create_context(navsto->param,
-                                                           default_bc);
+    navsto->coupling_context =
+      cs_navsto_ac_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    navsto->coupling_context
-      = cs_navsto_monolithic_create_context(navsto->param, default_bc);
+    navsto->coupling_context =
+      cs_navsto_monolithic_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
-      cs_navsto_projection_create_context(navsto->param, default_bc);
+      cs_navsto_projection_create_context(default_bc, navsto->param);
     break;
 
   default:
@@ -368,11 +382,14 @@ cs_navsto_system_destroy(void)
   BFT_FREE(navsto->bf_type);
 
   /*
-    Properties, advection fields, equations and fields are all destroyed
-    respectively inside cs_property_destroy_all(),
-    cs_advection_field_destroy_all(), cs_equation_destroy_all() and
-    cs_field_destroy_all()
-  */
+   * Properties, advection fields, equations and fields are all destroyed
+   * respectively inside cs_property_destroy_all(),
+   * cs_advection_field_destroy_all(), cs_equation_destroy_all() and
+   * cs_field_destroy_all()
+   */
+
+  BFT_FREE(navsto->mass_flux_array);
+  BFT_FREE(navsto->mass_flux_array_pre);
 
   cs_navsto_param_t  *nsp = navsto->param;
 
@@ -381,17 +398,17 @@ cs_navsto_system_destroy(void)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     navsto->coupling_context =
-      cs_navsto_ac_free_context(nsp, navsto->coupling_context);
+      cs_navsto_ac_free_context(navsto->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context =
-      cs_navsto_monolithic_free_context(nsp, navsto->coupling_context);
+      cs_navsto_monolithic_free_context(navsto->coupling_context);
     if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB)
       cs_cdofb_monolithic_finalize_common(nsp);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
-      cs_navsto_projection_free_context(nsp, navsto->coupling_context);
+      cs_navsto_projection_free_context(navsto->coupling_context);
     break;
 
   default:
@@ -491,27 +508,7 @@ cs_navsto_get_adv_field(void)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_adv_field_t  *adv = NULL;
-
-  switch (ns->param->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    adv = cs_navsto_ac_get_adv_field(ns->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    adv = cs_navsto_monolithic_get_adv_field(ns->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    adv = cs_navsto_projection_get_adv_field(ns->coupling_context);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-
-  }
-
-  return adv;
+  return ns->adv_field;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -532,28 +529,9 @@ cs_navsto_get_mass_flux(bool   previous)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_real_t  *mass_flux = NULL;
-
-  switch (ns->param->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    mass_flux = cs_navsto_ac_get_mass_flux(ns->coupling_context,
-                                           previous);
-    break;
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    mass_flux = cs_navsto_monolithic_get_mass_flux(ns->coupling_context,
-                                                   previous);
-    break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    mass_flux = cs_navsto_projection_get_mass_flux(ns->coupling_context,
-                                                   previous);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-
-  }
+  cs_real_t  *mass_flux = ns->mass_flux_array;
+  if (previous)
+    mass_flux = ns->mass_flux_array_pre;
 
   return mass_flux;
 }
@@ -715,17 +693,19 @@ cs_navsto_system_init_setup(void)
 
   }
 
-  /* Setup data according to the type of coupling */
+  /* Setup data according to the type of coupling (add the advection field in
+     case of Navier-Stokes equations) */
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    cs_navsto_ac_init_setup(nsp, ns->coupling_context);
+    cs_navsto_ac_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    cs_navsto_monolithic_init_setup(nsp, ns->coupling_context);
+    cs_navsto_monolithic_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_init_setup(nsp,
+                                    ns->adv_field,
                                     location_id,
                                     has_previous,
                                     ns->coupling_context);
@@ -857,18 +837,48 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   cs_navsto_set_symmetries(nsp);
   cs_navsto_set_outlets(nsp);
 
+  /* Define the advection field which relies on the mass flux. */
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    {
+      BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
+      memset(ns->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
+      memset(ns->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      cs_flag_t loc_flag =
+        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+
+      cs_advection_field_def_by_array(ns->adv_field,
+                                      loc_flag,
+                                      ns->mass_flux_array,
+                                      false, /* advection field is not owner */
+                                      NULL); /* index (not useful here) */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* End of switch on space_scheme */
+
   /* Last setup stage according to the type of coupling (not related to
      space discretization scheme */
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    cs_navsto_ac_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_ac_last_setup(nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    cs_navsto_monolithic_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_monolithic_last_setup(nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    cs_navsto_projection_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_projection_last_setup(quant, nsp, ns->coupling_context);
     break;
 
   default:
@@ -1117,6 +1127,9 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   /* Allocate and initialize the scheme context structure */
   ns->scheme_context = ns->init_scheme_context(nsp,
+                                               ns->adv_field,
+                                               ns->mass_flux_array,
+                                               ns->mass_flux_array_pre,
                                                ns->bf_type,
                                                ns->coupling_context);
 

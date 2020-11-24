@@ -189,7 +189,7 @@ cs_cdofb_navsto_finalize(void);
  * \param[in]      nsp         set of parameters to define the NavSto system
  * \param[in]      quant       set of additional geometrical quantities
  * \param[in]      face_vel    velocity vectors for each face
- * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ * \param[in, out] mass_flux   array of mass flux values to update (allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -197,7 +197,7 @@ void
 cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *face_vel,
-                          cs_adv_field_t              *adv);
+                          cs_real_t                   *mass_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
