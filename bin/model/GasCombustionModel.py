@@ -329,6 +329,11 @@ class GasCombustionModel(Variables, Model):
                     elif name == "mixture_fraction_variance":
                         NPE.setMinValue(name, 0.)
                         NPE.setMaxValue(name, 1.e+12)
+                        node.xmlSetData('variance', "mixture_fraction")
+
+                if self.getGasCombustionModel() == "lwp":
+                    if name == "mass_fraction_covariance":
+                        node.xmlSetData('variance', "mass_fraction")
 
     @Variables.noUndo
     def getNdirac(self):

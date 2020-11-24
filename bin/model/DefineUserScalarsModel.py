@@ -465,9 +465,15 @@ class DefineUserScalarsModel(Variables, Model):
         Get variance of an additional_scalar with name I{l}.
         Method also used by UserScalarPropertiesView
         """
-        self.isInList(l, self.getScalarNameList())
+        self.isInList(l, self.getScalarNameList() + self.getGasCombScalarsNameList())
 
-        return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
+        if l in self.getScalarNameList():
+            return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
+        elif l in self.getGasCombScalarsNameList():
+            var = self.gas_node.xmlGetNode('variable', name=l).xmlGetString('variance')
+            if var in ("", "no variance", "no_variance"):
+                return self.gas_node.xmlGetNode('variable', name=l).xmlGetString('covariance')
+            return var
 
 
     @Variables.undoGlobal

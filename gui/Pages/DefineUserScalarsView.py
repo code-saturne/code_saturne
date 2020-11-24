@@ -370,7 +370,9 @@ class StandardItemModelScalars(QStandardItemModel):
         Add only an item in the table view (do not create a scalar)
         """
         row = self.rowCount()
-
+        var = self.mdl.getScalarVariance(existing_name)
+        if var not in ("", "no variance", "no_variance"):
+            return
         turbFlux = self.mdl.getTurbulentFluxModel(existing_name)
         scalar = [existing_name, turbFlux]
 
@@ -500,6 +502,21 @@ class StandardItemModelVariance(QStandardItemModel):
         self._data.append(scalar)
 
 
+    def newModelItem(self, existing_name=None):
+        """
+        Add an item in the table view
+        """
+
+        row = self.rowCount()
+        var = self.mdl.getScalarVariance(existing_name)
+        if var in ("", "no variance", "no_variance"):
+            return
+        scalar = [existing_name, var]
+
+        self.setRowCount(row+1)
+        self._data.append(scalar)
+
+
     def getItem(self, row):
         """
         Return the values for an item.
@@ -591,6 +608,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelVariance.newItem(name)
         for name in self.mdl.getGasCombScalarsNameList():
             self.modelScalars.newModelItem(name)
+            self.modelVariance.newModelItem(name)
 
         if GroundwaterModel(self.case).getGroundwaterModel() != "off":
             self.groupBox_3.hide()
@@ -668,6 +686,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
 
         for row in lst:
             name = self.modelVariance.getItem(row)[0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             self.mdl.deleteScalar(name)
             self.modelVariance.deleteItem(row)
 
