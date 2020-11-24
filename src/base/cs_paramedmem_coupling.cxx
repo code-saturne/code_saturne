@@ -699,7 +699,6 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   else
     c->dec->setMethod("P1");
 
-
   c->fields.push_back(pf);
   /* TODO: setNature should be set by caller to allow for more options */
 
@@ -745,7 +744,8 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
   cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(f->location_id);
   cs_medcpl_space_discr_t sd       = CS_MEDCPL_ON_CELLS;
 
-  if (loc_type == CS_MESH_LOCATION_CELLS)
+  if (loc_type == CS_MESH_LOCATION_CELLS ||
+      loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
     sd = CS_MEDCPL_ON_CELLS;
   else if (loc_type == CS_MESH_LOCATION_VERTICES)
     sd = CS_MEDCPL_ON_NODES;
