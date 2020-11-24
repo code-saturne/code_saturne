@@ -569,19 +569,26 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   /*! [param_cdo_copy_settings] */
   {
-    /* Copy the settings for AdvDiff.Upw */
+    /* Copy the settings from AdvDiff.Upw to AdvDiff.SG */
     cs_equation_param_t  *eqp_ref = cs_equation_param_by_name("AdvDiff.Upw");
-    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.SG");
 
-    /* Copy the settings */
-    cs_equation_param_copy_from(eqp_ref, eqp, false);
+    /* Another example to retrieve the cs_equation_param structure */
+    cs_equation_t  *eq = cs_equation_by_name("AdvDiff.SG");
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
+    /* Copy the settings to start from a common state as in the reference
+     * equation (in this case, do not copy the associated field id since these
+     * are two different equations with their own variable field) */
+    bool  copy_field_id = false;
+    cs_equation_param_copy_from(eqp_ref, eqp, copy_field_id);
 
     /* Keep all the settings from "AdvDiff.Upw and then only change the
        advection scheme for the second equation */
     cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
     /* Call this function to be sure that the linear solver is set to what
-       one wants */
+       one wants (if there is no modification of the SLES parameters, this
+       step can be skipped) */
     cs_equation_param_set_sles(eqp);
 
   }
