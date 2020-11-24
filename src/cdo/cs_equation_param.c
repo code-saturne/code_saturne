@@ -3236,7 +3236,6 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
     z_id = z->id;
 
   /* Search for given BC. */
-  int j = -1;
   for (int i = 0; i < eqp->n_bc_defs; i++) {
     if (eqp->bc_defs[i]->z_id == z_id) {
       return eqp->bc_defs[i];

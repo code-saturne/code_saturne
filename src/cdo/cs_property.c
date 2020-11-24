@@ -1113,6 +1113,8 @@ cs_property_def_constant_value(cs_property_t    *pty,
 
   /* Set automatically the reference value if all cells are selected */
   cs_property_set_reference_value(pty, val);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
