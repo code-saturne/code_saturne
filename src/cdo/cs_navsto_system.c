@@ -1152,6 +1152,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
       cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
     }
 
+    /* Initialize the mass flux */
+    const cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
+    const cs_real_t  *face_vel = cs_equation_get_face_values(mom_eq, false);
+    cs_cdofb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
+
   } /* Face-based schemes */
 
   cs_turbulence_initialize(mesh, connect, quant, ts, ns->turbulence);
