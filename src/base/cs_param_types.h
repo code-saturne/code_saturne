@@ -707,6 +707,19 @@ extern const char cs_med_sepline[50];
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Copy a cs_param_sles_t structure from src to dst
+ *
+ * \param[in]   src      reference cs_param_sles_t structure to copy
+ * \param[out]  dst      copy of the reference at exit
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_copy_from(cs_param_sles_t    src,
+                        cs_param_sles_t   *dst);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Return true if the space scheme has degrees of freedom on faces,
  *          otherwise false
  *

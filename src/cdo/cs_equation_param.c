@@ -2150,19 +2150,19 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   }
 
-  /* Copy the settings for driving the linear algebra */
+  /* Copy the settings driving the linear algebra algorithms */
   if (copy_fid)
-    dst->sles_param.field_id = ref->sles_param.field_id;
-  dst->sles_param.verbosity = ref->sles_param.verbosity;
-  dst->sles_param.solver_class = ref->sles_param.solver_class;
-  dst->sles_param.precond = ref->sles_param.precond;
-  dst->sles_param.solver = ref->sles_param.solver;
-  dst->sles_param.amg_type = ref->sles_param.amg_type;
-  dst->sles_param.n_max_iter = ref->sles_param.n_max_iter;
-  dst->sles_param.eps = ref->sles_param.eps;
-  dst->sles_param.resnorm_type = ref->sles_param.resnorm_type;
+    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
 
-  /* Settings for performance */
+  else {
+
+    int save_field_id = dst->sles_param.field_id;
+    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
+    dst->sles_param.field_id = save_field_id;
+
+  }
+
+  /* Settings related to the performance */
   dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
