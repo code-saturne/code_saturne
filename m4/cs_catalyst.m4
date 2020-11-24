@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2019 EDF S.A.
+dnl Copyright (C) 1998-2020 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -180,6 +180,11 @@ if test "x$with_catalyst" != "xno" ; then
 
   if test "x$cs_have_catalyst" = "xno"; then
     CATALYST_LIBS=""
+  else
+    AC_LANG_PUSH([C++])
+    CPPFLAGS="${saved_CPPFLAGS} ${CATALYST_CPPFLAGS}"
+    AC_CHECK_HEADERS([vtkCPPythonScriptV2Pipeline.h])
+    AC_LANG_POP([C++])
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"

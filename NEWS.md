@@ -34,6 +34,8 @@ User changes:
 
 Architectural changes:
 
+- In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
+
 - Improve Catalyst detection robustness for recent ParaView builds.
 
 Release 6.0.5 (August 28 2020)
