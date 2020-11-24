@@ -1404,7 +1404,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    nl_info->n_inner_iter = (nl_info->last_inner_iter =
+    nl_info->n_inner_iter += (nl_info->last_inner_iter =
                          cs_equation_solve_scalar_system(3*n_faces,
                                                          mom_eqp->name,
                                                          mom_eqp->sles_param,
