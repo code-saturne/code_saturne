@@ -271,7 +271,7 @@ _check_script_is_catalyst(const char  *path)
       int n_space = 0;
       int i = 0;
       for (int j = 0; j < 1024 && s+j < e && s[j] != '\0'; j++) {
-        if (s[j] == ' ' || s[j] == '\t' && s[j] != '\0') {
+        if (s[j] == ' ' || s[j] == '\t') {
           if (n_space < 1)
             s[i++] = ' ';
           n_space += 1;
@@ -345,7 +345,6 @@ _add_v2_pipeline(const char  *path)
     bft_printf(_("\nFile \"%s\"\n"
                  "does not seem to contain a Catalyst Python pipeline.\n"),
                path);
-    pipeline->Delete();
     return -1;
   }
 
@@ -361,7 +360,6 @@ _add_v2_pipeline(const char  *path)
 
   /* pipeline->SetGhostLevel(1); */
   _processor->AddPipeline(pipeline);
-  // pipeline->Delete();
 
   return id;
 
@@ -439,15 +437,13 @@ _add_script(const char         *path)
 
   /* Add Catalyst pipeline */
 
-  vtkCPPythonScriptPipeline  *pipeline = vtkCPPythonScriptPipeline::New();
-
+  vtkNew<vtkCPPythonScriptPipeline> pipeline;
   if (pipeline->Initialize(path) == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Error initializing pipeline from \"%s\""), path);
 
   /* pipeline->SetGhostLevel(1); */
   _processor->AddPipeline(pipeline);
-  pipeline->Delete();
 
   return id;
 }
@@ -917,7 +913,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
               fvm_catalyst_field_t *);
 
   vtkUnstructuredGrid *f = NULL;
-  vtkDoubleArray *tmp = NULL;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
 
@@ -926,7 +921,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
     f = vtkUnstructuredGrid::SafeDownCast(vtkDataSet::SafeDownCast
           (writer->mb->GetBlock(mesh_id)));
 
-    tmp = vtkDoubleArray::New();
+    vtkNew<vtkDoubleArray> tmp;
     tmp->SetName(fieldname);
 
     tmp->SetNumberOfComponents(dest_dim);
@@ -944,7 +939,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
       vtkDataSetAttributes::SafeDownCast
         (f->GetCellData())->AddArray(vtkAbstractArray::SafeDownCast(tmp));
     }
-    tmp->Delete();
 
   }
 
@@ -989,7 +983,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
   stride = (size_t)(mesh->dim);
 
-  vtkPoints *points = vtkPoints::New();
+  vtkNew<vtkPoints> points;
 
   points->Allocate(mesh->n_vertices);
 
@@ -1018,7 +1012,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
     const cs_gnum_t *g_vtx_num
       = fvm_io_num_get_global_num(mesh->global_vertex_num);
 
-    vtkIdTypeArray *g_vtx_id = vtkIdTypeArray::New();
+    vtkNew<vtkIdTypeArray> g_vtx_id;
 
     g_vtx_id->SetNumberOfComponents(1);
     g_vtx_id->SetName("GlobalNodeIds");
@@ -1035,12 +1029,9 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
     vtk_mesh->GetPointData()->SetGlobalIds(g_vtx_id);
 
-    g_vtx_id->Delete();
-
   }
 
   vtk_mesh->SetPoints(points);
-  points->Delete();
 }
 
 /*----------------------------------------------------------------------------
