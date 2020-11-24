@@ -607,6 +607,63 @@ cs_xdef_copy(cs_xdef_t     *src)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief In the case of a definition by an analytic function, a time function
+ *        or a function relying on degrees of freedom (DoFs), this function
+ *        allows one to set a more or less complex input data structure.  This
+ *        call should be done before the first evaluation call of the
+ *        associated cs_xdef_t structure.
+ *
+ * \param[in, out]  d         pointer to a cs_xdef_t structure
+ * \param[in]       input     pointer to an input structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_input_context(cs_xdef_t       *d,
+                          void            *input)
+{
+  if (d == NULL)
+    return;
+
+  switch (d->type) {
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_context_t *c = (cs_xdef_analytic_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_context_t *c = (cs_xdef_dof_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t *c =
+        (cs_xdef_time_func_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  default:
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: Setting a free input function is ignored.\n"
+                  " The type of definition is not compatible.", __func__);
+    break; /* Nothing special to do */
+
+  } /* End of switch */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief In case of a definition by an analytic function, a time function or a
  *        function relying on degrees of freedom (DoFs). One can set a function
  *        to free a complex input data structure (please refer to \ref
