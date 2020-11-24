@@ -869,8 +869,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
       boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
 
   /* Parallel synchronization if needed */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
+  cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
 
   /* Output result */
   cs_log_printf(CS_LOG_DEFAULT,
