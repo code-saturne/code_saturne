@@ -257,6 +257,8 @@ class VarianceDelegate(QItemDelegate):
         l1 = index.model().mdl.getScalarNameList()
         for label in index.model().mdl.getThermalScalarName():
             l1.append(label)
+        for label in index.model().mdl.getGasCombScalarsNameList():
+            l1.append(label)
         for s in index.model().mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
 
