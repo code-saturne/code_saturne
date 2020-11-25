@@ -768,12 +768,10 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           const cs_real_t        var[],
                           cs_real_3_t  *restrict grad)
 {
-  cs_gnum_t  t_n_clip;
   cs_real_t  global_min_factor, global_max_factor;
-  cs_real_t  t_min_factor, t_max_factor;
 
-  cs_gnum_t  n_clip = 0, n_g_clip = 0;
   cs_real_t  min_factor = 1, max_factor = 0;
+  cs_gnum_t  n_clip = 0, n_g_clip = 0;
   cs_real_t  *buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
@@ -860,7 +858,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_lnum_t jj = i_face_cells[f_id][1];
 
           cs_real_t dist[3];
-          for (int ll = 0; ll < 3; ll++)
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
           cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
@@ -896,7 +894,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_lnum_t jj = cell_cells_lst[cidx];
 
           cs_real_t dist[3];
-          for (int ll = 0; ll < 3; ll++)
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
           cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
@@ -926,7 +924,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_lnum_t jj = i_face_cells[f_id][1];
 
           cs_real_t dist[3];
-          for (int ll = 0; ll < 3; ll++)
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
           cs_real_t dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
@@ -962,7 +960,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           cs_lnum_t jj = cell_cells_lst[cidx];
 
           cs_real_t dist[3];
-          for (int ll = 0; ll < 3; ll++)
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
           cs_real_t dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
@@ -988,13 +986,11 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
   if (clip_mode == CS_GRADIENT_LIMIT_CELL) {
 
-    t_min_factor = min_factor;
-    t_max_factor = max_factor;
-
-#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip)
+#   pragma omp parallel
     {
-      t_n_clip = 0;
-      t_min_factor = min_factor; t_max_factor = max_factor;
+      cs_gnum_t  t_n_clip = 0;
+      cs_real_t  t_min_factor = min_factor;
+      cs_real_t  t_max_factor = max_factor;
 
 #     pragma omp for
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
@@ -1044,7 +1040,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(min_factor)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -1062,10 +1058,10 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
           if (denum[jj] > climgp * denom[jj])
             factor2 = climgp * denom[jj]/denum[jj];
 
-          min_factor = CS_MIN(factor1, factor2);
+          cs_real_t l_min_factor = CS_MIN(factor1, factor2);
 
-          clip_factor[ii] = CS_MIN(clip_factor[ii], min_factor);
-          clip_factor[jj] = CS_MIN(clip_factor[jj], min_factor);
+          clip_factor[ii] = CS_MIN(clip_factor[ii], l_min_factor);
+          clip_factor[jj] = CS_MIN(clip_factor[jj], l_min_factor);
 
         } /* End of loop on faces */
 
@@ -1103,15 +1099,15 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     } /* End for extended neighborhood */
 
-#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip)
+#   pragma omp parallel
     {
-      t_n_clip = 0;
-      t_min_factor = min_factor; t_max_factor = max_factor;
+      cs_gnum_t t_n_clip = 0;
+      cs_real_t t_min_factor = min_factor, t_max_factor = max_factor;
 
 #     pragma omp for
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
-        for (int ll = 0; ll < 3; ll++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           grad[ii][ll] *= clip_factor[ii];
 
         if (clip_factor[ii] < 0.99) {
@@ -1278,9 +1274,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
-  cs_lnum_t  ii, jj;
-  int        g_id, t_id;
-
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
 
@@ -1309,7 +1302,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (int j = 0; j < 3; j++)
+    for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] = 0.0;
   }
 
@@ -1320,17 +1313,17 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(ii, jj)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              f_id++) {
 
-          ii = i_face_cells[f_id][0];
-          jj = i_face_cells[f_id][1];
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
 
           cs_real_t ktpond = (c_weight == NULL) ?
              weight[f_id] :              /* no cell weighting */
@@ -1370,7 +1363,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           pfaci += (1.0-ktpond) * (pvar[jj] - pvar[ii]);
           pfacj -=      ktpond  * (pvar[jj] - pvar[ii]);
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
             grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -1383,16 +1376,16 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(ii)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          ii = b_face_cells[f_id];
+          cs_lnum_t ii = b_face_cells[f_id];
 
           cs_real_t poro = b_poro_duq[is_porous*f_id];
 
@@ -1412,7 +1405,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
           pfac += (coefbp[f_id] - 1.0) * pvar[ii];
 
-          for (int j = 0; j < 3; j++)
+          for (cs_lnum_t j = 0; j < 3; j++)
             grad[ii][j] += pfac * b_f_face_normal[f_id][j];
 
         } /* loop on faces */
@@ -1430,17 +1423,17 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(ii, jj)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
         for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              f_id++) {
 
-          ii = i_face_cells[f_id][0];
-          jj = i_face_cells[f_id][1];
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
 
           cs_real_t ktpond = (c_weight == NULL) ?
              weight[f_id] :              /* no cell weighting */
@@ -1459,7 +1452,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t pfaci = (1.0-ktpond) * (pvar[jj] - pvar[ii]);
           cs_real_t pfacj =     -ktpond  * (pvar[jj] - pvar[ii]);
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
             grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -1477,10 +1470,10 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(ii)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1488,7 +1481,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
           if (cpl == NULL || !coupled_faces[f_id]) {
 
-            ii = b_face_cells[f_id];
+            cs_lnum_t ii = b_face_cells[f_id];
 
             /*
                Remark: for the cell \f$ \celli \f$ we remove
@@ -1498,7 +1491,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
             cs_real_t pfac =   inc*coefap[f_id]
                              + (coefbp[f_id]-1.0)*pvar[ii];
 
-            for (int j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               grad[ii][j] += pfac * b_f_face_normal[f_id][j];
 
           } /* face without internal coupling */
@@ -1520,7 +1513,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     else
       dvol = 0.;
 
-    for (int j = 0; j < 3; j++)
+    for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] *= dvol;
   }
 
@@ -1708,10 +1701,6 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
 
-  cs_lnum_t  f_id;
-  int        g_id, t_id;
-  cs_real_t  rnorm;
-  cs_real_3_t  fexd;
   cs_real_3_t *rhs;
 
   int n_sweeps = 0;
@@ -1760,7 +1749,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   /* Compute normalization residual */
 
-  rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
+  cs_real_t  rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
 
   if (rnorm <= cs_math_epzero) {
     if (gradient_info != NULL)
@@ -1793,12 +1782,12 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from interior faces */
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, fexd)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                f_id++) {
 
@@ -1817,6 +1806,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             };
 
             // TODO add porous contribution
+            cs_real_t  fexd[3];
             fexd[0] = 0.5 * (f_ext[c_id1][0] + f_ext[c_id2][0]);
             fexd[1] = 0.5 * (f_ext[c_id1][1] + f_ext[c_id2][1]);
             fexd[2] = 0.5 * (f_ext[c_id1][2] + f_ext[c_id2][2]);
@@ -1855,7 +1845,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
             pfacj -= ktpond * (pvar[c_id2] - pvar[c_id1]);
 
-            for (int j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               rhs[c_id1][j] += pfaci * i_f_face_normal[f_id][j];
               rhs[c_id2][j] -= pfacj * i_f_face_normal[f_id][j];
             }
@@ -1868,12 +1858,12 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from boundary faces */
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-          for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
@@ -1919,12 +1909,12 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from interior faces */
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                f_id++) {
 
@@ -1956,7 +1946,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
             pfacj -=      ktpond  * (pvar[c_id2] - pvar[c_id1]);
 
-            for (int j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               rhs[c_id1][j] += pfaci * i_f_face_normal[f_id][j];
               rhs[c_id2][j] -= pfacj * i_f_face_normal[f_id][j];
             }
@@ -1978,12 +1968,12 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from boundary faces */
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-          for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
@@ -3234,7 +3224,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (int j = 0; j < 3; j++)
+    for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] = 0.0;
   }
 
@@ -3315,7 +3305,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  + dofij[f_id][1] * (r_grad[c_id1][1]+r_grad[c_id2][1])
                  + dofij[f_id][2] * (r_grad[c_id1][2]+r_grad[c_id2][2])) * 0.5;
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[c_id1][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
             grad[c_id2][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
           }
@@ -3495,13 +3485,13 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
       cs_real_3_t gradpa;
-      for (int i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
         gradpa[i] = grad[c_id][i];
         grad[c_id][i] = 0.;
       }
 
-      for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
+      for (cs_lnum_t i = 0; i < 3; i++)
+        for (cs_lnum_t j = 0; j < 3; j++)
           grad[c_id][i] += corr_grad_lin[c_id][i][j] * gradpa[j];
     }
   }
@@ -3967,7 +3957,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (int j = 0; j < 3; j++)
+    for (cs_lnum_t j = 0; j < 3; j++)
       grad[c_id][j] = 0.0;
   }
 
@@ -4112,7 +4102,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
           pfaci += i_f_var[f_id] - c_var[ii];
           pfacj += i_f_var[f_id] - c_var[jj];
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
             grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -4158,7 +4148,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                 + (b_face_cog[f_id][2] - cell_cen[c_id][2])*f_ext[c_id][2]
                 + poro);
 
-            for (int j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               grad[c_id][j] += pfac * b_f_face_normal[f_id][j];
 
           } /* face without internal coupling */
@@ -4193,7 +4183,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t pfaci = i_f_var[f_id] - c_var[ii];
           cs_real_t pfacj = i_f_var[f_id] - c_var[jj];
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
             grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -4231,7 +4221,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
             cs_real_t pfac = b_f_var[f_id] - c_var[ii];
 
-            for (int j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               grad[ii][j] += pfac * b_f_face_normal[f_id][j];
 
           } /* face without internal coupling */
@@ -4256,7 +4246,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     else
       dvol = 0.;
 
-    for (int j = 0; j < 3; j++)
+    for (cs_lnum_t j = 0; j < 3; j++)
       grad[c_id][j] *= dvol;
   }
 
@@ -4293,13 +4283,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                           const cs_real_3_t   *restrict pvar,
                           cs_real_33_t        *restrict gradv)
 {
-  int        g_id, t_id;
-  cs_gnum_t  t_n_clip;
-  cs_lnum_t  c_id, c_id1, c_id2, f_id, i, j;
-  cs_real_3_t dist, grad_dist1, grad_dist2;
-  cs_real_t  dvar_sq, dist_sq1, dist_sq2;
-  cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
-  cs_real_t  t_max_factor, t_min_factor;
+  cs_real_t  global_min_factor, global_max_factor;
 
   cs_gnum_t  n_clip = 0, n_g_clip =0;
   cs_real_t  min_factor = 1;
@@ -4347,7 +4331,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   /* Initialization */
 
 # pragma omp parallel for
-  for (c_id = 0; c_id < n_cells_ext; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     denum[c_id] = 0;
     denom[c_id] = 0;
     if (clip_mode == 1)
@@ -4363,24 +4347,24 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   if (clip_mode == 0) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(f_id, c_id1, c_id2, i, \
-                                      dist, grad_dist1, grad_dist2, \
-                                      dist_sq1, dist_sq2, dvar_sq)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              f_id++) {
 
-          c_id1 = i_face_cells[f_id][0];
-          c_id2 = i_face_cells[f_id][1];
+          cs_lnum_t c_id1 = i_face_cells[f_id][0];
+          cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          for (i = 0; i < 3; i++)
+          cs_real_t dist[3], grad_dist1[3], grad_dist2[3];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
             dist[i] = cell_cen[c_id1][i] - cell_cen[c_id2][i];
 
-          for (i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
 
             grad_dist1[i] =   gradv[c_id1][i][0] * dist[0]
                             + gradv[c_id1][i][1] * dist[1]
@@ -4391,6 +4375,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                             + gradv[c_id2][i][2] * dist[2];
 
           }
+
+          cs_real_t  dvar_sq, dist_sq1, dist_sq2;
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -4422,22 +4408,26 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(c_id2, i, dist, \
-                                      grad_dist1, dist_sq1, dvar_sq)
-      for (c_id1 = 0; c_id1 < n_cells; c_id1++) {
+#     pragma omp parallel for
+      for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
         for (cs_lnum_t cidx = cell_cells_idx[c_id1];
              cidx < cell_cells_idx[c_id1+1];
              cidx++) {
 
-          c_id2 = cell_cells_lst[cidx];
+          cs_lnum_t c_id2 = cell_cells_lst[cidx];
 
-          for (i = 0; i < 3; i++)
+
+          cs_real_t dist[3], grad_dist1[3];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
             dist[i] = cell_cen[c_id1][i] - cell_cen[c_id2][i];
 
-          for (i = 0; i < 3; i++)
+          for (cs_lnum_t i = 0; i < 3; i++)
             grad_dist1[i] =   gradv[c_id1][i][0] * dist[0]
                             + gradv[c_id1][i][1] * dist[1]
                             + gradv[c_id1][i][2] * dist[2];
+
+          cs_real_t  dvar_sq, dist_sq1;
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -4465,27 +4455,30 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   else if (clip_mode == 1) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(f_id, c_id1, c_id2, i, \
-                                      dist, grad_dist1, dist_sq1, dvar_sq)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              f_id++) {
 
-          c_id1 = i_face_cells[f_id][0];
-          c_id2 = i_face_cells[f_id][1];
+          cs_lnum_t c_id1 = i_face_cells[f_id][0];
+          cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          for (i = 0; i < 3; i++)
+          cs_real_t dist[3], grad_dist1[3];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
             dist[i] = cell_cen[c_id1][i] - cell_cen[c_id2][i];
 
-          for (i = 0; i < 3; i++)
+          for (cs_lnum_t i = 0; i < 3; i++)
             grad_dist1[i]
               = 0.5 * (  (gradv[c_id1][i][0]+gradv[c_id2][i][0])*dist[0]
                        + (gradv[c_id1][i][1]+gradv[c_id2][i][1])*dist[1]
                        + (gradv[c_id1][i][2]+gradv[c_id2][i][2])*dist[2]);
+
+          cs_real_t dist_sq1, dvar_sq;
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -4513,23 +4506,26 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(c_id2, i, dist, \
-                                      grad_dist1, dist_sq1, dvar_sq)
-      for (c_id1 = 0; c_id1 < n_cells; c_id1++) {
+#     pragma omp parallel for
+      for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
         for (cs_lnum_t cidx = cell_cells_idx[c_id1];
              cidx < cell_cells_idx[c_id1+1];
              cidx++) {
 
-          c_id2 = cell_cells_lst[cidx];
+          cs_lnum_t c_id2 = cell_cells_lst[cidx];
 
-          for (i = 0; i < 3; i++)
+          cs_real_t dist[3], grad_dist1[3];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
             dist[i] = cell_cen[c_id1][i] - cell_cen[c_id2][i];
 
-          for (i = 0; i < 3; i++)
+          for (cs_lnum_t i = 0; i < 3; i++)
             grad_dist1[i]
               = 0.5 * (  (gradv[c_id1][i][0]+gradv[c_id2][i][0])*dist[0]
                        + (gradv[c_id1][i][1]+gradv[c_id2][i][1])*dist[1]
                        + (gradv[c_id1][i][2]+gradv[c_id2][i][2])*dist[2]);
+
+          cs_real_t dist_sq1, dvar_sq;
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -4566,21 +4562,20 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   if (clip_mode == 0) {
 
-#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip, \
-                                factor1, i, j)
+#   pragma omp parallel
     {
-      t_n_clip = 0;
-      t_min_factor = min_factor; t_max_factor = max_factor;
+      cs_gnum_t t_n_clip = 0;
+      cs_real_t t_min_factor = min_factor, t_max_factor = max_factor;
 
 #     pragma omp for
-      for (c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         if (denum[c_id] > clipp_coef_sq * denom[c_id]) {
 
-          factor1 = sqrt(clipp_coef_sq * denom[c_id]/denum[c_id]);
+          cs_real_t factor1 = sqrt(clipp_coef_sq * denom[c_id]/denum[c_id]);
 
-          for (i = 0; i < 3; i++) {
-            for (j = 0; j < 3; j++)
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++)
               gradv[c_id][i][j] *= factor1;
           }
 
@@ -4607,31 +4602,30 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   else if (clip_mode == 1) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(f_id, c_id1, c_id2, \
-                                      factor1, factor2, min_factor)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              f_id++) {
 
-          c_id1 = i_face_cells[f_id][0];
-          c_id2 = i_face_cells[f_id][1];
+          cs_lnum_t c_id1 = i_face_cells[f_id][0];
+          cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          factor1 = 1.0;
+          cs_real_t factor1 = 1.0;
           if (denum[c_id1] > clipp_coef_sq * denom[c_id1])
             factor1 = sqrt(clipp_coef_sq * denom[c_id1]/denum[c_id1]);
 
-          factor2 = 1.0;
+          cs_real_t factor2 = 1.0;
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          min_factor = CS_MIN(factor1, factor2);
+          cs_real_t l_min_factor = CS_MIN(factor1, factor2);
 
-          clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], min_factor);
-          clip_factor[c_id2] = CS_MIN(clip_factor[c_id2], min_factor);
+          clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], l_min_factor);
+          clip_factor[c_id2] = CS_MIN(clip_factor[c_id2], l_min_factor);
 
         } /* End of loop on faces */
 
@@ -4643,42 +4637,41 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(c_id2, min_factor, factor2)
-      for (c_id1 = 0; c_id1 < n_cells; c_id1++) {
+#     pragma omp parallel for
+      for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
 
-        min_factor = 1.0;
+        cs_real_t l_min_factor = 1.0;
 
         for (cs_lnum_t cidx = cell_cells_idx[c_id1];
              cidx < cell_cells_idx[c_id1+1];
              cidx++) {
 
-          c_id2 = cell_cells_lst[cidx];
-          factor2 = 1.0;
+          cs_lnum_t c_id2 = cell_cells_lst[cidx];
+          cs_real_t factor2 = 1.0;
 
           if (denum[c_id2] > clipp_coef_sq * denom[c_id2])
             factor2 = sqrt(clipp_coef_sq * denom[c_id2]/denum[c_id2]);
 
-          min_factor = CS_MIN(min_factor, factor2);
+          l_min_factor = CS_MIN(l_min_factor, factor2);
 
         }
 
-        clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], min_factor);
+        clip_factor[c_id1] = CS_MIN(clip_factor[c_id1], l_min_factor);
 
       } /* End of loop on cells */
 
     } /* End for extended neighborhood */
 
-#   pragma omp parallel private(t_min_factor, t_max_factor, factor1, \
-                                t_n_clip, i, j)
+#   pragma omp parallel
     {
-      t_n_clip = 0;
-      t_min_factor = min_factor; t_max_factor = max_factor;
+      cs_gnum_t t_n_clip = 0;
+      cs_real_t t_min_factor = min_factor, t_max_factor = max_factor;
 
 #     pragma omp for
-      for (c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-        for (i = 0; i < 3; i++) {
-          for (j = 0; j < 3; j++)
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
             gradv[c_id][i][j] *= clip_factor[c_id];
         }
 
@@ -4856,11 +4849,11 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                    and for the cell \f$ \cellj \f$ we remove
                    \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
         */
-        for (int i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
           cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
             grad[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -4892,17 +4885,17 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
           cs_lnum_t c_id = b_face_cells[f_id];
 
-          for (int i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 3; i++) {
             cs_real_t pfac = inc*coefav[f_id][i];
 
-            for (int k = 0; k < 3; k++) {
+            for (cs_lnum_t k = 0; k < 3; k++) {
               if (i == k)
                 pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
               else
                 pfac += coefbv[f_id][i][k] * pvar[c_id][k];
             }
 
-            for (int j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               grad[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
           }
         }
@@ -4922,8 +4915,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     else
       dvol = 0.;
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] *= dvol;
     }
   }
@@ -5060,7 +5053,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                                   + dofij[f_id][2]*(  r_grad[c_id1][i][2]
                                                     + r_grad[c_id2][i][2]));
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
             grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
           }
@@ -5102,7 +5095,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
             cs_real_t pfac = inc*coefav[f_id][i];
 
-            for (int k = 0; k < 3; k++)
+            for (cs_lnum_t k = 0; k < 3; k++)
               pfac += coefbv[f_id][i][k] * pvar[c_id][k];
 
             pfac -= pvar[c_id][i];
@@ -5110,14 +5103,14 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
             /* Reconstruction part */
 
             cs_real_t rfac = 0.;
-            for (int k = 0; k < 3; k++) {
+            for (cs_lnum_t k = 0; k < 3; k++) {
               cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
                                  + grad[c_id][k][1] * diipb[f_id][1]
                                  + grad[c_id][k][2] * diipb[f_id][2];
               rfac += coefbv[f_id][i][k] * vecfac;
             }
 
-            for (int j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
           }
         }
@@ -5137,21 +5130,21 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     else
       dvol = 0.;
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] *= dvol;
     }
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
       cs_real_t gradpa[3];
-      for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
           gradpa[j] = grad[c_id][i][j];
           grad[c_id][i][j] = 0.;
         }
 
-        for (int j = 0; j < 3; j++)
-          for (int k = 0; k < 3; k++)
+        for (cs_lnum_t j = 0; j < 3; j++)
+          for (cs_lnum_t k = 0; k < 3; k++)
             grad[c_id][i][j] += corr_grad_lin[c_id][j][k] * gradpa[k];
       }
     }
@@ -5208,9 +5201,6 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
                            cs_real_33_t         *restrict grad)
 {
   int isweep = 0;
-  int g_id, t_id;
-  cs_lnum_t f_id;
-  cs_real_t l2_norm, l2_residual, vecfac, pond;
 
   cs_real_33_t *rhs;
 
@@ -5261,8 +5251,8 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
   /* L2 norm */
 
-  l2_norm = _l2_norm_1(9*n_cells, (cs_real_t *)grad);
-  l2_residual = l2_norm;
+  cs_real_t l2_norm = _l2_norm_1(9*n_cells, (cs_real_t *)grad);
+  cs_real_t l2_residual = l2_norm;
 
   if (l2_norm > cs_math_epzero) {
 
@@ -5275,26 +5265,26 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
 #     pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        for (int i = 0; i < 3; i++) {
-          for (int j = 0; j < 3; j++)
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] = -grad[c_id][i][j] * cell_f_vol[c_id];
         }
       }
 
       /* Interior face treatment */
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, pond)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                f_id++) {
 
             cs_lnum_t c_id1 = i_face_cells[f_id][0];
             cs_lnum_t c_id2 = i_face_cells[f_id][1];
-            pond = weight[f_id];
+            cs_real_t pond = weight[f_id];
 
             cs_real_t ktpond = (c_weight == NULL) ?
               pond :                     // no cell weighting
@@ -5311,7 +5301,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
                        \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
             */
 
-            for (int i = 0; i < 3; i++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
 
               /* Reconstruction part */
               cs_real_t
@@ -5327,7 +5317,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
               pfaci += (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
               pfacj -=      ktpond  * (pvar[c_id2][i] - pvar[c_id1][i]);
 
-              for (int j = 0; j < 3; j++) {
+              for (cs_lnum_t j = 0; j < 3; j++) {
                 rhs[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
                 rhs[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
               }
@@ -5347,12 +5337,12 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
       /* Boundary face treatment */
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, vecfac)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-          for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
@@ -5360,7 +5350,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
               cs_lnum_t c_id = b_face_cells[f_id];
 
-              for (int i = 0; i < 3; i++) {
+              for (cs_lnum_t i = 0; i < 3; i++) {
 
                 /*
                    Remark: for the cell \f$ \celli \f$ we remove
@@ -5369,11 +5359,11 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
                 cs_real_t pfac = inc*coefav[f_id][i];
 
-                for (int k = 0; k < 3; k++) {
+                for (cs_lnum_t k = 0; k < 3; k++) {
                   /* Reconstruction part */
-                  vecfac = grad[c_id][k][0] * diipb[f_id][0]
-                         + grad[c_id][k][1] * diipb[f_id][1]
-                         + grad[c_id][k][2] * diipb[f_id][2];
+                  cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
+                                     + grad[c_id][k][1] * diipb[f_id][1]
+                                     + grad[c_id][k][2] * diipb[f_id][2];
                   pfac += coefbv[f_id][i][k] * vecfac;
 
                   if (i == k)
@@ -5382,7 +5372,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
                     pfac += coefbv[f_id][i][k] * pvar[c_id][k];
                 }
 
-                for (int j = 0; j < 3; j++)
+                for (cs_lnum_t j = 0; j < 3; j++)
                   rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
 
               }
@@ -5405,14 +5395,14 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
         else
           dvol = 0.;
 
-        for (int i = 0; i < 3; i++) {
-          for (int j = 0; j < 3; j++)
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] *= dvol;
         }
 
-        for (int i = 0; i < 3; i++) {
-          for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++)
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            for (cs_lnum_t k = 0; k < 3; k++)
               grad[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
           }
         }
@@ -5498,9 +5488,6 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                            cs_real_63_t        *restrict grad)
 {
   int isweep = 0;
-  int g_id, t_id;
-  cs_lnum_t f_id;
-  cs_real_t l2_norm, l2_residual, vecfac, pond;
 
   cs_real_63_t *rhs;
 
@@ -5547,8 +5534,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
   /* L2 norm */
 
-  l2_norm = _l2_norm_1(18*n_cells, (cs_real_t *)grad);
-  l2_residual = l2_norm ;
+  cs_real_t l2_norm = _l2_norm_1(18*n_cells, (cs_real_t *)grad);
+  cs_real_t l2_residual = l2_norm ;
 
   if (l2_norm > cs_math_epzero) {
 
@@ -5561,26 +5548,26 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
 #     pragma omp parallel for
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        for (int i = 0; i < 6; i++) {
-          for (int j = 0; j < 3; j++)
+        for (cs_lnum_t i = 0; i < 6; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] = - cell_f_vol[c_id] * grad[c_id][i][j];
         }
       }
 
       /* Interior face treatment */
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, pond)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-          for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                f_id++) {
 
             cs_lnum_t c_id1 = i_face_cells[f_id][0];
             cs_lnum_t c_id2 = i_face_cells[f_id][1];
-            pond = weight[f_id];
+            cs_real_t pond = weight[f_id];
 
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -5591,7 +5578,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                        \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
             */
 
-            for (int i = 0; i < 6; i++) {
+            for (cs_lnum_t i = 0; i < 6; i++) {
 
               /* Reconstruction part */
               cs_real_t
@@ -5606,7 +5593,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
               pfaci += (1.0-pond) * (pvar[c_id2][i] - pvar[c_id1][i]);
               pfacj -=       pond * (pvar[c_id2][i] - pvar[c_id1][i]);
-              for (int j = 0; j < 3; j++) {
+              for (cs_lnum_t j = 0; j < 3; j++) {
                 rhs[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
                 rhs[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
               }
@@ -5620,18 +5607,18 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
       /* Boundary face treatment */
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#       pragma omp parallel for private(f_id, vecfac)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-          for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
             cs_lnum_t c_id = b_face_cells[f_id];
 
-            for (int i = 0; i < 6; i++) {
+            for (cs_lnum_t i = 0; i < 6; i++) {
 
               /*
                  Remark: for the cell \f$ \celli \f$ we remove
@@ -5640,11 +5627,11 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
               cs_real_t pfac = inc*coefat[f_id][i];
 
-              for (int k = 0; k < 6; k++) {
+              for (cs_lnum_t k = 0; k < 6; k++) {
                 /* Reconstruction part */
-                vecfac = grad[c_id][k][0] * diipb[f_id][0]
-                       + grad[c_id][k][1] * diipb[f_id][1]
-                       + grad[c_id][k][2] * diipb[f_id][2];
+                cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
+                                   + grad[c_id][k][1] * diipb[f_id][1]
+                                   + grad[c_id][k][2] * diipb[f_id][2];
                 pfac += coefbt[f_id][i][k] * vecfac;
 
                 if (i == k)
@@ -5653,7 +5640,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                   pfac += coefbt[f_id][i][k] * pvar[c_id][k];
               }
 
-              for (int j = 0; j < 3; j++)
+              for (cs_lnum_t j = 0; j < 3; j++)
                 rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
 
             }
@@ -5675,14 +5662,14 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
         else
           dvol = 0.;
 
-        for (int i = 0; i < 6; i++) {
-          for (int j = 0; j < 3; j++)
+        for (cs_lnum_t i = 0; i < 6; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] *= dvol;
         }
 
-        for (int i = 0; i < 6; i++) {
-          for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++)
+        for (cs_lnum_t i = 0; i < 6; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            for (cs_lnum_t k = 0; k < 3; k++)
               grad[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
           }
         }
@@ -5768,8 +5755,8 @@ _init_cocg_lsq(cs_lnum_t                     c_id,
 
   /* initialize cocg */
 
-  for (int ii = 0; ii < 3; ii++) {
-    for (int jj = 0; jj < 3; jj++)
+  for (cs_lnum_t ii = 0; ii < 3; ii++) {
+    for (cs_lnum_t jj = 0; jj < 3; jj++)
       cocg[ii][jj] = 0.;
   }
 
@@ -5803,8 +5790,8 @@ _init_cocg_lsq(cs_lnum_t                     c_id,
 
       cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-      for (int ii = 0; ii < 3; ii++) {
-        for (int jj = 0; jj < 3; jj++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
           cocg[ii][jj] += dc[ii]*dc[jj]*ddc;
       }
 
@@ -5828,8 +5815,8 @@ _init_cocg_lsq(cs_lnum_t                     c_id,
     /* Normal is vector 0 if the b_face_normal norm is too small */
     cs_math_3_normalise(b_face_normal[f_id], normal);
 
-    for (int ii = 0; ii < 3; ii++) {
-      for (int jj = 0; jj < 3; jj++)
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++)
         cocg[ii][jj] += normal[ii] * normal[jj];
     }
 
@@ -6215,10 +6202,6 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   cs_real_33_t *restrict cocg = NULL;
   _get_cell_cocg_lsq(m, halo_type, fvq, cpl, &cocg, NULL);
 
-  cs_lnum_t  c_id1, c_id2, i, j, k;
-  cs_real_t  pfac, ddc;
-  cs_real_t  dc[3], fctb[3];
-
   cs_real_33_t *rhs;
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
@@ -6229,10 +6212,10 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Compute Right-Hand Side */
   /*-------------------------*/
 
-# pragma omp parallel for private(i, j)
+# pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (i = 0; i < 3; i++)
-      for (j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][i][j] = 0.0;
   }
 
@@ -6240,31 +6223,32 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(c_id1, c_id2,\
-                                    i, j, pfac, dc, fctb, ddc)
+#   pragma omp parallel for
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
       for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            f_id++) {
 
-        c_id1 = i_face_cells[f_id][0];
-        c_id2 = i_face_cells[f_id][1];
+        cs_lnum_t c_id1 = i_face_cells[f_id][0];
+        cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        for (i = 0; i < 3; i++)
+        cs_real_t  dc[3], fctb[3];
+
+        for (cs_lnum_t i = 0; i < 3; i++)
           dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
 
-        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         if (c_weight != NULL) {
           cs_real_t pond = weight[f_id];
           cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
                                   + (1. - pond)*c_weight[c_id2]);
 
-          for (i = 0; i < 3; i++) {
-            pfac =  (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-            for (j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               fctb[j] = dc[j] * pfac;
               rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
               rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
@@ -6272,10 +6256,10 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
           }
         }
         else {
-          for (i = 0; i < 3; i++) {
-            pfac =  (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-            for (j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               fctb[j] = dc[j] * pfac;
               rhs[c_id1][i][j] += fctb[j];
               rhs[c_id2][i][j] += fctb[j];
@@ -6293,24 +6277,26 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   if (halo_type == CS_HALO_EXTENDED) {
 
-#   pragma omp parallel for private(c_id2, dc, pfac, ddc, i, j)
-    for (c_id1 = 0; c_id1 < n_cells; c_id1++) {
+#   pragma omp parallel for
+    for (cs_lnum_t c_id1 = 0; c_id1 < n_cells; c_id1++) {
       for (cs_lnum_t cidx = cell_cells_idx[c_id1];
            cidx < cell_cells_idx[c_id1+1];
            cidx++) {
 
-        c_id2 = cell_cells_lst[cidx];
+        cs_lnum_t c_id2 = cell_cells_lst[cidx];
 
-        for (i = 0; i < 3; i++)
+        cs_real_t dc[3];
+
+        for (cs_lnum_t i = 0; i < 3; i++)
           dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
 
-        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
 
-          pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
+          cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-          for (j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             rhs[c_id1][i][j] += dc[j] * pfac;
           }
         }
@@ -6333,7 +6319,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(c_id1, i, j, pfac)
+#   pragma omp parallel for
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -6342,26 +6328,26 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
         if (cpl == NULL || !coupled_faces[f_id]) {
 
-          c_id1 = b_face_cells[f_id];
+          cs_lnum_t c_id1 = b_face_cells[f_id];
 
-          cs_real_3_t n_d_dist;
+          cs_real_t n_d_dist[3];
           /* Normal is vector 0 if the b_face_normal norm is too small */
           cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
 
           cs_real_t d_b_dist = 1. / b_dist[f_id];
 
           /* Normal divided by b_dist */
-          for (i = 0; i < 3; i++)
+          for (cs_lnum_t i = 0; i < 3; i++)
             n_d_dist[i] *= d_b_dist;
 
-          for (i = 0; i < 3; i++) {
-            pfac = (coefav[f_id][i]*inc
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            cs_real_t pfac = (coefav[f_id][i]*inc
                  + ( coefbv[f_id][0][i] * pvar[c_id1][0]
                    + coefbv[f_id][1][i] * pvar[c_id1][1]
                    + coefbv[f_id][2][i] * pvar[c_id1][2]
-                   -                         pvar[c_id1][i]));
+                   -                      pvar[c_id1][i]));
 
-            for (j = 0; j < 3; j++)
+            for (cs_lnum_t j = 0; j < 3; j++)
               rhs[c_id1][i][j] += n_d_dist[j] * pfac;
           }
         }
@@ -6376,12 +6362,12 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /*------------------*/
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (j = 0; j < 3; j++) {
-      for (i = 0; i < 3; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
 
         gradv[c_id][i][j] = 0.0;
 
-        for (k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < 3; k++)
           gradv[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
 
       }
@@ -6874,8 +6860,8 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (int i = 0; i < 6; i++)
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 6; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         rhs[c_id][i][j] = 0.0;
   }
 
@@ -6894,7 +6880,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
         cs_real_3_t dc, fctb;
-        for (int i = 0; i < 3; i++)
+        for (cs_lnum_t i = 0; i < 3; i++)
           dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
 
         cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
@@ -6904,10 +6890,10 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
           cs_real_t denom = 1. / (  pond       *c_weight[c_id1]
                                   + (1. - pond)*c_weight[c_id2]);
 
-          for (int i = 0; i < 6; i++) {
+          for (cs_lnum_t i = 0; i < 6; i++) {
             cs_real_t pfac =  (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-            for (int j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               fctb[j] = dc[j] * pfac;
               rhs[c_id1][i][j] += c_weight[c_id2] * denom * fctb[j];
               rhs[c_id2][i][j] += c_weight[c_id1] * denom * fctb[j];
@@ -6915,10 +6901,10 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
           }
         }
         else {
-          for (int i = 0; i < 6; i++) {
+          for (cs_lnum_t i = 0; i < 6; i++) {
             cs_real_t pfac =  (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-            for (int j = 0; j < 3; j++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
               fctb[j] = dc[j] * pfac;
               rhs[c_id1][i][j] += fctb[j];
               rhs[c_id2][i][j] += fctb[j];
@@ -6945,16 +6931,16 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
         cs_lnum_t c_id2 = cell_cells_lst[cidx];
 
         cs_real_3_t dc;
-        for (int i = 0; i < 3; i++)
+        for (cs_lnum_t i = 0; i < 3; i++)
           dc[i] = cell_cen[c_id2][i] - cell_cen[c_id1][i];
 
         cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (int i = 0; i < 6; i++) {
+        for (cs_lnum_t i = 0; i < 6; i++) {
 
           cs_real_t pfac = (pvar[c_id2][i] - pvar[c_id1][i]) * ddc;
 
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             rhs[c_id1][i][j] += dc[j] * pfac;
           }
         }
@@ -6983,15 +6969,15 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
         cs_real_t d_b_dist = 1. / b_dist[f_id];
 
         /* Normal divided by b_dist */
-        for (int i = 0; i < 3; i++)
+        for (cs_lnum_t i = 0; i < 3; i++)
           n_d_dist[i] *= d_b_dist;
 
-        for (int i = 0; i < 6; i++) {
+        for (cs_lnum_t i = 0; i < 6; i++) {
           cs_real_t pfac = coefat[f_id][i]*inc - pvar[c_id1][i];
-          for (int j = 0; j < 6; j++)
+          for (cs_lnum_t j = 0; j < 6; j++)
             pfac += coefbt[f_id][j][i] * pvar[c_id1][j];
 
-          for (int j = 0; j < 3; j++)
+          for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id1][i][j] += pfac * n_d_dist[j];
         }
 
@@ -7005,12 +6991,12 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   /*------------------*/
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (int j = 0; j < 3; j++) {
-      for (int i = 0; i < 6; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      for (cs_lnum_t i = 0; i < 6; i++) {
 
         gradt[c_id][i][j] = 0.0;
 
-        for (int k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < 3; k++)
           gradt[c_id][i][j] += rhs[c_id][i][k] * cocg[c_id][k][j];
 
       }
@@ -7113,10 +7099,6 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
                             const cs_real_6_t   *restrict pvar,
                             cs_real_63_t        *restrict grad)
 {
-  int g_id, t_id;
-  cs_lnum_t f_id;
-  cs_real_t pond;
-
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -7150,27 +7132,27 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 6; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] = 0.0;
     }
   }
 
   /* Interior faces contribution */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(f_id, pond)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            f_id++) {
 
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        pond = weight[f_id];
+        cs_real_t pond = weight[f_id];
 
         /*
            Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -7180,10 +7162,10 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
                    and for the cell \f$ \cellj \f$ we remove
                    \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
         */
-        for (int i = 0; i < 6; i++) {
+        for (cs_lnum_t i = 0; i < 6; i++) {
           cs_real_t pfaci = (1.0-pond) * (pvar[c_id2][i] - pvar[c_id1][i]);
           cs_real_t pfacj =     - pond * (pvar[c_id2][i] - pvar[c_id1][i]);
-          for (int j = 0; j < 3; j++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
             grad[c_id1][i][j] += pfaci * i_f_face_normal[f_id][j];
             grad[c_id2][i][j] -= pfacj * i_f_face_normal[f_id][j];
           }
@@ -7197,12 +7179,12 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
 
   /* Boundary face treatment */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(f_id)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
@@ -7212,10 +7194,10 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
            Remark: for the cell \f$ \celli \f$ we remove
                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
          */
-        for (int i = 0; i < 6; i++) {
+        for (cs_lnum_t i = 0; i < 6; i++) {
           cs_real_t pfac = inc*coefat[f_id][i];
 
-          for (int k = 0; k < 6; k++) {
+          for (cs_lnum_t k = 0; k < 6; k++) {
             if (i == k)
               pfac += (coefbt[f_id][i][k] - 1.0) * pvar[c_id][k];
             else
@@ -7223,7 +7205,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
 
           }
 
-          for (int j = 0; j < 3; j++)
+          for (cs_lnum_t j = 0; j < 3; j++)
             grad[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
         }
 
@@ -7242,8 +7224,8 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
     else
       dvol = 0.;
 
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 6; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] *= dvol;
     }
   }
@@ -7935,7 +7917,7 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
           cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
           cs_real_t dist[3];
-          for (int i = 0; i < 3; i++)
+          for (cs_lnum_t i = 0; i < 3; i++)
             dist[i] = cell_cen[c_id1][i] - cell_cen[c_id2][i];
 
           cs_real_t grad_dist1[6], var_dist[6];
@@ -9927,8 +9909,8 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
       /* Normal is vector 0 if the b_face_normal norm is too small */
       cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
 
-      for (int ii = 0; ii < 3; ii++) {
-        for (int jj = 0; jj < 3; jj++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
           cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
       }
 
@@ -10227,8 +10209,8 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
       /* Normal is vector 0 if the b_face_normal norm is too small */
       cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
 
-      for (int ii = 0; ii < 3; ii++) {
-        for (int jj = 0; jj < 3; jj++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t jj = 0; jj < 3; jj++)
           cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
       }
 

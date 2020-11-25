@@ -219,7 +219,6 @@ double precision hint  , hext  , pimp  , dimp, cfl
 double precision pinf  , ratio
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf
-double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision b_pvari(3)
@@ -670,11 +669,6 @@ call vericl(nvar, nscal, itypfb, icodcl)
 !===============================================================================
 ! 4. variables
 !===============================================================================
-
-! --- variables
-xxp0   = xyzp0(1)
-xyp0   = xyzp0(2)
-xzp0   = xyzp0(3)
 
 ! --- physical quantities
 call field_get_val_s(iviscl, viscl)
