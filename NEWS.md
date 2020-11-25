@@ -3,6 +3,9 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix possible data races with OpenMP for turbomachinery and
+  pressure average.
+
 - Lagrangian module: fix handling of statistics handled by the GUI.
 
 - Fix GUI handling of radiation + combustion "Modak" parameter

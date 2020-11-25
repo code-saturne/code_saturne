@@ -1006,7 +1006,7 @@ cs_field_set_volume_average(cs_field_t     *f,
   cs_real_t *restrict val = f->val;
   cs_real_t p_va = 0.;
 
-# pragma omp parallel for
+# pragma omp parallel for  reduction(+:p_va)
   for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
     p_va += cell_f_vol[c_id]*val[c_id];
   }
