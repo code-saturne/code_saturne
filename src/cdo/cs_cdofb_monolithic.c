@@ -2361,7 +2361,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
 
-  /* Compute the new mass flux used as the advection field */
+  /* Compute the new current mass flux used as the advection field */
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                             sc->mass_flux_array);
 
@@ -2670,11 +2670,17 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
+  /* Since a current to previous op. has been done:
+   *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (not t^(n-1)
+   *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
   cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
                                     sc->mass_flux_array_pre,
                                     sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
+
+  cs_real_t  *mass_flux_array_k = NULL;
+  cs_real_t  *mass_flux_array_kp1 = sc->mass_flux_array;
 
   while (nl_info->cvg == CS_SLES_ITERATING) {
 
@@ -2712,14 +2718,19 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
+    /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
+    if (mass_flux_array_k == NULL)
+      BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
+    memcpy(mass_flux_array_k, mass_flux_array_kp1, n_faces*sizeof(cs_real_t));
+
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
-                              sc->mass_flux_array);
+                              mass_flux_array_kp1);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      sc->mass_flux_array_pre,
-                                      sc->mass_flux_array,
+                                      mass_flux_array_k,
+                                      mass_flux_array_kp1,
                                       div_l2_norm,
                                       nl_info);
 
@@ -2749,6 +2760,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
+  if (mass_flux_array_k != NULL)
+    BFT_FREE(mass_flux_array_k);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
