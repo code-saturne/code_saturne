@@ -151,9 +151,8 @@ cs_iter_algo_navsto_print_header(const char   *algo_name)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It  -- Algo.Res   Inner    Cumul  ||div(u)||   Tol\n",
+                "%12s.It  -- Algo.Res   Inner  Cumul  ||div(u)||  Tolerance\n",
                 algo_name);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -174,7 +173,7 @@ cs_iter_algo_navsto_print(const char                    *algo_name,
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It%02d-- %5.3e  %5d  %6d  %6.4e  %6.4e\n",
+                "%12s.It%02d-- %5.3e  %5d  %5d  %6.4e  %6.4e\n",
                 algo_name, info->n_algo_iter, info->res,
                 info->last_inner_iter, info->n_inner_iter, div_l2, info->tol);
   cs_log_printf_flush(CS_LOG_DEFAULT);

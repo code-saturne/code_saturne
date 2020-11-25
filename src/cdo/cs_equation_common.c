@@ -588,7 +588,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
   /* Output information about the convergence of the resolution */
   if (slesp.verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%24s/sles_cvg> code %-d | n_iters %d"
+    cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e | normalization % -8.4e\n",
                   eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 

@@ -2401,7 +2401,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Output information about the convergence of the resolution */
   if (sles_param.verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "####  %24s/SLES: code %-d n_iters %d"
+    cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
 
