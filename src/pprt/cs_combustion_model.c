@@ -45,6 +45,9 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_log.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -303,6 +306,62 @@ cs_f_fuel_get_pointers(int     **nclafu)
   *nclafu = &(cs_glob_combustion_model->fuel.nclafu);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the combustion module options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_log_setup(void)
+{
+  if (  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+     || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+     || cs_glob_physical_model_flag[CS_COMBUSTION_LW]  >= 0){
+
+    cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Combustion module options\n"
+                  "-------------------------\n\n"));
+
+    switch(cs_glob_combustion_model->isoot ) {
+      case -1:
+        /* No Soot model */
+        cs_log_printf(CS_LOG_SETUP,
+                    _("    isoot:    -1 (No Soot model)\n\n"));
+        break;
+      case 0:
+        /* constant fraction of product Xsoot */
+        cs_log_printf(CS_LOG_SETUP,
+                    _("    isoot:     0 (Constant fraction of product)\n\n"));
+        cs_log_printf(CS_LOG_SETUP,
+                    _("  Parameters for the soot model:\n"
+                      "    xsoot:  %14.5e (Fraction of product)\n"
+                      "    rosoot: %14.5e (Soot density)\n\n"),
+                      cs_glob_combustion_model->gas.xsoot,
+                      cs_glob_combustion_model->gas.rosoot);
+        break;
+      case 1:
+        /* 2 equations model of Moss et al. */
+        cs_log_printf(CS_LOG_SETUP,
+                    _("    isoot:     1 (2 equations model of Moss et al.)\n\n"));
+        cs_log_printf(CS_LOG_SETUP,
+                    _("  Parameters for the soot model:\n"
+                      "    rosoot: %14.5e (Soot density)\n\n"),
+                      cs_glob_combustion_model->gas.rosoot);
+        break;
+      default:
+        break;
+    }
+  
+    const char *ipthrm_value_str[] = {N_("0 (NOT uniform variable thermodynamic pressure)"),
+                                      N_("1 (uniform variable thermodynamic pressure)")};
+    cs_log_printf(CS_LOG_SETUP,
+                _("    ipthrm:    %s\n"),
+                _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));
+
+     }
+}
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
