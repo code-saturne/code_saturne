@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix possible data races with OpenMP for turbomachinery and
+  pressure average.
+
 - Fix crash or possible corruption in cell removal algorithm.
 
 - Fix GUI crash in turbomachinery rotor selection.
