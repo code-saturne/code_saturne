@@ -370,12 +370,10 @@ cs_equation_sync_rhs_normalization(cs_param_resnorm_type_t    type,
  * \param[in]      rhs_redux  do or not a parallel sum reduction on the RHS
  * \param[in, out] x          array of unknowns (in: initial guess)
  * \param[in, out] b          right-hand side
- *
- * \returns the number of non-zeros in the matrix
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gnum_t
+void
 cs_equation_prepare_system(int                     stride,
                            cs_lnum_t               x_size,
                            const cs_matrix_t      *matrix,

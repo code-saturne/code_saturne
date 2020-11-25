@@ -2367,19 +2367,19 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   double  residual = DBL_MAX;
 
   /* Prepare solving (handle parallelism) */
-  cs_gnum_t  nnz = cs_equation_prepare_system(1,     /* stride */
-                                              n_scatter_elts,
-                                              matrix,
-                                              rset,
-                                              true,  /* rhs_redux */
-                                              xsol, b);
+  cs_equation_prepare_system(1,     /* stride */
+                             n_scatter_elts,
+                             matrix,
+                             rset,
+                             true,  /* rhs_redux */
+                             xsol, b);
 
   /* Solve the linear solver */
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   const cs_param_sles_t  sles_param = eqp->sles_param;
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
   cs_real_t  rtol = sles_param.eps;
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   if (nslesp.strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp.strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
@@ -2401,9 +2401,9 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Output information about the convergence of the resolution */
   if (sles_param.verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "####  %s/SLES: code %-d n_iters %d"
-                  " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
+    cs_log_printf(CS_LOG_DEFAULT, "####  %24s/SLES: code %-d n_iters %d"
+                  " residual % -8.4e\n",
+                  eqp->name, code, n_iters, residual);
 
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,

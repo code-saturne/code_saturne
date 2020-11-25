@@ -445,12 +445,10 @@ cs_equation_sync_rhs_normalization(cs_param_resnorm_type_t    type,
  * \param[in]      rhs_redux  do or not a parallel sum reduction on the RHS
  * \param[in, out] x          array of unknowns (in: initial guess)
  * \param[in, out] b          right-hand side
- *
- * \returns the number of non-zeros in the matrix
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gnum_t
+void
 cs_equation_prepare_system(int                     stride,
                            cs_lnum_t               x_size,
                            const cs_matrix_t      *matrix,
@@ -504,23 +502,17 @@ cs_equation_prepare_system(int                     stride,
                         b);          /* out: size = n_sles_gather_elts */
   }
 
-  /* Output information related to the linear system */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 2
   const cs_lnum_t  *row_index, *col_id;
   const cs_real_t  *d_val, *x_val;
 
   cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 2
   cs_dbg_dump_linear_system("Dump linear system",
                             n_gather_elts, CS_EQUATION_COMMON_DBG,
                             x, b,
                             row_index, col_id, x_val, d_val);
 #endif
-
-  cs_gnum_t  nnz = row_index[n_gather_elts];
-  cs_parall_counter(&nnz, 1);
-
-  return nnz;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -576,14 +568,10 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   sinfo.res_norm = DBL_MAX;
   sinfo.rhs_norm = normalization;
 
-  /* Prepare solving (handle parallelism) */
-  cs_gnum_t  nnz = cs_equation_prepare_system(1, /* stride for scalar-valued */
-                                              n_scatter_dofs,
-                                              matrix,
-                                              rset,
-                                              rhs_redux,
-                                              xsol,
-                                              b);
+  /* Prepare solving (handle parallelism)
+   * stride = 1 for scalar-valued */
+  cs_equation_prepare_system(1, n_scatter_dofs, matrix, rset, rhs_redux,
+                             xsol, b);
 
   /* Solve the linear solver */
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
@@ -600,10 +588,9 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
   /* Output information about the convergence of the resolution */
   if (slesp.verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d | n_iters %d"
-                  " residual % -8.4e | normalization % -8.4e | nnz %lu\n",
-                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm,
-                  nnz);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%24s/sles_cvg> code %-d | n_iters %d"
+                  " residual % -8.4e | normalization % -8.4e\n",
+                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
     cs_range_set_scatter(rset,
