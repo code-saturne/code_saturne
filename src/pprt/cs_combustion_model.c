@@ -346,7 +346,7 @@ cs_combustion_log_setup(void)
         cs_log_printf(CS_LOG_SETUP,
                     _("    isoot:     1 (2 equations model of Moss et al.)\n\n"));
         cs_log_printf(CS_LOG_SETUP,
-                    _("  Parameters for the soot model:\n"
+                    _("  Parameter for the soot model:\n"
                       "    rosoot: %14.5e (Soot density)\n\n"),
                       cs_glob_combustion_model->gas.rosoot);
         break;
