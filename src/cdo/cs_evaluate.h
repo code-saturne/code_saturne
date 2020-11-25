@@ -167,6 +167,25 @@ cs_evaluate_3_square_wc2x_norm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the weighted L2-norm of the magnitude of vector-valued
+ *         array. A weight has to be given as parameter.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  size    size of the weight array
+ * \param[in]  weight  weight to apply (mandatory)
+ * \param[in]  array   array to analyze (array size = 3*size)
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_3_square_weighted_norm(cs_lnum_t               size,
+                                   const cs_real_t        *weight,
+                                   const cs_real_t        *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the norm of the difference of two arrays scanne by the same
  *         \ref cs_adjacency_t structure with the reference array.
  *         The computed quantities are synchronized in parallel.
