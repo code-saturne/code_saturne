@@ -613,7 +613,7 @@ if (iprco.le.0) then
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
   if (iturbo.ne.0) then
-    !$omp parallel do private(iel1, iel2, dtfac, rhofac)
+    !$omp parallel do private(iel1, iel2, rhofac, vr1, vr2)
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -629,8 +629,7 @@ if (iprco.le.0) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
       endif
     enddo
-    !$omp parallel do private(iel, dtfac, rhofac) &
-    !$omp          if(nfabor > thr_n_min)
+    !$omp parallel do private(iel, rhofac, vr) if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       if (irotce(iel).ne.0) then
@@ -1242,7 +1241,7 @@ if (iale.ge.1) then
   endif
 
   ! Here we need of the opposite of the mesh velocity.
-  !$omp parallel do private(icpt) if(nfabor > thr_n_min)
+  !$omp parallel do private(disp_fac, icpt, ii, inod, iel) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     ! Compute the mass flux using the nodes displacement
     if (iflxmw.eq.0) then
