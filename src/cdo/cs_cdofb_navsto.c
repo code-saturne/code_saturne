@@ -104,7 +104,7 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-cs_time_plot_t  *cs_cdofb_time_plot = NULL;
+static cs_time_plot_t  *cs_cdofb_time_plot = NULL;
 
 /*============================================================================
  * Private function prototypes
