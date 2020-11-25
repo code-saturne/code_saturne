@@ -331,6 +331,8 @@ class StandardItemModelScalars(QStandardItemModel):
         # Name
         if col == 0:
             old_pname = self._data[row][col]
+            if self.mdl.getScalarType(old_pname) == 'var_model':
+                return
             new_pname = str(from_qvariant(value, to_text_string))
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
@@ -457,6 +459,8 @@ class StandardItemModelVariance(QStandardItemModel):
         # name
         if col == 0:
             old_pname = self._data[row][col]
+            if self.mdl.getScalarType(old_pname) == 'var_model':
+                return
             new_pname = str(from_qvariant(value, to_text_string))
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
@@ -467,6 +471,8 @@ class StandardItemModelVariance(QStandardItemModel):
             variance = str(from_qvariant(value, to_text_string))
             self._data[row][col] = variance
             name = self._data[row][0]
+            if self.mdl.getScalarType(name) == 'var_model':
+                return
             self.mdl.setScalarVariance(name, variance)
 
         self.dataChanged.emit(index, index)
