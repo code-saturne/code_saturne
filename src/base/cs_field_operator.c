@@ -247,7 +247,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
                      point_coords[i][1] - cell_cen[cell_id][1],
                      point_coords[i][2] - cell_cen[cell_id][2]};
 
-    for (int j = 0; j < dim; j++) {
+    for (cs_lnum_t j = 0; j < f->dim; j++) {
       cs_lnum_t k = (cell_id*dim + j)*3;
       val[i*dim + j] =   f->val[cell_id*dim + j]
                        + d[0] * grad[k]
@@ -355,7 +355,6 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
     cs_halo_sync_var(m->halo, halo_type, local_min);
     cs_halo_sync_var(m->halo, halo_type, local_max);
   }
-
 }
 
 /*============================================================================
@@ -1037,7 +1036,7 @@ cs_field_set_volume_average(cs_field_t     *f,
   cs_real_t *restrict val = f->val;
   cs_real_t p_va = 0.;
 
-# pragma omp parallel for
+# pragma omp parallel for  reduction(+:p_va)
   for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
     p_va += cell_f_vol[c_id]*val[c_id];
   }
