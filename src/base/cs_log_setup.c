@@ -64,6 +64,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
 #include "cs_volume_zone.h"
+#include "cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -145,6 +146,9 @@ _log_global_model_options(void)
 
   /* Atmospheric aerosols */
   cs_atmo_aerosol_log_setup();
+
+  /* Combustion */
+  cs_combustion_log_setup();
 
   /* TODO : Partie iroext etc... */
 
