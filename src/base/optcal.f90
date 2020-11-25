@@ -75,8 +75,8 @@ module optcal
   !> and \ref istmpf = 1 otherwise.
   integer, save ::          istmpf
 
-  !> number of iterations on the pressure-velocity coupling on Navier-Stokes
-  !> (for the PISO algorithm)
+  !> number of iterations on the velocity-pressure coupling on Navier-Stokes
+  !> (for the U/P inner iterations scheme)
   integer(c_int), pointer, save ::          nterup
 
   !> \ref isno2t specifies the time scheme activated for the source
@@ -215,14 +215,14 @@ module optcal
   double precision, save :: thetvs(nscamx)
 
   !> relative precision for the convergence test of the iterative process on
-  !> pressure-velocity coupling (PISO)
+  !> velocity-pressure coupling (inner iterations)
   real(c_double), pointer, save :: epsup
 
   !> norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$
-  !> of the iterative process on pressure-velocity coupling (PISO)
+  !> of the iterative process on velocity-pressure coupling (inner iterations)
   real(c_double), pointer, save :: xnrmu
 
-  !> norm of \f$ \vect{u}^0 \f$ (used by PISO algorithm)
+  !> norm of \f$ \vect{u}^0 \f$ (used by velocity-pressure inner iterations)
   real(c_double), pointer, save :: xnrmu0
 
   !> \}
@@ -788,7 +788,7 @@ module optcal
   !>    - 1: 1/A_u
   integer(c_int), pointer, save :: rcfact
 
-  !> indicates the algorithm for velocity/pressure coupling:
+  !> indicates the algorithm for velocity-pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
   !> Always useful (it is seldom advised, but it can prove very useful,
@@ -1403,7 +1403,7 @@ module optcal
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
-    ! global PISO options structure
+    ! global velocity-pressure inner iterations structure
 
     subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0,         &
                                       n_buoyant_scal)                       &
@@ -1783,7 +1783,7 @@ contains
 
   end subroutine time_scheme_options_init
 
-  !> \brief Initialize Fortran PISO options API.
+  !> \brief Initialize Fortran inner iteration options API.
   !> This maps Fortran pointers to global C structure members.
 
   subroutine piso_options_init

@@ -302,7 +302,7 @@ ivar = 0
 iflmas = 0
 imax = 0
 
-! pointer to velosity at sub iteration k for PISO like algorithm
+! pointer to velosity at sub iteration k for velocity-pressure inner iterations
 if (nterup.gt.1) then
 
   allocate(uvwk(3, ncelet))
@@ -1492,12 +1492,12 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 endif
 
 !===============================================================================
-! 12. Loop on the velocity/Pressure coupling (PISO)
+! 12. Velocity/pressure inner iterations
 !===============================================================================
 
 if (nterup.gt.1) then
 
-  ! Convergence test on PISO-like algorithm, icvrge is 1 if converged
+  ! Convergence test on U/P inner iterations, icvrge is 1 if converged
   icvrge = 1
 
   xnrtmp = 0.d0

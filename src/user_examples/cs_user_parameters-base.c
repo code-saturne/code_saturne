@@ -730,7 +730,7 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [param_physical_constants] */
 
-  /* Example: Change options relative to the PISO-like sub-iterations
+  /* Example: Change options relative to the inner iterations
    * over prediction-correction.
    * - nterup: number of sub-iterations (default 1)
    * - epsup: relative precision (default 10e-5)
@@ -977,7 +977,7 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [param_var_blend_st] */
 
   /* Example: declare a scalar as buoyant so that it is
-   * included in the velocity pressure PISO loop  */
+   * included in the velocity pressure inner loop  */
   /*----------------------------------------------*/
 
   /*! [param_var_is_buoyant] */

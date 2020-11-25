@@ -185,9 +185,9 @@ BEGIN_C_DECLS
 /*!
   \struct cs_piso_t
 
-  \brief PISO options descriptor.
+  \brief Inner velocity/pressure iteration options descriptor.
 
-  Members of the PISO structure are publicly accessible, to allow for
+  Members of this structure are publicly accessible, to allow for
   concise  syntax, as they are expected to be used in many places.
 
   \var  cs_piso_t::nterup
@@ -430,7 +430,7 @@ static cs_time_scheme_t  _time_scheme =
 
 const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
 
-/* PISO structure and associated pointer */
+/* Velocity/pressure inner iterations structure and associated pointer */
 
 static cs_piso_t  _piso =
 {

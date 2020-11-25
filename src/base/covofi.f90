@@ -1439,7 +1439,7 @@ if (vcopt%iwarni.ge.2) then
   write(nfecra,1200)chaine(1:16) ,sclnor
 endif
 
-! Log in case of PISO-like sub iterations
+! Log in case of velocity/pressure inner iterations
 if (iterns.ge.1.and.vcopt%iwarni.ge.1) then
 
   allocate(errork(ncelet))
@@ -1488,7 +1488,8 @@ if (allocated(diverg)) deallocate(diverg)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-2601 format('PISO scalar',I10, 'iter=', I10, 'L2 error = ',E12.4,' L2 normalized error', E12.4, 'L2 nomr', E12.4 ,/)
+2601 format('Inner iteration scalar',I10, 'iter=', I10, 'L2 error = ',E12.4, &
+            ' L2 normalized error', E12.4, 'L2 nomr', E12.4 ,/)
 
 !----
 ! End

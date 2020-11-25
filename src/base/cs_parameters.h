@@ -175,7 +175,7 @@ typedef struct {
 } cs_time_scheme_t;
 
 /*----------------------------------------------------------------------------
- * PISO descriptor
+ * Inner iterations descriptor
  *----------------------------------------------------------------------------*/
 
 typedef struct {
@@ -222,7 +222,7 @@ extern const cs_space_disc_t  *cs_glob_space_disc;
 
 extern const cs_time_scheme_t  *cs_glob_time_scheme;
 
-/* Pointer to PISO options structure */
+/* Pointer to inner iterations structure */
 
 extern const cs_piso_t  *cs_glob_piso;
 

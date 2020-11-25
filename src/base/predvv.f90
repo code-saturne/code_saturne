@@ -845,7 +845,7 @@ if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
 
     call tspdcv(ncepdp, icepdc, vela, ckupdc, hl_exp)
 
-    ! If PISO-like sub-iterations, we use trava, otherwise trav
+    ! If we have inner iterations, we use trava, otherwise trav
     if(nterup.gt.1) then
       do ielpdc = 1, ncepdp
         iel    = icepdc(ielpdc)
@@ -1139,14 +1139,14 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
     ! No extrapolation of source terms
     else
 
-      ! No PISO iteration
+      ! No inner iteration
       if (nterup.eq.1) then
         do iel = 1, ncel
           do isou = 1, 3
             trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
           enddo
         enddo
-      ! PISO iterations
+      ! Inner iterations
       else
         do iel = 1, ncel
           do isou = 1, 3
@@ -1454,7 +1454,7 @@ if ((iphydr.ne.1.or.igpust.ne.1)) then
 
   else
     ! Alwways in the current work array because this may be updated
-    ! during  PISO sweeps
+    ! during inner iterations
      do iel = 1, ncel
        do isou = 1, 3
          trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
@@ -1509,7 +1509,7 @@ if (ncesmp.gt.0) then
                 trava, fimp, gavinj)
   endif
 
-  ! At the first PISO iteration, the explicit part "Gamma u^{in}" is added
+  ! At the first inner iteration, the explicit part "Gamma u^{in}" is added
   if (iterns.eq.1) then
     ! If source terms are extrapolated, stored in fields
     if(isno2t.gt.0) then
@@ -1520,7 +1520,7 @@ if (ncesmp.gt.0) then
       enddo
 
     else
-      ! If no PISO iteration: in trav
+      ! If no inner iteration: in trav
       if (nterup.eq.1) then
         do iel = 1,ncel
           do isou = 1, 3
@@ -1547,7 +1547,7 @@ endif
 ! If source terms are extrapolated in time
 if (isno2t.gt.0) then
   thetp1 = 1.d0 + thets
-  ! If no PISO iteration: trav
+  ! If no inner iteration: trav
   if (nterup.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
@@ -1566,14 +1566,14 @@ if (isno2t.gt.0) then
 
 ! No time extrapolation
 else
-  ! No PISO iteration
+  ! No inner iteration
   if (nterup.eq.1) then
     do iel = 1, ncel
       do isou = 1, 3
         smbr(isou,iel) = trav(isou,iel)
       enddo
     enddo
-  ! PISO iterations
+  ! Inner iterations
   else
     do iel = 1, ncel
       do isou = 1, 3
