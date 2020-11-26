@@ -3066,6 +3066,10 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   BFT_FREE(g_block_index);
   BFT_FREE(block_connect);
 
+  /* Write family numbers */
+
+  _export_families_g(export_sections, w, med_mesh);
+
   return current_section;
 }
 
