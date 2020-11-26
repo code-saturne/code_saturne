@@ -90,8 +90,8 @@ cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
 static const char
 cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
   { N_("Steady-state"),
-    N_("Implicit"),
-    N_("Explicit"),
+    N_("1st order Forward Euler (Implicit)"),
+    N_("1st order Backward Euler (Explicit)"),
     N_("Crank-Nicolson"),
     N_("Theta scheme")
   };
