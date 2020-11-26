@@ -3,6 +3,8 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix missing polygon families/groups in MED output for parallel runs.
+
 - Fix possible data races with OpenMP for turbomachinery and
   pressure average.
 
