@@ -110,7 +110,7 @@ class NameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
                 default = {}
                 default['name']  = self.old_pname
                 default['list']   = model.mdl.getScalarNameList()
@@ -213,7 +213,7 @@ class VarianceNameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
                 default = {}
                 default['name']  = self.old_pname
                 default['list']   = model.mdl.getScalarNameList()
@@ -336,10 +336,11 @@ class StandardItemModelScalars(QStandardItemModel):
         # Name
         if col == 0:
             old_pname = self._data[row][col]
+            if self.mdl.getScalarType(old_pname) == 'var_model':
+                return
             new_pname = str(from_qvariant(value, to_text_string))
-            if self.mdl.getScalarType(old_pname) != 'var_model' or self.mdl.getScalarType(new_pname) != 'var_model':
-                self._data[row][col] = new_pname
-                self.mdl.renameScalarLabel(old_pname, new_pname)
+            self._data[row][col] = new_pname
+            self.mdl.renameScalarLabel(old_pname, new_pname)
 
         # GGDH
         elif col == 1:
@@ -466,8 +467,6 @@ class StandardItemModelVariance(QStandardItemModel):
             if self.mdl.getScalarType(old_pname) == 'var_model':
                 return
             new_pname = str(from_qvariant(value, to_text_string))
-            if self.mdl.getScalarType(new_pname) == 'var_model':
-                return
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
 
