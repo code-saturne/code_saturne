@@ -254,10 +254,13 @@ class VarianceDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        if value in index.model().mdl.getGasCombScalarsNameList():
+            self.modelCombo.addItem(value, value)
+            return
         l1 = index.model().mdl.getScalarNameList()
         for label in index.model().mdl.getThermalScalarName():
-            l1.append(label)
-        for label in index.model().mdl.getGasCombScalarsNameList():
             l1.append(label)
         for s in index.model().mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
