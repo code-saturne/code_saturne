@@ -113,8 +113,8 @@ class NameDelegate(QItemDelegate):
             if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
                 default = {}
                 default['label']  = self.old_pname
-                default['name']  = self.old_pname
-                default['list']   = model.mdl.getScalarNameList()
+                default['name']   = self.old_pname
+                default['list'] = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
@@ -122,7 +122,10 @@ class NameDelegate(QItemDelegate):
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
-                    new_pname = result['name']
+                    new_pname = result['label']
+                    result['name'] = new_pname
+                    result['list'] = model.mdl.getScalarNameList()
+                    result['regexp'] = self.regExp
                     log.debug("setModelData -> result = %s" % result)
                 else:
                     new_pname = self.old_pname
