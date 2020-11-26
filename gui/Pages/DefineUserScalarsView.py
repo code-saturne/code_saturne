@@ -112,6 +112,7 @@ class NameDelegate(QItemDelegate):
 
             if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
                 default = {}
+                default['label']  = self.old_pname
                 default['name']  = self.old_pname
                 default['list']   = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
@@ -215,6 +216,7 @@ class VarianceNameDelegate(QItemDelegate):
 
             if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
                 default = {}
+                default['label']  = self.old_pname
                 default['name']  = self.old_pname
                 default['list']   = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
