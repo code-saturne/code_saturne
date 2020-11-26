@@ -510,6 +510,10 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
   cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  if (g <= 0.)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Atmo meteo profiles: gravity must not be 0.\n"));
+
   cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   /* Reference fluid properties set from meteo values */

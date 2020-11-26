@@ -168,7 +168,9 @@ typedef struct {
   /*! Use meteo profile:
    *  - 0: not use
    *  - 1: use a meteo file
-   *  - 2: directly enter values */
+   *  - 2: directly enter values large scale values
+   *  - 3: fill directly meteo_* fields
+   *  */
   int meteo_profile;
 
   /*! Meteo file */

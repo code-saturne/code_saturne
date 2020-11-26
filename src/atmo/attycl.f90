@@ -137,7 +137,7 @@ tpent = 0.d0
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 
-if (imeteo.eq.2) then
+if (imeteo.ge.2) then
   call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
   call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
   call field_get_val_s_by_name('meteo_tke', cpro_met_k)

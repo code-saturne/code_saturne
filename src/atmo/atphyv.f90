@@ -88,7 +88,7 @@ if (idilat.eq.0) then
   call field_get_val_s_by_name("thermal_expansion", cpro_beta)
 endif
 
-if (imeteo.eq.2) then
+if (imeteo.ge.2) then
   call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
 endif
 

@@ -150,7 +150,7 @@ do iel = 1, ncel
     enddo
   endif
 
-  if (theo_interp.eq.1.or.imeteo.eq.2) then
+  if (theo_interp.eq.1.or.imeteo.ge.2) then
 
     xuent = cpro_vel_target(1,iel)
     xvent = cpro_vel_target(2,iel)

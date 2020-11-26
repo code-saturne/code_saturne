@@ -502,7 +502,7 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   call field_set_key_int(iflid, keydri, iscdri)
 endif
 
-if (imeteo.eq.2) then
+if (imeteo.ge.2) then
   f_name  = 'meteo_pressure'
   f_label = 'Meteo pressure'
   ! Now create matching property
