@@ -110,7 +110,7 @@ class NameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
                 default = {}
                 default['label']  = self.old_pname
                 default['name']   = self.old_pname
@@ -217,7 +217,7 @@ class VarianceNameDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             new_pname = str(editor.text())
 
-            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList():
+            if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
                 default = {}
                 default['label']  = self.old_pname
                 default['name']  = self.old_pname
