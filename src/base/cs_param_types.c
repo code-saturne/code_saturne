@@ -209,7 +209,10 @@ cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 {
+  assert(scheme > -1);
   if (scheme == CS_SPACE_N_SCHEMES)
+    return "Unkown";
+  else if (scheme > CS_SPACE_N_SCHEMES)
     return NULL;
   else
     return cs_param_space_scheme_name[scheme];
@@ -228,7 +231,10 @@ cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 {
+  assert(scheme > -1);
   if (scheme == CS_TIME_N_SCHEMES)
+    return "Unkown";
+  else if (scheme > CS_TIME_N_SCHEMES)
     return NULL;
   else
     return cs_param_time_scheme_name[scheme];
@@ -247,7 +253,10 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 const char *
 cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
 {
+  assert(adv_form > -1);
   if (adv_form == CS_PARAM_N_ADVECTION_FORMULATIONS)
+    return "Unkown";
+  else if (adv_form > CS_PARAM_N_ADVECTION_FORMULATIONS)
     return NULL;
   else
     return cs_param_adv_form_name[adv_form];
@@ -266,7 +275,10 @@ cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
 const char *
 cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
 {
+  assert(scheme > -1);
   if (scheme == CS_PARAM_N_ADVECTION_SCHEMES)
+    return "Unkown";
+  else if (scheme > CS_PARAM_N_ADVECTION_SCHEMES)
     return NULL;
   else
     return cs_param_adv_scheme_name[scheme];
@@ -285,7 +297,10 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
 const char *
 cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
+  assert(type > -1);
   if (type == CS_PARAM_N_BC_TYPES)
+    return "Unkown";
+  else if (type > CS_PARAM_N_BC_TYPES)
     return NULL;
   else
     return cs_param_bc_type_name[type];
@@ -304,7 +319,10 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
 const char *
 cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
 {
+  assert(type > -1);
   if (type == CS_PARAM_N_BC_ENFORCEMENTS)
+    return "Unkown";
+  else if (type > CS_PARAM_N_BC_ENFORCEMENTS)
     return NULL;
   else
     return cs_param_bc_enforcement_name[type];
