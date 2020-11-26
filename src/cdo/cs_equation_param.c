@@ -2667,53 +2667,16 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
                     eqname, cs_property_get_name(eqp->adv_scaling_property));
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation:", eqname);
-    switch(eqp->adv_formulation) {
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation: %s\n",
+                  eqname,
+                  cs_param_get_advection_form_name(eqp->adv_formulation));
 
-    case CS_PARAM_ADVECTION_FORM_CONSERV:
-      cs_log_printf(CS_LOG_SETUP, " Conservative\n");
-      break;
-    case CS_PARAM_ADVECTION_FORM_NONCONS:
-      cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
-      break;
-    case CS_PARAM_ADVECTION_FORM_SKEWSYM:
-      cs_log_printf(CS_LOG_SETUP, " Skew-symmetric\n");
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid operator type for advection.");
-
-    } /* Switch on formulation */
-
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme:", eqname);
-    switch(eqp->adv_scheme) {
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-      cs_log_printf(CS_LOG_SETUP, " centered\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_CIP:
-      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
-      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty (CellWise)\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
-      cs_log_printf(CS_LOG_SETUP, " centered-upwind (%3.2f %% of upwind)\n",
-                    100*eqp->upwind_portion);
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
-      cs_log_printf(CS_LOG_SETUP,
-                    " upwind weighted with Samarskii function\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_SG:
-      cs_log_printf(CS_LOG_SETUP,
-                    " upwind weighted with Scharfetter-Gummel function\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-      cs_log_printf(CS_LOG_SETUP, " upwind\n");
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid scheme for advection.");
-    }
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme: %s\n",
+                  eqname,
+                  cs_param_get_advection_scheme_name(eqp->adv_scheme));
+    if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Upwind.Portion: %3.2f %%\n",
+                    eqname, 100*eqp->upwind_portion);
 
   } /* Advection term */
 

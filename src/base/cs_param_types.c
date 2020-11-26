@@ -97,6 +97,24 @@ cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
   };
 
 static const char
+cs_param_adv_form_name[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
+  { N_("Conservative"),
+    N_("Non-Conservative"),
+    N_("Skew-symmetric"),
+  };
+
+static const char
+cs_param_adv_scheme_name[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
+  { N_("Centered"),
+    N_("Continuous interior penalty"),
+    N_("Continuous interior penalty (cellwise)"),
+    N_("Hybrid centered-upwind"),
+    N_("Upwind with the Samarskii weight function "),
+    N_("Upwind with the Scharfetter-Gummel weight function"),
+    N_("Upwind"),
+  };
+
+static const char
 cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
   { N_("Homogeneous Dirichlet"),
     N_("Dirichlet"),
@@ -214,6 +232,44 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
     return NULL;
   else
     return cs_param_time_scheme_name[scheme];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label associated to the advection formulation
+ *
+ * \param[in] adv_form      type of advection formulation
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
+{
+  if (adv_form == CS_PARAM_N_ADVECTION_FORMULATIONS)
+    return NULL;
+  else
+    return cs_param_adv_form_name[adv_form];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label of the advection scheme
+ *
+ * \param[in] scheme      type of advection scheme
+ *
+ * \return the associated advection scheme label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
+{
+  if (scheme == CS_PARAM_N_ADVECTION_SCHEMES)
+    return NULL;
+  else
+    return cs_param_adv_scheme_name[scheme];
 }
 
 /*----------------------------------------------------------------------------*/

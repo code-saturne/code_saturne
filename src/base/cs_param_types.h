@@ -760,6 +760,32 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the label associated to the advection formulation
+ *
+ * \param[in] adv_form      type of advection formulation
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label of the advection scheme
+ *
+ * \param[in] scheme      type of advection scheme
+ *
+ * \return the associated advection scheme label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the type of boundary condition
  *
  * \param[in] type     type of boundary condition
