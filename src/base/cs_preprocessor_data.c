@@ -488,7 +488,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
 
     /* Set mesh modification flag */
 
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
 
   }
 
@@ -1829,7 +1829,7 @@ _read_data(int                 file_id,
           _transform_coords(range_size,
                             mb->vertex_coords + val_offset_cur,
                             f->matrix);
-          mesh->modified = 1;
+          mesh->modified |= CS_MESH_MODIFIED;
         }
       }
 
@@ -2267,14 +2267,14 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 
   if (cs_mesh_cartesian_need_build()) {
     cs_mesh_cartesian_connectivity(mesh, mesh_builder, echo);
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
   }
   else {
     for (file_id = 0; file_id < mr->n_files; file_id++)
       _read_data(file_id, mesh, mesh_builder, mr, echo);
 
     if (mr->n_files > 1)
-      mesh->modified = 1;
+      mesh->modified |= CS_MESH_MODIFIED;
   }
 
   /* Partition data */

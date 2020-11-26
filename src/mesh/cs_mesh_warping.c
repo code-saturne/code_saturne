@@ -1274,7 +1274,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   /* Set mesh modification flag */
 
-  mesh->modified = 1;
+  mesh->modified |= CS_MESH_MODIFIED;
 }
 
 /*----------------------------------------------------------------------------

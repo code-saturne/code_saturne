@@ -319,7 +319,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
 
   BFT_FREE(c_o2n);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= CS_MESH_MODIFIED;
 
   /* Rebuild ghosts */
 

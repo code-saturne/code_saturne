@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Preprocessing: added mesh modification flag types to more easily
+  activate re-partitioning.
+
 - LES inflow synthetic turbulence configuration is now zone-based, with
   a new, more consistent user API.
 

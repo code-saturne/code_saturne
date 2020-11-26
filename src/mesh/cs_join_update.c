@@ -4701,7 +4701,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   }
 
   if (n_g_clean_faces[0] + n_g_clean_faces[1] > 0)
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
 
   /* Free memory */
 

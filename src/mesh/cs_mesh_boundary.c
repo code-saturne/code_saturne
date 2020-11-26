@@ -1711,7 +1711,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   BFT_REALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   if (mesh->n_g_b_faces != _n_g_b_faces)
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
 
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;

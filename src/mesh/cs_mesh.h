@@ -53,6 +53,16 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*
+ * Mesh modification type flags
+ */
+
+/*! Any type of mesh modification */
+#define CS_MESH_MODIFIED (1 << 0)
+
+/*! Mesh modification has changed mesh distribution balance */
+#define CS_MESH_MODIFIED_BALANCE (1 << 1)
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

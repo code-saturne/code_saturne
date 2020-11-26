@@ -2151,7 +2151,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   BFT_FREE(l_faces);
   BFT_FREE(l_vertices);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= CS_MESH_MODIFIED;
 
   /* Rebuild ghosts */
 

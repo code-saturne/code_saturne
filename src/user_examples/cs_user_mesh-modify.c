@@ -102,7 +102,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     /* Set mesh modification flag if it should be saved for future re-use. */
 
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
   }
   /*! [mesh_modify_coords] */
 
@@ -297,7 +297,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     /* Mark mesh as modified to save it */
 
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
   }
   /*! [mesh_modify_groups_1] */
 
@@ -325,7 +325,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     /* Mark mesh as modified to save it */
 
-    mesh->modified = 1;
+    mesh->modified |= CS_MESH_MODIFIED;
   }
   /*! [mesh_modify_groups_2] */
 
@@ -440,7 +440,8 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     BFT_FREE(selected_elts);
     BFT_FREE(flag);
 
-    mesh->modified = 1;
+    /* Mark for re-partitioning */
+    mesh->modified |= CS_MESH_MODIFIED_BALANCE;
   }
   /*! [mesh_modify_remove_cells] */
 

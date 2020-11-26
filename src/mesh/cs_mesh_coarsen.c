@@ -762,7 +762,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   BFT_FREE(c_o2n);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   bft_printf("\nWarning mesh coarsening algorithm not complete yet\n");
 
