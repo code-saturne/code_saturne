@@ -449,16 +449,8 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-        if self.cat_case_name is not None:
-            config = configparser.ConfigParser()
-            config.read(self.package.get_configfiles())
-            cathare_libpath=config.get('install', 'cathare')
-        else:
-            cathare_libpath=None
-
         self.__build_run_cfg__(distrep = repbase,
-                               casename = 'coupling',
-                               cathare_path = cathare_libpath)
+                               casename = 'coupling')
 
         self.__coupled_run_cfg__(distrep = repbase,
                                  coupled_domains = coupled_domains)
@@ -637,8 +629,7 @@ class study:
 
     def __build_run_cfg__(self,
                           distrep,
-                          casename,
-                          cathare_path=None):
+                          casename):
         """
         Retrieve batch file for the current system
         Update batch file for the study
