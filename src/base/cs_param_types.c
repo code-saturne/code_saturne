@@ -209,13 +209,20 @@ cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 {
-  assert(scheme > -1);
-  if (scheme == CS_SPACE_N_SCHEMES)
-    return "Unkown";
-  else if (scheme > CS_SPACE_N_SCHEMES)
-    return NULL;
-  else
+  switch (scheme) {
+  case CS_SPACE_SCHEME_LEGACY:
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+  case CS_SPACE_SCHEME_CDOEB:
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
     return cs_param_space_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,13 +238,16 @@ cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 {
-  assert(scheme > -1);
-  if (scheme == CS_TIME_N_SCHEMES)
-    return "Unkown";
-  else if (scheme > CS_TIME_N_SCHEMES)
-    return NULL;
-  else
+  switch (scheme) {
+  case CS_TIME_SCHEME_STEADY:
+  case CS_TIME_SCHEME_EULER_IMPLICIT:
+  case CS_TIME_SCHEME_EULER_EXPLICIT:
+  case CS_TIME_SCHEME_THETA:
     return cs_param_time_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -253,13 +263,15 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 const char *
 cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
 {
-  assert(adv_form > -1);
-  if (adv_form == CS_PARAM_N_ADVECTION_FORMULATIONS)
-    return "Unkown";
-  else if (adv_form > CS_PARAM_N_ADVECTION_FORMULATIONS)
-    return NULL;
-  else
+  switch (adv_form) {
+  case CS_PARAM_ADVECTION_FORM_CONSERV:
+  case CS_PARAM_ADVECTION_FORM_NONCONS:
+  case CS_PARAM_ADVECTION_FORM_SKEWSYM:
     return cs_param_adv_form_name[adv_form];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -275,13 +287,19 @@ cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
 const char *
 cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
 {
-  assert(scheme > -1);
-  if (scheme == CS_PARAM_N_ADVECTION_SCHEMES)
-    return "Unkown";
-  else if (scheme > CS_PARAM_N_ADVECTION_SCHEMES)
-    return NULL;
-  else
+  switch (scheme) {
+  case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+  case CS_PARAM_ADVECTION_SCHEME_CIP:
+  case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
+  case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
+  case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
+  case CS_PARAM_ADVECTION_SCHEME_SG:
+  case CS_PARAM_ADVECTION_SCHEME_UPWIND:
     return cs_param_adv_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -297,13 +315,19 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
 const char *
 cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
-  assert(type > -1);
-  if (type == CS_PARAM_N_BC_TYPES)
-    return "Unkown";
-  else if (type > CS_PARAM_N_BC_TYPES)
-    return NULL;
-  else
+  switch (type) {
+  case CS_PARAM_BC_HMG_DIRICHLET:
+  case CS_PARAM_BC_DIRICHLET:
+  case CS_PARAM_BC_HMG_NEUMANN:
+  case CS_PARAM_BC_NEUMANN:
+  case CS_PARAM_BC_ROBIN:
+  case CS_PARAM_BC_SLIDING:
+  case CS_PARAM_BC_CIRCULATION:
     return cs_param_bc_type_name[type];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -319,13 +343,16 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
 const char *
 cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
 {
-  assert(type > -1);
-  if (type == CS_PARAM_N_BC_ENFORCEMENTS)
-    return "Unkown";
-  else if (type > CS_PARAM_N_BC_ENFORCEMENTS)
-    return NULL;
-  else
+  switch (type) {
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     return cs_param_bc_enforcement_name[type];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
