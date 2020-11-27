@@ -444,6 +444,36 @@ typedef struct {
 
 } cs_navsto_param_sles_t;
 
+/*! \enum cs_navsto_param_advection_strategy_t
+ *  \brief Choice of how to handle the advection term in the momentum
+ *         equation.
+ *
+ * \var CS_NAVSTO_ADVECTION_IMPLICIT_FULL
+ * The advection term is implicitly treated. The non-linearity stemming from
+ * this term has to be solved using a specific algorithm such as the Picard
+ * (fixed-point) technique or more elaborated techniques. Please refer to
+ * \ref cs_navsto_nl_algo_t for more details.
+ *
+ * \var CS_NAVSTO_ADVECTION_IMPLICIT_LINEARIZED
+ * The advection term is implicitly treated. The non-linearity stemming from
+ * this term is simplified. Namely, one assumes a linearized advection. This is
+ * equivalent to a one-step Picard technique.
+ *
+ * \var CS_NAVSTO_ADVECTION_EXPLICIT_ADAMS_BASHFORTH
+ * The advection term is treated explicitly. One keeps the non-linearity
+ * stemming from this term at the right hand-side. A second-order
+ * Adams-Bashforth technique is used.
+ */
+
+typedef enum {
+
+  CS_NAVSTO_ADVECTION_IMPLICIT_FULL,
+  CS_NAVSTO_ADVECTION_IMPLICIT_LINEARIZED,
+  CS_NAVSTO_ADVECTION_EXPLICIT_ADAMS_BASHFORTH,
+
+  CS_NAVSTO_N_ADVECTION_STRATEGIES
+
+} cs_navsto_param_advection_strategy_t;
 
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
@@ -592,9 +622,13 @@ typedef struct {
    *
    *  \var adv_scheme
    *  Type of scheme for the advection term
+   *
+   *  \var adv_strategy
+   *  Strategy to handle the advection term
    */
-  cs_param_advection_form_t     adv_form;
-  cs_param_advection_scheme_t   adv_scheme;
+  cs_param_advection_form_t               adv_form;
+  cs_param_advection_scheme_t             adv_scheme;
+  cs_navsto_param_advection_strategy_t    adv_strategy;
 
   /*! \var qtype
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
@@ -846,6 +880,7 @@ typedef enum {
 
   CS_NSKEY_ADVECTION_FORMULATION,
   CS_NSKEY_ADVECTION_SCHEME,
+  CS_NSKEY_ADVECTION_STRATEGY,
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
   CS_NSKEY_IL_ALGO_ATOL,

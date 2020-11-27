@@ -87,6 +87,14 @@ cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
     N_("Incremental projection algorithm"),
   };
 
+static const char
+cs_navsto_param_adv_strategy_name
+[CS_NAVSTO_N_ADVECTION_STRATEGIES] [CS_BASE_STRING_LEN] =
+  { N_("Fully implicit"),
+    N_("Linearized (implicit)"),
+    N_("Explicit with a 2nd order Adams-Bashforth"),
+  };
+
 static const char _err_empty_nsp[] =
   N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
      " Please check your settings.\n");
@@ -320,6 +328,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
 
   param->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  param->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_FULL;
 
   /* Forcing steady state in order to avoid inconsistencies */
   if (option_flag & CS_NAVSTO_FLAG_STEADY)
@@ -571,6 +580,24 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     }
     break;
 
+  case CS_NSKEY_ADVECTION_STRATEGY:
+    if (strcmp(val, "fully_implicit") == 0 ||
+        strcmp(val, "implicit") == 0)
+      nsp->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_FULL;
+    else if (strcmp(val, "implicit_linear") == 0 ||
+             strcmp(val, "linearized") == 0)
+      nsp->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_LINEARIZED;
+    else if (strcmp(val, "explicit") == 0 ||
+             strcmp(val, "adams-bashforth") == 0)
+      nsp->adv_strategy = CS_NAVSTO_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key"
+                  " CS_NSKEY_ADVECTION_STRATEGY\n"), __func__, _val);
+    }
+    break;
+
   case CS_NSKEY_DOF_REDUCTION:
     if (strcmp(val, "derham") == 0)
       nsp->dof_reduction_mode = CS_PARAM_REDUCTION_DERHAM;
@@ -643,9 +670,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_NL_ALGO:
     {
-      if (strcmp(val, "picard") == 0)
-        nsp->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
-      else if (strcmp(val, "fixed-point") == 0)
+      if (strcmp(val, "picard") == 0 ||
+          strcmp(val, "fixed-point") == 0)
         nsp->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
       else {
         const char *_val = val;
@@ -968,9 +994,44 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
                   " Boussinesq approximation for solidification activated");
 
-  /* Describe the coupling algorithm */
+  /* Describe the space-time discretization */
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",
                 cs_navsto_param_coupling_name[nsp->coupling]);
+
+  if (!cs_navsto_param_is_steady(nsp)) {
+
+    const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
+    if (time_scheme != NULL) {
+      cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time scheme: %s", time_scheme);
+      if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
+        cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
+      else
+        cs_log_printf(CS_LOG_SETUP, "\n");
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
+
+  }
+
+  const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
+  if (nsp->space_scheme < CS_SPACE_N_SCHEMES)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Space scheme: %s\n",
+                  space_scheme);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Undefined space scheme.", __func__);
+
+  /* Advection treament */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
+
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection scheme: %s\n",
+                  cs_param_get_advection_scheme_name(nsp->adv_scheme));
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection formulation: %s\n",
+                  cs_param_get_advection_form_name(nsp->adv_scheme));
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection strategy: %s\n",
+                  cs_navsto_param_adv_strategy_name[nsp->adv_strategy]);
+
+  }
 
   /* Describe if needed the SLES settings for the non-linear algorithm */
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
@@ -1042,29 +1103,6 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | InnerLinear.Algo.Tolerances:"
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
                 nslesp.il_algo_rtol, nslesp.il_algo_atol, nslesp.il_algo_dtol);
-
-  const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
-  if (nsp->space_scheme < CS_SPACE_N_SCHEMES)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Space scheme: %s\n",
-                  space_scheme);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Undefined space scheme.", __func__);
-
-  if (!cs_navsto_param_is_steady(nsp)) {
-
-    const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
-    if (time_scheme != NULL) {
-      cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time scheme: %s", time_scheme);
-      if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
-        cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
-      else
-        cs_log_printf(CS_LOG_SETUP, "\n");
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
-
-  }
 
   /* Default quadrature type */
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Default quadrature: %s\n",
