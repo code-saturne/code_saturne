@@ -143,7 +143,8 @@ class GasCombustionModel(Variables, Model):
             for tag in ('variable',
                         'property',
                         'reference_mass_molar',
-                        'reference_temperature'):
+                        'reference_temperature',
+                        'soot_model'):
                 for node in self.node_gas.xmlGetNodeList(tag):
                     node.xmlRemoveNode()
             for zone in LocalizationModel('BoundaryZone', self.case).getZones():
