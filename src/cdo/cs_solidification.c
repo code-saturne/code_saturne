@@ -2300,8 +2300,9 @@ cs_solidification_set_verbosity(int   verbosity)
  * \param[in]  options          flag to handle optional parameters
  * \param[in]  post_flag        predefined post-processings
  * \param[in]  boundaries       pointer to the domain boundaries
+ * \param[in]  ns_model         model equations for the NavSto system
+ * \param[in]  ns_model_flag    option flag for the Navier-Stokes system
  * \param[in]  algo_coupling    algorithm used for solving the NavSto system
- * \param[in]  ns_option        option flag for the Navier-Stokes system
  * \param[in]  ns_post_flag     predefined post-processings for Navier-Stokes
  *
  * \return a pointer to a new allocated solidification structure
@@ -2309,13 +2310,14 @@ cs_solidification_set_verbosity(int   verbosity)
 /*----------------------------------------------------------------------------*/
 
 cs_solidification_t *
-cs_solidification_activate(cs_solidification_model_t      model,
-                           cs_flag_t                      options,
-                           cs_flag_t                      post_flag,
-                           const cs_boundary_t           *boundaries,
-                           cs_navsto_param_coupling_t     algo_coupling,
-                           cs_flag_t                      ns_option,
-                           cs_flag_t                      ns_post_flag)
+cs_solidification_activate(cs_solidification_model_t       model,
+                           cs_flag_t                       options,
+                           cs_flag_t                       post_flag,
+                           const cs_boundary_t            *boundaries,
+                           cs_navsto_param_model_t         ns_model,
+                           cs_navsto_param_model_flag_t    ns_model_flag,
+                           cs_navsto_param_coupling_t      algo_coupling,
+                           cs_navsto_param_post_flag_t     ns_post_flag)
 {
   if (model < 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -2334,17 +2336,13 @@ cs_solidification_activate(cs_solidification_model_t      model,
   /* Activate and default settings for the Navier-Stokes module */
   /* ---------------------------------------------------------- */
 
-  cs_navsto_param_model_t  ns_model = CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
-  if (model & CS_SOLIDIFICATION_MODEL_STOKES)
-    ns_model |= CS_NAVSTO_MODEL_STOKES;
-  else if (model & CS_SOLIDIFICATION_MODEL_NAVIER_STOKES)
-    ns_model |= CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES;
+  ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
   cs_navsto_system_activate(boundaries,
                             ns_model,
+                            ns_model_flag,
                             algo_coupling,
-                            ns_option,
                             ns_post_flag);
 
   solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
@@ -3176,12 +3174,6 @@ cs_solidification_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Verbosity: %d\n",
                 solid->verbosity);
-  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_STOKES))
-    cs_log_printf(CS_LOG_SETUP, "Stokes");
-  else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_NAVIER_STOKES))
-    cs_log_printf(CS_LOG_SETUP, "Navier-Stokes");
-  cs_log_printf(CS_LOG_SETUP, "\n");
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
   if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {

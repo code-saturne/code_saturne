@@ -324,7 +324,7 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
                        const cs_param_sles_t           slesp,
                        KSP                             ksp)
 {
-  if (model & CS_NAVSTO_MODEL_STOKES)
+  if (model == CS_NAVSTO_MODEL_STOKES)
     KSPSetType(ksp, KSPFCG);
 
   else { /* Advection is present, so one needs a more genric iterative solver */
@@ -333,6 +333,7 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
 
     KSPSetType(ksp, KSPFGMRES);
     KSPGMRESSetRestart(ksp, n_max_restart);
+
   }
 
   /* Set KSP tolerances */

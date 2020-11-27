@@ -129,7 +129,7 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
 
   /* Set the default solver settings */
   cs_equation_set_param(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+  if (nsp->model ==  CS_NAVSTO_MODEL_STOKES)
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
   else
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "bicg");
@@ -289,7 +289,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   cs_equation_set_param(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Solver settings */
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES) {
+  if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
     cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "gkb_saturne");
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
   }
@@ -453,7 +453,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
 
     /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    if (nsp->model & CS_NAVSTO_MODEL_STOKES)
+    if (nsp->model == CS_NAVSTO_MODEL_STOKES)
       cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
     else
       cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");

@@ -152,13 +152,6 @@ typedef cs_flag_t  cs_solidification_model_t;
  *  \brief Bit values for physical modelling related to the Navier-Stokes system
  *  of equations
  *
- * \var CS_SOLIDIFICATION_MODEL_STOKES
- * Stokes equations (mass and momentum) with the classical choice of variables
- * i.e. velocity and pressure. Mass density is assumed to be constant.
- *
- * \var CS_SOLIDIFICATION_MODEL_NAVIER_STOKES
- * Navier-Stokes equations: mass and momentum with a constant mass density
- *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
  * Modelling introduced in Voller and Prakash entitled:
  * "A fixed grid numerical modelling methodology for convection-diffusion mushy
@@ -172,23 +165,17 @@ typedef cs_flag_t  cs_solidification_model_t;
 
 typedef enum {
 
-  /* Main modelling for the dynamic
-     ------------------------------ */
-
-  CS_SOLIDIFICATION_MODEL_STOKES                  = 1<<0, /* =   1 */
-  CS_SOLIDIFICATION_MODEL_NAVIER_STOKES           = 1<<1, /* =   2 */
-
   /* Main modelling for the thermal system
      ------------------------------------- */
 
-  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
-  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
+  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<0, /* =   1 */
+  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<1, /* =   2 */
 
   /* Solidification modelling
      ------------------------ */
 
-  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<4, /* =  16 */
-  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<5, /* =  32 */
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<2, /* =   4 */
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<3, /* =   8 */
 
 } cs_solidification_model_bit_t;
 
@@ -549,8 +536,9 @@ cs_solidification_set_verbosity(int   verbosity);
  * \param[in]  options          flag to handle optional parameters
  * \param[in]  post_flag        predefined post-processings
  * \param[in]  boundaries       pointer to the domain boundaries
+ * \param[in]  ns_model         model equations for the NavSto system
+ * \param[in]  ns_model_flag    option flag for the Navier-Stokes system
  * \param[in]  algo_coupling    algorithm used for solving the NavSto system
- * \param[in]  ns_option        option flag for the Navier-Stokes system
  * \param[in]  ns_post_flag     predefined post-processings for Navier-Stokes
  *
  * \return a pointer to a new allocated solidification structure
@@ -562,9 +550,10 @@ cs_solidification_activate(cs_solidification_model_t      model,
                            cs_flag_t                      options,
                            cs_flag_t                      post_flag,
                            const cs_boundary_t           *boundaries,
+                           cs_navsto_param_model_t        ns_model,
+                           cs_navsto_param_model_flag_t   ns_model_flag,
                            cs_navsto_param_coupling_t     algo_coupling,
-                           cs_flag_t                      ns_option,
-                           cs_flag_t                      ns_post_flag);
+                           cs_navsto_param_post_flag_t    ns_post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -787,7 +787,7 @@ _add_gravity_source_term(const cs_navsto_param_t           *nsp,
                          const cs_cdofb_navsto_builder_t   *nsb,
                          cs_cell_sys_t                     *csys)
 {
-  assert(nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
+  assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
 
   const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
   const cs_real_t  cell_contrib[3] =
@@ -1991,10 +1991,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
               __func__);
 
   }
-  /* Source terme induced by the gravity (not the Boussinesq approximation but
+
+  /* Source term induced by the gravity (not the Boussinesq approximation but
      only rho.g) */
   sc->add_gravity_source_term = NULL;
-  if (nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
+  if (nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
     sc->add_gravity_source_term = _add_gravity_source_term;
 
   /* Set the build function */

@@ -49,73 +49,50 @@ BEGIN_C_DECLS
 
 #define CS_NAVSTO_STREAM_EQNAME      "streamfunction_eq"
 
-/*!
- * @name Flags specifying numerical options
- * @{
- */
-
-/* Value = 1 */
-#define CS_NAVSTO_FLAG_STEADY            (1 <<  0) /*!< Steady-state */
-
-/*!
- * @}
- * @name Flag specifying predefined post-processing
- *
- * \brief w denotes the vorticity * vector and u the velocity vector, k is the
- *        kinetic energy defined by k := 1/2 * u \cdot u
- *
- * @{
- */
-
-/* Value =   1 */
-#define CS_NAVSTO_POST_VELOCITY_DIVERGENCE (1 <<  0) /*!< div(u) */
-
-/* Value =   2 */
-#define CS_NAVSTO_POST_KINETIC_ENERGY      (1 <<  1) /*!< k := rho/2 u\cdot u */
-
-/* Value =   4 */
-#define CS_NAVSTO_POST_VORTICITY           (1 <<  2) /*!< w = curl(u) */
-
-/* Value =   8 */
-#define CS_NAVSTO_POST_VELOCITY_GRADIENT   (1 <<  3)
-
-/* Value =  16 */
-#define CS_NAVSTO_POST_STREAM_FUNCTION     (1 <<  4) /*!< -Lap(Psi) = w_z */
-
-/* Value =  32 */
-#define CS_NAVSTO_POST_HELICITY            (1 <<  5) /*!< u \cdot w */
-
-/* Value =  64 */
-#define CS_NAVSTO_POST_ENSTROPHY           (1 <<  6) /*!< w \cdot w */
-
-/*!
- * @}
- */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-typedef cs_flag_t  cs_navsto_param_model_t;
+typedef cs_flag_t  cs_navsto_param_model_flag_t;
+typedef cs_flag_t  cs_navsto_param_post_flag_t;
 
-/*! \enum cs_navsto_param_model_bit_t
- *  \brief Bit values for physical modelling related to the Navier-Stokes system
- *  of equations
+/*! \enum cs_navsto_param_model_t
+ *  \brief Describe the system of equations related to the Navier-Stokes to be
+ *  solved
  *
  * \var CS_NAVSTO_MODEL_STOKES
  * Stokes equations (mass and momentum) with the classical choice of variables
  * i.e. velocity and pressure. Mass density is assumed to be constant.
  *
+ * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
+ * Navier-Stokes equations: mass and momentum with a constant mass density
+ * Mass equation is equivalent to an incompressibility constraint
+ *
  * \var CS_NAVSTO_MODEL_OSEEN
  * Like the incompressible Navier-Stokes equations (mass and momentum) but with
  * a velocity field which is given. Thus the advection term in the momentum
  * equation is linear. Unknowns: velocity and pressure. Mass density is assumed
- * to be constant.
+ * to be constant. The advection field is set using
+ * \ref cs_navsto_add_oseen_field
  *
- * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
- * Navier-Stokes equations: mass and momentum with a constant mass density
+ */
+
+typedef enum {
+
+  CS_NAVSTO_MODEL_STOKES,
+  CS_NAVSTO_MODEL_OSEEN,
+  CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
+
+  CS_NAVSTO_N_MODELS
+
+} cs_navsto_param_model_t;
+
+/*! \enum cs_navsto_param_model_bit_t
+ *  \brief Bit values for additional physical modelling related to the
+ *  Navier-Stokes system of equations
  *
- * ----------------------------------------------------------------------------
+ * \var CS_NAVSTO_MODEL_STEADY
+ * There is no time dependency in the model
  *
  * \var CS_NAVSTO_MODEL_GRAVITY_EFFECTS
  * Take into account the gravity effects (add a constant source term equal to
@@ -153,23 +130,57 @@ typedef cs_flag_t  cs_navsto_param_model_t;
 
 typedef enum {
 
-  /* Main modelling for the dynamic
-     ------------------------------ */
-
-  CS_NAVSTO_MODEL_STOKES                          = 1<<0, /* =   1 */
-  CS_NAVSTO_MODEL_OSEEN                           = 1<<1, /* =   2 */
-  CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES    = 1<<2, /* =   4 */
-
-  /* Additional modelling bits
-     ------------------------- */
-
-  CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<3, /* =   8 */
-  CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<4, /* =  16 */
-  CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER          = 1<<5, /* =  32 */
-  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<6, /* =  64 */
-  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<7, /* = 128 */
+  CS_NAVSTO_MODEL_STEADY                          = 1<<0, /* =   1 */
+  CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<1, /* =   2 */
+  CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<2, /* =   4 */
+  CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER          = 1<<3, /* =   8 */
+  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<4, /* =  16 */
+  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<5, /* =  32 */
 
 } cs_navsto_param_model_bit_t;
+
+/*! \enum cs_navsto_param_post_bit_t
+ *  \brief Bit values for additional generic postprocessing related to the
+ *  Navier-Stokes module. In what follows, w denotes the vorticity vector, u
+ *  the velocity vector and k the kinetic energy defined by 1/2 * u \cdot u
+ *
+ * \var CS_NAVSTO_POST_VELOCITY_DIVERGENCE
+ * Compute div(u) and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_KINETIC_ENERGY
+ * Compute rho/2 u\cdot u and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_VORTICITY
+ * Compute w = curl(u) and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_VELOCITY_GRADIENT
+ * Compute the tensor grad(u) and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_STREAM_FUNCTION
+ * Add an equation to compute the stream function and associate a field to this
+ * quantity. This equation is a scalar valued diffusion equation:
+ * -Lap(Psi) = w_z
+ * This is only useful for a 2D computation (assuming that the z-azis is the
+ * extruded one, i.e. the flow is in the x-y plane
+ *
+ * \var CS_NAVSTO_POST_HELICITY
+ * Compute h = u \cdot w and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_ENSTROPHY
+ * Compute  w \cdot w and associate a field to this quantity
+ */
+
+typedef enum {
+
+  CS_NAVSTO_POST_VELOCITY_DIVERGENCE      = 1<< 0, /* =   1 */
+  CS_NAVSTO_POST_KINETIC_ENERGY           = 1<< 1, /* =   2 */
+  CS_NAVSTO_POST_VORTICITY                = 1<< 2, /* =   4 */
+  CS_NAVSTO_POST_VELOCITY_GRADIENT        = 1<< 3, /* =   8 */
+  CS_NAVSTO_POST_STREAM_FUNCTION          = 1<< 4, /* =  16 */
+  CS_NAVSTO_POST_HELICITY                 = 1<< 5, /* =  32 */
+  CS_NAVSTO_POST_ENSTROPHY                = 1<< 6, /* =  64 */
+
+} cs_navsto_param_post_bit_t;
 
 /*! \enum cs_navsto_sles_t
  *
@@ -506,16 +517,6 @@ typedef enum {
 
 typedef struct {
 
-  /*! \var verbosity
-   * Level of display of the information related to the Navier-Stokes system
-   */
-  int                         verbosity;
-
-  /*! \var post_flag
-   * Flag storing which predefined post-processing has to be done
-   */
-  cs_flag_t                   post_flag;
-
   /*!
    * @name Physical modelling
    * Which equations to solve ?  Properties and their related fields are
@@ -526,27 +527,36 @@ typedef struct {
   /*! \var model
    * Modelling related to the Navier-Stokes system of equations
    */
-  cs_navsto_param_model_t     model;
+  cs_navsto_param_model_t        model;
 
-  /*! \var reference_pressure
-   *  Value of the reference pressure p0 (used for rescaling or during update
-   *  of physical quantities). By default: 0.
+  /*! \var model_flag
+   * Flag storing high-level option related to the Navier-Stokes system
+   */
+  cs_navsto_param_model_flag_t   model_flag;
+
+  /*! \var turbulence
+   *  Structure storing all information needed to set the turbulence modelling
    */
 
-  cs_real_t                   reference_pressure;
+  cs_turbulence_param_t         *turbulence;
 
+  /*!
+   * @}
+   * @name Properties and fields related to the Navier-Stokes module
+   * @{
+   */
   /*! \var phys_constants
    * Main physical constants (gravity vector and coriolis source term). This
    * structure is shared with the legacy part.
    */
-  cs_physical_constants_t    *phys_constants;
+  cs_physical_constants_t       *phys_constants;
 
   /*! \var mass_density
    * Mass_density of the fluid, pointer to \ref cs_property_t used in several
    * terms in the Navier-Stokes equations
    */
 
-  cs_property_t              *mass_density;
+  cs_property_t                 *mass_density;
 
   /*! \var tot_viscosity
    *  Laminar viscosity + if needed the turbulent viscosity
@@ -554,36 +564,37 @@ typedef struct {
    *  diffusion term for the momentum equation
    */
 
-  cs_property_t              *tot_viscosity;
+  cs_property_t                *tot_viscosity;
 
   /*! \var lami_viscosity
    *  Laminar viscosity
    */
 
-  cs_property_t              *lam_viscosity;
+  cs_property_t                *lam_viscosity;
 
   /*!
-   * @name Turbulence modelling
-   * Set of parameters to handle turbulence modelling.
-   * @{
-   */
-
-  /*! \var turbulence
-   *  Structure storing all information needed to set the turbulence modelling
-   */
-
-  cs_turbulence_param_t      *turbulence;
-
-  /*!
+   * @}
    * @name Numerical options
    * Set of numerical options to build the linear system and how to solve it
    * @{
    */
 
-  /*! \var option_flag
-   * Flag storing high-level option related to the Navier-Stokes system
+  /*! \var dof_reduction_mode
+   *  How are defined the Degrees of freedom
    */
-  cs_flag_t                     option_flag;
+  cs_param_dof_reduction_t       dof_reduction_mode;
+
+  /*! \var coupling
+   * Choice of algorithm for solving the system
+   */
+  cs_navsto_param_coupling_t     coupling;
+
+  /*! \var gd_scale_coef
+   *  Default value to set the scaling of the grad-div term when an
+   *  artificial compressibility algorithm or an Uzawa-Augmented Lagrangian
+   *  method is used
+   */
+  cs_real_t                      gd_scale_coef;
 
   /*! \var time_scheme
    * Discretization scheme for time
@@ -592,30 +603,13 @@ typedef struct {
    * Value of the parameter for the time scheme when a theta-scheme is used
    *
    */
-  cs_param_time_scheme_t        time_scheme;
-  cs_real_t                     theta;
+  cs_param_time_scheme_t         time_scheme;
+  cs_real_t                      theta;
 
   /*! \var space_scheme
    * Discretization scheme for space
    */
-  cs_param_space_scheme_t       space_scheme;
-
-  /*! \var dof_reduction_mode
-   *  How are defined the Degrees of freedom
-   */
-  cs_param_dof_reduction_t      dof_reduction_mode;
-
-  /*! \var coupling
-   * Choice of algorithm for solving the system
-   */
-  cs_navsto_param_coupling_t    coupling;
-
-  /*! \var gd_scale_coef
-   *  Default value to set the scaling of the grad-div term when an
-   *  artificial compressibility algorithm or an Uzawa-Augmented Lagrangian
-   *  method is used
-   */
-  cs_real_t                     gd_scale_coef;
+  cs_param_space_scheme_t        space_scheme;
 
   /*! \var adv_form
    *  Type of formulation for the advection term
@@ -634,18 +628,18 @@ typedef struct {
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
    *  all routines involving quadratures
    */
-  cs_quadrature_type_t          qtype;
+  cs_quadrature_type_t           qtype;
 
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
    */
-  cs_navsto_param_sles_t        sles_param;
+  cs_navsto_param_sles_t         sles_param;
 
   /*! \var delta_thermal_tolerance
    * Value under which one considers that the thermal equation is converged
    * max_{c \in Cells} |T_c - T_{ref}|/|T_{ref}| < eps => stop iteration
    */
-  cs_real_t                     delta_thermal_tolerance;
+  cs_real_t                      delta_thermal_tolerance;
 
   /*! \var n_max_outer_iter
    * Stopping crierion related to the maximum number of outer iterations
@@ -653,7 +647,22 @@ typedef struct {
    * and (according to the case settings) the turbulence system and/or
    * the thermal system.
    */
-  int                           n_max_outer_iter;
+  int                            n_max_outer_iter;
+
+  /*!
+   * @}
+   * @name Output
+   * @{
+   *
+   * \var verbosity
+   * Level of display of the information related to the Navier-Stokes system
+   */
+  int                           verbosity;
+
+  /*! \var post_flag
+   * Flag storing which predefined post-processing has to be done
+   */
+  cs_navsto_param_post_flag_t   post_flag;
 
   /*!
    * @}
@@ -751,6 +760,18 @@ typedef struct {
   bool         pressure_bc_is_owner;
   int          n_pressure_bc_defs;
   cs_xdef_t  **pressure_bc_defs;
+
+  /*! @}
+   * @name Other conditions
+   * @{
+   */
+
+  /*! \var reference_pressure
+   *  Value of the reference pressure p0 (used for rescaling or during update
+   *  of physical quantities). By default: 0.
+   */
+
+  cs_real_t    reference_pressure;
 
   /*! \var n_solid_cells
    *   If n_solid_cells > 0, then one requests that a part of the fluid is
@@ -928,7 +949,7 @@ cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
   if (nsp == NULL)
     return true;
 
-  if (nsp->option_flag & CS_NAVSTO_FLAG_STEADY)
+  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
     return true;
   else
     return false;
@@ -943,22 +964,22 @@ cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
  * \brief  Create a new structure to store all numerical parameters related
  *         to the resolution of the Navier-Stokes (NS) system
  *
- * \param[in]  boundaries     pointer to a cs_boundary_t structure
- * \param[in]  model          model related to the NS system to solve
- * \param[in]  algo_coupling  algorithm used for solving the NS system
- * \param[in]  option_flag    additional high-level numerical options
- * \param[in]  post_flag      predefined post-processings
+ * \param[in] boundaries      pointer to a cs_boundary_t structure
+ * \param[in] model           type of model related to the NS system
+ * \param[in] model_flag      additional high-level model options
+ * \param[in] algo_coupling   algorithm used for solving the NS system
+ * \param[in] post_flag       predefined post-processings options
  *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(const cs_boundary_t             *boundaries,
-                       cs_navsto_param_model_t          model,
-                       cs_navsto_param_coupling_t       algo_coupling,
-                       cs_flag_t                        option_flag,
-                       cs_flag_t                        post_flag);
+cs_navsto_param_create(const cs_boundary_t            *boundaries,
+                       cs_navsto_param_model_t         model,
+                       cs_navsto_param_model_flag_t    model_flag,
+                       cs_navsto_param_coupling_t      algo_coupling,
+                       cs_navsto_param_post_flag_t     post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1027,6 +1048,19 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp);
 
 cs_equation_param_t *
 cs_navsto_param_get_velocity_param(const cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of the model system of equations
+ *
+ * \param[in]   model    a \ref cs_navsto_param_model_t
+ *
+ * \return the corresponding name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_navsto_param_get_model_name(cs_navsto_param_model_t   model);
 
 /*----------------------------------------------------------------------------*/
 /*!

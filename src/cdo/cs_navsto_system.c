@@ -233,13 +233,13 @@ cs_navsto_system_update_model(bool   with_thermal)
   if (with_thermal) { /* Thermal system is switch on and relies on the mass flux
                          for the advection */
 
-    if ((nsp->model & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
-                       CS_NAVSTO_MODEL_BOUSSINESQ |
-                       CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
+    if ((nsp->model_flag & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
+                            CS_NAVSTO_MODEL_BOUSSINESQ |
+                            CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
 
-      /* Thermal system is linked the Navier-Stokes one but nothing has been
-       * set. Add a flag. */
-      nsp->model |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
+      /* Thermal system is linked to the Navier-Stokes one but nothing has been
+       * set. Add the expected flag. */
+      nsp->model_flag |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
 
     }
 
@@ -253,9 +253,9 @@ cs_navsto_system_update_model(bool   with_thermal)
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
+ * \param[in] model_flag     additional high-level model options
  * \param[in] algo_coupling  algorithm used for solving the NS system
- * \param[in] option_flag    additional high-level numerical options
- * \param[in] post_flag      predefined post-processings
+ * \param[in] post_flag      predefined post-processings options
  *
  * \return a pointer to a new allocated cs_navsto_system_t structure
  */
@@ -264,9 +264,9 @@ cs_navsto_system_update_model(bool   with_thermal)
 cs_navsto_system_t *
 cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_navsto_param_model_t        model,
+                          cs_navsto_param_model_flag_t   model_flag,
                           cs_navsto_param_coupling_t     algo_coupling,
-                          cs_flag_t                      option_flag,
-                          cs_flag_t                      post_flag)
+                          cs_navsto_param_post_flag_t    post_flag)
 {
   /* Sanity checks */
   if (model < 1)
@@ -277,8 +277,10 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   cs_navsto_system_t  *navsto = _allocate_navsto_system();
 
   /* Initialize the set of parameters */
-  navsto->param = cs_navsto_param_create(boundaries, model, algo_coupling,
-                                         option_flag, post_flag);
+  navsto->param = cs_navsto_param_create(boundaries,
+                                         model, model_flag,
+                                         algo_coupling,
+                                         post_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
@@ -806,9 +808,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Setup checkings */
-  if ((nsp->model & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
-                     CS_NAVSTO_MODEL_BOUSSINESQ |
-                     CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
+  if ((nsp->model_flag & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
+                          CS_NAVSTO_MODEL_BOUSSINESQ |
+                          CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
 
     if (cs_thermal_system_is_activated() == false)
       bft_error(__FILE__, __LINE__, 0,
@@ -1040,7 +1042,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   }
 
-  if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
     cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
@@ -1263,7 +1265,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   /* First resolve the thermal system if needed */
   cs_equation_t  *th_eq = cs_thermal_system_get_equation();
 
-  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     assert(th_eq != NULL);
 
@@ -1275,7 +1277,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       cs_thermal_system_compute_steady_state(mesh, time_step, connect, cdoq);
 
   }
-  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
@@ -1373,7 +1375,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
   const cs_navsto_param_t  *nsp = ns->param;
 
-  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     /* First resolve the thermal system if needed */
     cs_equation_t  *th_eq = cs_thermal_system_get_equation();
@@ -1389,7 +1391,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       cs_thermal_system_compute(true, mesh, time_step, connect, cdoq);
 
   }
-  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
