@@ -742,12 +742,16 @@ typedef struct {
  *         Navier-Stokes system
  *
  * \var CS_NSKEY_ADVECTION_FORMULATION
- * Set the type of formulation for the advection term, for example in the  Oseen
- * problem . cf. cs_param_types.h
+ * Set the type of formulation for the advection term, for example in the Oseen
+ * problem. cf. cs_param_types.h
  *
  * \var CS_NSKEY_ADVECTION_SCHEME
- * Set the type of scheme for the advection term, for example in the  Oseen
- * problem . cf. cs_param_types.h
+ * Set the type of scheme for the advection term, for example in the Oseen
+ * problem. cf. cs_param_types.h
+ *
+ * \var CS_NSKEY_ADVECTION_STRATEGY
+ * Set the strategy to handle the advection term
+ * (cf. \ref cs_navsto_param_advection_strategy_t)
  *
  * \var CS_NSKEY_DOF_REDUCTION
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
@@ -819,7 +823,7 @@ typedef struct {
  *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization. Available choices are:
- * - "cdo_fb"  for CDO face-based scheme
+ * - "cdo_fb" or "cdofb" for CDO face-based scheme
  *
  * \var CS_NSKEY_THERMAL_TOLERANCE
  * Value of the tolerance criterion under which one stops iterating on

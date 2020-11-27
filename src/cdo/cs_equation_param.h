@@ -1009,25 +1009,29 @@ typedef struct {
  *
  * \var CS_EQKEY_SPACE_SCHEME
  * Set the space discretization scheme. Available choices are:
- * - "cdo_vb"  for CDO vertex-based scheme
- * - "cdo_vcb" for CDO vertex+cell-based scheme
- * - "cdo_fb"  for CDO face-based scheme
- * - "cdo_eb"  for CDO edge-based scheme
- * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
- * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
+ * - "cdo_vb"  or "cdovb" for CDO vertex-based scheme
+ * - "cdo_vcb" or "cdovcb" for CDO vertex+cell-based scheme
+ * - "cdo_fb"  or "cdofb" for CDO face-based scheme
+ * - "cdo_eb"  or "cdoeb" for CDO edge-based scheme
+ * - "hho_p1" for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
+ * - "hho_p2" for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:
- * - "euler_implicit": first-order in time (inconditionnally stable)
- * - "euler_explicit":
- * - "crank_nicolson": second_order in time
- * - "theta_scheme": generic time scheme. One recovers "euler_implicit" with
- *   theta equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ * - "euler_implicit" or "forward_euler" (1st order)
+ * - "euler_explicit" or "backward_euler" (1st order, conditional stability)
+ * - "theta_scheme": Time scheme encompassing several other schemes according
+ *   to the value of theta. One recovers for instance "euler_implicit" with
+ *   theta equal to "1", "euler_explicit" with "0" or "crank_nicolson" with
+ *   theta equal to "0.5"
+ * - "crank_nicolson": Shortcut to set a theta scheme with theta equal to
+ *    0.5. This time discretization is second_order in time accurate.
  *
  * \var CS_EQKEY_TIME_THETA
- * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
- * "theta_scheme"
- * - Example: "0.75" (keyval must be between 0 and 1)
+ * Set a value betwwen 0 and 1 for the theta parameter when a "theta_scheme" is
+ * set for the time discretization. Only useful if CS_EQKEY_TIME_SCHEME is set
+ * to "theta_scheme".
+ * - Example: "0.75"
  *
  * \var CS_EQKEY_VERBOSITY
  * Set the level of details written by the code for an equation.

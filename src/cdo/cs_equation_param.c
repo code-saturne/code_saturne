@@ -1687,7 +1687,8 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_SPACE_SCHEME:
-    if (strcmp(keyval, "cdo_vb") == 0) {
+    if (strcmp(keyval, "cdo_vb") == 0 ||
+        strcmp(keyval, "cdovb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
@@ -1697,7 +1698,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
-    else if (strcmp(keyval, "cdo_vcb") == 0) {
+    else if (strcmp(keyval, "cdo_vcb") == 0 ||
+             strcmp(keyval, "cdovcb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
@@ -1706,7 +1708,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
-    else if (strcmp(keyval, "cdo_fb") == 0) {
+    else if (strcmp(keyval, "cdo_fb") == 0 ||
+             strcmp(keyval, "cdofb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
@@ -1714,7 +1717,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
-    else if (strcmp(keyval, "cdo_eb") == 0) {
+    else if (strcmp(keyval, "cdo_eb") == 0 ||
+             strcmp(keyval, "cdoeb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_EPFD;
@@ -1753,11 +1757,13 @@ _set_key(cs_equation_param_t   *eqp,
     if (strcmp(keyval, "no") == 0 || strcmp(keyval, "steady") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_STEADY;
     }
-    else if (strcmp(keyval, "euler_implicit") == 0) {
+    else if (strcmp(keyval, "euler_implicit") == 0 ||
+             strcmp(keyval, "forward_euler") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
       eqp->theta = 1.;
     }
-    else if (strcmp(keyval, "euler_explicit") == 0) {
+    else if (strcmp(keyval, "euler_explicit") == 0 ||
+             strcmp(keyval, "backward_euler") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_EULER_EXPLICIT;
       eqp->theta = 0.;
     }
