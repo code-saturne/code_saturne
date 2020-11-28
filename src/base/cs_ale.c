@@ -832,6 +832,21 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   /* Update the values of boundary mesh vertices */
   _update_bcs_free_surface(domain);
 
+  /* Compute the Poisson equation on the original mesh */
+  cs_real_3_t *vtx_coord = (cs_real_3_t *)m->vtx_coord;
+  cs_real_3_t *vtx_coord0 = (cs_real_3_t *)(cs_field_by_name("vtx_coord0")->val);
+  const cs_lnum_t n_vertices = m->n_vertices;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
+
+  /* Back to original mesh */
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    for (cs_lnum_t idim = 0; idim < 3; idim++) {
+      vtx_coord[v_id][idim] = vtx_coord0[v_id][idim];
+    }
+  }
+
+  cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
+
   if (cs_equation_uses_new_mechanism(eq))
     cs_equation_solve_steady_state(m, eq);
 
@@ -850,6 +865,16 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
   cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
   cs_real_3_t *m_vel = (cs_real_3_t *)(cs_field_by_name("mesh_velocity")->val);
+
+  /* Back to mesh at time n */
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    for (cs_lnum_t idim = 0; idim < 3; idim++) {
+      vtx_coord[v_id][idim] = vtx_coord0[v_id][idim] + disale[v_id][idim];
+    }
+  }
+
+  cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
+
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
     if (impale[v] == 0) {
