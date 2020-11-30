@@ -852,12 +852,26 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           cs_xdef_array_context_t  *ac =
             (cs_xdef_array_context_t *)def->context;
 
-          assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
-          assert(bz->n_elts == quant->n_b_faces);
           assert(ac->stride == eqp->dim);
           assert(cs_flag_test(ac->loc, cs_flag_primal_face));
 
-          memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+          if (eqp->n_bc_defs == 1) { /* Only one definition */
+
+            assert(bz->n_elts == quant->n_b_faces);
+            memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+
+          }
+          else { /* Only a selection has to be considered */
+
+            assert(elt_ids != NULL);
+#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+              const cs_lnum_t  shift = def->dim*elt_ids[i];
+              for (int k = 0; k < def->dim; k++)
+                values[shift+k] = ac->values[shift+k];
+            }
+
+          }
         }
         break;
 
