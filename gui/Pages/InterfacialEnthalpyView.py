@@ -51,7 +51,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.Base.QtPage import ComboModel, DoubleValidator
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, BasicTableModel
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.InterfacialEnthalpy import Ui_InterfacialEnthalpy
 from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
@@ -66,213 +66,15 @@ logging.basicConfig()
 log = logging.getLogger("InterfacialEnthalpyView")
 log.setLevel(GuiParam.DEBUG)
 
-
-#-------------------------------------------------------------------------------
-# Combo box delegate for the field choice
-#-------------------------------------------------------------------------------
-
-
-class FieldDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent, mdl):
-        super(FieldDelegate, self).__init__(parent)
-        self.parent   = parent
-        self.mdl      = mdl
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        self.modelCombo = ComboModel(editor, 1, 1)
-
-        if index.column() == 0 :
-            txt = index.model().getData(index)[0]
-            fieldIda = self.mdl.getFieldId(txt)
-            for fieldId in self.mdl.getFieldIdaList(fieldIda) :
-                label = self.mdl.getLabel(fieldId[0])
-                self.modelCombo.addItem(self.tr(label), label)
-        else :
-            row = index.row()
-            fieldIda, id = self.mdl.getEnthalpyCoupleList()[row]
-            label = self.mdl.getLabel(id)
-            self.modelCombo.addItem(self.tr(label), label)
-            for fieldId in self.mdl.getFieldIdbList(fieldIda) :
-                label = self.mdl.getLabel(fieldId)
-                self.modelCombo.addItem(self.tr(label), label)
-
-        editor.setMinimumSize(editor.sizeHint())
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        row = index.row()
-        col = index.column()
-        string = index.model().getData(index)[col]
-        self.modelCombo.setItem(str_model=string)
-
-
-    def setModelData(self, comboBox, model, index):
-        txt = str(comboBox.currentText())
-        value = self.modelCombo.dicoV2M[txt]
-        log.debug("FieldDelegate value = %s"%value)
-
-        selectionModel = self.parent.selectionModel()
-        for idx in selectionModel.selectedIndexes():
-            if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
-
-
-#-------------------------------------------------------------------------------
-# StandardItemModelInterfacialEnthalpy class
-#-------------------------------------------------------------------------------
-
-class StandardItemModelInterfacialEnthalpy(QStandardItemModel):
-
-    def __init__(self, parent, mdl):
-        """
-        """
-        QStandardItemModel.__init__(self)
-
-        self.headers = [ self.tr("Field A name"),
-                         self.tr("Field B name ")]
-
-        self.setColumnCount(len(self.headers))
-        self.parent = parent
-
-        self.tooltip = []
-
-        self._data = []
-        self.mdl = mdl
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-
-        if role == Qt.ToolTipRole:
-            return None
-
-        elif role == Qt.DisplayRole:
-            data = self._data[index.row()][index.column()]
-            if data:
-                return data
-            else:
-                return None
-
-        elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-
-        return None
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headers[section]
-        return None
-
-
-    def setData(self, index, value, role):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-
-        row = index.row()
-        col = index.column()
-
-        # field A choice
-        if col == 0:
-            oldField = self._data[row][col]
-            new_pmodel = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_pmodel
-            oldFieldId = self.mdl.getFieldId(oldField)
-            fieldbId = self.mdl.getFieldId(self._data[row][1])
-            fieldaId = self.mdl.getFieldId(new_pmodel)
-
-            self.mdl.setFielda(oldFieldId, fieldbId, fieldaId)
-
-        # field B choice
-        elif col == 1:
-            oldField = self._data[row][col]
-            new_pmodel = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_pmodel
-            oldFieldId = self.mdl.getFieldId(oldField)
-            fieldaId = self.mdl.getFieldId(self._data[row][0])
-            fieldbId = self.mdl.getFieldId(new_pmodel)
-
-            self.mdl.setFieldb(fieldaId, oldFieldId, fieldbId)
-
-        self.dataChanged.emit(index, index)
-        return True
-
-
-    def getData(self, index):
-        row = index.row()
-        return self._data[row]
-
-
-    def newItem(self, couplefield = None):
-        """
-        Add/load a couple a field for model
-        """
-        # TODO on bride pour l'instant a un seul couple
-        # on doit controler qu'on est en eau/vap sur le couple 1/2
-        #if (len(self.mdl.getFreeCouples()) > 0 or couplefield != None ) :
-        if (len(self.mdl.getFreeCouples()) > 0 or couplefield != None ) and self.rowCount() == 0 :
-            row = self.rowCount()
-
-            if couplefield == None :
-                couple = self.mdl.addEnthalpyCouple()
-            else :
-                couple = couplefield
-
-            labela = self.mdl.getLabel(couple[0])
-            labelb = self.mdl.getLabel(couple[1])
-
-            field = [labela, labelb]
-
-            self._data.append(field)
-            self.setRowCount(row+1)
-        else :
-            title = self.tr("Interfacial enthalpy transfer")
-            msg   = self.tr("No fields couple to create a new enthalpy transfer")
-            QMessageBox.information(self.parent, title, msg)
-
-
-    def deleteItem(self, row):
-        """
-        Delete the row in the model.
-        """
-        fieldaId = self.mdl.getFieldId(self._data[row][0])
-        fieldbId = self.mdl.getFieldId(self._data[row][1])
-        self.mdl.deleteEnthalpyCouple(fieldaId, fieldbId)
-        del self._data[row]
-        row = self.rowCount()
-        self.setRowCount(row-1)
-
-
-    def getCouple(self, row) :
-        """
-        return list of field Id
-        """
-        fieldaId = self.mdl.getFieldId(self._data[row][0])
-        fieldbId = self.mdl.getFieldId(self._data[row][1])
-        return [fieldaId, fieldbId]
-
-
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # InterfacialEnthalpyView class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
     """
     InterfacialEnthalpyView layout.
     """
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -286,40 +88,22 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.case.undoStopGlobal()
         self.mdl = InterfacialEnthalpyModel(self.case)
 
-        if (len(self.mdl.getSolidFieldIdList()) > 0 or len(self.mdl.getFieldIdList()) > 2 or self.mdl.getPredefinedFlow == "None") :
-            self.groupBoxSolidEnergyTransfer.show()
-            # Combo box models
-            self.modelSolidEnergyTransfer = ComboModel(self.comboBoxSolidEnergyTransfer, 2, 1)
-            self.modelSolidEnergyTransfer.addItem(self.tr("none"), "none")
-            self.modelSolidEnergyTransfer.addItem(self.tr("gas-particle"), "gas_particule")
-
-            model = self.mdl.getSolidEnergyTransfer()
-            self.modelSolidEnergyTransfer.setItem(str_model = model)
-        else :
-            self.groupBoxSolidEnergyTransfer.hide()
-
-        self.tableModelLiquidGasEnergyTransfer = StandardItemModelInterfacialEnthalpy(self, self.mdl)
-        self.tableViewLiquidGasEnergyTransfer.setModel(self.tableModelLiquidGasEnergyTransfer)
-        self.tableViewLiquidGasEnergyTransfer.resizeColumnsToContents()
-        self.tableViewLiquidGasEnergyTransfer.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
-        self.tableViewLiquidGasEnergyTransfer.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewLiquidGasEnergyTransfer.setSelectionMode(QAbstractItemView.SingleSelection)
-
-        delegateFielda    = FieldDelegate(self.tableViewLiquidGasEnergyTransfer, self.mdl)
-        delegateFieldb    = FieldDelegate(self.tableViewLiquidGasEnergyTransfer, self.mdl)
-
-        self.tableViewLiquidGasEnergyTransfer.setItemDelegateForColumn(0, delegateFielda)
-        self.tableViewLiquidGasEnergyTransfer.setItemDelegateForColumn(1, delegateFieldb)
-
         # Combo models
+        liquid_vapor_couples = self.mdl.getLiquidVaporCouples()
+        self.modelLiquidVaporFields = ComboModel(self.comboBoxLiquidVaporFields, 1, 1)
+        self.modelLiquidVaporFields.addItem("None", "none")
+        for id_pair in liquid_vapor_couples:
+            field_descriptions = []
+            for id in id_pair:
+                name = self.mdl.getLabel(id)
+                phase = self.mdl.getFieldNature(id)
+                criterion = self.mdl.getCriterion(id)
+                field_descriptions.append("{0} ({1} {2})".format(name, criterion, phase))
+            # Display fields as "Field1 (continuous liquid) / Field2 (dispersed gas)"
+            view = self.tr(" / ".join(field_descriptions))
+            model = "{0}_{1}".format(*id_pair)
+            self.modelLiquidVaporFields.addItem(view, model)
+
         self.modelPonderationCoefFielda = ComboModel(self.comboBoxPonderationCoefFielda, 3, 1)
         self.modelPonderationCoefFielda.addItem(self.tr("alp1"), "alp1")
         self.modelPonderationCoefFielda.addItem(self.tr("alp2"), "alp2")
@@ -330,142 +114,149 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.modelPonderationCoefFieldb.addItem(self.tr("alp2"), "alp2")
         self.modelPonderationCoefFieldb.addItem(self.tr("alp1*alp2"), "alp1_alp2")
 
-        # hide/show groupBoxLiquidGasEnergyTransfer
-        if len(self.mdl.getFreeCouples()) < 1 and len(self.mdl.getEnthalpyCoupleList()) == 0 :
-            self.groupBoxLiquidGasEnergyTransfer.hide()
-        else :
-            self.groupBoxLiquidGasEnergyTransfer.show()
+        self.modelSolidEnergyTransfer = ComboModel(self.comboBoxSolidEnergyTransfer, 2, 1)
+        self.modelSolidEnergyTransfer.addItem(self.tr("none"), "none")
+        self.modelSolidEnergyTransfer.addItem(self.tr("gas-particle"), "gas_particule")
 
-            if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0 \
-            and InterfacialForcesModel(self.case).getContinuousCouplingModel() \
-                == 'Large_Interface_Model':
-                self.checkBoxActivatePool.show()
-            else:
-                self.checkBoxActivatePool.hide()
-
-        # Validators
-        validatorRelaxa = DoubleValidator(self.lineEditRelaxationTimeFielda, min = 0.0)
-        validatorRelaxb = DoubleValidator(self.lineEditRelaxationTimeFieldb, min = 0.0)
-        self.lineEditRelaxationTimeFielda.setValidator(validatorRelaxa)
-        self.lineEditRelaxationTimeFieldb.setValidator(validatorRelaxb)
-
-        # Connect signals to slots
-        self.pushButtonAdd.clicked.connect(self.slotAddEnthalpy)
-        self.pushButtonDelete.clicked.connect(self.slotDeleteEnthalpy)
-        self.tableModelLiquidGasEnergyTransfer.dataChanged.connect(self.dataChanged)
-        self.tableViewLiquidGasEnergyTransfer.clicked.connect(self.__slotSelectField)
-        self.comboBoxFieldaModel.activated[str].connect(self.slotFieldaModel)
-        self.comboBoxPonderationCoefFielda.activated[str].connect(self.slotPonderationCoefFielda)
-        self.comboBoxFieldbModel.activated[str].connect(self.slotFieldbModel)
-        self.comboBoxPonderationCoefFieldb.activated[str].connect(self.slotPonderationCoefFieldb)
-        self.lineEditRelaxationTimeFielda.textChanged[str].connect(self.slotRelaxationTimeFielda)
-        self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
-        self.comboBoxSolidEnergyTransfer.activated[str].connect(self.slotSolidEnergyTransfer)
-        self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
-
-        for couple in self.mdl.getEnthalpyCoupleList() :
-            self.tableModelLiquidGasEnergyTransfer.newItem(couple)
+        self.modelFieldaModel = ComboModel(self.comboBoxFieldaModel, 1, 1)
+        self.modelFieldaModel.addItem(self.tr("No source term"), "no_source_term")
+        self.modelFieldaModel.addItem(self.tr("Relaxation time : alphk.rok.cpk.(Ts-Tk)/tauk"), "relaxation_time")
+        self.modelFieldbModel = ComboModel(self.comboBoxFieldbModel, 1, 1)
+        self.modelFieldbModel.addItem(self.tr("No source term"), "no_source_term")
+        self.modelFieldbModel.addItem(self.tr("Relaxation time : alphk.rok.cpk.(Ts-Tk)/tauk"), "relaxation_time")
 
         self.groupBoxLiquidVaporModel.hide()
+        self.groupBoxSolidEnergyTransfer.hide()
+        if (len(self.mdl.getSolidFieldIdList()) > 0):
+            model = self.mdl.getSolidEnergyTransfer()
+            self.modelSolidEnergyTransfer.setItem(str_model=model)
+            self.groupBoxSolidEnergyTransfer.show()
+            self.groupBoxEnergyTransfer.hide()
+
+        self.setValidators()
+        self.setConnections()
 
         # Initial state of Pool boiling model
         if self.mdl.getPoolBoiling() == 'on':
             self.checkBoxActivatePool.setChecked(True)
 
+        # Initialize pair of fields
+        predefined_flow = self.mdl.getPredefinedFlow()
+        if predefined_flow == "None":
+            if self.mdl.getEnthalpyCoupleFieldId() == None:
+                self.modelLiquidVaporFields.setItem(str_model="none")
+            else:
+                field_id_a, field_id_b = self.mdl.getEnthalpyCoupleFieldId()
+                model = "{0}_{1}".format(field_id_a, field_id_b)
+                self.modelLiquidVaporFields.setItem(str_model=model)
+        elif predefined_flow == "free_surface":
+            self.lockFreeSurfaceOptions()
+        elif predefined_flow == "boiling_flow":
+            self.lockBubblyFlowOptions()
+        elif predefined_flow == "droplet_flow":
+            self.lockDropletFlowOptions()
+        elif predefined_flow == "particles_flow":
+            # self.lockParticlesFlowOptions()
+            # TODO check if options should be locked or not
+            pass
+        elif predefined_flow == "multiregime":
+            self.lockMultiregimeFlowOptions()
+
         self.case.undoStartGlobal()
 
+    def lockMultiregimeFlowOptions(self):
+        self.modelLiquidVaporFields.setItem(str_model="1_2")
+        self.modelFieldaModel.setItem(str_model="wall_law_type_model")
+        self.modelFieldbModel.setItem(str_model="sublayer_LI3C")
+        self.comboBoxLiquidVaporFields.setEnabled(False)
+        self.comboBoxFieldaModel.setEnabled(False)
+        self.comboBoxFieldbModel.setEnabled(False)
 
-    def dataChanged(self, topLeft, bottomRight):
-        self.tableViewLiquidGasEnergyTransfer.resizeColumnsToContents()
-        self.tableViewLiquidGasEnergyTransfer.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewLiquidGasEnergyTransfer.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+    def lockParticlesFlowOptions(self):
+        self.modelSolidEnergyTransfer.setItem(str_model="gas_particule")
+        self.comboBoxSolidEnergyTransfer.setEnabled(False)
 
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        self.__updateModel(row)
+    def lockDropletFlowOptions(self):
+        self.modelLiquidVaporFields.setItem(str_model="1_2")
+        self.modelFieldaModel.setItem(str_model="droplet_model_for_vapour")
+        self.modelFieldbModel.setItem(str_model="droplet_model_for_liquid")
+        self.comboBoxLiquidVaporFields.setEnabled(False)
+        self.comboBoxFieldaModel.setEnabled(False)
+        self.comboBoxFieldbModel.setEnabled(False)
 
+    def lockBubblyFlowOptions(self):
+        self.modelLiquidVaporFields.setItem(str_model="1_2")
+        self.modelFieldaModel.setItem(str_model="bubble_model_for_liquid")
+        self.modelFieldbModel.setItem(str_model="relaxation_time_subcooled")
+        self.comboBoxLiquidVaporFields.setEnabled(False)
+        self.comboBoxFieldaModel.setEnabled(False)
+        self.comboBoxFieldbModel.setEnabled(False)
 
-    @pyqtSlot()
-    def slotAddEnthalpy(self):
-        """
-        Add an enthalpy interfacial force
-        """
-        self.tableViewLiquidGasEnergyTransfer.clearSelection()
-        self.groupBoxLiquidVaporModel.hide()
-        self.tableModelLiquidGasEnergyTransfer.newItem()
+    def lockFreeSurfaceOptions(self):
+        self.modelLiquidVaporFields.setItem(str_model="1_2")
+        self.modelFieldaModel.setItem(str_model="wall_law_type_model")
+        self.modelFieldbModel.setItem(str_model="sublayer_LI3C")
+        self.comboBoxLiquidVaporFields.setEnabled(False)
+        self.comboBoxFieldaModel.setEnabled(False)
+        self.comboBoxFieldbModel.setEnabled(False)
 
+    def setValidators(self):
+        validatorRelaxa = DoubleValidator(self.lineEditRelaxationTimeFielda, min=0.0)
+        validatorRelaxb = DoubleValidator(self.lineEditRelaxationTimeFieldb, min=0.0)
+        self.lineEditRelaxationTimeFielda.setValidator(validatorRelaxa)
+        self.lineEditRelaxationTimeFieldb.setValidator(validatorRelaxb)
 
-    @pyqtSlot()
-    def slotDeleteEnthalpy(self):
-        """
-        Suppress an enthalpy interfacial force
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        if row >= 0 :
-            log.debug("slotDeleteLiquidGasEnergyTransfer -> %s" % row)
-            self.tableModelLiquidGasEnergyTransfer.deleteItem(row)
-        self.groupBoxLiquidVaporModel.hide()
+    def setConnections(self):
+        self.comboBoxLiquidVaporFields.currentTextChanged[str].connect(self.slotSelectInteraction)
+        self.comboBoxSolidEnergyTransfer.currentTextChanged[str].connect(self.slotSolidEnergyTransfer)
+        self.comboBoxFieldaModel.currentTextChanged[str].connect(self.slotFieldaModel)
+        self.comboBoxPonderationCoefFielda.activated[str].connect(self.slotPonderationCoefFielda)
+        self.comboBoxFieldbModel.currentTextChanged[str].connect(self.slotFieldbModel)
+        self.comboBoxPonderationCoefFieldb.activated[str].connect(self.slotPonderationCoefFieldb)
+        self.lineEditRelaxationTimeFielda.textChanged[str].connect(self.slotRelaxationTimeFielda)
+        self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
+        self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
 
-
-    def __slotSelectField(self, index):
+    @pyqtSlot(str)
+    def slotSelectInteraction(self, value):
         """
         Select a Field in the QTable
         """
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(index.row())
+        selection = self.modelLiquidVaporFields.dicoV2M[value]
+        if selection == "none":
+            self.groupBoxLiquidVaporModel.hide()
+            self.mdl.deleteLiquidVaporEnthalpyTransfer()
+            return
+        fieldaId, fieldbId = selection.split("_")
+        if self.mdl.getEnthalpyCoupleFieldId() == None:
+            self.mdl.addLiquidVaporEnthalpyTransfer(fieldaId, fieldbId)
+        self.mdl.setEnthalpyCoupleFieldId(fieldaId, fieldbId)
+        self.updateLiquidVaporModel()
         self.groupBoxLiquidVaporModel.show()
-        self.__updateModel(index.row())
+        if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0 \
+                and InterfacialForcesModel(self.case).getContinuousCouplingModel(fieldaId, fieldbId) \
+                == 'Large_Interface_Model':
+            self.checkBoxActivatePool.show()
+        else:
+            self.checkBoxActivatePool.hide()
 
-
-    def __updateModel(self, row) :
+    def updateLiquidVaporModel(self):
         """
         update if necessary
         """
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        self.fillLiquidVaporModels(fieldIda, fieldIdb)
 
-        self.modelFieldaModel = ComboModel(self.comboBoxFieldaModel, 1, 1)
-        self.modelFieldbModel = ComboModel(self.comboBoxFieldbModel, 1, 1)
+        model = self.mdl.getFieldModel(fieldIda)
+        if model == None:
+            model = "no_source_term"
+        self.modelFieldaModel.setItem(str_model=model)
 
-        for field in (fieldIda, fieldIdb) :
-            if field == fieldIda :
-                self.__currentmodel = self.modelFieldaModel
-            else :
-                self.__currentmodel = self.modelFieldbModel
-
-            self.__currentmodel.addItem(self.tr("Relaxation time : alphk.rok.cpk.(Ts-Tk)/tauk"),"relaxation_time")
-            self.__currentmodel.addItem(self.tr("No source term"),"no_source_term")
-
-        # fieldIda == continuous by construction and nature(fieldIda) != nature(fieldIdb)
-        if self.mdl.getFieldNature(fieldIda) == "liquid" :
-            if self.mdl.getCriterion(fieldIdb) == "continuous" :
-                self.modelFieldaModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),"wall_law_type_model")
-                self.modelFieldbModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"),"sublayer_LI3C")
-            else :
-                self.modelFieldaModel.addItem(self.tr("Bulk model (Ranz-Marshall)"),"bulk")
-                self.modelFieldaModel.addItem(self.tr("Flashing (Cathare)"),"flashing")
-                self.modelFieldaModel.addItem(self.tr("Bubble model for liquid (Manon-Berne)"),"bubble_model_for_liquid")
-                #suppression temporaire le temps que le modele soit au point
-                #self.modelFieldbModel.addItem(self.tr("Bubble model for vapour"),"bubble_model_for_vapour")
-                self.modelFieldbModel.addItem(self.tr("Relaxation time + subcooled gas treatment"),"relaxation_time_subcooled")
-        else :
-            if self.mdl.getCriterion(fieldIdb) == "continuous" :
-                self.modelFieldaModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"),"sublayer_LI3C")
-                self.modelFieldbModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),"wall_law_type_model")
-            else :
-                self.modelFieldaModel.addItem(self.tr("Bulk model (Ranz-Marshall)"),"bulk")
-                if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0:
-                    self.modelFieldaModel.addItem(self.tr("Droplet model for vapour"),"droplet_model_for_vapour")
-                    self.modelFieldbModel.addItem(self.tr("Droplet model for liquid"),"droplet_model_for_liquid")
-
-
-        model = self.mdl.getFieldModel(fieldIda, fieldIdb, fieldIda)
-        self.modelFieldaModel.setItem(str_model = model)
-
-        if model == 'relaxation_time' :
-            model = self.mdl.getPonderationCoef(fieldIda, fieldIdb, fieldIda)
-            self.modelPonderationCoefFielda.setItem(str_model = model)
-            value = self.mdl.getRelaxationTime(fieldIda, fieldIdb, fieldIda)
+        if model == 'relaxation_time':
+            model = self.mdl.getPonderationCoef(fieldIda)
+            self.modelPonderationCoefFielda.setItem(str_model=model)
+            value = self.mdl.getRelaxationTime(fieldIda)
             self.lineEditRelaxationTimeFielda.setText(str(value))
 
             self.comboBoxPonderationCoefFielda.show()
@@ -478,95 +269,50 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.lineEditRelaxationTimeFielda.hide()
             self.labelRelaxationTimeFielda.hide()
 
-        model = self.mdl.getFieldModel(fieldIda, fieldIdb, fieldIdb)
+        model = self.mdl.getFieldModel(fieldIdb)
         self.modelFieldbModel.setItem(str_model = model)
 
         if model == 'relaxation_time' :
-            model = self.mdl.getPonderationCoef(fieldIda, fieldIdb, fieldIdb)
+            model = self.mdl.getPonderationCoef(fieldIdb)
             self.modelPonderationCoefFieldb.setItem(str_model = model)
-            value = self.mdl.getRelaxationTime(fieldIda, fieldIdb, fieldIdb)
+            value = self.mdl.getRelaxationTime(fieldIdb)
             self.lineEditRelaxationTimeFieldb.setText(str(value))
 
             self.comboBoxPonderationCoefFieldb.show()
             self.labelPonderationCoefFieldb.show()
             self.lineEditRelaxationTimeFieldb.show()
             self.labelRelaxationTimeFieldb.show()
-        else :
+        else:
             self.comboBoxPonderationCoefFieldb.hide()
             self.labelPonderationCoefFieldb.hide()
             self.lineEditRelaxationTimeFieldb.hide()
             self.labelRelaxationTimeFieldb.hide()
 
-
-    @pyqtSlot(str)
-    def slotFieldaModel(self, text):
-        """
-        set model for field a
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        choice = self.modelFieldaModel.dicoV2M[text]
-        self.mdl.setFieldModel(fieldIda, fieldIdb, fieldIda, choice)
-        self.__updateModel(row)
-
-
-    @pyqtSlot(str)
-    def slotPonderationCoefFielda(self, text):
-        """
-        set ponderation coefficient for field a
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        choice = self.modelPonderationCoefFielda.dicoV2M[text]
-        self.mdl.setPonderationCoef(fieldIda, fieldIdb, fieldIda, choice)
-
-
-    @pyqtSlot(str)
-    def slotFieldbModel(self, text):
-        """
-        set model for field b
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        choice = self.modelFieldbModel.dicoV2M[text]
-        self.mdl.setFieldModel(fieldIda, fieldIdb, fieldIdb, choice)
-        self.__updateModel(row)
-
-
-    @pyqtSlot(str)
-    def slotPonderationCoefFieldb(self, text):
-        """
-        set ponderation coefficient for field b
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        choice = self.modelPonderationCoefFieldb.dicoV2M[text]
-        self.mdl.setPonderationCoef(fieldIda, fieldIdb, fieldIdb, choice)
-
-
-    @pyqtSlot(str)
-    def slotRelaxationTimeFielda(self, text):
-        """
-        Update the relaxation time for field a
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        if self.lineEditRelaxationTimeFielda.validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, float)
-            self.mdl.setRelaxationTime(fieldIda, fieldIdb, fieldIda, value)
-
-
-    @pyqtSlot(str)
-    def slotRelaxationTimeFieldb(self, text):
-        """
-        Update the relaxation time for field b
-        """
-        row = self.tableViewLiquidGasEnergyTransfer.currentIndex().row()
-        (fieldIda, fieldIdb) = self.tableModelLiquidGasEnergyTransfer.getCouple(row)
-        if self.lineEditRelaxationTimeFieldb.validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, float)
-            self.mdl.setRelaxationTime(fieldIda, fieldIdb, fieldIdb, value)
-
+    def fillLiquidVaporModels(self, fieldIda, fieldIdb):
+        # fieldIda == continuous by construction and nature(fieldIda) != nature(fieldIdb)
+        if self.mdl.getFieldNature(fieldIda) == "liquid":
+            if self.mdl.getCriterion(fieldIdb) == "continuous":
+                self.modelFieldaModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
+                                              "wall_law_type_model")
+                self.modelFieldbModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
+            else:
+                self.modelFieldaModel.addItem(self.tr("Bulk model (Ranz-Marshall)"), "bulk")
+                self.modelFieldaModel.addItem(self.tr("Flashing (Cathare)"), "flashing")
+                self.modelFieldaModel.addItem(self.tr("Bubble model for liquid (Manon-Berne)"),
+                                              "bubble_model_for_liquid")
+                # suppression temporaire le temps que le modele soit au point
+                # self.modelFieldbModel.addItem(self.tr("Bubble model for vapour"),"bubble_model_for_vapour")
+                self.modelFieldbModel.addItem(self.tr("Relaxation time + subcooled gas treatment"),
+                                              "relaxation_time_subcooled")
+        else:
+            if self.mdl.getCriterion(fieldIdb) == "continuous":
+                self.modelFieldaModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
+                self.modelFieldbModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
+                                              "wall_law_type_model")
+            else:
+                self.modelFieldaModel.addItem(self.tr("Bulk model (Ranz-Marshall)"), "bulk")
+                self.modelFieldaModel.addItem(self.tr("Droplet model for vapour"), "droplet_model_for_vapour")
+                self.modelFieldbModel.addItem(self.tr("Droplet model for liquid"), "droplet_model_for_liquid")
 
     @pyqtSlot(str)
     def slotSolidEnergyTransfer(self, text):
@@ -576,6 +322,74 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         choice = self.modelSolidEnergyTransfer.dicoV2M[text]
         self.mdl.setSolidEnergyTransfer(choice)
 
+    @pyqtSlot(str)
+    def slotFieldaModel(self, text):
+        """
+        set model for field a
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        choice = self.modelFieldaModel.dicoV2M[text]
+        self.mdl.setFieldModel(fieldIda, choice)
+        self.updateLiquidVaporModel()
+
+
+    @pyqtSlot(str)
+    def slotPonderationCoefFielda(self, text):
+        """
+        set ponderation coefficient for field a
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        choice = self.modelPonderationCoefFielda.dicoV2M[text]
+        self.mdl.setPonderationCoef(fieldIda, choice)
+
+
+    @pyqtSlot(str)
+    def slotFieldbModel(self, text):
+        """
+        set model for field b
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        choice = self.modelFieldbModel.dicoV2M[text]
+        self.mdl.setFieldModel(fieldIdb, choice)
+        self.updateLiquidVaporModel()
+
+
+    @pyqtSlot(str)
+    def slotPonderationCoefFieldb(self, text):
+        """
+        set ponderation coefficient for field b
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        choice = self.modelPonderationCoefFieldb.dicoV2M[text]
+        self.mdl.setPonderationCoef(fieldIdb, choice)
+
+
+    @pyqtSlot(str)
+    def slotRelaxationTimeFielda(self, text):
+        """
+        Update the relaxation time for field a
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        if self.lineEditRelaxationTimeFielda.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            self.mdl.setRelaxationTime(fieldIda, value)
+
+
+    @pyqtSlot(str)
+    def slotRelaxationTimeFieldb(self, text):
+        """
+        Update the relaxation time for field b
+        """
+        selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
+        fieldIda, fieldIdb = selection.split("_")
+        if self.lineEditRelaxationTimeFieldb.validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            self.mdl.setRelaxationTime(fieldIdb, value)
 
     @pyqtSlot()
     def slotPoolBoilingModel(self):

@@ -285,13 +285,9 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.InterfacialEnthalpyView as Page
         thisPage = Page.InterfacialEnthalpyView(root, case)
 
-    elif page_name == tr("Nucleate boiling parameters"):
-        import code_saturne.Pages.NucleateBoilingView as Page
-        thisPage = Page.NucleateBoilingView(root, case)
-
-    elif page_name == tr("Droplet condensation-evaporation"):
-        import code_saturne.Pages.DropletCondensationEvaporationView as Page
-        thisPage = Page.DropletCondensationEvaporationView(root, case)
+    elif page_name == tr("Wall transfer parameters"):
+        import code_saturne.Pages.NeptuneWallTransferView as Page
+        thisPage = Page.NeptuneWallTransferView(root, case)
 
     elif page_name == tr("Particles interactions"):
         import code_saturne.Pages.SolidView as Page

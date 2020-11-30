@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>188</height>
+    <height>207</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxNonCondensable">
      <property name="title">
       <string>Non Condensable Gases</string>
@@ -26,13 +26,26 @@
       <property name="spacing">
        <number>6</number>
       </property>
-      <item row="0" column="0">
+      <item row="1" column="0">
        <widget class="QTableView" name="tableViewNonCondensable"/>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="3" column="0">
+    <spacer>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>641</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="0">
     <layout class="QHBoxLayout" name="_2">
      <property name="spacing">
       <number>6</number>
@@ -105,18 +118,12 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="0" column="0">
+    <widget class="QLabel" name="labelNoGas">
+     <property name="text">
+      <string>No gas phase with energy equation found. Page is disabled.</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>641</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
   </layout>
  </widget>

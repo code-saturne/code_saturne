@@ -345,6 +345,7 @@ bin/model/MainFieldsInitializationModel.py \
 bin/model/MainFieldsSourceTermsModel.py \
 bin/model/MainFieldsModel.py \
 bin/model/MobileMeshModel.py \
+bin/model/NeptuneWallTransferModel.py \
 bin/model/NonCondensableModel.py \
 bin/model/NotebookModel.py \
 bin/model/NucleateBoilingModel.py \

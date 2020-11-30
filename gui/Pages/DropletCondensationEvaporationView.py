@@ -70,7 +70,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
     """
     Droplet Condensation-Evaporation model layout.
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent):
         """
         Constructor
         """
@@ -79,6 +79,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
         Ui_DropletCondensationEvaporation.__init__(self)
         self.setupUi(self)
 
+    def setup(self, case):
         self.case = case
         self.case.undoStopGlobal()
         self.mdl = DropletCondensationEvaporationModel(self.case)
@@ -90,7 +91,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
 
         # Validators
 
-        validatorYplus = DoubleValidator(self.lineEditYPlus, min = 0.0)
+        validatorYplus = DoubleValidator(self.lineEditYPlus, min=0.0)
 
         validatorYplus.setExclusiveMin(True)
 
@@ -110,7 +111,6 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
            self.lineEditYPlus.hide()
 
         self.case.undoStartGlobal()
-
 
     @pyqtSlot(str)
     def slotYPlus(self, text):

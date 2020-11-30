@@ -30,7 +30,7 @@ from code_saturne.model.MainFieldsModel import *
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
 
-class SolidModel(TurbulenceModel):
+class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from TurbulenceModel or MainFieldsModel ?
 
     """
     This class manages the turbulence objects in the XML file

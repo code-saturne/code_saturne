@@ -70,7 +70,8 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
     """
     Nucleate boiling model layout.
     """
-    def __init__(self, parent, case):
+
+    def __init__(self, parent):
         """
         Constructor
         """
@@ -79,13 +80,15 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         Ui_NucleateBoiling.__init__(self)
         self.setupUi(self)
 
+    def setup(self, case):
+
         self.case = case
         self.case.undoStopGlobal()
         self.mdl = NucleateBoilingModel(self.case)
 
         self.modelHeatTransferModel = ComboModel(self.comboBoxHeatTransferModel, 2, 1)
-        self.modelHeatTransferModel.addItem(self.tr("Extended Kurul-Podowski model"),"extended_kurul-podowski")
-        self.modelHeatTransferModel.addItem(self.tr("Standard Kurul-Podowski model"),"standard_kurul-podowski")
+        self.modelHeatTransferModel.addItem(self.tr("Extended Kurul-Podowski model"), "extended_kurul-podowski")
+        self.modelHeatTransferModel.addItem(self.tr("Standard Kurul-Podowski model"), "standard_kurul-podowski")
 
         self.modelWallFunctionModel = ComboModel(self.comboBoxWallFunctionModel, 3, 1)
         self.modelWallFunctionModel.addItem(self.tr("standard (single phase wall function)"), "standard")
@@ -192,7 +195,6 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         self.modelWallFunctionModel.setItem(str_model=model)
 
         self.case.undoStartGlobal()
-
 
     @pyqtSlot(str)
     def slotHeatTransferModel(self, text):

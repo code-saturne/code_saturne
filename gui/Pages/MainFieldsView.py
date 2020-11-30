@@ -202,9 +202,8 @@ class EnthalpyDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        if self.mdl.getPredefinedFlow() == "free_surface" or \
-            self.mdl.getPredefinedFlow() == "boiling_flow" or \
-            self.mdl.getPredefinedFlow() == "droplet_flow":
+        predefined_flow = self.mdl.getPredefinedFlow()
+        if predefined_flow in ["free_surface", "boiling_flow", "droplet_flow", "multiregime"]:
             self.modelCombo = ComboModel(editor, 2, 1)
             self.modelCombo.addItem(self.tr("off"), 'off')
             self.modelCombo.addItem(self.tr("total enthalpy"), 'total_enthalpy')
@@ -254,7 +253,7 @@ class CriterionDelegate(QItemDelegate):
         self.modelCombo.addItem(self.tr("continuous"), 'continuous')
         self.modelCombo.addItem(self.tr("dispersed"), 'dispersed')
         self.modelCombo.addItem(self.tr("auto"), 'auto')
-        # TODO a supprimer quand existant
+        # TODO to delete if/when the auto option is implemented
         self.modelCombo.disableItem(2)
         # fixed to continuous for field 1
         if index.row() == 0 :
@@ -393,8 +392,8 @@ class StandardItemModelMainFields(QStandardItemModel):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         elif index.column() == 5:
             if self.mdl.getPredefinedFlow() != "None" \
-               and self.mdl.getPredefinedFlow() != "particles_flow" \
-               and (index.row()==0 or index.row()==1):
+                    and self.mdl.getPredefinedFlow() != "particles_flow" \
+                    and self.mdl.getHeatMassTransferStatus() == "on":
                 return Qt.ItemIsSelectable
             else:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -546,7 +545,7 @@ class StandardItemModelMainFields(QStandardItemModel):
         Delete the row in the model.
         """
         del self._data[row]
-        self.mdl.deleteField(row)
+        self.mdl.deleteField(row + 1)
         row = self.rowCount()
         self.setRowCount(row-1)
         self.updateItem()
@@ -575,8 +574,6 @@ class MainFieldsView(QWidget, Ui_MainFields):
         self.mdl  = MainFieldsModel(self.case)
         self.lagr = LagrangianModel(self.case)
 
-        model = self.mdl.getPredefinedFlow()
-
         # Main fields definition
         self.tableModelFields = StandardItemModelMainFields(self.mdl)
         self.tableViewFields.setModel(self.tableModelFields)
@@ -595,9 +592,9 @@ class MainFieldsView(QWidget, Ui_MainFields):
 
         delegateLabel      = LabelDelegate(self.tableViewFields)
         delegateNature     = NatureDelegate(self.tableViewFields)
-        delegateCriterion  = CriterionDelegate(self.tableViewFields)
-        delegateCarrier    = CarrierDelegate(self.tableViewFields, self.mdl)
-        delegateEnthalpy   = EnthalpyDelegate(self.tableViewFields, self.mdl)
+        delegateCriterion = CriterionDelegate(self.tableViewFields)
+        delegateCarrier = CarrierDelegate(self.tableViewFields, self.mdl)
+        delegateEnthalpy = EnthalpyDelegate(self.tableViewFields, self.mdl)
 
         self.tableViewFields.setItemDelegateForColumn(0, delegateLabel)
         self.tableViewFields.setItemDelegateForColumn(1, delegateNature)
@@ -605,41 +602,46 @@ class MainFieldsView(QWidget, Ui_MainFields):
         self.tableViewFields.setItemDelegateForColumn(3, delegateCarrier)
         self.tableViewFields.setItemDelegateForColumn(5, delegateEnthalpy)
 
-        # Connect signals to slots
+        model = self.mdl.getPredefinedFlow()
+        if model != "None":
+            self._hidePushButtons()
+        else:
+            self._initializePushButtons()
+
+        for fieldId in self.mdl.getFieldIdList():
+            label = self.mdl.getLabel(fieldId)
+            nature = self.mdl.getFieldNature(fieldId)
+            criterion = self.mdl.getCriterion(fieldId)
+            carrier = self.mdl.getCarrierField(fieldId)
+            if carrier != "off":
+                carrierLabel = self.mdl.getLabel(carrier)
+            else:
+                carrierLabel = carrier
+            compressible = self.mdl.getCompressibleStatus(fieldId)
+            energy = self.mdl.getEnergyModel(fieldId)
+            self.tableModelFields.loadItem(label, nature, criterion, carrierLabel, compressible, energy)
+        self.browser.configureTree(self.case)
+
+        self.case.undoStartGlobal()
+
+    def _initializePushButtons(self):
         self.pushButtonAdd.clicked.connect(self.slotAddField)
         self.pushButtonDelete.clicked.connect(self.slotDeleteField)
         self.tableModelFields.dataChanged.connect(self.dataChanged)
-
-        for fieldId in self.mdl.getFieldIdList():
-            label        = self.mdl.getLabel(fieldId)
-            nature       = self.mdl.getFieldNature(fieldId)
-            criterion    = self.mdl.getCriterion(fieldId)
-            carrier      = self.mdl.getCarrierField(fieldId)
-            carrierLabel = ""
-            if carrier != "off" :
-                carrierLabel = self.mdl.getLabel(carrier)
-            else :
-                carrierLabel = carrier
-            compressible = self.mdl.getCompressibleStatus(fieldId)
-            energy       = self.mdl.getEnergyModel(fieldId)
-            self.tableModelFields.loadItem(label, nature, criterion, carrierLabel, compressible, energy)
-
-        self.browser.configureTree(self.case)
 
         if len(self.mdl.getFieldIdList()) > 2:
             self.pushButtonDelete.setEnabled(1)
         else:
             self.pushButtonDelete.setEnabled(0)
 
-        mdl = self.lagr.getLagrangianModel()
-
-        self.case.undoStartGlobal()
-
+    def _hidePushButtons(self):
+        self.pushButtonAdd.hide()
+        self.pushButtonDelete.hide()
 
     def dataChanged(self, topLeft, bottomRight):
-        for row in range(topLeft.row(), bottomRight.row()+1):
+        for row in range(topLeft.row(), bottomRight.row() + 1):
             self.tableViewFields.resizeRowToContents(row)
-        for col in range(topLeft.column(), bottomRight.column()+1):
+        for col in range(topLeft.column(), bottomRight.column() + 1):
             self.tableViewFields.resizeColumnToContents(col)
 
         self.browser.configureTree(self.case)

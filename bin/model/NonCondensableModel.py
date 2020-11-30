@@ -109,7 +109,6 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         helium['Cobin2'] = 1.75
         return helium
 
-
     def OxygenValues(self):
         """
         Return in a dictionnary which contains default values
@@ -120,6 +119,17 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         oxygen['Cobin2'] = 1.71
         return oxygen
 
+    def checkNonCondensableRequirements(self):
+        """
+        Check if the requirements for non condensable gas addition are met
+        - Energy equation must be activated for all gases
+        """
+        if self.getGasPhaseList() in [[], None]:
+            return False
+        for field_id in self.getGasPhaseList():
+            if self.getEnergyModel(field_id) == "off":
+                return False
+        return True
 
     def getNonCondensableLabelList(self):
         """

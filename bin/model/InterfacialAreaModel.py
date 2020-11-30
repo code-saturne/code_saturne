@@ -30,6 +30,7 @@ from code_saturne.model.MainFieldsModel import *
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 
+# TODO : try to include this model in "InterfaceForcesModel" directly ?
 class InterfacialAreaModel(MainFieldsModel, Variables, Model):
 
     """
@@ -56,17 +57,15 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def defaultValues(self):
         default = {}
 
-        default['diameter']        = 0.001
-        default['mindiam']         = 1.e-6
-        default['maxdiam']         = 0.1
-        default['coupling']        = "uncoupled"
-        default['areamodel']       = "constant"
-        default['sourcetermgas']   = "no_coalescence_no_fragmentation"
+        default['diameter'] = 0.001
+        default['mindiam'] = 1.e-6
+        default['maxdiam'] = 0.1
+        default['coupling'] = "uncoupled"
+        default['areamodel'] = "constant"
+        default['sourcetermgas'] = "no_coalescence_no_fragmentation"
         default['sourcetermsolid'] = "no_coalescence_no_fragmentation"
-
-        if InterfacialForcesModel(self.case).getBubblesForLIMStatus() == 'on':
-            default['areamodel']     = "interfacial_area_transport"
-            default['sourcetermgas'] = "ruyer_seiler"
+        default['areamodel'] = "interfacial_area_transport"
+        default['sourcetermgas'] = "ruyer_seiler"
 
         return default
 

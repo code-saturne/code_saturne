@@ -64,13 +64,11 @@ class GasCombustionModel(Variables, Model):
         self.case = case
 
         nModels          = self.case.xmlGetNode('thermophysical_models')
-        self.node_turb   = nModels.xmlInitNode('turbulence',        'model')
         self.node_gas    = nModels.xmlInitNode('gas_combustion',    'model')
         self.node_coal   = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_joule  = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_atmo   = nModels.xmlInitNode('atmospheric_flows', 'model')
-        self.node_prop   = self.case.xmlGetNode('physical_properties')
-        self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
+        node_prop   = self.case.xmlGetNode('physical_properties')
+        self.node_fluid  = node_prop.xmlInitNode('fluid_properties')
 
         self.gasCombustionModel = ('off', 'ebu', 'd3p','lwp')
         self.d3p_list = ("adiabatic", "extended")

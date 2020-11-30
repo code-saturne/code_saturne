@@ -433,6 +433,14 @@ class ComboModel:
 
         self.last += 1
 
+    def addItemList(self, list_of_views_and_models, warn=False, groupName=None):
+        """
+        Insert of a list of items in the model.
+        list_of_views_and_models is a list of 2-element list
+          e.g. [ ["View1", "Model1"], ["View2", "Model2"] ]
+        """
+        for view, model in list_of_views_and_models:
+            self.addItem(view, model, warn, groupName)
 
     def addItem(self, str_view, str_model="", warn=False, groupName=None):
         """
@@ -501,8 +509,14 @@ class ComboModel:
             del self.dicoV2M[str_view]
 
             self.dicoM2V[new_str_model] = new_str_view
-            self.dicoV2M[new_str_view]  = new_str_model
+            self.dicoV2M[new_str_view] = new_str_model
 
+    def flushItems(self):
+        """
+        Remove all items
+        """
+        while self.last > 0:
+            self.delItem(0)
 
     def delItem(self, index=None, str_model="", str_view=""):
         """
@@ -1290,7 +1304,6 @@ class ComboDelegate(QItemDelegate):
                                to_text_string)
         comboBox.setEditText(string)
 
-
     def setModelData(self, comboBox, model, index):
 
         value = comboBox.currentText()
@@ -1301,6 +1314,61 @@ class ComboDelegate(QItemDelegate):
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
 
-#-------------------------------------------------------------------------------
+
+class BasicTableModel(QAbstractTableModel):
+
+    def __init__(self, parent=QModelIndex(), xml_model=None, data=[[]], headers=[], default_row=[]):
+        super(BasicTableModel, self).__init__(parent)
+        self.parent = parent
+        self.xml_model = xml_model
+        self.data_table = data
+        self.headers = headers
+        self.default_row = default_row
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.data_table)
+
+    def columnCount(self, parent=QModelIndex()):
+        return len(self.headers)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return QVariant()
+        elif role != Qt.DisplayRole:
+            return QVariant()
+        return self.data_table[index.row()][index.column()]
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.headers[section]
+        return None
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.NoItemFlags
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if (role == Qt.EditRole) and (index.isValid()):
+            self.data_table[index.row()][index.column()] = value
+            self.dataChanged.emit(index, index)
+            return True
+        return QAbstractTableModel.setData(index, value, role)
+
+    def insertRows(self, position, rows=1, index=QModelIndex()):
+        self.beginInsertRows(QModelIndex(), position, position + rows - 1)
+        for row in range(rows):
+            self.data_table.insert(position + row, self.default_row)
+        self.endInsertRows()
+        return True
+
+    def removeRows(self, position, rows=1, index=QModelIndex()):
+        self.beginRemoveRows(QModelIndex(), position, position + rows - 1)
+        del self.data_table[position:position + rows]
+        self.endRemoveRows()
+        return True
+
+# -------------------------------------------------------------------------------
 # End of QtPage
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

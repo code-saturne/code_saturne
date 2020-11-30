@@ -86,17 +86,22 @@ class TurbulenceDelegate(QItemDelegate):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
-        if self.mdl.getCriterion(fieldId) == "continuous" :
-           for turb in TurbulenceModelsDescription.continuousTurbulenceModels :
-               self.modelCombo.addItem(self.tr(self.dicoM2V[turb]), turb)
+
+        if self.mdl.getCriterion(fieldId) == "continuous":
+            turbulence_models = TurbulenceModelsDescription.continuousTurbulenceModels
         else:
-           carrier = self.mdl.getCarrierField(fieldId)
-           if self.mdl.getTurbulenceModel(carrier) != "none" or \
-              self.mdl.getFieldNature(fieldId) == "solid":
-               for turb in TurbulenceModelsDescription.dispersedTurbulenceModels :
-                   self.modelCombo.addItem(self.tr(self.dicoM2V[turb]), turb)
-           else:
-               self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
+            carrier = self.mdl.getCarrierField(fieldId)
+            if self.mdl.getPredefinedFlow() == "boiling_flow":
+                turbulence_models = TurbulenceModelsDescription.bubblyFlowsTurbulenceModels
+            elif self.mdl.getPredefinedFlow() == "droplet_flow":
+                turbulence_models = TurbulenceModelsDescription.dropletFlowsTurbulenceModels
+            elif self.mdl.getTurbulenceModel(carrier) != "none" or \
+                    self.mdl.getFieldNature(fieldId) == "solid":
+                turbulence_models = TurbulenceModelsDescription.dispersedTurbulenceModels
+            else:
+                turbulence_models = ["none"]
+        for turb in turbulence_models:
+            self.modelCombo.addItem(self.tr(self.dicoM2V[turb]), turb)
         editor.setMinimumSize(editor.sizeHint())
         editor.installEventFilter(self)
         return editor
@@ -486,17 +491,19 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         self.tableViewTurbulence.setSelectionMode(QAbstractItemView.SingleSelection)
 
         delegateTurbulence = TurbulenceDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
-        delegateTurbFlux   = TurbFluxDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
-        delegateCoupling   = CouplingDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
+        delegateTurbFlux = TurbFluxDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
+        delegateCoupling = CouplingDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
         self.tableViewTurbulence.setItemDelegateForColumn(2, delegateTurbulence)
         self.tableViewTurbulence.setItemDelegateForColumn(3, delegateTurbFlux)
         self.tableViewTurbulence.setItemDelegateForColumn(4, delegateCoupling)
 
         # Combo models
-        self.modelContinuousCoupling = ComboModel(self.comboBoxContinuousCoupling, 3, 1)
+        self.modelContinuousCoupling = ComboModel(self.comboBoxContinuousCoupling, 1, 1)
         self.modelContinuousCoupling.addItem(self.tr('none'), 'none')
-        self.modelContinuousCoupling.addItem(self.tr("separate phases"), "separate_phase")
-        self.modelContinuousCoupling.addItem(self.tr("separate phases + cond"), "separate_phase_cond")
+        if self.mdl.getHeatMassTransferStatus() == "off":
+            self.modelContinuousCoupling.addItem(self.tr("separate phases"), "separate_phase")
+        else:
+            self.modelContinuousCoupling.addItem(self.tr("separate phases + cond"), "separate_phase_cond")
 
         # hide groupBoxMixingLength
         self.groupBoxMixingLength.hide()

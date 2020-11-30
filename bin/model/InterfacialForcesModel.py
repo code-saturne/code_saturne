@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import sys, unittest
 from code_saturne.model.XMLvariables import Model
@@ -29,10 +29,12 @@ from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
-import copy
+from code_saturne.model.OutputFieldsModel import OutputFieldsModel
+from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.NotebookModel import NotebookModel
+
 
 class InterfacialForcesModel(MainFieldsModel, Variables, Model):
-
     """
     This class manages the turbulence objects in the XML file
     """
@@ -46,77 +48,49 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         MainFieldsModel.__init__(self, case)
         self.turb_m   = TurbulenceModel(case)
         self.thermo_m = ThermodynamicsModel(case)
+        self.notebook = NotebookModel(case)
 
         self.case = case
-        self.XMLClosure      = self.case.xmlGetNode('closure_modeling')
-        self.XMLInterForce   = self.XMLClosure.xmlInitNode('interfacial_forces')
-        self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
+        self.XMLClosure = self.case.xmlGetNode('closure_modeling')
+        self.XMLInterForce = self.XMLClosure.xmlInitNode('interfacial_forces')
+        self.XMLNodethermo = self.case.xmlGetNode('thermophysical_models')
         self.XMLNodeproperty = self.XMLNodethermo.xmlInitNode('properties')
 
-        self.__availableturbulentedispersionModelsList    = ["none","LLB_model","GTD_model"]
-        self.__availablewallforcesModelList               = ["none", "antal", "tomiyama"]
-        self.__availableContinuousDragModelList           = ["none", "Large_Interface_Model", "Large_Bubble_Model"]
-        self.__availableGasDispersedDragModelList         = ["none", "ishii"]
-        self.__availableSolidLiquidDispersedDragModelList = ["none", "inclusions", "Wen_Yu"]
-        self.__availableAddedMassModelsLists              = ["none", "standard", "zuber"]
-        self.__availableLiftModelsLists                   = ["none", "coef_cst", "Tomiyama_SMD"]
+        self.__availableturbulentedispersionModelsList = ["none", "LLB_model", "GTD_model"]
+        self.__availablewallforcesModelList = ["none", "antal", "tomiyama"]
+        self.__availableContinuousDragModelList = ["Large_Interface_Model", "G_Large_Interface_Model",
+                                                   "Large_Bubble_Model"]
+        self.__availableGasDispersedDragModelList = ["ishii"]
+        self.__availableSolidLiquidDispersedDragModelList = ["inclusions", "Wen_Yu"]
+        self.__availableAddedMassModelsLists = ["none", "standard", "zuber"]
+        self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"]
 
         # Init freeCouples for forces : criterion checking !
-        self.__freeCouples = []
+        self.__allCouples = []
+        for i, fieldaId in enumerate(self.getContinuousFieldList()):
+            for fieldbId in self.getContinuousFieldList()[i + 1:]:
+                self.__allCouples.append([self.getLabel(fieldaId), self.getLabel(fieldbId), "continuous"])
+        for fieldbId in self.getDispersedFieldList():
+            fieldaId = self.getCarrierField(fieldbId)
+            self.__allCouples.append([self.getLabel(fieldaId), self.getLabel(fieldbId), "dispersed"])
 
-        for fieldaId in self.getContinuousFieldList() :
-            for fieldbId in self.getDispersedFieldList() :
-                self.__freeCouples.append((fieldaId, fieldbId))
+    def getAllCouples(self):
+        return self.__allCouples
 
-        XMLNodesForces = self.XMLInterForce.xmlGetNodeList('force', 'field_id_a', 'field_id_b')
-        for node in XMLNodesForces :
-            # Get fields
-            fieldaId = node['field_id_a']
-            fieldbId = node['field_id_b']
-            #
-            # Update free couples
-            try :
-                self.__freeCouples.remove((fieldaId, fieldbId))
-            except:
-                pass
-
-
-    def getFreeCouples (self) :
-         """
-         return list of free couples
-         """
-         return self.__freeCouples
-
-
-    def getFieldIdaList (self, fieldaId) :
-         """
-         return list of free couples
-         """
-         lst = []
-         lst.append(fieldaId)
-         for fielda, fieldb in self.__freeCouples :
-             if fielda not in lst :
-                 lst.append(fielda)
-         return lst
-
-
-    def getFieldIdbList (self, fieldaId) :
-         """
-         return list of free couples
-         """
-         lst = []
-         for fielda, fieldb in self.__freeCouples :
-             if str(fielda) == str(fieldaId) :
-                 lst.append(fieldb)
-         return lst
-
+    # TODO : to remove once the "auto" type of interaction is enabled ?
+    def getGLIMfields(self):
+        fields = []
+        for i, fieldaId in enumerate(self.getContinuousFieldList()):
+            for fieldbId in self.getContinuousFieldList()[i + 1:]:
+                if self.getContinuousCouplingModel(fieldaId, fieldbId) == "G_Large_Interface_Model":
+                    fields += [fieldaId, fieldbId]
+        return fields
 
     def getAvailableContinuousDragModelList(self):
         """
         Get available turbulente dispersion list model
         """
         return self.__availableContinuousDragModelList
-
 
     def getAvailableTurbulenteDispersionModelList(self, fieldaId, fieldbId):
         """
@@ -211,13 +185,11 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         default['TurbulenceEffect']              = 'off'
         default['FrictionEffect']                = 'off'
 
-        # buubbles forces for LIM
         default['BubblesForLIM']                 = 'off'
-
-        # interface sharpening options
-        default['InterfaceSharpening']           = 'off'
-        default['UnsharpenedCells']              = 'off'
-        default['SurfaceTension']                = 'off'
+        default['InterfaceSharpening'] = 'none'
+        default["SurfaceTension"] = "none"
+        default['SurfaceTensionValue'] = '0.075'
+        default["SurfaceTensionChoice"] = "constant"
 
         return default
 
@@ -232,92 +204,6 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
             couple=[node['field_id_a'], node['field_id_b']]
             lst.append(couple)
         return lst
-
-
-    @Variables.undoGlobal
-    def addForce(self) :
-        """
-        add a new force
-        """
-        couple = []
-        if len(self.getFreeCouples()) > 0 :
-            couple = self.getFreeCouples()[0]
-            node = self.XMLInterForce.xmlInitChildNode('force', field_id_a = couple[0], field_id_b = couple[1])
-
-            model = ""
-            if self.getFieldNature(couple[1]) == "gas" :
-                model = self.defaultValues(couple[0], couple[1])['gasdisperseddragmodel']
-            else :
-                model = self.defaultValues(couple[0], couple[1])['liquidsoliddisperseddragmodel']
-            node.xmlInitChildNode('drag_model', model = model)
-            if node != "none" :
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, couple[1], "drag_coefficient", "drag_coef"+str(couple[1]))
-            model = self.defaultValues(couple[0], couple[1])['addedmassmodel']
-            node.xmlInitChildNode('added_mass', model = model)
-
-            model = self.defaultValues(couple[0], couple[1])['liftmodel']
-            node.xmlInitChildNode('lift_model', model = model)
-
-            if len(self.getAvailableWallForcesModelList(couple[0], couple[1])) > 1:
-                model = self.defaultValues(couple[0], couple[1])['wallforcemodel']
-            else:
-                model = self.defaultValues(couple[0], couple[1])['nowallforcemodel']
-            node.xmlInitChildNode('wall_force_model', model = model)
-
-            model = self.defaultValues(couple[0], couple[1])['turbulent_dispersion_model']
-            node.xmlInitChildNode('turbulent_dispersion_model', model = model)
-
-            try :
-                self.__freeCouples.remove((couple[0], couple[1]))
-            except:
-                pass
-        return couple
-
-
-    @Variables.undoGlobal
-    def setFielda(self, oldfieldaId, fieldbId, fieldaId):
-        """
-        put field id for field a
-        """
-        self.isInList([oldfieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = oldfieldaId, field_id_b = fieldbId)
-        node['field_id_a'] = fieldaId
-
-        if oldfieldaId != fieldaId :
-            if (fieldaId, fieldbId) not in self.__freeCouples :
-                new_fieldb = self.getFieldIdbList(fieldaId)[0]
-                node['field_id_b'] = new_fieldb
-                if self.getFieldNature(fieldbId) != self.getFieldNature(new_fieldb) :
-                    self.__updatedrag(fieldaId, new_fieldb)
-                self.__freeCouples.remove((fieldaId, new_fieldb))
-            else :
-                self.__freeCouples.remove((fieldaId, fieldbId))
-
-            self.__freeCouples.append((oldfieldaId, fieldbId))
-            self.__updatedrag(fieldaId, fieldbId)
-            self.__updateWallForce(fieldaId, fieldbId)
-
-
-    @Variables.undoGlobal
-    def setFieldb(self, fieldaId, oldfieldbId, fieldbId):
-        """
-        put field id for field b
-        """
-        self.isInList([fieldaId, oldfieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = oldfieldbId)
-        node['field_id_b'] = fieldbId
-
-        if oldfieldbId != fieldbId :
-            self.__freeCouples.remove((fieldaId, fieldbId))
-            self.__freeCouples.append((fieldaId, oldfieldbId))
-            self.__updatedrag(fieldaId, fieldbId)
-            self.__updateWallForce(fieldaId, fieldbId)
-
-        if self.getFieldNature(oldfieldbId) != self.getFieldNature(fieldbId) :
-            self.__updatedrag(fieldaId, fieldbId)
-
 
     def __updatedrag(self, fieldaId, fieldbId) :
         """
@@ -360,15 +246,14 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         set drag model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
         self.isInList(model, self.getAvailableDragModels(fieldaId, fieldbId))
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
-        ChildNode = node.xmlGetChildNode('drag_model')
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
+        ChildNode = node.xmlInitChildNode('drag_model')
         ChildNode['model'] = model
-        if model != "none" :
-            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId, "drag_coefficient", "drag_coef"+str(fieldbId))
-        else :
+        if model != "none":
+            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId,
+                                                        "drag_coefficient", "drag_coef" + str(fieldbId))
+        else:
             Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
 
 
@@ -377,9 +262,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         get drag model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('drag_model')
         if childNode == None :
             model = ""
@@ -397,11 +280,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         set added mass model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
         self.isInList(model, self.getAvailableAddedMassModels())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
-        ChildNode = node.xmlGetChildNode('added_mass')
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
+        ChildNode = node.xmlInitChildNode('added_mass')
         ChildNode['model'] = model
 
 
@@ -410,9 +291,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         get added mass model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('added_mass')
         if childNode == None :
             model = self.defaultValues(fieldaId, fieldbId)['addedmassmodel']
@@ -426,11 +305,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         set lift model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
         self.isInList(model, self.getAvailableLiftModels())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
-        ChildNode = node.xmlGetChildNode('lift_model')
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
+        ChildNode = node.xmlInitChildNode('lift_model')
         ChildNode['model'] = model
 
 
@@ -439,9 +316,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         get lift model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('lift_model')
         if childNode == None :
             model = self.defaultValues(fieldaId, fieldbId)['liftmodel']
@@ -455,11 +330,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         set wall force model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
         self.isInList(model, self.getAvailableWallForcesModelList(fieldaId, fieldbId))
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
-        ChildNode = node.xmlGetChildNode('wall_force_model')
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
+        ChildNode = node.xmlInitChildNode('wall_force_model')
         ChildNode['model'] = model
 
 
@@ -468,9 +341,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         get wall force model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('wall_force_model')
         if childNode == None :
             if len(self.getAvailableWallForcesModelList(fieldaId, fieldbId)) > 1:
@@ -487,11 +358,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         set turbulent dispersion model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
         self.isInList(model, self.getAvailableTurbulenteDispersionModelList(fieldaId, fieldbId))
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
-        ChildNode = node.xmlGetChildNode('turbulent_dispersion_model')
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
+        ChildNode = node.xmlInitChildNode('turbulent_dispersion_model')
         ChildNode['model'] = model
 
 
@@ -500,13 +369,11 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         get turbulent dispersion model for a couple fieldId
         """
-        self.isInList([fieldaId, fieldbId], self.getForceList())
-
-        node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
+        node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('turbulent_dispersion_model')
         if childNode == None :
             model = self.defaultValues(fieldaId, fieldbId)['turbulent_dispersion_model']
-            self.setWallForceModel(fieldaId, fieldbId, model)
+            self.setTurbDispModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('turbulent_dispersion_model')['model']
         return model
 
@@ -520,126 +387,67 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         node = self.XMLInterForce.xmlGetNode('force', field_id_a = fieldaId, field_id_b = fieldbId)
         node.xmlRemoveNode()
 
-        # update free couples
-        self.__freeCouples.append((fieldaId, fieldbId))
-
-
     @Variables.undoGlobal
-    def setContinuousCouplingModel(self, model) :
+    def setContinuousCouplingModel(self, field_id_a, field_id_b, model):
         """
         set turbulent dispersion model for a couple fieldId
         """
         self.isInList(model, self.getAvailableContinuousDragModelList())
-        ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        if ChildNode == None :
-            ChildNode = self.XMLInterForce.xmlInitChildNode('continuous_field_momentum_transfer')
+        ChildNode = self.XMLInterForce.xmlInitChildNode('continuous_field_momentum_transfer',
+                                                        field_id_a=field_id_a,
+                                                        field_id_b=field_id_b)
         ChildNode['model'] = model
-        if model != "separate_phases" :
+        if model != "separate_phases":
             ChildNode2 = ChildNode.xmlGetChildNode('gradP_correction')
-            if ChildNode2 != None :
+            if ChildNode2 != None:
                 ChildNode2.xmlRemoveNode()
             ChildNode2 = ChildNode.xmlGetChildNode('gradP_correction_model')
-            if ChildNode2 != None :
+            if ChildNode2 != None:
                 ChildNode2.xmlRemoveNode()
 
-        if model != "Large_Interface_Model" :
+        if model not in ["Large_Interface_Model", "G_Large_Interface_Model"]:
             ChildNode2 = ChildNode.xmlGetChildNode('BubblesForLIM')
-            if ChildNode2 != None :
+            if ChildNode2 != None:
                 ChildNode2.xmlRemoveNode()
 
-        if model == "none" :
+        if model == "none":
             ChildNode2 = ChildNode.xmlGetChildNode('InterfaceSharpening')
-            if ChildNode2 != None :
-                ChildNode2.xmlRemoveNode()
-            ChildNode2 = ChildNode.xmlGetChildNode('UnsharpenedCells')
-            if ChildNode2 != None :
-                ChildNode2.xmlRemoveNode()
-            ChildNode2 = ChildNode.xmlGetChildNode('ITMSurfaceTension')
-            if ChildNode2 != None :
+            if ChildNode2 != None:
                 ChildNode2.xmlRemoveNode()
 
+        if model == "G_Large_Interface_Model":
+            self.setBubblesForLIMStatus(field_id_a, field_id_b, "on")
 
     @Variables.noUndo
-    def getContinuousCouplingModel(self) :
+    def getContinuousCouplingModel(self, field_id_a, field_id_b):
         """
         get turbulent dispersion model for a couple fieldId
         """
-        ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+        ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer', field_id_a=field_id_a,
+                                                       field_id_b=field_id_b)
 
         # separate_phases model has been removed from the GUI!
         # Hence if the test leads to separate phases we set the model to none...
         if ChildNode == None:
             model = self.defaultValuesContinuous()['continuousdragmodel']
-            self.setContinuousCouplingModel(model)
-            ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+            self.setContinuousCouplingModel(field_id_a, field_id_b, model)
+            ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer', field_id_a=field_id_a,
+                                                           field_id_b=field_id_b)
         elif ChildNode['model'] == 'separate_phases':
-            self.setContinuousCouplingModel('none')
-            ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+            self.setContinuousCouplingModel(field_id_a, field_id_b, 'none')
+            ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer', field_id_a=field_id_a,
+                                                           field_id_b=field_id_b)
 
         model = ChildNode['model']
+        if model == None:
+            model = "none"
         return model
 
-
     @Variables.undoLocal
-    def setGradPCorrectionStatus(self, status) :
-        """
-        set gradP correction status for separate phases model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        node.xmlSetData('gradP_correction', status)
-        if status == "off" :
-            ChildNode = node.xmlGetChildNode('gradP_correction_model')
-            if ChildNode != None :
-                ChildNode.xmlRemoveNode()
-        else :
-            # to impose a GradP correction model in XML
-            self.getGradPCorrectionModel()
-
-
-    @Variables.noUndo
-    def getGradPCorrectionStatus(self) :
-        """
-        get gradP correction status for separate phases model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        ChildNode = node.xmlGetChildNode('gradP_correction')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['gradP_correction_status']
-           self.setGradPCorrectionStatus(status)
-        status = node.xmlGetString('gradP_correction')
-        return status
-
-
-    @Variables.undoLocal
-    def setGradPCorrectionModel(self, model) :
-        """
-        set gradP correction model for separate phases model
-        """
-        self.isInList(model,('refined_gradient', 'refined_gradient_2_criteria'))
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        node.xmlSetData('gradP_correction_model', model)
-
-
-    @Variables.noUndo
-    def getGradPCorrectionModel(self) :
-        """
-        get gradP correction model for separate phases model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        ChildNode = node.xmlGetChildNode('gradP_correction_model')
-        if ChildNode == None :
-           model = self.defaultValuesContinuous()['gradP_correction_model']
-           self.setGradPCorrectionModel(model)
-        model = node.xmlGetString('gradP_correction_model')
-        return model
-
-
-    @Variables.undoLocal
-    def setBubblesForLIMStatus(self, status) :
-        """
-        set bubbles forces for LIM status for continuous momentum transfert model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+    def setBubblesForLIMStatus(self, field_id_a, field_id_b, status):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
         old_status = node.xmlGetString('BubblesForLIM')
         node.xmlSetData('BubblesForLIM', status)
 
@@ -674,91 +482,61 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                             'drift_component',
                                                             'drift_component_'+field_name)
 
-
     @Variables.noUndo
-    def getBubblesForLIMStatus(self) :
-        """
-        get bubbles forces for LIM status for continuous momentum transfert model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        if node == None :
-            node = self.XMLInterForce.xmlInitChildNode('continuous_field_momentum_transfer')
+    def getBubblesForLIMStatus(self, field_id_a, field_id_b):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
+        if node == None:
+            node = self.XMLInterForce.xmlInitChildNode('continuous_field_momentum_transfer',
+                                                       field_id_a=field_id_a,
+                                                       field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('BubblesForLIM')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['BubblesForLIM']
-           self.setBubblesForLIMStatus(status)
+        if ChildNode == None:
+            status = self.defaultValuesContinuous()['BubblesForLIM']
+            self.setBubblesForLIMStatus(field_id_a, field_id_b, status)
         status = node.xmlGetString('BubblesForLIM')
         return status
 
-
     @Variables.undoLocal
-    def setInterfaceSharpeningStatus(self, status) :
-        """
-        set interface sharpening status for continuous momentum transfert model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+    def setInterfaceSharpeningModel(self, field_id_a, field_id_b, status):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
         node.xmlSetData('InterfaceSharpening', status)
 
-
     @Variables.noUndo
-    def getInterfaceSharpeningStatus(self) :
-        """
-        get interface sharpening status for continuous momentum transfert model
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+    def getInterfaceSharpeningModel(self, field_id_a, field_id_b):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('InterfaceSharpening')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['InterfaceSharpening']
-           self.setInterfaceSharpeningStatus(status)
+        if ChildNode == None:
+            status = self.defaultValuesContinuous()['InterfaceSharpening']
+            self.setInterfaceSharpeningModel(field_id_a, field_id_b, status)
         status = node.xmlGetString('InterfaceSharpening')
         return status
 
-
     @Variables.undoLocal
-    def setUnsharpenedCellsStatus(self, status) :
-        """
-        set unsharpened cells status
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        node.xmlSetData('UnsharpenedCells', status)
-
+    def setSurfaceTensionModel(self, field_id_a, field_id_b, model):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
+        st_node = node.xmlInitChildNode('SurfaceTension')
+        st_node.xmlSetData('model', model)
 
     @Variables.noUndo
-    def getUnsharpenedCellsStatus(self) :
-        """
-        get unsharpened cells status
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        ChildNode = node.xmlGetChildNode('UnsharpenedCells')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['UnsharpenedCells']
-           self.setUnsharpenedCellsStatus(status)
-        status = node.xmlGetString('UnsharpenedCells')
-        return status
-
-
-    @Variables.undoLocal
-    def setSurfaceTensionStatus(self, status) :
-        """
-        set
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        node.xmlSetData('ITMSurfaceTension', status)
-
-
-    @Variables.noUndo
-    def getSurfaceTensionStatus(self) :
-        """
-        get
-        """
-        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        ChildNode = node.xmlGetChildNode('ITMSurfaceTension')
-        if ChildNode == None :
-           status = self.defaultValuesContinuous()['SurfaceTension']
-           self.setSurfaceTensionStatus(status)
-        status = node.xmlGetString('ITMSurfaceTension')
-        return status
-
+    def getSurfaceTensionModel(self, field_id_a, field_id_b):
+        node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
+                                                  field_id_a=field_id_a,
+                                                  field_id_b=field_id_b)
+        st_node = node.xmlGetChildNode('SurfaceTension')
+        if st_node == None:
+            st_node = node.xmlInitChildNode('SurfaceTension')
+            model = self.defaultValuesContinuous()['SurfaceTension']
+            self.setSurfaceTensionModel(field_id_a, field_id_b, model)
+        model = st_node.xmlGetString('model')
+        return model
 
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
@@ -773,48 +551,11 @@ class InterfacialForcesTestCase(ModelTest):
         assert model != None, 'Could not instantiate InterfacialForcesModel'
 
 
-    def checkGetFreeCouples(self):
-        """Check whether the InterfacialEnthalpyModel class could get FreeCouples"""
-        MainFieldsModel(self.case).addField()
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
-        MainFieldsModel(self.case).addDefinedField('3', 'field3', 'dispersed', 'gas', 'on', 'on', 'off', 3)
-        mdl = InterfacialForcesModel(self.case)
-        assert mdl.getFreeCouples() ==[('1', '3'), ('2', '3')],\
-            'Could not get FreeCouples'
-
-
-    def checkGetFieldIdaList(self):
-        """Check whether the InterfacialEnthalpyModel class could get FieldIdaList"""
-        MainFieldsModel(self.case).addField()
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
-        MainFieldsModel(self.case).addDefinedField('3', 'field3', 'dispersed', 'gas', 'on', 'on', 'off', 3)
-        mdl = InterfacialForcesModel(self.case)
-        assert mdl.getFieldIdaList('1') == ['1', '2'],\
-            'Could not get FieldIdaList'
-        assert mdl.getFieldIdaList('2') == ['2', '1'],\
-            'Could not get FieldIdaList'
-        assert mdl.getFieldIdaList('3') == ['3', '1', '2'],\
-            'Could not get FieldIdaList'
-
-
-    def checkGetFieldIdbList(self):
-        """Check whether the InterfacialEnthalpyModel class could get FieldIdbList"""
-        MainFieldsModel(self.case).addField()
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
-        MainFieldsModel(self.case).addDefinedField('3', 'field3', 'dispersed', 'gas', 'on', 'on', 'off', 3)
-        mdl = InterfacialForcesModel(self.case)
-        assert mdl.getFieldIdbList('1') ==['3'] ,\
-            'Could not get FieldIdbList'
-        assert mdl.getFieldIdbList('2') == ['3'] ,\
-            'Could not get FieldIdbList'
-        assert mdl.getFieldIdbList('3') == [],\
-            'Could not get FieldIdbList'
-
-
     def checkGetAvailableContinuousDragModelList(self):
         """Check whether the InterfacialEnthalpyModel class could get the AvailableContinuousDragModelList"""
         mdl = InterfacialForcesModel(self.case)
-        assert mdl.getAvailableContinuousDragModelList() == ["none", "Large_Interface_Model", "Large_Bubble_Model"],\
+        assert mdl.getAvailableContinuousDragModelList() == ["none", "Large_Interface_Model", "G_Large_Interface_Model",
+                                                             "Large_Bubble_Model"], \
             'Could not get AvailableContinuousDragModelList'
 
 
@@ -861,7 +602,7 @@ class InterfacialForcesTestCase(ModelTest):
     def checkGetAvailableLiftModels(self):
         """Check whether the InterfacialEnthalpyModel class could get the AvailableLiftModels"""
         mdl = InterfacialForcesModel(self.case)
-        assert mdl.getAvailableLiftModels() == ["none", "coef_cst", "Tomiyama_SMD"],\
+        assert mdl.getAvailableLiftModels() == ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"], \
             'Could not get AvailableLiftModels'
 
 
@@ -870,78 +611,14 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         assert mdl.getForceList() == [['1', '2']],\
             'Could not get force list'
-
-
-    def checkaddForce(self):
-        """Check whether the InterfacialEnthalpyModel class could add force"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
-        mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
-        doc = '''<interfacial_forces>
-                         <force field_id_a="1" field_id_b="2">
-                                 <drag_model model="ishii"/>
-                                 <added_mass model="none"/>
-                                 <lift_model model="none"/>
-                                 <wall_force_model model="none"/>
-                                 <turbulent_dispersion_model model="none"/>
-                         </force>
-                 </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
-            'Could not add force'
-
-
-    def checksetFielda(self):
-        """Check whether the InterfacialEnthalpyModel class could setFielda"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
-        MainFieldsModel(self.case).addDefinedField('3', 'field3', 'continuous', 'liquid', 'on', 'on', 'off', 3)
-        mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
-        mdl.setFielda('1','2','3')
-        doc = '''<interfacial_forces>
-                         <force field_id_a="3" field_id_b="2">
-                                 <drag_model model="ishii"/>
-                                 <added_mass model="none"/>
-                                 <lift_model model="none"/>
-                                 <wall_force_model model="none"/>
-                                 <turbulent_dispersion_model model="none"/>
-                         </force>
-                 </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
-            'Could not set Fielda'
-
-
-    def checksetFieldb(self):
-        """Check whether the InterfacialEnthalpyModel class could setFieldb"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
-        MainFieldsModel(self.case).addDefinedField('3', 'field3', 'dispersed', 'gas', 'on', 'on', 'off', 3)
-        mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
-        mdl.setFieldb('1','2','3')
-        doc = '''<interfacial_forces>
-                         <force field_id_a="1" field_id_b="3">
-                                 <drag_model model="ishii"/>
-                                 <added_mass model="none"/>
-                                 <lift_model model="none"/>
-                                 <wall_force_model model="none"/>
-                                 <turbulent_dispersion_model model="none"/>
-                         </force>
-                 </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
-            'Could not set Fieldb'
-
 
     def checkGetandSetDragModel(self):
         """Check whether the InterfacialEnthalpyModel class could set and get DragModel"""
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.setDragModel('1','2','ishii')
         doc = '''<interfacial_forces>
                          <force field_id_a="1" field_id_b="2">
@@ -963,7 +640,6 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.setAddMassModel('1','2','standard')
         doc = '''<interfacial_forces>
                          <force field_id_a="1" field_id_b="2">
@@ -985,7 +661,6 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.setLiftModel('1','2','coef_cst')
         doc = '''<interfacial_forces>
                          <force field_id_a="1" field_id_b="2">
@@ -1008,7 +683,6 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         ThermodynamicsModel(self.case).setMaterials('2','Water')
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.setWallForceModel('1','2','antal')
         doc = '''<interfacial_forces>
                          <force field_id_a="1" field_id_b="2">
@@ -1032,7 +706,6 @@ class InterfacialForcesTestCase(ModelTest):
         TurbulenceModel(self.case).setTurbulenceModel('1','k-epsilon')
         TurbulenceModel(self.case).setTurbulenceModel('2','none')
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.setTurbDispModel('1','2','LLB_model')
         doc = '''<interfacial_forces>
                          <force field_id_a="1" field_id_b="2">
@@ -1054,7 +727,6 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.addForce()
         mdl.deleteForce('1','2')
         doc = '''<interfacial_forces/>'''
         assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
@@ -1066,65 +738,21 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.setContinuousCouplingModel('Large_Interface_Model')
+        mdl.setContinuousCouplingModel('1', '2', 'Large_Interface_Model')
         doc = '''<interfacial_forces>
                          <continuous_field_momentum_transfer model="Large_Interface_Model"/>
                  </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
+        assert mdl.XMLInterForce == self.xmlNodeFromString(doc), \
             'Could not set ContinuousCouplingModel'
-        assert mdl.getContinuousCouplingModel() == 'Large_Interface_Model',\
+        assert mdl.getContinuousCouplingModel('1', '2') == 'Large_Interface_Model', \
             'Could not get ContinuousCouplingModel'
-
-
-    def checkGetandSetGradPCorrectionStatus(self):
-        """Check whether the InterfacialEnthalpyModel class could set and get GradPCorrectionStatus"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
-        mdl = InterfacialForcesModel(self.case)
-        mdl.setContinuousCouplingModel('separate_phases')
-        mdl.setGradPCorrectionStatus('on')
-        doc = '''<interfacial_forces>
-                         <continuous_field_momentum_transfer model="separate_phases">
-                                 <gradP_correction>
-                                         on
-                                 </gradP_correction>
-                                 <gradP_correction_model>
-                                         refined_gradient
-                                 </gradP_correction_model>
-                         </continuous_field_momentum_transfer>
-                 </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
-            'Could not set GradPCorrectionStatus'
-        assert mdl.getGradPCorrectionStatus() == 'on',\
-            'Could not set GradPCorrectionStatus'
-
-
-    def checkGetandSetGradPCorrectionModel(self):
-        """Check whether the InterfacialEnthalpyModel class could set and get GradPCorrectionModel"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
-        mdl = InterfacialForcesModel(self.case)
-        mdl.setContinuousCouplingModel('separate_phases')
-        mdl.setGradPCorrectionModel('refined_gradient_2_criteria')
-        doc = '''<interfacial_forces>
-                         <continuous_field_momentum_transfer model="separate_phases">
-                                 <gradP_correction_model>
-                                         refined_gradient_2_criteria
-                                 </gradP_correction_model>
-                         </continuous_field_momentum_transfer>
-                 </interfacial_forces>'''
-        assert mdl.XMLInterForce == self.xmlNodeFromString(doc),\
-            'Could not set GradPCorrectionModel'
-        assert mdl.getGradPCorrectionModel() == 'refined_gradient_2_criteria',\
-            'Could not set GradPCorrectionModel'
-
 
     def checkGetandSetTurbulenceEffectStatus(self):
         """Check whether the InterfacialEnthalpyModel class could set and get TurbulenceEffectStatus"""
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.setContinuousCouplingModel('Large_Interface_Model')
+        mdl.setContinuousCouplingModel('1', '2', 'Large_Interface_Model')
         doc = '''<interfacial_forces>
                          <continuous_field_momentum_transfer model="Large_Interface_Model">
                                  <TurbulenceEffect>
@@ -1143,7 +771,7 @@ class InterfacialForcesTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'liquid', 'on', 'on', 'off', 1)
         MainFieldsModel(self.case).addDefinedField('2', 'field2', 'continuous', 'gas', 'on', 'on', 'off', 2)
         mdl = InterfacialForcesModel(self.case)
-        mdl.setContinuousCouplingModel('Large_Interface_Model')
+        mdl.setContinuousCouplingModel('1', '2', 'Large_Interface_Model')
         mdl.setFrictionStatus('on')
         doc = '''<interfacial_forces>
                          <continuous_field_momentum_transfer model="Large_Interface_Model">

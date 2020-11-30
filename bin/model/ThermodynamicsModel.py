@@ -20,20 +20,30 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+import logging
+import unittest
 
-import sys, unittest
-from code_saturne.model.XMLvariables import Model
-from code_saturne.model.XMLengine import *
-from code_saturne.model.XMLmodel import *
+from code_saturne.model.Common import GuiParam
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.OutputFieldsModel import OutputFieldsModel
 from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.XMLengine import *
+from code_saturne.model.XMLmodel import *
+from code_saturne.model.XMLvariables import Model
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+# log config
+# -------------------------------------------------------------------------------
+
+logging.basicConfig()
+log = logging.getLogger("ThermodynamicsModel")
+log.setLevel(GuiParam.DEBUG)
+
+# -------------------------------------------------------------------------------
 # EOS
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 EOS = 1
 try:
@@ -81,50 +91,58 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         default['molecular_viscosity']  = 0.0000456
         default['specific_heat']        = 4000
         default['thermal_conductivity'] = 1.e-5
-        default['surface_tension']      = 0.075
-        default['emissivity']           = 0.
-        default['elasticity']           = 0.9
-        default['radiative']            = "off"
-        default['material']             = "user_material"
-        default['method']               = "user_properties"
-        default['user_property']        = "constant"
-        default['thetisClipping']       = "on"
-        default['cathareClipping']      = "on"
-        default['propertyChoice']       = "constant"
+        default['emissivity'] = 0.
+        default['elasticity'] = 0.9
+        default['radiative'] = "off"
+        default['material'] = "user_material"
+        default['method'] = "user_properties"
+        default['user_property'] = "constant"
+        default['thetisClipping'] = "on"
+        default['cathareClipping'] = "on"
+        default['propertyChoice'] = "constant"
+
+        if self.checkEOSRequirements():
+            default["material"] = "Water"
+            default["method"] = "Cathare"
 
         return default
 
-
     def propertiesFormulaList(self):
         lst = ('density', 'molecular_viscosity',
-                'specific_heat', 'thermal_conductivity',
-                'surface_tension',
-                'temperature','d_rho_d_P', 'd_rho_d_h',
-                'SaturationEnthalpyLiquid', 'SaturationEnthalpyGas',
-                'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas',
-                'SaturationTemperature','d_Tsat_d_P', 'LatentHeat')
+               'specific_heat', 'thermal_conductivity',
+               'surface_tension',
+               'temperature', 'd_rho_d_P', 'd_rho_d_h',
+               'SaturationEnthalpyLiquid', 'SaturationEnthalpyGas',
+               'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas',
+               'SaturationTemperature', 'd_Tsat_d_P', 'LatentHeat')
         return lst
 
+    def checkEOSRequirements(self):
+        """
+        Check if EOS material laws can be activated
+        """
+        for field_id in self.getFieldIdList():
+            if self.getEnergyModel(field_id) == "off":
+                return False
+        return {1: True, 0: False}[EOS]
 
     @Variables.undoLocal
     def setMaterials(self, fieldId, material):
-        """
-        set the nature of materials
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        self.check_field_id(fieldId)
+        node = self.get_field_node(fieldId)
+        field_name = self.getFieldLabelsList()[int(fieldId) - 1]
         childNode = node.xmlInitChildNode('material')
         m = childNode.xmlGetNode('material')
         oldMaterial = None
         if m != None:
             oldMaterial = m['choice']
-        childNode.xmlSetAttribute(choice = material)
+        if not (self.checkEOSRequirements()):
+            material = "user_material"
+            log.debug("Warning : EOS not available. Changing material to user...")
+        childNode.xmlSetAttribute(choice=material)
         if material != "user_material":
             for prop in self.propertiesFormulaList():
-                node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=prop)
+                node = self.get_property_node(fieldId, prop)
                 if node:
                     node.xmlRemoveChild('formula')
             # add node enthalpy if needed
@@ -139,7 +157,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                         field2 = '2'
                     else:
                         field2 = '1'
-                    node2 = self.__XMLNodefields.xmlGetNode('field', field_id = field2)
+                    node2 = self.get_field_node(field2)
                     childNode2 = node2.xmlInitChildNode('material')
                     m2 = childNode2.xmlGetNode('material')
                     oldMaterial2 = None
@@ -156,7 +174,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                         field2 = '2'
                     else:
                         field2 = '1'
-                    node2 = self.__XMLNodefields.xmlGetNode('field', field_id = field2)
+                    node2 = self.get_field_node(field2)
                     childNode2 = node2.xmlInitChildNode('material')
                     m2 = childNode2.xmlGetNode('material')
                     oldMaterial2 = None
@@ -166,15 +184,14 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                     # update method
                     self.updateMethod(field2, oldMaterial2)
 
-
     @Variables.noUndo
     def getMaterials(self, fieldId):
         """
         get the nature of materials
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.check_field_id(fieldId)
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('material')
         if nodem == None :
             material = self.defaultValues()['material']
@@ -182,28 +199,28 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         material = node.xmlGetNode('material')['choice']
         return material
 
-
     @Variables.undoLocal
     def setMethod(self, fieldId, method):
         """
         set the nature of materials
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        self.check_field_id(fieldId)
+        if not (self.checkEOSRequirements()):
+            method = "user_properties"
+            log.debug("Warning : EOS not available. Changing method to user...")
+        node = self.get_field_node(fieldId)
         childNode = node.xmlInitChildNode('method')
-        childNode.xmlSetAttribute(choice = method)
+        childNode.xmlSetAttribute(choice=method)
         self.updateReference(fieldId)
-
 
     @Variables.noUndo
     def getMethod(self, fieldId):
         """
         get the nature of materials
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.check_field_id(fieldId)
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('method')
         if nodem == None :
             method = self.defaultValues()['method']
@@ -211,18 +228,17 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         method = node.xmlGetNode('method')['choice']
         return method
 
-
     @Variables.undoGlobal
     def updateMethod(self, fieldId, oldMaterial):
         """
         update reference value for EOS
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.check_field_id(fieldId)
         material = self.getMaterials(fieldId)
         if oldMaterial != material :
             if material == self.defaultValues()['material'] :
                self.setMethod(fieldId, self.defaultValues()['method'])
-            elif EOS == 1 :
+            elif EOS == 1 and material != "user_material":
                 self.ava = eosAva.EosAvailable()
                 self.ava.setMethods(material)
                 fls = self.ava.whichMethods()
@@ -233,6 +249,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                         if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
                             self.setMethod(fieldId, fli)
                             break
+            else:
+                self.setMethod(fieldId, "user_properties")
 
             if material == 'user_material' :
                 choice = 'constant'
@@ -246,15 +264,14 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 fieldId = "none"
                 self.setPropertyMode(fieldId, tag, choice)
 
-
     @Variables.undoGlobal
     def updateReference(self, fieldId):
         """
         return reference value for EOS
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.check_field_id(fieldId)
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        node = self.get_field_node(fieldId)
         reference = ""
         material = self.getMaterials(fieldId)
         method = self.getMethod(fieldId)
@@ -292,7 +309,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return reference
 
-
     @Variables.noUndo
     def getInitialValue(self, fieldId, tag):
         """
@@ -308,13 +324,12 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 'specific_heat', 'thermal_conductivity',
                 'surface_tension', 'emissivity','elasticity')
         self.isInList(tag, lst)
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
         pp = node.xmlGetDouble('initial_value')
         if pp == None:
             pp = self.defaultValues()[tag]
             self.setInitialValue(fieldId, tag, pp)
         return pp
-
 
     @Variables.undoLocal
     def setInitialValue(self, fieldId, tag, val):
@@ -333,95 +348,68 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isFloat(val)
         if tag != 'emissivity' and tag != 'elasticity':
             self.isGreater(val, 0.)
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
         node.xmlSetData('initial_value', val)
-
 
     @Variables.noUndo
     def getInitialValueDensity(self, fieldId):
         """Return initial value of density"""
         return self.getInitialValue(fieldId, 'density')
 
-
     @Variables.undoLocal
     def setInitialValueDensity(self, fieldId, val):
         """Put initial value for density"""
         self.setInitialValue(fieldId, 'density', val)
-
 
     @Variables.noUndo
     def getInitialValueViscosity(self, fieldId):
         """Return initial value of viscosity"""
         return self.getInitialValue(fieldId, 'molecular_viscosity')
 
-
     @Variables.undoLocal
     def setInitialValueViscosity(self, fieldId, val):
         """Put initial value for viscosity"""
         self.setInitialValue(fieldId, 'molecular_viscosity', val)
-
 
     @Variables.noUndo
     def getInitialValueHeat(self, fieldId):
         """Return initial value of specific heat"""
         return self.getInitialValue(fieldId, 'specific_heat')
 
-
     @Variables.undoLocal
     def setInitialValueHeat(self, fieldId, val):
         """Put initial value for specific heat"""
         self.setInitialValue(fieldId, 'specific_heat', val)
-
 
     @Variables.noUndo
     def getInitialValueCond(self, fieldId):
         """Return initial value of conductivity"""
         return self.getInitialValue(fieldId, 'thermal_conductivity')
 
-
     @Variables.undoLocal
     def setInitialValueCond(self, fieldId, val):
         """Put initial value for conductivity"""
         self.setInitialValue(fieldId, 'thermal_conductivity', val)
-
-
-    @Variables.noUndo
-    def getInitialValueTens(self):
-        """Return initial value of surface tension"""
-        fieldId = 'none'
-        return self.getInitialValue(fieldId, 'surface_tension')
-
-
-    @Variables.undoLocal
-    def setInitialValueTens(self, val):
-        """Put initial value for surface tension"""
-        fieldId = 'none'
-        self.setInitialValue(fieldId, 'surface_tension', val)
-
 
     @Variables.noUndo
     def getInitialValueEmissivity(self, fieldId):
         """Return initial value of emissivity"""
         return self.getInitialValue(fieldId, 'emissivity')
 
-
     @Variables.undoLocal
     def setInitialValueEmissivity(self, fieldId, val):
         """Put initial value for emissivity"""
         self.setInitialValue(fieldId, 'emissivity', val)
-
 
     @Variables.noUndo
     def getInitialValueElastCoef(self, fieldId):
         """Return initial value of elasticity coefficient"""
         return self.getInitialValue(fieldId, 'elasticity')
 
-
     @Variables.undoLocal
     def setInitialValueElastCoef(self, fieldId, val):
         """Put initial value for elasticity coefficient"""
         self.setInitialValue(fieldId, 'elasticity', val)
-
 
     @Variables.noUndo
     def getFormula(self, fieldId, tag, zone="1"):
@@ -432,7 +420,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
 
         if zone != "1":
             if node.xmlGetChildNode("zone", zone_id=zone):
@@ -445,7 +433,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         else:
             return None
 
-
     @Variables.undoLocal
     def setFormula(self, fieldId, tag, strg, zone="1"):
         """
@@ -455,7 +442,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
 
         if zone != "1":
             if node.xmlGetChildNode("zone", zone_id=zone):
@@ -465,35 +452,31 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         node.xmlSetData('formula', strg)
 
-
     @Variables.undoLocal
     def setRadiativeTransferStatus(self, fieldId, status):
         """
         set status for radiative resolution transfer
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.check_field_id(fieldId)
         self.isOnOff(status)
 
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
+        node = self.get_field_node(fieldId)
         childNode = node.xmlInitChildNode('particles_radiative_transfer')
         childNode.xmlSetAttribute(status = status)
-
 
     @Variables.noUndo
     def getRadiativeTransferStatus(self, fieldId):
         """
         return status for radiative resolution transfer
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
-        nodeh= node.xmlGetNode('particles_radiative_transfer')
-        if nodeh == None :
+        self.check_field_id(fieldId)
+        node = self.get_field_node(fieldId)
+        nodeh = node.xmlGetNode('particles_radiative_transfer')
+        if nodeh == None:
             rad = self.defaultValues()['radiative']
-            self.setRadiativeTransferStatus(fieldId,rad)
+            self.setRadiativeTransferStatus(fieldId, rad)
         rad = node.xmlGetNode('particles_radiative_transfer')['status']
         return rad
-
 
     @Variables.noUndo
     def getPropertyMode(self, fieldId, tag):
@@ -503,7 +486,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
 
         c = None
         if node:
@@ -518,7 +501,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return c
 
-
     @Variables.undoLocal
     def setPropertyMode(self, fieldId, tag, choice):
         """Put choice in xml file's node I{tag}"""
@@ -529,20 +511,28 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
         self.isInList(choice, ('constant', 'user_law', 'table_law'))
 
-        node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+        node = self.get_property_node(fieldId, tag)
         node['choice'] = choice
 
         if choice == 'constant':
             node.xmlRemoveChild('formula')
 
+    def get_property_node(self, fieldId, prop):
+        node = self.XMLNodeproperty.xmlGetNode('property', field_id=fieldId, name=prop)
+        return node
+
+    def check_field_id(self, fieldId):
+        return self.isInList(str(fieldId), self.getFieldIdList())
+
+    def get_field_node(self, fieldId):
+        node = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
+        return node
 
     def getXMLNodefieldsNode(self):
         return self.__XMLNodefields
 
-
     def getXMLThermo(self):
         return self.__XMLThermo
-
 
     # MEG Generation related functions
     def getFormulaComponents(self, fieldId, tag, zone="1"):
@@ -571,9 +561,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         elif tag == 'temperature':
             return self.getFormulaTemperatureComponents(fieldId, zone)
 
-        elif tag == 'surface_tension':
-            return self.getFormulaStComponents()
-
         elif tag == 'd_Tsat_d_P':
             return self.getFormuladTsatdpComponents(zone)
 
@@ -593,8 +580,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
 
-
-    def getFormulaRhoComponents(self, fieldId, zone="1"):
+    def getFormulaRhoComponents(self, fieldId, zone="all_cells"):
         """
         User formula for density
         """
@@ -750,48 +736,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return exp, req, known_fields, symbols
 
-
-    def getFormulaStComponents(self):
-        """
-        User formula for surface tension
-        """
-        exp = self.getFormula('none', 'surface_tension')
-        if not exp:
-            exp = "sigma = 0.075;"
-        req = [('sigma', 'Surface Tension')]
-
-        # Predefined Symbols
-        symbols = []
-
-        # Known fields (for equation->C translation) within the code
-        known_fields = []
-
-        for s in self.list_scalars:
-           symbols.append(s)
-           known_fields.append(s)
-
-        for fieldId in self.getFieldIdList():
-            if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-                symbols.append((label, 'enthalpy_'+str(fieldId)))
-                known_fields.append((label, 'enthalpy_'+str(fieldId)))
-
-        s0_val = self.getInitialValue('none', 'surface_tension')
-        symbols.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
-
-        symbols.append(('volume', 'Zone volume'))
-
-        for s in self.m_spe.getScalarNameList():
-              symbols.append((s, s))
-              known_fields.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, known_fields, symbols
-
-
-    def getFormulaTemperatureComponents(self, fieldId, zone="1"):
+    def getFormulaTemperatureComponents(self, fieldId, zone="all_cells"):
         """
         User formula for temperature as a function of enthalpy
         """
@@ -1023,7 +968,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return exp, req, known_fields, symbols
 
-
     def tr(self, text):
         """
         translation
@@ -1031,13 +975,216 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return text
 
 
+# TODO change of architecture to avoid redundant get/set methods (instead of passing field_ids,
+#  we should pass an common object, without the details of it being one field, two fields, a banana...)
+class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
-#-------------------------------------------------------------------------------
+    def __init__(self, case):
+        ThermodynamicsModel.__init__(self, case)
+        self.available_modes = ["constant", "user_law", "eos"]
+
+    def defaultValues(self):
+        default = super().defaultValues()
+        default["surface_tension"] = 0.075
+        return default
+
+    def propertiesFormulaList(self):
+        return ('surface_tension')
+
+    @Variables.noUndo
+    def getPropertyMode(self, field_id_a, field_id_b, tag):
+        """Return choice of node I{tag}. Choice is constant or variable"""
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+
+        self.isInList(tag, self.propertiesFormulaList())
+        node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+
+        c = None
+        if node:
+            if node['choice'] != "" and node['choice'] != None:
+                c = node['choice']
+                self.isInList(c, self.available_modes)
+
+        if c == None:
+            c = self.defaultValues()['propertyChoice']
+            if node:
+                self.setPropertyMode(field_id_a, field_id_b, tag, c)
+
+        return c
+
+    @Variables.undoLocal
+    def setPropertyMode(self, field_id_a, field_id_b, tag, choice):
+        """Put choice in xml file's node I{tag}"""
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+
+        self.isInList(tag, self.propertiesFormulaList())
+        self.isInList(choice, self.available_modes)
+
+        node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+        node['choice'] = choice
+
+        if choice == 'constant':
+            node.xmlRemoveChild('formula')
+
+    @Variables.noUndo
+    def getInitialValue(self, field_id_a, field_id_b, tag):
+        """
+        Return initial value of the markup tag : 'density', or
+        'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
+        'surface_tension', 'emissivity' or 'elasticity'
+        """
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+
+        self.isInList(tag, self.propertiesFormulaList())
+        node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+        pp = node.xmlGetDouble('initial_value')
+        if pp == None:
+            pp = self.defaultValues()[tag]
+            self.setInitialValue(field_id_a, field_id_b, tag, pp)
+        return pp
+
+    @Variables.undoLocal
+    def setInitialValue(self, field_id_a, field_id_b, tag, val):
+        """
+        Put initial value for the markup tag : 'density', or
+        'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
+        'surface_tension', 'emissivity' or 'elasticity'
+        """
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+
+        self.isInList(tag, self.propertiesFormulaList())
+        self.isFloat(val)
+        if tag != 'emissivity' and tag != 'elasticity':
+            self.isGreater(val, 0.)
+        node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+        node.xmlSetData('initial_value', val)
+
+    @Variables.noUndo
+    def getFormula(self, field_id_a, field_id_b, tag, zone="all_cells"):
+        """
+        Return a formula for properties
+        """
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+        self.isInList(tag, self.propertiesFormulaList())
+
+        node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+
+        if zone != "all_cells":
+            if node.xmlGetChildNode("zone", name=zone):
+                node = node.xmlGetChildNode("zone", name=zone)
+            else:
+                node = node.xmlInitChildNode("zone")
+                node["name"] = zone
+
+        if node:
+            return node.xmlGetChildString('formula')
+        else:
+            return None
+
+    @Variables.undoLocal
+    def setFormula(self, field_id_a, field_id_b, tag, strg, zone="all_cells"):
+        """
+        Gives a formula for properties
+        """
+        fieldIdList = self.getFieldIdList()
+        fieldIdList.append('none')
+        self.isInList(str(field_id_a), fieldIdList)
+        self.isInList(str(field_id_b), fieldIdList)
+        self.isInList(tag, self.propertiesFormulaList())
+        node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
+
+        if zone != "all_cells":
+            if node.xmlGetChildNode("zone", name=zone):
+                node = node.xmlGetChildNode("zone", name=zone)
+            else:
+                node = node.xmlInitChildNode("zone")
+                node["name"] = zone
+
+        node.xmlSetData('formula', strg)
+
+    @Variables.noUndo
+    def getInitialValueTens(self, field_id_a, field_id_b):
+        """Return initial value of surface tension"""
+        return self.getInitialValue(field_id_a, field_id_b, 'surface_tension')
+
+    @Variables.undoLocal
+    def setInitialValueTens(self, field_id_a, field_id_b, val):
+        """Put initial value for surface tension"""
+        self.setInitialValue(field_id_a, field_id_b, 'surface_tension', val)
+
+    def getFormulaComponents(self, field_id_a, field_id_b, tag, zone="all_cells"):
+        """
+        Get the formula components for a given tag
+        """
+
+        if tag == 'surface_tension':
+            return self.getFormulaStComponents(field_id_a, field_id_b, zone)
+        else:
+            msg = 'Formula is not available for field %s_%s in MEG' % (tag, str(fieldId))
+            raise Exception(msg)
+
+    def getFormulaStComponents(self, field_id_a, field_id_b, zone="all_cells"):
+        """
+        User formula for surface tension
+        """
+        exp = self.getFormula(field_id_a, field_id_b, 'surface_tension', zone)
+        if not exp:
+            exp = "sigma = 0.075;"
+        req = [('sigma', 'Surface Tension')]
+
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
+        for s in self.list_scalars:
+            symbols.append(s)
+            known_fields.append(s)
+
+        for fieldId in self.getFieldIdList():
+            if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+                symbols.append((label, 'enthalpy_' + str(fieldId)))
+                known_fields.append((label, 'enthalpy_' + str(fieldId)))
+
+        s0_val = self.getInitialValue('none', 'surface_tension')
+        symbols.append(('sigma0', 'Surface tension (reference value) = ' + str(s0_val)))
+
+        symbols.append(('volume', 'Zone volume'))
+
+        for s in self.m_spe.getScalarNameList():
+            symbols.append((s, s))
+            known_fields.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, known_fields, symbols
+
+
+# -------------------------------------------------------------------------------
 # DefineUsersScalars test case
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 class ThermodynamicsTestCase(ModelTest):
     """
     """
+
     def checkThermodynamicsInstantiation(self):
         """Check whether the ThermodynamicsModel class could be instantiated"""
         model = None

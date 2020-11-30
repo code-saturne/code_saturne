@@ -158,8 +158,8 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         else:
             h = self._headers[col]
             zname = self._data[row][0]
-	    # FIXME: For v7.0 'all_cells' is always used for physical properties.
-	    # Will be changed for v7.1
+            # FIXME: For v7.0 'all_cells' is always used for physical properties.
+            # Will be changed for v7.1
             if zname == "all_cells" and h == "Physical properties":
                 return Qt.NoItemFlags
             else:

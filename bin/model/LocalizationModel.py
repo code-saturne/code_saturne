@@ -237,20 +237,19 @@ class VolumicZone(Zone):
         self.case = case
 
         self._natureDict = {}
-        self._natureDict['initialization']       = self.tr("Initialization")
-
+        self._natureDict['initialization'] = self.tr("Initialization")
         self._natureDict['physical_properties'] = self.tr("Physical properties")
         self._natureList.append('physical_properties')
-        if self.case.module_name() == 'code_saturne':
 
+        if self.case.module_name() == 'code_saturne':
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
                 self._natureList.append('head_losses')
                 self._natureList.append('porosity')
                 self._natureList.append('momentum_source_term')
 
-                self._natureDict['head_losses']          = self.tr("Head losses")
-                self._natureDict['porosity']             = self.tr("Porosity")
+                self._natureDict['head_losses'] = self.tr("Head losses")
+                self._natureDict['porosity'] = self.tr("Porosity")
                 self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
             else:
                 self._natureList.append('momentum_source_term')
@@ -269,6 +268,7 @@ class VolumicZone(Zone):
                 if node_darcy['model'] != 'off':
                     self._natureList.append('groundwater_law')
                     self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
+
         elif self.case.module_name() == 'neptune_cfd':
             self._natureList.append('head_losses')
             self._natureList.append('porosity')

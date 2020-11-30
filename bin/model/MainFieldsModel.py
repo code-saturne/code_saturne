@@ -47,14 +47,15 @@ class PredefinedFlowsModel:
     This class manages the Field objects for a predefined flow in the XML file
     """
 
-    fieldsCouple = ["None" ,
+    fieldsCouple = ["None",
                     "free_surface",
                     "boiling_flow",
                     "droplet_flow",
-                    "particles_flow"]
+                    "particles_flow",
+                    "multiregime"]
 
     fieldsCoupleProperties = {}
-    fieldsCoupleProperties[fieldsCouple[0]] = ("","")
+    fieldsCoupleProperties[fieldsCouple[0]] = ("", "")
     fieldsCoupleProperties[fieldsCouple[1]] = (("continuous", "continuous"),
                                                ("liquid", "gas"))
     fieldsCoupleProperties[fieldsCouple[2]] = (("continuous", "dispersed"),
@@ -63,6 +64,8 @@ class PredefinedFlowsModel:
                                                ("gas", "liquid"))
     fieldsCoupleProperties[fieldsCouple[4]] = (("continuous", "dispersed"),
                                                ("gas", "solid"))
+    fieldsCoupleProperties[fieldsCouple[5]] = (("continuous", "continuous"),
+                                               ("liquid", "gas"))
 
 
 #-------------------------------------------------------------------------------
@@ -139,7 +142,8 @@ class MainFieldsModel(Variables, Model):
         default['phase']                      = FieldAttributesDescription.phaseValues[0]
         default['carrierField']               = "off"
         default['compressibleStatus']         = "off"
-        default['defaultPredefinedFlow']      = "None"
+        default['defaultPredefinedFlow'] = "None"
+        default["heatMassTransfer"] = "off"
 
         return default
 
@@ -281,10 +285,17 @@ class MainFieldsModel(Variables, Model):
         list = []
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             childNode = node.xmlInitChildNode('type')
-            if childNode['choice'] == "dispersed" :
-               list.append(node['field_id'])
+            if childNode['choice'] == "dispersed":
+                list.append(node['field_id'])
         return list
 
+    def getLiquidPhaseList(self):
+        list = []
+        for node in self.__XMLNodefields.xmlGetNodeList('field'):
+            childNode = node.xmlInitChildNode('phase')
+            if childNode['choice'] == "liquid":
+                list.append(node['field_id'])
+        return list
 
     def getGasPhaseList(self):
         """
@@ -293,8 +304,8 @@ class MainFieldsModel(Variables, Model):
         list = []
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             childNode = node.xmlInitChildNode('phase')
-            if childNode['choice'] == "gas" :
-               list.append(node['field_id'])
+            if childNode['choice'] == "gas":
+                list.append(node['field_id'])
         return list
 
 
@@ -305,12 +316,35 @@ class MainFieldsModel(Variables, Model):
         list = []
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             childNode = node.xmlInitChildNode('phase')
-            if childNode['choice'] == "solid" :
-               list.append(node['field_id'])
+            if childNode['choice'] == "solid":
+                list.append(node['field_id'])
         return list
 
+    def getFilteredFieldIdList(self,
+                               phase_state=None,
+                               interfacial_criterion=None,
+                               carrier_state=None):
+        list = []
+        phase_filter = True
+        type_filter = True
+        carrier_filter = True
+        for node in self.__XMLNodefields.xmlGetNodeList('field'):
+            if phase_state != None:
+                child_node = node.xmlInitChildNode('phase')
+                phase_filter = (child_node['choice'] == phase_state)
+            if interfacial_criterion != None:
+                child_node = node.xmlInitChildNode('type')
+                type_filter = (child_node['choice'] == interfacial_criterion)
+            if type_filter and interfacial_criterion == "dispersed" and carrier_state != None:
+                # TODO check if self.getCarrierField can replace following lines
+                child_node = node.xmlInitChildNode("carrier_field")
+                carrier_id = child_node["field_id"]
+                carrier_filter = (self.getFieldNature(carrier_id) == carrier_state)
+            if phase_filter and type_filter and carrier_filter:
+                list.append(node['field_id'])
+        return list
 
-    def getFirstContinuousField(self) :
+    def getFirstContinuousField(self):
         """
         return id of first continuous field
         """
@@ -384,31 +418,54 @@ class MainFieldsModel(Variables, Model):
     def setCriterion(self, fieldId, type):
         """
         Put type of field
+        TODO this method is too complex and should be refactored, but it might imply a complete change of architecture
+             for MainFieldsModel, InterfacialForcesModel, InterfacialEnthalpyModel, possibly TurbulenceNeptuneModel.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList())
 
         field_name = self.getFieldLabelsList()[int(fieldId)-1]
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         childNode = node.xmlInitChildNode('type')
         oldtype = childNode['choice']
-        childNode.xmlSetAttribute(choice = type)
+        childNode.xmlSetAttribute(choice=type)
         # update carrier field
-        if type == "continuous" :
-            self.setCarrierField(fieldId,self.defaultValues()['carrierField'])
-        else :
-            self.setCarrierField(fieldId,self.getFirstContinuousField())
-            if oldtype != type :
-               for id in self.getDispersedFieldList() :
-                  if self.getCarrierField(id) == str(fieldId) :
-                     self.setCarrierField(id,self.getFirstContinuousField())
+        if type == "continuous":
+            self.setCarrierField(fieldId, self.defaultValues()['carrierField'])
+        else:
+            self.setCarrierField(fieldId, self.getFirstContinuousField())
+            if oldtype != type:
+                for id in self.getDispersedFieldList():
+                    if self.getCarrierField(id) == str(fieldId):
+                        self.setCarrierField(id, self.getFirstContinuousField())
+
+        # if type is changed from continuous to dispersed and vice versa, delete old coupling information
+        if oldtype != type and oldtype == "continuous":
+            node = self.XMLturbulence.xmlGetNode("field", field_id=fieldId)
+            if node:
+                node.xmlRemoveNode()
+            node_list = self.XMLforces.xmlGetChildNodeList("continuous_field_momentum_transfer", field_id_a=fieldId)
+            node_list += self.XMLforces.xmlGetChildNodeList("continuous_field_momentum_transfer", field_id_b=fieldId)
+            for node in node_list:
+                if node:
+                    node.xmlRemoveNode()
+        if oldtype != type and oldtype == "dispersed":
+            node = self.XMLturbulence.xmlGetNode("field", field_id=fieldId)
+            if node:
+                node.xmlRemoveNode()
+            node_list = self.XMLforces.xmlGetChildNodeList("force",
+                                                           field_id_b=fieldId)  # dispersed phase is always in second position
+            for node in node_list:
+                if node:
+                    node.xmlRemoveNode()
+
         # if number of continuous field < 2 suppress coupling and momentum forces
-        if len(self.getContinuousFieldList()) < 2 :
+        if len(self.getContinuousFieldList()) < 2:
             node = self.XMLturbulence.xmlGetNode('continuous_field_coupling')
-            if node :
+            if node:
                 node.xmlRemoveNode()
             node = self.XMLforces.xmlGetNode('continuous_field_momentum_transfer')
-            if node :
+            if node:
                 node.xmlRemoveNode()
 
         # remove closure law linked to field for coherence of XML
@@ -629,18 +686,17 @@ class MainFieldsModel(Variables, Model):
 
 
     @Variables.undoGlobal
-    def deleteField(self, row):
+    def deleteField(self, fieldId):
         """
         delete a field in XML and update
         """
-        fieldId = row + 1
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList())
 
-        #suppress profile
-        for node in reversed(self.node_profile.xmlGetNodeList('profile')) :
+        # suppress profile
+        for node in reversed(self.node_profile.xmlGetNodeList('profile')):
             suppress = 0
-            for child in node.xmlGetNodeList('var_prop') :
-                if (child['field_id'] == str(fieldId)) :
+            for child in node.xmlGetNodeList('var_prop'):
+                if (child['field_id'] == str(fieldId)):
                     suppress = 1
             if suppress == 1 :
                 label = node['label']
@@ -685,7 +741,7 @@ class MainFieldsModel(Variables, Model):
             nodec = node.xmlGetNode('carrier_field')
             if nodec != None :
                 if str(nodec['field_id']) == str(fieldId) :
-                    id = self.getFirstContinuousField()
+                    id = int(self.getFirstContinuousField())
                     if id > 0 :
                        nodec['field_id'] = id
                     else :
@@ -740,172 +796,83 @@ class MainFieldsModel(Variables, Model):
                 list.append(n)
         return list
 
-
     @Variables.undoGlobal
-    def setPredefinedFlow(self, value):    # <=> setPredefinedFlow
+    def setPredefinedFlow(self, flow_choice):  # <=> setPredefinedFlow
         """
         """
 
-        self.isInList(value, PredefinedFlowsModel.fieldsCouple)
+        self.isInList(flow_choice, PredefinedFlowsModel.fieldsCouple)
 
         node = self.XMLNodethermo.xmlInitChildNode('predefined_flow')
-        node.xmlSetAttribute(choice = value)
-        from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+        node.xmlSetAttribute(choice=flow_choice)
         self.XMLNodeclosure = self.case.xmlGetNode('closure_modeling')
-        self.XMLMassTrans   = self.XMLNodeclosure.xmlInitNode('mass_transfer_model')
+        self.XMLMassTrans = self.XMLNodeclosure.xmlInitNode('mass_transfer_model')
 
-        #Variables : neptune_cfd.core.XMLvariables.Variables
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none", "surface_tension", "Surf_tens")
+        # Variables : neptune_cfd.core.XMLvariables.Variables
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
+                                                    "surface_tension", "Surf_tens")
+        self._deleteFieldsProperties()
+        energyModel = "total_enthalpy"
+        if self.getHeatMassTransferStatus() == "off":
+            energyModel = "off"
 
-        if value != "None":  #avant: "None"
+        if flow_choice != "None":
 
             # Create the first field
-            fieldId      = "1"
-            label        = "Field1"
-            typeChoice   = PredefinedFlowsModel.fieldsCoupleProperties[value][0][0]
-            phase        = PredefinedFlowsModel.fieldsCoupleProperties[value][1][0]
-            if typeChoice == "dispersed" :
+            fieldId = "1"
+            label = "Field1"
+            typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][0]
+            phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][0]
+            if typeChoice == "dispersed":
                 carrierField = "2"
-            else :
+            else:
                 carrierField = "off"
-            hmodel       = "total_enthalpy"
             compressible = "off"
             self.case.undoStop()
-
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, hmodel, compressible, 1)
-
-            if value != "particles_flow":
-                # initialisation for thermodynamique material
-                if EOS == 1 :
-                    material = 'Water'
-                    self.ava = eosAva.EosAvailable()
-                    self.ava.setMethods(material)
-                    self.case.undoStop()
-                    ThermodynamicsModel(self.case).setMaterials(fieldId, material)
-
-                    fls = self.ava.whichMethods()
-                    if "Cathare" in fls:
-                        ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
-                    else:
-                        for fli in fls:
-                            if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
-                                ThermodynamicsModel(self.case).setMethod(fieldId, fli)
-                            break
-
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux", "wall_total_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_liquid_total_flux", "wall_liquid_total_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_evaporation_flux", "wall_evaporation_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux", "wall_quenching_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_liquid_convective_flux", "wall_liquid_convective_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_steam_convective_flux", "wall_steam_convective_flux", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boundary_temperature", "wall_temperature", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_liquid_temperature", "wall_liquid_temperature", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation", "wall_oversaturation", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter", "unal_diameter", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_diameter_mesh_independancy", "wall_diameter_mesh_independancy", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness", "wall_roughness", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_dispersed_phase_mass_source_term", "wall_dispersed_phase_mass_source_term", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria", "boiling_criteria", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "exchange_coefficient", "exchange_coefficient", support = "boundary")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part", "uninfluenced_part", support = "boundary")
+            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
 
             # Create the second field
-            fieldId      = "2"
-            label        = "Field2"
-            typeChoice   = PredefinedFlowsModel.fieldsCoupleProperties[value][0][1]
-            phase        = PredefinedFlowsModel.fieldsCoupleProperties[value][1][1]
-            if typeChoice == "dispersed" :
-               carrierField = "1"
-            else :
-               carrierField = "off"
-            hmodel       = "total_enthalpy"
+            fieldId = "2"
+            label = "Field2"
+            typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][1]
+            phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][1]
+            if typeChoice == "dispersed":
+                carrierField = "1"
+            else:
+                carrierField = "off"
             compressible = "off"
             self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, hmodel, compressible, 2)
+            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
 
-            if value != "particles_flow":
-                # initialisation for thermodynamique material
-                if EOS == 1 :
-                    self.case.undoStop()
-                    ThermodynamicsModel(self.case).setMaterials(fieldId, material)
+            if flow_choice != "particles_flow":
+                # initialisation for thermodynamic material
+                if EOS == 1:
+                    defaultMaterial = "Water"
+                    self._setFieldMaterial("1", defaultMaterial)
+                    self._setFieldMaterial("2", defaultMaterial)
+                self._createSaturationProperties()
+                self._createWallFieldsProperties()
+            else:
+                self._deleteFieldsProperties()
 
-                    fls = self.ava.whichMethods()
-                    if "Cathare" in fls:
-                        ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
-                    else:
-                        for fli in fls:
-                            if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
-                                ThermodynamicsModel(self.case).setMethod(fieldId, fli)
-                            break
-
-                #TODO attention a modifier lors de la generalisation des modeles
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "SaturationTemperature", "TsatK", post = True)
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "SaturationEnthalpyLiquid", "Hsat_Liquid")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "SaturationEnthalpyGas", "Hsat_Gas")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid", "dHsat_dp_Liquid")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas", "dHsat_dp_Gas")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P", "dTsat_dp")
-                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
-            else :
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyLiquid")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_convective_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_steam_convective_flux")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_diameter_mesh_independancy")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_dispersed_phase_mass_source_term")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
-                Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
+            # Remove remnant fields from previous flow choice
+            for fieldId in self.getFieldIdList():
+                if fieldId not in ["1", "2"]:
+                    self.deleteField(fieldId)
 
             # modification du choix pour le predicteur de vitesse
             self.case.undoStop()
-            if (value == "boiling_flow") :
-                GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_bubble'])
-            else :
-                GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
+            if (flow_choice == "boiling_flow"):
+                GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(
+                    GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_bubble'])
+            else:
+                GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(
+                    GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
 
-            if value != "boiling_flow" and value != "free_surface":
+            if flow_choice != "boiling_flow" and flow_choice != "free_surface" and flow_choice != "multiregime":
                 self.XMLMassTrans.xmlRemoveChild('nucleate_boiling')
 
         else :
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyLiquid")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_convective_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_steam_convective_flux")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_diameter_mesh_independancy")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_dispersed_phase_mass_source_term")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
-
             GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
             self.XMLMassTrans.xmlRemoveChild('nucleate_boiling')
 
@@ -916,26 +883,125 @@ class MainFieldsModel(Variables, Model):
             typeChoice   = "continuous"
             phase        = "liquid"
             carrierField = "off"
-            hmodel       = "total_enthalpy"
             compressible = "off"
             self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, hmodel, compressible, 1)
+            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
             # Create the second field
             fieldId      = "2"
             label        = "Field2"
-            typeChoice   = "continuous"
-            phase        = "gas"
+            typeChoice = "continuous"
+            phase = "gas"
             carrierField = "off"
-            hmodel       = "total_enthalpy"
             compressible = "off"
             self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, hmodel, compressible, 2)
+            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
         self.case.undoStart()
 
         return node
 
+    def _setFieldMaterial(self, fieldId, material):
+        from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+        eos = eosAva.EosAvailable()
+        eos.setMethods(material)
+        self.case.undoStop()
+        ThermodynamicsModel(self.case).setMaterials(fieldId, material)
+        fls = eos.whichMethods()
+        if "Cathare" in fls:
+            ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
+        else:
+            for fli in fls:
+                if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
+                    ThermodynamicsModel(self.case).setMethod(fieldId, fli)
+                break
+
+    def _deleteFieldsProperties(self):
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+                                                    "SaturationEnthalpyLiquid")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+                                                    "wall_liquid_convective_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+                                                    "wall_steam_convective_flux")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+                                                    "wall_diameter_mesh_independancy")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+                                                    "wall_dispersed_phase_mass_source_term")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
+        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
+
+    def _createSaturationProperties(self):
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "SaturationTemperature", "TsatK", post=True)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "SaturationEnthalpyLiquid", "Hsat_Liquid")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "SaturationEnthalpyGas", "Hsat_Gas")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid",
+                                                    "dHsat_dp_Liquid")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas",
+                                                    "dHsat_dp_Gas")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P",
+                                                    "dTsat_dp")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
+
+    def _createWallFieldsProperties(self):
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux",
+                                                    "wall_total_flux", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_liquid_total_flux", "wall_liquid_total_flux",
+                                                    support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_evaporation_flux", "wall_evaporation_flux",
+                                                    support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux",
+                                                    "wall_quenching_flux", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_liquid_convective_flux", "wall_liquid_convective_flux",
+                                                    support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_steam_convective_flux", "wall_steam_convective_flux",
+                                                    support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "boundary_temperature", "wall_temperature", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_liquid_temperature", "wall_liquid_temperature",
+                                                    support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation",
+                                                    "wall_oversaturation", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter",
+                                                    "unal_diameter", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_diameter_mesh_independancy",
+                                                    "wall_diameter_mesh_independancy", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness",
+                                                    "wall_roughness", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "wall_dispersed_phase_mass_source_term",
+                                                    "wall_dispersed_phase_mass_source_term", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria",
+                                                    "boiling_criteria", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+                                                    "exchange_coefficient", "exchange_coefficient", support="boundary")
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part",
+                                                    "uninfluenced_part", support="boundary")
+
     @Variables.noUndo
-    def getPredefinedFlow(self) :
+    def getPredefinedFlow(self):
         """
         """
         node = self.XMLNodethermo.xmlGetNode('predefined_flow')
@@ -944,13 +1010,26 @@ class MainFieldsModel(Variables, Model):
 
         return node['choice']
 
+    @Variables.noUndo
+    def setHeatMassTransferStatus(self, status):
+        self.isOnOff(status)
+        node = self.XMLNodethermo.xmlInitChildNode('heat_mass_transfer')
+        node.xmlSetAttribute(status=status)
+
+    @Variables.noUndo
+    def getHeatMassTransferStatus(self):
+        node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
+        if node == None:
+            self.setHeatMassTransferStatus(self.defaultValues()['heatMassTransfer'])
+            node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
+        return node["status"]
 
     @Variables.noUndo
     def getFieldId(self, label):
         """
         return field id  for a label
         """
-        self.isInList(label,self.getFieldLabelsList())
+        self.isInList(label, self.getFieldLabelsList())
 
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             if node['label'] == label :

@@ -55,9 +55,9 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
 
     def defaultValues(self):
         default = {}
-        default['wallmodel']                = "nucleate_boiling"
-        default['wallfunction']             = "standard"
-        default['heatmodel']                = "extended_kurul-podowski"
+        default['wallmodel'] = "nucleate_boiling"
+        default['wallfunction'] = "mimouni"
+        default['heatmodel'] = "extended_kurul-podowski"
         default['yplusmodel']               = "diameter"
         default['yplusvalue']               = 250.
         default['cavities_radius']          = 0.0001
