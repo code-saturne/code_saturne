@@ -486,11 +486,13 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
+  const cs_real_t *bf_centers = (quant != NULL) ? quant->b_face_center : NULL;
+
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the border face center */
   ac->func(time_eval,
-           n_elts, elt_ids, quant->b_face_center,
+           n_elts, elt_ids, bf_centers,
            compact,  // compacted output ?
            ac->input,
            eval);
@@ -529,6 +531,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
+  assert(connect != NULL && quant != NULL);
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(dim, qtype);
@@ -664,14 +667,19 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
                                      void                        *context,
                                      cs_real_t                   *eval)
 {
-  CS_UNUSED(mesh);
   CS_UNUSED(connect);
+
+  cs_real_t  *v_coords = (quant != NULL) ? quant->vtx_coord : NULL;
+  if (v_coords == NULL) {
+    assert(mesh != NULL);
+    v_coords = mesh->vtx_coord;
+  }
 
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the cell center */
   ac->func(time_eval,
-           n_elts, elt_ids, quant->vtx_coord,
+           n_elts, elt_ids, v_coords,
            compact,  // compacted output ?
            ac->input,
            eval);
@@ -738,6 +746,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
   }
   else if ((ac->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx) {
 
+    assert(connect != NULL && quant != NULL);
     if (elt_ids != NULL && !compact) {
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -845,7 +854,9 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
   }
   else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
 
+    /* Sanity checks */
     assert(stride == 3);
+    assert(connect!= NULL && quant != NULL);
     assert(ac->index == connect->c2e->idx);
 
     if (elt_ids != NULL && !compact) {
@@ -1178,6 +1189,7 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
   }
   else if (field->location_id == v_ml_id) {
 
+    assert(connect != NULL);
     if (field->dim > 1)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid field dimension.", __func__);
