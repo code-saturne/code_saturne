@@ -463,6 +463,15 @@ class NonCondensableView(QWidget, Ui_NonCondensable):
         for noncond in self.mdl.getNonCondensableNameList():
             self.tableModelNonCondensable.newItem(noncond)
 
+        # Disable page if no gas phase is present
+        if self.mdl.checkNonCondensableRequirements():
+            self.labelNoGas.hide()
+        else:
+            self.labelNoGas.show()
+            for _ in self.mdl.getNonCondensableNameList():
+                self.tableModelNonCondensable.deleteItem(0)
+            self.setEnabled(False)
+
         self.case.undoStartGlobal()
 
 

@@ -259,8 +259,10 @@ class ThermalView(QWidget, Ui_ThermalForm):
         # Soot model
         #----------------
 
-        self.__setSoot__()
-#        self.__setSoot__(model)
+        # Only activate soot for code_saturne (for which it is available).
+        # Otherwise it may lead to the spurious apparition of pages for NCFD
+        if self.case.module_name() == 'code_saturne':
+            self.__setSoot__()
 
         # Undo/redo part
 

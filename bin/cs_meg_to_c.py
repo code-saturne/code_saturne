@@ -1335,14 +1335,15 @@ class meg_to_c_interpreter:
                               'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas']
 
             user_gas_liq_fields = False
-            # surface tenstion
+            # surface tension
             if tm:
-                if tm.getPropertyMode('none', 'surface_tension') == 'user_law':
-                    name = 'SurfaceTension'
-                    exp, req, sca, sym = tm.getFormulaComponents('none',
-                                                                 'surface_tension')
-                    self.init_block('vol', 'all_cells', name,
-                                    exp, req, sym, sca)
+                ## Deactivated for 7.0, might be reactivated in the future
+                # if tm.getPropertyMode('none', 'surface_tension') == 'user_law':
+                #     name = 'SurfaceTension'
+                #     exp, req, sca, sym = tm.getFormulaComponents('none',
+                #                                                  'surface_tension')
+                #     self.init_block('vol', 'all_cells', name,
+                #                     exp, req, sym, sca)
 
                 for fieldId in tm.getFieldIdList():
                     if tm.getMaterials(fieldId) == 'user_material':

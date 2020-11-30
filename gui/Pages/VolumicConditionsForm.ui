@@ -38,10 +38,10 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-         <widget class="FluidCharacteristicsView" name="saturnePropertiesWidget" native="true"/>
+        <widget class="FluidCharacteristicsView" name="saturnePropertiesWidget" native="true"/>
        </item>
        <item>
-         <widget class="ThermodynamicsView" name="neptunePropertiesWidget" native="true"/>
+           <widget class="NeptuneThermodynamicsView" name="neptunePropertiesWidget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -140,9 +140,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>ThermodynamicsView</class>
+      <class>NeptuneThermodynamicsView</class>
    <extends>QWidget</extends>
-   <header>ThermodynamicsView</header>
+      <header>NeptuneThermodynamicsView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

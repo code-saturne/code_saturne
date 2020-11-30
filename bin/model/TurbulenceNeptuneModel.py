@@ -40,10 +40,13 @@ class TurbulenceModelsDescription:
                                   'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
                                   'les_smagorinsky', 'les_wale']
 
-    dispersedTurbulenceModels  = ['none','tchen','q2-q12', 'r2-q12', 'r2-r12-tchen']
+    dispersedTurbulenceModels = ['none', 'tchen', 'q2-q12', 'r2-q12', 'r2-r12-tchen']
 
-    continuousCouplingModels = ['none','separate_phase','separate_phase_cond']
-    dispersedCouplingModels  = ['none','small_inclusions','large_inclusions']
+    bubblyFlowsTurbulenceModels = ["none", "tchen", "r2-r12-tchen"]
+    dropletFlowsTurbulenceModels = ["none", "q2-q12", "r2-q12"]
+
+    continuousCouplingModels = ['none', 'separate_phase', 'separate_phase_cond']
+    dispersedCouplingModels = ['none', 'small_inclusions', 'large_inclusions']
 
     ThermalTurbFluxModels = ['sgdh', 'ggdh']
 
@@ -283,9 +286,9 @@ class TurbulenceModel(MainFieldsModel):
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node == None:
-            self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
-                                                               model = self.defaultValues()['model'],
-                                                               two_way_coupling = model)
+            node = self.XMLturbulence.xmlInitChildNode('field', field_id=fieldId,
+                                                       model=self.defaultValues()['model'],
+                                                       two_way_coupling=model)
         node['two_way_coupling'] = model
 
 
@@ -299,6 +302,7 @@ class TurbulenceModel(MainFieldsModel):
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node == None:
             self.setTwoWayCouplingModel(fieldId, self.defaultValues()['two_way_coupling'])
+            node = self.XMLturbulence.xmlGetNode('field', field_id=fieldId)
         model = node['two_way_coupling']
 
         return model

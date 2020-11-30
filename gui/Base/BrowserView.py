@@ -498,8 +498,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         elif section == 'Closure modeling':
             return ['Interfacial area',
                     'Interfacial enthalpy transfer',
-                    'Nucleate boiling parameters',
-                    'Droplet condensation-evaporation',
+                    'Wall transfer parameters',
                     'Particles interactions']
 #        elif section == 'Fluid properties':
 #            return []
@@ -777,8 +776,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         self.setRowClose(self.tr('Interfacial area'))
         self.setRowClose(self.tr('Interfacial enthalpy transfer'))
-        self.setRowClose(self.tr('Nucleate boiling parameters'))
-        self.setRowClose(self.tr('Droplet condensation-evaporation'))
+        self.setRowClose(self.tr('Wall transfer parameters'))
         self.setRowClose(self.tr('Particles interactions'))
         """
 
@@ -918,11 +916,10 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         m_ncfd = {}
         m_ncfd['non_condens'] = False
-        m_ncfd['nucleate_boiling'] = False
-        m_ncfd['droplet_condens'] = False
         m_ncfd['particles_interactions'] = False
         m_ncfd['itf_area'] = False
         m_ncfd['itf_h_transfer'] = False
+        m_ncfd['wall_transfer'] = False
 
         ncfd_fields = 0
 
@@ -939,28 +936,23 @@ class BrowserView(QWidget, Ui_BrowserForm):
             from code_saturne.model.MainFieldsModel import MainFieldsModel
             from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
+            heat_mass_transfer = MainFieldsModel(case).getHeatMassTransferStatus()
 
             if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
                 m_ncfd['particles_interactions'] = True
-            if (len(MainFieldsModel(case).getDispersedFieldList()) > 0
-                    or InterfacialForcesModel(case).getBubblesForLIMStatus() == 'on'):
-                m_ncfd['itf_area'] = True
+
+            m_ncfd['itf_area'] = True
+            m_ncfd['non_condens'] = True
+            m_ncfd["itf_h_transfer"] = {"on": True, "off": False}[heat_mass_transfer]
+            m_ncfd['wall_transfer'] = {"on": True, "off": False}[heat_mass_transfer]
 
             if predefined_flow == "free_surface":
-                m_ncfd['non_condens'] = True
-                m_ncfd['nucleate_boiling'] = True
-                m_ncfd['itf_h_transfer'] = True
-            elif predefined_flow == "boiling_flow":
-                m_ncfd['non_condens'] = True
-                m_ncfd['nucleate_boiling'] = True
-                m_ncfd['itf_h_transfer'] = True
-            elif predefined_flow == "droplet_flow":
-                m_ncfd['non_condens'] = True
-                m_ncfd['droplet_condens'] = True
-                m_ncfd['itf_h_transfer'] = True
+                m_ncfd['itf_area'] = False
             elif predefined_flow == "particles_flow":
                 m_ncfd['particles_interactions'] = True
-                m_ncfd['itf_h_transfer'] = True
+                m_ncfd['wall_transfer'] = False
+            elif predefined_flow == "None":
+                m_ncfd['particles_interactions'] = True
 
         is_ncfd = (p_module == 'neptune_cfd')
 
@@ -997,8 +989,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Closure modeling'), (ncfd_fields > 1))
         self.setRowShow(self.tr('Interfacial enthalpy transfer'), m_ncfd['itf_h_transfer'])
         self.setRowShow(self.tr('Interfacial area'), m_ncfd['itf_area'])
-        self.setRowShow(self.tr('Nucleate boiling parameters'), m_ncfd['nucleate_boiling'])
-        self.setRowShow(self.tr('Droplet condensation-evaporation'), m_ncfd['droplet_condens'])
+        self.setRowShow(self.tr('Wall transfer parameters'), m_ncfd['wall_transfer'])
         self.setRowShow(self.tr('Particles interactions'), m_ncfd['particles_interactions'])
 
         # Fluid properties

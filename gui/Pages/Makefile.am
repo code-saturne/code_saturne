@@ -89,6 +89,7 @@ MainFieldsView.py \
 MainFieldsInitializationView.py \
 MainFieldsSourceTermsView.py \
 MobileMeshView.py \
+NeptuneWallTransferView.py \
 NonCondensableView.py \
 NotebookView.py \
 NucleateBoilingView.py \
@@ -123,7 +124,9 @@ UsersControlView.py \
 OutputFieldsView.py \
 OpenTurnsDialogView.py \
 SolidView.py \
-ThermodynamicsView.py \
+ThermodynamicsFieldView.py \
+ThermodynamicsInteractionView.py \
+NeptuneThermodynamicsView.py \
 TimeStepViewNeptune.py \
 VolumicNatureView.py \
 BoundaryNatureView.py \
@@ -180,6 +183,7 @@ LagrangianStatisticsForm.ui \
 LocalizationForm.ui \
 MeshQualityCriteriaLogDialogForm.ui \
 MobileMeshForm.ui \
+NeptuneWallTransferForm.ui \
 NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
@@ -226,7 +230,9 @@ BoundaryConditionsNeptune.ui \
 UsersControl.ui \
 OutputFields.ui \
 Solid.ui \
-Thermodynamics.ui \
+ThermodynamicsField.ui \
+ThermodynamicsInteraction.ui \
+NeptuneThermodynamics.ui \
 NumericalParamEquationNeptune.ui \
 BoundaryConditionsPressure.ui \
 BoundaryConditionsEnergy.ui \

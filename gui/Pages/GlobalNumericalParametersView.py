@@ -292,12 +292,18 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         value = self.mdl.getMaxPressure()
         self.lineEditMaximumPressure.setText(str(value))
 
-
         model = self.mdl.getVelocityPredictorAlgo()
-        self.modelVelocityAlgorithm.setItem(str_model = model)
+        self.modelVelocityAlgorithm.setItem(str_model=model)
 
         self.case.undoStartGlobal()
 
+        predefined_flow = MainFieldsModel(self.case).getPredefinedFlow()
+        if predefined_flow in ["free_surface", "droplet_flow", "multiregime"]:
+            self.modelVelocityAlgorithm.setItem(str_model="coupled_difvitc")
+            self.comboBoxVelocityAlgorithm.setEnabled(False)
+        elif predefined_flow == "boiling_flow":
+            self.modelVelocityAlgorithm.setItem(str_model="mean_velocity_relative_velocity")
+            self.comboBoxVelocityAlgorithm.setEnabled(False)
 
     @pyqtSlot()
     def slotRestart(self):
