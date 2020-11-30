@@ -322,7 +322,7 @@ class PerformanceTuningModel(Model):
         """
         Define default block IO buffer size.
         """
-        return 1024*1024*8
+        return 1024*1024
 
 
     @Variables.noUndo

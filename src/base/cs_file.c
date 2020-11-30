@@ -260,7 +260,7 @@ static cs_file_access_t _default_access_w = CS_FILE_DEFAULT;
 
 static bool     _mpi_defaults_are_set = false;
 static int      _mpi_rank_step = 1;
-static size_t   _mpi_min_coll_buf_size = 1024*1024*8;
+static size_t   _mpi_min_coll_buf_size = 1024*1024;
 static MPI_Comm _mpi_comm = MPI_COMM_NULL;
 static MPI_Comm _mpi_io_comm = MPI_COMM_NULL;
 static MPI_Info _mpi_io_hints_r = MPI_INFO_NULL;
