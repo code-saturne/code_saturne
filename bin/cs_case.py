@@ -1095,6 +1095,11 @@ class case:
                 'Export paths necessary for python coupling.\n')
             pydir = self.package_compute.get_dir("pythondir")
             cs_exec_environment.write_prepend_path(s, "PYTHONPATH", pydir)
+            # This export is necessary fr PyPLE to work correctly
+            libdir = self.package_compute.get_dir("libdir")
+            cs_exec_environment.write_prepend_path(s,
+                                                   "LD_LIBRARY_PATH",
+                                                   libdir)
             s.write('\n')
 
         # Handle environment modules if used
