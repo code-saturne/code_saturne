@@ -3643,8 +3643,8 @@ cs_all_to_all_log_finalize(void)
 
     if (cs_glob_rank_id < 1) {
       FILE *f = fopen("all_to_all_trace.csv", "w");
-      fprintf(f, "call, time, dt_mean, dt_max, stage, mem_cur_mean, mem_cur_max,"
-              "mem_max_mean, mem_max, send_size_mean, send_size_max,"
+      fprintf(f, "call, time, dt_mean, dt_max, stage, mem_cur_mean, mem_cur_max, "
+              "mem_max_mean, mem_max, send_size_mean, send_size_max, "
               "recv_size_mean, recv_size_max, "
               "send_ranks_mean, send_ranks_max, "
               "recv_ranks_mean, recv_ranks_max\n");
