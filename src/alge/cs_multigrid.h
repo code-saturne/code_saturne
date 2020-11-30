@@ -172,10 +172,7 @@ cs_multigrid_copy(const void  *context);
  * parameters:
  *   mg                     <-> pointer to multigrid info and context
  *   aggregation_limit      <-- maximum allowed fine rows per coarse cell
- *   coarsening_type        <-- coarsening type:
- *                              0: algebraic, natural face traversal;
- *                              1: algebraic, face traveral by criteria;
- *                              2: algebraic, Hilbert face traversal;
+ *   coarsening_type        <-- coarsening type; see cs_grid_coarsening_t
  *   n_max_levels           <-- maximum number of grid levels
  *   min_g_rows             <-- global number of rows on coarse grids
  *                              under which no coarsening occurs
