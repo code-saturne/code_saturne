@@ -113,21 +113,21 @@ typedef struct {
  * \brief  Generic function pointer for defining a quantity at known locations
  *         Here at cells with a function.  elt_ids is optional. If not NULL,
  *         the function works on a sub-list of elements. Moreover, it enables
- *         to fill retval with an indirection if compact is set to false
+ *         to fill retval with an indirection if dense_output is set to false
  *         Case of k-epsilon model
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _tke_source_term(cs_lnum_t            n_elts,
                  const cs_lnum_t     *elt_ids,
-                 bool                 compact,
+                 bool                 dense_output,
                  void                *input,
                  cs_real_t           *retval)
 {
@@ -140,21 +140,21 @@ _tke_source_term(cs_lnum_t            n_elts,
  * \brief  Generic function pointer for defining a quantity at known locations
  *         Here at cells with a function.  elt_ids is optional. If not NULL,
  *         the function works on a sub-list of elements. Moreover, it enables
- *         to fill retval with an indirection if compact is set to false
+ *         to fill retval with an indirection if dense_output is set to false
  *         Case of k-epsilon model with linear production
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _tke_lin_source_term(cs_lnum_t            n_elts,
                      const cs_lnum_t     *elt_ids,
-                     bool                 compact,
+                     bool                 dense_output,
                      void                *input,
                      cs_real_t           *retval)
 {

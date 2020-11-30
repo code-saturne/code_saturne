@@ -478,7 +478,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
         case CS_PARAM_REDUCTION_DERHAM:
           cs_xdef_eval_at_b_faces_by_analytic(z->n_elts,
                                               z->elt_ids,
-                                              false, /* compact output */
+                                              false, /* dense output */
                                               mesh,
                                               connect,
                                               quant,
@@ -490,7 +490,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_eval_avg_at_b_faces_by_analytic(z->n_elts,
                                                   z->elt_ids,
-                                                  false, /* compact output */
+                                                  false, /* dense output */
                                                   mesh,
                                                   connect,
                                                   quant,

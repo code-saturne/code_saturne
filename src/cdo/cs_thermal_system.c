@@ -113,26 +113,26 @@ _is_solved_with_temperature(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the thermal diffusivity for a given list of cells
- *         Case of an anisotropic thermal conductivity
- *         This function fits the generic prototype of cs_xdef_cell_eval_t
+ * \brief  Evaluate the thermal diffusivity for a given list of cells.
+ *         Case of an anisotropic thermal conductivity.
+ *         This function fits the generic prototype of cs_xdef_eval_t
  *
- * \param[in]      n_elts    number of elements to consider
- * \param[in]      elt_ids   list of element ids
- * \param[in]      compact   indirection for output (true or false)
- * \param[in]      mesh      pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      input     pointer to an input structure cast on-the_fly
- * \param[in, out] result    array storing the result (must be allocated)
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      input         NULL or pointer to a structure cast on-the_fly
+ * \param[in, out] result        array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 _eval_aniso_kappa(cs_lnum_t                    n_elts,
                   const cs_lnum_t              elt_ids[],
-                  bool                         compact,
+                  bool                         dense_output,
                   const cs_mesh_t             *mesh,
                   const cs_cdo_connect_t      *connect,
                   const cs_cdo_quantities_t   *quant,
@@ -169,7 +169,7 @@ _eval_aniso_kappa(cs_lnum_t                    n_elts,
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  c_id = elt_ids[i];
-      const cs_lnum_t  id = compact ? i : c_id;
+      const cs_lnum_t  id = dense_output ? i : c_id;
 
       cs_real_t  *kappa_c = result + 9*id;
       cs_property_get_cell_tensor(c_id, t_eval, thm->lambda, false,

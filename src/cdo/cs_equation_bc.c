@@ -327,7 +327,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
           ac->func(t_eval,
                    z->n_elts, z->elt_ids, cdoq->b_face_center,
-                   false,       /* compacted output ? */
+                   false,       /* dense output ? */
                    ac->input,
                    values);
         }
@@ -674,7 +674,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_array(n_vf,
                                           lst,
-                                          true, /* compact output */
+                                          true, /* dense output */
                                           mesh,
                                           connect,
                                           quant,
@@ -697,7 +697,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
                                              lst,
-                                             true, /* compact output */
+                                             true, /* dense output */
                                              mesh,
                                              connect,
                                              quant,
@@ -868,7 +868,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         case CS_PARAM_REDUCTION_DERHAM:
           cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
                                               bz->elt_ids,
-                                              false, /* compact output */
+                                              false, /* dense output */
                                               mesh,
                                               connect,
                                               quant,
@@ -880,7 +880,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_eval_avg_at_b_faces_by_analytic(bz->n_elts,
                                                   bz->elt_ids,
-                                                  false, /* compact output */
+                                                  false, /* dense output */
                                                   mesh,
                                                   connect,
                                                   quant,
@@ -1278,7 +1278,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
         (cs_xdef_analytic_context_t *)def->context;
 
       ac->func(t_eval, 1, NULL,
-               cm->face[f].center, true, /* compacted output ? */
+               cm->face[f].center, true, /* dense output ? */
                ac->input,
                (cs_real_t *)parameters);
 

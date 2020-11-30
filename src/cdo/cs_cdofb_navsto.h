@@ -499,18 +499,18 @@ cs_cdofb_fixed_wall(short int                       f,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
                                        const cs_lnum_t     *elt_ids,
-                                       bool                 compact,
+                                       bool                 dense_output,
                                        void                *input,
                                        cs_real_t           *retval);
 
@@ -520,18 +520,18 @@ cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
                                    const cs_lnum_t     *elt_ids,
-                                   bool                 compact,
+                                   bool                 dense_output,
                                    void                *input,
                                    cs_real_t           *retval);
 

@@ -2073,18 +2073,18 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
  *         to the generic function pointer \ref cs_dof_function_t
  *         Take into account only the variation of temperature.
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _temp_boussinesq_source_term(cs_lnum_t            n_elts,
                              const cs_lnum_t     *elt_ids,
-                             bool                 compact,
+                             bool                 dense_output,
                              void                *input,
                              cs_real_t           *retval)
 {
@@ -2097,7 +2097,7 @@ _temp_boussinesq_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = compact ? i : id;                 /* position in retval */
+    cs_lnum_t  r_id = dense_output ? i : id; /* position in retval */
     cs_real_t  *_r = retval + 3*r_id;
 
     /* Thermal effect */
@@ -2116,18 +2116,18 @@ _temp_boussinesq_source_term(cs_lnum_t            n_elts,
  *         to the generic function pointer \ref cs_dof_function_t
  *         Take into account the variation of temperature and concentration.
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
                                   const cs_lnum_t     *elt_ids,
-                                  bool                 compact,
+                                  bool                 dense_output,
                                   void                *input,
                                   cs_real_t           *retval)
 {
@@ -2148,7 +2148,7 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = compact ? i : id;                 /* position in retval */
+    cs_lnum_t  r_id = dense_output ? i : id;            /* position in retval */
     cs_real_t  *_r = retval + 3*r_id;
 
     /* Thermal effect */

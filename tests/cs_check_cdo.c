@@ -104,7 +104,7 @@ _unity(cs_real_t         time,
        cs_lnum_t         n_pts,
        const cs_lnum_t  *pt_ids,
        const cs_real_t  *xyz,
-       bool              compact,
+       bool              dense_output,
        void             *input,
        cs_real_t         retval[])
 {
@@ -114,7 +114,7 @@ _unity(cs_real_t         time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
-    const cs_lnum_t  r = compact ? i : p;
+    const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = 1.0;
   }
 }
@@ -127,7 +127,7 @@ _unity_vect(cs_real_t         time,
             cs_lnum_t         n_pts,
             const cs_lnum_t  *pt_ids,
             const cs_real_t  *xyz,
-            bool              compact,
+            bool              dense_output,
             void             *input,
             cs_real_t         retval[])
 {
@@ -137,7 +137,7 @@ _unity_vect(cs_real_t         time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
-    const cs_lnum_t  r = compact ? i : p;
+    const cs_lnum_t  r = dense_output ? i : p;
     for (int j = 0; j < 3; j++)
       retval[3*r+j] = 1.0;
   }
@@ -151,7 +151,7 @@ _linear_xyz(cs_real_t          time,
             cs_lnum_t          n_pts,
             const cs_lnum_t   *pt_ids,
             const cs_real_t   *xyz,
-            bool               compact,
+            bool               dense_output,
             void              *input,
             cs_real_t          retval[])
 {
@@ -160,7 +160,7 @@ _linear_xyz(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
-    const cs_lnum_t  r = compact ? i : p;
+    const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p] + xyz[3*p+1] + xyz[3*p+2];
   }
 }
@@ -173,7 +173,7 @@ _linear_xyz_vect(cs_real_t          time,
                  cs_lnum_t          n_pts,
                  const cs_lnum_t   *pt_ids,
                  const cs_real_t   *xyz,
-                 bool               compact,
+                 bool               dense_output,
                  void              *input,
                  cs_real_t          retval[])
 {
@@ -182,7 +182,7 @@ _linear_xyz_vect(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
-    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_lnum_t  r = dense_output ? 3*i : p;
     for (int j = 0; j < 3; j++)
       retval[r+j] = (j+1) * xyz[p+j];
   }
@@ -197,7 +197,7 @@ _quadratic_x2(cs_real_t          time,
               cs_lnum_t          n_pts,
               const cs_lnum_t   *pt_ids,
               const cs_real_t   *xyz,
-              bool               compact,
+              bool               dense_output,
               void              *input,
               cs_real_t          retval[])
 {
@@ -206,7 +206,7 @@ _quadratic_x2(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
-    const cs_lnum_t  r = compact ? i : p;
+    const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p]*xyz[3*p];
   }
 }
@@ -219,7 +219,7 @@ _quadratic_x2_vect(cs_real_t          time,
                    cs_lnum_t          n_pts,
                    const cs_lnum_t   *pt_ids,
                    const cs_real_t   *xyz,
-                   bool               compact,
+                   bool               dense_output,
                    void              *input,
                    cs_real_t          retval[])
 {
@@ -228,7 +228,7 @@ _quadratic_x2_vect(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
-    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  x2 = xyz[p]*xyz[p];
     for (int j = 0; j < 3; j++)
       retval[r+j] = x2;
@@ -244,7 +244,7 @@ _quadratic_xyz2(cs_real_t          time,
                 cs_lnum_t          n_pts,
                 const cs_lnum_t   *pt_ids,
                 const cs_real_t   *xyz,
-                bool               compact,
+                bool               dense_output,
                 void              *input,
                 cs_real_t          retval[])
 {
@@ -253,7 +253,7 @@ _quadratic_xyz2(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
-    const cs_lnum_t  r = compact ? i : p;
+    const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = cs_math_3_square_norm(xyz + 3*p);
   }
 
@@ -268,7 +268,7 @@ _cubic_xyz3_vect(cs_real_t          time,
                  cs_lnum_t          n_pts,
                  const cs_lnum_t   *pt_ids,
                  const cs_real_t   *xyz,
-                 bool               compact,
+                 bool               dense_output,
                  void              *input,
                  cs_real_t          retval[])
 {
@@ -277,7 +277,7 @@ _cubic_xyz3_vect(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
-    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_lnum_t  r = dense_output ? 3*i : p;
     for (short int j = 0; j < 3; j++)
       retval[r+j] = cs_math_pow3(xyz[p+j]);
   }
@@ -292,7 +292,7 @@ _nonpoly_vect(cs_real_t          time,
               cs_lnum_t          n_pts,
               const cs_lnum_t   *pt_ids,
               const cs_real_t   *xyz,
-              bool               compact,
+              bool               dense_output,
               void              *input,
               cs_real_t          retval[])
 {
@@ -301,7 +301,7 @@ _nonpoly_vect(cs_real_t          time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
     const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
-    const cs_lnum_t  r = compact ? 3*i : p;
+    const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  eval = exp(xyz[p]+xyz[p+1]+xyz[p+2]-1.5);
     for (int j = 0; j < 3; j++)
       retval[r+j] = eval;

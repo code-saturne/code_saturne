@@ -74,18 +74,19 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function pointer for an analytic function
- *         elt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
+ * \brief  Generic function pointer for an evaluation relying on an analytic
+ *         function
+ *         elt_ids is optional. If not NULL, it enables to access to the coords
+ *         array with an indirection. The same indirection can be applied to
+ *         fill retval if dense_output is set to false.
  *
- * \param[in]      time     when ?
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids (to access coords and fill)
- * \param[in]      coords   where ?
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      time          when ?
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids (in coords and retval)
+ * \param[in]      coords        where ?
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -94,30 +95,30 @@ typedef void
                       cs_lnum_t            n_elts,
                       const cs_lnum_t     *elt_ids,
                       const cs_real_t     *coords,
-                      bool                 compact,
+                      bool                 dense_output,
                       void                *input,
                       cs_real_t           *retval);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function pointer for defining a quantity at known locations
- *         (cells, faces, edges or vertices) with a function.  elt_ids is
- *         optional. If not NULL, the function works on a sub-list of
- *         elements. Moreover, it enables to fill retval with an indirection if
- *         compact is set to false
+ * \brief  Generic function pointer for computing a quantity at predefined
+ *         locations such as degrees of freedom (DoF): cells, faces, edges or
+ *         or vertices.
+ *         elt_ids is optional. If not NULL, it enables to fill retval partially
+ *         with this indirection if dense_output is set to false.
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_dof_func_t) (cs_lnum_t            n_elts,
                  const cs_lnum_t     *elt_ids,
-                 bool                 compact,
+                 bool                 dense_output,
                  void                *input,
                  cs_real_t           *retval);
 
@@ -127,7 +128,7 @@ typedef void
  *         current time and any structure given as a parameter
  *
  * \param[in]   time        value of the time at the end of the last iteration
- * \param[in]   input       pointer to a structure cast on-the-fly
+ * \param[in]   input       NULL or pointer to a structure cast on-the-fly
  * \param[in]   retval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
@@ -136,10 +137,6 @@ typedef void
 (cs_time_func_t) (double        time,
                   void         *input,
                   cs_real_t    *retval);
-
-/* ================
- * ENUM definitions
- * ================ */
 
 /*! \enum cs_param_space_scheme_t
  *  \brief Type of numerical scheme for the discretization in space
