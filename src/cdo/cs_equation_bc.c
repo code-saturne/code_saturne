@@ -913,6 +913,18 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         } /* switch on reduction */
         break;
 
+      case CS_XDEF_BY_DOF_FUNCTION:
+        cs_xdef_eval_at_b_faces_by_dof_func(bz->n_elts,
+                                            bz->elt_ids,
+                                            false, /* dense output */
+                                            mesh,
+                                            connect,
+                                            quant,
+                                            t_eval,
+                                            def->context,
+                                            values);
+        break;
+
       default:
         bft_error(__FILE__, __LINE__, 0,
                   _(" %s: Invalid type of definition.\n"

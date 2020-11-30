@@ -1921,6 +1921,76 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the velocity field for an inlet boundary using a DoF function
+ *
+ * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  z_name      name of the associated zone (if NULL or "" all
+ *                         boundary faces are considered)
+ * \param[in]  func        pointer to a \ref cs_dof_function_t
+ * \param[in]  func_input  NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
+                                         const char           *z_name,
+                                         cs_dof_func_t        *func,
+                                         void                 *func_input)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (!(nsp->boundaries->types[bdy_id] & CS_BOUNDARY_IMPOSED_VEL))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       " %s: Zone \"%s\" is not related to an imposed velocity boundary.\n"
+       " Please check your settings.", __func__, z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_dof_context_t  dc = { .z_id = z_id,
+                                .func = func,
+                                .input = func_input,
+                                .free_input = NULL };
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_DOF_FUNCTION,
+                                          3,    /* dim */
+                                          z_id,
+                                          0,    /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          &dc);
+
+  /* Assign the default quadrature type of the Navier-Stokes module to this
+   * definition (this can be modified by the user if the same call is
+   * performed in cs_user_finalize_setup()) */
+  cs_xdef_set_quadrature(d, nsp->qtype);
+
+  int  new_id = nsp->n_velocity_bc_defs;
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[new_id] = d;
+
+  cs_equation_param_t  *eqp = _get_momentum_param(nsp);
+  cs_equation_add_xdef_bc(eqp, d);
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a new source term structure defined by an analytical function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
