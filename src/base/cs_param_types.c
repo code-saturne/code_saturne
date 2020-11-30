@@ -242,6 +242,7 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
   case CS_TIME_SCHEME_STEADY:
   case CS_TIME_SCHEME_EULER_IMPLICIT:
   case CS_TIME_SCHEME_EULER_EXPLICIT:
+  case CS_TIME_SCHEME_CRANKNICO:
   case CS_TIME_SCHEME_THETA:
     return cs_param_time_scheme_name[scheme];
 
