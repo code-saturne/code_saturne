@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * \brief Compute and post-process (C_bulk - C_0)/C_0
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated
- * C_0 is the reference concentration
+ *        C_0 is the reference concentration
  *
  * \def CS_SOLIDIFICATION_POST_CLIQ
  * \brief Post-process Cliq the liquid solute distribution (wt %)
@@ -131,7 +131,27 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 1) /*=    2 */
 #define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 2) /*=    4 */
 
-/* Automatically set by the code if user functions are used */
+/* Automatically set by the code if user functions are used
+ * The following flags are set when calling \ref cs_solidification_set_functions
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC
+ * \brief the update of the forcing term (penalization) in the momentum equation
+ *        is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC
+ * \brief the update of the liquid concentration of the binary alloy is defined
+ *        using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC
+ * \brief the update of the liquid fraction is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC
+ * \brief the update of the thermal source term is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC
+ * \brief the main algorithm for the thermo-solutal coupling is defined by a
+ *        user function.
+ */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
@@ -150,17 +170,28 @@ typedef cs_flag_t  cs_solidification_model_t;
 
 /*! \enum cs_solidification_model_bit_t
  *  \brief Bit values for physical modelling related to the Navier-Stokes system
- *  of equations
+ *         of equations
+ *
+ * \var CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE
+ *      The dynamic system of equations is associated with an energy equation
+ *      solved using the temperature as variable. This is the default option.
+ *
+ * \var CS_SOLIDIFICATION_MODEL_USE_ENTHALPY
+ *      The dynamic system of equations is associated with an energy equation
+ *      solved using the temperature as variable (not fully available).
  *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
- * Modelling introduced in Voller and Prakash entitled:
- * "A fixed grid numerical modelling methodology for convection-diffusion mushy
- * region phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.
- * No tracer. Only physical constants describing the solidification process are
- * used.
+ *      Modelling introduced in Voller and Prakash entitled: "A fixed grid
+ *      numerical modelling methodology for convection-diffusion mushy region
+ *      phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.  No
+ *      tracer. Only physical constants describing the solidification process
+ *      are used.
  *
  * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- * The tracer is composed by an alloy with two chemical constituents
+ *      The basis is similar to \ref CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
+ *      A tracer equation is added corresponding to the evolution of the bulk
+ *      concentration in alloy. This alloy has two chemical constituents hence
+ *      the name "binary alloy".
  */
 
 typedef enum {
