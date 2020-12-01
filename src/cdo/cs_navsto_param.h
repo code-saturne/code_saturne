@@ -1294,6 +1294,32 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the velocity field for an inlet boundary using an array
+ *         of values
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      loc       information to know where are located values
+ * \param[in]      array     pointer to an array
+ * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                           (true or false)
+ * \param[in]      index     optional pointer to the array index
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_flag_t             loc,
+                                      cs_real_t            *array,
+                                      bool                  is_owner,
+                                      cs_lnum_t            *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the velocity field for an inlet boundary using a DoF function
  *
  * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
