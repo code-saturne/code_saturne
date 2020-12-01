@@ -238,7 +238,7 @@ _triangle_box_intersect(const cs_real_t  box_extents[6],
   // Construction of the last testing axis resulting from
   // the triangle normal, repeat the process
   cs_real_t n[3];
-  cs_math_3_cross_product(&(f[0][0]),&(f[1][0]), n);
+  cs_math_3_cross_product(f[0], f[1], n);
 
   cs_real_t p[3];
   for (int dir = 0; dir < 3; dir ++)
@@ -611,11 +611,11 @@ _tetra_vol(cs_real_t x1[3],
   cs_real_t tetra_vol;
 
   tetra_vol =  cs_math_fabs((  (x1[0]-x4[0])*(x2[1]-x4[1])
-                             - (x1[1]-x4[1])*(x2[0]-x4[0]) ) * (x3[2]-x4[2])
+                             - (x1[1]-x4[1])*(x2[0]-x4[0])) * (x3[2]-x4[2])
                          + (   (x1[1]-x4[1])*(x2[2]-x4[2])
-                             - (x1[2]-x4[2])*(x2[1]-x4[1]) ) * (x3[0]-x4[0])
+                             - (x1[2]-x4[2])*(x2[1]-x4[1])) * (x3[0]-x4[0])
                          + (   (x1[2]-x4[2])*(x2[0]-x4[0])
-                             - (x1[0]-x4[0])*(x2[2]-x4[2]) ) * (x3[1]-x4[1]) );
+                             - (x1[0]-x4[0])*(x2[2]-x4[2])) * (x3[1]-x4[1]));
 
   tetra_vol *= cs_math_1ov6;
 
