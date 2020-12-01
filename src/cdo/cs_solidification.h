@@ -462,11 +462,14 @@ typedef struct  {
   cs_property_t   *mass_density;
   cs_real_t        rho0;
 
-  /* Heat capacity in the solidification/melting area (assumed to be uniform) */
+  /* Reference value for the heat capacity in the solidification/melting area
+   * (assumed to be uniform) */
   cs_real_t        cp0;
 
-  /* Laminar dynamic viscosity */
-  cs_property_t   *lam_viscosity;
+  /* Viscosity (pointer to the total viscosity which should be equal to the
+  *  laminar viscosity since no turbulence modelling is usually taken into
+  *  account */
+  cs_property_t   *viscosity;
 
   /* Liquid fraction of the mixture */
   /* ------------------------------ */

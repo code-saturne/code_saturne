@@ -325,7 +325,7 @@ _solidification_create(void)
   solid->mass_density = NULL;
   solid->rho0 = 0.;
   solid->cp0 = 0.;
-  solid->lam_viscosity = NULL;
+  solid->viscosity = NULL;
 
   /* Quantities related to the liquid fraction */
   solid->g_l = NULL;
@@ -434,9 +434,9 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
   const cs_real_t  dgldT_coef = solid->rho0*v_model->latent_heat*dgldT/ts->dt[0];
 
-  assert(cs_property_is_uniform(solid->lam_viscosity));
+  assert(cs_property_is_uniform(solid->viscosity));
   const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
-                                                       solid->lam_viscosity);
+                                                       solid->viscosity);
   const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -609,9 +609,9 @@ _update_velocity_forcing(const cs_mesh_t             *mesh,
    * there is nothing to do locally */
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
-  assert(cs_property_is_uniform(solid->lam_viscosity));
+  assert(cs_property_is_uniform(solid->viscosity));
   const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
-                                                       solid->lam_viscosity);
+                                                       solid->viscosity);
   const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
   const cs_real_t  *g_l = solid->g_l_field->val;
 
@@ -2339,17 +2339,17 @@ cs_solidification_activate(cs_solidification_model_t       model,
   ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
-  cs_navsto_system_activate(boundaries,
-                            ns_model,
-                            ns_model_flag,
-                            algo_coupling,
-                            ns_post_flag);
+  cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
+                                                      ns_model,
+                                                      ns_model_flag,
+                                                      algo_coupling,
+                                                      ns_post_flag);
 
-  solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  solid->mass_density = ns->param->mass_density;
   assert(solid->mass_density != NULL);
 
-  solid->lam_viscosity = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
-  assert(solid->lam_viscosity != NULL);
+  solid->viscosity = ns->param->tot_viscosity;
+  assert(solid->viscosity != NULL);
 
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
