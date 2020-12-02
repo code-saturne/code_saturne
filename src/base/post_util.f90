@@ -81,7 +81,7 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         iflmab, iscacp
 
-double precision :: cpp   , srfbn , heq, denom
+double precision :: cpp   , srfbn , heq
 double precision :: flumab, diipbx, diipby, diipbz
 
 double precision, allocatable, dimension(:) :: theipb
