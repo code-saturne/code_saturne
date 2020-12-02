@@ -3122,7 +3122,10 @@ cs_partition(cs_mesh_t             *mesh,
     if (   stage != CS_PARTITION_MAIN
         || cs_partition_get_preprocess() == false) {
       _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
-      if (mb->have_cell_rank)
+      /* If cell_rank array is NULL, repartitionning is needed, hence
+       * no return.
+       */
+      if (mb->have_cell_rank && mb->cell_rank != NULL)
         return;
     }
   }
