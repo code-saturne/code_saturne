@@ -1249,6 +1249,23 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_ADV_STRATEGY:
+    if (strcmp(keyval, "fully_implicit") == 0 ||
+        strcmp(keyval, "implicit") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
+    else if (strcmp(keyval, "implicit_linear") == 0 ||
+             strcmp(keyval, "linearized") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
+    else if (strcmp(keyval, "explicit") == 0 ||
+             strcmp(keyval, "adams_bashforth") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_STRATEGY");
+    }
+    break;
+
   case CS_EQKEY_ADV_UPWIND_PORTION:
     eqp->upwind_portion = atof(keyval);
     /* Automatic witch to a hybrid upwind/centered scheme for advection */
@@ -1936,6 +1953,7 @@ cs_equation_create_param(const char            *name,
   eqp->adv_scaling_property = NULL;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   eqp->upwind_portion = 0.15;
 
   /* Description of the discretization of the reaction term.
@@ -2089,6 +2107,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   /* Advection term */
   dst->adv_formulation = ref->adv_formulation;
   dst->adv_scheme = ref->adv_scheme;
+  dst->adv_strategy = ref->adv_strategy;
   dst->upwind_portion = ref->upwind_portion;
   dst->adv_field = ref->adv_field;
   dst->adv_scaling_property = ref->adv_scaling_property;
@@ -2683,6 +2702,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Upwind.Portion: %3.2f %%\n",
                     eqname, 100*eqp->upwind_portion);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
+                  eqname,
+                  cs_param_get_advection_strategy_name(eqp->adv_strategy));
 
   } /* Advection term */
 

@@ -318,6 +318,35 @@ typedef enum {
 
 } cs_param_advection_scheme_t;
 
+/*! \enum cs_param_advection_strategy_t
+ *  \brief Choice of how to handle the advection term in an equation
+ *
+ * \var CS_PARAM_ADVECTION_IMPLICIT_FULL
+ * The advection term is implicitly treated. The non-linearity stemming from
+ * this term has to be solved using a specific algorithm such as the Picard
+ * (fixed-point) technique or more elaborated techniques.
+ *
+ * \var CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED
+ * The advection term is implicitly treated. The non-linearity stemming from
+ * this term is simplified. Namely, one assumes a linearized advection. This is
+ * equivalent to a one-step Picard technique.
+ *
+ * \var CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH
+ * The advection term is treated explicitly. One keeps the non-linearity
+ * stemming from this term at the right hand-side. A second-order
+ * Adams-Bashforth technique is used.
+ */
+
+typedef enum {
+
+  CS_PARAM_ADVECTION_IMPLICIT_FULL,
+  CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED,
+  CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH,
+
+  CS_PARAM_N_ADVECTION_STRATEGIES
+
+} cs_param_advection_strategy_t;
+
 /*!
  * @}
  * @name Settings for the boundary conditions
@@ -780,6 +809,19 @@ cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form);
 
 const char *
 cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label associated to the advection strategy
+ *
+ * \param[in] adv_stra      type of advection strategy
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_strategy_name(cs_param_advection_strategy_t  adv_stra);
 
 /*----------------------------------------------------------------------------*/
 /*!

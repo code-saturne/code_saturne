@@ -622,6 +622,10 @@ typedef struct {
    * @name Numerical settings for the advection term
    * @{
    *
+   * \var adv_strategy
+   * Strategy used to handle the advection term (please refer to \ref
+   * cs_param_advection_strategy_t)
+   *
    * \var adv_formulation
    * Type of formulation (conservative, non-conservative...) for the advective
    * term
@@ -647,11 +651,12 @@ typedef struct {
    * for instance or in the solidification module.
    */
 
-  cs_param_advection_form_t     adv_formulation;
-  cs_param_advection_scheme_t   adv_scheme;
-  cs_real_t                     upwind_portion;
-  cs_adv_field_t               *adv_field;
-  cs_property_t                *adv_scaling_property;
+  cs_param_advection_strategy_t  adv_strategy;
+  cs_param_advection_form_t      adv_formulation;
+  cs_param_advection_scheme_t    adv_scheme;
+  cs_real_t                      upwind_portion;
+  cs_adv_field_t                *adv_field;
+  cs_property_t                 *adv_scaling_property;
 
   /*!
    * @}
@@ -821,6 +826,15 @@ typedef struct {
  *   Enable a better accuracy.
  *   Consider a cellwise approximation of the advection field.
  *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
+ *
+ * \var CS_EQKEY_ADV_STRATEGY
+ * Strategy used to handle the advection term
+ * - "fully_implicit" or "implicit" (default choice)
+ * - "linearized" or "implicit_linear"
+ * - "explicit" or "adams_bashforth"
+ * There is a difference between the two first choices when the advection term
+ * induces a non-linearity. In this situation, the first choice implies that a
+ * non-linear algorithm has to be used.
  *
  * \var CS_EQKEY_ADV_UPWIND_PORTION
  * Value between 0 and 1 specifying the portion of upwind added to a centered
@@ -1046,6 +1060,7 @@ typedef enum {
 
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_ADV_STRATEGY,
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,

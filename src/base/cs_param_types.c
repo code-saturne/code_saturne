@@ -97,6 +97,14 @@ cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
   };
 
 static const char
+cs_param_adv_strategy_name
+[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+  { N_("Fully implicit"),
+    N_("Linearized (implicit)"),
+    N_("Explicit with a 2nd order Adams-Bashforth"),
+  };
+
+static const char
 cs_param_adv_form_name[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
   { N_("Conservative"),
     N_("Non-Conservative"),
@@ -297,6 +305,30 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
   case CS_PARAM_ADVECTION_SCHEME_SG:
   case CS_PARAM_ADVECTION_SCHEME_UPWIND:
     return cs_param_adv_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label associated to the advection strategy
+ *
+ * \param[in] adv_stra      type of advection strategy
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_strategy_name(cs_param_advection_strategy_t   adv_stra)
+{
+  switch (adv_stra) {
+  case CS_PARAM_ADVECTION_IMPLICIT_FULL:
+  case CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED:
+  case CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH:
+    return cs_param_adv_strategy_name[adv_stra];
 
   default:
     return NULL;

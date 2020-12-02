@@ -80,6 +80,10 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
+static const char _err_empty_nsp[] =
+  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
+     " Please check your settings.\n");
+
 static const char
 cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
   { N_("Stokes equations"),
@@ -94,17 +98,7 @@ cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
     N_("Incremental projection algorithm"),
   };
 
-static const char
-cs_navsto_param_adv_strategy_name
-[CS_NAVSTO_N_ADVECTION_STRATEGIES] [CS_BASE_STRING_LEN] =
-  { N_("Fully implicit"),
-    N_("Linearized (implicit)"),
-    N_("Explicit with a 2nd order Adams-Bashforth"),
-  };
-
-static const char _err_empty_nsp[] =
-  N_(" %s: Stop setting an empty cs_navsto_param_t structure.\n"
-     " Please check your settings.\n");
+/* Keys to transfer settings from cs_param_navsto_t to cs_equation_param_t */
 
 static const char
 _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
@@ -140,6 +134,14 @@ _quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
     "bary_subdiv",
     "higher",
     "highest"
+  };
+
+static const char
+_adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+  {
+    "fully_implicit",
+    "linearized",
+    "adams_bashforth"
   };
 
 static const char
@@ -333,7 +335,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* Advection settings */
   param->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-  param->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_FULL;
+  param->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
 
   /* Forcing steady state in order to avoid inconsistencies */
   if (model_flag & CS_NAVSTO_MODEL_STEADY)
@@ -607,13 +609,13 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
   case CS_NSKEY_ADVECTION_STRATEGY:
     if (strcmp(val, "fully_implicit") == 0 ||
         strcmp(val, "implicit") == 0)
-      nsp->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_FULL;
+      nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
     else if (strcmp(val, "implicit_linear") == 0 ||
              strcmp(val, "linearized") == 0)
-      nsp->adv_strategy = CS_NAVSTO_ADVECTION_IMPLICIT_LINEARIZED;
+      nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
     else if (strcmp(val, "explicit") == 0 ||
-             strcmp(val, "adams-bashforth") == 0)
-      nsp->adv_strategy = CS_NAVSTO_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
+             strcmp(val, "adams_bashforth") == 0)
+      nsp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -941,11 +943,14 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   /*  Set quadratures type */
   const char  *quad_key = _quad_type_key[nsp->qtype];
 
-  /* If requested, add advection */
+  /* If requested, add advection parameters */
   if ((nsp->model & (CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES |
                      CS_NAVSTO_MODEL_OSEEN)) > 0) {
 
     /* If different from default value */
+    const char *stra_key = _adv_strategy_key[nsp->adv_strategy];
+    cs_equation_set_param(eqp, CS_EQKEY_ADV_STRATEGY, stra_key);
+
     const char *form_key = _adv_formulation_key[nsp->adv_form];
     cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
 
@@ -1040,7 +1045,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection formulation: %s\n",
                   cs_param_get_advection_form_name(nsp->adv_form));
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection strategy: %s\n",
-                  cs_navsto_param_adv_strategy_name[nsp->adv_strategy]);
+                  cs_param_get_advection_strategy_name(nsp->adv_strategy));
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
     const char algo_name[] = "Picard";
