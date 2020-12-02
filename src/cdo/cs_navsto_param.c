@@ -1038,7 +1038,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection scheme: %s\n",
                   cs_param_get_advection_scheme_name(nsp->adv_scheme));
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection formulation: %s\n",
-                  cs_param_get_advection_form_name(nsp->adv_scheme));
+                  cs_param_get_advection_form_name(nsp->adv_form));
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection strategy: %s\n",
                   cs_navsto_param_adv_strategy_name[nsp->adv_strategy]);
 
