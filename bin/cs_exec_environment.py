@@ -524,7 +524,7 @@ def get_script_positional_args():
     if sys.platform.startswith('win'):
         args = '%*'
     else:
-        args = '$@'
+        args = '"$@"'
     return args
 
 #-------------------------------------------------------------------------------
