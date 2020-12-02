@@ -596,10 +596,15 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
   /* Sanity checks */
   assert(eval != NULL || cx != NULL);
 
-  cs_real_t  *v_coords = (quant != NULL) ? quant->vtx_coord : NULL;
-  if (v_coords == NULL) {
-    assert(mesh != NULL);
+  const cs_real_t  *v_coords;
+  if (quant != NULL)
+    v_coords = quant->vtx_coord;
+  else if (mesh != NULL)
     v_coords = mesh->vtx_coord;
+  else {
+    v_coords = NULL;/* avoid a compilation warning */
+    bft_error(__FILE__, __LINE__, 0, "%s: No vertex coordinates available.",
+              __func__);
   }
 
   /* Evaluate the function for this time at the cell center */
@@ -640,6 +645,7 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(time_eval);
 
   if (n_elts == 0)
     return;
@@ -687,6 +693,7 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(time_eval);
 
   if (n_elts == 0)
     return;
@@ -734,6 +741,7 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(time_eval);
 
   if (n_elts == 0)
     return;
