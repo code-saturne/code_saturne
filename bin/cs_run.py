@@ -38,7 +38,7 @@ from __future__ import print_function
 
 import os, sys
 import types, string, re, fnmatch
-from optparse import OptionParser
+from argparse import ArgumentParser
 try:
     import ConfigParser  # Python2
     configparser = ConfigParser
@@ -116,68 +116,63 @@ def process_cmd_line(argv, pkg):
     Process the passed command line arguments.
     """
 
-    if sys.argv[0][-3:] == '.py':
-        usage = "usage: %prog [options]"
-    else:
-        usage = "usage: %prog run [options]"
+    parser = ArgumentParser(description="Run a case or specified run stages.")
 
-    parser = OptionParser(usage=usage)
+    parser.add_argument("--compute-build", dest="compute_build", type=str,
+                        metavar="<build>",
+                        help="base name or full path to the compute build")
 
-    parser.add_option("--compute-build", dest="compute_build", type="string",
-                      metavar="<build>",
-                      help="base name or full path to the compute build")
+    parser.add_argument("-n", "--nprocs", dest="nprocs", type=int,
+                        metavar="<nprocs>",
+                        help="number of MPI processes for the computation")
 
-    parser.add_option("-n", "--nprocs", dest="nprocs", type="int",
-                      metavar="<nprocs>",
-                      help="number of MPI processes for the computation")
+    parser.add_argument("--nt", "--threads-per-task", dest="nthreads", type=int,
+                        help="number of OpenMP threads per task")
 
-    parser.add_option("--nt", "--threads-per-task", dest="nthreads", type="int",
-                      help="number of OpenMP threads per task")
+    parser.add_argument("-p", "--param", dest="param", type=str,
+                        metavar="<param>",
+                        help="path or name of the parameters file")
 
-    parser.add_option("-p", "--param", dest="param", type="string",
-                      metavar="<param>",
-                      help="path or name of the parameters file")
+    parser.add_argument("--case", dest="case", type=str,
+                        metavar="<case>",
+                        help="path to the case's directory")
 
-    parser.add_option("--case", dest="case", type="string",
-                      metavar="<case>",
-                      help="path to the case's directory")
+    parser.add_argument("--id", dest="id", type=str,
+                        metavar="<id>",
+                        help="use the given run id")
 
-    parser.add_option("--id", dest="id", type="string",
-                      metavar="<id>",
-                      help="use the given run id")
+    parser.add_argument("--id-prefix", dest="id_prefix", type=str,
+                        metavar="<prefix>",
+                        help="prefix the run id with the given string")
 
-    parser.add_option("--id-prefix", dest="id_prefix", type="string",
-                      metavar="<prefix>",
-                      help="prefix the run id with the given string")
+    parser.add_argument("--id-suffix", dest="id_suffix", type=str,
+                        metavar="<suffix>",
+                        help="suffix the run id with the given string")
 
-    parser.add_option("--id-suffix", dest="id_suffix", type="string",
-                      metavar="<suffix>",
-                      help="suffix the run id with the given string")
-
-    parser.add_option("--suggest-id", dest="suggest_id",
+    parser.add_argument("--suggest-id", dest="suggest_id",
                       action="store_true",
                       help="suggest a run id for the next run")
 
-    parser.add_option("--force", dest="force",
-                      action="store_true",
-                      help="run the data preparation stage even if " \
-                           + "the matching execution directory exists")
+    parser.add_argument("--force", dest="force",
+                        action="store_true",
+                        help="run the data preparation stage even if " \
+                              + "the matching execution directory exists")
 
-    parser.add_option("--stage", dest="stage",
-                      action="store_true",
-                      help="stage data prior to preparation and execution")
+    parser.add_argument("--stage", dest="stage",
+                        action="store_true",
+                        help="stage data prior to preparation and execution")
 
-    parser.add_option("--initialize", "--preprocess", dest="initialize",
-                      action="store_true",
-                      help="run the data preparation stage")
+    parser.add_argument("--initialize", "--preprocess", dest="initialize",
+                        action="store_true",
+                        help="run the data preparation stage")
 
-    parser.add_option("--compute", "--execute", dest="compute",
-                      action="store_true",
-                      help="run the compute stage")
+    parser.add_argument("--compute", "--execute", dest="compute",
+                        action="store_true",
+                        help="run the compute stage")
 
-    parser.add_option("--finalize", dest="finalize",
-                      action="store_true",
-                      help="run the results copy/cleanup stage")
+    parser.add_argument("--finalize", dest="finalize",
+                        action="store_true",
+                        help="run the results copy/cleanup stage")
 
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
@@ -194,7 +189,7 @@ def process_cmd_line(argv, pkg):
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
 
-    (options, args) = parser.parse_args(argv)
+    options = parser.parse_args(argv)
 
     # Stages to run (if no filter given, all are done).
 
