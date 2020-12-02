@@ -244,6 +244,7 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
  * \param[in]   c2f           cell -> faces connectivity
  * \param[in]   quant         pointer to the additional quantities struct.
  * \param[in]   face_dofs     array of DoF values at faces
+ * \param[in]   local_input   true means that face_dofs is of size n_cell_faces
  * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
  *                            quantity should have been allocated before calling
  *                            this function
@@ -255,6 +256,7 @@ cs_reco_cell_vector_by_face_dofs(cs_lnum_t                   c_id,
                                  const cs_adjacency_t       *c2f,
                                  const cs_cdo_quantities_t  *cdoq,
                                  const cs_real_t             face_dofs[],
+                                 bool                        local_input,
                                  cs_real_t                  *cell_reco);
 
 /*----------------------------------------------------------------------------*/
@@ -520,6 +522,24 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *pdi,
                           cs_real_t                    val_xc[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the
+ *        given flux array. This array is stored in the same order as cm->f_ids
+ *        Scalar-valued face DoFs are related to the normal flux across primal
+ *        faces.
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      fluxes         array of normal fluxes on primal faces
+ * \param[out]     cell_reco      vector-valued reconstruction inside the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_vect_from_flux(const cs_cell_mesh_t    *cm,
+                               const cs_real_t         *fluxes,
+                               cs_real_t               *cell_reco);
 
 /*----------------------------------------------------------------------------*/
 /*!

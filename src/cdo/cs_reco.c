@@ -317,6 +317,7 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
  * \param[in]   c2f           cell -> faces connectivity
  * \param[in]   quant         pointer to the additional quantities struct.
  * \param[in]   face_dofs     array of DoF values at faces
+ * \param[in]   local_input   true means that face_dofs is of size n_cell_faces
  * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
  *                            quantity should have been allocated before calling
  *                            this function
@@ -324,11 +325,12 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_cell_vector_by_face_dofs(cs_lnum_t                   c_id,
-                                 const cs_adjacency_t       *c2f,
-                                 const cs_cdo_quantities_t  *cdoq,
-                                 const cs_real_t             face_dofs[],
-                                 cs_real_t                  *cell_reco)
+cs_reco_cell_vector_by_face_dofs(cs_lnum_t                    c_id,
+                                 const cs_adjacency_t        *c2f,
+                                 const cs_cdo_quantities_t   *cdoq,
+                                 const cs_real_t              face_dofs[],
+                                 bool                         local_input,
+                                 cs_real_t                   *cell_reco)
 {
   /* Sanity checks */
   assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
@@ -337,15 +339,33 @@ cs_reco_cell_vector_by_face_dofs(cs_lnum_t                   c_id,
   cell_reco[0] = cell_reco[1] = cell_reco[2] = 0;
 
   /* Loop on cell faces */
-  for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+  if (local_input) {
 
-    const cs_lnum_t  f_id = c2f->ids[j];
-    const cs_real_t  *dedge_vect = cdoq->dedge_vector + 3*j;
+    const cs_lnum_t  s = c2f->idx[c_id], e = c2f->idx[c_id+1];
+    const cs_real_t  *_dedge_vector = cdoq->dedge_vector + 3*s;
 
-    for (int k = 0; k < 3; k++)
-      cell_reco[k] += face_dofs[f_id] * dedge_vect[k];
+    for (cs_lnum_t j = 0; j < e-s; j++) {
 
-  } /* Loop on cell faces */
+      const cs_real_t  *dedge_vect = _dedge_vector + 3*j;
+      for (int k = 0; k < 3; k++)
+        cell_reco[k] += face_dofs[j] * dedge_vect[k];
+
+    } /* Loop on cell faces */
+
+  }
+  else { /* face_dofs is accessed with f_id */
+
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->ids[j];
+      const cs_real_t  *dedge_vect = cdoq->dedge_vector + 3*j;
+
+      for (int k = 0; k < 3; k++)
+        cell_reco[k] += face_dofs[f_id] * dedge_vect[k];
+
+    } /* Loop on cell faces */
+
+  }
 
   const cs_real_t  invvol = 1./cdoq->cell_vol[c_id];
   for (int k =0; k < 3; k++) cell_reco[k] *= invvol;
@@ -966,6 +986,51 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the
+ *        given flux array. This array is stored in the same order as cm->f_ids
+ *        Scalar-valued face DoFs are related to the normal flux across primal
+ *        faces.
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      fluxes         array of normal fluxes on primal faces
+ * \param[out]     cell_reco      vector-valued reconstruction inside the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_vect_from_flux(const cs_cell_mesh_t    *cm,
+                               const cs_real_t         *fluxes,
+                               cs_real_t               *cell_reco)
+{
+  if (fluxes == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(cell_reco != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
+
+  /* Initialization */
+  cell_reco[0] = cell_reco[1] = cell_reco[2] = 0.;
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    /* Related dual edge quantity */
+    const cs_nvec3_t  deq = cm->dedge[f];
+    const cs_real_t  coef = fluxes[f] * deq.meas;
+
+    cell_reco[0] += coef*deq.unitv[0];
+    cell_reco[1] += coef*deq.unitv[1];
+    cell_reco[2] += coef*deq.unitv[2];
+
+  } /* Loop on cell faces */
+
+  const cs_real_t  invvol = 1./cm->vol_c;
+  for (int k =0; k < 3; k++) cell_reco[k] *= invvol;
 }
 
 /*----------------------------------------------------------------------------*/
