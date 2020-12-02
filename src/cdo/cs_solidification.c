@@ -3786,8 +3786,8 @@ cs_solidification_extra_post(void                      *input,
                         CS_POST_WRITER_DEFAULT,
                         "cell_state",
                         1,
-                        false,  // interlace
-                        true,   // true = original mesh
+                        false,  /* interlace */
+                        true,   /* true = original mesh */
                         CS_POST_TYPE_int,
                         solid->cell_state, NULL, NULL,
                         time_step);
@@ -3808,8 +3808,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "delta_cliq_minus_cbulk",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->cliq_minus_cbulk, NULL, NULL,
                             time_step);
@@ -3819,8 +3819,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "delta_tbulk_minus_tliq",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->tbulk_minus_tliq, NULL, NULL,
                             time_step);
@@ -3830,8 +3830,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "Cbulk_advection_scaling",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->eta_coef_array, NULL, NULL,
                             time_step);
@@ -3845,8 +3845,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "T_liquidus",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->t_liquidus, NULL, NULL,
                             time_step);
@@ -3865,8 +3865,8 @@ cs_solidification_extra_post(void                      *input,
                           CS_POST_WRITER_DEFAULT,
                           "C_bulk_adim",
                           1,
-                          false,  // interlace
-                          true,   // true = original mesh
+                          false,  /* interlace */
+                          true,   /* true = original mesh */
                           CS_POST_TYPE_cs_real_t,
                           wb, NULL, NULL,
                           time_step);
@@ -3878,8 +3878,8 @@ cs_solidification_extra_post(void                      *input,
                           CS_POST_WRITER_DEFAULT,
                           "C_l",
                           1,
-                          false,  // interlace
-                          true,   // true = original mesh
+                          false,  /* interlace */
+                          true,   /* true = original mesh */
                           CS_POST_TYPE_cs_real_t,
                           alloy->c_l_cells, NULL, NULL,
                           time_step);

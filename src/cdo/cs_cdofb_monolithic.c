@@ -2638,9 +2638,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_timer_t  t_solve_start = cs_timer_time();
-
-  cs_iter_algo_reset(nl_info);
-
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
   msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
@@ -2649,6 +2646,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
+  cs_iter_algo_reset(nl_info);
+
   nl_info->n_inner_iter =
     (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 

@@ -1575,7 +1575,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
   assert(m != NULL && facto != NULL);
   assert(m->n_cols == m->n_rows && m->n_cols == 3);
 
-  // j=0: first row
+  /* j=0: first row */
   const cs_real_t  d00 = m->val[0];
   if (fabs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1584,14 +1584,14 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l10 = facto[1] = m->val[1] * facto[0];
   const cs_real_t  l20 = facto[3] = m->val[2] * facto[0];
 
-  // j=1: second row
+  /* j=1: second row */
   const cs_real_t  d11 = m->val[4] - l10*l10 * d00;
   if (fabs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[2] = 1. / d11;
   const cs_real_t l21 = facto[4] = (m->val[5] - l20*d00*l10) * facto[2];
 
-  // j=2: third row
+  /* j=2: third row */
   const cs_real_t  d22 = m->val[8] - l20*l20*d00 - l21*l21*d11;
   if (fabs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1622,7 +1622,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   assert(m != NULL && facto != NULL);
   assert(m->n_cols == m->n_rows && m->n_cols == 4);
 
-  // j=0: first row
+  /* j=0: first row */
   const cs_real_t  d00 = m->val[0];
   if (fabs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1632,7 +1632,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l20 = facto[3] = m->val[2] * facto[0];
   const cs_real_t  l30 = facto[6] = m->val[3] * facto[0];
 
-  // j=1: second row
+  /* j=1: second row */
   const cs_real_t  d11 = m->val[5] - l10*l10 * d00;
   if (fabs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1640,7 +1640,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l21 = facto[4] = (m->val[6] - l20*d00*l10) * facto[2];
   const cs_real_t  l31 = facto[7] = (m->val[7] - l30*d00*l10) * facto[2];
 
-  // j=2: third row
+  /* j=2: third row */
   const cs_real_t  d22 = m->val[10] - l20*l20*d00 - l21*l21*d11;
   if (fabs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1648,7 +1648,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l32 = facto[8] =
     (m->val[11] - l30*d00*l20 - l31*d11*l21) * facto[5];
 
-  // j=3: row 4
+  /* j=3: row 4 */
   const cs_real_t  d33 = m->val[15] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
   if (fabs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1679,7 +1679,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   assert(m != NULL && facto != NULL);
   assert(m->n_cols == m->n_rows && m->n_cols == 6);
 
-  // j=0: first row
+  /* j=0: first row */
   const cs_real_t  d00 = m->val[0];
   if (fabs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1691,7 +1691,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l40 = facto[10] = m->val[4] * facto[0];
   const cs_real_t  l50 = facto[15] = m->val[5] * facto[0];
 
-  // j=1: second row
+  /* j=1: second row */
   const cs_real_t  d11 = m->val[7] - l10*l10 * d00;
   if (fabs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1702,7 +1702,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l41 = facto[11] = (m->val[10] - l40*d0l10) * facto[2];
   const cs_real_t  l51 = facto[16] = (m->val[11] - l50*d0l10) * facto[2];
 
-  // j=2: third row
+  /* j=2: third row */
   const cs_real_t  d22 = m->val[14] - l20*l20*d00 - l21*l21*d11;
   if (fabs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1715,7 +1715,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l52 = facto[17] =
     (m->val[17] - l30*d0l20 - l31*d1l21) * facto[5];
 
-  // j=3: row 4
+  /* j=3: row 4 */
   const cs_real_t  d33 = m->val[21] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
   if (fabs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
@@ -1726,7 +1726,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l53 = facto[18] =
     (m->val[23] - l50*d0l30 - l51*d1l31 - l52*d2l32) * facto[9];
 
-  // j=4: row 5
+  /* j=4: row 5 */
   const cs_real_t  d44 =
     m->val[28] - l40*l40*d00 - l41*l41*d11 - l42*l42*d22 - l43*l43*d33;
   if (fabs(d44) < cs_math_zero_threshold)
@@ -1735,7 +1735,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   const cs_real_t  l54 = facto[19] = facto[14] *
     (m->val[29] - l50*d00*l40 - l51*d11*l41 - l52*d22*l42 - l53*d33*l43);
 
-  // j=5: row 6
+  /* j=5: row 6 */
   const cs_real_t  d55 = m->val[35]
     - l50*l50*d00 - l51*l51*d11 - l52*l52*d22 - l53*l53*d33 - l54*l54*d44;
   if (fabs(d55) < cs_math_zero_threshold)
@@ -1789,13 +1789,13 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
     case 0:  /* Optimization for the first colum */
       {
-        dkk[0] = m->val[0]; // d00
+        dkk[0] = m->val[0]; /* d00 */
 
         if (fabs(dkk[0]) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
         const cs_real_t  inv_d00 = facto[0] = 1. / dkk[0];
 
-        // l_i0 = a_i0 / d_00
+        /* l_i0 = a_i0 / d_00 */
         short int rowi_idx = rowj_idx;
         const cs_real_t  *a_0 = m->val;  /* a_ij = a_ji */
         for (short int i = j+1; i < n; i++) { /* Loop on rows */
@@ -1811,7 +1811,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
     case 1:  /* Optimization for the second colum */
       {
-        // d_11 = a_11 - l_10^2 * d_00
+        /* d_11 = a_11 - l_10^2 * d_00 */
         cs_real_t  *l_1 = facto + rowj_idx;
 
         const cs_real_t  d11 = dkk[1] = m->val[n+1] - l_1[0]*l_1[0]*dkk[0];
@@ -1820,7 +1820,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
         const cs_real_t  inv_d11 = facto[djj_idx] = 1. / d11;
 
-        // l_i1 = (a_i1 - l_i0 * d_00 * l_10 ) / d_11
+        /* l_i1 = (a_i1 - l_i0 * d_00 * l_10 ) / d_11 */
         short int rowi_idx = rowj_idx;
         const cs_real_t  *a_1 = m->val + n;  /* a_i1 = a_1i */
         for (short int i = 2; i < n; i++) { /* Loop on rows */
@@ -1836,7 +1836,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
     default:
       {
-        // d_jj = a_jj - \sum_{k=0}^{j-1} l_jk^2 * d_kk
+        /* d_jj = a_jj - \sum_{k=0}^{j-1} l_jk^2 * d_kk */
         cs_real_t  *l_j = facto + rowj_idx;
 
         cs_real_t  sum = 0.;
@@ -1849,7 +1849,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
         const cs_real_t  inv_djj = facto[djj_idx] = 1. / djj;
 
-        // l_ij = (a_ij - \sum_{k=1}^{j-1} l_ik * d_kk * l_jk ) / d_jj
+        /* l_ij = (a_ij - \sum_{k=1}^{j-1} l_ik * d_kk * l_jk ) / d_jj */
         short int rowi_idx = rowj_idx;
         const cs_real_t  *a_j = m->val + j*n;  /* a_ij = a_ji */
         for (short int i = j+1; i < n; i++) { /* Loop on rows */
@@ -2017,9 +2017,9 @@ cs_sdm_ldlt_solve(int                n_rows,
    */
 
   const short int  last_row_id = n_rows - 1;
-  const int  shift = n_rows*(last_row_id)/2;   // idx with n_rows - 1
-  int  diagi_idx = shift + last_row_id;        // last entry of the facto.
-  sol[last_row_id] *= facto[diagi_idx];         // 1 / d_nn
+  const int  shift = n_rows*(last_row_id)/2;   /* idx with n_rows - 1 */
+  int  diagi_idx = shift + last_row_id;        /* last entry of the facto. */
+  sol[last_row_id] *= facto[diagi_idx];        /* 1 / d_nn */
 
   for (short int i = last_row_id - 1; i >= 0; i--) {
 

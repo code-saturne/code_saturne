@@ -3190,21 +3190,21 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
           v_gradient[3*cm->v_ids[v] + k] += dvol*cgrd[k];
       }
 
-    } // Loop on cells
+    } /* Loop on cells */
 
     if (cs_glob_n_ranks > 1) {
 
       cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            connect->n_vertices,
                            1,
-                           true, // interlace
+                           true, /* interlace */
                            CS_REAL_TYPE,
                            dualcell_vol);
 
       cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            connect->n_vertices,
                            3,
-                           true, // interlace
+                           true, /* interlace */
                            CS_REAL_TYPE,
                            v_gradient);
     }
@@ -3218,7 +3218,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     BFT_FREE(pot);
 
-  } // OMP Section
+  } /* OMP Section */
 
   BFT_FREE(dualcell_vol);
 
@@ -3364,7 +3364,7 @@ cs_cdovcb_scaleq_extra_post(const cs_equation_param_t  *eqp,
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
-  // TODO
+  /* TODO */
   CS_UNUSED(eqp);
   CS_UNUSED(eqb);
   CS_UNUSED(eqc);

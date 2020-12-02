@@ -2847,7 +2847,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         eqp->dim,
                                         z_id,
-                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        CS_FLAG_STATE_UNIFORM, /* state flag */
                                         meta_flag,
                                         val);
 
@@ -2895,7 +2895,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
                                         eqp->dim,
                                         z_id,
-                                        0, // state flag
+                                        0, /* state flag */
                                         meta_flag,
                                         &quantity);
 
@@ -2947,7 +2947,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
-                                        0, // state flag
+                                        0, /* state flag */
                                         meta_flag,
                                         &ac);
 
@@ -3028,7 +3028,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
                                           cs_get_bdy_zone_id(z_name),
-                                          CS_FLAG_STATE_UNIFORM, // state flag
+                                          CS_FLAG_STATE_UNIFORM, /* state flag */
                                           meta_flag,
                                           (void *)values);
 
@@ -3188,7 +3188,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
                                           z_id,
-                                          0, // state
+                                          0, /* state */
                                           meta_flag,
                                           &ac);
 
@@ -3270,7 +3270,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_DOF_FUNCTION,
                                           dim,
                                           z_id,
-                                          0, // state
+                                          0, /* state */
                                           meta_flag,
                                           &cx);
 

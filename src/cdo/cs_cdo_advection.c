@@ -408,7 +408,7 @@ _build_cell_epcd_cen(const cs_cell_mesh_t          *cm,
   /* Weight is always equal to 0.5 Loop on cell edges */
   for (short int e = 0; e < cm->n_ec; e++) {
 
-    const cs_real_t  wflx = 0.5 * fluxes[e] * cm->e2v_sgn[e]; // sgn_v1
+    const cs_real_t  wflx = 0.5 * fluxes[e] * cm->e2v_sgn[e]; /* sgn_v1 */
 
     if (fabs(wflx) > 0) {
 
@@ -810,8 +810,8 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
 
   /* Useful quantities are stored in cb->values and cb->vectors */
   cs_sdm_t  *af = cb->aux;
-  double  *bgc_save = cb->values;                      // size n_fc
-  double  *l_vc = cb->values + cm->n_fc + 2*cm->n_ec;  // size n_vc
+  double  *bgc_save = cb->values;                      /* size n_fc */
+  double  *l_vc = cb->values + cm->n_fc + 2*cm->n_ec;  /* size n_vc */
   cs_real_3_t  *bgvf = cb->vectors + fshift;
   cs_real_3_t  *u_vc = cb->vectors + 2*cm->n_ec;
 
@@ -1028,12 +1028,12 @@ _vcb_stabilization_part2(const cs_cell_mesh_t     *cm,
   double  *bgc_save, *tef_save, *wvf1, *wvf2;  /* scalar-valued buffers */
   int  m_shft = 0;
 
-  bgc_save = cb->values, m_shft = cm->n_fc;             // size = n_fc
-  tef_save = cb->values + m_shft, m_shft += 2*cm->n_ec; // size = 2*n_ec
-  wvf1 = cb->values + m_shft, m_shft += cm->n_vc;       // size = n_vc
-  wvf2 = cb->values + m_shft, m_shft += cm->n_vc;       // size = n_vc
+  bgc_save = cb->values, m_shft = cm->n_fc;             /* size = n_fc */
+  tef_save = cb->values + m_shft, m_shft += 2*cm->n_ec; /* size = 2*n_ec */
+  wvf1 = cb->values + m_shft, m_shft += cm->n_vc;       /* size = n_vc */
+  wvf2 = cb->values + m_shft, m_shft += cm->n_vc;       /* size = n_vc */
 
-  cs_real_3_t  *bgvf_save = cb->vectors;      /* size = 2*n_ec */
+  cs_real_3_t  *bgvf_save = cb->vectors; /* size = 2*n_ec */
 
   for (short int e = 0; e < cm->n_ec; e++) {
 

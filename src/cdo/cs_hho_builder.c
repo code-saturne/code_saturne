@@ -99,7 +99,7 @@ _fill_vol_reco_op(cs_sdm_t             *stiffness,
   }
 
   /* rhs_c shares a part of m_g (the stiffness matrix). Add this contribution */
-  cs_real_t *r_j = rhs_c_t->val + gs; // Skip the first row (only 0)
+  cs_real_t *r_j = rhs_c_t->val + gs; /* Skip the first row (only 0) */
   for (short int j = 0; j < cs - 1; j++, r_j += gs) {
     const cs_real_t  *mg_j = mg + j*gs;
     for (short int i = 0; i < gs; i++)
@@ -684,7 +684,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
       const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       switch(n_vf){
@@ -705,7 +705,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -1000,7 +1000,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
       const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       /* Retrieve the rhs block related to this face.
@@ -1035,7 +1035,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -1302,7 +1302,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
     const cs_quant_t  pfq = cm->face[f];
     const int  start = cm->f2e_idx[f];
     const int  end = cm->f2e_idx[f+1];
-    const int  n_vf = end - start; // #vertices (=#edges)
+    const int  n_vf = end - start; /* #vertices (=#edges) */
     const short int  *f2e_ids = cm->f2e_ids + start;
 
     switch(n_vf){
@@ -1323,7 +1323,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
 
         for (int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-          // Edge-related variables
+          /* Edge-related variables */
           const int  e0  = f2e_ids[e];
           const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
           const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -1541,7 +1541,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
       const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_basis_func_t  *fbf = hhob->face_basis[f];
 
@@ -1576,7 +1576,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
@@ -1726,7 +1726,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
         const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
-        const short int n_vf = end - start; // #vertices (=#edges)
+        const short int n_vf = end - start; /* #vertices (=#edges) */
         const short int *f2e_ids = cm->f2e_ids + start;
         const cs_basis_func_t  *fbf = hhob->face_basis[f];
 
@@ -1888,7 +1888,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
 
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);

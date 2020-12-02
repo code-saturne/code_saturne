@@ -116,7 +116,7 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
     bft_error(__FILE__, __LINE__, 0, "Invalid time scheme for CDO schemes");
     break;
 
-  } // End of switch on time scheme
+  } /* End of switch on time scheme */
 
   return  NULL;
 }
@@ -184,10 +184,10 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
       break;
 
     case CS_TIME_SCHEME_EULER_IMPLICIT:
-    default: // Nothing to do
+    default: /* Nothing to do */
       break;
 
-    } // End of switch
+    } /* End of switch */
 
   }
   else { /* dof_ids == NULL */
@@ -209,10 +209,10 @@ cs_cdo_time_update_rhs(const cs_equation_param_t    *eqp,
       break;
 
     case CS_TIME_SCHEME_EULER_IMPLICIT:
-    default: // Nothing to do
+    default: /* Nothing to do */
       break;
 
-    } // End of switch
+    } /* End of switch */
 
   }
 
@@ -490,7 +490,7 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
   double  *adr_pn = cb->values;
   cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
-    adr_pn[i] *= tcoef; // (1 - theta)
+    adr_pn[i] *= tcoef; /* (1 - theta) */
 
   /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
            >> Update the cellwise system with the time matrix */
@@ -556,7 +556,7 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
   double  *adr_pn = cb->values;
   cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
-    adr_pn[i] *= tcoef; // (1 - theta)
+    adr_pn[i] *= tcoef; /* (1 - theta) */
 
   /* STEPS >> Update the cellwise system with the time matrix */
   for (short int i = 0; i < csys->n_dofs; i++) {

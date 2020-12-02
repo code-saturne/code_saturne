@@ -288,7 +288,7 @@ cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
 
   const int  start = cm->f2e_idx[f];
   const int  end = cm->f2e_idx[f+1];
-  const short int  n_ef = end - start; // #vertices (=#edges)
+  const short int  n_ef = end - start; /* ertices (=#edges) */
   const short int  *f2e_ids = cm->f2e_ids + start;
   const cs_quant_t  pfq = cm->face[f];
 
@@ -377,7 +377,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
       const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
-      const short int n_vf = end - start; // #vertices (=#edges)
+      const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       assert(n_vf > 2);
 
@@ -400,7 +400,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
 
           for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const short int v0 = cm->e2v_ids[2*e0];
             const short int v1 = cm->e2v_ids[2*e0+1];

@@ -2548,8 +2548,8 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                                                    &residual,
                                                    b,
                                                    x,
-                                                   0,      // aux. size
-                                                   NULL);  // aux. buffers
+                                                   0,      /* aux. size */
+                                                   NULL);  /* aux. buffers */
 
   if (sles_param.verbosity > 0) {
 
