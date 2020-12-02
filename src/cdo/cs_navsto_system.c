@@ -125,6 +125,16 @@ _handle_non_linearities(cs_navsto_param_t    *nsp)
   case CS_NAVSTO_MODEL_STOKES:
     return false;
 
+  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
+    if (nsp->adv_strategy == CS_NAVSTO_ADVECTION_IMPLICIT_FULL)
+      return true;
+    else {
+      assert(nsp->adv_strategy == CS_NAVSTO_ADVECTION_IMPLICIT_LINEARIZED ||
+             nsp->adv_strategy == CS_NAVSTO_ADVECTION_EXPLICIT_ADAMS_BASHFORTH);
+      return false;
+    }
+    break;
+
   default:
     return true;
 
