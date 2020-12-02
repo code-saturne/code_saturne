@@ -369,29 +369,6 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def __updateRunId(self, run_id):
-        """
-        Update the run configuration.
-        """
-
-        # Determine run.cfg path
-        path = os.path.join(self.__dest, self.label)
-        if not self.subdomains:
-            path = os.path.join(path, "DATA")
-
-        path = os.path.join(path, "run.cfg")
-
-        run_conf = cs_run_conf.run_conf(path,
-                                        package=self.pkg)
-
-        # Assign run command from repo in dest
-        run_conf.set('run', 'id', str(run_id))
-
-        # Write runcase
-        run_conf.save()
-
-    #---------------------------------------------------------------------------
-
     def run(self):
         """
         Check if a run with same result subdirectory name exists
@@ -424,9 +401,8 @@ class Case(object):
         self.run_id  = run_id
         self.run_dir = run_dir
 
-        self.__updateRunId(run_id)
+        run_cmd = enquote_arg(self.exe) + " run --id=" + enquote_arg(self.run_id)
 
-        run_cmd = enquote_arg(self.exe) + " run"
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
         if not error:

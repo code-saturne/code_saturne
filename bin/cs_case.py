@@ -35,7 +35,7 @@ import platform
 import sys
 import stat
 
-from code_saturne import cs_exec_environment
+from code_saturne import cs_exec_environment, cs_run_conf
 
 from code_saturne.cs_case_domain import *
 
@@ -1407,6 +1407,14 @@ class case:
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
+
+        # Set run_id in run.cfg as a precaution
+
+        run_conf_path = os.path.join(self.result_dir, "run.cfg")
+        if os.path.isfile(run_conf_path):
+            run_conf = cs_run_conf.run_conf(run_conf_path, package=self.package)
+            run_conf.set('run', 'id', str(self.run_id))
+            run_conf.save()
 
         # Rename temporary file to indicate new status
 
