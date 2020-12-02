@@ -2581,9 +2581,10 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     const cs_adjacency_t  *f2c = connect->f2c;
     const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
 
-    cs_real_t  *pot = NULL, *flux = NULL;
-    BFT_MALLOC(pot, connect->n_max_vbyc + 1, cs_real_t);
-    BFT_MALLOC(flux, connect->n_max_vbyc , cs_real_t);
+    /* Set inside the OMP section so that each thread has its own value */
+    double  *tmp = cs_cdo_local_get_d_buffer(t_id);
+    cs_real_t  *pot = tmp,
+               *flux = tmp + connect->n_max_vbyc + 1;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2715,9 +2716,6 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     } /* End of loop on boundary faces */
 
-    BFT_FREE(pot);
-    BFT_FREE(flux);
-
   } /* End of Open block */
 
   cs_timer_t  t1 = cs_timer_time();
@@ -2790,8 +2788,8 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(0);
   cs_cell_builder_t  *cb = _vcbs_cell_builder[0];
 
-  double  *p_v = NULL;
-  BFT_MALLOC(p_v, connect->n_max_vbyf, double);
+  /* Set inside the OMP section so that each thread has its own value */
+  double  *p_v = cs_cdo_local_get_d_buffer(0);
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
@@ -2902,8 +2900,6 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
   } /* Set of interior or border faces */
 
-  BFT_FREE(p_v);
-
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
@@ -2967,8 +2963,8 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_hodge_t  *hodge = eqc->diffusion_hodge[t_id];
 
-    double  *pot = NULL;
-    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+    /* Set inside the OMP section so that each thread has its own value */
+    double  *pot = cs_cdo_local_get_d_buffer(t_id);
 
     cb->t_pty_eval = t_eval;
     if (eqb->diff_pty_uniform)  /* cell_id =0, cell_flag = 0 */
@@ -2996,8 +2992,6 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
                                          cb, diff_flux + 3*c_id);
 
     } /* Loop on cells */
-
-    BFT_FREE(pot);
 
   } /* OMP Section */
 
@@ -3067,8 +3061,8 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_hodge_t  *hodge = eqc->diffusion_hodge[t_id];
 
-    double  *pot = NULL;
-    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+    /* Set inside the OMP section so that each thread has its own value */
+    double  *pot = cs_cdo_local_get_d_buffer(t_id);
 
     cb->t_pty_eval = t_eval;
     if (eqb->diff_pty_uniform)  /* cell_id =0, cell_flag = 0 */
@@ -3097,8 +3091,6 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
                                           cb, diff_flux + connect->c2e->idx[c_id]);
 
     } /* Loop on cells */
-
-    BFT_FREE(pot);
 
   } /* OMP Section */
 
@@ -3153,10 +3145,10 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 #else
     int  t_id = 0;
 #endif
-    double  *pot = NULL;
     cs_real_3_t  cgrd;
 
-    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+    /* Set inside the OMP section so that each thread has its own value */
+    double  *pot = cs_cdo_local_get_d_buffer(t_id);
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
       CS_FLAG_COMP_DEQ |  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_HFQ;
@@ -3215,8 +3207,6 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
       for (int k = 0; k < 3; k++)
         v_gradient[3*i + k] *= inv_dualcell_vol;
     }
-
-    BFT_FREE(pot);
 
   } /* OMP Section */
 
