@@ -2507,9 +2507,9 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->build(nsp, dir_values,
+  sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
-            enforced_ids, sc);
+            dir_values, enforced_ids, sc);
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
