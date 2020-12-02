@@ -182,8 +182,8 @@ typedef struct {
    *
    * \var definition
    * pointer to the generic structure used to define the advection field. We
-   * assume that only one definition is available (i.e. there is not several
-   * zones).
+   * assume that only one definition is available (i.e. there is a unique
+   * zone related to "cells").
    *
    * \var n_bdy_flux_defs
    * Number of definitions related to the normal flux at the boundary
@@ -547,6 +547,23 @@ void
 cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
                                    cs_analytic_func_t    *func,
                                    void                  *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_adv_field_t structure using a cs_dof_func_t
+ *
+ * \param[in, out] adv       pointer to a cs_adv_field_t structure
+ * \param[in]      loc_flag  location where values are computed
+ * \param[in]      func      pointer to a cs_dof_func_t function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
+                                   cs_flag_t          loc_flag,
+                                   cs_dof_func_t     *func,
+                                   void              *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

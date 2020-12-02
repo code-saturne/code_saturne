@@ -45,6 +45,7 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
+#include "cs_equation_common.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -200,6 +201,152 @@ _cw_fill_uniform_boundary_flux(const cs_cell_mesh_t   *cm,
     fluxes[v1] += weighted_flux;
 
   } /* Loop on face edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute a vector-valued reconstruction of the advection field at
+ *         vertices from the definition of the advection field
+ *
+ * \param[in]      quant        additional mesh quantities struct.
+ * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]      def          pointer to a cs_xdef_t struct.
+ * \param[in, out] vtx_values   values of the reconstruction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
+                                const cs_cdo_connect_t     *connect,
+                                cs_xdef_t                  *def,
+                                cs_real_t                  *vtx_values)
+{
+  memset(vtx_values, 0, 3*quant->n_vertices*sizeof(cs_real_t));
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  switch (def->type) {
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_real_t  cell_vector[3];
+      cs_xdef_array_context_t  *ai = (cs_xdef_array_context_t *)def->context;
+
+      if (cs_flag_test(ai->loc, cs_flag_dual_face_byc)) {
+
+        assert(ai->index == connect->c2e->idx);
+
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+          cs_reco_dfbyc_at_cell_center(c_id,
+                                       connect->c2e,
+                                       quant,
+                                       ai->values,
+                                       cell_vector);
+
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+            const cs_real_t  vc_vol = quant->dcell_vol[j];
+            cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
+
+            _val[0] += vc_vol * cell_vector[0];
+            _val[1] += vc_vol * cell_vector[1];
+            _val[2] += vc_vol * cell_vector[2];
+
+          }
+
+        } /* Loop on cells */
+
+      }
+      else if (cs_flag_test(ai->loc, cs_flag_primal_face)) {
+
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+          cs_reco_cell_vector_by_face_dofs(c_id,
+                                           connect->c2f,
+                                           quant,
+                                           ai->values,
+                                           false, /* local input ? */
+                                           cell_vector);
+
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+            const cs_real_t  vc_vol = quant->dcell_vol[j];
+            cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
+
+            _val[0] += vc_vol * cell_vector[0];
+            _val[1] += vc_vol * cell_vector[1];
+            _val[2] += vc_vol * cell_vector[2];
+
+          }
+
+        } /* Loop on cells */
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid location for array", __func__);
+
+    }
+    break; /* by array */
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
+      int  t_id = omp_get_thread_num();
+#else
+      int  t_id = 0;
+#endif
+      cs_real_t  cell_vector[3];
+      cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(t_id);
+      cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+      if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid location for definition by DoFs.\n", __func__);
+
+      const cs_lnum_t  *idx = connect->c2f->idx;
+
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        cs_lnum_t  n_fc = idx[c_id+1] - idx[c_id];
+        const cs_lnum_t  *_ids = connect->c2f->ids + idx[c_id];
+
+        /* Values of the function are defined at the primal faces */
+        cx->func(n_fc, _ids, true, /* dense output */
+                 cx->input,
+                 fluxes);
+
+        cs_reco_cell_vector_by_face_dofs(c_id,
+                                         connect->c2f,
+                                         quant,
+                                         fluxes,
+                                         true, /* local input ? */
+                                         cell_vector);
+
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+          const cs_real_t  vc_vol = quant->dcell_vol[j];
+          cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
+
+          _val[0] += vc_vol * cell_vector[0];
+          _val[1] += vc_vol * cell_vector[1];
+          _val[2] += vc_vol * cell_vector[2];
+
+        }
+
+      } /* Loop on cells */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
+              __func__);
+    break;
+
+  } /* Type of definition */
+
 }
 
 /*============================================================================
@@ -637,6 +784,43 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
                                           state_flag,
                                           meta_flag,
                                           &ac);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_adv_field_t structure using a cs_dof_func_t
+ *
+ * \param[in, out] adv       pointer to a cs_adv_field_t structure
+ * \param[in]      loc_flag  location where values are computed
+ * \param[in]      func      pointer to a cs_dof_func_t function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
+                                   cs_flag_t          loc_flag,
+                                   cs_dof_func_t     *func,
+                                   void              *input)
+{
+  if (adv == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
+
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = CS_FLAG_FULL_LOC;
+  int  dim = _get_dim_def(adv);
+  cs_xdef_dof_context_t  cx = { .z_id = 0, /* all cells */
+                                .loc = loc_flag,
+                                .func = func,
+                                .input = input,
+                                .free_input = NULL };
+
+  adv->definition = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
+                                          dim,
+                                          0,  /* zone_id = 0 => all cells */
+                                          state_flag,
+                                          meta_flag,
+                                          &cx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1195,7 +1379,7 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
       }
       break;
 
-    case CS_XDEF_BY_FIELD:
+    case CS_XDEF_BY_FIELD:          /* P0 approximation */
       {
         const cs_real_t  *i_flux = (cs_field_by_id(adv->int_field_id))->val;
         const cs_real_t  *b_flux = (cs_field_by_id(adv->bdy_field_id))->val;
@@ -1204,6 +1388,29 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
                                             i_flux,
                                             b_flux,
                                             vector_values);
+        cs_nvec3(vector_values, eval);
+      }
+      break;
+
+    case CS_XDEF_BY_DOF_FUNCTION:   /* P0 approximation */
+      {
+#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
+        int  t_id = omp_get_thread_num();
+#else
+        int  t_id = 0;
+#endif
+        cs_real_t  *fluxes = cs_cdo_local_get_d_buffer(t_id);
+        cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+        /* Values of the function are defined at the primal faces */
+        if (cs_flag_test(cx->loc, cs_flag_primal_face))
+          cx->func(cm->n_fc, cm->f_ids, true, /* dense output */
+                   cx->input, fluxes);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid location for definition by DoFs.\n", __func__);
+
+        cs_reco_cw_cell_vect_from_flux(cm, fluxes, vector_values);
         cs_nvec3(vector_values, eval);
       }
       break;
@@ -1361,6 +1568,27 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
       }
       break;
 
+    case CS_XDEF_BY_DOF_FUNCTION:   /* P0 approximation in each cell */
+      {
+        cs_real_t  *fluxes = cs_equation_get_tmpbuf();
+        cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+        if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid location for definition by DoFs.\n", __func__);
+        assert(cs_equation_get_tmpbuf_size() <= cdoq->n_faces);
+
+        /* Values of the function are defined at the primal faces */
+        cx->func(cdoq->n_faces, NULL, true, /* dense output */
+                 cx->input, fluxes);
+
+        cs_reco_cell_vectors_by_face_dofs(cs_cdo_connect->c2f,
+                                          cdoq,
+                                          fluxes,
+                                          cell_values);
+      }
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0, "%s: Incompatible type of definition.",
                 __func__);
@@ -1468,118 +1696,45 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
   if (adv == NULL)
     return;
 
-  cs_xdef_t  *def = adv->definition;
-
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
 
+  cs_xdef_t  *def = adv->definition;
+
   if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) {
 
-    switch (def->type) {
+    /* Compute the vector-valued vector at each vertex */
+    _compute_adv_vector_at_vertices(cdoq, connect, def, vtx_values);
 
-    case CS_XDEF_BY_ARRAY:
-      {
-        const cs_adjacency_t  *c2v = connect->c2v;
+    /* Parallel synchronization of values at vertices */
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                           cdoq->n_vertices,
+                           3,             /* stride */
+                           true,          /* = interlace */
+                           CS_REAL_TYPE,
+                           vtx_values);
 
-        cs_real_t  cell_vector[3];
-        cs_xdef_array_context_t  *ai = (cs_xdef_array_context_t *)def->context;
+    cs_real_t  *dual_vol = NULL;
+    BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
+    cs_cdo_quantities_compute_dual_volumes(cdoq, connect->c2v, dual_vol);
 
-        if (cs_flag_test(ai->loc, cs_flag_dual_face_byc)) {
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                           cdoq->n_vertices,
+                           1,             /* stride */
+                           true,          /* = interlace */
+                           CS_REAL_TYPE,
+                           dual_vol);
 
-          assert(ai->index == connect->c2e->idx);
-          memset(vtx_values, 0, 3*cdoq->n_vertices*sizeof(cs_real_t));
+#   pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < cdoq->n_vertices; v_id++) {
+      const cs_real_t  invvol = 1./dual_vol[v_id];
+      for (int k = 0; k < 3; k++)
+        vtx_values[3*v_id+k] *= invvol;
+    }
 
-          for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-            cs_reco_dfbyc_at_cell_center(c_id,
-                                         connect->c2e,
-                                         cdoq,
-                                         ai->values,
-                                         cell_vector);
-
-            for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-
-              const cs_real_t  vc_vol = cdoq->dcell_vol[j];
-              cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
-
-              _val[0] += vc_vol * cell_vector[0];
-              _val[1] += vc_vol * cell_vector[1];
-              _val[2] += vc_vol * cell_vector[2];
-
-            }
-
-          } /* Loop on cells */
-
-        }
-        else if (cs_flag_test(ai->loc, cs_flag_primal_face)) {
-
-          memset(vtx_values, 0, 3*cdoq->n_vertices*sizeof(cs_real_t));
-
-          for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-            cs_reco_cell_vector_by_face_dofs(c_id,
-                                             connect->c2f,
-                                             cdoq,
-                                             ai->values,
-                                             cell_vector);
-
-            for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-
-              const cs_real_t  vc_vol = cdoq->dcell_vol[j];
-              cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
-
-              _val[0] += vc_vol * cell_vector[0];
-              _val[1] += vc_vol * cell_vector[1];
-              _val[2] += vc_vol * cell_vector[2];
-
-            }
-
-          } /* Loop on cells */
-
-        }
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid location for array", __func__);
-
-        /* Parallel synchronization of values at vertices */
-        if (cs_glob_n_ranks > 1)
-          cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                               cdoq->n_vertices,
-                               3,             /* stride */
-                               true,          /* = interlace */
-                               CS_REAL_TYPE,
-                               vtx_values);
-
-        cs_real_t  *dual_vol = NULL;
-        BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
-        cs_cdo_quantities_compute_dual_volumes(cdoq, c2v, dual_vol);
-
-        if (cs_glob_n_ranks > 1)
-          cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                               cdoq->n_vertices,
-                               1,             /* stride */
-                               true,          /* = interlace */
-                               CS_REAL_TYPE,
-                               dual_vol);
-
-#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
-        for (cs_lnum_t v_id = 0; v_id < cdoq->n_vertices; v_id++) {
-          const cs_real_t  invvol = 1./dual_vol[v_id];
-          for (int k = 0; k < 3; k++)
-            vtx_values[3*v_id+k] *= invvol;
-        }
-
-        BFT_FREE(dual_vol);
-
-      }
-      break; /* by array */
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
-                __func__);
-      break;
-
-    } /* Type of definition */
+    BFT_FREE(dual_vol);
 
   }
   else {
@@ -1830,21 +1985,51 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
     if (adv->n_bdy_flux_defs == 0) {
 
-      if (def->type != CS_XDEF_BY_ARRAY)
+      switch (def->type) {
+
+      case CS_XDEF_BY_ARRAY:
+        {
+          const cs_xdef_array_context_t *ac =
+            (cs_xdef_array_context_t *)def->context;
+
+          assert(ac->stride == 1);
+          assert(def->meta & CS_FLAG_FULL_LOC); /* over the volume hence the
+                                                   shift with n_i_faces */
+
+          if (cs_flag_test(ac->loc, cs_flag_primal_face))
+            memcpy(flx_values, ac->values + n_i_faces,
+                   sizeof(cs_real_t)*n_b_faces);
+        }
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        {
+          cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+          if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Invalid location for definition by DoFs.\n",
+                      __func__);
+
+          cs_lnum_t  *bface_ids = NULL;
+          BFT_MALLOC(bface_ids, n_b_faces, cs_lnum_t);
+          for (cs_lnum_t i = 0; i < n_b_faces; i++)
+            bface_ids[i] = n_i_faces + i;
+
+          cx->func(n_b_faces, bface_ids, true, /* dense output */
+                   cx->input,
+                   flx_values);
+
+          BFT_FREE(bface_ids);
+        }
+        break;
+
+      default:
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid type of definition in case of flux defined\n"
                   "on the whole domain. It should a definition by array.",
                   __func__);
-
-      const cs_xdef_array_context_t *ac =
-        (cs_xdef_array_context_t *)def->context;
-
-      assert(ac->stride == 1);
-      assert(def->meta & CS_FLAG_FULL_LOC); /* over the volume hence the shift
-                                               with n_i_faces */
-
-      if (cs_flag_test(ac->loc, cs_flag_primal_face))
-        memcpy(flx_values, ac->values + n_i_faces, sizeof(cs_real_t)*n_b_faces);
+      }
 
     }
     else {
@@ -2082,18 +2267,46 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
     assert(adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX);
     if (adv->n_bdy_flux_defs == 0) {
 
-      const cs_xdef_array_context_t  *ac =
-        (cs_xdef_array_context_t *)def->context;
+      switch (def->type) {
 
-      assert(ac->stride == 1);
-      if (cs_flag_test(ac->loc, cs_flag_primal_face))
-        f_flux = ac->values[cm->bface_shift + bf_id];
-      else
+      case CS_XDEF_BY_ARRAY:
+        {
+          const cs_xdef_array_context_t  *ac =
+            (cs_xdef_array_context_t *)def->context;
+
+          assert(ac->stride == 1);
+          if (cs_flag_test(ac->loc, cs_flag_primal_face))
+            f_flux = ac->values[cm->f_ids[f]];
+          else
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Invalid array support.", __func__);
+        }
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        {
+          cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+          if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Invalid location for definition by DoFs.\n",
+                      __func__);
+
+          /* Values of the function are defined at the primal faces */
+          cx->func(1, cm->f_ids + f, true, /* dense output */
+                   cx->input,
+                   &f_flux);
+        }
+        break;
+
+      default:
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid array support.", __func__);
+                  "%s: Invalid type of definition.", __func__);
+
+      } /* def->type */
 
     }
-    else {
+    else { /* n_bdy_flux_defs > 0 */
 
       const cs_xdef_t  *bdef = (adv->bdy_def_ids == NULL) ?
         adv->bdy_flux_defs[0] : adv->bdy_flux_defs[adv->bdy_def_ids[bf_id]];
@@ -2435,45 +2648,63 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
   if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) {
 
-    if (def->type == CS_XDEF_BY_ARRAY) {
+    switch (def->type) {
 
-      const cs_real_t  *xdef_fluxes = cs_xdef_get_array(def);
-      assert(fluxes != NULL);
-      for (short int f = 0; f < cm->n_fc; f++)
-        fluxes[f] = xdef_fluxes[cm->f_ids[f]];
+    case CS_XDEF_BY_ARRAY:
+      {
+        const cs_real_t  *xdef_fluxes = cs_xdef_get_array(def);
+        assert(fluxes != NULL);
+        for (short int f = 0; f < cm->n_fc; f++)
+          fluxes[f] = xdef_fluxes[cm->f_ids[f]];
 
-    }
-    else if (def->type == CS_XDEF_BY_FIELD) {
+      }
+      break;
 
-      cs_field_t  *fld = (cs_field_t *)def->context;
+    case CS_XDEF_BY_FIELD:
+      {
+        cs_field_t  *fld = (cs_field_t *)def->context;
 
-      /* Sanity check */
-      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
-      assert(cs_mesh_location_get_type(fld->location_id)
-             == CS_MESH_LOCATION_INTERIOR_FACES);
-      assert(adv->bdy_field_id > -1);
+        /* Sanity check */
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+        assert(cs_mesh_location_get_type(fld->location_id)
+               == CS_MESH_LOCATION_INTERIOR_FACES);
+        assert(adv->bdy_field_id > -1);
 
-      cs_field_t  *b_mflx_fld = cs_field_by_id(adv->bdy_field_id);
-      assert(b_mflx_fld != NULL);
+        cs_field_t  *b_mflx_fld = cs_field_by_id(adv->bdy_field_id);
+        assert(b_mflx_fld != NULL);
 
-      const cs_real_t  *b_flux = b_mflx_fld->val;
-      const cs_real_t  *i_flux = fld->val;
+        const cs_real_t  *b_flux = b_mflx_fld->val;
+        const cs_real_t  *i_flux = fld->val;
 
-      /* Loop on cell faces */
-      for (short int f = 0; f < cm->n_fc; f++) {
+        /* Loop on cell faces */
+        for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  f_id = cm->f_ids[f];
-        if (cm->f_ids[f] < cm->bface_shift) /* Interior face */
-          fluxes[f] = i_flux[f_id];
-        else
-          fluxes[f] = b_flux[f_id - cm->bface_shift];
+          const cs_lnum_t  f_id = cm->f_ids[f];
+          if (cm->f_ids[f] < cm->bface_shift) /* Interior face */
+            fluxes[f] = i_flux[f_id];
+          else
+            fluxes[f] = b_flux[f_id - cm->bface_shift];
 
-      } /* Loop on cell faces */
+        } /* Loop on cell faces */
+      }
+      break;
 
-    }
-    else
+    case CS_XDEF_BY_DOF_FUNCTION:
+      {
+        cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+        assert(cs_flag_test(cx->loc, cs_flag_primal_face));
+        cx->func(cm->n_fc, cm->f_ids, true, /* dense_output */
+                 cx->input,
+                 fluxes);
+      }
+      break;
+
+    default:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid type of definition", __func__);
+
+    } /* End of switch def->type */
 
   }
   else {
