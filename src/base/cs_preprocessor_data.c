@@ -346,14 +346,13 @@ _set_block_ranges(cs_mesh_t          *mesh,
 {
   int i;
 
-  int min_block_size = 0;
+  size_t min_block_size = 0;
   int rank_id = cs_glob_rank_id;
   int n_ranks = cs_glob_n_ranks;
 
 #if defined(HAVE_MPI)
-  int block_rank_step = 1;
-  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
-  mb->min_rank_step = block_rank_step;
+  mb->min_rank_step = 1;
+  min_block_size = cs_parall_get_min_coll_buf_size();
 #endif
 
   /* Always build per_face_range in case of periodicity */
@@ -1459,7 +1458,7 @@ _read_data(int                 file_id,
     MPI_Info           hints;
     MPI_Comm           block_comm, comm;
     cs_file_get_default_access(CS_FILE_MODE_READ, &method, &hints);
-    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
     pp_in = cs_io_initialize(f->filename,
                              "Face-based mesh definition, R0",

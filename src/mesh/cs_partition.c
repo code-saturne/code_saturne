@@ -2408,7 +2408,7 @@ _write_output(cs_gnum_t  n_g_cells,
     MPI_Info  hints;
     MPI_Comm  block_comm, comm;
     cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
     fh = cs_io_initialize(filename,
                           magic_string,
@@ -2526,7 +2526,7 @@ _read_cell_rank(cs_mesh_t          *mesh,
     MPI_Info           hints;
     MPI_Comm           block_comm, comm;
     cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
     rank_pp_in = cs_io_initialize(file_name,
                                   magic_string,

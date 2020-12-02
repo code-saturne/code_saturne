@@ -1464,7 +1464,7 @@ _write_matrix_g(const cs_matrix_t  *m,
 
   n_glob_ents = fvm_io_num_get_global_count(io_num);
 
-  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
+  cs_file_get_default_comm(&block_rank_step, NULL, NULL);
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
@@ -1672,7 +1672,7 @@ _write_vector_g(cs_lnum_t         n_elts,
   for (ii = 0; ii < n_elts; ii++)
     g_elt_num[ii] = ii + coo_shift + 1;
 
-  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
+  cs_file_get_default_comm(&block_rank_step, NULL, NULL);
 
   /* Redistribution structures */
 

@@ -97,6 +97,10 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- For parallel IO, allow ranks stepping at the `cs_file` level so as to
+  allow using rank steps > 1 with all blocks, reducing the overhead
+  of using fewer and larger blocks.
+
 - In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
 
 - Add AmgX library support for linear system resolution on NVIDIA GPU's.

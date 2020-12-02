@@ -4191,7 +4191,7 @@ fvm_to_med_init_writer(const char                   *name,
 
   int min_rank_step = 1;
   MPI_Comm w_block_comm, w_comm;
-  cs_file_get_default_comm(&min_rank_step, NULL,
+  cs_file_get_default_comm(&min_rank_step,
                            &w_block_comm, &w_comm);
 
   if (min_rank_step < writer->min_rank_step) {

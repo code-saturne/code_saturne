@@ -540,16 +540,9 @@ cs_file_set_default_access(cs_file_mode_t    mode,
  * guaranteed to be empty for block reads and writes with files opened using
  * this default.
  *
- * A minimum block size target may also be used, so as to limit the number
- * of active blocks to a value proportional to the data size (limiting
- * latency issues for small data sets, while not requiring too much local
- * memory).
- *
  * parameters:
  *   block_rank_step --> MPI rank stepping between non-empty distributed blocks,
  *                       or NULL
- *   block_min_size  --> minimum block size target for non-empty distributed
- *                       blocks, or NULL
  *   block_comm      --> Handle to MPI communicator used for distributed
  *                       file block access, or NULL
  *   comm            --> Handle to main MPI communicator, or NULL
@@ -557,7 +550,6 @@ cs_file_set_default_access(cs_file_mode_t    mode,
 
 void
 cs_file_get_default_comm(int       *block_rank_step,
-                         int       *block_min_size,
                          MPI_Comm  *block_comm,
                          MPI_Comm  *comm);
 
@@ -570,26 +562,18 @@ cs_file_get_default_comm(int       *block_rank_step,
  * guaranteed to be empty for block reads and writes with files opened using
  * this default.
  *
- * A minimum block size target may also be used, so as to limit the number
- * of active blocks to a value proportional to the data size (limiting
- * latency issues for small data sets, while not requiring too much local
- * memory).
- *
  * For each argument, an "out of range" value may be used to avoid modifying
  * the previous default for that argument.
  *
  * parameters:
  *   block_rank_step <-- MPI rank stepping between non-empty blocks for
  *                       file block reads and writes (not set if <= 0)
- *   block_min_size  <-- minimum block size target for non-empty distributed
- *                       blocks (not set if < 1)
  *   comm            <-- handle to main MPI communicator
  *                       (not set if MPI_COMM_SELF)
  *----------------------------------------------------------------------------*/
 
 void
 cs_file_set_default_comm(int       block_rank_step,
-                         int       block_min_size,
                          MPI_Comm  comm);
 
 /*----------------------------------------------------------------------------

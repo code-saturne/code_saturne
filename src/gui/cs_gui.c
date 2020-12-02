@@ -3841,13 +3841,15 @@ cs_gui_parallel_io(void)
   cs_gui_node_get_child_int(tn_bio, "min_block_size", &block_size);
 
   if (rank_step > 0 || block_size > -1) {
-    int def_rank_step, def_block_size;
-    cs_file_get_default_comm(&def_rank_step, &def_block_size, NULL, NULL);
+    int def_rank_step;
+    cs_file_get_default_comm(&def_rank_step, NULL, NULL);
+    size_t def_block_size = cs_parall_get_min_coll_buf_size();
     if (rank_step < 1)
       rank_step = def_rank_step;
     if (block_size < 0)
       block_size = def_block_size;
-    cs_file_set_default_comm(rank_step, block_size, cs_glob_mpi_comm);
+    cs_file_set_default_comm(rank_step, cs_glob_mpi_comm);
+    cs_parall_set_min_coll_buf_size(block_size);
   }
 
 #endif /* defined(HAVE_MPI) */

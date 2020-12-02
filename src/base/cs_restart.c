@@ -346,15 +346,13 @@ _add_file(cs_restart_t  *r)
 
 #if defined(HAVE_MPI)
   {
-    int                block_rank_step, min_block_size;
     MPI_Info           hints;
     MPI_Comm           block_comm, comm;
 
-    cs_file_get_default_comm(&block_rank_step, &min_block_size,
-                             &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
 
-    r->rank_step = block_rank_step;
-    r->min_block_size = min_block_size;
+    r->rank_step = 1;
+    r->min_block_size = cs_parall_get_min_coll_buf_size();
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
 
     if (r->mode == CS_RESTART_MODE_READ) {
