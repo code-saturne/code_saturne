@@ -1442,6 +1442,8 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
 
   /* Clear previous builder data if present (periodicity done separately) */
 
+  mb->have_cell_rank = false;
+
   BFT_FREE(mb->face_cells);
   BFT_FREE(mb->face_vertices_idx);
   BFT_FREE(mb->face_vertices);

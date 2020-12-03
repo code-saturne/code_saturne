@@ -1819,33 +1819,37 @@ _scotch_cell_cells(size_t        n_cells,
   start_id = _cell_idx[0]; /* also = 0 */
   end_id = 0;
 
-  for (i = 0; i < n_cells; i++) {
+  if (_cell_neighbors != NULL) {
 
-    SCOTCH_Num j, n_prev;
+    for (i = 0; i < n_cells; i++) {
 
-    end_id = _cell_idx[i+1];
+      SCOTCH_Num j, n_prev;
 
-    _scotch_sort_shell(start_id, end_id, _cell_neighbors);
+      end_id = _cell_idx[i+1];
 
-    n_prev = _cell_neighbors[start_id];
-    _cell_neighbors[c_id] = n_prev;
-    c_id += 1;
+      _scotch_sort_shell(start_id, end_id, _cell_neighbors);
 
-    for (j = start_id + 1; j < end_id; j++) {
-      if (_cell_neighbors[j] != n_prev) {
-        n_prev = _cell_neighbors[j];
-        _cell_neighbors[c_id] = n_prev;
-        c_id += 1;
+      n_prev = _cell_neighbors[start_id];
+      _cell_neighbors[c_id] = n_prev;
+      c_id += 1;
+
+      for (j = start_id + 1; j < end_id; j++) {
+        if (_cell_neighbors[j] != n_prev) {
+          n_prev = _cell_neighbors[j];
+          _cell_neighbors[c_id] = n_prev;
+          c_id += 1;
+        }
       }
+
+      start_id = end_id;
+      _cell_idx[i+1] = c_id;
+
     }
 
-    start_id = end_id;
-    _cell_idx[i+1] = c_id;
+    if (c_id < end_id)
+      BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   }
-
-  if (c_id < end_id)
-    BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   /* Set return values */
 
@@ -3122,10 +3126,7 @@ cs_partition(cs_mesh_t             *mesh,
     if (   stage != CS_PARTITION_MAIN
         || cs_partition_get_preprocess() == false) {
       _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
-      /* If cell_rank array is NULL, repartitionning is needed, hence
-       * no return.
-       */
-      if (mb->have_cell_rank && mb->cell_rank != NULL)
+      if (mb->have_cell_rank)
         return;
     }
   }
