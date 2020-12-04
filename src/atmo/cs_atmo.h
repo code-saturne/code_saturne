@@ -301,6 +301,30 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function computes hydrostatic profiles of density and pressure
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \divs \left( \grad \varia \right)
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
+ *  is the potential temperature.
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *  \f]
+ *  and Neumann elsewhere.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_hydrostatic_profiles_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function set the file name of the meteo file.
  *
  * \param[in] file_name  name of the file.
