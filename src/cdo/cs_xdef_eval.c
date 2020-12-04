@@ -307,13 +307,10 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL && tfc != NULL);
+  assert(tfc != NULL);
 
   /* Evaluate the quantity only once */
   cs_real_t  _eval;
@@ -368,13 +365,10 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL && tfc != NULL);
+  assert(tfc != NULL);
 
   /* Evaluate the quantity */
   cs_real_t  _eval[3];
@@ -432,13 +426,10 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL || tfc != NULL);
+  assert(tfc != NULL);
 
   /* Evaluate the quantity */
   cs_real_t  _eval[9];
@@ -494,15 +485,12 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  if (n_elts == 0)
-    return;
-
   const cs_real_t *cell_centers = (quant != NULL) ? quant->cell_centers : NULL;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL || cx != NULL);
+  assert(cx != NULL);
 
   /* Evaluate the function for this time at the cell center */
   cx->func(time_eval, n_elts, elt_ids, cell_centers, dense_output, cx->input,
@@ -542,15 +530,12 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  if (n_elts == 0)
-    return;
-
   const cs_real_t *bf_centers = (quant != NULL) ? quant->b_face_center : NULL;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL || cx != NULL);
+  assert(cx != NULL);
 
   /* Evaluate the function for this time at the border face center */
   cx->func(time_eval, n_elts, elt_ids, bf_centers, dense_output, cx->input,
@@ -647,10 +632,10 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
+
+  /* Sanity check */
+  assert(cx != NULL);
 
   /* Values of the function are defined at the cells */
   if ( (cx->loc & cs_flag_primal_cell) == cs_flag_primal_cell )
@@ -695,10 +680,10 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
+
+  /* Sanity check */
+  assert(cx != NULL);
 
   /* Values of the function are defined at vertices */
   if ( (cx->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx )
@@ -743,10 +728,10 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(time_eval);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
+
+  /* Sanity check */
+  assert(cx != NULL);
 
   /* Values of the function are defined at the boundary faces */
   if (cs_flag_test(cx->loc, cs_flag_primal_face | CS_FLAG_BORDER))
@@ -1223,13 +1208,10 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 {
   CS_UNUSED(mesh);
 
-  if (n_elts == 0)
-    return;
-
   cs_xdef_analytic_context_t *cx = (cs_xdef_analytic_context_t *)context;
 
   /* Sanity checks */
-  assert(eval != NULL || cx != NULL);
+  assert(cx != NULL);
   assert(connect != NULL && quant != NULL);
 
   cs_quadrature_tria_integral_t
