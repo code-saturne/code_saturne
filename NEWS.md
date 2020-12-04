@@ -72,8 +72,8 @@ Bug fixes:
 
 Numerics and physical modelling:
 
-- Amtospheric module: Major modification the scheme for Solar radiation done the PhD of
-  L. Asmar.
+- Amtospheric module: Major modification the scheme for Solar radiation based
+  on the PhD of L. Asmar.
 
   In a previous version of the 1D solar radiation scheme of Code_Saturne, the
   effect of aerosols has been introduced by making the approximation that
