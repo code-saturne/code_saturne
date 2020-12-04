@@ -1182,23 +1182,20 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
    * flux. In this case, a zero row may appear leading to the divergence of
    * linear solver. To circumvent this issue, one set the boundary face value
    * to the cell value. */
+  assert(cs_equation_param_has_diffusion(eqp) == false);
 
-  if (cs_equation_param_has_diffusion(eqp) == false) {
+  for (int f = 0; f < cm->n_fc; f++) {
 
-    for (int f = 0; f < cm->n_fc; f++) {
+    if (fabs(cb->adv_fluxes[f]) < cs_math_zero_threshold) {
 
-      if (fabs(cb->adv_fluxes[f]) < cs_math_zero_threshold) {
+      cs_real_t  *f_row = adv->val + f*adv->n_rows;
 
-        cs_real_t  *f_row = adv->val + f*adv->n_rows;
+      f_row[cm->n_fc] += -1;
+      f_row[f]        +=  1;
 
-        f_row[cm->n_fc] += -1;
-        f_row[f]        +=  1;
+    }
 
-      }
-
-    } /* Loop on cell faces */
-
-  } /* One may have to tackle an issue */
+  } /* Loop on cell faces */
 
   /* Multiply by a scaling property if needed */
   if (eqp->adv_scaling_property != NULL) {

@@ -638,7 +638,7 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
   assert(cx != NULL);
 
   /* Values of the function are defined at the cells */
-  if ( (cx->loc & cs_flag_primal_cell) == cs_flag_primal_cell )
+  if (cs_flag_test(cx->loc, cs_flag_primal_cell))
     cx->func(n_elts, elt_ids, dense_output, cx->input,
              eval);
   else
@@ -686,7 +686,7 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
   assert(cx != NULL);
 
   /* Values of the function are defined at vertices */
-  if ( (cx->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx )
+  if (cs_flag_test(cx->loc, cs_flag_primal_vtx))
     cx->func(n_elts, elt_ids, dense_output, cx->input,
              eval);
   else
@@ -782,7 +782,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
   assert(eval != NULL || cx != NULL);
   assert(cx->stride == 1);
 
-  if ((cx->loc & cs_flag_primal_cell) == cs_flag_primal_cell) {
+  if (cs_flag_test(cx->loc, cs_flag_primal_cell)) {
 
     if (elt_ids != NULL && !dense_output) {
 
@@ -806,7 +806,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
     }
 
   }
-  else if ((cx->loc & cs_flag_primal_vtx) == cs_flag_primal_vtx) {
+  else if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
 
     assert(connect != NULL && quant != NULL);
     if (elt_ids != NULL && !dense_output) {
