@@ -588,10 +588,14 @@ typedef struct {
    *
    *  \var adv_strategy
    *  Strategy to handle the advection term
+   *
+   *  \var adv_extrapol
+   *  Extrapolation used to estimate the advection field
    */
   cs_param_advection_form_t      adv_form;
   cs_param_advection_scheme_t    adv_scheme;
   cs_param_advection_strategy_t  adv_strategy;
+  cs_param_advection_extrapol_t  adv_extrapol;
 
   /*! \var qtype
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
@@ -765,6 +769,10 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of the
  *         Navier-Stokes system
  *
+ * \var CS_NSKEY_ADVECTION_EXTRAPOL
+ * Set the extrapolation to use for the estimation of the advection field
+ * (cf. \ref cs_param_advection_extrapol_t))
+ *
  * \var CS_NSKEY_ADVECTION_FORMULATION
  * Set the type of formulation for the advection term, for example in the Oseen
  * problem. (cf. \ref cs_param_advection_form_t)
@@ -868,6 +876,7 @@ typedef struct {
 
 typedef enum {
 
+  CS_NSKEY_ADVECTION_EXTRAPOL,
   CS_NSKEY_ADVECTION_FORMULATION,
   CS_NSKEY_ADVECTION_SCHEME,
   CS_NSKEY_ADVECTION_STRATEGY,

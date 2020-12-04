@@ -359,29 +359,18 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
   if (cs_equation_param_has_convection(eqp) &&
       ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
                                                        * ============== */
+    /* Open hook: Compute the advection flux for the numerical scheme and store
+       the advection fluxes across primal faces */
+    eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
     /* Define the local advection matrix and store the advection fluxes across
        primal faces (Boundary conditions are treated at this stage since there
        are always weakly enforced) */
-    eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
+    eqc->advection_build(eqp, cm, csys, eqc->advection_scheme, cb);
 
-    /* Add it to the local system */
-    if (eqp->adv_scaling_property == NULL)
-      cs_sdm_add(csys->mat, cb->loc);
-
-    else {
-
-      if (cs_property_is_uniform(eqp->adv_scaling_property))
-        cs_sdm_add_mult(csys->mat,
-                        eqp->adv_scaling_property->ref_value, cb->loc);
-      else {
-        cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                      eqp->adv_scaling_property,
-                                                      cb->t_pty_eval);
-        cs_sdm_add_mult(csys->mat, scaling, cb->loc);
-      }
-
-    }
+    /* Close hook: Modify if needed the computed advection matrix and update
+       the local system */
+    eqc->advection_close(eqp, cm, csys, cb, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2528,7 +2517,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
            since there are always weakly enforced) */
 
         /* TODO: Boundary condition and csys --> set to NULL up to now */
-        eqc->advection_build(eqp, cm, NULL, eqc->advection_func, cb);
+        eqc->advection_build(eqp, cm, NULL, eqc->advection_scheme, cb);
 
         cs_real_t  *res = cb->values;
         memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));

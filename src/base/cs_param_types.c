@@ -97,14 +97,6 @@ cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
   };
 
 static const char
-cs_param_adv_strategy_name
-[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
-  { N_("Fully implicit"),
-    N_("Linearized (implicit)"),
-    N_("Explicit with a 2nd order Adams-Bashforth"),
-  };
-
-static const char
 cs_param_adv_form_name[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
   { N_("Conservative"),
     N_("Non-Conservative"),
@@ -120,6 +112,22 @@ cs_param_adv_scheme_name[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
     N_("Upwind with the Samarskii weight function "),
     N_("Upwind with the Scharfetter-Gummel weight function"),
     N_("Upwind"),
+  };
+
+static const char
+cs_param_adv_strategy_name
+[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+  { N_("Fully implicit"),
+    N_("Linearized (implicit)"),
+    N_("Explicit"),
+  };
+
+static const char
+cs_param_adv_extrapol_name
+[CS_PARAM_N_ADVECTION_EXTRAPOLATIONS][CS_BASE_STRING_LEN] =
+  { N_("None"),
+    N_("2nd order Taylor expansion"),
+    N_("2nd order Adams-Bashforth technique"),
   };
 
 static const char
@@ -327,8 +335,33 @@ cs_param_get_advection_strategy_name(cs_param_advection_strategy_t   adv_stra)
   switch (adv_stra) {
   case CS_PARAM_ADVECTION_IMPLICIT_FULL:
   case CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED:
-  case CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH:
+  case CS_PARAM_ADVECTION_EXPLICIT:
     return cs_param_adv_strategy_name[adv_stra];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the label associated to the extrapolation used for the advection
+ *         field
+ *
+ * \param[in] adv_stra      type of extrapolation for the advection field
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_extrapol_name(cs_param_advection_extrapol_t   extrapol)
+{
+  switch (extrapol) {
+  case CS_PARAM_ADVECTION_EXTRAPOL_NONE:
+  case CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2:
+  case CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2:
+    return cs_param_adv_extrapol_name[extrapol];
 
   default:
     return NULL;

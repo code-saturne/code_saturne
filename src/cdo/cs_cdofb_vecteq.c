@@ -571,26 +571,16 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
       ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
                                                        * ============== */
 
-    /* Define the local advection matrix and store the advection
-       fluxes across primal faces */
-    eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
+    /* Open hook: Compute the advection flux for the numerical scheme and store
+       the advection fluxes across primal faces */
+    eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
-    /* Add the local advection operator to the local system */
-    const cs_real_t  *sval = cb->loc->val;
-    for (int bi = 0; bi < cm->n_fc + 1; bi++) {
-      for (int bj = 0; bj < cm->n_fc + 1; bj++) {
+    /* Define the local advection matrix*/
+    eqc->advection_build(eqp, cm, csys, eqc->advection_scheme, cb);
 
-        /* Retrieve the 3x3 matrix */
-        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
-        assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
-
-        const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
-        bij->val[0] += _val;
-        bij->val[4] += _val;
-        bij->val[8] += _val;
-
-      }
-    }
+    /* Close hook: Modify if needed the computed advection matrix and update
+       the local system */
+    eqc->advection_close(eqp, cm, csys, cb, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))

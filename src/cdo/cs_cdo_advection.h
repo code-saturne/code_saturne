@@ -50,6 +50,30 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* ---------------------------------------------------------------------------
+ * Function pointers for CDO face-based schemes
+ * -------------------------------------------------------------------------- */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform preprocessing such as the computation of the advection flux
+ *         at the expected location in order to be able to build the advection
+ *
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys     pointer to a cs_cell_sys_t structure
+ * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] cb       pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdofb_adv_open_hook_t)(const cs_equation_param_t   *eqp,
+                           const cs_cell_mesh_t        *cm,
+                           const cs_cell_sys_t         *csys,
+                           void                        *input,
+                           cs_cell_builder_t           *cb);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Define the local convection operator in CDO-Fb schemes. Case of an
@@ -65,11 +89,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdofb_advection_t)(int                        dim,
-                       const cs_cell_mesh_t      *cm,
-                       const cs_cell_sys_t       *csys,
-                       cs_cell_builder_t         *cb,
-                       cs_sdm_t                  *adv);
+(cs_cdofb_adv_scheme_t)(int                        dim,
+                        const cs_cell_mesh_t      *cm,
+                        const cs_cell_sys_t       *csys,
+                        cs_cell_builder_t         *cb,
+                        cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -78,22 +102,46 @@ typedef void
  *
  *          This pointer of function manages how is build the advection term
  *          in a cell and it relies on the lower-level function
- *          \ref cs_cdofb_advection_t
+ *          \ref cs_cdofb_adv_scheme_t
  *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      csys        pointer to a cs_cell_sys_t structure
- * \param[in]      build_func  pointer to the function building the system
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      scheme_func  function pointer to the scheme definition
+ * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdofb_advection_build_t)(const cs_equation_param_t   *eqp,
-                             const cs_cell_mesh_t        *cm,
-                             const cs_cell_sys_t         *csys,
-                             cs_cdofb_advection_t        *build_func,
-                             cs_cell_builder_t           *cb);
+(cs_cdofb_adv_build_t)(const cs_equation_param_t   *eqp,
+                       const cs_cell_mesh_t        *cm,
+                       const cs_cell_sys_t         *csys,
+                       cs_cdofb_adv_scheme_t       *scheme_func,
+                       cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Operation done after the matrix related to the advection term has
+ *          been defined.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdofb_adv_close_hook_t)(const cs_equation_param_t   *eqp,
+                            const cs_cell_mesh_t        *cm,
+                            cs_cell_sys_t               *csys,
+                            cs_cell_builder_t           *cb,
+                            cs_sdm_t                    *adv);
+
+/* ---------------------------------------------------------------------------
+ * Function pointers for CDO vertex-based schemes
+ * -------------------------------------------------------------------------- */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -170,6 +218,116 @@ cs_cdo_advection_get_cip_coef(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Perform preprocessing such as the computation of the advection flux
+ *         at the expected location in order to be able to build the advection
+ *         Follow the prototype given by cs_cdofb_adv_open_hook_t
+ *         Default case.
+ *
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys     pointer to a cs_cell_sys_t structure
+ * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] cb       pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_open_std(const cs_equation_param_t   *eqp,
+                            const cs_cell_mesh_t        *cm,
+                            const cs_cell_sys_t         *csys,
+                            void                        *input,
+                            cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Default scalar-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_std_scal(const cs_equation_param_t   *eqp,
+                                  const cs_cell_mesh_t        *cm,
+                                  cs_cell_sys_t               *csys,
+                                  cs_cell_builder_t           *cb,
+                                  cs_sdm_t                    *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Default vector-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_std_vect(const cs_equation_param_t   *eqp,
+                                  const cs_cell_mesh_t        *cm,
+                                  cs_cell_sys_t               *csys,
+                                  cs_cell_builder_t           *cb,
+                                  cs_sdm_t                    *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Explicit treatment without extrapolation for scalar-valued DoFs.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
+                                       const cs_cell_mesh_t        *cm,
+                                       cs_cell_sys_t               *csys,
+                                       cs_cell_builder_t           *cb,
+                                       cs_sdm_t                    *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Explicit treatment without extrapolation for vector-valued DoFs.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
+                                       const cs_cell_mesh_t        *cm,
+                                       cs_cell_sys_t               *csys,
+                                       cs_cell_builder_t           *cb,
+                                       cs_sdm_t                    *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build the cellwise advection operator for CDO-Fb schemes
  *          The local matrix related to this operator is stored in cb->loc
  *
@@ -190,7 +348,7 @@ void
 cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
                                       const cs_cell_mesh_t        *cm,
                                       const cs_cell_sys_t         *csys,
-                                      cs_cdofb_advection_t        *build_func,
+                                      cs_cdofb_adv_scheme_t       *build_func,
                                       cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
@@ -213,7 +371,7 @@ void
 cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
                          const cs_cell_mesh_t        *cm,
                          const cs_cell_sys_t         *csys,
-                         cs_cdofb_advection_t        *build_func,
+                         cs_cdofb_adv_scheme_t       *build_func,
                          cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
@@ -238,11 +396,11 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwnoc(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv);
+cs_cdofb_advection_upwnoc(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -266,11 +424,11 @@ cs_cdo_advection_fb_upwnoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwcsv(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv);
+cs_cdofb_advection_upwcsv(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -294,11 +452,11 @@ cs_cdo_advection_fb_upwcsv(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cennoc(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv);
+cs_cdofb_advection_cennoc(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -322,11 +480,11 @@ cs_cdo_advection_fb_cennoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cencsv(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv);
+cs_cdofb_advection_cencsv(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!

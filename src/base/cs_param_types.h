@@ -331,21 +331,55 @@ typedef enum {
  * this term is simplified. Namely, one assumes a linearized advection. This is
  * equivalent to a one-step Picard technique.
  *
- * \var CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH
+ * \var CS_PARAM_ADVECTION_EXPLICIT
  * The advection term is treated explicitly. One keeps the non-linearity
- * stemming from this term at the right hand-side. A second-order
- * Adams-Bashforth technique is used.
+ * stemming from this term at the right hand-side. An extrapolation can be
+ * used for the advection field (cf. \ref cs_param_advection_extrapol_t)
  */
 
 typedef enum {
 
   CS_PARAM_ADVECTION_IMPLICIT_FULL,
   CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED,
-  CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH,
+  CS_PARAM_ADVECTION_EXPLICIT,
 
   CS_PARAM_N_ADVECTION_STRATEGIES
 
 } cs_param_advection_strategy_t;
+
+/*! \enum cs_param_advection_extrapol_t
+ *  \brief Choice of how to extrapolate the advection field in the advection
+ *         term
+ *
+ * \var CS_PARAM_ADVECTION_EXTRAPOL_NONE
+ * The advection field is not extrapolated. The last known advection field
+ * is considered \phi^n if one computes u^(n+1) knowing u^n. In case of a
+ * a non-linearity, this is \phi^(n+1,k) if one computes u^(n+1,k+1) knowing
+ * u^(n+1,k) and u^n. The initial step is such that u^(n+1,0) = u^n
+ * This is a good choice with a first-order forward or backward time scheme.
+ *
+ * \var CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2
+ * The advection field is extrapolated with a 2nd order Taylor expansion
+ * yielding \phi^extrap = 2 \phi^n - \phi^(n-1)
+ * This corresponds to an estimation of \phi at n+1. Thus, this is a good
+ * choice when associated with a BDF2 time scheme.
+ *
+ * \var CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2
+ * The advection field is extrapolated with a 2nd order Adams-Bashforth
+ * technique yielding \phi^extrap = 3/2 \phi^n - 1/2 \phi^(n-1)
+ * This corresponds to an estimation of \phi at n+1/2. Thus, this is a good
+ * choice when associated with a Crank-Nilcolson time scheme.
+ */
+
+typedef enum {
+
+  CS_PARAM_ADVECTION_EXTRAPOL_NONE,
+  CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2,
+  CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2,
+
+  CS_PARAM_N_ADVECTION_EXTRAPOLATIONS
+
+} cs_param_advection_extrapol_t;
 
 /*!
  * @}
@@ -822,6 +856,20 @@ cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme);
 
 const char *
 cs_param_get_advection_strategy_name(cs_param_advection_strategy_t  adv_stra);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the label associated to the extrapolation used for the advection
+ *         field
+ *
+ * \param[in] adv_stra      type of extrapolation for the advection field
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_extrapol_name(cs_param_advection_extrapol_t   extrapol);
 
 /*----------------------------------------------------------------------------*/
 /*!

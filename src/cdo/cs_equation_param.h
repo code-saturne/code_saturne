@@ -622,16 +622,20 @@ typedef struct {
    * @name Numerical settings for the advection term
    * @{
    *
-   * \var adv_strategy
-   * Strategy used to handle the advection term (please refer to \ref
-   * cs_param_advection_strategy_t)
-   *
    * \var adv_formulation
    * Type of formulation (conservative, non-conservative...) for the advective
    * term
    *
    * \var adv_scheme
    * Numerical scheme used for the discretization of the advection term
+   *
+   * \var adv_strategy
+   * Strategy used to handle the advection term (please refer to \ref
+   * cs_param_advection_strategy_t)
+   *
+   * \var adv_extrapol
+   * Extrapolation used to estimate the advection field (please refer to \ref
+   * cs_param_advection_extrapol_t)
    *
    * \var upwind_portion
    * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
@@ -651,12 +655,13 @@ typedef struct {
    * for instance or in the solidification module.
    */
 
-  cs_param_advection_strategy_t  adv_strategy;
-  cs_param_advection_form_t      adv_formulation;
-  cs_param_advection_scheme_t    adv_scheme;
-  cs_real_t                      upwind_portion;
-  cs_adv_field_t                *adv_field;
-  cs_property_t                 *adv_scaling_property;
+  cs_param_advection_form_t        adv_formulation;
+  cs_param_advection_scheme_t      adv_scheme;
+  cs_param_advection_strategy_t    adv_strategy;
+  cs_param_advection_extrapol_t    adv_extrapol;
+  cs_real_t                        upwind_portion;
+  cs_adv_field_t                  *adv_field;
+  cs_property_t                   *adv_scaling_property;
 
   /*!
    * @}
@@ -803,6 +808,14 @@ typedef struct {
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
  *
+ * \var CS_EQKEY_ADV_EXTRAPOL
+ * Choice in the way to extrapolate the advection field when building the
+ * advection operator
+ * - "none" (default)
+ * - "taylor"
+ * - "adams_bashforth"
+ * Please refer to \ref cs_param_advection_extrapol_t for more details.
+ *
  * \var CS_EQKEY_ADV_FORMULATION
  * Kind of formulation of the advective term. Available choices are:
  * - "conservative"
@@ -831,7 +844,7 @@ typedef struct {
  * Strategy used to handle the advection term
  * - "fully_implicit" or "implicit" (default choice)
  * - "linearized" or "implicit_linear"
- * - "explicit" or "adams_bashforth"
+ * - "explicit"
  * There is a difference between the two first choices when the advection term
  * induces a non-linearity. In this situation, the first choice implies that a
  * non-linear algorithm has to be used.
@@ -1058,6 +1071,7 @@ typedef struct {
 
 typedef enum {
 
+  CS_EQKEY_ADV_EXTRAPOL,
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
   CS_EQKEY_ADV_STRATEGY,
@@ -1269,6 +1283,32 @@ cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_FORCE_VALUES)
     return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation induces an implicit treatment
+ *         of the advection term
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_implicit_advection(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_CONVECTION) {
+    if (eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL ||
+        eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED)
+      return true;
+    else
+      return false;
+  }
   else
     return false;
 }

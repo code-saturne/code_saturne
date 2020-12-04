@@ -130,7 +130,7 @@ _handle_non_linearities(cs_navsto_param_t    *nsp)
       return true;
     else {
       assert(nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
-             nsp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH);
+             nsp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
       return false;
     }
     break;

@@ -1136,6 +1136,249 @@ cs_cdo_advection_get_cip_coef(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Perform preprocessing such as the computation of the advection flux
+ *         at the expected location in order to be able to build the advection
+ *         Follow the prototype given by cs_cdofb_adv_open_hook_t
+ *         Default case.
+ *
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys     pointer to a cs_cell_sys_t structure
+ * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] cb       pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_open_std(const cs_equation_param_t   *eqp,
+                            const cs_cell_mesh_t        *cm,
+                            const cs_cell_sys_t         *csys,
+                            void                        *input,
+                            cs_cell_builder_t           *cb)
+{
+  CS_UNUSED(csys);
+  CS_UNUSED(input);
+
+  assert(eqp->adv_extrapol == CS_PARAM_ADVECTION_EXTRAPOL_NONE);
+
+  /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
+  cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
+                                  cb->adv_fluxes);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Default scalar-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_std_scal(const cs_equation_param_t   *eqp,
+                                  const cs_cell_mesh_t        *cm,
+                                  cs_cell_sys_t               *csys,
+                                  cs_cell_builder_t           *cb,
+                                  cs_sdm_t                    *adv)
+{
+  /* Multiply by a scaling property if needed before adding it to the local
+     system */
+  if (eqp->adv_scaling_property == NULL)
+    cs_sdm_add(csys->mat, cb->loc);
+
+  else {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_add_mult(csys->mat,
+                      eqp->adv_scaling_property->ref_value, cb->loc);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_add_mult(csys->mat, scaling, cb->loc);
+    }
+
+  } /* adv_scaling_property != NULL */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Default vector-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_std_vect(const cs_equation_param_t   *eqp,
+                                  const cs_cell_mesh_t        *cm,
+                                  cs_cell_sys_t               *csys,
+                                  cs_cell_builder_t           *cb,
+                                  cs_sdm_t                    *adv)
+{
+  /* Multiply by a scaling property if needed */
+  if (eqp->adv_scaling_property != NULL) {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_scale(scaling, adv);
+    }
+
+  }
+
+  /* Add the local scalar-valued advection operator to the local vector-valued
+     system */
+  const cs_real_t  *sval = adv->val;
+  for (int bi = 0; bi < cm->n_fc + 1; bi++) {
+    for (int bj = 0; bj < cm->n_fc + 1; bj++) {
+
+      /* Retrieve the 3x3 matrix */
+      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+      const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
+      bij->val[0] += _val;
+      bij->val[4] += _val;
+      bij->val[8] += _val;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Explicit treatment without extrapolation for scalar-valued DoFs.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
+                                       const cs_cell_mesh_t        *cm,
+                                       cs_cell_sys_t               *csys,
+                                       cs_cell_builder_t           *cb,
+                                       cs_sdm_t                    *adv)
+{
+  /* Multiply by a scaling property if needed before adding it to the local
+     system */
+  if (eqp->adv_scaling_property == NULL)
+    cs_sdm_add(csys->mat, cb->loc);
+
+  else {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_add_mult(csys->mat,
+                      eqp->adv_scaling_property->ref_value, cb->loc);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_add_mult(csys->mat, scaling, cb->loc);
+    }
+
+  } /* adv_scaling_property != NULL */
+
+  /* Update the RHS: u_n is the previous time step.
+   * This is done before the static condensation. Thus, there is cell unknown
+   */
+  double  *adv_u_n = cb->values;
+
+  cs_sdm_matvec(adv, csys->val_n, adv_u_n);
+
+  /* Update the RHS (interlaced values) */
+  for (int i = 0; i < cm->n_fc + 1; i++)
+    csys->rhs[i] -= adv_u_n[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Operation done after the matrix related to the advection term has
+ *         been defined.
+ *         Follow the prototype given by cs_cdofb_adv_close_hook_t
+ *         Explicit treatment without extrapolation for vector-valued DoFs.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to the local advection matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
+                                       const cs_cell_mesh_t        *cm,
+                                       cs_cell_sys_t               *csys,
+                                       cs_cell_builder_t           *cb,
+                                       cs_sdm_t                    *adv)
+{
+  assert(eqp->dim == 3);
+
+  /* Multiply by a scaling property if needed */
+  if (eqp->adv_scaling_property != NULL) {
+
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
+    else {
+      cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                    eqp->adv_scaling_property,
+                                                    cb->t_pty_eval);
+      cs_sdm_scale(scaling, adv);
+    }
+
+  }
+
+  /* Update the RHS component by component: u_n is the previous time step.
+   * This is done before the static condensation. Thus, there is cell unknown
+   */
+  double  *u_n = cb->values;
+  double  *adv_u_n = cb->values + cm->n_fc + 1;
+
+  for (int k = 0; k < 3; k++) {
+
+    /* De-interlace the local variable in order to perform a matrix-vector product */
+    for (int i = 0; i < cm->n_fc + 1; i++)
+      u_n[i] = csys->val_n[3*i+k];
+
+    cs_sdm_matvec(adv, u_n, adv_u_n);
+
+    /* Update the RHS (interlaced values) */
+    for (int i = 0; i < cm->n_fc + 1; i++)
+      csys->rhs[3*i+k] -= adv_u_n[i];
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build the cellwise advection operator for CDO-Fb schemes
  *          The local matrix related to this operator is stored in cb->loc
  *
@@ -1156,7 +1399,7 @@ void
 cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
                                       const cs_cell_mesh_t        *cm,
                                       const cs_cell_sys_t         *csys,
-                                      cs_cdofb_advection_t        *build_func,
+                                      cs_cdofb_adv_scheme_t       *build_func,
                                       cs_cell_builder_t           *cb)
 {
   /* Sanity checks */
@@ -1169,10 +1412,6 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
 
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
     return;         /* Nothing to do. No advection in the current cell volume */
-
-  /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
-  cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
-                                  cb->adv_fluxes);
 
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
@@ -1196,20 +1435,6 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
     }
 
   } /* Loop on cell faces */
-
-  /* Multiply by a scaling property if needed */
-  if (eqp->adv_scaling_property != NULL) {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_scale(scaling, adv);
-    }
-
-  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -1244,7 +1469,7 @@ void
 cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
                          const cs_cell_mesh_t        *cm,
                          const cs_cell_sys_t         *csys,
-                         cs_cdofb_advection_t        *build_func,
+                         cs_cdofb_adv_scheme_t       *build_func,
                          cs_cell_builder_t           *cb)
 {
   /* Sanity checks */
@@ -1265,20 +1490,6 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
   build_func(eqp->dim, cm, csys, cb, adv);
-
-  /* Multiply by a scaling property if needed */
-  if (eqp->adv_scaling_property != NULL) {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_scale(scaling, adv);
-    }
-
-  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -1315,11 +1526,11 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwnoc(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv)
+cs_cdofb_advection_upwnoc(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv)
 {
   const cs_real_t  *fluxes = cb->adv_fluxes;
 
@@ -1408,11 +1619,11 @@ cs_cdo_advection_fb_upwnoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_upwcsv(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv)
+cs_cdofb_advection_upwcsv(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv)
 {
   const cs_real_t  *fluxes = cb->adv_fluxes;
 
@@ -1514,11 +1725,11 @@ cs_cdo_advection_fb_upwcsv(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cennoc(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv)
+cs_cdofb_advection_cennoc(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1581,11 +1792,11 @@ cs_cdo_advection_fb_cennoc(int                        dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_fb_cencsv(int                        dim,
-                           const cs_cell_mesh_t      *cm,
-                           const cs_cell_sys_t       *csys,
-                           cs_cell_builder_t         *cb,
-                           cs_sdm_t                  *adv)
+cs_cdofb_advection_cencsv(int                        dim,
+                          const cs_cell_mesh_t      *cm,
+                          const cs_cell_sys_t       *csys,
+                          cs_cell_builder_t         *cb,
+                          cs_sdm_t                  *adv)
 {
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
   const cs_real_t  *fluxes = cb->adv_fluxes;

@@ -137,10 +137,10 @@ _quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
   };
 
 static const char
-_adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+_adv_extrap_key[CS_PARAM_N_ADVECTION_EXTRAPOLATIONS][CS_BASE_STRING_LEN] =
   {
-    "fully_implicit",
-    "linearized",
+    "none",
+    "taylor",
     "adams_bashforth"
   };
 
@@ -162,6 +162,14 @@ _adv_scheme_key[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
     "samarskii",
     "sg",
     "upwind"
+  };
+
+static const char
+_adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+  {
+    "fully_implicit",
+    "linearized",
+    "explicit"
   };
 
 /*============================================================================
@@ -336,6 +344,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   param->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   param->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
+  param->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
 
   /* Forcing steady state in order to avoid inconsistencies */
   if (model_flag & CS_NAVSTO_MODEL_STEADY)
@@ -556,6 +565,21 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   switch(key) {
 
+  case CS_NSKEY_ADVECTION_EXTRAPOL:
+    if (strcmp(val, "none") == 0)
+      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
+    else if (strcmp(val, "taylor") == 0)
+      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
+    else if (strcmp(val, "adams_bashforth") == 0)
+      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key"
+                  " CS_NSKEY_ADVECTION_EXTRAPOL\n"), __func__, _val);
+    }
+    break;
+
   case CS_NSKEY_ADVECTION_FORMULATION:
     if (strcmp(val, "conservative") == 0)
       nsp->adv_form = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -613,9 +637,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "implicit_linear") == 0 ||
              strcmp(val, "linearized") == 0)
       nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
-    else if (strcmp(val, "explicit") == 0 ||
-             strcmp(val, "adams_bashforth") == 0)
-      nsp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
+    else if (strcmp(val, "explicit") == 0)
+      nsp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -948,6 +971,9 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
                      CS_NAVSTO_MODEL_OSEEN)) > 0) {
 
     /* If different from default value */
+    const char *extrap_key = _adv_extrap_key[nsp->adv_extrapol];
+    cs_equation_set_param(eqp, CS_EQKEY_ADV_EXTRAPOL, extrap_key);
+
     const char *stra_key = _adv_strategy_key[nsp->adv_strategy];
     cs_equation_set_param(eqp, CS_EQKEY_ADV_STRATEGY, stra_key);
 
@@ -1046,6 +1072,8 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   cs_param_get_advection_form_name(nsp->adv_form));
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection strategy: %s\n",
                   cs_param_get_advection_strategy_name(nsp->adv_strategy));
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection.Extrapolation: %s\n",
+                  cs_param_get_advection_extrapol_name(nsp->adv_extrapol));
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
     const char algo_name[] = "Picard";

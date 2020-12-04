@@ -1206,6 +1206,20 @@ _set_key(cs_equation_param_t   *eqp,
 
   switch(key) {
 
+  case CS_EQKEY_ADV_EXTRAPOL:
+    if (strcmp(keyval, "none") == 0)
+      eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
+    else if (strcmp(keyval, "taylor") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
+    else if (strcmp(keyval, "adams_bashforth") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_EXTRAPOL");
+    }
+    break;
+
   case CS_EQKEY_ADV_FORMULATION:
     if (strcmp(keyval, "conservative") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -1256,9 +1270,8 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "implicit_linear") == 0 ||
              strcmp(keyval, "linearized") == 0)
       eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
-    else if (strcmp(keyval, "explicit") == 0 ||
-             strcmp(keyval, "adams_bashforth") == 0)
-      eqp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT_ADAMS_BASHFORTH;
+    else if (strcmp(keyval, "explicit") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1951,6 +1964,7 @@ cs_equation_create_param(const char            *name,
   /* Advection term */
   eqp->adv_field = NULL;
   eqp->adv_scaling_property = NULL;
+  eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
@@ -2105,6 +2119,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   cs_hodge_copy_parameters(&(ref->graddiv_hodgep), &(dst->graddiv_hodgep));
 
   /* Advection term */
+  dst->adv_extrapol = ref->adv_extrapol;
   dst->adv_formulation = ref->adv_formulation;
   dst->adv_scheme = ref->adv_scheme;
   dst->adv_strategy = ref->adv_strategy;
@@ -2705,6 +2720,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
                   eqname,
                   cs_param_get_advection_strategy_name(eqp->adv_strategy));
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Extrapolation: %s\n",
+                  eqname,
+                  cs_param_get_advection_extrapol_name(eqp->adv_extrapol));
 
   } /* Advection term */
 
