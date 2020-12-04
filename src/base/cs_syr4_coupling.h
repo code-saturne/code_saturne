@@ -112,14 +112,14 @@ cs_syr4_coupling_t *
 cs_syr4_coupling_by_id(int  coupling_id);
 
 /*----------------------------------------------------------------------------
- * Create a syr4_coupling_t structure.
+ * Create or redefine a syr4_coupling_t structure.
+ *
+ * If a structure is redefined, associated locations are reset.
  *
  * parameters:
  *   dim                <-- spatial mesh dimension
  *   ref_axis           <-- reference axis
- *   face_sel_criterion <-- criterion for selection of boundary faces
- *   cell_sel_criterion <-- criterion for selection of cells
- *   app_name           <-- SYRTHES application name
+ *   syr_name           <-- SYRTHES application name
  *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
  *   tolerance          <-- addition to local extents of each element
  *                          extent = base_extent * (1 + tolerance)
@@ -127,16 +127,26 @@ cs_syr4_coupling_by_id(int  coupling_id);
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
 
+cs_syr4_coupling_t *
+cs_syr4_coupling_define(int          dim,
+                        int          ref_axis,
+                        const char  *syr_name,
+                        bool         allow_nonmatching,
+                        float        tolerance,
+                        int          verbosity,
+                        int          visualization);
+
+/*----------------------------------------------------------------------------
+ * Add a mesh location to a syr4_coupling_t structure.
+ *
+ * parameters:
+ *   syr_coupling  <-- SYRTHES coupling structure
+ *   location_id   <-- id of mesh location to add (boundary faces or cells)
+ *----------------------------------------------------------------------------*/
+
 void
-cs_syr4_coupling_add(int          dim,
-                     int          ref_axis,
-                     const char  *face_sel_criterion,
-                     const char  *cell_sel_criterion,
-                     const char  *app_name,
-                     bool         allow_nonmatching,
-                     float        tolerance,
-                     int          verbosity,
-                     int          visualization);
+cs_syr4_coupling_add_location(cs_syr4_coupling_t  *syr_coupling,
+                              int                  location_id);
 
 /*----------------------------------------------------------------------------
  * Destroy cs_syr4_coupling_t structures
