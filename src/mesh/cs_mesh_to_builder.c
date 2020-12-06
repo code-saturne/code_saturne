@@ -882,9 +882,9 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     BFT_MALLOC(mb->face_r_gen, n_faces, char);
 
     for (i = 0; i < n_i_faces; i++)
-      mb->face_r_gen[i] = mesh->i_face_family[i_order[i]];
+      mb->face_r_gen[i] = mesh->i_face_r_gen[i_order[i]];
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
-      mb->face_r_gen[j] = mesh->b_face_family[b_order[i]];
+      mb->face_r_gen[j] = 0;
 
     if (transfer == true)
       BFT_FREE(mesh->i_face_r_gen);
