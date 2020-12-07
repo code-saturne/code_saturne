@@ -3767,9 +3767,9 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         for (int i = 0; i < 3; i++) {
           cs_real_t rfac = 0.;
           for (int k = 0; k < 3; k++) {
-            cs_real_t vecfac = gradv[cell_id][k][0] * diipb[face_id][0]
-                             + gradv[cell_id][k][1] * diipb[face_id][1]
-                             + gradv[cell_id][k][2] * diipb[face_id][2];
+            cs_real_t vecfac = r_gradv[cell_id][k][0] * diipb[face_id][0]
+                             + r_gradv[cell_id][k][1] * diipb[face_id][1]
+                             + r_gradv[cell_id][k][2] * diipb[face_id][2];
             rfac += coefbv[face_id][i][k] * vecfac;
           }
 
