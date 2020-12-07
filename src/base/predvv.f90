@@ -59,7 +59,7 @@
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
 !> \param[in]     velk          velocity at the previous sub iteration (or vela)
-!> \param[in,out] da_u          diagonal part of velocity matrix
+!> \param[in,out] da_uu         velocity matrix
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
@@ -95,7 +95,7 @@ subroutine predvv &
    nvar   , nscal  , iterns ,                                     &
    ncepdp , ncesmp ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vela   , velk   , da_u   ,                   &
+   dt     , vel    , vela   , velk   , da_uu  ,                   &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
@@ -165,7 +165,7 @@ double precision cofbfv(3,3,nfabor)
 double precision vel   (3, ncelet)
 double precision velk  (3, ncelet)
 double precision vela  (3, ncelet)
-double precision da_u  (ncelet)
+double precision da_uu (6, ncelet)
 
 ! Local variables
 
@@ -191,7 +191,6 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
 double precision dvol
-double precision eigen_vals(3)
 double precision tensor(6)
 
 double precision rvoid(1)
@@ -1653,6 +1652,7 @@ endif
 
 if (iappel.eq.1) then
 
+  ! Store fimp as the velocity matrix is stored in it in codtiv call
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
@@ -1683,28 +1683,30 @@ if (iappel.eq.1) then
    vel    ,                                                       &
    eswork )
 
-  ! Store inverse of the diagonal velocity matrix for the
-  ! correction step if needed (otherwise dt is used)
-  if (rcfact.eq.0) then
+  ! Store inverse of the velocity matrix for the correction step
+  !  if needed (otherwise vitenp is used in resopv)
+  if (rcfact.eq.1) then
+
     do iel = 1, ncel
-      da_u(iel) = dt(iel)
+
+      tensor(1) = fimp(1,1,iel)/crom(iel)
+      tensor(2) = fimp(2,2,iel)/crom(iel)
+      tensor(3) = fimp(3,3,iel)/crom(iel)
+      tensor(4) = fimp(1,2,iel)/crom(iel)
+      tensor(5) = fimp(2,3,iel)/crom(iel)
+      tensor(6) = fimp(1,3,iel)/crom(iel)
+
+      call symmetric_matrix_inverse(tensor, da_uu(:, iel))
+
+      do ii = 1, 6
+        da_uu(ii,iel) = cell_f_vol(iel)*da_uu(ii,iel)
+      enddo
+
     enddo
 
-  else
-    do iel = 1, ncel
-      tensor(1) = fimp(1,1,iel)
-      tensor(2) = fimp(2,2,iel)
-      tensor(3) = fimp(3,3,iel)
-      tensor(4) = fimp(1,2,iel)
-      tensor(5) = fimp(2,3,iel)
-      tensor(6) = fimp(1,3,iel)
-      call calc_symtens_eigvals(tensor,eigen_vals)
-      da_u(iel) = crom(iel)*cell_f_vol(iel)                         &
-                  / minval(eigen_vals(1:3))
-    enddo
   endif
 
-  call synsca(da_u)
+  call syntis(da_uu)
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized

@@ -70,7 +70,7 @@
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
-!> \param[in,out] da_u          diagonal part of velocity matrix
+!> \param[in,out] da_uu         velocity matrix
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
@@ -99,7 +99,7 @@
 subroutine resopv &
  ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                   &
    icetsm , ifbpcd , ltmast , isostd ,                            &
-   dt     , vel    , da_u   ,                                     &
+   dt     , vel    , da_uu  ,                                     &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou ,                                     &
@@ -159,7 +159,7 @@ double precision tslagr(ncelet,*)
 double precision coefav(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision vel   (3  ,ncelet)
-double precision da_u  (ncelet)
+double precision da_uu (6  ,ncelet)
 double precision coefa_dp(nfabor)
 double precision coefb_dp(nfabor)
 
@@ -188,7 +188,7 @@ integer          icvflb
 integer          ivoid(1)
 
 double precision residu, phydr0, rnormp
-double precision ardtsr, arsr  , thetap
+double precision arsr  , thetap
 double precision dtsrom
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , relaxp
@@ -405,6 +405,14 @@ if (ivofmt.gt.0) then
 endif
 
 i_vof_mass_transfer = iand(ivofmt,VOF_MERKLE_MASS_TRANSFER)
+
+if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0 .and. rcfact.eq.0) then
+  do iel = 1, ncel
+    do ii = 1, 6
+      da_uu(ii,iel) = vitenp(ii,iel)
+    enddo
+  enddo
+endif
 
 ! Calculation of dt/rho
 if (ivofmt.gt.0.or.idilat.eq.4) then
@@ -808,101 +816,55 @@ else
   enddo
 endif
 
-! --- Weakly compressible algorithm and VOF
-!     The RHS contains rho div(u*) and not div(rho u*)
-!     so this term will be add afterwards
-if (idilat.ge.4.or.ivofmt.gt.0) then
-  if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
-    do iel = 1, ncel
-      ardtsr  = arak * da_u(iel) / crom(iel)
-      do isou = 1, 3
-        trav(isou,iel) = ardtsr*trav(isou,iel)
-      enddo
+! Rhie and Chow filter
+if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0 .and. rcfact.eq.0) then
+  do iel = 1, ncel
+    arsr = arak/crom(iel)
+    do isou = 1, 3
+      trav(isou,iel) = arsr * dt(iel) * trav(isou,iel)
     enddo
-  else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-    do iel = 1, ncel
-      rc1(1) = arak*(                                &
-                      vitenp(1,iel)*trav(1,iel)      &
-                    + vitenp(4,iel)*trav(2,iel)      &
-                    + vitenp(6,iel)*trav(3,iel)      &
-                    )
-      rc1(2) = arak*(                                &
-                      vitenp(4,iel)*trav(1,iel)      &
-                    + vitenp(2,iel)*trav(2,iel)      &
-                    + vitenp(5,iel)*trav(3,iel)      &
-                    )
-      rc1(3) = arak*(                                &
-                      vitenp(6,iel)*trav(1,iel)      &
-                    + vitenp(5,iel)*trav(2,iel)      &
-                    + vitenp(3,iel)*trav(3,iel)      &
-                    )
+  enddo
+else if (arak.gt.0.d0 .and. (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0 .or. rcfact.eq.1)) then
+  do iel = 1, ncel
+    arsr = arak/crom(iel)
 
-      do isou = 1, 3
-        trav(isou,iel) = rc1(isou)
-      enddo
+    rc1(1) = arsr*(                                &
+                    da_uu(1,iel)*trav(1,iel)       &
+                  + da_uu(4,iel)*trav(2,iel)       &
+                  + da_uu(6,iel)*trav(3,iel)       &
+                  )
+    rc1(2) = arsr*(                                &
+                    da_uu(4,iel)*trav(1,iel)       &
+                  + da_uu(2,iel)*trav(2,iel)       &
+                  + da_uu(5,iel)*trav(3,iel)       &
+                  )
+    rc1(3) = arsr*(                                &
+                    da_uu(6,iel)*trav(1,iel)       &
+                  + da_uu(5,iel)*trav(2,iel)       &
+                  + da_uu(3,iel)*trav(3,iel)       &
+                  )
 
+    do isou = 1, 3
+      trav(isou,iel) = rc1(isou)
     enddo
-  else
-    !$omp parallel do private(isou)
-    do iel = 1, ncel
-      do isou = 1, 3
-        trav(isou,iel) = 0.d0
-      enddo
-    enddo
-  endif
 
-  ! For VOF, add vel
-  if (ivofmt.gt.0) then
-    !$omp parallel do private(isou)
-    do iel = 1, ncel
-      do isou = 1, 3
-        trav(isou,iel) = trav(isou,iel) + vel(isou, iel)
-      enddo
-    enddo
-  endif
-
-! Standard algorithm
+  enddo
 else
-  if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
-    do iel = 1, ncel
-      ardtsr  = arak * da_u(iel) / crom(iel)
-      do isou = 1, 3
-        trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
-      enddo
+  !$omp parallel do private(isou)
+  do iel = 1, ncel
+    do isou = 1, 3
+      trav(isou,iel) = 0.d0
     enddo
-  else if (arak.gt.0.d0 .and. iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-    do iel = 1, ncel
-      arsr  = arak/crom(iel)
+  enddo
+endif
 
-      rc1(1) = arsr*(                                &
-                      vitenp(1,iel)*trav(1,iel)      &
-                    + vitenp(4,iel)*trav(2,iel)      &
-                    + vitenp(6,iel)*trav(3,iel)      &
-                    )
-      rc1(2) = arsr*(                                &
-                      vitenp(4,iel)*trav(1,iel)      &
-                    + vitenp(2,iel)*trav(2,iel)      &
-                    + vitenp(5,iel)*trav(3,iel)      &
-                    )
-      rc1(3) = arsr*(                                &
-                      vitenp(6,iel)*trav(1,iel)      &
-                    + vitenp(5,iel)*trav(2,iel)      &
-                    + vitenp(3,iel)*trav(3,iel)      &
-                    )
-
-      do isou = 1, 3
-        trav(isou,iel) = vel(isou,iel) + rc1(isou)
-      enddo
-
+if (idilat.lt.4) then
+  !$omp parallel do private(isou)
+  do iel = 1, ncel
+    do isou = 1, 3
+      trav(isou,iel) = trav(isou,iel) + vel(isou, iel)
     enddo
-  else
-    !$omp parallel do private(isou)
-    do iel = 1, ncel
-      do isou = 1, 3
-        trav(isou, iel) = vel(isou, iel)
-      enddo
-    enddo
-  endif
+  enddo
 endif
 
 ! ---> Traitement du parallelisme et de la periodicite
@@ -996,19 +958,13 @@ if (arak.gt.0.d0) then
 
   ! Scalar diffusivity
   !-------------------
-  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0 .and. rcfact.eq.0) then
 
     allocate(cpro_visc(ncelet))
 
-    if (idilat.eq.4.or.ivofmt.gt.0) then
-      do iel = 1, ncel
-        cpro_visc(iel) = arak * da_u(iel) / crom(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        cpro_visc(iel) = arak * da_u(iel)
-      enddo
-    endif
+    do iel = 1, ncel
+      cpro_visc(iel) = arak * viscap(iel)
+    enddo
 
     if (ivofmt.gt.0) then
       imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
@@ -1079,21 +1035,29 @@ if (arak.gt.0.d0) then
 
   ! Tensor diffusivity
   !-------------------
-  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0 .or. rcfact.eq.1) then
 
     allocate(cpro_vitenp(6, ncelet))
-    do iel = 1, ncel
-      cpro_vitenp(1,iel) = arak*vitenp(1,iel)
-      cpro_vitenp(2,iel) = arak*vitenp(2,iel)
-      cpro_vitenp(3,iel) = arak*vitenp(3,iel)
-      cpro_vitenp(4,iel) = arak*vitenp(4,iel)
-      cpro_vitenp(5,iel) = arak*vitenp(5,iel)
-      cpro_vitenp(6,iel) = arak*vitenp(6,iel)
-    enddo
+
+    if (idilat.eq.4.or.ivofmt.gt.0) then
+      do iel = 1, ncel
+        arsr = arak/crom(iel)
+        do ii = 1, 6
+          cpro_vitenp(ii,iel) = arsr*da_uu(ii,iel)
+        enddo
+      enddo
+    else
+      do iel = 1, ncel
+        do ii = 1, 6
+          cpro_vitenp(ii,iel) = arak*da_uu(ii,iel)
+        enddo
+      enddo
+    endif
 
     allocate(weighftp(2,nfac))
     allocate(weighbtp(ndimfb))
 
+    ! An harmonic mean is used regardless of the imvisf option.
     call vitens &
     !==========
    ( cpro_vitenp, iwarnp   ,             &

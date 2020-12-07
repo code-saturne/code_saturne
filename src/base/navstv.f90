@@ -150,7 +150,7 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
-double precision, dimension(:), pointer :: da_u
+double precision, dimension(:,:), pointer :: da_uu
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
 double precision, dimension(:), pointer :: viscbi
@@ -185,7 +185,7 @@ interface
   subroutine resopv &
    ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                 &
      icetsm , ifbpcd , ltmast , isostd ,                          &
-     dt     , vel    , da_u   ,                                   &
+     dt     , vel    , da_uu  ,                                   &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou ,                                   &
@@ -215,7 +215,7 @@ interface
     double precision coefav(3,ndimfb)
     double precision coefbv(3,3,ndimfb)
     double precision vel(3,ncelet)
-    double precision da_u(ncelet)
+    double precision da_uu(6,ncelet)
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
@@ -471,14 +471,14 @@ endif
 
 iappel = 1
 
-allocate(da_u(ncelet))
+allocate(da_uu(6,ncelet))
 
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , vel    , vela   , velk   , da_u   ,                   &
+  dt     , vel    , vela   , velk   , da_uu  ,                   &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , frcxt  ,                                     &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
@@ -747,7 +747,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Resize other arrays related to the velocity-pressure resolution
 
-      call resize_sca_real_array(da_u)
+      call resize_sym_tens_real_array(da_uu)
       call resize_vec_real_array(trav)
       call resize_vec_real_array(dfrcxt)
 
@@ -860,7 +860,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
   call resopv &
 ( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
   icetsm , ifbpcd , ltmast , isostd ,                            &
-  dt     , vel    , da_u   ,                                     &
+  dt     , vel    , da_uu  ,                                     &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens ,                                     &
@@ -1479,7 +1479,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , vel    , vel    , velk   , da_u   ,                   &
+   dt     , vel    , vel    , velk   , da_uu  ,                   &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , dttens , trav   ,          &
@@ -1713,7 +1713,7 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(trav)
-deallocate(da_u)
+deallocate(da_uu)
 deallocate(dfrcxt)
 deallocate(w1)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
