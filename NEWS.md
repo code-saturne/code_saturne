@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix boundary reconstruction for hybrid Gauss + least-squares vector
+  gradient (GitLab issue #247).
+
 - Fix missing polygon families/groups in MED output for parallel runs.
 
 - Fix possible data races with OpenMP for turbomachinery and
