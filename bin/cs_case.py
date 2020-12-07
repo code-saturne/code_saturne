@@ -558,14 +558,10 @@ class case:
          + len(self.py_domains) > 1:
             r += '_COUPLING'
 
-        if os.path.isdir(r):
-            self.result_dir = os.path.join(r, self.run_id)
-        else:
-            err_str = \
-                    '\nResults directory: ' + r + '\n' \
-                    + 'does not exist.\n' \
-                    + 'Calculation will not be run.\n'
-            raise RunCaseError(err_str)
+        if not os.path.isdir(r):
+            os.mkdir(r)
+
+        self.result_dir = os.path.join(r, self.run_id)
 
     #---------------------------------------------------------------------------
 
