@@ -331,7 +331,7 @@
   <action name="openDataEditorAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>
+     <normaloff>:/icons/22x22/data_editor-icon.png</normaloff>:/icons/22x22/data_editor-icon.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Manage data files</string>
