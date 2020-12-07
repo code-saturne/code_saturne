@@ -413,6 +413,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
   if (tensorial_diffusion == 1) {
     /* Symmetric matrix */
     if (isym == 1) {
+      assert(eb_size[0] == 1);
       cs_sym_matrix_vector(m,
                            idiffp,
                            thetap,
@@ -424,7 +425,8 @@ cs_matrix_wrapper_vector(int                  iconvp,
                            xa);
 
     /* Non-symmetric matrix */
-    } else {
+    }
+    else {
       cs_matrix_vector(m,
                        mq,
                        iconvp,
