@@ -72,6 +72,11 @@ Bug fixes:
 
 Numerics and physical modelling:
 
+- CDO schemes: Add different strategies for the treatment of the advection term
+  in Navier-Stokes equations (linearized implicit and explicit treatment). The
+  Picard algorihtm (implicit) is the default as in the previous version. This is
+  based on results obtained during R. MILANI's PhD.
+
 - Amtospheric module: Major modification the scheme for Solar radiation based
   on the PhD of L. Asmar.
 
@@ -107,6 +112,11 @@ Architectural changes:
   * Associated matrices should be forced in CSR format.
   * In parallel, Mesh renumbering should be set
     to use `CS_RENUMBER_ADJACENT_LOW`.
+
+- Extend `cs_xdef_t` structure with definitions by DoF (degrees of freedom) for
+  advection fields, boundary and initial conditions (CDO schemes). This allow
+  one to add more generic/complex definitions at the user level or in existing
+  modules.
 
 Release 6.2.0 (August 27 2020)
 --------------------------
