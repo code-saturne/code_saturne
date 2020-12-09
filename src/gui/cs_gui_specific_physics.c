@@ -1360,7 +1360,7 @@ cs_gui_physical_model_select(void)
         else
           bft_error(__FILE__, __LINE__, 0,
                     _("Invalid gas combustion flow model: %s."),
-                    vars->model_value);
+                    model_value);
         
         /* Read uniform variable thermodynamical pressure (ipthrm) */
         cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
