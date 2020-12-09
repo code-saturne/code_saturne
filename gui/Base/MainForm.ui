@@ -346,7 +346,7 @@
   <action name="openSrcEditorAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>
+     <normaloff>:/icons/22x22/src_editor-icon.png</normaloff>:/icons/22x22/src_editor-icon.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Manage user functions</string>
@@ -376,7 +376,7 @@
   <action name="openResultsFileAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/viewer-icon.png</normaloff>:/icons/22x22/viewer-icon.png</iconset>
+     <normaloff>:/icons/22x22/resu_viewer-icon.png</normaloff>:/icons/22x22/resu_viewer-icon.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Examine output files</string>

@@ -87,11 +87,11 @@
         </message>
         <message>
             <source>CFDSTUDY_FILE_EDITOR_OBJ_ICON</source>
-            <translation>editor-icon.png</translation>
+            <translation>src_editor-icon.png</translation>
         </message>
         <message>
             <source>CFDSTUDY_FILE_VIEWER_OBJ_ICON</source>
-            <translation>viewer-icon.png</translation>
+            <translation>resu_viewer-icon.png</translation>
         </message>
         <message>
             <source>CFDSTUDY_FILE_TRANSFER_OBJ_ICON</source>
