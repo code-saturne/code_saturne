@@ -628,11 +628,24 @@ cs_sles_mumps_setup(void               *context,
   sd->mumps->job = MUMPS_JOB_ANALYSE_FACTO;
   dmumps_c(sd->mumps);
 
-  if (cs_glob_rank_id < 1)
-    if (sd->mumps->INFOG(1) < 0)
+  if (cs_glob_rank_id < 1) {
+
+    if (sd->mumps->INFOG(1) < 0) {
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "\n MUMPS feedback error code: INFOG(1)=%d, INFOG(2)=%d\n",
+                    sd->mumps->INFOG(1), sd->mumps->INFOG(2));
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected during the anaylis/factorization step",
                 __func__);
+    }
+    else {
+      if (verbosity > 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "\n MUMPS feedback code: INFOG(1)=%d, INFOG(2)=%d\n",
+                      sd->mumps->INFOG(1), sd->mumps->INFOG(2));
+    }
+
+  } /* rank_id = 0 */
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
