@@ -71,9 +71,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atprke(cs_real_t  *tinstk,
-          cs_real_t  *smbrk,
-          cs_real_t  *smbre);
+cs_atmo_buoyancy_ke_prod(cs_real_t  *tinstk,
+                         cs_real_t  *smbrk,
+                         cs_real_t  *smbre);
 
 /*----------------------------------------------------------------------------*/
 

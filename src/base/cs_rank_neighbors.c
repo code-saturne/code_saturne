@@ -41,7 +41,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_error.h"
 #include "bft_printf.h"
 
 #include "cs_block_dist.h"
@@ -69,7 +68,6 @@ BEGIN_C_DECLS
         Management of parallel rank neighbors.
 
   Algorithm names are based upon \cite Hoefler:2010 and \cite Fox:1988 .
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -106,10 +104,11 @@ _exchange_type = CS_RANK_NEIGHBORS_PEX;
 
 #if defined(HAVE_MPI)
 
-/* Call counters and timers ( 0: creation; 1: count/index; 2: communication) */
+/* Call counters and timers (0: creation; 1: count/index; 2-4: communication
+   based on method) */
 
-static size_t              _rank_neighbors_calls[] = {0, 0, 0};
-static cs_timer_counter_t  _rank_neighbors_timer[3];
+static size_t              _rank_neighbors_calls[] = {0, 0, 0, 0, 0};
+static cs_timer_counter_t  _rank_neighbors_timer[5];
 
 #endif /* defined(HAVE_MPI) */
 
@@ -425,7 +424,7 @@ cs_rank_neighbors_destroy(cs_rank_neighbors_t  **n)
 void
 cs_rank_neighbors_to_index(const cs_rank_neighbors_t  *n,
                            size_t                      n_elts,
-                           int                        *elt_rank,
+                           const int                   elt_rank[],
                            int                        *elt_rank_index)
 {
   cs_timer_t t0, t1;
@@ -519,8 +518,8 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
 
   /* Initialize timers if required */
 
-  if (_rank_neighbors_calls[2] == 0)
-    CS_TIMER_COUNTER_INIT(_rank_neighbors_timer[2]);
+  if (_rank_neighbors_calls[2 + _exchange_type] == 0)
+    CS_TIMER_COUNTER_INIT(_rank_neighbors_timer[2 + _exchange_type]);
 
   if (_exchange_type == CS_RANK_NEIGHBORS_PEX) {
 
@@ -695,8 +694,9 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
   /* Stop timer */
 
   t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_rank_neighbors_timer + 2, &t0, &t1);
-  _rank_neighbors_calls[2] += 1;
+  cs_timer_counter_add_diff(_rank_neighbors_timer + 2 + _exchange_type,
+                            &t0, &t1);
+  _rank_neighbors_calls[2 + _exchange_type] += 1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -763,6 +763,39 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
                              cs_lnum_t                  **recv_count,
                              MPI_Comm                     comm)
 {
+  cs_rank_neighbors_sync_count_m(n_send,
+                                 n_recv,
+                                 send_count,
+                                 recv_count,
+                                 _exchange_type,
+                                 comm);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange send and receive counts for rank neighborhoods,
+ *        using a given method.
+ *
+ * This allocates the n_recv ranks neighborhood structure and the
+ * recv_count counts array, which the caller is responsible for freeing.
+ *
+ * \param[in]   n_send         pointer to rank neighborhood used for sending
+ * \param[out]  n_recv         pointer to rank neighborhood used for receiving
+ * \param[in]   send_count     pointer to rank neighborhood used for sending
+ * \param[in]   recv_count     pointer to rank neighborhood used for sending
+ * \param[in]   exchange_type  exchange type
+ * \param[in]   comm           associated communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
+                               cs_rank_neighbors_t           **n_recv,
+                               const cs_lnum_t                *send_count,
+                               cs_lnum_t                     **recv_count,
+                               cs_rank_neighbors_exchange_t    exchange_type,
+                               MPI_Comm                        comm)
+{
   cs_timer_t  t0, t1;
 
   t0 = cs_timer_time();
@@ -775,157 +808,179 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
   BFT_MALLOC(_n_recv, 1, cs_rank_neighbors_t);
   _n_recv->rank = NULL;
 
+  /* Fallback if nonblocking barrier is not available */
+#if !defined(HAVE_MPI_IBARRIER)
+  if (exchange_type == CS_RANK_NEIGHBORS_NBX)
+    exchange_type == _exchange_type;
+#endif
+
   /* Initialize timers if required */
 
-  if (_rank_neighbors_calls[2] == 0)
-    CS_TIMER_COUNTER_INIT(_rank_neighbors_timer[2]);
+  if (_rank_neighbors_calls[2 + _exchange_type] == 0)
+    CS_TIMER_COUNTER_INIT(_rank_neighbors_timer[2 + exchange_type]);
 
-  if (_exchange_type == CS_RANK_NEIGHBORS_PEX) {
+  /* Exchange based on variant */
 
-    int comm_size;
-    MPI_Comm_size(comm, &comm_size);
+  switch(exchange_type) {
 
-    cs_lnum_t *sendbuf, *recvbuf;
-    BFT_MALLOC(sendbuf, comm_size, cs_lnum_t);
-    BFT_MALLOC(recvbuf, comm_size, cs_lnum_t);
+  case CS_RANK_NEIGHBORS_PEX:
+    {
 
-    for (int i = 0; i < comm_size; i++)
-      sendbuf[i] = 0;
+      int comm_size;
+      MPI_Comm_size(comm, &comm_size);
 
-    for (int i = 0; i < n_send->size; i++)
-      sendbuf[n_send->rank[i]] = send_count[i];
+      cs_lnum_t *sendbuf, *recvbuf;
+      BFT_MALLOC(sendbuf, comm_size, cs_lnum_t);
+      BFT_MALLOC(recvbuf, comm_size, cs_lnum_t);
 
-    MPI_Alltoall(sendbuf, 1, CS_MPI_LNUM, recvbuf, 1, CS_MPI_LNUM, comm);
+      for (int i = 0; i < comm_size; i++)
+        sendbuf[i] = 0;
 
-    _n_recv->size = 0;
-    for (int i = 0; i < comm_size; i++) {
-      if (recvbuf[i] != 0)
-        _n_recv->size++;
-    }
+      for (int i = 0; i < n_send->size; i++)
+        sendbuf[n_send->rank[i]] = send_count[i];
 
-    BFT_MALLOC(_n_recv->rank, _n_recv->size, int);
-    BFT_MALLOC(_recv_count, _n_recv->size, cs_lnum_t);
+      MPI_Alltoall(sendbuf, 1, CS_MPI_LNUM, recvbuf, 1, CS_MPI_LNUM, comm);
 
-    size_t n_elts = 0;
-    for (int i = 0; i < comm_size; i++) {
-      if (recvbuf[i] != 0) {
-        _n_recv->rank[n_elts] = i;
-        _recv_count[n_elts] = recvbuf[i];
-        n_elts++;
+      _n_recv->size = 0;
+      for (int i = 0; i < comm_size; i++) {
+        if (recvbuf[i] != 0)
+          _n_recv->size++;
       }
+
+      BFT_MALLOC(_n_recv->rank, _n_recv->size, int);
+      BFT_MALLOC(_recv_count, _n_recv->size, cs_lnum_t);
+
+      size_t n_elts = 0;
+      for (int i = 0; i < comm_size; i++) {
+        if (recvbuf[i] != 0) {
+          _n_recv->rank[n_elts] = i;
+          _recv_count[n_elts] = recvbuf[i];
+          n_elts++;
+        }
+      }
+
+      BFT_FREE(recvbuf);
+      BFT_FREE(sendbuf);
+
     }
-
-    BFT_FREE(recvbuf);
-    BFT_FREE(sendbuf);
-
-  }
+    break;
 
 #if defined(HAVE_MPI_IBARRIER)
 
   /* Variant using nonblocking barrier */
 
-  else if (_exchange_type == CS_RANK_NEIGHBORS_NBX) {
+  case CS_RANK_NEIGHBORS_NBX:
+    {
 
-    size_t n_elts = 0;
-    size_t n_max_elts = 16;
+      size_t n_elts = 0;
+      size_t n_max_elts = 16;
 
-    MPI_Request  *requests;
+      MPI_Request  *requests;
 
-    BFT_MALLOC(requests, n_send->size, MPI_Request);
+      BFT_MALLOC(requests, n_send->size, MPI_Request);
 
-    BFT_MALLOC(_n_recv->rank, n_max_elts, int);
-    BFT_MALLOC(_recv_count, n_max_elts, cs_lnum_t);
+      BFT_MALLOC(_n_recv->rank, n_max_elts, int);
+      BFT_MALLOC(_recv_count, n_max_elts, cs_lnum_t);
 
-    int tag = 0;
+      int tag = 0;
 
-    for (int i = 0; i < n_send->size; i++) {
-      MPI_Issend(send_count + i, 1, CS_MPI_LNUM, n_send->rank[i], tag,
-                 comm, requests + i);
-    }
-
-    MPI_Request  barrier_request;
-    int flag;
-    int barrier_done = 0, barrier_active = 0;
-
-    while (!barrier_done) {
-
-      MPI_Status status, status_recv;
-
-      MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &flag, &status);
-      if (flag) {
-        if (n_elts >= n_max_elts) {
-          n_max_elts *= 2;
-          BFT_REALLOC(_n_recv->rank, n_max_elts, int);
-          BFT_REALLOC(_recv_count, n_max_elts, cs_lnum_t);
-        }
-        MPI_Recv(_recv_count + n_elts, 1, CS_MPI_LNUM, status.MPI_SOURCE,
-                 tag, comm, &status_recv);
-        _n_recv->rank[n_elts] = status.MPI_SOURCE;
-        n_elts += 1;
+      for (int i = 0; i < n_send->size; i++) {
+        MPI_Issend(send_count + i, 1, CS_MPI_LNUM, n_send->rank[i], tag,
+                   comm, requests + i);
       }
 
-      if (!barrier_active) {
+      MPI_Request  barrier_request;
+      int flag;
+      int barrier_done = 0, barrier_active = 0;
 
-        MPI_Testall(n_send->size, requests, &flag, MPI_STATUSES_IGNORE);
+      while (!barrier_done) {
+
+        MPI_Status status, status_recv;
+
+        MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &flag, &status);
         if (flag) {
-          MPI_Ibarrier(comm, &barrier_request);
-          barrier_active = 1;
+          if (n_elts >= n_max_elts) {
+            n_max_elts *= 2;
+            BFT_REALLOC(_n_recv->rank, n_max_elts, int);
+            BFT_REALLOC(_recv_count, n_max_elts, cs_lnum_t);
+          }
+          MPI_Recv(_recv_count + n_elts, 1, CS_MPI_LNUM, status.MPI_SOURCE,
+                   tag, comm, &status_recv);
+          _n_recv->rank[n_elts] = status.MPI_SOURCE;
+          n_elts += 1;
         }
 
+        if (!barrier_active) {
+
+          MPI_Testall(n_send->size, requests, &flag, MPI_STATUSES_IGNORE);
+          if (flag) {
+            MPI_Ibarrier(comm, &barrier_request);
+            barrier_active = 1;
+          }
+
+        }
+        else
+          MPI_Test(&barrier_request, &barrier_done, MPI_STATUS_IGNORE);
+
       }
-      else
-        MPI_Test(&barrier_request, &barrier_done, MPI_STATUS_IGNORE);
+
+      _n_recv->size = n_elts;
+      BFT_REALLOC(_n_recv->rank, _n_recv->size, int);
+      BFT_REALLOC(_recv_count, _n_recv->size, cs_lnum_t);
+
+      _heapsort_int_count(_n_recv->rank, _recv_count, _n_recv->size);
+
+      BFT_FREE(requests);
 
     }
-
-    _n_recv->size = n_elts;
-    BFT_REALLOC(_n_recv->rank, _n_recv->size, int);
-    BFT_REALLOC(_recv_count, _n_recv->size, cs_lnum_t);
-
-    _heapsort_int_count(_n_recv->rank, _recv_count, _n_recv->size);
-
-    BFT_FREE(requests);
-
-  }
+    break;
 
 #endif /* defined(HAVE_MPI_IBARRIER) */
 
-  else if (_exchange_type == CS_RANK_NEIGHBORS_CRYSTAL_ROUTER) {
+  case CS_RANK_NEIGHBORS_CRYSTAL_ROUTER:
+    {
 
-    /* Create Crystal-router structure */
+      /* Create Crystal-router structure */
 
-    int flags = CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+      int flags = CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
 
-    cs_crystal_router_t *cr = cs_crystal_router_create_s(n_send->size,
-                                                         1,
-                                                         CS_LNUM_TYPE,
-                                                         flags,
-                                                         send_count,
-                                                         NULL,
-                                                         NULL,
-                                                         n_send->rank,
-                                                         comm);
+      cs_crystal_router_t *cr = cs_crystal_router_create_s(n_send->size,
+                                                           1,
+                                                           CS_LNUM_TYPE,
+                                                           flags,
+                                                           send_count,
+                                                           NULL,
+                                                           NULL,
+                                                           n_send->rank,
+                                                           comm);
 
-    cs_crystal_router_exchange(cr);
+      cs_crystal_router_exchange(cr);
 
-    _n_recv->size = cs_crystal_router_n_elts(cr);
+      _n_recv->size = cs_crystal_router_n_elts(cr);
 
-    _n_recv->rank = NULL;
+      _n_recv->rank = NULL;
 
-    void *recv_count_p = NULL;
+      void *recv_count_p = NULL;
 
-    cs_crystal_router_get_data(cr,
-                               &(_n_recv->rank),
-                               NULL,
-                               NULL,
-                               NULL,
-                               &recv_count_p);
+      cs_crystal_router_get_data(cr,
+                                 &(_n_recv->rank),
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 &recv_count_p);
 
-    _recv_count = recv_count_p;
+      _recv_count = recv_count_p;
 
-    cs_crystal_router_destroy(&cr);
+      cs_crystal_router_destroy(&cr);
 
-    _heapsort_int_count(_n_recv->rank, _recv_count, _n_recv->size);
+      _heapsort_int_count(_n_recv->rank, _recv_count, _n_recv->size);
+
+    }
+    break;
+
+  default:
+    assert(0);
+    BFT_FREE(_n_recv);
 
   }
 
@@ -937,8 +992,9 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
   /* Stop timer */
 
   t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_rank_neighbors_timer + 2, &t0, &t1);
-  _rank_neighbors_calls[2] += 1;
+  cs_timer_counter_add_diff(_rank_neighbors_timer + 2 + _exchange_type,
+                            &t0, &t1);
+  _rank_neighbors_calls[2 + _exchange_type] += 1;
 }
 
 #endif /* defined(HAVE_MPI) */

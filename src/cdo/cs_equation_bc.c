@@ -327,7 +327,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
 
           ac->func(t_eval,
                    z->n_elts, z->elt_ids, cdoq->b_face_center,
-                   false,       /* compacted output ? */
+                   false,       /* dense output ? */
                    ac->input,
                    values);
         }
@@ -674,7 +674,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_array(n_vf,
                                           lst,
-                                          true, /* compact output */
+                                          true, /* dense output */
                                           mesh,
                                           connect,
                                           quant,
@@ -697,7 +697,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
                                              lst,
-                                             true, /* compact output */
+                                             true, /* dense output */
                                              mesh,
                                              connect,
                                              quant,
@@ -852,12 +852,26 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           cs_xdef_array_context_t  *ac =
             (cs_xdef_array_context_t *)def->context;
 
-          assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
-          assert(bz->n_elts == quant->n_b_faces);
           assert(ac->stride == eqp->dim);
           assert(cs_flag_test(ac->loc, cs_flag_primal_face));
 
-          memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+          if (eqp->n_bc_defs == 1) { /* Only one definition */
+
+            assert(bz->n_elts == quant->n_b_faces);
+            memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+
+          }
+          else { /* Only a selection has to be considered */
+
+            assert(elt_ids != NULL);
+#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+              const cs_lnum_t  shift = def->dim*elt_ids[i];
+              for (int k = 0; k < def->dim; k++)
+                values[shift+k] = ac->values[shift+k];
+            }
+
+          }
         }
         break;
 
@@ -868,7 +882,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         case CS_PARAM_REDUCTION_DERHAM:
           cs_xdef_eval_at_b_faces_by_analytic(bz->n_elts,
                                               bz->elt_ids,
-                                              false, /* compact output */
+                                              false, /* dense output */
                                               mesh,
                                               connect,
                                               quant,
@@ -880,7 +894,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_eval_avg_at_b_faces_by_analytic(bz->n_elts,
                                                   bz->elt_ids,
-                                                  false, /* compact output */
+                                                  false, /* dense output */
                                                   mesh,
                                                   connect,
                                                   quant,
@@ -897,6 +911,18 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                       " Stop computing the Dirichlet value.\n"), __func__);
 
         } /* switch on reduction */
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        cs_xdef_eval_at_b_faces_by_dof_func(bz->n_elts,
+                                            bz->elt_ids,
+                                            false, /* dense output */
+                                            mesh,
+                                            connect,
+                                            quant,
+                                            t_eval,
+                                            def->context,
+                                            values);
         break;
 
       default:
@@ -1278,7 +1304,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
         (cs_xdef_analytic_context_t *)def->context;
 
       ac->func(t_eval, 1, NULL,
-               cm->face[f].center, true, /* compacted output ? */
+               cm->face[f].center, true, /* dense output ? */
                ac->input,
                (cs_real_t *)parameters);
 

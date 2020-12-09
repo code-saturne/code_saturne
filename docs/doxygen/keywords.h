@@ -120,6 +120,13 @@ int time_extrapolated;
 int limiter_choice;
 
 /*!
+  \var scalar_id
+  Matching scalar id (inverse Fortran <tt> isca(iscal) </tt>),
+  or -1 if the field does not represent a solved scalar type variable.
+ */
+int scalar_id;
+
+/*!
   \var var_cal_opt
   Structure containing the equation parameters of a solved variable.
 
@@ -143,6 +150,21 @@ cs_solving_info_t *solving_info;
   If NULL, default rules apply.
 */
 char *restart_file;
+
+/*!
+  \var diffusivity_id
+  Field if of the matching molecular diffusivity for a scalar.
+  Negative value if the field has constant diffusivity.
+
+  If set to 0, a matching field will be created and its value
+  reset automatically to that field's id. If set directly to
+  a value > 0, it is assumed that the matching diffusivity field
+  has already been defined and is associated with this scalar.
+  This allows both creating an associated field automatically or
+  in more advanced cases, sharing a diffusivity field between
+  several scalars.
+*/
+int diffusivity_id;
 
 /*!
   \var diffusivity_ref

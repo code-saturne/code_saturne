@@ -217,7 +217,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
                                      SIGFPE detection */
 
   cs_navsto_param_model_t  model = nsp->model;
-  if (model & CS_NAVSTO_MODEL_STOKES)
+  if (model == CS_NAVSTO_MODEL_STOKES)
     KSPSetType(ksp, KSPFCG);
   else
     KSPSetType(ksp, KSPFGMRES);

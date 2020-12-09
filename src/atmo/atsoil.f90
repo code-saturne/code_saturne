@@ -79,7 +79,8 @@ type variables_sol
   double precision :: w2
 end type variables_sol
 
-! Initialisation values for soil variables (filled in usati1)
+! Initialisation values for soil variables
+! (filled in usispu/cs_user_parameters)
 
 !> initial soil surface temperature
 double precision :: tsini

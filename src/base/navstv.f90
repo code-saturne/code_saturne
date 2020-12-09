@@ -164,7 +164,7 @@ double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visc
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
-double precision, dimension(:,:), pointer :: disala
+double precision, dimension(:,:), pointer :: xyzno0
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
@@ -212,10 +212,10 @@ interface
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision viscf(nfac), viscb(ndimfb)
     double precision tslagr(ncelet,*)
-    double precision coefav(3  ,ndimfb)
+    double precision coefav(3,ndimfb)
     double precision coefbv(3,3,ndimfb)
-    double precision vel   (3  ,ncelet)
-    double precision da_u  (ncelet)
+    double precision vel(3,ncelet)
+    double precision da_u(ncelet)
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
@@ -302,7 +302,7 @@ ivar = 0
 iflmas = 0
 imax = 0
 
-! pointer to velosity at sub iteration k for PISO like algorithm
+! pointer to velosity at sub iteration k for velocity-pressure inner iterations
 if (nterup.gt.1) then
 
   allocate(uvwk(3, ncelet))
@@ -521,7 +521,8 @@ if (iprco.le.0) then
 
     call field_get_val_v(ivarfl(iuma), mshvel)
 
-    call field_get_val_prev_v(fdiale, disala)
+    call field_get_val_v(fdiale, disale)
+    call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
     if (iflxmw.gt.0) then
       ! One temporary array needed for internal faces, in case some internal vertices
@@ -618,7 +619,7 @@ if (iprco.le.0) then
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
   if (iturbo.ne.0) then
-    !$omp parallel do private(iel1, iel2, dtfac, rhofac)
+    !$omp parallel do private(iel1, iel2, rhofac, vr1, vr2)
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -634,8 +635,7 @@ if (iprco.le.0) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
       endif
     enddo
-    !$omp parallel do private(iel, dtfac, rhofac) &
-    !$omp          if(nfabor > thr_n_min)
+    !$omp parallel do private(iel, rhofac, vr) if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       if (irotce(iel).ne.0) then
@@ -747,6 +747,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       ! Resize other arrays related to the velocity-pressure resolution
 
+      call resize_sca_real_array(da_u)
       call resize_vec_real_array(trav)
       call resize_vec_real_array(dfrcxt)
 
@@ -1186,7 +1187,7 @@ if (iale.ge.1) then
   call field_get_val_v(ivarfl(iuma), mshvel)
 
   call field_get_val_v(fdiale, disale)
-  call field_get_val_prev_v(fdiale, disala)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   if (iflxmw.gt.0) then
     ! One temporary array needed for internal faces, in case some internal vertices
@@ -1220,7 +1221,7 @@ if (iale.ge.1) then
   endif
 
   ! Here we need of the opposite of the mesh velocity.
-  !$omp parallel do private(icpt) if(nfabor > thr_n_min)
+  !$omp parallel do private(disp_fac, icpt, ii, inod, iel) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     ! Compute the mass flux using the nodes displacement
     if (iflxmw.eq.0) then
@@ -1491,12 +1492,12 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 endif
 
 !===============================================================================
-! 12. Loop on the velocity/Pressure coupling (PISO)
+! 12. Velocity/pressure inner iterations
 !===============================================================================
 
 if (nterup.gt.1) then
 
-  ! Convergence test on PISO-like algorithm, icvrge is 1 if converged
+  ! Convergence test on U/P inner iterations, icvrge is 1 if converged
   icvrge = 1
 
   xnrtmp = 0.d0

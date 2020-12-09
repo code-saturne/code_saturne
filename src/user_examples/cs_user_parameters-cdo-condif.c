@@ -67,18 +67,19 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Give the explicit definition of the advection field.
- *         pt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
- *         Rely on a generic function pointer for an analytic function
+ *         Generic function pointer for an evaluation relying on an analytic
+ *         function
+ *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         array with an indirection. The same indirection can be applied to
+ *         fill retval if dense_output is set to false.
  *
- * \param[in]      time       when ?
- * \param[in]      n_pts      number of elements to consider
- * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      xyz        where ?
- * \param[in]      compact    true:no indirection, false:indirection for filling
- * \param[in]      input      NULL or pointer to a structure cast on-the-fly
- * \param[in, out] res        result of the function
+ * \param[in]      time          when ?
+ * \param[in]      n_pts         number of elements to consider
+ * \param[in]      pt_ids        list of elements ids (in coords and retval)
+ * \param[in]      xyz           where ? Coordinates array
+ * \param[in]      dense_output  perform an indirection in res or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -87,7 +88,7 @@ _define_adv_field(cs_real_t           time,
                   cs_lnum_t           n_pts,
                   const cs_lnum_t    *pt_ids,
                   const cs_real_t    *xyz,
-                  bool                compact,
+                  bool                dense_output,
                   void               *input,
                   cs_real_t          *res)
 {
@@ -97,7 +98,7 @@ _define_adv_field(cs_real_t           time,
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
     const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
-    const cs_lnum_t  ii = compact ? p : id;
+    const cs_lnum_t  ii = dense_output ? p : id;
     const cs_real_t  *pxyz = xyz + 3*id;
     cs_real_t  *pres = res + 3*ii;
 
@@ -111,18 +112,19 @@ _define_adv_field(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Give the explicit definition of the dirichlet boundary conditions
- *         pt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
- *         Rely on a generic function pointer for an analytic function
+ *         Generic function pointer for an evaluation relying on an analytic
+ *         function
+ *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         array with an indirection. The same indirection can be applied to
+ *         fill retval if dense_output is set to false.
  *
- * \param[in]      time      when ?
- * \param[in]      n_pts     number of elements to consider
- * \param[in]      pt_ids    list of elements ids (to access coords and fill)
- * \param[in]      xyz       where ?
- * \param[in]      compact   true:no indirection, false:indirection for filling
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- * \param[in, out] res       result of the function
+ * \param[in]      time          when ?
+ * \param[in]      n_pts         number of elements to consider
+ * \param[in]      pt_ids        list of elements ids (in coords and retval)
+ * \param[in]      xyz           where ? Coordinates array
+ * \param[in]      dense_output  perform an indirection in res or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -131,7 +133,7 @@ _define_bcs(cs_real_t           time,
             cs_lnum_t           n_pts,
             const cs_lnum_t    *pt_ids,
             const cs_real_t    *xyz,
-            bool                compact,
+            bool                dense_output,
             void               *input,
             cs_real_t          *res)
 {
@@ -142,7 +144,7 @@ _define_bcs(cs_real_t           time,
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
     const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
-    const cs_lnum_t  ii = compact ? p : id;
+    const cs_lnum_t  ii = dense_output ? p : id;
     const cs_real_t  *_xyz = xyz + 3*id;
     const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
@@ -569,19 +571,26 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   /*! [param_cdo_copy_settings] */
   {
-    /* Copy the settings for AdvDiff.Upw */
+    /* Copy the settings from AdvDiff.Upw to AdvDiff.SG */
     cs_equation_param_t  *eqp_ref = cs_equation_param_by_name("AdvDiff.Upw");
-    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.SG");
 
-    /* Copy the settings */
-    cs_equation_param_update_from(eqp_ref, eqp);
+    /* Another example to retrieve the cs_equation_param structure */
+    cs_equation_t  *eq = cs_equation_by_name("AdvDiff.SG");
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
+    /* Copy the settings to start from a common state as in the reference
+     * equation (in this case, do not copy the associated field id since these
+     * are two different equations with their own variable field) */
+    bool  copy_field_id = false;
+    cs_equation_param_copy_from(eqp_ref, eqp, copy_field_id);
 
     /* Keep all the settings from "AdvDiff.Upw and then only change the
        advection scheme for the second equation */
     cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
     /* Call this function to be sure that the linear solver is set to what
-       one wants */
+       one wants (if there is no modification of the SLES parameters, this
+       step can be skipped) */
     cs_equation_param_set_sles(eqp);
 
   }

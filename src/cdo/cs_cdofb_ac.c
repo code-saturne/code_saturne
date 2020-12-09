@@ -160,6 +160,27 @@ typedef struct {
 
   /*!
    * @}
+   * @name Advection quantities
+   * Members related to the advection
+   * @{
+   *
+   *  \var adv_field
+   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
+   */
+  cs_adv_field_t           *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array;
+
+  /*! \var mass_flux_array_pre
+   *  Previous values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array_pre;
+
+  /*!
+   * @}
    * @name Boundary conditions (BC) management
    * Routines and elements used for enforcing the BCs
    * @{
@@ -277,7 +298,7 @@ _ac_fields_to_previous(cs_cdofb_ac_t        *sc,
            3 * quant->n_faces * sizeof(cs_real_t));
 
   /* Mass flux arrays */
-  memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+  memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
          quant->n_faces * sizeof(cs_real_t));
 }
 
@@ -859,18 +880,24 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
 /*!
  * \brief  Initialize a \ref cs_cdofb_ac_t structure
  *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] fb_type    type of boundary for each boundary face
- * \param[in] nsc_input  pointer to a \ref cs_navsto_ac_t structure
+ * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in] adv_field   pointer to \ref cs_adv_field_t structure
+ * \param[in] mflux       current values of the mass flux across primal faces
+ * \param[in] mflux_pre   current values of the mass flux across primal faces
+ * \param[in] fb_type     type of boundary for each boundary face
+ * \param[in] nsc_input   pointer to a \ref cs_navsto_ac_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_ac_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
-                                cs_boundary_type_t         *fb_type,
-                                void                       *nsc_input)
+cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
+                                cs_adv_field_t            *adv_field,
+                                cs_real_t                 *mflux,
+                                cs_real_t                 *mflux_pre,
+                                cs_boundary_type_t        *fb_type,
+                                void                      *nsc_input)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
@@ -887,7 +914,11 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
 
   BFT_MALLOC(sc, 1, cs_cdofb_ac_t);
 
-  sc->coupling_context = cc; /* shared with cs_navsto_system_t */
+  /* Quantities shared with the cs_navsto_system_t structure */
+  sc->coupling_context = cc;
+  sc->adv_field = adv_field;
+  sc->mass_flux_array = mflux;
+  sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");
@@ -1164,7 +1195,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
   int  n_solver_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                       mom_eqp,
+                                                       mom_eqp->name,
+                                                       mom_eqp->sles_param,
                                                        matrix,
                                                        rs,
                                                        normalization,
@@ -1191,7 +1223,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                                         vel_f, vel_c);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
   /* Update the pressure knowing the new divergence of the velocity */
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
@@ -1323,16 +1355,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
-  nl_info->n_inner_iter =
-    (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                          mom_eqp,
-                                                          matrix,
-                                                          rs,
-                                                          normalization,
-                                                          true, /* rhs_redux */
-                                                          sles,
-                                                          vel_f,
-                                                          rhs));
+  nl_info->n_inner_iter = (nl_info->last_inner_iter =
+                           cs_equation_solve_scalar_system(3*n_faces,
+                                                           mom_eqp->name,
+                                                           mom_eqp->sles_param,
+                                                           matrix,
+                                                           rs,
+                                                           normalization,
+                                                           true, /* rhs_redux */
+                                                           sles,
+                                                           vel_f,
+                                                           rhs));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1346,7 +1379,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_real_t  div_l2_norm = _ac_update_div(vel_f, div);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
@@ -1361,8 +1394,8 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *--------------------------------------------------------------------------*/
 
   cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
+                                    sc->mass_flux_array_pre,
+                                    sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
 
@@ -1402,16 +1435,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    nl_info->n_inner_iter =
-      (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                            mom_eqp,
-                                                            matrix,
-                                                            rs,
-                                                            normalization,
-                                                            true, /* rhs_redux */
-                                                            sles,
-                                                            vel_f,
-                                                            rhs));
+    nl_info->n_inner_iter += (nl_info->last_inner_iter =
+                         cs_equation_solve_scalar_system(3*n_faces,
+                                                         mom_eqp->name,
+                                                         mom_eqp->sles_param,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         true, /* rhs_redux */
+                                                         sles,
+                                                         vel_f,
+                                                         rhs));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1420,16 +1454,16 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     div_l2_norm = _ac_update_div(vel_f, div);
 
     /* Compute the new mass flux used as the advection field */
-    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+    memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
            n_faces*sizeof(cs_real_t));
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+    cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
-                                      cc->mass_flux_array_pre,
-                                      cc->mass_flux_array,
+                                      sc->mass_flux_array_pre,
+                                      sc->mass_flux_array,
                                       div_l2_norm,
                                       nl_info);
 

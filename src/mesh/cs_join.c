@@ -1993,7 +1993,7 @@ cs_join_all(bool  preprocess)
     /* Set mesh modification flag */
 
     if (join_type != CS_JOIN_TYPE_NULL)
-      mesh->modified = 1;
+      mesh->modified |= CS_MESH_MODIFIED;
 
   } /* End of loop on joinings */
 

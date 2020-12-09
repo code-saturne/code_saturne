@@ -132,23 +132,25 @@ struct _cs_syr4_coupling_t {
 
   /* Mesh-related members */
 
-  int                      dim;            /* Coupled mesh dimension */
-  int                      ref_axis;       /* Selected axis for edge extraction */
+  int                      dim;             /* Coupled mesh dimension */
+  int                      ref_axis;        /* Axis for edge extraction */
 
-  char                    *syr_name;       /* Application name */
+  char                    *syr_name;        /* Application name */
 
-  char                    *face_sel;       /* Face selection criteria */
-  char                    *cell_sel;       /* Face selection criteria */
+  int                      n_b_locations;   /* Numbero of boundary locations */
+  int                      n_v_locations;   /* Numbero of volume locations */
+  int                     *b_location_ids;  /* Boundary location ids */
+  int                     *v_location_ids;  /* Volume location ids */
 
-  cs_syr4_coupling_ent_t  *faces;          /* Wall coupling structure */
-  cs_syr4_coupling_ent_t  *cells;          /* Volume coupling structure */
+  cs_syr4_coupling_ent_t  *faces;           /* Wall coupling structure */
+  cs_syr4_coupling_ent_t  *cells;           /* Volume coupling structure */
 
-  bool                     allow_nearest;  /* Allow nearest-neighbor
-                                              mapping beyond basic matching
-                                              tolerance */
-  float                    tolerance;      /* Tolerance */
-  int                      verbosity;      /* Verbosity level */
-  int                      visualization;  /* Visualization output flag */
+  bool                     allow_nearest;   /* Allow nearest-neighbor
+                                               mapping beyond basic matching
+                                               tolerance */
+  float                    tolerance;       /* Tolerance */
+  int                      verbosity;       /* Verbosity level */
+  int                      visualization;   /* Visualization output flag */
 
   /* Communication-related members */
 
@@ -508,7 +510,8 @@ _is_location_complete(cs_syr4_coupling_t      *syr_coupling,
  *
  * parameters:
  *   syr_coupling    <-- partially initialized SYRTHES coupling structure
- *   select_criteria <-- selection criteria
+ *   n_locations     <-- number of associated locations
+ *   location_ids    <-- associated location ids
  *   elt_dim         <-- element dimension
  *
  * returns:
@@ -517,7 +520,8 @@ _is_location_complete(cs_syr4_coupling_t      *syr_coupling,
 
 static cs_syr4_coupling_ent_t *
 _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
-                    const char          *select_criteria,
+                    int                  n_locations,
+                    int                  location_ids[],
                     int                  elt_dim)
 {
   char *coupled_mesh_name = NULL;
@@ -559,6 +563,31 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     bft_printf_flush();
   }
 
+  /* Select elements */
+
+  cs_lnum_t  n_elts = 0;
+  cs_lnum_t *elt_list = NULL;
+
+  for (int l_i = 0; l_i < n_locations; l_i++)
+    n_elts += cs_mesh_location_get_n_elts(location_ids[l_i])[0];
+
+  BFT_MALLOC(elt_list, n_elts, cs_lnum_t);
+
+  n_elts = 0;
+  for (int l_i = 0; l_i < n_locations; l_i++) {
+    int loc_id = location_ids[l_i];
+    const cs_lnum_t n = cs_mesh_location_get_n_elts(loc_id)[0];
+    const cs_lnum_t *ids = cs_mesh_location_get_elt_list(loc_id);
+    if (ids != NULL) {
+      for (cs_lnum_t i = 0; i < n; i++)
+        elt_list[n_elts++] = ids[i] + 1;
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n; i++)
+        elt_list[n_elts++] = i + 1;
+    }
+  }
+
   /* Creation of a new nodal mesh from selected cells */
 
   if (elt_dim == syr_coupling->dim) {
@@ -568,12 +597,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                + strlen(syr_coupling->syr_name) + 1, char);
     sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
-    cs_lnum_t *elt_list = NULL;
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
-
-    cs_selector_get_cell_num_list(select_criteria,
-                                  &(coupling_ent->n_elts),
-                                  elt_list);
+    coupling_ent->n_elts = n_elts;
 
     coupling_ent->elts
       = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
@@ -581,8 +605,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        false,
                                        coupling_ent->n_elts,
                                        elt_list);
-
-    BFT_FREE(elt_list);
 
     /* Allocate additional buffers */
 
@@ -600,12 +622,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                char);
     sprintf(coupled_mesh_name, _("SYRTHES %s faces"), syr_coupling->syr_name);
 
-    cs_lnum_t *elt_list = NULL;
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
-
-    cs_selector_get_b_face_num_list(select_criteria,
-                                    &(coupling_ent->n_elts),
-                                    elt_list);
+    coupling_ent->n_elts = n_elts;
 
     coupling_ent->elts
       = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -616,9 +633,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        NULL,
                                        elt_list);
 
-    BFT_FREE(elt_list);
-
   }
+
+  BFT_FREE(elt_list);
 
   BFT_FREE(coupled_mesh_name);
 
@@ -629,10 +646,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (fvm_nodal_get_n_g_vertices(coupling_ent->elts) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Selection criteria:\n"
-                " \"%s\"\n"
-                " leads to an empty mesh for SYRTHES coupling.\n"),
-              select_criteria);
+              _(" Selected mesh locations:\n"
+                " lead to an empty mesh for SYRTHES coupling .\n"
+                " \"%s\"\n"),
+              syr_coupling->syr_name);
 
   /* In case of 2D coupling, project coupled elements to 2D */
 
@@ -1211,7 +1228,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
              cs_syr4_coupling_tag,
              syr_coupling->comm);
 
-    if (syr_coupling->verbosity > 0)
+    if (syr_coupling->verbosity > 1)
       bft_printf(_(" Global heat flux exchanged with SYRTHES in W: %5.3e\n"),
                  g_flux);
 
@@ -1228,7 +1245,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
 
   /* Print message */
 
-  if (syr_coupling->verbosity > 0)
+  if (syr_coupling->verbosity > 1)
     bft_printf(_(" Correction coefficient used to force conservativity during"
                  " coupling with SYRTHES: %5.3e\n"), coef);
 }
@@ -1326,13 +1343,13 @@ cs_syr4_coupling_by_id(int  coupling_id)
 }
 
 /*----------------------------------------------------------------------------
- * Create a syr4_coupling_t structure.
+ * Create or redefine a syr4_coupling_t structure.
+ *
+ * If a structure is redefined, associated locations are reset.
  *
  * parameters:
  *   dim                <-- spatial mesh dimension
  *   ref_axis           <-- reference axis
- *   face_sel_criterion <-- criterion for selection of boundary faces
- *   cell_sel_criterion <-- criterion for selection of cells
  *   syr_name           <-- SYRTHES application name
  *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
  *   tolerance          <-- addition to local extents of each element
@@ -1341,24 +1358,46 @@ cs_syr4_coupling_by_id(int  coupling_id)
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
 
-void
-cs_syr4_coupling_add(int          dim,
-                     int          ref_axis,
-                     const char  *face_sel_criterion,
-                     const char  *cell_sel_criterion,
-                     const char  *syr_name,
-                     bool         allow_nonmatching,
-                     float        tolerance,
-                     int          verbosity,
-                     int          visualization)
+cs_syr4_coupling_t *
+cs_syr4_coupling_define(int          dim,
+                        int          ref_axis,
+                        const char  *syr_name,
+                        bool         allow_nonmatching,
+                        float        tolerance,
+                        int          verbosity,
+                        int          visualization)
 {
   cs_syr4_coupling_t *syr_coupling = NULL;
 
+  /* Search in existing couplings */
+
+  for (int i = 0;
+       i < cs_glob_syr4_n_couplings && syr_coupling == NULL;
+       i++) {
+
+    if (strcmp(cs_glob_syr4_couplings[i]->syr_name, syr_name) == 0) {
+      syr_coupling = cs_glob_syr4_couplings[i];
+
+      BFT_FREE(syr_coupling->syr_name);
+      BFT_FREE(syr_coupling->b_location_ids);
+      BFT_FREE(syr_coupling->v_location_ids);
+
+      assert(syr_coupling->faces == NULL);  /* not built yet at this stage */
+      assert(syr_coupling->cells == NULL);
+    }
+  }
+
   /* Allocate _cs_syr4_coupling_t structure */
 
-  BFT_REALLOC(cs_glob_syr4_couplings,
-              cs_glob_syr4_n_couplings + 1, cs_syr4_coupling_t *);
-  BFT_MALLOC(syr_coupling, 1, cs_syr4_coupling_t);
+  if (syr_coupling == NULL) {
+    BFT_REALLOC(cs_glob_syr4_couplings,
+                cs_glob_syr4_n_couplings + 1, cs_syr4_coupling_t *);
+    BFT_MALLOC(syr_coupling, 1, cs_syr4_coupling_t);
+
+    cs_glob_syr4_couplings[cs_glob_syr4_n_couplings] = syr_coupling;
+
+    cs_glob_syr4_n_couplings++;
+  }
 
   syr_coupling->dim = dim;
   syr_coupling->ref_axis = ref_axis;
@@ -1376,23 +1415,10 @@ cs_syr4_coupling_add(int          dim,
 
   /* Selection criteria  */
 
-  syr_coupling->face_sel = NULL;
-  syr_coupling->cell_sel = NULL;
-
-  if (face_sel_criterion != NULL) {
-    BFT_MALLOC(syr_coupling->face_sel, strlen(face_sel_criterion) + 1, char);
-    strcpy(syr_coupling->face_sel, face_sel_criterion);
-  }
-  if (cell_sel_criterion != NULL) {
-    BFT_MALLOC(syr_coupling->cell_sel, strlen(cell_sel_criterion) + 1, char);
-    strcpy(syr_coupling->cell_sel, cell_sel_criterion);
-  }
-
-  if (face_sel_criterion == NULL && cell_sel_criterion == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Coupling with SYRTHES impossible.\n"
-                "No selection criteria for faces or cells to couple."));
-
+  syr_coupling->n_b_locations = 0;
+  syr_coupling->n_v_locations = 0;
+  syr_coupling->b_location_ids = NULL;
+  syr_coupling->v_location_ids = NULL;
 
   syr_coupling->faces = NULL;
   syr_coupling->cells = NULL;
@@ -1412,10 +1438,38 @@ cs_syr4_coupling_add(int          dim,
 
 #endif
 
-  /* Update coupling array and return */
+  return  syr_coupling;
+}
 
-  cs_glob_syr4_couplings[cs_glob_syr4_n_couplings] = syr_coupling;
-  cs_glob_syr4_n_couplings++;
+/*----------------------------------------------------------------------------
+ * Add a mesh location to a syr4_coupling_t structure.
+ *
+ * parameters:
+ *   syr_coupling  <-- SYRTHES coupling structure
+ *   location_id   <-- id of mesh location to add (boundary faces or cells)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_syr4_coupling_add_location(cs_syr4_coupling_t  *syr_coupling,
+                              int                  location_id)
+{
+  cs_mesh_location_type_t l_type = cs_mesh_location_get_type(location_id);
+
+  if (l_type & CS_MESH_LOCATION_BOUNDARY_FACES) {
+    int i = syr_coupling->n_b_locations;
+    syr_coupling->n_b_locations += 1;
+    BFT_REALLOC(syr_coupling->b_location_ids, syr_coupling->n_b_locations, int);
+
+    syr_coupling->b_location_ids[i] = location_id;
+  }
+
+  else if (l_type & CS_MESH_LOCATION_CELLS) {
+    int i = syr_coupling->n_v_locations;
+    syr_coupling->n_v_locations += 1;
+    BFT_REALLOC(syr_coupling->v_location_ids, syr_coupling->n_v_locations, int);
+
+    syr_coupling->v_location_ids[i] = location_id;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1439,13 +1493,9 @@ cs_syr4_coupling_all_destroy(void)
 
     /* Free _cs_syr4_coupling structure */
 
-    if (syr_coupling->syr_name != NULL)
-      BFT_FREE(syr_coupling->syr_name);
-
-    if (syr_coupling->face_sel != NULL)
-      BFT_FREE(syr_coupling->face_sel);
-    if (syr_coupling->cell_sel != NULL)
-      BFT_FREE(syr_coupling->cell_sel);
+    BFT_FREE(syr_coupling->syr_name);
+    BFT_FREE(syr_coupling->b_location_ids);
+    BFT_FREE(syr_coupling->v_location_ids);
 
     if (syr_coupling->faces != NULL)
       _destroy_coupled_ent(&(syr_coupling->faces));
@@ -1544,9 +1594,9 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
 
   /* Exchange coupling options */
 
-  if (syr_coupling->face_sel != NULL)
+  if (syr_coupling->n_b_locations > 0)
     boundary_flag = 'b';
-  if (syr_coupling->cell_sel != NULL)
+  if (syr_coupling->n_v_locations > 0)
     volume_flag = 'v';
   if (cs_syr4_coupling_conservativity == 0)
     conservativity_flag = '0';
@@ -1598,16 +1648,18 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
 
   int match_flag = 0;
 
-  if (syr_coupling->face_sel != NULL) {
+  if (syr_coupling->n_b_locations > 0) {
     syr_coupling->faces = _create_coupled_ent(syr_coupling,
-                                              syr_coupling->face_sel,
+                                              syr_coupling->n_b_locations,
+                                              syr_coupling->b_location_ids,
                                               syr_coupling->dim - 1);
     match_flag += _sync_after_location(syr_coupling);
   }
 
-  if (syr_coupling->cell_sel != NULL) {
+  if (syr_coupling->n_v_locations > 0) {
     syr_coupling->cells = _create_coupled_ent(syr_coupling,
-                                              syr_coupling->cell_sel,
+                                              syr_coupling->n_v_locations,
+                                              syr_coupling->v_location_ids,
                                               syr_coupling->dim);
     match_flag += _sync_after_location(syr_coupling);
   }
@@ -1639,7 +1691,7 @@ cs_syr4_coupling_is_surf(const cs_syr4_coupling_t  *syr_coupling)
 
   assert(syr_coupling != NULL);
 
-  if (syr_coupling->faces != NULL)
+  if (syr_coupling->n_b_locations > 0)
     retval = 1;
 
   return retval;
@@ -1662,7 +1714,7 @@ cs_syr4_coupling_is_vol(const cs_syr4_coupling_t  *syr_coupling)
 
   assert(syr_coupling != NULL);
 
-  if (syr_coupling->cells != NULL)
+  if (syr_coupling->n_v_locations > 0)
     retval = 1;
 
   return retval;

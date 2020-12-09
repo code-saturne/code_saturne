@@ -44,7 +44,6 @@
 #include "cs_matrix_building.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix.h"
-#include "cs_matrix_priv.h"
 #include "cs_matrix_tuning.h"
 #include "cs_matrix_util.h"
 #include "cs_multigrid.h"

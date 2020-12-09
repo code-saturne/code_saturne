@@ -557,7 +557,7 @@ enddo
 
 if (ineedy.eq.1) then
 
-  if (abs(icdpar).ne.1) then
+  if (abs(icdpar).ne.1 .and. abs(icdpar).ne.2) then
     write(nfecra,2700) icdpar
     iok = iok + 1
   endif

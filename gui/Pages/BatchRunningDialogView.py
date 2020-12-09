@@ -761,21 +761,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         prv_dir = os.getcwd()
         os.chdir(self.case['data_path'])
 
-        # Do we have a mesh ?
-
-        have_mesh = False
-        node_ecs = self.case.xmlGetNode('solution_domain')
-        if node_ecs.xmlGetNode('meshes_list'):
-            if node_ecs.xmlGetNode('meshes_list').xmlGetNodeList('mesh'):
-                have_mesh = True
-        if node_ecs.xmlGetNode('mesh_input', 'path'):
-            have_mesh = True
-        if not have_mesh:
-            title = self.tr("Warning")
-            msg   = self.tr("You have to select a mesh.\n\n")
-            QMessageBox.information(self, title, msg)
-            return
-
         # Build command line
 
         rm_type = self.jmdl.batch.rm_type

@@ -255,7 +255,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
   /* Set mesh modification flag if it should be saved for future re-use. */
 
-  mesh->modified = 1;
+  mesh->modified |= CS_MESH_MODIFIED;
 }
 
 /*----------------------------------------------------------------------------*/

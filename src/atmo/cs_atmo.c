@@ -59,6 +59,7 @@
 
 #include "fvm_nodal_extract.h"
 
+#include "cs_atmo_profile_std.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -122,7 +123,9 @@ static cs_atmo_option_t  _atmo_option = {
   .deposition_model = 0,
   .nucleation_model = 0,
   .subgrid_model = 0,
+  .distribution_model = 1, /* all or nothing */
   .meteo_profile = 0, /* no meteo profile */
+  .meteo_file_name = NULL,
   .meteo_dlmo = 0.,
   .meteo_z0 = -1.,
   .meteo_zref = -1.,
@@ -137,20 +140,23 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_ustar0 = -1.,
   .meteo_wstar0 = -1.,
   .meteo_angle = -1.,
-  .meteo_t0 = 0.,
+  .meteo_t0 = 284.15, /* 11 deg C */
   .meteo_t1 = 0.,
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
-  .meteo_psea = -1.,
+  .meteo_psea = 101325.,
   .nbmetd = 0,
   .nbmett = 0,
   .nbmetm = 0,
   .nbmaxt = 0,
   .z_temp_met = NULL,
   .time_met   = NULL,
-  .hyd_p_met  = NULL,
-  .frac_neb  = NULL,
-  .diag_neb  = NULL
+  .hyd_p_met  = NULL
+};
+
+/* global atmo constants structure */
+static cs_atmo_constants_t _atmo_constants = {
+  .ps = 1.e5
 };
 
 /* atmo chemistry options structure */
@@ -179,6 +185,8 @@ static cs_atmo_chemistry_t _atmo_chem = {
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
 
+cs_atmo_constants_t *cs_glob_atmo_constants = &_atmo_constants;
+
 cs_atmo_chemistry_t *cs_glob_atmo_chemistry = &_atmo_chem;
 
 static const char *cs_atmo_aerosol_type_enum_name[]
@@ -199,6 +207,10 @@ cs_mo_phim(cs_real_t              z,
            cs_real_t              dlmo);
 
 cs_real_t
+cs_mo_phih(cs_real_t              z,
+           cs_real_t              dlmo);
+
+cs_real_t
 cs_mo_psim(cs_real_t              z,
            cs_real_t              z0,
            cs_real_t              dlmo);
@@ -215,7 +227,13 @@ void
 cs_atmo_compute_meteo_profiles(void);
 
 void
-cs_f_atmo_get_pointers(int                    **syear,
+cs_f_atmo_get_meteo_file_name(int           name_max,
+                              const char  **name,
+                              int          *name_len);
+
+void
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
                        int                    **squant,
                        int                    **shour,
                        int                    **smin,
@@ -228,6 +246,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        int                    **deposition_model,
                        int                    **nucleation_model,
                        int                    **subgrid_model,
+                       int                    **distribution_model,
                        int                    **model,
                        int                    **n_species,
                        int                    **n_reactions,
@@ -248,9 +267,7 @@ void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2],
-                              cs_real_t **frac_neb,
-                              cs_real_t **diag_neb);
+                              int         dim_hyd_p_met[2]);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -271,11 +288,41 @@ cs_f_atmo_finalize(void);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return the name meteo file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_meteo_file_name(int           name_max,
+                              const char  **name,
+                              int          *name_len)
+{
+  *name = _atmo_option.meteo_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving meteo file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_option.meteo_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Get pointer
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_pointers(int                    **syear,
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
                        int                    **squant,
                        int                    **shour,
                        int                    **smin,
@@ -288,6 +335,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        int                    **deposition_model,
                        int                    **nucleation_model,
                        int                    **subgrid_model,
+                       int                    **distribution_model,
                        int                    **model,
                        int                    **n_species,
                        int                    **n_reactions,
@@ -304,6 +352,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        int                    **nbmetm,
                        int                    **nbmaxt)
 {
+  *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
   *squant    = &(_atmo_option.squant);
   *shour     = &(_atmo_option.shour);
@@ -317,6 +366,7 @@ cs_f_atmo_get_pointers(int                    **syear,
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
   *subgrid_model = &(_atmo_option.subgrid_model);
+  *distribution_model = &(_atmo_option.distribution_model);
   *meteo_profile = &(_atmo_option.meteo_profile);
   *nbmetd     = &(_atmo_option.nbmetd);
   *nbmett     = &(_atmo_option.nbmett);
@@ -357,9 +407,7 @@ void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2],
-                              cs_real_t **frac_neb,
-                              cs_real_t **diag_neb)
+                              int         dim_hyd_p_met[2])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -371,10 +419,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   if (_atmo_option.hyd_p_met == NULL)
     BFT_MALLOC(_atmo_option.hyd_p_met,
                _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
-  if (_atmo_option.frac_neb == NULL)
-    BFT_MALLOC(_atmo_option.frac_neb, n_cells_ext, cs_real_t);
-  if (_atmo_option.diag_neb == NULL)
-    BFT_MALLOC(_atmo_option.diag_neb, n_cells_ext, cs_real_t);
 
   *hyd_p_met       = _atmo_option.hyd_p_met;
   dim_hyd_p_met[0] = _atmo_option.nbmaxt;
@@ -382,8 +426,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
 
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
-  *frac_neb   = _atmo_option.frac_neb;
-  *diag_neb   = _atmo_option.diag_neb;
 }
 
 void
@@ -414,11 +456,10 @@ cs_f_atmo_chem_finalize(void)
 void
 cs_f_atmo_finalize(void)
 {
+  BFT_FREE(_atmo_option.meteo_file_name);
   BFT_FREE(_atmo_option.z_temp_met);
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
-  BFT_FREE(_atmo_option.frac_neb);
-  BFT_FREE(_atmo_option.diag_neb);
 }
 
 /*============================================================================
@@ -461,6 +502,24 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t kappa = cs_turb_xkappa;
 
   cs_atmo_option_t *aopt = &_atmo_option;
+  cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+
+  /* potential temp at ref */
+  cs_real_t pref = cs_glob_atmo_constants->ps;
+  cs_real_t rair = phys_pro->r_pg_cnst;
+  cs_real_t cp0 = phys_pro->cp0;
+  cs_real_t rscp = rair/cp0;
+  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  if (g <= 0.)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Atmo meteo profiles: gravity must not be 0.\n"));
+
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  /* Reference fluid properties set from meteo values */
+  phys_pro->p0 = aopt->meteo_psea;
+  phys_pro->t0 = theta0; /* ref potential temp theta0*/
+
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
   if (aopt->meteo_ustar0 < 0. && aopt->meteo_uref < 0.)
@@ -488,15 +547,6 @@ cs_atmo_init_meteo_profiles(void)
                    z0,
                    aopt->meteo_dlmo);
 
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-  /* potential temp at ref */
-  cs_real_t pref = 1.e5;
-  cs_real_t rair = phys_pro->r_pg_cnst;
-  cs_real_t cp0 = phys_pro->cp0;
-  cs_real_t rscp = rair/cp0;
-  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
-
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
   cs_real_t ustar0 = aopt->meteo_ustar0;
@@ -511,17 +561,6 @@ cs_atmo_init_meteo_profiles(void)
   cs_real_t corio_f = 4. * cs_math_pi / 86164.
     * sin(aopt->latitude * cs_math_pi / 180.);
   aopt->meteo_zi = zi_coef * ustar0 / corio_f;
-
-  bft_printf("\n"
-             " Meteo profile information\n"
-             "  roughness = %f\n"
-             "  ground ustar = %f\n"
-             "  uref = %f\n"
-             "  zref = %f\n"
-             "  tstar = %f\n"
-             "  1/LMO = %f\n"
-             "  zi = %f\n",
-             z0, ustar0, aopt->meteo_uref, zref, tstar, dlmo, aopt->meteo_zi);
 
 }
 
@@ -547,6 +586,9 @@ cs_atmo_compute_meteo_profiles(void)
     (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
   cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
   cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
+  cs_real_t *cpro_met_p = cs_field_by_name("meteo_pressure")->val;
+  cs_real_t *cpro_met_rho = cs_field_by_name("meteo_density")->val;
+  cs_real_t *cpro_met_t = cs_field_by_name("meteo_temperature")->val;
 
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
@@ -557,7 +599,7 @@ cs_atmo_compute_meteo_profiles(void)
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* potential temp at ref */
-  cs_real_t pref = 1.e5;
+  cs_real_t pref = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
@@ -571,10 +613,30 @@ cs_atmo_compute_meteo_profiles(void)
   /* Friction temperature */
   cs_real_t tstar = aopt->meteo_tstar;
 
+  /* Variables used for clipping */
+  cs_real_t ri_max = cs_math_big_r;
+  cs_real_t *dlmo_var = NULL;
+  cs_real_t z_min = cs_math_big_r;
+  if (aopt->compute_z_ground == true){
+    cs_atmo_z_ground_compute();
+  }
+  cs_real_t *z_ground = cs_field_by_name_try("z_ground")->val;
+
+  BFT_MALLOC(dlmo_var, m->n_cells, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    dlmo_var[cell_id]=0.0;
+  }
+
+  if (dlmo>0) {
+    ri_max = 0.75; // Value chosen to limit buoyancy vs shear production
+  }
+
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
-    cs_real_t z = cell_cen[cell_id][2];
+    //TODO reference altitude or use z_ground?
+    cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
 
     /* Velocity profile */
     cs_real_t u_norm = ustar0 / kappa * cs_mo_psim(z+z0, z0, dlmo);
@@ -587,7 +649,7 @@ cs_atmo_compute_meteo_profiles(void)
     cpro_met_potemp[cell_id] = theta0 + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
 
     /* Richardson flux number profile */
-    // FIXME Arya 4.37 : z/L * phih/phim^2
+    // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo * phim
     cs_real_t ri_f = (z+z0) * dlmo / cs_mo_phim(z+z0, dlmo);
 
     /* TKE profile */
@@ -598,6 +660,55 @@ cs_atmo_compute_meteo_profiles(void)
     cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
       * cs_mo_phim(z+z0, dlmo)*(1.-ri_f); //FIXME min (1, ri_f) ?
 
+    /* TODO compute hydrostatic pressure and density profiles
+     * with Laplace integration  (see atlecm.f90) */
+    cs_atmo_profile_std((z+z0),
+                        &(cpro_met_p[cell_id]),
+                        &(cpro_met_t[cell_id]),
+                        &(cpro_met_rho[cell_id]));
+
+
+    /* Very stable cases */
+    if (ri_f > ri_max) {
+      if (z <= z_min) {
+        //Ri_f is an increasing monotonic function, so the lowest value of
+        //z for which Ri_f>Ri_max is needed
+        z_min = z;
+      }
+    }
+  }
+
+  /* Very stable cases, corresponding to mode 0 in the Python prepro */
+  if (z_min < cs_math_big_r) { // Clipping only if there are cells to be clipped
+    bft_printf("Switching to very stable clipping for meteo profile.\n");
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
+      if (z >= z_min) {
+         /* mode = 0 is ustar=cst */
+        dlmo_var[cell_id] = dlmo * (z_min + z0) / (z + z0);
+
+        /* Velocity profile */
+        cs_real_t u_norm = ustar0 / kappa * cs_mo_phim(z_min, dlmo) * log(z / z0);
+
+        cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
+        cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
+
+       /* Potential temperature profile
+        * Note: same roughness as dynamics */
+        cpro_met_potemp[cell_id] = theta0
+          + tstar * z_min / kappa * cs_mo_phih(z_min, dlmo) * (-1./z + 1./z0) ;
+
+       /* TKE profile
+          ri_max is necessarily lower than 1, but CS_MIN might be useful if
+          that changes in the future */
+        cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
+          * sqrt(1. - CS_MIN(ri_max, 1.));
+
+        /* epsilon profile */
+        cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / kappa  / dlmo_var[cell_id]
+         * (1- CS_MIN(ri_max, 1.)) / CS_MIN(ri_max, 1.);
+      }
+    }
   }
 
 }
@@ -798,6 +909,55 @@ cs_atmo_z_ground_compute(void)
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function computes hydrostatic profiles of density and pressure
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \divs \left( \grad \varia \right)
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
+ *  is the potential temperature.
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *  \f]
+ *  and Neumann elsewhere.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_hydrostatic_profiles_compute(void)
+{
+ //TODO
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the meteo file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_meteo_file_name(const char *file_name)
+{
+  if (file_name == NULL) {
+    return;
+  }
+
+  BFT_MALLOC(_atmo_option.meteo_file_name,
+             strlen(file_name) + 1,
+             char);
+
+  sprintf(_atmo_option.meteo_file_name, "%s", file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1060,7 +1220,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 void
 cs_atmo_log_setup(void)
 {
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -1069,17 +1229,17 @@ cs_atmo_log_setup(void)
                   "--------------------------\n\n"));
 
   switch(cs_glob_physical_model_flag[CS_ATMOSPHERIC]) {
-    case 0:
+    case CS_ATMO_CONSTANT_DENSITY:
       /* Constant density */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Constant density\n\n"));
       break;
-    case 1:
+    case CS_ATMO_DRY:
       /* Dry */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Dry atmosphere\n\n"));
       break;
-    case 2:
+    case CS_ATMO_HUMID:
       /* Humid */
       cs_log_printf(CS_LOG_SETUP,
                   _("  Humid atmosphere\n\n"));
@@ -1124,6 +1284,14 @@ cs_atmo_log_setup(void)
        "    longitude: %6f\n\n"),
      cs_glob_atmo_option->latitude,
      cs_glob_atmo_option->longitude);
+
+  if (cs_glob_atmo_option->meteo_profile == 1) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Large scale Meteo file: %s\n\n"),
+       cs_glob_atmo_option->meteo_file_name);
+  }
+
 
   if (cs_glob_atmo_option->meteo_profile == 2) {
     cs_log_printf

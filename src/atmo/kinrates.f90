@@ -56,6 +56,7 @@ implicit none
 ! Local variables
 
 integer iel,ii,iphotolysis
+integer          met_qv_id
 double precision temp, dens          ! temperature, density
 double precision press, hspec        ! pressure, specific humidity (kg/kg)
 double precision rk(nrg)             ! kinetic rates
@@ -71,6 +72,9 @@ double precision omega
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_totwt
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
+double precision, dimension(:), pointer :: cpro_met_temp
+double precision, dimension(:), pointer :: cpro_met_p
+double precision, dimension(:), pointer :: cpro_met_qv
 
 ! Initialisation
 
@@ -78,6 +82,15 @@ temp = t0
 dens = ro0
 press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
+
+if (imeteo.ge.2) then
+  call field_get_val_s_by_name('meteo_temperature', cpro_met_temp)
+  call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
+  call field_get_id_try('meteo_humidity', met_qv_id)
+  if (met_qv_id.ge.0) then
+    call field_get_val_s(met_qv_id, cpro_met_qv)
+  endif
+endif
 
 if (photolysis) then
   iphotolysis = 1
@@ -129,10 +142,14 @@ do iel = 1, ncel
     call intprf                                                   &
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, ttmet, zent, ttcabs, temp )
-    temp=temp+tkelvi
+
+    temp = temp + tkelvi
+  else
+    press = cpro_met_p(iel)
+    temp = cpro_met_temp(iel) + tkelvi
   endif
 
-  ! Specific hymidity
+  ! Specific humidity
   ! Humid atmosphere
   if (ippmod(iatmos).ge.2) then
     hspec = (cvar_totwt(iel)-cpro_liqwt(iel))    &
@@ -145,6 +162,8 @@ do iel = 1, ncel
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, qvmet, zent, ttcabs, hspec )
 
+  else
+    hspec = cpro_met_qv(iel)
   endif
 
   ! Call the computation of kinetic rates
@@ -166,10 +185,10 @@ do iel = 1, ncel
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 !----
-! END
+! End
 !----
 
 return

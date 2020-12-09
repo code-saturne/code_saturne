@@ -91,110 +91,39 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
-/* Structure associated with SYRTHES coupling */
-
-typedef struct {
-
-  int      match_id;       /* Id of matched application, -1 initially */
-  int      dim;            /* Coupled mesh dimension */
-  int      ref_axis;       /* Selected axis for edge extraction */
-  char    *app_name;       /* Application name */
-  char    *face_sel_c;     /* Face selection criteria */
-  char    *cell_sel_c;     /* Cell selection criteria */
-  bool     allow_nearest;  /* Allow nearest-neighbor beyond tolerance */
-  float    tolerance;      /* Tolerance */
-  int      verbosity;      /* Verbosity level */
-  int      visualization;  /* Visualization level */
-  int      conservativity; /* Conservativity forcing flag */
-
-} _cs_syr_coupling_builder_t;
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
-
-static int _cs_glob_n_syr_cp = -1;
-static int _cs_glob_n_syr4_cp = -1;
-
-static int                         _syr_coupling_builder_size = 0;
-static _cs_syr_coupling_builder_t *_syr_coupling_builder = NULL;
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Remove matched builder entries from the coupling builder.
- *----------------------------------------------------------------------------*/
-
-static void
-_remove_matched_builder_entries(void)
-{
-  int i;
-  int n_unmatched_entries = 0;
-
-  /* First, free arrays associated with marked entries */
-
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
-
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-
-    if (scb->match_id > -1) {
-      if (scb->face_sel_c != NULL)
-        BFT_FREE(scb->face_sel_c);
-      if (scb->cell_sel_c != NULL)
-        BFT_FREE(scb->cell_sel_c);
-      if (scb->app_name != NULL)
-        BFT_FREE(scb->app_name);
-    }
-  }
-
-  /* Now, remove marked entries and resize */
-
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-    if (scb->match_id < 0) {
-      *(_syr_coupling_builder + n_unmatched_entries) = *scb;
-      n_unmatched_entries += 1;
-    }
-  }
-
-  _syr_coupling_builder_size = n_unmatched_entries;
-
-  BFT_REALLOC(_syr_coupling_builder,
-              _syr_coupling_builder_size,
-              _cs_syr_coupling_builder_t);
-}
-
-/*----------------------------------------------------------------------------
  * Print information on yet unmatched SYRTHES couplings.
+ *
+ * parameters:
+ *   n_unmatched    <--  number of unmatched couplings
+ *   unmatched_ids  <--  array of unmatched couplings
  *----------------------------------------------------------------------------*/
 
 static void
-_print_all_unmatched_syr(void)
+_print_all_unmatched_syr(int        n_unmatched,
+                         const int  unmatched_ids[])
 {
-  int i;
-
-  const char empty_string[] = "";
-
   /* Loop on defined SYRTHES instances */
 
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
+  for (int i = 0; i < n_unmatched; i++) {
 
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(unmatched_ids[i]);
+    const char *local_name = cs_syr4_coupling_get_name(syr_coupling);
 
-    if (scb->match_id < 0) {
+    bft_printf(_(" SYRTHES coupling:\n"
+                 "   coupling id:              %d\n"
+                 "   local name:               \"%s\"\n\n"),
+               i, local_name);
 
-      const char *local_name = empty_string;
-
-      if (scb->app_name != NULL)
-        local_name = scb->app_name;
-
-      bft_printf(_(" SYRTHES coupling:\n"
-                   "   coupling id:              %d\n"
-                   "   local name:               \"%s\"\n\n"),
-                 i, local_name);
-    }
   }
 
   bft_printf_flush();
@@ -203,233 +132,153 @@ _print_all_unmatched_syr(void)
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Add a SYRTHES 4 coupling using MPI.
- *
- * parameters:
- *   builder_id    <-- SYRTHES application id in coupling builder
- *   syr_root_rank <-- root rank associated with SYRTHES
- *   n_syr_ranks   <-- number of ranks associated with SYRTHES
- *----------------------------------------------------------------------------*/
-
-static void
-_syr4_add_mpi(int builder_id,
-              int syr_root_rank,
-              int n_syr_ranks)
-{
-  cs_syr4_coupling_t *syr_coupling = NULL;
-  _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + builder_id;
-
-  /* Addition of coupling and association of communicator could
-     be grouped together, but we prefer to keep the steps separate
-     so that we could simply add SYRTHES 4 couplings directly (without
-     resorting to a temporary builder), then match communications */
-
-  cs_syr4_coupling_add(scb->dim,
-                       scb->ref_axis,
-                       scb->face_sel_c,
-                       scb->cell_sel_c,
-                       scb->app_name,
-                       scb->allow_nearest,
-                       scb->tolerance,
-                       scb->verbosity,
-                       scb->visualization);
-
-  syr_coupling = cs_syr4_coupling_by_id(cs_syr4_coupling_n_couplings() - 1);
-
-  cs_syr4_coupling_init_comm(syr_coupling,
-                             builder_id,
-                             syr_root_rank,
-                             n_syr_ranks);
-}
-
-/*----------------------------------------------------------------------------
- * Print information on identified SYRTHES couplings using MPI.
- *
- * This function requires coupling_builder information, and must thus
- * be called before removing matched builder entries.
- *----------------------------------------------------------------------------*/
-
-static void
-_print_all_mpi_syr(void)
-{
-  int i;
-
-  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
-  const char empty_string[] = "";
-
-  /* Loop on defined SYRTHES instances */
-
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
-
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-
-    if (scb->match_id > -1) {
-
-      const char *syr_version = empty_string;
-      const char *local_name = empty_string;
-      const char *distant_name = empty_string;
-
-      const ple_coupling_mpi_set_info_t
-        ai = ple_coupling_mpi_set_get_info(mpi_apps, scb->match_id);
-
-      if (scb->app_name != NULL)
-        local_name = scb->app_name;
-      if (ai.app_type != NULL)
-        syr_version = ai.app_type;
-      if (ai.app_name != NULL)
-        distant_name = ai.app_name;
-
-      bft_printf(_(" SYRTHES coupling:\n"
-                   "   coupling id:              %d\n"
-                   "   version:                  \"%s\"\n"
-                   "   local name:               \"%s\"\n"
-                   "   distant application name: \"%s\"\n"
-                   "   MPI application id:       %d\n"
-                   "   MPI root rank:            %d\n"
-                   "   number of MPI ranks:      %d\n\n"),
-                 i, syr_version, local_name, distant_name,
-                 scb->match_id, ai.root_rank, ai.n_ranks);
-    }
-  }
-
-  bft_printf_flush();
-}
-
-/*----------------------------------------------------------------------------
  * Initialize MPI SYRTHES couplings using MPI.
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
+ *
+ * parameters:
+ *   n_unmatched    <->  pointer to number of unmatched couplings
+ *   unmatched_ids  <->  pointer to array of unmatched couplings
  *----------------------------------------------------------------------------*/
 
 static void
-_init_all_mpi_syr(void)
+_init_all_mpi_syr(int  *n_unmatched,
+                  int  **unmatched_ids)
 {
-  int i;
+  int _n_unmatched = *n_unmatched;
+  int *_unmatched_ids = *unmatched_ids;
 
-  int n_apps = 0;
-  int n_matched_apps = 0;
-  int n_syr4_apps = 0;
-  int syr_app_id = -1;
+  const int n_couplings = cs_syr4_coupling_n_couplings();
 
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps == NULL)
     return;
 
-  n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+  const int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+
+  /* Loop on applications */
+
+  for (int i = 0; i < n_apps; i++) {
+
+    ple_coupling_mpi_set_info_t ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+
+    if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
+
+      int  match_queue_id = -1;
+      int  coupling_id = -1;
+
+      if (n_apps == 2 && n_couplings == 1 && _n_unmatched == 1) {
+        match_queue_id = 0;
+        coupling_id = 0;
+      }
+      else if (ai.app_name != NULL) {
+        for (int j = 0; j < _n_unmatched; j++) {
+          int k = _unmatched_ids[j];
+          cs_syr4_coupling_t *scpl = cs_syr4_coupling_by_id(k);
+          if (strcmp(ai.app_name, cs_syr4_coupling_get_name(scpl)) == 0) {
+            coupling_id = k;
+            match_queue_id = j;
+            break;
+          }
+        }
+      }
+
+      if (coupling_id > -1) {
+
+        /* Remove from unmatched queue */
+        _n_unmatched -= 1;
+        for (int l = match_queue_id; l < _n_unmatched; l++)
+          _unmatched_ids[l] = _unmatched_ids[l+1];
+        if (_n_unmatched == 0)
+          BFT_FREE(_unmatched_ids);
+
+        /* Set communicator */
+        cs_syr4_coupling_init_comm(cs_syr4_coupling_by_id(coupling_id),
+                                   coupling_id,
+                                   ai.root_rank,
+                                   ai.n_ranks);
+
+        /* Print matching info */
+
+        const char *syr_version = cs_empty_string;
+        const char *local_name = cs_empty_string;
+        const char *distant_name = cs_empty_string;
+
+        if (ai.app_name != NULL)
+          local_name = ai.app_name;
+        if (ai.app_type != NULL)
+          syr_version = ai.app_type;
+        if (ai.app_name != NULL)
+          distant_name = ai.app_name;
+
+        bft_printf(_(" SYRTHES coupling:\n"
+                     "   coupling id:              %d\n"
+                     "   version:                  \"%s\"\n"
+                     "   local name:               \"%s\"\n"
+                     "   distant application name: \"%s\"\n"
+                     "   MPI application id:       %d\n"
+                     "   MPI root rank:            %d\n"
+                     "   number of MPI ranks:      %d\n\n"),
+                   coupling_id, syr_version, local_name, distant_name,
+                   i, ai.root_rank, ai.n_ranks);
+      }
+
+      /* Note that a SYRTHES app may be present in the coupling set, but
+         not coupled to the current code_saturne instance, so
+         coupling_id < 0 here should not be reported as an error or
+         complained about here. In case if missing matches, only the
+         codes having defined and missing couplings should complain. */
+
+    }
+
+  } /* End of loop on applications */
+
+  bft_printf_flush();
+
+  /* Set return values */
+
+  *n_unmatched = _n_unmatched;
+  *unmatched_ids = _unmatched_ids;
+}
+
+/*----------------------------------------------------------------------------
+ * Find name of single SYRTHES coupling using MPI.
+ *
+ * If no coupling or multiple couplings are present, the default cannot be
+ * determined, so NULL is returned.
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_mpi_syr_default_name(void)
+{
+  const char *retval = NULL;
+
+  int n_syr4_apps = 0;
+
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
+
+  if (mpi_apps == NULL)
+    return NULL;
+
+  int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
 
   /* First pass to count available SYRTHES couplings */
 
-  for (i = 0; i < n_apps; i++) {
+  for (int i = 0; i < n_apps; i++) {
     const ple_coupling_mpi_set_info_t
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
     if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
+      if (n_syr4_apps == 0)
+        retval = ai.app_name;
+      else
+        retval = NULL;
       n_syr4_apps += 1;
-      syr_app_id = i;
     }
   }
 
-  /* In single-coupling mode, no identification necessary */
-
-  if (n_syr4_apps == 1 && _syr_coupling_builder_size == 1) {
-
-    ple_coupling_mpi_set_info_t ai
-      = ple_coupling_mpi_set_get_info(mpi_apps, syr_app_id);
-
-    _syr_coupling_builder->match_id = syr_app_id;
-
-    BFT_REALLOC(_syr_coupling_builder->app_name, strlen(ai.app_name) + 1, char);
-    strcpy(_syr_coupling_builder->app_name, ai.app_name);
-
-    n_matched_apps += 1;
-
-  }
-
-  /* In multiple-coupling mode, identification is necessary */
-
-  else {
-
-    int j;
-    ple_coupling_mpi_set_info_t ai;
-    int n_syr_apps = 0;
-    int *syr_appinfo = NULL;
-
-    /* First, build an array of matched/unmatched SYRTHES applications, with
-       2 entries per instance: matched indicator, app_id */
-
-    BFT_MALLOC(syr_appinfo, n_syr4_apps*2, int);
-
-    for (i = 0; i < n_apps; i++) {
-      ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
-      if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
-        syr_appinfo[n_syr_apps*2] = 0;
-        syr_appinfo[n_syr_apps*2 + 1] = i;
-        n_syr_apps += 1;
-      }
-    }
-
-    assert(n_syr_apps == n_syr4_apps);
-
-    /* Loop on defined SYRTHES instances */
-
-    for (i = 0; i < _syr_coupling_builder_size; i++) {
-
-      _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-
-      /* First loop on available SYRTHES instances to match app_names */
-
-      if (scb->app_name != NULL) {
-
-        for (j = 0; j < n_syr_apps; j++) {
-
-          if (syr_appinfo[j*2] != 0) /* Consider only unmatched applications */
-            continue;
-
-          ai = ple_coupling_mpi_set_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
-          if (ai.app_name == NULL)
-            continue;
-
-          if (strcmp(ai.app_name, scb->app_name) == 0) {
-            scb->match_id = syr_appinfo[j*2 + 1];
-            syr_appinfo[j*2] = i;
-            n_matched_apps += 1;
-            break;
-          }
-
-        }
-
-      }
-
-    } /* End of loop on defined SYRTHES instances */
-
-    BFT_FREE(syr_appinfo);
-
-  } /* End of test on single or multiple SYRTHES matching algorithm */
-
-  /* Print matching info */
-
-  _print_all_mpi_syr();
-
-  /* Now initialize matched couplings */
-  /*----------------------------------*/
-
-  for (i = 0; i < _syr_coupling_builder_size; i++) {
-
-    _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
-
-    if (scb->match_id > -1) {
-      const ple_coupling_mpi_set_info_t
-        ai = ple_coupling_mpi_set_get_info(mpi_apps, scb->match_id);
-
-      if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0)
-        _syr4_add_mpi(i, ai.root_rank, ai.n_ranks);
-    }
-  }
-
-  /* Cleanup */
-
-  _remove_matched_builder_entries();
+  return retval;
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -476,66 +325,134 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        int          verbosity,
                        int          visualization)
 {
-  int  conservativity = 1; /* Default value */
-
-  _cs_syr_coupling_builder_t *scb = NULL;
-
-  /* Add corresponding coupling to temporary SYRTHES couplings array */
-
-  BFT_REALLOC(_syr_coupling_builder,
-              _syr_coupling_builder_size + 1,
-              _cs_syr_coupling_builder_t);
-
-  scb = &(_syr_coupling_builder[_syr_coupling_builder_size]);
-
-  scb->match_id = -1;
+  int dim = 3;
+  int ref_axis = -1;
 
   switch (projection_axis) {
   case 'x':
   case 'X':
-    scb->dim = 2;
-    scb->ref_axis = 0;
+    dim = 2;
+    ref_axis = 0;
     break;
   case 'y':
   case 'Y':
-    scb->dim = 2;
-    scb->ref_axis = 1;
+    dim = 2;
+    ref_axis = 1;
     break;
   case 'z':
   case 'Z':
-    scb->dim = 2;
-    scb->ref_axis = 2;
+    dim = 2;
+    ref_axis = 2;
     break;
   default:
-    scb->dim = 3;
-    scb->ref_axis = -1;
+    break;
   }
 
-  scb->app_name = NULL;
-  if (syrthes_name != NULL) {
-    BFT_MALLOC(scb->app_name, strlen(syrthes_name) + 1, char);
-    strcpy(scb->app_name, syrthes_name);
+  /* Ensure name is available */
+
+  if (syrthes_name == NULL)
+    syrthes_name = _mpi_syr_default_name();
+  if (syrthes_name == NULL)
+    syrthes_name = cs_empty_string;
+
+  /* Define additional coupling */
+
+  cs_syr4_coupling_t  *syr_coupling = cs_syr4_coupling_define(dim,
+                                                              ref_axis,
+                                                              syrthes_name,
+                                                              allow_nonmatching,
+                                                              tolerance,
+                                                              verbosity,
+                                                              visualization);
+
+  /* Add locations if done at that stage (deprecated) */
+
+  int n_locations = cs_mesh_location_n_locations();
+
+  const char *sel_criteria[2] = {boundary_criteria, volume_criteria};
+  const char *type_name[2] = {"faces", "cells"};
+  cs_mesh_location_type_t type_filter[2] = {CS_MESH_LOCATION_BOUNDARY_FACES,
+                                            CS_MESH_LOCATION_CELLS};
+
+  for (int i = 0; i < 2; i++) {
+
+    if (sel_criteria[i] != NULL) {
+      for (int j = 0; j < n_locations && sel_criteria[i] != NULL; j++) {
+        cs_mesh_location_type_t l_type = cs_mesh_location_get_type(j);
+        if (l_type & type_filter[i]) {
+          const char *c = cs_mesh_location_get_selection_string(j);
+          if (c != NULL) {
+            if (strcmp(c, sel_criteria[i]) == 0) {
+              cs_syr4_coupling_add_location(syr_coupling, j);
+              sel_criteria[i] = NULL;
+            }
+          }
+        }
+      }
+    }
+
+    if (sel_criteria[i] != NULL) {
+
+      char *name;
+      size_t l = strlen(syrthes_name) + strlen(type_name[i]) + 2;
+      BFT_MALLOC(name, l, char);
+      snprintf(name, l, "%s_%s", syrthes_name, type_name[i]);
+
+      int j = cs_mesh_location_add(name, type_filter[i], sel_criteria[i]);
+
+      BFT_FREE(name);
+
+      cs_syr4_coupling_add_location(syr_coupling, j);
+
+    }
+
   }
 
-  scb->face_sel_c = NULL;
-  if (boundary_criteria != NULL) {
-    BFT_MALLOC(scb->face_sel_c, strlen(boundary_criteria) + 1, char);
-    strcpy(scb->face_sel_c, boundary_criteria);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associated a zone to a defined SYRTHES coupling.
+ *
+ * \param[in] syrthes_name  matching SYRTHES application name
+ * \param[in] z             pointer to matching zone
+ *                          (boundary or volume)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_add_zone(const char       *syrthes_name,
+                         const cs_zone_t  *z)
+{
+  /* Ensure name is available */
+
+  if (syrthes_name == NULL)
+    syrthes_name = _mpi_syr_default_name();
+  if (syrthes_name == NULL)
+    syrthes_name = cs_empty_string;
+
+  /* Search for matching name in existing couplings */
+
+  int n_couplings = cs_syr4_coupling_n_couplings();
+  bool match = false;
+
+  for (int i = 0; i < n_couplings; i++) {
+
+    cs_syr4_coupling_t  *syr_coupling = cs_syr4_coupling_by_id(i);
+    const char *cmp_name = cs_syr4_coupling_get_name(syr_coupling);
+
+    if (strcmp(syrthes_name, cmp_name) == 0) {
+      cs_syr4_coupling_add_location(syr_coupling, z->location_id);
+      match = true;
+      break;
+    }
+
   }
 
-  scb->cell_sel_c = NULL;
-  if (volume_criteria != NULL) {
-    BFT_MALLOC(scb->cell_sel_c, strlen(volume_criteria) + 1, char);
-    strcpy(scb->cell_sel_c, volume_criteria);
-  }
-
-  scb->allow_nearest = allow_nonmatching;
-  scb->tolerance = tolerance;
-  scb->verbosity = verbosity;
-  scb->visualization = visualization;
-  scb->conservativity = conservativity;
-
-  _syr_coupling_builder_size += 1;
+  if (match == false)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: no defined SYRTHES coupling named \"%s\"."),
+              __func__, syrthes_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -548,28 +465,36 @@ cs_syr_coupling_define(const char  *syrthes_name,
 void
 cs_syr_coupling_all_init(void)
 {
+  int n_unmatched = cs_syr4_coupling_n_couplings();
+
+  int *unmatched_ids;
+  BFT_MALLOC(unmatched_ids, n_unmatched, int);
+
+  for (int i = 0; i < n_unmatched; i++)
+    unmatched_ids[i] = i;
+
   /* First try using MPI */
 
 #if defined(HAVE_MPI)
 
-  if (_syr_coupling_builder_size > 0)
-    _init_all_mpi_syr();
+  if (n_unmatched > 0)
+    _init_all_mpi_syr(&n_unmatched, &unmatched_ids);
 
 #endif
 
-  if (_syr_coupling_builder_size > 0) {
+  if (n_unmatched > 0) {
 
     bft_printf("Unmatched SYRTHES couplings:\n"
                "----------------------------\n\n");
 
-    _print_all_unmatched_syr();
+    _print_all_unmatched_syr(n_unmatched, unmatched_ids);
+
+    BFT_FREE(unmatched_ids);
 
     bft_error(__FILE__, __LINE__, 0,
               _("At least 1 SYRTHES coupling was defined for which\n"
                 "no communication with a SYRTHES instance is possible."));
   }
-
-  _cs_glob_n_syr4_cp = cs_syr4_coupling_n_couplings();
 }
 
 /*----------------------------------------------------------------------------
@@ -592,14 +517,7 @@ cs_syr_coupling_all_finalize(void)
 int
 cs_syr_coupling_n_couplings(void)
 {
-  if (_cs_glob_n_syr_cp < 0) {
-    if (_syr_coupling_builder_size > 0)
-      _cs_glob_n_syr_cp = _syr_coupling_builder_size;
-    else
-      _cs_glob_n_syr_cp = cs_syr4_coupling_n_couplings();
-  }
-
-  return _cs_glob_n_syr_cp;
+  return cs_syr4_coupling_n_couplings();
 }
 
 /*----------------------------------------------------------------------------
@@ -637,7 +555,7 @@ void
 cs_syr_coupling_log_setup(void)
 {
   /* Get the number of SYRTHES couplings */
-  int n_coupl = cs_syr_coupling_n_couplings();
+  int n_coupl = cs_syr4_coupling_n_couplings();
   const int keysca = cs_field_key_id("scalar_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
   int icpsyr;
@@ -653,7 +571,7 @@ cs_syr_coupling_log_setup(void)
 
     int n_surf_coupl = 0, n_vol_coupl = 0, issurf, isvol;
 
-    for (int coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
+    for (int coupl_id = 0; coupl_id < n_coupl; coupl_id++) {
       cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
 
       /* Add a new surface coupling if detected */
@@ -708,7 +626,9 @@ cs_syr_coupling_log_setup(void)
 void
 cs_syr_coupling_init_meshes(void)
 {
-  for (int coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
+  int n_coupl = cs_syr4_coupling_n_couplings();
+
+  for (int coupl_id = 0; coupl_id < n_coupl; coupl_id++) {
     cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
     cs_syr4_coupling_init_mesh(syr_coupling);
   }
@@ -729,28 +649,15 @@ cs_syr_coupling_is_surf(int  cpl_id)
 {
   int retval = 0;  /* Default initialization */
 
-  int n_couplings = _cs_glob_n_syr_cp;
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
 
-  assert(_cs_glob_n_syr_cp > -1);
-
-  if (cpl_id < 0 || cpl_id >= n_couplings)
+  if (syr_coupling == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("SYRTHES coupling id %d impossible; "
-                "there are %d couplings"), cpl_id, n_couplings);
+                "there are %d couplings"),
+              cpl_id, cs_syr4_coupling_n_couplings());
 
-  if (_cs_glob_n_syr_cp == _cs_glob_n_syr4_cp) {
-    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
-    retval = cs_syr4_coupling_is_surf(syr_coupling);
-  }
-
-  else { /* Couplings are still defined in the builder structure */
-    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
-      _cs_syr_coupling_builder_t *scb = NULL;
-      scb = _syr_coupling_builder + cpl_id;
-      if (scb->face_sel_c != NULL)
-        retval = 1;
-    }
-  }
+  retval = cs_syr4_coupling_is_surf(syr_coupling);
 
   return retval;
 }
@@ -1310,20 +1217,18 @@ cs_lnum_t
 cs_syr_coupling_n_elts(int  cpl_id,
                        int  mode)
 {
-  int n_couplings = _cs_glob_n_syr4_cp;
   cs_lnum_t retval = 0;
 
-  if (cpl_id < 0 || cpl_id >= n_couplings)
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+
+  if (syr_coupling == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("SYRTHES coupling id %d impossible; "
                 "there are %d couplings"),
-              cpl_id, n_couplings);
+              cpl_id,cs_syr4_coupling_n_couplings());
 
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(cpl_id);
+  else
     retval = cs_syr4_coupling_get_n_elts(syr_coupling, mode);
-  }
 
   return retval;
 }
@@ -1343,19 +1248,16 @@ cs_syr_coupling_elt_ids(int        cpl_id,
                         int        mode,
                         cs_lnum_t  elt_ids[])
 {
-  int n_couplings = _cs_glob_n_syr4_cp;
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
 
-  if (cpl_id < 0 || cpl_id >= n_couplings)
+  if (syr_coupling == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("SYRTHES coupling id %d impossible; "
                 "there are %d couplings"),
-              cpl_id, n_couplings);
+              cpl_id,cs_syr4_coupling_n_couplings());
 
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(cpl_id);
+  else
     cs_syr4_coupling_get_elt_ids(syr_coupling, elt_ids, mode);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1373,19 +1275,16 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
                             int        mode,
                             cs_real_t  t_solid[])
 {
-  int n_couplings = _cs_glob_n_syr4_cp;
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
 
-  if (cpl_id < 0 || cpl_id >= n_couplings)
+  if (syr_coupling == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("SYRTHES coupling id %d impossible; "
                 "there are %d couplings"),
-              cpl_id, n_couplings);
+              cpl_id,cs_syr4_coupling_n_couplings());
 
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(cpl_id);
+  else
     cs_syr4_coupling_recv_tsolid(syr_coupling, t_solid, mode);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1396,7 +1295,7 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
  * \param[in]    mode     0 for boundary, 1 for volume
  * \param[in]    elt_ids  ids of coupled elements
  * \param[in]    t_fluid  fluid temperature
- * \param[in]    h_fluid  fluid exchage coefficient
+ * \param[in]    h_fluid  fluid exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1407,20 +1306,17 @@ cs_syr_coupling_send_tf_hf(int              cpl_id,
                            cs_real_t        t_fluid[],
                            cs_real_t        h_fluid[])
 {
-  int n_couplings = _cs_glob_n_syr4_cp;
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
 
-  if (cpl_id < 0 || cpl_id >= n_couplings)
+  if (syr_coupling == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("SYRTHES coupling id %d impossible; "
                 "there are %d couplings"),
-              cpl_id, n_couplings);
+              cpl_id,cs_syr4_coupling_n_couplings());
 
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(cpl_id);
+  else
     cs_syr4_coupling_send_tf_hf(syr_coupling, elt_ids,
                                 t_fluid, h_fluid, mode);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

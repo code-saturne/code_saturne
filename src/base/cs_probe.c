@@ -1776,14 +1776,9 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   /* Set a global numbering if needed */
 
   if (pset->p_define_func != NULL) {
-    cs_real_t *s;
-    BFT_MALLOC(s, pset->n_loc_probes, cs_real_t);
-    for (int i = 0; i < pset->n_loc_probes; i++) {
-      int j = pset->loc_id[i];
-      s[i] = pset->s_coords[j];
-    }
+    cs_real_t *s = cs_probe_set_get_loc_curvilinear_abscissa(pset);
     fvm_io_num_t *vtx_io_num
-      = fvm_io_num_create_from_real(pset->s_coords, pset->n_loc_probes);
+      = fvm_io_num_create_from_real(s, pset->n_loc_probes);
     BFT_FREE(s);
     fvm_nodal_transfer_vertex_io_num(exp_mesh, &vtx_io_num);
   }
@@ -2028,6 +2023,35 @@ cs_probe_set_get_curvilinear_abscissa(const cs_probe_set_t   *pset)
     return retval;
   else
     return pset->s_coords;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the list of curvilinear abscissa of probes located
+ *         on the local ranks for the given probe set
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * \param[in]  pset              pointer to a cs_probe_set_t structure
+ *
+ * \return NULL or the pointer to the array of abscissa
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_probe_set_get_loc_curvilinear_abscissa(const cs_probe_set_t   *pset)
+{
+  if (pset == NULL)
+    return NULL;
+
+  cs_real_t *s;
+  BFT_MALLOC(s, pset->n_loc_probes, cs_real_t);
+  for (int i = 0; i < pset->n_loc_probes; i++) {
+    int j = pset->loc_id[i];
+    s[i] = pset->s_coords[j];
+  }
+
+  return s;
 }
 
 /*----------------------------------------------------------------------------*/

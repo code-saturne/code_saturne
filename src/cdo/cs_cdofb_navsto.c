@@ -61,6 +61,7 @@
 #include "cs_reco.h"
 #include "cs_sdm.h"
 #include "cs_timer.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -103,9 +104,58 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
+static cs_time_plot_t  *cs_cdofb_time_plot = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize a \ref cs_time_plot_t structure
+ *
+ * \param[in] nsp       pointer to a cs_navsto_param_t struct.
+ *
+ * \return a pointer to a new allocated cs_time_plot_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_time_plot_t *
+_init_time_plot(const cs_navsto_param_t    *nsp)
+{
+  int n_cols = 0;
+  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY)
+    n_cols++;
+  if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
+    n_cols++;
+  if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
+    n_cols++;
+
+  const char  **labels;
+  BFT_MALLOC(labels, n_cols, const char *);
+  n_cols = 0;
+  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY)
+    labels[n_cols++] = "kinetic_energy";
+  if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
+    labels[n_cols++] = "enstrophy";
+  if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
+    labels[n_cols++] = "helicity";
+
+  cs_time_plot_t  *tplot = cs_time_plot_init_probe("navsto_monitor",
+                                                   "",
+                                                   CS_TIME_PLOT_DAT,
+                                                   false, /* use iteration */
+                                                   300,   /* flush time */
+                                                   -1,
+                                                   n_cols,
+                                                   NULL,
+                                                   NULL,
+                                                   labels);
+
+  BFT_FREE(labels);
+
+  return tplot;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -368,6 +418,19 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free allocated structures associated to this file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_finalize(void)
+{
+  if (cs_cdofb_time_plot != NULL)
+    cs_time_plot_finalize(&cs_cdofb_time_plot);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the
@@ -376,7 +439,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  * \param[in]      nsp         set of parameters to define the NavSto system
  * \param[in]      quant       set of additional geometrical quantities
  * \param[in]      face_vel    velocity vectors for each face
- * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ * \param[in, out] mass_flux   array of mass flux values to update (allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -384,19 +447,18 @@ void
 cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *face_vel,
-                          cs_adv_field_t              *adv)
+                          cs_real_t                   *mass_flux)
 {
+  if (mass_flux == NULL)
+    return;
+
   /* Sanity checks */
+  assert(face_vel != NULL);
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
   assert(cs_property_is_uniform(nsp->mass_density));
   assert(nsp->mass_density->n_definitions == 1);
-  assert(face_vel != NULL);
 
   const cs_real_t  rho_val = nsp->mass_density->ref_value;
-  cs_real_t  *mass_flux = cs_xdef_get_array(adv->definition);
-
-  if (mass_flux == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty mass flux", __func__);
 
   /* Define the mass flux. */
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
@@ -560,7 +622,8 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
       /* Evaluating the integrals: the averages will be taken care of at the
        * end when ensuring zero-mean valuedness */
     case CS_XDEF_BY_VALUE:
-      cs_evaluate_density_by_value(dof_flag, def, values);
+      /* When constant mean-value or the value at cell center is the same */
+      cs_evaluate_potential_at_cells_by_value(def, values);
       break;
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -569,15 +632,12 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
-          /* Forcing BARY so that it is equivalent to DeRham (JB?)*/
-          cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
-          /* Restoring the original */
           cs_xdef_set_quadrature(def, nsp->qtype);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
           break;
         case CS_PARAM_REDUCTION_AVERAGE:
           cs_xdef_set_quadrature(def, nsp->qtype);
-          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
+          cs_evaluate_average_on_cells_by_analytic(def, t_cur, values);
           break;
 
         default:
@@ -841,7 +901,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   const cs_boundary_t  *boundaries = nsp->boundaries;
   const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
-  /* 1. Compute for each boundary the integrated flux */
+  /* 1. Compute for each boundary the integrated mass flux to perform mass
+     balance */
   bool  *belong_to_default = NULL;
   BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
 # pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
@@ -865,14 +926,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   } /* Loop on domain boundaries */
 
   /* Update the flux through the default boundary */
-  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
+  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
     if (belong_to_default[i])
       boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
-  }
 
   /* Parallel synchronization if needed */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
+  cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
 
   /* Output result */
   cs_log_printf(CS_LOG_DEFAULT,
@@ -906,8 +965,15 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   cs_flag_t  integral_masks[3] = { CS_NAVSTO_POST_KINETIC_ENERGY,
                                    CS_NAVSTO_POST_HELICITY,
                                    CS_NAVSTO_POST_ENSTROPHY };
-  if (nsp->verbosity > 0 && cs_flag_at_least(nsp->post_flag, 3, integral_masks))
-    cs_log_printf(CS_LOG_DEFAULT, "\n- Integral over the domain\n");
+
+  int  n_cols = 0;
+  /* There are three values if all flags are activated */
+  cs_real_t  col_vals[3] = {0, 0, 0};
+
+  if (cs_flag_at_least(nsp->post_flag, 3, integral_masks))
+    if (cs_cdofb_time_plot == NULL && cs_glob_rank_id < 1)
+      /* Initialization is requested */
+      cs_cdofb_time_plot = _init_time_plot(nsp);
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
@@ -945,15 +1011,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     }
 
-    if (nsp->verbosity > 0) {
+    /* Compute the integral of the kinetic energy for monitoring */
+    double  k = cs_weighted_sum(quant->n_cells,
+                                quant->cell_vol,
+                                kinetic_energy->val);
 
-      double  k = cs_weighted_sum(quant->n_cells, quant->cell_vol,
-                                  kinetic_energy->val);
-
-      cs_parall_sum(1, CS_DOUBLE, &k);
-      cs_log_printf(CS_LOG_DEFAULT, "i Kinetic energy  | %- 8.6e\n", k);
-
-    }
+    cs_parall_sum(1, CS_DOUBLE, &k); /* Manage parallel computations */
+    col_vals[n_cols++] = k;
 
   } /* Kinetic energy */
 
@@ -1040,33 +1104,40 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     } /* velocity gradient has been computed previously */
 
-    if (nsp->verbosity > 0) {
+    if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
 
-      if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
+      double  e = cs_weighted_sum(quant->n_cells,
+                                  quant->cell_vol,
+                                  enstrophy->val);
 
-        double  e = cs_weighted_sum(quant->n_cells, quant->cell_vol,
-                                    enstrophy->val);
+      cs_parall_sum(1, CS_DOUBLE, &e); /* Manage parallel computations */
+      col_vals[n_cols++] = e;
 
-        cs_parall_sum(1, CS_DOUBLE, &e);
-        cs_log_printf(CS_LOG_DEFAULT, "i Enstrophy       | %- 8.6e\n", e);
+    }
 
-      }
+    if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
 
-      if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
+      double  h = cs_weighted_sum(quant->n_cells,
+                                  quant->cell_vol,
+                                  helicity->val);
 
-        double  h = cs_weighted_sum(quant->n_cells, quant->cell_vol,
-                                    helicity->val);
+      cs_parall_sum(1, CS_DOUBLE, &h); /* Manage parallel computations */
+      col_vals[n_cols++] = h;
 
-        cs_parall_sum(1, CS_DOUBLE, &h);
-        cs_log_printf(CS_LOG_DEFAULT, "i Helicity        | %- 8.6e\n", h);
-
-      }
-
-    } /* verbosity > 0 */
+    }
 
   } /* vorticity, helicity or enstrophy computations */
 
+  if (cs_glob_rank_id < 1 && cs_cdofb_time_plot != NULL)
+    cs_time_plot_vals_write(cs_cdofb_time_plot,
+                            ts->nt_cur,
+                            ts->t_cur,
+                            n_cols,
+                            col_vals);
+
   /* Stream function */
+  /* --------------- */
+
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
 
     cs_equation_t  *eq = cs_equation_by_name(CS_NAVSTO_STREAM_EQNAME);
@@ -1604,18 +1675,18 @@ cs_cdofb_fixed_wall(short int                       f,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
                                        const cs_lnum_t     *elt_ids,
-                                       bool                 compact,
+                                       bool                 dense_output,
                                        void                *input,
                                        cs_real_t           *retval)
 {
@@ -1628,7 +1699,7 @@ cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i];
-    cs_lnum_t  r_id = compact ? i : id;
+    cs_lnum_t  r_id = dense_output ? i : id;
     cs_real_t  *_r = retval + 3*r_id;
 
     const cs_real_t  bq_coef = -bq->rho0*bq->beta * (bq->var[id] - bq->var0);
@@ -1644,18 +1715,18 @@ cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
                                    const cs_lnum_t     *elt_ids,
-                                   bool                 compact,
+                                   bool                 dense_output,
                                    void                *input,
                                    cs_real_t           *retval)
 {
@@ -1668,7 +1739,7 @@ cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i];
-    cs_lnum_t  r_id = compact ? i : id;
+    cs_lnum_t  r_id = dense_output ? i : id;
 
     retval[r_id] = w[3*id+2];   /* Extract the z component */
 

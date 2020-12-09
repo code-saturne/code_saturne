@@ -89,7 +89,8 @@ use ppincl
 use cs_c_bindings
 use mesh
 use field
-use atincl, only: kmx, cpvcpa, sigc, irdu, iru, ird
+use atincl, only: kmx, sigc, irdu, iru, ird
+use ctincl, only: cp_a, cp_v
 use cstnum, only: epzero, pi
 use radiat
 
@@ -132,7 +133,7 @@ double precision rm, req
 double precision a3, tvsups, dtvsups
 double precision foirs, foirs1, foirs2
 double precision tlsups, fnss
-double precision var, zent
+double precision var, zent, cpvcpa
 
 double precision, allocatable :: rov(:), roc(:), rol(:), qv0(:), qc(:)
 double precision, allocatable :: qqc(:), qql(:)
@@ -163,6 +164,7 @@ endif
 
 ! local initializations
 
+cpvcpa = cp_v / cp_a
 xqqlinf = 0.d0
 taul = 0.d0
 sig = stephn ! Boltzmann constant 5.6703d-8

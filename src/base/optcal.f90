@@ -75,8 +75,8 @@ module optcal
   !> and \ref istmpf = 1 otherwise.
   integer, save ::          istmpf
 
-  !> number of iterations on the pressure-velocity coupling on Navier-Stokes
-  !> (for the PISO algorithm)
+  !> number of iterations on the velocity-pressure coupling on Navier-Stokes
+  !> (for the U/P inner iterations scheme)
   integer(c_int), pointer, save ::          nterup
 
   !> \ref isno2t specifies the time scheme activated for the source
@@ -215,14 +215,14 @@ module optcal
   double precision, save :: thetvs(nscamx)
 
   !> relative precision for the convergence test of the iterative process on
-  !> pressure-velocity coupling (PISO)
+  !> velocity-pressure coupling (inner iterations)
   real(c_double), pointer, save :: epsup
 
   !> norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$
-  !> of the iterative process on pressure-velocity coupling (PISO)
+  !> of the iterative process on velocity-pressure coupling (inner iterations)
   real(c_double), pointer, save :: xnrmu
 
-  !> norm of \f$ \vect{u}^0 \f$ (used by PISO algorithm)
+  !> norm of \f$ \vect{u}^0 \f$ (used by velocity-pressure inner iterations)
   real(c_double), pointer, save :: xnrmu0
 
   !> \}
@@ -284,11 +284,11 @@ module optcal
   !> Indicates the reading (=1) or not (=0) of the auxiliary
   !> calculation restart file\n
   !> Useful only in the case of a calculation restart
-  integer, save :: ileaux
+  integer(c_int), pointer, save :: ileaux
 
   !> Indicates the writing (=1) or not (=0) of the auxiliary calculation
   !> restart file.
-  integer, save :: iecaux
+  integer(c_int), pointer, save :: iecaux
 
   !> \anchor isuit1
   !> For the 1D wall thermal module, activation (1) or not(0)
@@ -296,14 +296,6 @@ module optcal
   !> from the restart file
   !> Useful if nfpt1d > 0
   integer, save :: isuit1
-
-  !> Reading of the LES inflow module restart file.
-  !> -0: not activated
-  !> -1: activated\n
-  !> If \ref isuisy = 1, synthetic fluctuations are
-  !> not re-initialized in case of restart calculation.
-  !> Useful if \ref iturb = 40, 41 or 42
-  integer, save :: isuisy
 
   !----------------------------------------------------------------------------
   ! Time stepping options
@@ -791,12 +783,12 @@ module optcal
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   real(c_double), pointer, save :: arak
 
-  !> Preconditioner for mass:
+  !> Factor of the Rhie and Chow filter:
   !>    - 0: dt (default)
   !>    - 1: 1/A_u
-  integer(c_int), pointer, save :: mass_preconditioner
+  integer(c_int), pointer, save :: rcfact
 
-  !> indicates the algorithm for velocity/pressure coupling:
+  !> indicates the algorithm for velocity-pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
   !> Always useful (it is seldom advised, but it can prove very useful,
@@ -1376,17 +1368,15 @@ module optcal
     ! Stokes options structure
 
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
-                                                arak  , mass_preconditioner,   &
-                                                ipucou, iccvfg,                &
-                                                idilat, epsdp ,itbrrb, iphydr, &
+                                                arak  , rcfact, ipucou, iccvfg,&
+                                                idilat, epsdp , itbrrb, iphydr,&
                                                 igprij, igpust,                &
                                                 iifren, icalhy, irecmf,        &
                                                 fluid_solid)                   &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
-      type(c_ptr), intent(out) :: mass_preconditioner
+      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak, rcfact
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
       type(c_ptr), intent(out) :: fluid_solid
@@ -1413,7 +1403,7 @@ module optcal
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
-    ! global PISO options structure
+    ! global velocity-pressure inner iterations structure
 
     subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0,         &
                                       n_buoyant_scal)                       &
@@ -1422,6 +1412,16 @@ module optcal
       implicit none
       type(c_ptr), intent(out) :: nterup, epsup, xnrmu, xnrmu0, n_buoyant_scal
     end subroutine cs_f_piso_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global restart_auxiliary options structure
+
+    subroutine cs_f_restart_auxiliary_get_pointers(ileaux, iecaux)          &
+      bind(C, name='cs_f_restart_auxiliary_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ileaux, iecaux
+    end subroutine cs_f_restart_auxiliary_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global electric model structure
@@ -1709,16 +1709,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
-    type(c_ptr) :: c_mass_preconditioner
+    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
 
     call cs_f_porous_model_get_pointers(c_iporos)
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_mass_preconditioner, &
-                                          c_ipucou, c_iccvfg,  &
+                                          c_arak  , c_rcfact, c_ipucou,  &
+                                          c_iccvfg,  &
                                           c_idilat, c_epsdp , c_itbrrb,  &
                                           c_iphydr, c_igprij, c_igpust,  &
                                           c_iifren, c_icalhy, c_irecmf,  &
@@ -1729,7 +1728,7 @@ contains
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )
     call c_f_pointer(c_arak  , arak  )
-    call c_f_pointer(c_mass_preconditioner, mass_preconditioner)
+    call c_f_pointer(c_rcfact, rcfact)
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_iccvfg, iccvfg)
     call c_f_pointer(c_idilat, idilat)
@@ -1784,7 +1783,7 @@ contains
 
   end subroutine time_scheme_options_init
 
-  !> \brief Initialize Fortran PISO options API.
+  !> \brief Initialize Fortran inner iteration options API.
   !> This maps Fortran pointers to global C structure members.
 
   subroutine piso_options_init
@@ -1806,6 +1805,25 @@ contains
     call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
 
   end subroutine piso_options_init
+
+  !> \brief Initialize Fortran auxiliary options API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine restart_auxiliary_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ileaux, c_iecaux
+
+    call cs_f_restart_auxiliary_get_pointers(c_ileaux, c_iecaux)
+
+    call c_f_pointer(c_ileaux, ileaux)
+    call c_f_pointer(c_iecaux, iecaux)
+
+  end subroutine restart_auxiliary_options_init
 
   !> \brief Initialize Fortran ELEC options API.
   !> This maps Fortran pointers to global C structure members.

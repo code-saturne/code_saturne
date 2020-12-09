@@ -372,7 +372,8 @@ class MainView(object):
         self.fileCloseAction.triggered.connect(self.close)
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
-        self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+        self.openDataEditorAction.triggered.connect(self.dataEditorOpen)
+        self.openSrcEditorAction.triggered.connect(self.fileEditorOpen)
         self.openResultsFileAction.triggered.connect(self.fileViewerOpen)
         self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
 
@@ -882,6 +883,40 @@ class MainView(object):
         self.statusbar.clearMessage()
 
 
+    def dataEditorOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        # We do several checks:
+        # - Has a case structure been initialized ?
+        # - Does the xml file exists ?
+        # - Is the xml file within a DATA folder ?
+        #
+        # Only if all of these tests are passed do we open the file editor.
+        datadir = None
+        if hasattr(self, 'case'):
+            datadir = os.path.join(self.case['case_path'], 'DATA')
+
+        if not datadir:
+            title = self.tr("Warning")
+            msg   = self.tr("You can only manage data files inside a case directory.")
+            QMessageBox.warning(self, title, msg)
+            return
+
+        reference_dir = os.path.join(self.package.get_dir("pkgdatadir"),
+                                     'data',
+                                     'user')
+        fileEditor = QFileEditor(parent=self,
+                                 case_dir=datadir,
+                                 reference_dir=reference_dir,
+                                 noOpen=True)
+        fileEditor.show()
+
+
     def fileEditorOpen(self):
         """
         public
@@ -918,8 +953,10 @@ class MainView(object):
             QMessageBox.warning(self, title, msg)
             return
 
+        reference_dir = os.path.join(self.package.get_dir("pkgdatadir"), 'user_sources')
         fileEditor = QFileEditor(parent=self,
                                  case_dir=self.case['case_path']+'/SRC',
+                                 reference_dir=reference_dir,
                                  noOpen=True)
         fileEditor.show()
 
@@ -1128,9 +1165,6 @@ class MainView(object):
         self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.jobFileSave()
-        meg_state = self.saveUserFormulaInC()
-        if meg_state == -1:
-            return
 
         # force to blank after save
         self.case['saved'] = 'yes'

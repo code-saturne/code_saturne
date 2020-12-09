@@ -2464,13 +2464,12 @@ module cs_c_bindings
     !> \brief Return pointers to atmo arrays
 
     subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_tmmet, &
-         p_phmet, dim_phmet,                                   &
-         p_nn, p_nebdia)                                       &
+         p_phmet, dim_phmet)                                   &
          bind(C, name='cs_f_atmo_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(2) :: dim_phmet
-      type(c_ptr), intent(out) :: p_ztmet, p_tmmet, p_phmet, p_nn, p_nebdia
+      type(c_ptr), intent(out) :: p_ztmet, p_tmmet, p_phmet
     end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
@@ -2492,6 +2491,17 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_f_atmo_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Sets the meteo file name
+
+    subroutine cs_atmo_set_meteo_file_name(name) &
+      bind(C, name='cs_atmo_set_meteo_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_atmo_set_meteo_file_name
 
     !---------------------------------------------------------------------------
 
@@ -2918,12 +2928,11 @@ module cs_c_bindings
 
     ! Interface to C function updating the mesh in the ALE framework.
 
-    subroutine cs_ale_update_mesh(itrale, xyzno0)   &
+    subroutine cs_ale_update_mesh(itrale)   &
       bind(C, name='cs_ale_update_mesh')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: itrale
-      real(kind=c_double), dimension(*), intent(in) :: xyzno0
     end subroutine cs_ale_update_mesh
 
     !---------------------------------------------------------------------------
@@ -6200,6 +6209,30 @@ contains
     is_active = c_is_active
 
   end function cell_is_active
+
+  !=============================================================================
+
+  !> \brief Sets the meteo file name
+
+  !> \param[in]     name      name of the file
+
+  subroutine atmo_set_meteo_file_name(name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+    call cs_atmo_set_meteo_file_name(c_name)
+
+  end subroutine atmo_set_meteo_file_name
 
   !=============================================================================
 

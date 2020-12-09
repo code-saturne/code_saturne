@@ -1,0 +1,96 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2020 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+  \page les_inflow Generation of synthetic turbulence at LES inlets
+
+  \section cs_user_les_infow_intro Introduction
+
+  Generation of  synthetic turbulence at LES inlets can be defined using
+  the \ref cs_user_les_inflow_define user function, and possibly
+  updated using \ref cs_user_les_inflow_update, with
+  \ref cs_user_les_inflow_advanced allowing for finer definition of
+   target statistics the inlet if needed.
+
+  \section cs_user_les_inflow_init Global caracteristics of synthetic turbulence inlets
+
+  \subsection user_les_inflow_general General settings
+
+  The \ref cs_user_les_inflow_define function is the main entry point
+  for LES inflow definitions.
+
+  It can be used to set general options, such as the specific
+  checkpoint/restart behavior, as in the following example:
+
+  \snippet cs_user_les_inflow-base.c set_restart
+
+  \subsection user_les_inflow_define_inlets Defining inlet properties
+
+  For each LES inlet, the \ref cs_les_inflow_add_inlet
+  must be used.
+
+  For example, to use the Batten Method for boundary faces of
+  a zone named INLET_1:
+
+  \snippet cs_user_les_inflow-base.c init_1
+
+  And to use the Synthetic Eddy Method for boundary faces of
+  a zone named INLET_2:
+
+  \section cs_user_les_inflow_modify Modifying synthetic turbulence inlets
+
+  \subsection user_les_inflow_update Updating base characteristics
+
+  To update reference velocity, turbulent kinetic energy, or dissipation
+  rate for a given turbulence inlet,
+  the \ref cs_user_les_inflow_update function may be used.
+  It is called automatically for each LES inlet defined previously.
+
+  The following example illustrates modifying values for the example
+  zone named INLET_1:
+
+  \snippet cs_user_les_inflow-base.c update_1
+
+  \subsection cs_user_les_inflow_example_1 Advanced LES inlet Example 1
+
+  Mean velocity, Reynolds stresses an dissipation are deduced from a wall law
+  for the zone named INLET_1 (no modification of
+  the statistics of the flow is provided for the other synthetic
+  turbulence inlets).
+
+  \snippet cs_user_les_inflow-base.c example_1
+
+  \subsection cs_user_les_inflow_example_2 Advanced LES Example 2
+
+  Reynolds stresses and dissipation at the inlet are computed
+  using the turbulence intensity and standard laws for
+  a circular pipe for for the zone named INLET_1 (no modification of
+  the statistics of the flow is provided for the other synthetic
+  turbulence inlets).
+
+  \snippet cs_user_les_inflow-base.c example_2
+
+*/

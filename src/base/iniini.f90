@@ -60,6 +60,7 @@ use cs_nz_condensation, only: nzones
 use ctincl
 use cfpoin
 use vof
+use cs_c_bindings
 
 !===============================================================================
 
@@ -140,6 +141,7 @@ call fluid_properties_init
 call space_disc_options_init
 call time_scheme_options_init
 call piso_options_init
+call restart_auxiliary_options_init
 call turb_reference_values_init
 call listing_writing_period_init
 call radiat_init
@@ -182,7 +184,7 @@ indjon = 1
 
 ! ---> Fichiers module atmospherique
 impmet = 26
-ficmet = 'meteo'
+call atmo_set_meteo_file_name('meteo')
 
 ! ---> Fichiers historiques
 
@@ -452,21 +454,13 @@ enddo
 ! default: based on cell center mesh velocity
 iflxmw = 0
 
-! --- Restarted calculation
-!       By default, non-restarted calculation
-!       Write auxiliary restart file by default
-!       Read auxiliary restart file by default (in case of restarted calculation)
-!       The match between new scalars and old scalars will be established later
-!         (GUI, cs_user_parameters.f90, and lecamo)
-!       The restart indicator of the 1D wall thermal model is initialized by default
-!         to -1, to force the user to set it in uspt1d.
-!       The same goes for the synthetic turbulence method restart indicator.
+! Restarted calculation
+!   The restart indicator of the 1D wall thermal model is initialized by default
+!   to -1, to force the user to set it in uspt1d.
+!   The same goes for the synthetic turbulence method restart indicator.
 
 isuite = 0
-iecaux = 1
-ileaux = 1
 isuit1 = -1
-isuisy = -1
 
 ! Time stepping (value not already in C)
 
@@ -477,7 +471,7 @@ do ii = 1, nvarmx
   cdtvar(ii) = 1.d0
 enddo
 
-! --- Thermique
+! Thermal model
 
 ! No thermal scalar by default
 itherm = 0

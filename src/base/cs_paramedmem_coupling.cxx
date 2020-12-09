@@ -628,11 +628,12 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling)
 /*!
  * \brief Define a coupled field
  *
- * \param[in] c           pointer to cs_paramedmem_coupling_t struct
- * \param[in] name        name of field
- * \param[in] dim         field dimension
- * \param[in] space_discr field space discretisation (nodes or cells)
- * \param[in] time_discr  field coupling time discretisation
+ * \param[in] c             pointer to cs_paramedmem_coupling_t struct
+ * \param[in] name          name of field
+ * \param[in] dim           field dimension
+ * \param[in] field_nature  field nature flag
+ * \param[in] space_discr   field space discretisation (nodes or cells)
+ * \param[in] time_discr    field coupling time discretisation
  *
  * \return index of field within the storing vector
  *
@@ -643,6 +644,7 @@ int
 cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
                                 const char                *name,
                                 int                        dim,
+                                cs_medcpl_field_nature_t   field_nature,
                                 cs_medcpl_space_discr_t    space_discr,
                                 cs_medcpl_time_discr_t     time_discr)
 {
@@ -699,11 +701,34 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   else
     c->dec->setMethod("P1");
 
-
   c->fields.push_back(pf);
   /* TODO: setNature should be set by caller to allow for more options */
 
-  pf->getField()->setNature(IntensiveConservation);
+  /* Set nature of field
+   * As default we use intensive conservation since code_saturne is
+   * a CFD code :)
+   */
+  NatureOfField nature = IntensiveConservation;
+  switch (field_nature) {
+  case CS_MEDCPL_FIELD_EXT_CONSERVATION:
+    nature = ExtensiveConservation;
+    break;
+
+  case CS_MEDCPL_FIELD_EXT_MAXIMUM:
+    nature = ExtensiveMaximum;
+    break;
+
+  case CS_MEDCPL_FIELD_INT_CONSERVATION:
+    nature = IntensiveConservation;
+    break;
+
+  case CS_MEDCPL_FIELD_INT_MAXIMUM:
+    nature = IntensiveMaximum;
+    break;
+  }
+
+  pf->getField()->setNature(nature);
+
   pf->getField()->setName(name);
 
 #endif
@@ -717,6 +742,7 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
  *
  * \param[in] c           pointer to cs_paramedmem_coupling_t struct
  * \param[in] f           pointer to cs_field_t struct
+ * \param[in] fn          field nature flag
  * \param[in] time_discr  field coupling time discretisation
  *
  * \return index of field within the storing vector
@@ -726,6 +752,7 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
 int
 cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
                                               cs_field_t               *f,
+                                              cs_medcpl_field_nature_t  fn,
                                               cs_medcpl_time_discr_t    td)
 {
   int f_id = -1;
@@ -745,7 +772,8 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
   cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(f->location_id);
   cs_medcpl_space_discr_t sd       = CS_MEDCPL_ON_CELLS;
 
-  if (loc_type == CS_MESH_LOCATION_CELLS)
+  if (loc_type == CS_MESH_LOCATION_CELLS ||
+      loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
     sd = CS_MEDCPL_ON_CELLS;
   else if (loc_type == CS_MESH_LOCATION_VERTICES)
     sd = CS_MEDCPL_ON_NODES;
@@ -756,6 +784,7 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
   f_id = cs_paramedmem_def_coupled_field(c,
                                          f->name,
                                          f->dim,
+                                         fn,
                                          sd,
                                          td);
 #endif

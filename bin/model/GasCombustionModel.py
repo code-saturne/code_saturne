@@ -112,16 +112,9 @@ class GasCombustionModel(Variables, Model):
 
     def gasCombustionModelsList(self):
         """
-        Create a tuple with the gas combustion models allowed
-        by the calculation features.
+        Create a tuple with the available gas combustion models.
         """
-        gasCombustionList = self.gasCombustionModel
-        turb_mdl = TurbulenceModel(self.case)
-
-        if self.node_turb['model'] not in turb_mdl.RANSmodels():
-            gasCombustionList = ('off',)
-
-        return gasCombustionList
+        return self.gasCombustionModel
 
 
     @Variables.undoGlobal

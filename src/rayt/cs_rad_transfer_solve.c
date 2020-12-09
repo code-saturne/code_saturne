@@ -885,7 +885,7 @@ _cs_rad_transfer_sol(int                        gg_id,
  * The density of net radiation flux must be calculated
  * consistently with the boundary conditions of the intensity.
  * The density of net flux is the balance between the radiative
- * emiting part of a boudary face (and not the reflecting one)
+ * emiting part of a boundary face (and not the reflecting one)
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types

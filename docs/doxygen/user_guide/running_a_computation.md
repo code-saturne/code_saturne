@@ -249,6 +249,58 @@ On some HPC systems, the compilers may also be available only on the front-end n
 so this also avoids possible issues related to trying to compile user-defined
 functions and re-link the code from a compute node.
 
+Computation restart {#sec_prg_restart}
+===================
+
+As some computations may require long run times it is possible to
+run a computation in multiple steps using a checkpoint/restart mechanism.
+
+By default, a running computation produces a `checkpoint` directory
+containing several files:
+
+- `mesh.csm` contains the preprocessed mesh
+- `main.csc` contains the values of the main fields.
+- `auxiliary.csc` contains additional field values, such as mass fluxes,
+   which are needed for a perfectly continuous restart, but not
+   absolutely necessary.
+- possible additional files based on the active physical models
+  (`radiative_transfer`, `lagrangian`, `lagrangian stats`, ...).
+
+This directory can be used as `restart` directory for a subsequent
+computation (this can be easily defined in the GUI or in the
+additional `cs_user_scripts.py` user scripts).
+
+If the code cannot find one or several elements of data required for the
+calculation restart, default values are then used.
+If the number of faces has been modified (for instance in case of
+modification of the mesh merging or of periodicity), reading
+the auxiliary restart file should be deactivated (in the GUI
+or setting \ref cs_glob_restart_auxiliary->read_auxiliary to `false`).
+
+Checkpoint files are binary, but their contents can be queried
+and dumpled using the `code_saturne bdump` command,
+and compared using `code_saturne bdiff`.
+
+When running in parallel, data is read and written in in partitioning-independent
+manner, based on element global numbers, so restarting can be transparently done
+on a different number of processes, or using a different partitioning.
+When the mesh is assembled from multiple files, the global element
+numbers are assigned in sequence, so the order of assembly should not be
+modified between standard restarts.
+
+It is possible to restart a computation that was run using a different
+mesh. In that case, the original `mesh.csc` file must also be provided
+along with the restart directory (in most cases, it should be already be
+present in the matching `checkpoint` directory).
+
+Checkpointing of the mesh and various files may usually be deactivated
+globally, or using parameters specific to each file.
+
+Note also that when unchanged between succeeding computations, the `mesh.csm`
+file is linked (in the Unix/Linux/POSIX) sense rather than copied: when
+as long as checkpoint directories are present on the sale file system,
+the files are shared rather than actually copied, to save space.
+
 Interactive modification of selected parameters {#sec_prg_control_file}
 ===============================================
 
@@ -493,4 +545,3 @@ The various command-line options are detailed here:
 * `-h`, `--help`
 
   Displays a summary of the different command line options.
-

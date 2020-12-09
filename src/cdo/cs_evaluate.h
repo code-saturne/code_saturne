@@ -69,7 +69,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute reduced quantities for an array of size equal to dim * n_x
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]      dim     local array dimension (max: 3)
  * \param[in]      n_x     number of elements
@@ -100,7 +100,7 @@ cs_evaluate_array_reduction(int                     dim,
  *         face or edge DoFs
  *         The weight to apply to each entity x is scanned using the adjacency
  *         structure. array size is equal to dim * n_x
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]      dim     local array dimension (max: 3)
  * \param[in]      n_x     number of elements
@@ -130,10 +130,10 @@ cs_evaluate_scatter_array_reduction(int                     dim,
 /*!
  * \brief  Compute the weighted L2-norm of an array. The weight is scanned
  *         by a \ref cs_adjacency_t structure
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
- * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
  * \return the square weighted L2-norm
@@ -150,10 +150,10 @@ cs_evaluate_square_wc2x_norm(const cs_real_t        *array,
  * \brief  Compute the weighted L2-norm of an array. The weight is scanned
  *         by a \ref cs_adjacency_t structure.
  *         Case of a vector-valued array.
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
- * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
  * \return the square weighted L2-norm
@@ -167,13 +167,32 @@ cs_evaluate_3_square_wc2x_norm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the weighted L2-norm of the magnitude of vector-valued
+ *         array. A weight has to be given as parameter.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  size    size of the weight array
+ * \param[in]  weight  weight to apply (mandatory)
+ * \param[in]  array   array to analyze (array size = 3*size)
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_3_square_weighted_norm(cs_lnum_t               size,
+                                   const cs_real_t        *weight,
+                                   const cs_real_t        *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the norm of the difference of two arrays scanne by the same
  *         \ref cs_adjacency_t structure with the reference array.
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
  * \param[in]  ref     array used for normalization and difference
- * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
  * \return the computed square weighted and normalized L2-norm of the
@@ -192,11 +211,11 @@ cs_evaluate_delta_square_wc2x_norm(const cs_real_t        *array,
  * \brief  Compute the relative norm of the difference of two arrays scanned
  *         by the same \ref cs_adjacency_t structure. Normalization is done
  *         with the reference array.
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
  * \param[in]  ref     array used for normalization and difference
- * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
  * \return the computed square weighted and normalized L2-norm of the
@@ -215,12 +234,12 @@ cs_evaluate_delta_square_wc2x_rnorm(const cs_real_t        *array,
  * \brief  Compute the relative norm of the difference of two arrays scanned
  *         by the same \ref cs_adjacency_t structure. Normalization is done
  *         with the reference array.
- *         The quantities computed are synchronized in parallel.
+ *         The computed quantities are synchronized in parallel.
  *         Case of vector-valued arrays.
  *
  * \param[in]  array   array to analyze
  * \param[in]  ref     array used for normalization and difference
- * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
  * \return the computed square weighted and normalized L2-norm of the

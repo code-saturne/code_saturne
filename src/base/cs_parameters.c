@@ -185,9 +185,9 @@ BEGIN_C_DECLS
 /*!
   \struct cs_piso_t
 
-  \brief PISO options descriptor.
+  \brief Inner velocity/pressure iteration options descriptor.
 
-  Members of the PISO structure are publicly accessible, to allow for
+  Members of this structure are publicly accessible, to allow for
   concise  syntax, as they are expected to be used in many places.
 
   \var  cs_piso_t::nterup
@@ -200,6 +200,19 @@ BEGIN_C_DECLS
         iterative process on pressure-velocity coupling
   \var  cs_piso_t::xnrmu0
         norm of \f$ \vect{u}^0 \f$
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \struct cs_restart_auxiliary_t
+
+  \brief Additional checkpoint/restart files
+
+  \var  cs_restart_auxiliary_t::read_auxiliary
+        activate reading of auxiliary restart file
+  \var  cs_restart_auxiliary_t::write_auxiliary
+        activate writing of auxiliary restart file
 */
 
 /*----------------------------------------------------------------------------*/
@@ -417,7 +430,7 @@ static cs_time_scheme_t  _time_scheme =
 
 const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
 
-/* PISO structure and associated pointer */
+/* Velocity/pressure inner iterations structure and associated pointer */
 
 static cs_piso_t  _piso =
 {
@@ -429,6 +442,16 @@ static cs_piso_t  _piso =
 };
 
 const cs_piso_t  *cs_glob_piso = &_piso;
+
+/* Auxiliary checkpoint/restart file parameters */
+
+static cs_restart_auxiliary_t  _restart_auxiliary =
+{
+  .read_auxiliary = 1,
+  .write_auxiliary = 1
+};
+
+cs_restart_auxiliary_t  *cs_glob_restart_auxiliary = &_restart_auxiliary;
 
 /* Definition of user variables and properties */
 
@@ -491,6 +514,10 @@ cs_f_piso_get_pointers(int     **nterup,
                        double  **xnrmu,
                        double  **xnrmu0,
                        int     **n_buoyant_scal);
+
+void
+cs_f_restart_auxiliary_get_pointers(int  **ileaux,
+                                    int  **iecaux);
 
 void
 cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
@@ -791,6 +818,25 @@ cs_f_piso_get_pointers(int     **nterup,
   *xnrmu  = &(_piso.xnrmu);
   *xnrmu0 = &(_piso.xnrmu0);
   *n_buoyant_scal = &(_piso.n_buoyant_scal);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global restart_auxiliary structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ileaux  --> pointer to cs_glob_restart_auxiliary->read_auxiliary
+ *   iecaux  --> pointer to cs_glob_restart_auxiliary->write_auxiliary
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_restart_auxiliary_get_pointers(int  **ileaux,
+                                    int  **iecaux)
+{
+  *ileaux = &(_restart_auxiliary.read_auxiliary);
+  *iecaux = &(_restart_auxiliary.write_auxiliary);
 }
 
 /*----------------------------------------------------------------------------

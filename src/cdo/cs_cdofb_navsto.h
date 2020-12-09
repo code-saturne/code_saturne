@@ -172,6 +172,15 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free allocated structures associated to this file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the
@@ -180,7 +189,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  * \param[in]      nsp         set of parameters to define the NavSto system
  * \param[in]      quant       set of additional geometrical quantities
  * \param[in]      face_vel    velocity vectors for each face
- * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ * \param[in, out] mass_flux   array of mass flux values to update (allocated)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -188,7 +197,7 @@ void
 cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *face_vel,
-                          cs_adv_field_t              *adv);
+                          cs_real_t                   *mass_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -490,18 +499,18 @@ cs_cdofb_fixed_wall(short int                       f,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
                                        const cs_lnum_t     *elt_ids,
-                                       bool                 compact,
+                                       bool                 dense_output,
                                        void                *input,
                                        cs_real_t           *retval);
 
@@ -511,18 +520,18 @@ cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
                                    const cs_lnum_t     *elt_ids,
-                                   bool                 compact,
+                                   bool                 dense_output,
                                    void                *input,
                                    cs_real_t           *retval);
 

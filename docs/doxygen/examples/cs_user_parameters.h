@@ -107,7 +107,7 @@
 
   If one wants to declare a scalar as buoyant (i.e. the density depends on this scalar
   through a given equation of state) and add it in the velocity-pressure optional
-  sub-iterations (PISO), one can set the dedicated keyword:
+  inner-iterations, one can set the dedicated keyword:
 
   \snippet cs_user_parameters-base.c param_var_is_buoyant
 
@@ -121,7 +121,7 @@
 
   \snippet cs_user_parameters-base.c param_stokes_model
 
-  To set options for the PISO-like sub iterations (velocity pressure coupling
+  To set options for the optional inner iterations (velocity pressure coupling
   see \ref cs_piso_t structure):
 
   \snippet cs_user_parameters-base.c param_piso

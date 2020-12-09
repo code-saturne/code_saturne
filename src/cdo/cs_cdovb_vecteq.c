@@ -1246,7 +1246,6 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
@@ -1269,9 +1268,9 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.0;
 
-  assert(3*n_vertices == eqc->n_dofs);
+  assert(3*quant->n_vertices == eqc->n_dofs);
   BFT_MALLOC(rhs, eqc->n_dofs, cs_real_t);
-# pragma omp parallel for if  (n_vertices > CS_THR_MIN)
+# pragma omp parallel for if  (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
@@ -1282,7 +1281,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1419,7 +1418,8 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
-                                  eqp,
+                                  eqp->name,
+                                  eqp->sles_param,
                                   matrix,
                                   rs,
                                   rhs_norm,

@@ -52,6 +52,14 @@
 
   \page cs_user_extra_operations_examples_energy_balance_p Energy balance
 
+  In general, it is recommended to use the higher level
+  [balance by zone](@ref cs_balance_by_zone.h) series of functions, such
+  as in the provided [example]@ref cs_user_extra_operations_examples_scalar_balance_p).
+
+  This series of function does not yet account for volume mass injections
+  (i.e. mass source terms), so the present example remains of interest in
+  that case.
+
   \section cs_user_extra_operations_examples_energy_balance Energy balance
 
   \subsection cs_user_extra_operations_examples_loc_var_eb Local variables to be added

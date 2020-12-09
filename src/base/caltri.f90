@@ -88,12 +88,12 @@ implicit none
 ! Local variables
 
 logical(kind=c_bool) :: mesh_modified, log_active
+integer(c_int) :: ierr
 
 integer          modhis, iappel, iisuit
 integer          iel
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
-integer          nent   , nstruct, volmode
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
@@ -109,6 +109,7 @@ double precision, save :: ttchis
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
+double precision, dimension(:,:), pointer :: xyzno0 => null()
 
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
@@ -172,6 +173,14 @@ interface
 
   !=============================================================================
 
+  subroutine cs_les_inflow_initialize()  &
+    bind(C, name='cs_les_inflow_initialize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_inflow_initialize
+
+  !=============================================================================
+
   subroutine cs_meg_post_activate()  &
     bind(C, name='cs_meg_post_activate')
     use, intrinsic :: iso_c_binding
@@ -212,6 +221,22 @@ interface
 
   !=============================================================================
 
+  subroutine cs_les_synthetic_eddy_restart_read()  &
+    bind(C, name='cs_les_synthetic_eddy_restart_read')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_synthetic_eddy_restart_read
+
+  !=============================================================================
+
+  subroutine cs_les_synthetic_eddy_restart_write()  &
+    bind(C, name='cs_les_synthetic_eddy_restart_write')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_les_synthetic_eddy_restart_write
+
+  !=============================================================================
+
   subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
@@ -219,6 +244,15 @@ interface
     integer(kind=c_int), value :: ncetsm
     integer(kind=c_int), dimension(*), intent(out) :: icetsm, izctsm
   end subroutine cs_volume_mass_injection_build_lists
+
+  !=============================================================================
+
+  function cs_runaway_check() result(ierr) &
+    bind(C, name='cs_runaway_check')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: ierr
+  end function cs_runaway_check
 
   !=============================================================================
 
@@ -416,19 +450,11 @@ call init_aux_arrays(ncelet, nfabor)
 call turbomachinery_init
 
 if (ippmod(iatmos).ge.0) then
-
-  call init_meteo
-
-  if (imbrication_flag) then
-    call activate_imbrication
-  endif
-
-  call cs_at_data_assim_build_ops
+  call init_atmo_autom(nfabor)
 
   if (ifilechemistry.ge.1) then
-    call init_chemistry
+    call init_chemistry_reacnum
   endif
-
 endif
 
 if (ippmod(icompf).ge.0) then
@@ -582,8 +608,7 @@ if (nftcdt.gt.0) then
 
   ! the Condensation model coupled with a 0-D thermal model
   ! to take into account the metal mass structures effects.
-  if(itagms.eq.1) then
-
+  if (itagms.eq.1) then
     call init_tagms
   endif
 
@@ -593,10 +618,7 @@ endif
 ! Initialization for the Synthetic turbulence Inlets
 !===============================================================================
 
-nent = 0
-nstruct = 0
-volmode = 0
-call defsyn(nent,nstruct,volmode)
+call cs_les_inflow_initialize
 
 !===============================================================================
 ! Possible restart
@@ -619,6 +641,7 @@ if (isuite.eq.1) then
   if (iale.ge.1) then
 
     call field_get_val_v(fdiale, disale)
+    call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
     do inod = 1, nnod
       do idim = 1, ndim
@@ -643,9 +666,7 @@ if (isuite.eq.1) then
     call cs_restart_lagrangian_checkpoint_read()
   endif
 
-  if (isuisy.eq.1) then
-    call lecsyn('les_inflow.csc'//c_null_char)
-  endif
+  call cs_les_synthetic_eddy_restart_read
 
   ! TODO
   ! cs_restart_map_free may not be called yet, because
@@ -886,6 +907,9 @@ if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
   ntmabs = ntcabs
 endif
 
+! Check for runaway (diverging) computation
+ierr = cs_runaway_check()
+
 ! Set default logging (always log 10 first iterations and last one=)
 log_active = .false.
 if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
@@ -953,7 +977,7 @@ endif
 if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
-    call cs_ale_update_mesh(itrale, xyzno0)
+    call cs_ale_update_mesh(itrale)
   endif
 
 endif
@@ -1026,9 +1050,7 @@ if (iisuit.eq.1) then
     call cs_1d_wall_thermal_write
   endif
 
-  if (nent.gt.0) then
-    call ecrsyn('les_inflow.csc'//c_null_char)
-  endif
+  call cs_les_synthetic_eddy_restart_write
 
   if (iilagr.gt.0) then
     call cs_restart_lagrangian_checkpoint_write()
@@ -1182,9 +1204,9 @@ call turbulence_model_free_bc_ids
 
 call finalize_aux_arrays
 
-if (ippmod(iatmos).ge.0) then
+call finalize_meteo
 
-  call finalize_meteo
+if (ippmod(iatmos).ge.0) then
 
   if(imbrication_flag)then
     call finalize_imbrication

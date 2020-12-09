@@ -560,6 +560,95 @@ cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Fill a list of vertices verifying a given boundary selection criteria.
+ *
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_vertices_list(const char *criteria,
+                                     cs_lnum_t  *n_vertices,
+                                     cs_lnum_t   vtx_ids[])
+{
+
+  cs_lnum_t  n_faces = 0;
+  cs_lnum_t  *face_ids = NULL;
+
+  BFT_MALLOC(face_ids, cs_glob_mesh->n_b_faces, cs_lnum_t);
+
+  cs_selector_get_b_face_list(criteria, &n_faces, face_ids);
+  cs_selector_get_b_face_vertices_list_by_ids(n_faces,
+                                              face_ids,
+                                              n_vertices,
+                                              vtx_ids);
+
+  BFT_FREE(face_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of vertices belonging to a given list of boundary faces.
+ *
+ * \param[in]   n_cells     number of selected cells
+ * \param[in]   cell_ids    ids of selected cells
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_vertices_list_by_ids(cs_lnum_t         n_faces,
+                                            const cs_lnum_t   face_ids[],
+                                            cs_lnum_t        *n_vertices,
+                                            cs_lnum_t         vtx_ids[])
+{
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t _n_vertices = m->n_vertices;
+
+  for (cs_lnum_t i = 0; i < _n_vertices; i++)
+    vtx_ids[i] = -1;
+
+  /* Mark vertices */
+  if (face_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t f_id = face_ids[i];
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++)
+        vtx_ids[m->b_face_vtx_lst[k]] = 1;
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t s_id = m->b_face_vtx_idx[i];
+      cs_lnum_t e_id = m->b_face_vtx_idx[i+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++)
+        vtx_ids[m->b_face_vtx_lst[k]] = 1;
+    }
+  }
+
+  /* Now compact list */
+
+  cs_lnum_t n = 0;
+  for (cs_lnum_t i = 0; i < _n_vertices; i++) {
+    if (vtx_ids[i] != -1) {
+      vtx_ids[n] = i;
+      n++;
+    }
+  }
+
+  *n_vertices = n;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Fill lists of faces at the boundary of a set of cells verifying
  *        a given selection criteria.
  *

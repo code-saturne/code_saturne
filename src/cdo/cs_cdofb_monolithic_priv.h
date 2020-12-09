@@ -222,6 +222,27 @@ struct _cdofb_monolithic_t {
 
   /*!
    * @}
+   * @name Advection quantities
+   * Members related to the advection
+   * @{
+   *
+   *  \var adv_field
+   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
+   */
+  cs_adv_field_t           *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array;
+
+  /*! \var mass_flux_array_pre
+   *  Previous values of the mass flux at primal faces (Shared)
+   */
+  cs_real_t                *mass_flux_array_pre;
+
+  /*!
+   * @}
    * @name Boundary conditions (BC) management
    * Routines and elements used for enforcing the BCs
    * @{

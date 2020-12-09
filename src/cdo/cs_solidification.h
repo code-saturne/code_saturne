@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * \brief Compute and post-process (C_bulk - C_0)/C_0
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated
- * C_0 is the reference concentration
+ *        C_0 is the reference concentration
  *
  * \def CS_SOLIDIFICATION_POST_CLIQ
  * \brief Post-process Cliq the liquid solute distribution (wt %)
@@ -131,7 +131,27 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 1) /*=    2 */
 #define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 2) /*=    4 */
 
-/* Automatically set by the code if user functions are used */
+/* Automatically set by the code if user functions are used
+ * The following flags are set when calling \ref cs_solidification_set_functions
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC
+ * \brief the update of the forcing term (penalization) in the momentum equation
+ *        is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC
+ * \brief the update of the liquid concentration of the binary alloy is defined
+ *        using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC
+ * \brief the update of the liquid fraction is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC
+ * \brief the update of the thermal source term is defined using a user function
+ *
+ * \def CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC
+ * \brief the main algorithm for the thermo-solutal coupling is defined by a
+ *        user function.
+ */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
@@ -150,45 +170,43 @@ typedef cs_flag_t  cs_solidification_model_t;
 
 /*! \enum cs_solidification_model_bit_t
  *  \brief Bit values for physical modelling related to the Navier-Stokes system
- *  of equations
+ *         of equations
  *
- * \var CS_SOLIDIFICATION_MODEL_STOKES
- * Stokes equations (mass and momentum) with the classical choice of variables
- * i.e. velocity and pressure. Mass density is assumed to be constant.
+ * \var CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE
+ *      The dynamic system of equations is associated with an energy equation
+ *      solved using the temperature as variable. This is the default option.
  *
- * \var CS_SOLIDIFICATION_MODEL_NAVIER_STOKES
- * Navier-Stokes equations: mass and momentum with a constant mass density
+ * \var CS_SOLIDIFICATION_MODEL_USE_ENTHALPY
+ *      The dynamic system of equations is associated with an energy equation
+ *      solved using the temperature as variable (not fully available).
  *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
- * Modelling introduced in Voller and Prakash entitled:
- * "A fixed grid numerical modelling methodology for convection-diffusion mushy
- * region phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.
- * No tracer. Only physical constants describing the solidification process are
- * used.
+ *      Modelling introduced in Voller and Prakash entitled: "A fixed grid
+ *      numerical modelling methodology for convection-diffusion mushy region
+ *      phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.  No
+ *      tracer. Only physical constants describing the solidification process
+ *      are used.
  *
  * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- * The tracer is composed by an alloy with two chemical constituents
+ *      The basis is similar to \ref CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
+ *      A tracer equation is added corresponding to the evolution of the bulk
+ *      concentration in alloy. This alloy has two chemical constituents hence
+ *      the name "binary alloy".
  */
 
 typedef enum {
 
-  /* Main modelling for the dynamic
-     ------------------------------ */
-
-  CS_SOLIDIFICATION_MODEL_STOKES                  = 1<<0, /* =   1 */
-  CS_SOLIDIFICATION_MODEL_NAVIER_STOKES           = 1<<1, /* =   2 */
-
   /* Main modelling for the thermal system
      ------------------------------------- */
 
-  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
-  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
+  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<0, /* =   1 */
+  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<1, /* =   2 */
 
   /* Solidification modelling
      ------------------------ */
 
-  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<4, /* =  16 */
-  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<5, /* =  32 */
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<2, /* =   4 */
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<3, /* =   8 */
 
 } cs_solidification_model_bit_t;
 
@@ -444,11 +462,14 @@ typedef struct  {
   cs_property_t   *mass_density;
   cs_real_t        rho0;
 
-  /* Heat capacity in the solidification/melting area (assumed to be uniform) */
+  /* Reference value for the heat capacity in the solidification/melting area
+   * (assumed to be uniform) */
   cs_real_t        cp0;
 
-  /* Laminar dynamic viscosity */
-  cs_property_t   *lam_viscosity;
+  /* Viscosity (pointer to the total viscosity which should be equal to the
+  *  laminar viscosity since no turbulence modelling is usually taken into
+  *  account */
+  cs_property_t   *viscosity;
 
   /* Liquid fraction of the mixture */
   /* ------------------------------ */
@@ -549,8 +570,9 @@ cs_solidification_set_verbosity(int   verbosity);
  * \param[in]  options          flag to handle optional parameters
  * \param[in]  post_flag        predefined post-processings
  * \param[in]  boundaries       pointer to the domain boundaries
+ * \param[in]  ns_model         model equations for the NavSto system
+ * \param[in]  ns_model_flag    option flag for the Navier-Stokes system
  * \param[in]  algo_coupling    algorithm used for solving the NavSto system
- * \param[in]  ns_option        option flag for the Navier-Stokes system
  * \param[in]  ns_post_flag     predefined post-processings for Navier-Stokes
  *
  * \return a pointer to a new allocated solidification structure
@@ -562,9 +584,10 @@ cs_solidification_activate(cs_solidification_model_t      model,
                            cs_flag_t                      options,
                            cs_flag_t                      post_flag,
                            const cs_boundary_t           *boundaries,
+                           cs_navsto_param_model_t        ns_model,
+                           cs_navsto_param_model_flag_t   ns_model_flag,
                            cs_navsto_param_coupling_t     algo_coupling,
-                           cs_flag_t                      ns_option,
-                           cs_flag_t                      ns_post_flag);
+                           cs_navsto_param_post_flag_t    ns_post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

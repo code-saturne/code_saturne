@@ -57,7 +57,9 @@
 #include "cs_gradient.h"
 #include "cs_gui_util.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
+#include "cs_field_pointer.h"
 #include "cs_flag_check.h"
 #include "cs_halo.h"
 #include "cs_math.h"
@@ -100,6 +102,18 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+typedef struct {
+
+  int             bc_location_id;      /* location id of boundary zone */
+  int             source_location_id;  /* location if of source elements */
+  cs_real_t       coord_shift[3];      /* coordinates shift relative to
+                                          selected boundary faces */
+  double          tolerance;           /* search tolerance */
+
+  ple_locator_t  *locator;             /* associated locator */
+
+} cs_bc_map_t;
+
 /*----------------------------------------------------------------------------
  * Local Structure Definitions
  *----------------------------------------------------------------------------*/
@@ -115,6 +129,9 @@ const int *cs_glob_bc_type = NULL;
 static int *_bc_face_zone;
 
 const int *cs_glob_bc_face_zone = NULL;
+
+static int _n_bc_maps = 0;
+static cs_bc_map_t *_bc_maps = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -140,6 +157,53 @@ cs_f_boundary_conditions_get_pointers(int  **itypfb,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build or update map of shifted boundary face coordinates on
+ *        cells or boundary faces for automatic interpolation.
+ *
+ * \warning
+ *
+ * This function does not currently update the location in case of moving
+ * meshes. It could be modifed to do so.
+ *
+ * \param[in]  map_id      id of defined map
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_bc_map(int  map_id)
+{
+  assert(map_id > -1 && map_id < _n_bc_maps);
+
+  cs_bc_map_t *bc_map = _bc_maps + map_id;
+
+  if (bc_map->locator != NULL)
+    return;
+
+  cs_mesh_location_type_t location_type
+    = cs_mesh_location_get_type(bc_map->source_location_id);
+
+  cs_lnum_t n_location_elts
+    = cs_mesh_location_get_n_elts(bc_map->source_location_id)[0];
+  cs_lnum_t n_faces
+    = cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
+
+  const cs_lnum_t *location_elts
+    = cs_mesh_location_get_elt_ids_try(bc_map->source_location_id);
+  const cs_lnum_t *faces
+    = cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
+
+  bc_map->locator = cs_boundary_conditions_map(location_type,
+                                               n_location_elts,
+                                               n_faces,
+                                               location_elts,
+                                               faces,
+                                               &(bc_map->coord_shift),
+                                               0,
+                                               bc_map->tolerance);
+}
 
 /*----------------------------------------------------------------------------
  * Compute balance at inlet
@@ -178,7 +242,7 @@ _inlet_sum(int                          var_id,
            cs_lnum_t                    n_faces,
            const cs_lnum_t             *faces,
            cs_real_t                   *balance_w,
-           int                          nvar,
+           cs_lnum_t                    nvar,
            cs_real_t                    rcodcl[],
            cs_real_t                    inlet_sum[])
 {
@@ -221,6 +285,271 @@ _inlet_sum(int                          var_id,
   }
 
   cs_parall_sum(dim, CS_REAL_TYPE, inlet_sum);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the homogeneous Dirichlet BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       boundaries  pointer to associated boundaries
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       var_id      matching variable id
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
+                          const cs_boundary_t        *boundaries,
+                          const cs_equation_param_t  *eqp,
+                          const cs_xdef_t            *def,
+                          cs_lnum_t                   var_id,
+                          int                        *icodcl,
+                          double                     *rcodcl)
+{
+  assert(eqp->dim == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  cs_boundary_type_t boundary_type
+    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+
+  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
+    bc_type = 6;
+
+  for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+    int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+    cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
+
+    if (face_ids == NULL) {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        _icodcl[i]  = bc_type;
+        _rcodcl1[i] = 0;
+      }
+    }
+    else {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+        _icodcl[elt_id]  = bc_type;
+        _rcodcl1[elt_id] = 0;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       boundaries  pointer to associated boundaries
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       var_id      matching variable id
+ * \param[in]       t_eval      time at which one evaluates the boundary cond.
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_dirichlet_bc(const cs_mesh_t            *mesh,
+                      const cs_boundary_t        *boundaries,
+                      const cs_equation_param_t  *eqp,
+                      const cs_xdef_t            *def,
+                      cs_lnum_t                   var_id,
+                      cs_real_t                   t_eval,
+                      int                        *icodcl,
+                      double                     *rcodcl)
+{
+  assert(eqp->dim == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  cs_boundary_type_t boundary_type
+    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+
+  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
+    bc_type = 6;
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
+
+      for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+        int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
+
+        if (face_ids == NULL) {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            _icodcl[i]  = bc_type;
+            _rcodcl1[i] = constant_val[coo_id];
+          }
+        }
+        else {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+            _icodcl[elt_id]  = bc_type;
+            _rcodcl1[elt_id] = constant_val[coo_id];
+          }
+        }
+
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Unhandled %s definition type."),
+              __func__, cs_xdef_type_get_name(def->type));
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the homogeneous Neumann BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       nvar        number of variables
+ * \param[in]       var_id      matching variable id
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_hmg_neumann_bc(const cs_mesh_t            *mesh,
+                        const cs_equation_param_t  *eqp,
+                        const cs_xdef_t            *def,
+                        cs_lnum_t                   nvar,
+                        cs_lnum_t                   var_id,
+                        int                        *icodcl,
+                        double                     *rcodcl)
+{
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  for (int coo_id = 0; coo_id < def->dim; coo_id++) {
+
+    int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+    cs_real_t  *_rcodcl3 = rcodcl + 2*n_b_faces*nvar
+                                  + (var_id+coo_id)*n_b_faces;
+
+    if (face_ids == NULL) {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        _icodcl[i] = 3;
+        _rcodcl3[i] = 0;
+      }
+    }
+    else {
+#     pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+        const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+        _icodcl[elt_id] = 3;
+        _rcodcl3[elt_id] = 0;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs
+ *
+ * \param[in]       mesh        pointer to mesh structure
+ * \param[in]       eqp         pointer to a cs_equation_param_t
+ * \param[in]       def         pointer to a boundary condition definition
+ * \param[in]       nvar        number of variables
+ * \param[in]       var_id      matching variable id
+ * \param[in]       t_eval      time at which one evaluates the boundary cond.
+ * \param[in, out]  icodcl      boundary conditions type array
+ * \param[in, out]  rcodcl      boundary conditions values array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_neumann_bc(const cs_mesh_t            *mesh,
+                    const cs_equation_param_t  *eqp,
+                    const cs_xdef_t            *def,
+                    cs_lnum_t                   nvar,
+                    cs_lnum_t                   var_id,
+                    cs_real_t                   t_eval,
+                    int                        *icodcl,
+                    double                     *rcodcl)
+{
+  assert(eqp->dim*3 == def->dim);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *face_ids = bz->elt_ids;
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      /* Vector values per component
+         for CDO, scalar (1st component) for legacy */
+      const int dim = def->dim/3;
+      const cs_real_t *constant_vals = (cs_real_t *)def->context;
+
+      for (int coo_id = 0; coo_id < dim; coo_id++) {
+
+        const cs_real_t value = constant_vals[coo_id*3];
+
+        int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl3 = rcodcl + 2*n_b_faces*nvar
+                                      + (var_id+coo_id)*n_b_faces;
+
+        if (face_ids == NULL) {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            _icodcl[i]  = 3;
+            _rcodcl3[i] = value;
+          }
+        }
+        else {
+#         pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+            const cs_lnum_t  elt_id = (face_ids == NULL) ? i : face_ids[i];
+            _icodcl[elt_id]  = 3;
+            _rcodcl3[elt_id] = value;
+          }
+        }
+
+      }
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Unhandled %s definition type."),
+              __func__, cs_xdef_type_get_name(def->type));
+    break;
+
+  }
 }
 
 /*============================================================================
@@ -620,7 +949,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
   assert(sizeof(ple_coord_t) == sizeof(cs_real_t));
 
   if (location_type == CS_MESH_LOCATION_CELLS || interpolate) {
-    /* FIXME: we cheat here with the constedness of the field relative to
+    /* FIXME: we cheat here with the constedness of the field
        for a possible ghost values update, but having a finer control
        of when syncing is required would be preferable */
     cs_field_t *_f = cs_field_by_id(f->id);
@@ -637,7 +966,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
     const cs_field_bc_coeffs_t   *bc_coeffs = f->bc_coeffs;
 
-    /* If no boundary condition coefficients are available */
+    /* If boundary condition coefficients are available */
 
     if (bc_coeffs != NULL) {
 
@@ -738,7 +1067,60 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create the legacy boundary conditions face type and face zone arrays
+ * \brief Add location of locate shifted boundary face coordinates on
+ *        cells or boundary faces for automatic interpolation.
+ *
+ * \note
+ * This function is currently restricted to mapping of boundary face
+ * locations (usually from boundary zones) to cell of boundary face
+ * locations, but could be extended to other location types in the future.
+ *
+ * \param[in]  bc_location_id      id of selected boundary mesh location;
+ *                                 currently restricted to subsets of
+ *                                 boundary faces (i.e. boundary zone
+ *                                 location ids).
+ * \param[in]  source_location_id  id of selected location  mesh location
+ *                                 (usually CS_MESH_LOCATION_CELLS but can be
+ *                                 a more restricted cell or boundary face zone
+ *                                 location location id).
+ * \param[in]  coord_shift      coordinates shift relative to selected
+ *                              boundary faces
+ * \param[in]  tolerance        relative tolerance for point location.
+ *
+ * \return  id of added map
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_add_map(int         bc_location_id,
+                               int         source_location_id,
+                               cs_real_t   coord_shift[3],
+                               double      tolerance)
+{
+  int map_id = _n_bc_maps;
+
+  BFT_REALLOC(_bc_maps, _n_bc_maps+1, cs_bc_map_t);
+
+  cs_bc_map_t *bc_map = _bc_maps + _n_bc_maps;
+
+  bc_map->bc_location_id = bc_location_id;
+  bc_map->source_location_id = source_location_id;
+
+  for (int i = 0; i < 3; i++)
+    bc_map->coord_shift[i] = coord_shift[i];
+
+  bc_map->tolerance = tolerance;
+
+  bc_map->locator = NULL;
+
+  _n_bc_maps += 1;
+
+  return map_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the legacy boundary conditions face type and face zone arrays.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -774,22 +1156,31 @@ cs_boundary_conditions_create(void)
   cs_glob_bc_face_zone = _bc_face_zone;
 }
 
-/*----------------------------------------------------------------------------
- * Free the boundary conditions face type and face zone arrays
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the boundary conditions face type and face zone arrays.
+ *
+ * This also frees boundary condition mappings which may have been defined.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_free(void)
 {
   BFT_FREE(_bc_type);
   BFT_FREE(_bc_face_zone);
+
+  for (int i = 0; i < _n_bc_maps; i++)
+    ple_locator_destroy((_bc_maps + i)->locator);
+
+  BFT_FREE(_bc_maps);
+  _n_bc_maps = 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set convective oulet boundary condition for a scalar.
  *
- * Parameters:
  * \param[out]    coefa         explicit BC coefficient for gradients
  * \param[out]    cofaf         explicit BC coefficient for diffusive flux
  * \param[out]    coefb         implicit BC coefficient for gradients
@@ -816,6 +1207,160 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
   /* Flux BCs */
   *cofaf = - hint * *coefa;
   *cofbf =   hint * (1.0 - *coefb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update per variable boundary condition codes.
+ *
+ * \param[in]       nvar             number of variables requiring BC's
+ * \param[in]       itypfb           type of boundary for each face
+ * \param[in, out]  icodcl           boundary condition codes
+ * \param[in, out]  rcodcl           boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_compute(int         nvar,
+                               int        *itypfb,
+                               int        *icodcl,
+                               double     *rcodcl)
+{
+  /* Initialization */
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  for (int map_id = 0; map_id < _n_bc_maps; map_id++)
+    _update_bc_map(map_id);
+
+  static int var_id_key = -1;
+  if (var_id_key < 0)
+    var_id_key = cs_field_key_id("variable_id");
+  assert(var_id_key >= 0);
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_boundary_t *boundaries = cs_glob_boundaries;
+  const cs_real_t t_eval = ts->t_cur;
+
+  /* Loop on fields */
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    const cs_equation_param_t *eqp = NULL;
+    if (f->type & CS_FIELD_VARIABLE)
+      eqp = cs_field_get_equation_param_const(f);
+
+    if (eqp == NULL)
+      continue;
+
+    /* Only handle legacy discretization here */
+
+    if (eqp-> space_scheme != CS_SPACE_SCHEME_LEGACY)
+      continue;
+
+    /* Get associated variable id  */
+
+    int var_id = cs_field_get_key_int(f, var_id_key) - 1;
+    assert(var_id >= 0);
+
+    /* Loop on boundary conditions */
+
+    for (int bc_id = 0; bc_id < eqp->n_bc_defs; bc_id++) {
+      const cs_xdef_t *def = eqp->bc_defs[bc_id];
+      cs_param_bc_type_t bc_type = (cs_param_bc_type_t)(def->meta);
+      switch (bc_type) {
+
+      case CS_PARAM_BC_HMG_DIRICHLET:
+        _compute_hmg_dirichlet_bc(mesh,
+                                  boundaries,
+                                  eqp,
+                                  def,
+                                  var_id,
+                                  icodcl,
+                                  rcodcl);
+        break;
+
+      case CS_PARAM_BC_DIRICHLET:
+        _compute_dirichlet_bc(mesh,
+                              boundaries,
+                              eqp,
+                              def,
+                              var_id,
+                              t_eval,
+                              icodcl,
+                              rcodcl);
+        break;
+
+      case CS_PARAM_BC_HMG_NEUMANN:
+        _compute_hmg_neumann_bc(mesh,
+                                eqp,
+                                def,
+                                nvar,
+                                var_id,
+                                icodcl,
+                                rcodcl);
+        break;
+
+      case CS_PARAM_BC_NEUMANN:
+        _compute_neumann_bc(mesh,
+                            eqp,
+                            def,
+                            nvar,
+                            var_id,
+                            t_eval,
+                            icodcl,
+                            rcodcl);
+        break;
+
+      default:
+        break;
+      }
+    }
+
+    /* Treatment of mapped inlets */
+
+    for (int map_id = 0; map_id < _n_bc_maps; map_id++) {
+
+      cs_bc_map_t *bc_map = _bc_maps + map_id;
+
+      if (bc_map->locator == NULL || ts->nt_cur <= 1)
+        continue;
+
+      int interpolate = 0;
+      int normalize = 0;
+      if (f == CS_F_(vel))
+        normalize = 1;
+      else {
+        const int keysca = cs_field_key_id("scalar_id");
+        if (cs_field_get_key_int(f, keysca) > 0)
+          normalize = 1;
+      }
+
+      if (f != CS_F_(p)) {
+        cs_mesh_location_type_t location_type
+          = cs_mesh_location_get_type(bc_map->source_location_id);
+        cs_lnum_t n_faces
+          = cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
+        const cs_lnum_t *faces
+          = cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
+
+        cs_boundary_conditions_mapped_set(f,
+                                          bc_map->locator,
+                                          location_type,
+                                          normalize,
+                                          interpolate,
+                                          n_faces,
+                                          faces,
+                                          NULL,
+                                          nvar,
+                                          rcodcl);
+      }
+
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

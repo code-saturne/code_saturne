@@ -149,7 +149,7 @@ typedef struct
 
 /* Minimum recommended scatter/gather buffer size */
 
-static size_t _cs_parall_min_coll_buf_size = 1024*1024*8;
+static size_t _cs_parall_min_coll_buf_size = 1024*1024;
 
 #endif
 

@@ -153,11 +153,11 @@ enddo
 deallocate(cvara_espg)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

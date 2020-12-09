@@ -56,6 +56,14 @@ typedef enum {
   CS_MEDCPL_LINEAR_TIME
 } cs_medcpl_time_discr_t;
 
+typedef enum {
+  CS_MEDCPL_FIELD_INT_CONSERVATION,
+  CS_MEDCPL_FIELD_INT_MAXIMUM,
+  CS_MEDCPL_FIELD_EXT_CONSERVATION,
+  CS_MEDCPL_FIELD_EXT_MAXIMUM,
+  CS_MEDCPL_FIELD_N_NATURE
+} cs_medcpl_field_nature_t;
+
 /*============================================================================
  * Public C++ function prototypes
  *============================================================================*/
@@ -194,11 +202,12 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling);
 /*!
  * \brief Define a coupled field
  *
- * \param[in] c           pointer to cs_paramedmem_coupling_t struct
- * \param[in] name        name of field
- * \param[in] dim         field dimension
- * \param[in] space_discr field space discretisation (nodes or cells)
- * \param[in] time_discr  field coupling time discretisation
+ * \param[in] c             pointer to cs_paramedmem_coupling_t struct
+ * \param[in] name          name of field
+ * \param[in] dim           field dimension
+ * \param[in] field_nature  field nature flag
+ * \param[in] space_discr   field space discretisation (nodes or cells)
+ * \param[in] time_discr    field coupling time discretisation
  *
  * \return index of field within the storing vector
  *
@@ -209,6 +218,7 @@ int
 cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
                                 const char                *name,
                                 int                        dim,
+                                cs_medcpl_field_nature_t   field_nature,
                                 cs_medcpl_space_discr_t    space_discr,
                                 cs_medcpl_time_discr_t     time_discr);
 
@@ -218,6 +228,7 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
  *
  * \param[in] c           pointer to cs_paramedmem_coupling_t struct
  * \param[in] f           pointer to cs_field_t struct
+ * \param[in] fn          field nature flag
  * \param[in] time_discr  field coupling time discretisation
  *
  * \return index of field within the storing vector
@@ -227,6 +238,7 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
 int
 cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
                                               cs_field_t               *f,
+                                              cs_medcpl_field_nature_t  fn,
                                               cs_medcpl_time_discr_t    td);
 
 /*----------------------------------------------------------------------------*/

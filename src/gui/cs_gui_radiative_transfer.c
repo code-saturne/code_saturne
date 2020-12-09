@@ -50,7 +50,6 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
-#include "cs_gui_variables.h"
 #include "cs_gui_util.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_specific_physics.h"
@@ -58,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_post.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -291,7 +291,7 @@ cs_gui_radiative_transfer_parameters(void)
                               &cs_glob_rad_transfer_params->iimpar);
     cs_gui_node_get_child_int(tn0, "intensity_resolution_listing_printing",
                               &cs_glob_rad_transfer_params->verbosity);
-    if (cs_gui_get_activ_thermophysical_model()) {
+    if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2) {
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
         cs_glob_rad_transfer_params->imodak = 1;
@@ -331,8 +331,7 @@ cs_gui_rad_transfer_absorption(cs_real_t  ck[])
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  if (!cs_gui_get_activ_thermophysical_model()) {
-
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] < 2) {
     cs_tree_node_t *tn
       = cs_tree_get_node(cs_glob_tree,
                          "thermophysical_models/radiative_transfer");

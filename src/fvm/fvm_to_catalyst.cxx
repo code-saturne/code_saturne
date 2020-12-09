@@ -159,8 +159,6 @@ typedef struct {
   int                         time_step;       /* Latest time step */
   double                      time_value;      /* Latest time value */
 
-  vtkCPDataDescription       *datadesc;        /* Data description */
-
   char                       *input_name;      /* input name, or NULL for
                                                   default */
   bool                        private_comm;    /* Use private communicator */
@@ -204,7 +202,8 @@ MPI_Comm  _reference_comm = MPI_COMM_NULL;  /* Reference communicator */
  *   path <-- scripts path
  *
  * returns:
- *   1 if script is a Catalyst script, 0 otherwise
+ *   1 if script is a Catalyst V1, 2 if it seems to be a V2 script,
+ *   script, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 static int
@@ -220,6 +219,7 @@ _check_script_is_catalyst(const char  *path)
 
   int checks[] = {false, false, false};
   int n_checks = 0;
+  bool import_catalyst = false;
 
   const char *check_strings[]
     = {"CreateCoProcessor(",
@@ -238,13 +238,13 @@ _check_script_is_catalyst(const char  *path)
     char *s = fgets(buffer, 1024, fp);
     if (s == NULL) break;
 
-    while (*s == ' ' && *s == '\t')  /* skip initial whitespace */
+    while (s < e && *s == ' ' && *s == '\t')  /* skip initial whitespace */
       s++;
 
     if (strncmp(s, "def", 3) == 0) {
       s += 3;
       if (*s == ' ' || *s == '\t') {
-        while (*s == ' ' && *s == '\t')
+        while (*s == ' ' && *s == '\t' && *s != '\0')
           s++;
         /* Remove whitespace */
         size_t l = strlen(s);
@@ -265,9 +265,35 @@ _check_script_is_catalyst(const char  *path)
 
       }
     }
+    else if (strncmp(s, "from", 4) == 0) {
+
+      /* cleanup whitespace */
+      int n_space = 0;
+      int i = 0;
+      for (int j = 0; j < 1024 && s+j < e && s[j] != '\0'; j++) {
+        if (s[j] == ' ' || s[j] == '\t') {
+          if (n_space < 1)
+            s[i++] = ' ';
+          n_space += 1;
+        }
+        else {
+          s[i++] = s[j];
+          n_space = 0;
+        }
+      }
+
+      if (strncmp(s, "from paraview import catalyst", 29) == 0) {
+        import_catalyst = true;
+      }
+
+    }
 
     if (n_checks == 3) {
       retval = 1;
+      break;
+    }
+    else if (import_catalyst) {
+      retval = 2;
       break;
     }
 
@@ -286,6 +312,71 @@ _check_script_is_catalyst(const char  *path)
   fclose(fp);
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Add a Catalyst V2 pipeline if not already present.
+ *
+ * parameters:
+ *   path <-- V2 pipeline file path
+ *
+ * returns:
+ *   id of pipeline script in list, or -1 if not valid
+ *----------------------------------------------------------------------------*/
+
+static int
+_add_v2_pipeline(const char  *path)
+{
+  assert(path != NULL);
+
+  /* Check that we did not already add this file */
+
+  for (int i = 0; i < _n_scripts; i++) {
+    if (strcmp(_scripts[i], path) == 0)
+      return i;
+  }
+
+#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
+
+  /* Create Catalyst pipeline and check the file is valid */
+
+  vtkNew<vtkCPPythonScriptV2Pipeline> pipeline;
+  if (pipeline->Initialize(path) == false) {
+    bft_printf(_("\nFile \"%s\"\n"
+                 "does not seem to contain a Catalyst Python pipeline.\n"),
+               path);
+    return -1;
+  }
+
+  int id = _n_scripts;
+  _n_scripts += 1;
+
+  BFT_REALLOC(_scripts, _n_scripts, char *);
+
+  size_t l = strlen(path);
+  BFT_MALLOC(_scripts[id], l+1, char);
+  strncpy(_scripts[id], path, l);
+  _scripts[id][l] = '\0';
+
+  /* pipeline->SetGhostLevel(1); */
+  _processor->AddPipeline(pipeline);
+
+  return id;
+
+#else
+
+  bft_printf
+    (_("\nFile \"%s\"\n"
+       "seems to contain a Catalyst V2 Python pipeline but the version.\n"
+       "of Catalyst linked with only supports version 1 pipelines.\n\n"
+       "You may need to use a more recent Catalyst version or downgrade\n"
+       "to earlier V1 pipelines.\n"),
+     path);
+
+  return -1;
+
+#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
+
 }
 
 /*----------------------------------------------------------------------------
@@ -324,6 +415,11 @@ _add_script(const char         *path)
   if (is_catalyst < 1)
     return -1;
 
+  if (is_catalyst == 2) {
+    _add_v2_pipeline(path);
+    return 2;
+  }
+
   for (int i = 0; i < _n_scripts; i++) {
     if (strcmp(_scripts[i], path) == 0)
       return i;
@@ -341,72 +437,16 @@ _add_script(const char         *path)
 
   /* Add Catalyst pipeline */
 
-  vtkCPPythonScriptPipeline  *pipeline = vtkCPPythonScriptPipeline::New();
-
+  vtkNew<vtkCPPythonScriptPipeline> pipeline;
   if (pipeline->Initialize(path) == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Error initializing pipeline from \"%s\""), path);
 
   /* pipeline->SetGhostLevel(1); */
   _processor->AddPipeline(pipeline);
-  pipeline->Delete();
 
   return id;
 }
-
-#if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
-
-/*----------------------------------------------------------------------------
- * Add a Catalyst V2 pipeline if not already present.
- *
- * parameters:
- *   path <-- V2 pipeline ".zip" file path
- *
- * returns:
- *   id of pipeline script in list, or -1 if not valid
- *----------------------------------------------------------------------------*/
-
-static int
-_add_v2_pipeline(const char  *path)
-{
-  assert(path != NULL);
-
-  /* Check that we did not already add this file */
-
-  for (int i = 0; i < _n_scripts; i++) {
-    if (strcmp(_scripts[i], path) == 0)
-      return i;
-  }
-
-  /* Create Catalyst pipeline and check the file is valid */
-
-  vtkNew<vtkCPPythonScriptV2Pipeline> pipeline;
-  if (pipeline->InitializeFromZIP(path) == false) {
-    bft_printf(_("\nFile \"%s\"\n"
-                 "does not seem to contain a Catalyst Python pipeline.\n"),
-               path);
-    pipeline->Delete();
-    return -1;
-  }
-
-  int id = _n_scripts;
-  _n_scripts += 1;
-
-  BFT_REALLOC(_scripts, _n_scripts, char *);
-
-  size_t l = strlen(path);
-  BFT_MALLOC(_scripts[id], l+1, char);
-  strncpy(_scripts[id], path, l);
-  _scripts[id][l] = '\0';
-
-  /* pipeline->SetGhostLevel(1); */
-  _processor->AddPipeline(pipeline);
-  pipeline->Delete();
-
-  return id;
-}
-
-#endif /* defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H) */
 
 /*----------------------------------------------------------------------------
  * Add Catalyst scripts from directoty if not already present.
@@ -442,7 +482,7 @@ _add_dir_scripts(const char  *dir_path)
 
     /* Filter: Python files only */
     if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
-        char *tmp_name = NULL;
+      char *tmp_name = NULL;
       BFT_MALLOC(tmp_name,
                  strlen(dir_path) + 1 + strlen(file_name) + 1,
                  char);
@@ -453,7 +493,7 @@ _add_dir_scripts(const char  *dir_path)
 
 #if defined(HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H)
 
-    /* Filter: Catalyst V2 pipline ".zip" files only */
+    /* Filter: Catalyst V2 pipeline might be in ".zip" form */
     else if (l_ext == 4 && strncmp(ext, ".zip", 4) == 0) {
       char *tmp_name = NULL;
       BFT_MALLOC(tmp_name,
@@ -873,7 +913,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
               fvm_catalyst_field_t *);
 
   vtkUnstructuredGrid *f = NULL;
-  vtkDoubleArray *tmp = NULL;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
 
@@ -882,7 +921,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
     f = vtkUnstructuredGrid::SafeDownCast(vtkDataSet::SafeDownCast
           (writer->mb->GetBlock(mesh_id)));
 
-    tmp = vtkDoubleArray::New();
+    vtkNew<vtkDoubleArray> tmp;
     tmp->SetName(fieldname);
 
     tmp->SetNumberOfComponents(dest_dim);
@@ -900,7 +939,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
       vtkDataSetAttributes::SafeDownCast
         (f->GetCellData())->AddArray(vtkAbstractArray::SafeDownCast(tmp));
     }
-    tmp->Delete();
 
   }
 
@@ -945,7 +983,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
   stride = (size_t)(mesh->dim);
 
-  vtkPoints *points = vtkPoints::New();
+  vtkNew<vtkPoints> points;
 
   points->Allocate(mesh->n_vertices);
 
@@ -974,7 +1012,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
     const cs_gnum_t *g_vtx_num
       = fvm_io_num_get_global_num(mesh->global_vertex_num);
 
-    vtkIdTypeArray *g_vtx_id = vtkIdTypeArray::New();
+    vtkNew<vtkIdTypeArray> g_vtx_id;
 
     g_vtx_id->SetNumberOfComponents(1);
     g_vtx_id->SetName("GlobalNodeIds");
@@ -991,12 +1029,9 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
     vtk_mesh->GetPointData()->SetGlobalIds(g_vtx_id);
 
-    g_vtx_id->Delete();
-
   }
 
   vtk_mesh->SetPoints(points);
-  points->Delete();
 }
 
 /*----------------------------------------------------------------------------
@@ -1483,12 +1518,6 @@ fvm_to_catalyst_init_writer(const char             *name,
   if (_n_scripts < 1)
     _add_dir_scripts(".");
 
-  w->datadesc = vtkCPDataDescription::New();
-  if (w->input_name != NULL)
-    w->datadesc->AddInput(w->input_name);
-  else
-    w->datadesc->AddInput(w->name);
-
   w->modified = true;
 
   return w;
@@ -1528,7 +1557,6 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   _n_writers -= 1;
 
-  w->datadesc->Delete();
   w->mb->Delete();
 
   for (i = 0; i < w->n_fields; i++) {
@@ -1579,7 +1607,6 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
-    w->datadesc->SetTimeData(w->time_value, w->time_step);
   }
 }
 
@@ -1756,7 +1783,6 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
-    w->datadesc->SetTimeData(w->time_value, w->time_step);
   }
 
   /* Get field id */
@@ -1829,18 +1855,25 @@ fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  if (_processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
-    int n = w->datadesc->GetNumberOfInputDescriptions();
+  vtkNew<vtkCPDataDescription> dataDescription;
+  if (w->input_name != NULL)
+    dataDescription->AddInput(w->input_name);
+  else
+    dataDescription->AddInput(w->name);
+  dataDescription->SetTimeData(w->time_value, w->time_step);
+
+  if (_processor->RequestDataDescription(dataDescription) != 0 && w->modified) {
+    int n = dataDescription->GetNumberOfInputDescriptions();
     if (n == 1)
-      w->datadesc->GetInputDescription(0)->SetGrid(w->mb);
+      dataDescription->GetInputDescription(0)->SetGrid(w->mb);
     else {
       if (w->input_name != NULL)
-        w->datadesc->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
+        dataDescription->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
       else
-        w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
+        dataDescription->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
     }
 
-    _processor->CoProcess(w->datadesc);
+    _processor->CoProcess(dataDescription);
     w->modified = false;
   }
 }

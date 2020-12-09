@@ -39,7 +39,6 @@
 #include "cs_gui_radiative_transfer.h"
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_util.h"
-#include "cs_gui_variables.h"
 
 /*----------------------------------------------------------------------------*/
 

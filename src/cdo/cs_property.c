@@ -229,7 +229,7 @@ _get_cell_value(cs_lnum_t              c_id,
   cs_xdef_t  *def = pty->defs[def_id];
   cs_real_t  result = 0;
 
-  pty->get_eval_at_cell[def_id](1, &c_id, true, /* compact output */
+  pty->get_eval_at_cell[def_id](1, &c_id, true, /* dense output */
                                 cs_glob_mesh,
                                 cs_cdo_connect,
                                 cs_cdo_quant,
@@ -302,7 +302,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
   if (pty->type & CS_PROPERTY_ISO) {
 
     double  eval;
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* compact output */
+    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
                                   cs_glob_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -316,7 +316,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
   else if (pty->type & CS_PROPERTY_ORTHO) {
 
     double  eval[3];
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* compact output */
+    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
                                   cs_glob_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -331,7 +331,7 @@ _get_cell_tensor(cs_lnum_t               c_id,
   else {
 
     assert(pty->type & CS_PROPERTY_ANISO);
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* compact output */
+    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
                                   cs_glob_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -1113,6 +1113,8 @@ cs_property_def_constant_value(cs_property_t    *pty,
 
   /* Set automatically the reference value if all cells are selected */
   cs_property_set_reference_value(pty, val);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1623,7 +1625,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         a->get_eval_at_cell[i](z->n_elts,
                                z->elt_ids,
-                               false, /* without compact output */
+                               false, /* without dense output */
                                cs_glob_mesh,
                                cs_cdo_connect,
                                quant,
@@ -1641,7 +1643,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         b->get_eval_at_cell[i](z->n_elts,
                                z->elt_ids,
-                               false, /* without compact output */
+                               false, /* without dense output */
                                cs_glob_mesh,
                                cs_cdo_connect,
                                quant,
@@ -1673,7 +1675,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
           a->get_eval_at_cell[i](z->n_elts,
                                  z->elt_ids,
-                                 false, /* without compact output */
+                                 false, /* without dense output */
                                  cs_glob_mesh,
                                  cs_cdo_connect,
                                  quant,
@@ -1693,7 +1695,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
           b->get_eval_at_cell[i](z->n_elts,
                                  z->elt_ids,
-                                 false, /* without compact output */
+                                 false, /* without dense output */
                                  cs_glob_mesh,
                                  cs_cdo_connect,
                                  quant,
@@ -1727,7 +1729,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
           b->get_eval_at_cell[i](z->n_elts,
                                  z->elt_ids,
-                                 false, /* without compact output */
+                                 false, /* without dense output */
                                  cs_glob_mesh,
                                  cs_cdo_connect,
                                  quant,
@@ -1747,7 +1749,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
           a->get_eval_at_cell[i](z->n_elts,
                                  z->elt_ids,
-                                 false, /* without compact output */
+                                 false, /* without dense output */
                                  cs_glob_mesh,
                                  cs_cdo_connect,
                                  quant,
@@ -1792,7 +1794,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         pty->get_eval_at_cell[i](z->n_elts,
                                  z->elt_ids,
-                                 false, /* without compact output */
+                                 false, /* without dense output */
                                  cs_glob_mesh,
                                  cs_cdo_connect,
                                  quant,

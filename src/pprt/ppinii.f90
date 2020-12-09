@@ -20,27 +20,16 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppinii
-!================
-
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-! INITIALISATION PAR DEFAUT DES COMMONS PHYSIQUE PARTICULIERE
-
 !-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!> \file ppinii.f90
+!> \brief Default initialization of specific modules
+!> (only non-map fortran common variables of modules)
+!>
+!------------------------------------------------------------------------------
+
+subroutine ppinii
+
 !===============================================================================
 
 !===============================================================================
@@ -59,7 +48,10 @@ use cs_fuel_incl
 use ppincl
 use ppcpfu
 use atincl
+use atimbr
 use atchem
+use atsoil
+use field
 use sshaerosol
 
 !===============================================================================
@@ -645,26 +637,105 @@ do izone = 1, nozppm
 enddo
 
 !===============================================================================
-! 6. REMPLISSAGE INCLUDE atincl.h
-!                INCLUDE POUR LA VERSION ATMOSPHERIQUE
+! 6. Global variables for atmospheric flows (module atincl.f90)
 !===============================================================================
+
+! Space and time reference of the run:
+! ------------------------------------
+
+! Option for the meteo profile computation
+!ihpm   --> flag to compute the hydrostastic pressure by Laplace integration
+!           in the meteo profiles
+!       = 0 : bottom to top Laplace integration, based on P(sea level) (default)
+!       = 1 : top to bottom Laplace integration based on P computed for
+!            the standard atmosphere at z(nbmaxt)
+ihpm = 0
+
+! 1d radiative transfer model:
+! ----------------------------
+
+! iatra1 -->  flag for the use of the 1d atmo radiative model
+! nfatr1 --> 1d radiative model pass frequency
+! ivert  --> flag for the definition of the vertical grid
+!            -1: no vertical grid
+!            0 : automatic definition !!!!!!!!!MM 2do
+!            1 : definition by the user in usatdv
+! iqv0   --> flag for humidity above the domain (0 : no humidity; 1 : decreasing)
+
+iatra1 = 0
+nfatr1 = 1
+ivert = 1  ! if iatra1=1 then ivert=1
+iqv0 = 0
+
+! --> Initialisation for the 1d radiative model:
+nvert = 1
+kvert = 20
+
+! flag to use the soil model (if humid atmosphere)
+iatsoil = 0
+! Initial values for soil variables
+tsini  = 20.d0   !TSINI  : Surface ground temperature
+tprini = 20.d0   !TPRINI : Deep ground temperature
+qvsini = 0.d0    !QVSINI : Ground humidity
+tmer   = 20.d0   !Sea temperature
+
+!  -------------------------------------------------------------------------------
+!  Microphysics parameterization options
+!  -------------------------------------------------------------------------------
+
+! logaritmic standard deviation of the log-normal law of the droplet spectrum
+! adimensional
+sigc = 0.53 ! other referenced values are 0.28, 0.15
+
+!  -----------------------------------------------------------------------------
+!  Atmospheric imbrication on large scale meteo (atimbr module)
+!  -----------------------------------------------------------------------------
+
+! activation flag
+imbrication_flag = .false.
+imbrication_verbose = .false.
+
+! ------------------------------------------------------------------------------
+! flags for activating the cressman interpolation for the boundary conditions
+! ------------------------------------------------------------------------------
+cressman_u = .false.
+cressman_v = .false.
+cressman_tke = .false.
+cressman_eps = .false.
+cressman_theta = .false.
+cressman_qw = .false.
+cressman_nc = .false.
+
+! --------------------------------------------------------------
+! numerical parameters for the cressman interpolation formulas
+! --------------------------------------------------------------
+horizontal_influence_radius = 8500.d0
+vertical_influence_radius = 100.d0
+
+! key id for optimal interpolation
+
+call field_get_key_id("opt_interp_id", kopint)
+
+! -------------------------------------
+! flags for 1d radiative transfer model
+! -------------------------------------
+
+! no computation / storage of downward and upward infrared radiative fluxes
+irdu = 1
+
+! initmeteo --> use meteo profile for variables initialization
+!               (0: not used; 1: used )
+! NB : should eventually be set by interface and by zone (as BCs)
+
+initmeteo = 1
+
+theo_interp = 0
 
 !--> Initialisation for the meteo profile
 
 do izone = 1, nozppm
   iprofm(izone) = 0
 enddo
-ihpm=0
-
-! --> Initialisation for the 1d radiative model:
-
-iatra1 = 0
-nfatr1 = 1
-nvert = 1
-kvert = 20
-ivert = 0
-iqv0 = 0
-iatsoil = 0
 
 ! --> Initialisation for the chemistry models:
 
@@ -672,10 +743,8 @@ init_at_chem = 1
 
 ! --> Initialisation for the gaseous chemistry model:
 
-ichemistry = 0
 ifilechemistry = 0
 isepchemistry = 2
-photolysis = .true.
 nbchim = 0
 nbchmz = 0
 nespgi = 0
@@ -684,18 +753,22 @@ do izone = 1, nozppm
   iprofc(izone) = 0
 enddo
 
-
 ! --> Initialisation for the aerosol chemistry model:
 
-iaerosol = CS_ATMO_AEROSOL_OFF
-nogaseouschemistry = .false.
-init_gas_with_lib = .false.
-init_aero_with_lib = .false.
-nlayer_aer = 0
-n_aer = 0
 do izone = 1, nozppm
   iprofa(izone) = 0
 enddo
+
+! Default values (climatic ones) for radiative transfer and
+! aerosols
+aod_o3_tot=0.20d0
+aod_h2o_tot=0.10d0
+gaero_o3=0.66d0
+gaero_h2o=0.64d0
+piaero_o3=0.84d0
+piaero_h2o=0.84d0
+black_carbon_frac=0.d0
+zaero = 6000d0
 
 return
 end subroutine ppinii

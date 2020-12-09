@@ -152,7 +152,9 @@ icrom = irom
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
 
-call add_property_field_1d('pressure_increment', 'Pressure increment', iflid)
+! Add pressure increment field; this is not even a true property,
+! as its values at the end of a time step make no sense.
+call field_create('pressure_increment', FIELD_INTENSIVE, 1, 1, .false., iflid)
 call field_set_key_int(iflid, keypid, ivarfl(ipr))
 
 call add_boundary_property_field_owner('boundary_density', 'Boundary Density', &
@@ -326,6 +328,15 @@ if (iale.ge.1) then
   call field_set_key_int(fdiale, keylog, 1)
 
   call field_set_key_str(fdiale, keylbl, trim(f_label))
+
+  has_previous = .false.
+  idim3 = 3
+  f_name = 'vtx_coord0'
+  type_flag = FIELD_PROPERTY
+  location_id = 4 ! variables defined on vertices
+
+  call field_create(f_name, type_flag, location_id, idim3, &
+                    has_previous, iflid)
 
 endif
 

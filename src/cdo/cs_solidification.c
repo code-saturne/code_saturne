@@ -325,7 +325,7 @@ _solidification_create(void)
   solid->mass_density = NULL;
   solid->rho0 = 0.;
   solid->cp0 = 0.;
-  solid->lam_viscosity = NULL;
+  solid->viscosity = NULL;
 
   /* Quantities related to the liquid fraction */
   solid->g_l = NULL;
@@ -434,9 +434,9 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
   const cs_real_t  dgldT_coef = solid->rho0*v_model->latent_heat*dgldT/ts->dt[0];
 
-  assert(cs_property_is_uniform(solid->lam_viscosity));
+  assert(cs_property_is_uniform(solid->viscosity));
   const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
-                                                       solid->lam_viscosity);
+                                                       solid->viscosity);
   const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -609,9 +609,9 @@ _update_velocity_forcing(const cs_mesh_t             *mesh,
    * there is nothing to do locally */
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
-  assert(cs_property_is_uniform(solid->lam_viscosity));
+  assert(cs_property_is_uniform(solid->viscosity));
   const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
-                                                       solid->lam_viscosity);
+                                                       solid->viscosity);
   const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
   const cs_real_t  *g_l = solid->g_l_field->val;
 
@@ -2073,18 +2073,18 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
  *         to the generic function pointer \ref cs_dof_function_t
  *         Take into account only the variation of temperature.
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _temp_boussinesq_source_term(cs_lnum_t            n_elts,
                              const cs_lnum_t     *elt_ids,
-                             bool                 compact,
+                             bool                 dense_output,
                              void                *input,
                              cs_real_t           *retval)
 {
@@ -2097,7 +2097,7 @@ _temp_boussinesq_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = compact ? i : id;                 /* position in retval */
+    cs_lnum_t  r_id = dense_output ? i : id; /* position in retval */
     cs_real_t  *_r = retval + 3*r_id;
 
     /* Thermal effect */
@@ -2116,18 +2116,18 @@ _temp_boussinesq_source_term(cs_lnum_t            n_elts,
  *         to the generic function pointer \ref cs_dof_function_t
  *         Take into account the variation of temperature and concentration.
  *
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids
- * \param[in]      compact  true:no indirection, false:indirection for retval
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
                                   const cs_lnum_t     *elt_ids,
-                                  bool                 compact,
+                                  bool                 dense_output,
                                   void                *input,
                                   cs_real_t           *retval)
 {
@@ -2148,7 +2148,7 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = compact ? i : id;                 /* position in retval */
+    cs_lnum_t  r_id = dense_output ? i : id;            /* position in retval */
     cs_real_t  *_r = retval + 3*r_id;
 
     /* Thermal effect */
@@ -2227,7 +2227,7 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
 
   /* Define the local advection matrix */
-  eqc->advection_build(eqp, cm, csys, eqc->advection_func, cb);
+  eqc->advection_build(eqp, cm, csys, eqc->advection_scheme, cb);
 
   /* Build the cellwise array: c - c_l
      One should have c_l >= c. Therefore, one takes fmin(...,0) */
@@ -2300,8 +2300,9 @@ cs_solidification_set_verbosity(int   verbosity)
  * \param[in]  options          flag to handle optional parameters
  * \param[in]  post_flag        predefined post-processings
  * \param[in]  boundaries       pointer to the domain boundaries
+ * \param[in]  ns_model         model equations for the NavSto system
+ * \param[in]  ns_model_flag    option flag for the Navier-Stokes system
  * \param[in]  algo_coupling    algorithm used for solving the NavSto system
- * \param[in]  ns_option        option flag for the Navier-Stokes system
  * \param[in]  ns_post_flag     predefined post-processings for Navier-Stokes
  *
  * \return a pointer to a new allocated solidification structure
@@ -2309,13 +2310,14 @@ cs_solidification_set_verbosity(int   verbosity)
 /*----------------------------------------------------------------------------*/
 
 cs_solidification_t *
-cs_solidification_activate(cs_solidification_model_t      model,
-                           cs_flag_t                      options,
-                           cs_flag_t                      post_flag,
-                           const cs_boundary_t           *boundaries,
-                           cs_navsto_param_coupling_t     algo_coupling,
-                           cs_flag_t                      ns_option,
-                           cs_flag_t                      ns_post_flag)
+cs_solidification_activate(cs_solidification_model_t       model,
+                           cs_flag_t                       options,
+                           cs_flag_t                       post_flag,
+                           const cs_boundary_t            *boundaries,
+                           cs_navsto_param_model_t         ns_model,
+                           cs_navsto_param_model_flag_t    ns_model_flag,
+                           cs_navsto_param_coupling_t      algo_coupling,
+                           cs_navsto_param_post_flag_t     ns_post_flag)
 {
   if (model < 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -2334,24 +2336,20 @@ cs_solidification_activate(cs_solidification_model_t      model,
   /* Activate and default settings for the Navier-Stokes module */
   /* ---------------------------------------------------------- */
 
-  cs_navsto_param_model_t  ns_model = CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
-  if (model & CS_SOLIDIFICATION_MODEL_STOKES)
-    ns_model |= CS_NAVSTO_MODEL_STOKES;
-  else if (model & CS_SOLIDIFICATION_MODEL_NAVIER_STOKES)
-    ns_model |= CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES;
+  ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
-  cs_navsto_system_activate(boundaries,
-                            ns_model,
-                            algo_coupling,
-                            ns_option,
-                            ns_post_flag);
+  cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
+                                                      ns_model,
+                                                      ns_model_flag,
+                                                      algo_coupling,
+                                                      ns_post_flag);
 
-  solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  solid->mass_density = ns->param->mass_density;
   assert(solid->mass_density != NULL);
 
-  solid->lam_viscosity = cs_property_by_name(CS_NAVSTO_LAMINAR_VISCOSITY);
-  assert(solid->lam_viscosity != NULL);
+  solid->viscosity = ns->param->tot_viscosity;
+  assert(solid->viscosity != NULL);
 
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
@@ -3176,12 +3174,6 @@ cs_solidification_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Verbosity: %d\n",
                 solid->verbosity);
-  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_STOKES))
-    cs_log_printf(CS_LOG_SETUP, "Stokes");
-  else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_NAVIER_STOKES))
-    cs_log_printf(CS_LOG_SETUP, "Navier-Stokes");
-  cs_log_printf(CS_LOG_SETUP, "\n");
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
   if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {
@@ -3794,8 +3786,8 @@ cs_solidification_extra_post(void                      *input,
                         CS_POST_WRITER_DEFAULT,
                         "cell_state",
                         1,
-                        false,  // interlace
-                        true,   // true = original mesh
+                        false,  /* interlace */
+                        true,   /* true = original mesh */
                         CS_POST_TYPE_int,
                         solid->cell_state, NULL, NULL,
                         time_step);
@@ -3816,8 +3808,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "delta_cliq_minus_cbulk",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->cliq_minus_cbulk, NULL, NULL,
                             time_step);
@@ -3827,8 +3819,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "delta_tbulk_minus_tliq",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->tbulk_minus_tliq, NULL, NULL,
                             time_step);
@@ -3838,8 +3830,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "Cbulk_advection_scaling",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->eta_coef_array, NULL, NULL,
                             time_step);
@@ -3853,8 +3845,8 @@ cs_solidification_extra_post(void                      *input,
                             CS_POST_WRITER_DEFAULT,
                             "T_liquidus",
                             1,
-                            false,  // interlace
-                            true,   // true = original mesh
+                            false,  /* interlace */
+                            true,   /* true = original mesh */
                             CS_POST_TYPE_cs_real_t,
                             alloy->t_liquidus, NULL, NULL,
                             time_step);
@@ -3873,8 +3865,8 @@ cs_solidification_extra_post(void                      *input,
                           CS_POST_WRITER_DEFAULT,
                           "C_bulk_adim",
                           1,
-                          false,  // interlace
-                          true,   // true = original mesh
+                          false,  /* interlace */
+                          true,   /* true = original mesh */
                           CS_POST_TYPE_cs_real_t,
                           wb, NULL, NULL,
                           time_step);
@@ -3886,8 +3878,8 @@ cs_solidification_extra_post(void                      *input,
                           CS_POST_WRITER_DEFAULT,
                           "C_l",
                           1,
-                          false,  // interlace
-                          true,   // true = original mesh
+                          false,  /* interlace */
+                          true,   /* true = original mesh */
                           CS_POST_TYPE_cs_real_t,
                           alloy->c_l_cells, NULL, NULL,
                           time_step);

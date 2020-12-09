@@ -642,6 +642,22 @@ cs_math_sym_33_3_product_add(const cs_real_t  m[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the trace of a symmetric tensor.
+ *
+ * \param[in]   t   vector of 6 real values (symmetric tensor)
+ *
+ * \return trace (t[0] + t[1] + t[2])
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_6_trace(const cs_real_t  t[6])
+{
+  return (t[0] + t[1] + t[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a matrix of 6x6 real values by
  * a vector of 6 real values.
  *

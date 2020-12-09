@@ -1458,49 +1458,49 @@ endif
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ UNINITIALIZED BOUNDARY CONDITIONS                          ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
+'@   Number of boundary faces:',i10   ,'; variable:',a16       ,/,&
 '@     icodcl variable last face ', i10                        ,/,&
 '@                                                            '  )
  1010 format(                                                     &
 '@                                                            ',/,&
 '@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
-'@     icodcl variable last face ', i10                        ,/,&
+'@   Number of boundary faces:',i10   ,'; variable:',a16       ,/,&
+'@     icodcl variable last face:', i10                        ,/,&
 '@                                                            '  )
  1020 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENT BOUNDARY CONDITIONS VELOCITY COMPONENT          ',/,&
-'@   Number of boundary faces ',i10                            ,/,&
-'@     icodcl last face ', 3i10                                ,/,&
+'@   Number of boundary faces:',i10                            ,/,&
+'@     icodcl last face:', 3i10                                ,/,&
 '@                                                            '  )
  1030 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY-VARIABLE          ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
-'@     icodcl variable last face ', i10                        ,/,&
-'@     icodcl velocity ',3i10                                  ,/,&
+'@   Number of boundary faces:',i10   ,'; variable:',a16       ,/,&
+'@     icodcl variable last face:', i10                        ,/,&
+'@     icodcl velocity:',3i10                                  ,/,&
 '@                                                            '  )
  1040 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENT BOUNDARY CONDITIONS VELOCITY-RIJ-EPSILON        ',/,&
-'@   Number of boundary faces ',i10                            ,/,&
-'@     icodcl last face Rij-eps  ', 7i5                        ,/,&
-'@     icodcl           velocity ', 3i5                        ,/,&
+'@   Number of boundary faces:',i10                            ,/,&
+'@     icodcl last face Rij-eps: ', 7i5                        ,/,&
+'@     icodcl           velocity:', 3i5                        ,/,&
 '@                                                            '  )
  1041 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENT BOUNDARY CONDITIONS VELOCITY-RIJ-EPSILON EBRSM  ',/,&
-'@   Number of boundary faces ',i10                            ,/,&
-'@     icodcl last face Rij-eps  ', 8i5                        ,/,&
-'@     icodcl           velocity ', 3i5                        ,/,&
+'@   Number of boundary faces:',i10                            ,/,&
+'@     icodcl last face Rij-eps: ', 8i5                        ,/,&
+'@     icodcl           velocity:', 3i5                        ,/,&
 '@                                                            '  )
  1050 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENT BOUNDARY CONDITIONS VELOCITY-SCALAR             ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
+'@   Number of boundary faces:',i10   ,'; variable:',a16       ,/,&
 '@     last face:'                                             ,/,&
-'@       scalar number ',i10                                   ,/,&
-'@       icodcl scalar ',i10   ,'; icodcl velocity ',i10       ,/,&
+'@       scalar number:',i10                                   ,/,&
+'@       icodcl scalar:',i10   ,'; icodcl velocity:',i10       ,/,&
 '@                                                            '  )
  1901 format(                                                     &
 '@                                                            ',/,&

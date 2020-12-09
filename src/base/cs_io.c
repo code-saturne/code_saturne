@@ -1113,7 +1113,6 @@ _cs_io_convert_read(void           *buffer,
                     cs_datatype_t   dest_type)
 {
   cs_file_off_t ii;
-  size_t buffer_type_size = cs_datatype_size[buffer_type];
 
   assert(dest_type != buffer_type);
 

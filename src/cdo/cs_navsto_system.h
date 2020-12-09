@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
+#include "cs_cdo_turbulence.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_param_types.h"
@@ -66,6 +67,9 @@ BEGIN_C_DECLS
  *         with a specified coupling algorithm
  *
  * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      adv_field  pointer to \ref cs_adv_field_t structure
+ * \param[in]      mflux      current values of the mass flux
+ * \param[in]      mflux_pre  current values of the mass flux
  * \param[in]      fb_type    type of boundary for each boundary face
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
@@ -76,6 +80,9 @@ BEGIN_C_DECLS
 
 typedef void *
 (cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
+                                  cs_adv_field_t             *adv_field,
+                                  cs_real_t                  *mflux,
+                                  cs_real_t                  *mflux_pre,
                                   cs_boundary_type_t         *fb_type,
                                   void                       *nscc);
 
@@ -146,6 +153,26 @@ typedef struct {
    */
   cs_navsto_param_t          *param;
 
+  /*! \var adv_field
+   *  Pointer to the \ref cs_adv_field_t structure storing the advection
+   *  field used in the Navier-Stokes equations
+   */
+  cs_adv_field_t             *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current values of the mass flux (if this is a CDO Face-based scheme,
+   *  array is allocated to the number of faces; first interior faces then
+   *  boundary faces)
+   */
+  cs_real_t                  *mass_flux_array;
+
+  /*! \var mass_flux_array_pre
+   *  Previous values of the mass flux (if this is a CDO Face-based scheme,
+   *  array is allocated to the number of faces; first interior faces then
+   *  boundary faces)
+   */
+  cs_real_t                  *mass_flux_array_pre;
+
   /*! \var boundary_type
    * Array storing the type of boundary for each boundary face
    */
@@ -179,6 +206,13 @@ typedef struct {
    * equations (with the Maxwell system of equations)
    * @{
    */
+
+  /*! \var turbulence
+   *  Structure storing all settings, fields or properties related to the
+   *  turbulence modelling
+   */
+
+  cs_turbulence_t            *turbulence;
 
   /*! \var thm
    *  Structure storing all settings, fields or properties related to the
@@ -346,9 +380,9 @@ cs_navsto_system_update_model(bool   with_thermal);
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
+ * \param[in] model_flag     additional high-level model options
  * \param[in] algo_coupling  algorithm used for solving the NS system
- * \param[in] option_flag    additional high-level numerical options
- * \param[in] post_flag      predefined post-processings
+ * \param[in] post_flag      predefined post-processings options
  *
  * \return a pointer to a new allocated cs_navsto_system_t structure
  */
@@ -357,9 +391,9 @@ cs_navsto_system_update_model(bool   with_thermal);
 cs_navsto_system_t *
 cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_navsto_param_model_t        model,
+                          cs_navsto_param_model_flag_t   model_flag,
                           cs_navsto_param_coupling_t     algo_coupling,
-                          cs_flag_t                      option_flag,
-                          cs_flag_t                      post_flag);
+                          cs_navsto_param_post_flag_t    post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -458,8 +492,8 @@ cs_navsto_system_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context structure used to build the algebraic system
- *         This is done after the setup step.
+ * \brief  Initialize the scheme context structure used to build the algebraic
+ *         system. This is done after the setup step.
  *         Set an initial value for the velocity and pressure field if needed
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure

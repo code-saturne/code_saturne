@@ -677,22 +677,96 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # 0) Mesh Input
 
+        self.mesh_origin = self.mdl.getMeshOrigin()
+
         self.mesh_input = self.mdl.getMeshInput()
 
-        if self.mesh_input:
-            self.radioButtonImport.setChecked(False)
-            self.radioButtonExists.setChecked(True)
-            self.frameMeshImport.hide()
-            self.lineEditMeshInput.setText(self.mesh_input)
-        else:
+        if self.mesh_origin == "mesh_import":
             self.radioButtonImport.setChecked(True)
             self.radioButtonExists.setChecked(False)
+            self.radioButtonCartesianMesh.setChecked(False)
+
             self.frameMeshInput.hide()
+            self.frameMeshCartesian.hide()
+            self.frameMeshImport.show()
+
+        elif self.mesh_origin == "mesh_input":
+            self.radioButtonImport.setChecked(False)
+            self.radioButtonExists.setChecked(True)
+            self.radioButtonCartesianMesh.setChecked(False)
+
+            self.frameMeshImport.hide()
+            self.frameMeshCartesian.hide()
+            self.frameMeshInput.show()
+            self.lineEditMeshInput.setText(self.mesh_input)
+
+        elif self.mesh_origin == "mesh_cartesian":
+            self.radioButtonImport.setChecked(False)
+            self.radioButtonExists.setChecked(False)
+            self.radioButtonCartesianMesh.setChecked(True)
+
+            self.frameMeshInput.hide()
+            self.frameMeshImport.hide()
+            self.frameMeshCartesian.show()
+
+
 
         self.radioButtonImport.clicked.connect(self.slotSetImportMesh)
         self.radioButtonExists.clicked.connect(self.slotSetInputMesh)
+        self.radioButtonCartesianMesh.clicked.connect(self.slotSetCartesianMesh)
         self.toolButtonMeshInput.pressed.connect(self.selectInputMesh)
         self.lineEditMeshInput.textChanged[str].connect(self.modifyInputMesh)
+
+        self.cartParams = {"x_ncells":self.lineEditXNcells,
+                           "y_ncells":self.lineEditYNcells,
+                           "z_ncells":self.lineEditZNcells,
+                           "x_min":self.lineEditXmin,
+                           "x_max":self.lineEditXmax,
+                           "y_min":self.lineEditYmin,
+                           "y_max":self.lineEditYmax,
+                           "z_min":self.lineEditZmin,
+                           "z_max":self.lineEditZmax,
+                           "x_prog":self.lineEditXprog,
+                           "y_prog":self.lineEditYprog,
+                           "z_prog":self.lineEditZprog}
+
+
+        # We use lambda to connect all 9 lineEdits to the same function.
+        # val corresponds to the string, and "key=k" is necessary for the connect
+        # method to evaluate 'k' during creation. Otherwise last value of 'k' is
+        # used for all.
+        for k in self.cartParams.keys():
+            self.cartParams[k].textChanged[str].connect(lambda val,key=k:
+                    self.slotSetCartesianParam(val, key))
+            # set validator
+            if k.split("_")[1] == "ncells":
+                _v = IntValidator(self.cartParams[k], min=1)
+                self.cartParams[k].setValidator(_v)
+            else:
+                _v = DoubleValidator(self.cartParams[k])
+                self.cartParams[k].setValidator(_v)
+
+        self.cartParams["x_law"] = ComboModel(self.comboBoxXlaw, 3, 1)
+        self.cartParams["y_law"] = ComboModel(self.comboBoxYlaw, 3, 1)
+        self.cartParams["z_law"] = ComboModel(self.comboBoxZlaw, 3, 1)
+        for k in ("x_law", "y_law", "z_law"):
+            self.cartParams[k].addItem(self.tr("constant"), "constant")
+            self.cartParams[k].addItem(self.tr("geometric"), "geometric")
+            self.cartParams[k].addItem(self.tr("parabolic"), "parabolic")
+
+        self.comboBoxXlaw.activated[str].connect(lambda val:
+                self.slotSetCartesianParam(val, "x_law"))
+        self.comboBoxYlaw.activated[str].connect(lambda val:
+                self.slotSetCartesianParam(val, "y_law"))
+        self.comboBoxZlaw.activated[str].connect(lambda val:
+                self.slotSetCartesianParam(val, "z_law"))
+
+        # Set initial values
+        for k in self.cartParams.keys():
+            d = k.split("_")[0] + "_direction"
+            p = k.split("_")[1]
+            val = self.mdl.getCartesianParam(d, p)
+            self.slotSetCartesianParam(val, k)
 
         # 1) Meshes directory
 
@@ -1075,9 +1149,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.radioButtonImport.setChecked(False)
         self.radioButtonExists.setChecked(True)
+        self.radioButtonCartesianMesh.setChecked(False)
 
         self.frameMeshInput.show()
         self.frameMeshImport.hide()
+        self.frameMeshCartesian.hide()
 
         if self.mesh_input == None:
             self.selectInputMesh()
@@ -1085,6 +1161,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         # If Dialog was canceled and no previous mesh_input was selected
         if self.mesh_input == None:
             self.slotSetImportMesh()
+        else:
+            self.setMeshOriginChoice("mesh_input")
 
 
     @pyqtSlot()
@@ -1092,14 +1170,72 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.radioButtonImport.setChecked(True)
         self.radioButtonExists.setChecked(False)
+        self.radioButtonCartesianMesh.setChecked(False)
 
         self.frameMeshInput.hide()
         self.frameMeshImport.show()
+        self.frameMeshCartesian.hide()
 
         if self.mesh_input:
             self.lineEditMeshInput.setText("")
             self.mesh_input = None
             self.mdl.setMeshInput(self.mesh_input)
+
+        self.setMeshOriginChoice("mesh_import")
+
+
+    @pyqtSlot()
+    def slotSetCartesianMesh(self):
+        self.radioButtonImport.setChecked(False)
+        self.radioButtonExists.setChecked(False)
+        self.radioButtonCartesianMesh.setChecked(True)
+
+        self.frameMeshInput.hide()
+        self.frameMeshImport.hide()
+        self.frameMeshCartesian.show()
+
+        if self.mesh_input:
+            self.lineEditMeshInput.setText("")
+            self.mesh_input = None
+            self.mdl.setMeshInput(self.mesh_input)
+
+        self.setMeshOriginChoice("mesh_cartesian")
+
+
+    @pyqtSlot(str)
+    def slotSetCartesianParam(self, text, name):
+
+        val = text
+        if val == None:
+            # defaul values:
+            if name in ("x_ncells", "y_ncells", "z_ncells"):
+                val = "1"
+            elif name in ("x_min", "y_min", "z_min"):
+                val = "0.0"
+            elif name in ("x_max", "y_max", "z_max"):
+                val = "1.0"
+            elif name in ("x_prog", "y_prog", "z_prog"):
+                val = "1.0"
+            elif name in ("x_law", "y_law", "z_law"):
+                val = "constant"
+            else:
+                val = "-1"
+
+        if name in ("x_law", "y_law", "z_law"):
+            self.cartParams[name].setItem(str_model=val)
+            l0 = name[0]
+            if val == 'constant':
+                self.cartParams[l0+'_prog'].hide()
+                eval('self.label'+l0.upper()+'prog.hide()')
+            else:
+                self.cartParams[l0+'_prog'].show()
+                eval('self.label'+l0.upper()+'prog.show()')
+        else:
+            self.cartParams[name].setText(val)
+
+        d = name.split("_")[0] + "_direction"
+        p = name.split("_")[1]
+        self.mdl.setCartesianParam(d, p,val)
 
 
     @pyqtSlot()
@@ -1160,6 +1296,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         self.mdl.setMeshSaveOnModify(self.checkBoxMeshSave.isChecked())
 
+
+    def setMeshOriginChoice(self, choice):
+        """
+        Set mesh origin choice.
+        """
+        self.mesh_origin = choice
+        self.mdl.setMeshOrigin(choice)
 
 #-------------------------------------------------------------------------------
 # Testing part

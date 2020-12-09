@@ -219,7 +219,6 @@ double precision hint  , hext  , pimp  , dimp, cfl
 double precision pinf  , ratio
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf
-double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision b_pvari(3)
@@ -233,6 +232,7 @@ double precision sigmae
 character(len=80) :: fname
 
 double precision, dimension(:,:), pointer :: disale
+double precision, dimension(:,:), pointer :: xyzno0
 double precision, allocatable, dimension(:,:) :: velipb
 double precision, pointer, dimension(:,:) :: rijipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -375,8 +375,7 @@ call precli(nvar, icodcl, rcodcl)
 !    -> sera modifie lors de la restructuration des zones de bord
 
 call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
+  ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
@@ -428,17 +427,14 @@ endif
 ! -- Synthetic Eddy Method en L.E.S. :
 !    (Transfert des structures dans les tableaux rcodcl)
 
-call synthe &
-  ( nvar   , nscal  ,                                              &
-  iu     , iv     , iw     ,                                     &
-  ttcabs , dt     ,                                              &
-  rcodcl )
+call synthe(ttcabs, dt, rcodcl)
 
 ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
 
 if (iale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   do ii = 1, nnod
     impale(ii) = 0
@@ -454,6 +450,8 @@ if (iale.ge.1) then
       disale,                            &
       iuma, ivma, iwma,                  &
       rcodcl)
+
+  ! TODO in the future version: remove xyzno0, and disale because they are fields
 
   call usalcl &
     ( itrale ,                                                       &
@@ -650,7 +648,7 @@ if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale , .false. ,                  &
    dt     ,                                                       &
-   rcodcl , xyzno0 )
+   rcodcl )
 endif
 
 if (iturbo.ne.0) then
@@ -671,11 +669,6 @@ call vericl(nvar, nscal, itypfb, icodcl)
 !===============================================================================
 ! 4. variables
 !===============================================================================
-
-! --- variables
-xxp0   = xyzp0(1)
-xyp0   = xyzp0(2)
-xzp0   = xyzp0(3)
 
 ! --- physical quantities
 call field_get_val_s(iviscl, viscl)
@@ -5155,6 +5148,7 @@ double precision rcodcl(nfabor,nvar,3)
 integer          iterns, ii
 
 double precision, dimension(:,:), pointer :: disale
+double precision, dimension(:,:), pointer :: xyzno0
 
 !===============================================================================
 ! 0. User calls
@@ -5170,8 +5164,7 @@ call precli(nvar, icodcl, rcodcl)
 !    -> sera modifie lors de la restructuration des zones de bord
 
 call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
+  ( nozppm,                                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
@@ -5194,6 +5187,7 @@ call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 if (iale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
+  call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
   do ii = 1, nnod
     impale(ii) = 0
@@ -5242,7 +5236,7 @@ if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale , .true. ,                   &
    dt     ,                                                       &
-   rcodcl , xyzno0 )
+   rcodcl )
 endif
 
 if (iturbo.ne.0) then

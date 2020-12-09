@@ -348,6 +348,6 @@ module paramx
           cs_user_initialization, cs_user_physical_properties,     &
           cs_user_extra_operations, ushist, cs_f_user_head_losses, &
           cs_user_turbulence_source_terms,                         &
-          usatph, usvosy, usvpst
+          usatph, usvosy, usvpst, usati1
 
 end module paramx

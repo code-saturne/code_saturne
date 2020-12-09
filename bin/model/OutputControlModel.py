@@ -917,8 +917,14 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         associated_writer = []
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        writer_ids = self.getWriterIdList()
         for n in node.xmlGetNodeList('writer'):
-            associated_writer.append(n["id"])
+            writer_id = n['id']
+            if writer_id in writer_ids:
+                associated_writer.append(writer_id)
+            else:
+                # Fix for some incorrectly updated XML files
+                n.xmlRemoveNode()
         return associated_writer
 
 

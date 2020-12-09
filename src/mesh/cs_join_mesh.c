@@ -3580,7 +3580,8 @@ cs_join_mesh_dump(FILE                  *f,
       cs_lnum_t  end = mesh->face_vtx_idx[i+1];
 
       fprintf(f, "\n face_id: %9ld gnum: %10llu n_vertices : %4ld\n",
-              (long)i, (unsigned long long)mesh->face_gnum[i], end-start);
+              (long)i, (unsigned long long)mesh->face_gnum[i],
+              (long)(end-start));
 
       for (j = start; j < end; j++) {
 

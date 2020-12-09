@@ -63,13 +63,12 @@
 !>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[in]     xyzno0        initial mesh nodes coordinates
 !______________________________________________________________________________
 
 subroutine altycl &
  ( itypfb , ialtyb , icodcl , impale , init ,                    &
    dt     ,                                                      &
-   rcodcl , xyzno0)
+   rcodcl )
 
 !===============================================================================
 ! Module files
@@ -102,7 +101,6 @@ logical          init
 
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvar,3)
-double precision xyzno0(3,nnod)
 
 ! Local variables
 
@@ -113,6 +111,7 @@ double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 
 double precision, dimension(:,:), pointer :: disale
+double precision, dimension(:,:), pointer :: xyzno0
 double precision, allocatable, dimension(:,:) :: b_fluid_vel
 
 !===============================================================================
@@ -134,6 +133,7 @@ icoder(3) = -1
 icoder(4) = -1
 
 call field_get_val_v(fdiale, disale)
+call field_get_val_v_by_name("vtx_coord0", xyzno0)
 
 ! Set to 0 non specified RCODCL arrays
 do ifac = 1, nfabor

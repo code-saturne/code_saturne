@@ -198,13 +198,31 @@ static void
 _assign_face_mesh(const cs_mesh_t   *mesh,
                   cs_lnum_t          n_elts,
                   const cs_lnum_t   *elts_list,
-                  MEDCouplingUMesh  *med_mesh)
+                  MEDCouplingUMesh  *med_mesh,
+                  cs_lnum_t          new_to_old[])
 {
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = -1;
   cs_lnum_t elt_buf_size = 4;
   cs_lnum_t *vtx_id = NULL;
+
+  /* Build old->new face id indirection */
+
+  cs_lnum_t *face_id = NULL;
+  cs_lnum_t face_count = 0;
+  BFT_MALLOC(face_id, mesh->n_b_faces, cs_lnum_t);
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+    face_id[i] = -1;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    face_id[elts_list[i]] = face_count++;
+  }
+
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+    new_to_old[face_id[elts_list[ii]]] = elts_list[ii];
+  }
+  BFT_FREE(face_id);
 
   /* Mark and renumber vertices */
 
@@ -668,10 +686,13 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
 
     BFT_REALLOC(pmmesh->elt_list, pmmesh->n_elts, cs_lnum_t);
 
+    BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
+
     _assign_face_mesh(csmesh,
                       pmmesh->n_elts,
                       pmmesh->elt_list,
-                      pmmesh->med_mesh);
+                      pmmesh->med_mesh,
+                      pmmesh->new_to_old);
 
   }
 #endif

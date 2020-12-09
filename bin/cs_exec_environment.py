@@ -524,7 +524,7 @@ def get_script_positional_args():
     if sys.platform.startswith('win'):
         args = '%*'
     else:
-        args = '$@'
+        args = '"$@"'
     return args
 
 #-------------------------------------------------------------------------------
@@ -682,7 +682,23 @@ def source_shell_script(path):
     if sys.platform.startswith('win'):
         return
 
-    user_shell = os.getenv('SHELL')
+    user_shell = None
+
+    # If shebang is present, try to use it.
+    # (TODO: handle more complex cases with env)
+    try:
+        f = open(path, 'r')
+        l = f.readline()
+        f.close()
+        if l[:2] == '#!':
+            e = l[2:].split()[0]
+            if e[-3:] != 'env':
+                user_shell = e
+    except Exception:
+        pass
+
+    if not user_shell:
+        user_shell = os.getenv('SHELL')
     if not user_shell:
         user_shell = '/bin/sh'
 
@@ -784,7 +800,7 @@ def get_ld_library_path_additions(pkg):
 
 #-------------------------------------------------------------------------------
 
-def source_syrthes_env(pkg):
+def source_syrthes_env(pkg, verbose=True):
     """
     Source SYRTHES environment
     """
@@ -818,21 +834,24 @@ def source_syrthes_env(pkg):
     # for consistency with case creation parameters; it this is not enough,
     # use existing environment or load one based on current configuration.
 
-    try:
-        for p in sys.path:
-            if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
-                syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
-                if os.path.isfile(syr_profile):
-                    print("Sourcing SYRTHES environment: " + syr_profile)
+    for p in sys.path:
+        if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
+            syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
+            if os.path.isfile(syr_profile):
+                if verbose:
+                    sys.stdout.write("Sourcing SYRTHES environment: " \
+                                     + syr_profile + "\n")
+                try:
                     source_shell_script(syr_profile)
-    except Exception:
-        pass
+                except Exception:
+                    sys.stderr.write("  Failed sourcing SYRTHES environment.\n")
 
     env_syrthes_home = os.getenv('SYRTHES4_HOME')
 
     if not syrthes_home:
-        print("Set syrthes_home based on SYRTHES4_HOME: ",
-              str(env_syrthes_home))
+        if verbose:
+            sys.stdout.write("Set syrthes_home based on SYRTHES4_HOME: " \
+                             + str(env_syrthes_home) + "\n")
         syrthes_home = env_syrthes_home
 
     if not syrthes_home:
@@ -849,7 +868,9 @@ def source_syrthes_env(pkg):
     if syrthes_home != env_syrthes_home:
         syr_profile = os.path.join(config.get('install', 'syrthes'),
                                    'bin', 'syrthes.profile')
-        print("Sourcing SYRTHES environment: " + syr_profile)
+        if verbose:
+            sys.stdout.write("Sourcing SYRTHES environment: " \
+                             + syr_profile + "\n")
         source_shell_script(syr_profile)
 
     # Finally, ensure module can be imported

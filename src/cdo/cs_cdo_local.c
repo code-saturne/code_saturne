@@ -78,6 +78,14 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/* Auxiliary buffers for extra-operations related to local problems. These
+ * buffers are also used for computing quantities related to a cs_cell_mesh_t
+ * (there are as many buffers as threads since a call to these buffers can be
+ * inside an OpenMP directive */
+int                     cs_cdo_local_d_buffer_size = 0;
+double                **cs_cdo_local_d_buffer = NULL;
+
+/* Pointer of pointers to global structures */
 cs_cell_mesh_t        **cs_cdo_local_cell_meshes = NULL;
 cs_face_mesh_t        **cs_cdo_local_face_meshes = NULL;
 cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
@@ -89,9 +97,10 @@ cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
 static const int  n_robin_parameters = 3;
 static int  cs_cdo_local_n_structures = 0;
 
-/* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
-static double     **cs_cdo_local_dbuf = NULL;
-static short int  **cs_cdo_local_kbuf = NULL;
+/* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t
+   (there are as many buffers as threads since a call to these buffers can be
+   inside an OpenMP directive */
+static short int     **cs_cdo_local_kbuf = NULL;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -120,15 +129,19 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
   /* Sanity check */
   assert(cs_glob_n_threads > 0);
 
+  int  nthr = cs_glob_n_threads;
   int  n_vc = connect->n_max_vbyc;
-  int  size = cs_glob_n_threads;
+  int  max_ent = 3*CS_MAX(n_vc, CS_MAX(connect->n_max_ebyc,
+                                       connect->n_max_fbyc));
 
-  cs_cdo_local_n_structures = size;
-  BFT_MALLOC(cs_cdo_local_cell_meshes, size, cs_cell_mesh_t *);
-  BFT_MALLOC(cs_cdo_local_face_meshes, size, cs_face_mesh_t *);
-  BFT_MALLOC(cs_cdo_local_face_meshes_light, size, cs_face_mesh_light_t *);
-  BFT_MALLOC(cs_cdo_local_dbuf, size, double *);
-  BFT_MALLOC(cs_cdo_local_kbuf, size, short int *);
+  cs_cdo_local_d_buffer_size = CS_MAX(n_vc*(n_vc+1)/2, max_ent);
+
+  cs_cdo_local_n_structures = nthr;
+  BFT_MALLOC(cs_cdo_local_cell_meshes, nthr, cs_cell_mesh_t *);
+  BFT_MALLOC(cs_cdo_local_face_meshes, nthr, cs_face_mesh_t *);
+  BFT_MALLOC(cs_cdo_local_face_meshes_light, nthr, cs_face_mesh_light_t *);
+  BFT_MALLOC(cs_cdo_local_d_buffer, nthr, double *);
+  BFT_MALLOC(cs_cdo_local_kbuf, nthr, short int *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -141,9 +154,9 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
     cs_cdo_local_face_meshes_light[t_id] =
       cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
-    BFT_MALLOC(cs_cdo_local_dbuf[t_id], n_vc*(n_vc+1)/2, double);
-    BFT_MALLOC(cs_cdo_local_kbuf[t_id], CS_MAX(connect->v_max_cell_range,
-                                               connect->e_max_cell_range) + 1,
+    BFT_MALLOC(cs_cdo_local_d_buffer[t_id], cs_cdo_local_d_buffer_size, double);
+    BFT_MALLOC(cs_cdo_local_kbuf[t_id],
+               CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range)+1,
                short int);
   }
 #else
@@ -155,9 +168,9 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
   cs_cdo_local_face_meshes_light[0] =
     cs_face_mesh_light_create(connect->n_max_vbyf, connect->n_max_vbyc);
 
-  BFT_MALLOC(cs_cdo_local_dbuf[0], n_vc*(n_vc+1)/2, double);
-  BFT_MALLOC(cs_cdo_local_kbuf[0], CS_MAX(connect->v_max_cell_range,
-                                          connect->e_max_cell_range) + 1,
+  BFT_MALLOC(cs_cdo_local_d_buffer[0], cs_cdo_local_d_buffer_size, double);
+  BFT_MALLOC(cs_cdo_local_kbuf[0],
+             CS_MAX(connect->v_max_cell_range, connect->e_max_cell_range)+1,
              short int);
 
 #endif /* openMP */
@@ -187,7 +200,7 @@ cs_cdo_local_finalize(void)
     cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[t_id]));
     cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
     cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[t_id]));
-    BFT_FREE(cs_cdo_local_dbuf[t_id]);
+    BFT_FREE(cs_cdo_local_d_buffer[t_id]);
     BFT_FREE(cs_cdo_local_kbuf[t_id]);
 
   }
@@ -196,14 +209,14 @@ cs_cdo_local_finalize(void)
   cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[0]));
   cs_face_mesh_free(&(cs_cdo_local_face_meshes[0]));
   cs_face_mesh_light_free(&(cs_cdo_local_face_meshes_light[0]));
-  BFT_FREE(cs_cdo_local_dbuf[0]);
+  BFT_FREE(cs_cdo_local_d_buffer[0]);
   BFT_FREE(cs_cdo_local_kbuf[0]);
 #endif /* openMP */
 
   BFT_FREE(cs_cdo_local_cell_meshes);
   BFT_FREE(cs_cdo_local_face_meshes);
   BFT_FREE(cs_cdo_local_face_meshes_light);
-  BFT_FREE(cs_cdo_local_dbuf);
+  BFT_FREE(cs_cdo_local_d_buffer);
   BFT_FREE(cs_cdo_local_kbuf);
 }
 

@@ -539,7 +539,7 @@ _mono_face_basis_setup(void                    *pbf,
                            &tmp_meas, xexf_vect[idx++]);
 
   cs_real_t min = 1.;
-  short int e1 = 0, e2 = 1; // First selected couple
+  short int e1 = 0, e2 = 1; /* First selected couple */
   const short int n_e = cm->f2e_idx[f+1] - cm->f2e_idx[f];
   for (short int i = 0; i < n_e; i++) {
     for (short int j = i+1; j < n_e; j++) {
@@ -634,8 +634,8 @@ _iner_face_basis_setup(void                    *pbf,
     c0a0_c1a1[k] =  c0 * bf->axis[0].unitv[k] +
                     c1 * bf->axis[1].unitv[k];
 
-  cs_nvec3(c1a0_c0a1, bf->axis);  // First axis
-  cs_nvec3(c0a0_c1a1, bf->axis + 1);  // Second axis
+  cs_nvec3(c1a0_c0a1, bf->axis);     /* First axis */
+  cs_nvec3(c0a0_c1a1, bf->axis + 1); /* Second axis */
 
   const cs_real_t  odiam = 1. / cm->f_diam[f];
   bf->axis[0].meas = odiam;
@@ -1140,7 +1140,7 @@ _ck2_compute_projector(void                    *pbf,
 
           for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const short int v0 = cm->e2v_ids[2*e0];
             const short int v1 = cm->e2v_ids[2*e0+1];
@@ -1353,7 +1353,7 @@ _cka_compute_projector(void                    *pbf,
 
           for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const short int v0 = cm->e2v_ids[2*e0];
             const short int v1 = cm->e2v_ids[2*e0+1];
@@ -1891,7 +1891,7 @@ _fk1_compute_projector(void                    *pbf,
 
       for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-        // Edge-related variables
+        /* Edge-related variables */
         const short int e0  = f2e_ids[e];
         const short int v0 = cm->e2v_ids[2*e0];
         const short int v1 = cm->e2v_ids[2*e0+1];
@@ -2027,7 +2027,7 @@ _fk2_compute_projector(void                    *pbf,
 
       for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-        // Edge-related variables
+        /* Edge-related variables */
         const short int e0  = f2e_ids[e];
         const short int v0 = cm->e2v_ids[2*e0];
         const short int v1 = cm->e2v_ids[2*e0+1];
@@ -2260,7 +2260,7 @@ _fka_compute_projector(void                    *pbf,
 
       for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-        // Edge-related variables
+        /* Edge-related variables */
         const short int e0  = f2e_ids[e];
         const short int v0 = cm->e2v_ids[2*e0];
         const short int v1 = cm->e2v_ids[2*e0+1];

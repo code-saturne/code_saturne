@@ -2571,7 +2571,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   /* Porous models */
   if (mq->c_disable_flag == NULL) {
     if (mq->has_disable_flag == 1) {
-      cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+      cs_lnum_t n_cells_ext = n_cells_with_ghosts;
       BFT_MALLOC(mq->c_disable_flag, n_cells_ext, int);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
         mq->c_disable_flag[cell_id] = 0;

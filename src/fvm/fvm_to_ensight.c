@@ -736,12 +736,12 @@ _write_block_connect_g(int              stride,
      we may use use a collective call */
 
   if (f.bf != NULL)
-    cs_file_write_block(f.bf,
-                        block_connect,
-                        sizeof(int32_t),
-                        stride,
-                        num_start,
-                        num_end);
+    cs_file_write_block_buffer(f.bf,
+                               block_connect,
+                               sizeof(int32_t),
+                               stride,
+                               num_start,
+                               num_end);
 
   /* If all ranks do not have a binary file structure pointer, then
      we are using a text file, open only on rank 0 */
@@ -1149,12 +1149,12 @@ _write_block_indexed(cs_gnum_t         num_start,
      we may use use a collective call */
 
   if (f.bf != NULL)
-    cs_file_write_block(f.bf,
-                        block_connect,
-                        sizeof(int32_t),
-                        1,
-                        block_start,
-                        block_end);
+    cs_file_write_block_buffer(f.bf,
+                               block_connect,
+                               sizeof(int32_t),
+                               1,
+                               block_start,
+                               block_end);
 
   /* If all ranks do not have a binary file structure pointer, then
      we are using a text file, open only on rank 0 */
@@ -2578,23 +2578,22 @@ fvm_to_ensight_init_writer(const char             *name,
 
 #if defined(HAVE_MPI)
   {
-    int mpi_flag, rank, n_ranks, min_rank_step, min_block_size;
+    int mpi_flag, rank, n_ranks;
     MPI_Comm w_block_comm, w_comm;
     this_writer->min_rank_step = 1;
-    this_writer->min_block_size = 1024*1024*8;
+    this_writer->min_block_size = 0;
     this_writer->block_comm = MPI_COMM_NULL;
     this_writer->comm = MPI_COMM_NULL;
     MPI_Initialized(&mpi_flag);
     if (mpi_flag && comm != MPI_COMM_NULL) {
+      size_t min_block_size = cs_parall_get_min_coll_buf_size();
       this_writer->comm = comm;
       MPI_Comm_rank(this_writer->comm, &rank);
       MPI_Comm_size(this_writer->comm, &n_ranks);
       this_writer->rank = rank;
       this_writer->n_ranks = n_ranks;
-      cs_file_get_default_comm(&min_rank_step, &min_block_size,
-                               &w_block_comm, &w_comm);
+      cs_file_get_default_comm(NULL, &w_block_comm, &w_comm);
       if (comm == w_comm) {
-        this_writer->min_rank_step = min_rank_step;
         this_writer->min_block_size = min_block_size;
         this_writer->block_comm = w_block_comm;
       }

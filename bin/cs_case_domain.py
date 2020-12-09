@@ -628,10 +628,14 @@ class domain(base_domain):
             elif module_name == 'neptune_cfd':
                 from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
                 XMLinitNeptune(case).initialize(prepro)
-            case.xmlSaveDocument()
 
-            case['case_path'] = self.exec_dir
-            self.mci = meg_to_c_interpreter(case, module_name=module_name)
+            # Do not call case.xmlSaveDocument() to avoid side effects in case
+            # directory; is not required as meg_to_c_interpreter works from
+            # case in memory
+
+            self.mci = meg_to_c_interpreter(case,
+                                            module_name=module_name,
+                                            wdir = os.path.join(self.exec_dir, 'src'))
 
             if self.mci.has_meg_code():
                 needs_comp = True
@@ -679,7 +683,9 @@ class domain(base_domain):
                         self.error_long += " (%d/%d) %s is not provided for %s for zone %s\n" % (i+1, mci_state['nexps'], eme['func'], eme['var'], eme['zone'])
 
                     return
-
+                elif mci_state['state'] == 2:
+                    self.error = 'saving MEG generated sources'
+                    self.error_long = ' Incorrect directory ?'
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')
@@ -861,6 +867,24 @@ class domain(base_domain):
         if self.mesh_input:
             return
 
+        # Check if cartesian mesh is to be used
+        if self.param != None:
+            from code_saturne.model.XMLengine import Case
+            from code_saturne.model.SolutionDomainModel import getMeshOriginType
+
+            fp = os.path.join(self.data_dir, self.param)
+            case = Case(package=self.package, file_name=fp)
+            case['xmlfile'] = fp
+            case.xmlCleanAllBlank(case.xmlRootNode())
+
+            if getMeshOriginType(case) == 'mesh_cartesian':
+                return
+
+        # If no mesh is provided return, since user can define mesh_input
+        # using 'cs_user_mesh_input' user function.
+        if len(self.meshes) == 1 and self.meshes[0] == None:
+            return
+
         # Study directory
         study_dir = os.path.split(self.case_root_dir)[0]
 
@@ -948,27 +972,41 @@ class domain(base_domain):
 
             # Build command
 
-            cmd = [self.package.get_preprocessor()]
-
-            if (type(m) == tuple):
-                for opt in m[1:]:
-                    cmd.append(opt)
-
+            # Generate output mesh name
             if (mesh_id != None):
                 mesh_id += 1
-                cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
-                cmd = cmd + ['--out', os.path.join('mesh_input',
-                                                   'mesh_%02d.csm' % (mesh_id))]
-                cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
+                _outputmesh = os.path.join('mesh_input',
+                                           'mesh_%02d.csm' % (mesh_id))
             else:
-                cmd = cmd + ['--log']
-                cmd = cmd + ['--out', 'mesh_input.csm']
+                _outputmesh = 'mesh_input.csm'
 
-            cmd.append(mesh_path)
+            # Check if preprocessor is needed or not
+            if mesh_path[-4:] == ".csm":
+                # code_saturne mesh, no need to run preprocessor
+                self.symlink(mesh_path,
+                             os.path.join(self.exec_dir, _outputmesh))
 
-            # Run command
+                retcode = 0
+            else:
+                # run preprocessor if needed
 
-            retcode = run_command(cmd, pkg=self.package)
+                cmd = [self.package.get_preprocessor()]
+
+                if (type(m) == tuple):
+                    for opt in m[1:]:
+                        cmd.append(opt)
+
+                cmd = cmd + ['--out', _outputmesh]
+                if (mesh_id != None):
+                    cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
+                    cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
+                else:
+                    cmd = cmd + ['--log']
+
+                cmd.append(mesh_path)
+
+                # Run command
+                retcode = run_command(cmd, pkg=self.package)
 
             if retcode != 0:
                 err_str = \
@@ -1154,7 +1192,8 @@ class syrthes_domain(base_domain):
                  n_procs_weight = None,
                  n_procs_min = 1,
                  n_procs_max = None,
-                 n_procs_radiation = None):
+                 n_procs_radiation = None,
+                 verbose = True):
 
         base_domain.__init__(self,
                              package,
@@ -1197,7 +1236,7 @@ class syrthes_domain(base_domain):
 
         ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
 
-        source_syrthes_env(self.package)
+        source_syrthes_env(self.package, verbose)
 
         self.ld_library_path = os.getenv('LD_LIBRARY_PATH')
 

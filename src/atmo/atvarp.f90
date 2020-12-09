@@ -97,14 +97,9 @@ call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
-! 1. GUI and model information
+! 1. Model information
 !===============================================================================
 
-call uiati1 (ficmet, len(ficmet))
-
-! Set base default model parameters and call usati1
-
-call atini0
 
 !===============================================================================
 ! 1. Add variables

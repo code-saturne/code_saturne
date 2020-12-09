@@ -151,8 +151,6 @@ _injection_profile(int               zone_id,
 void
 cs_user_lagr_boundary_conditions(const int  bc_type[])
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-
   /*! [lagr_bc_variables] */
   cs_lagr_zone_data_t *lagr_bcs = cs_lagr_get_boundary_conditions();
   /*! [lagr_bc_variables] */
@@ -338,9 +336,9 @@ cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
   particles->n_part_dep += 1;
 
 # pragma omp atomic
-  particles->weight_dep += cs_lagr_particle_get_real(particles,
-                                                     p_id,
-                                                     CS_LAGR_STAT_WEIGHT);
+  particles->weight_dep += cs_lagr_particles_get_real(particles,
+                                                      p_id,
+                                                      CS_LAGR_STAT_WEIGHT);
 
   /* Mark particle as deposited and update its coordinates */
 

@@ -206,7 +206,6 @@ Variable declaration and initialization
 int i, j,
     k = 0, l = 1;
 double a = 1.;
-}
 ```
 <td>
 ```{.f90}
@@ -319,7 +318,7 @@ restrictive, or include additional metadata.
 - Array syntax may be used with pointers.
 - Pointer "arithmetic" is based on the pointer's type (unless `void`).
 - A single (but important) difference between pointers and arrays:
-  - An array decaration implies local memory allocation, a pointer does not.
+  - An array declaration implies local memory allocation, a pointer does not.
   - This is reflected by the different behavior of the `sizeof`
 - In addition to the following example, check the tutorial at:
   https://boredzo.org/pointers/
@@ -337,7 +336,7 @@ p++;                      // point to next value
 x = *p;                   // same as a[1]
 ```
 
-### Remarks on pointers}
+### Remarks on pointers
 
 Character strings do not have a dedicated type in C:
 - Strings are simply arrays or pointers to characters.
@@ -505,7 +504,7 @@ double f(int n, double x[], double y[]);
 - Only parameter types are required to match in the definition  and prototype,
   so compilers will not complain if names are different
   - But the code maintainers _will_ !
-  - And the documenation generator will emit warnings
+  - And the documentation generator will emit warnings
 
 Prototypes are usually grouped in `header` files, inserted locally using the
 `#include` preprocessor directive.
@@ -517,7 +516,7 @@ Prototypes are usually grouped in `header` files, inserted locally using the
   - Functions with the same name may be used in different files with no risk.
 - Using `static inline`, the function body is copied at each call
   - Avoids call overhead for short functions, leads to larger code.
-  - `static` without `inline` is tricky: see a more complete C course, or avoid it.
+  - `inline` without `static` is tricky: see a more complete C course, or avoid it.
 - In code_saturne, some simple computation functions are defined as
   `static inline`;
   - Their definition appear in header (`.h`) files in this case
@@ -570,7 +569,7 @@ void g(void) {
 
   f(x, y);                        /* call to f */
 
-  /* now x = 10, y[] = {1., 5.` */
+  /* now x = 10, y[] = {1., 5.} */
 
   ...
 }
@@ -653,8 +652,8 @@ on several rules.
 
 - code_saturne defines several preprocessor macros, among which the following:
   - \ref CS_ABS(a): absolute value of a
-  - \ref CS_MAX(a, b): maximum a a and b
-  - \ref CS_MIN(a, b): minimul of a and b
+  - \ref CS_MAX(a, b): maximum of a and b
+  - \ref CS_MIN(a, b): minimum of a and b
   - \ref CS_F_(fname): access to field structure of field with
     canonical name `name`.
 - Note: the C language also defines `double fmax(double x, double y)` and
@@ -730,7 +729,7 @@ int f(int n, double x[]) {
 
 The C scoping rules also allow definition of global variables.
 
-- Declaring a variable in a source file outside a function makesit _global_
+- Declaring a variable in a source file outside a function makes it _global_
   - It is recommended to add an initialization to the declaration when
     possible, which is safer and simple than requiring additional initialization
     functions
@@ -804,7 +803,6 @@ return x/0; // undefined behavior
 int arr[4] = {0, 1, 2, 3};
 int j = arr[5]; // stack buffer overflow
   ```
-  \end{lstlisting}
 
 - Example: out of scope return value
   ```{.c}

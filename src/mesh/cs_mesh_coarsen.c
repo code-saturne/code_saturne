@@ -714,7 +714,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
      0: total
   */
 
-  cs_timer_counter_t  timers[1];
+  cs_timer_counter_t  timers[2];
   for (int i = 0; i < 2; i++)
     CS_TIMER_COUNTER_INIT(timers[i]);
 
@@ -762,7 +762,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   BFT_FREE(c_o2n);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   bft_printf("\nWarning mesh coarsening algorithm not complete yet\n");
 

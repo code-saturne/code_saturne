@@ -38,6 +38,7 @@
 #include "fvm_defs.h"
 
 #include "cs_base.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -91,6 +92,20 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        float        tolerance,
                        int          verbosity,
                        int          visualization);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associated a zone to a defined SYRTHES coupling.
+ *
+ * \param[in] syrthes_name  matching SYRTHES application name
+ * \param[in] z             pointer to matching zone
+ *                          (boundary or volume)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_add_zone(const char       *syrthes_name,
+                         const cs_zone_t  *z);
 
 /*----------------------------------------------------------------------------
  * Initialize SYRTHES couplings.
@@ -276,7 +291,7 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
  * \param[in]    mode     0 for boundary, 1 for volume
  * \param[in]    elt_ids  ids of coupled elements
  * \param[in]    t_fluid  fluid temperature
- * \param[in]    h_fluid  fluid exchage coefficient
+ * \param[in]    h_fluid  fluid exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 

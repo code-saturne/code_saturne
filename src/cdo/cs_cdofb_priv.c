@@ -95,88 +95,116 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
     return;
 
   /* Sanity checks */
-  assert(eqp != NULL && eqb != NULL);
+  assert(eqp != NULL);
 
+  /* The open pointer function is set by default. If an extrapolation is
+   * requested then the calling code has to set a new function pointer as well
+   * as a pointer to an input structure if needed */
+  eqc->advection_open = cs_cdofb_advection_open_std;
   eqc->advection_build = NULL;
-  eqc->advection_func = NULL;
+  eqc->advection_scheme = NULL;
+  eqc->advection_close = NULL;
+  eqc->advection_input = NULL;
 
-  if (cs_equation_param_has_convection(eqp)) {
+  if (cs_equation_param_has_convection(eqp) == false)
+    return;
 
-    const cs_xdef_t *adv_def = eqp->adv_field->definition;
-    if (adv_def != NULL) { /* If linked to a NS equation, it might be null */
-      if (adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
-        /* Required by cs_advection_field_cw_face_flux */
-        eqb->msh_flag |= CS_FLAG_COMP_FEQ;
-        eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
-                                                cs_flag_primal_face);
-      }
+  const cs_xdef_t *adv_def = eqp->adv_field->definition;
+  if (adv_def != NULL) { /* If linked to a NS equation, it might be null */
+    if (adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
+      /* Required by cs_advection_field_cw_face_flux */
+      eqb->msh_flag |= CS_FLAG_COMP_FEQ;
+      eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
+                                              cs_flag_primal_face);
     }
+  }
 
-    /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ;
+  /* Boundary conditions for advection */
+  eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ;
 
-    if (cs_equation_param_has_diffusion(eqp))
-      eqc->advection_build = cs_cdofb_advection_build;
+  /* Set the function pointer for advection_scheme */
+  switch (eqp->adv_formulation) {
 
-    else {
+  case CS_PARAM_ADVECTION_FORM_CONSERV:
+    switch (eqp->adv_scheme) {
 
-      eqc->advection_build = cs_cdofb_advection_build_no_diffusion;
-      if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED)
-        /* Remark 5 about static condensation of paper (DiPietro, Droniou,
-         * Ern, 2015) */
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Centered advection scheme is not a valid option for"
-                  " face-based discretization and without diffusion.",
-                  __func__);
+    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+      eqc->advection_scheme = cs_cdofb_advection_upwcsv;
+      break;
 
-    }
-
-    switch (eqp->adv_formulation) {
-
-    case CS_PARAM_ADVECTION_FORM_CONSERV:
-      switch (eqp->adv_scheme) {
-
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        eqc->advection_func = cs_cdo_advection_fb_upwcsv;
-        break;
-
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        eqc->advection_func = cs_cdo_advection_fb_cencsv;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid advection scheme for face-based discretization",
-                  __func__);
-
-      } /* Scheme */
-      break; /* Conservative formulation */
-
-    case CS_PARAM_ADVECTION_FORM_NONCONS:
-      switch (eqp->adv_scheme) {
-
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        eqc->advection_func = cs_cdo_advection_fb_upwnoc;
-        break;
-
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        eqc->advection_func = cs_cdo_advection_fb_cennoc;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid advection scheme for face-based discretization",
-                  __func__);
-
-      } /* Scheme */
-      break; /* Non-conservative formulation */
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+      eqc->advection_scheme = cs_cdofb_advection_cencsv;
+      break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of formulation for the advection term",
+                " %s: Invalid advection scheme for face-based discretization",
                 __func__);
 
-    } /* Switch on the formulation */
+    } /* Scheme */
+    break; /* Conservative formulation */
+
+  case CS_PARAM_ADVECTION_FORM_NONCONS:
+    switch (eqp->adv_scheme) {
+
+    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+      eqc->advection_scheme = cs_cdofb_advection_upwnoc;
+      break;
+
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+      eqc->advection_scheme = cs_cdofb_advection_cennoc;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid advection scheme for face-based discretization",
+                __func__);
+
+    } /* Scheme */
+    break; /* Non-conservative formulation */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of formulation for the advection term",
+              __func__);
+
+  } /* Switch on the formulation */
+
+  /* Set the function pointer for advection_build */
+  if (cs_equation_param_has_diffusion(eqp))
+    eqc->advection_build = cs_cdofb_advection_build;
+
+  else {
+
+    eqc->advection_build = cs_cdofb_advection_build_no_diffusion;
+
+    if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED &&
+        cs_equation_param_has_implicit_advection(eqp))
+      /* Remark 5 about static condensation of paper (DiPietro, Droniou,
+       * Ern, 2015) */
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Centered advection scheme is not a valid option for"
+                " face-based discretization and without diffusion.",
+                __func__);
+
+  }
+
+  /* Set the close function pointer which depends on the implicit or explicit
+     treatment of the advection term */
+  if (cs_equation_param_has_implicit_advection(eqp)) {
+
+    if (eqp->dim == 1) /* scalar-valued case */
+      eqc->advection_close = cs_cdofb_advection_close_std_scal;
+    else
+      eqc->advection_close = cs_cdofb_advection_close_std_vect;
+
+  }
+  else { /* Explicit advection */
+
+    if (eqp->dim == 1) /* scalar-valued case without extrapolation */
+      eqc->advection_close = cs_cdofb_advection_close_exp_none_scal;
+    else
+      eqc->advection_close = cs_cdofb_advection_close_exp_none_vect;
 
   }
 

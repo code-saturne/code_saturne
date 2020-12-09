@@ -59,8 +59,6 @@ module albase
   !> from the boundary conditions defined in cs user boundary conditions,
   !> or even from their coordinates.
   integer, allocatable, dimension(:) :: ialtyb
-  !> initial mesh coordinates
-  double precision, allocatable, dimension(:,:) :: xyzno0
   !> Pointer to field over vertices: mesh displacement
   integer, save :: fdiale
   !> \}
@@ -79,7 +77,6 @@ contains
     integer, intent(in) :: nfabor, nnod
 
     if (iale.ge.1) then
-      allocate(xyzno0(3,nnod))
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
     endif
@@ -93,7 +90,6 @@ contains
     use cplsat
 
     if (iale.ge.1) then
-      deallocate(xyzno0)
       deallocate(impale)
       deallocate(ialtyb)
     endif

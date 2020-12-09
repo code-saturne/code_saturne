@@ -66,6 +66,7 @@
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_conjugate_heat_transfer.h"
+#include "cs_gui_mesh.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
@@ -104,6 +105,7 @@
 #include "cs_random.h"
 #include "cs_restart.h"
 #include "cs_restart_map.h"
+#include "cs_runaway_check.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
@@ -205,6 +207,12 @@ _run(void)
 
   cs_turbomachinery_define();
 
+  /* Check if an internally generated cartesian mesh is used */
+  if (cs_gui_mesh_build_cartesian())
+    cs_gui_mesh_cartesian_define();
+
+  cs_user_mesh_cartesian_define();
+
   /* Call main calculation initialization function or help */
 
   cs_io_log_initialize();
@@ -241,8 +249,6 @@ _run(void)
     const char default_restart_mesh[] = "restart_mesh_input";
     if (cs_file_isreg(default_restart_mesh))
       cs_restart_map_set_mesh_input(default_restart_mesh);
-
-    cs_gui_init();
 
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
@@ -460,7 +466,7 @@ _run(void)
 
     /* Finalize synthetic inlet condition generation */
 
-    cs_inflow_finalize();
+    cs_les_inflow_finalize();
 
   }
 
@@ -577,6 +583,8 @@ _run(void)
   cs_base_mem_finalize();
 
   cs_log_printf_flush(CS_LOG_N_TYPES);
+
+  cs_runaway_check_finalize();
 }
 
 /*============================================================================

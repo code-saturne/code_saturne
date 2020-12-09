@@ -73,6 +73,7 @@ double precision, allocatable, dimension(:) :: aeroso, infrad
 double precision, allocatable, dimension(:,:,:) :: coords(:,:,:)
 double precision, dimension(:), pointer :: crom, cpro_pcliq
 double precision, dimension(:), pointer :: cvara_totwt, cpro_tempc, cvara_ntdrp
+double precision, dimension(:), pointer :: nebdia
 
 save ideb
 data ideb/0/
@@ -134,6 +135,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     call field_get_val_prev_s(ivarfl(isca(iymw)), cvara_totwt)
     call field_get_val_prev_s(ivarfl(isca(intdrp)), cvara_ntdrp)
+    call field_get_val_s_by_name("nebulosity_diag", nebdia)
   endif
 
   !=============================================================================

@@ -1,8 +1,8 @@
-#ifndef __CS_GUI_VARIABLES_H__
-#define __CS_GUI_VARIABLES_H__
+#ifndef __CS_RUNAWAY_H__
+#define __CS_RUNAWAY_H__
 
 /*============================================================================
- * Management of the GUI parameters file: variables
+ * Runaway (diverging) computation detection.
  *============================================================================*/
 
 /*
@@ -28,44 +28,73 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh_location.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*============================================================================
- * Type definitions
+ * Macro definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Variables and scalars management structure
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  char  *model;            /* predifined physics model                        */
-  char  *model_value;      /* predifined physics model value                  */
-} cs_var_t;
-
 /*============================================================================
- * Static global variables
- *============================================================================*/
-
-extern cs_var_t    *cs_glob_var;   /* Pointer to main variables structure */
-
-/*============================================================================
- * Public function prototypes for Fortran API
+ * Local type definitions
  *============================================================================*/
 
 /*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that defined field bounds are not exceeded.
+ *
+ * \return 0 if no bounds are exceeded, 1 if bounds are exceeded.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_runaway_check(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define maximum value for a field, beyon which computation is aborted.
+ *
+ * Currently, only one field is handled, so calling this multiple times
+ * replaced the previous setting. Using a negative field id removes
+ * this check.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_runaway_check_define_field_max(int        f_id,
+                                  cs_real_t  max_allowed);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that defined field bounds are not exceeded.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_runaway_check_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_GUI_VARIABLES_H__ */
+#endif /* __CS_RUNAWAY_H__ */

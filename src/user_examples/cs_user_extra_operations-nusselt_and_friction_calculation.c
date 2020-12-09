@@ -128,7 +128,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
        fprintf(file, "# 1:Coords, 2:Cf, 3:Nu \n");
     }
 
-    /* Select boudary faces to print */
+    /* Select boundary faces to print */
 
     /* -------- TO MODIFY ---------- */
     const char criteria[] = "Wall";

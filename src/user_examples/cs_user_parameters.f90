@@ -150,7 +150,7 @@ ippmod(icolwc) = -1
 ! =================
 
 !        if = -1   module not activated
-!        if =  0   constant fraction of fuel Xsoot
+!        if =  0   constant fraction of soot
 !        if =  1   2 equations model of Moss et al.
 
 isoot = 0
@@ -225,16 +225,6 @@ ippmod(ieljou) = -1
 !        if = 2    electric potential and vector potential (hence 3D modelling)
 
 ippmod(ielarc) = -1
-
-! --- atmos: Atmospheric flows
-! ==========
-
-!        if = -1   module not activated
-!        if = 0    standard modelling
-!        if = 1    dry atmosphere
-!        if = 2    humid atmosphere (experimental)
-
-ippmod(iatmos) = -1
 
 ! --- aeros: Cooling towers
 ! ==========
@@ -311,12 +301,6 @@ if (ippmod(icfuel).ge.0) then
   ficfpp = 'dp_FUE'
 endif
 
-! Atmospheric flows
-
-if (ippmod(iatmos).ge.0) then
-  ficmet = 'meteo'
-endif
-
 if (ippmod(igmix).ge.0) then
   ! Specific condensation modelling
 
@@ -385,6 +369,11 @@ use field
 use cavitation
 use post
 use rotation
+use atincl
+use atsoil
+use atchem
+use atimbr
+use sshaerosol
 use cs_c_bindings
 
 !===============================================================================
@@ -616,6 +605,59 @@ epalim = 1.d-5
 
 !< [usipsu]
 
+!===============================================================================
+! Initialize non-standard calculation options for the atmospheric version.
+!===============================================================================
+
+!< [usati1]
+!  -----------------------------------------------------------------------------
+!  Atmospheric imbrication on large scale meteo (atimbr module)
+!  -----------------------------------------------------------------------------
+!
+! --------------------------------------------------------------
+! activation flag
+! --------------------------------------------------------------
+imbrication_flag    = .false.
+imbrication_verbose = .false.
+
+! ------------------------------------------------------------------------------
+! flags for activating the cressman interpolation for the boundary conditions
+! ------------------------------------------------------------------------------
+cressman_u     = .true.
+cressman_v     = .true.
+cressman_tke   = .true.
+cressman_eps   = .true.
+cressman_theta = .true.
+cressman_qw    = .true.
+cressman_nc    = .true.
+
+! --------------------------------------------------------------
+! numerical parameters for the cressman interpolation formulas
+! --------------------------------------------------------------
+horizontal_influence_radius = 8500.d0
+vertical_influence_radius = 100.d0
+
+! --------------------------------------------------------------
+
+! ifilechemistry: choice to read (=1,2,3,4, according to the scheme)
+! or not (0) a concentration profile file
+! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
+ifilechemistry = 0
+
+! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun)
+! resolution of chemistry.
+! Splitted (=1) mandatory for aerosols.
+! Semi-coupled (=2) by default.
+isepchemistry = 1
+
+! dtchemmax: maximal time step (s) for chemistry resolution
+dtchemmax = 10.0d0
+
+! computation / storage of downward and upward infrared radiative fluxes
+irdu = 1
+
+!< [usati1]
+
 !----
 ! Formats
 !----
@@ -746,109 +788,6 @@ endif
 
 return
 end subroutine usipes
-
-
-!===============================================================================
-
-
-!> \brief Initialize non-standard calculation options for the atmospheric version.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine usati1
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use ppppar
-use atincl
-use atsoil
-use atchem
-use atimbr
-use sshaerosol
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!< [usati1]
-
-!===============================================================================
-! 1. Example of calculation options to modify
-!===============================================================================
-
-!  -----------------------------------------------------------------------------
-!  Atmospheric imbrication on large scale meteo (atimbr module)
-!  -----------------------------------------------------------------------------
-!
-! --------------------------------------------------------------
-! activation flag
-! --------------------------------------------------------------
-imbrication_flag    = .false.
-imbrication_verbose = .false.
-
-! ------------------------------------------------------------------------------
-! flags for activating the cressman interpolation for the boundary conditions
-! ------------------------------------------------------------------------------
-cressman_u     = .true.
-cressman_v     = .true.
-cressman_tke   = .true.
-cressman_eps   = .true.
-cressman_theta = .true.
-cressman_qw    = .true.
-cressman_nc    = .true.
-
-! --------------------------------------------------------------
-! numerical parameters for the cressman interpolation formulas
-! --------------------------------------------------------------
-horizontal_influence_radius = 8500.d0
-vertical_influence_radius = 100.d0
-
-! --------------------------------------------------------------
-
-! ifilechemistry: choice to read (=1,2,3,4, according to the scheme)
-! or not (0) a concentration profile file
-! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
-ifilechemistry = 0
-
-! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun)
-! resolution of chemistry.
-! Splitted (=1) mandatory for aerosols.
-! Semi-coupled (=2) by default.
-isepchemistry = 1
-
-! dtchemmax: maximal time step (s) for chemistry resolution
-dtchemmax = 10.0d0
-
-! computation / storage of downward and upward infrared radiative fluxes
-irdu = 1
-! computation / storage of downward and upward solar radiative fluxes
-soldu = 1
-
-!< [usati1]
-
-!----
-! End
-!----
-
-return
-end subroutine usati1
-
 
 !===============================================================================
 ! Purpose:

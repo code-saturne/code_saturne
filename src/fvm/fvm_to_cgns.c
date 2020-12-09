@@ -3520,7 +3520,7 @@ fvm_to_cgns_init_writer(const char             *name,
       writer->rank = rank;
       writer->n_ranks = n_ranks;
       writer->min_rank_step = 1;
-      writer->min_block_size = 1024*1024*8;
+      writer->min_block_size = cs_parall_get_min_coll_buf_size();
     }
     else
       writer->comm = MPI_COMM_NULL;

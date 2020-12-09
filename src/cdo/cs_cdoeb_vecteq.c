@@ -1068,7 +1068,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
     memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
 
   cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp,
+                                  eqp->name,
+                                  eqp->sles_param,
                                   matrix,
                                   rs,
                                   rhs_norm,

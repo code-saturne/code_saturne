@@ -57,6 +57,19 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Atmospheric models
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_ATMO_OFF = -1,
+  CS_ATMO_CONSTANT_DENSITY = 0,
+  CS_ATMO_DRY = 1,
+  CS_ATMO_HUMID = 2,
+
+} cs_atmo_model_t;
+
+/*----------------------------------------------------------------------------
  * Atmospheric nucleation models
  *----------------------------------------------------------------------------*/
 
@@ -93,7 +106,7 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  /* Space and tim reference of the run */
+  /* Space and time reference of the run */
   /*! Starting year */
   int syear;
   /*! Starting quantile */
@@ -126,15 +139,42 @@ typedef struct {
   int open_bcs_treatment;
 
   /* Model options */
+  /*! Sedimentation flag */
   int sedimentation_model;
+  /*! Deposition flag */
   int deposition_model;
+  /*!
+   * Option for nucleation
+   *  0: without nucleation
+   *  1: Pruppacher and Klett 1997
+   *  2: Cohard et al. 1998,1999
+   *  3: Abdul-Razzak et al. 1998,2000
+   *  logaritmic standard deviation of the log-normal law of the droplet spectrum
+   */
   int nucleation_model;
+  /*!  Option for subgrid models
+   *   0: the simplest parameterization (for numerical verifications)
+   *   1: Bechtold et al. 1995 (Luc Musson-Genon)
+   *   2: Bouzereau et al. 2004
+   *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
+   *                 Deardorff 1977
+   */
   int subgrid_model;
+  /*! Option for liquid water content distribution models
+   *  1: all or nothing
+   *  2: Gaussian distribution
+   */
+  int distribution_model;
   /*! Use meteo profile:
    *  - 0: not use
    *  - 1: use a meteo file
-   *  - 2: directly enter values */
+   *  - 2: directly enter values large scale values
+   *  - 3: fill directly meteo_* fields
+   *  */
   int meteo_profile;
+
+  /*! Meteo file */
+  char *meteo_file_name;
 
   /*! Meteo Monin obukhov inverse length */
   cs_real_t meteo_dlmo;
@@ -181,12 +221,19 @@ typedef struct {
   cs_real_t *time_met;
   /* Hydrostatic pressure from Laplace integration */
   cs_real_t *hyd_p_met;
-  /* Fractional nebulosity */
-  cs_real_t *frac_neb;
-  /* Diagnosed nebulosity */
-  cs_real_t *diag_neb;
 
 } cs_atmo_option_t;
+
+/*----------------------------------------------------------------------------
+ * Atmospheric model constants descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  /* Space and tim reference of the run */
+  /*! Reference pressure (to compute potential temp: 1.0e+5) */
+  cs_real_t ps;
+
+} cs_atmo_constants_t;
 
 /*----------------------------------------------------------------------------
  * Atmospheric chemistry options descriptor
@@ -240,7 +287,10 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to atmo options structure */
-extern cs_atmo_option_t        *cs_glob_atmo_option;
+extern cs_atmo_option_t *cs_glob_atmo_option;
+
+/* Pointer to atmo constants structure */
+extern cs_atmo_constants_t *cs_glob_atmo_constants;
 
 /* Pointer to atmo chemistry structure */
 extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
@@ -248,6 +298,41 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function computes hydrostatic profiles of density and pressure
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \divs \left( \grad \varia \right)
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
+ *  is the potential temperature.
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *  \f]
+ *  and Neumann elsewhere.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_hydrostatic_profiles_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the meteo file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_meteo_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

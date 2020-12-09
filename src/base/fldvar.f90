@@ -343,10 +343,6 @@ if (nmodpp.eq.0) then
     iscalt = ihm
   endif
 
-  if (itherm.ne.0) then
-    call uithsc
-  endif
-
 endif
 
 call add_user_scalar_fields

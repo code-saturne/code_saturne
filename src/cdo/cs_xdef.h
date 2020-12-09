@@ -528,6 +528,23 @@ cs_xdef_copy(cs_xdef_t     *src);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief In the case of a definition by an analytic function, a time function
+ *        or a function relying on degrees of freedom (DoFs), this function
+ *        allows one to set a more or less complex input data structure.  This
+ *        call should be done before the first evaluation call of the
+ *        associated cs_xdef_t structure.
+ *
+ * \param[in, out]  d         pointer to a cs_xdef_t structure
+ * \param[in]       input     pointer to an input structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_input_context(cs_xdef_t       *d,
+                          void            *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief In case of a definition by an analytic function, a time function or a
  *        function relying on degrees of freedom (DoFs). One can set a function
  *        to free a complex input data structure (please refer to \ref
@@ -639,6 +656,19 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 void
 cs_xdef_log(const char          *prefix,
             const cs_xdef_t     *d);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the cs_xdef_type's name string
+ *
+ * \param[in] xdef_type  type to query
+ *
+ * \return a pointer to mathing name string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_xdef_type_get_name(cs_xdef_type_t  xdef_type);
 
 /*----------------------------------------------------------------------------*/
 

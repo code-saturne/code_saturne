@@ -125,6 +125,16 @@ _handle_non_linearities(cs_navsto_param_t    *nsp)
   case CS_NAVSTO_MODEL_STOKES:
     return false;
 
+  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
+    if (nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL)
+      return true;
+    else {
+      assert(nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
+             nsp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
+      return false;
+    }
+    break;
+
   default:
     return true;
 
@@ -154,6 +164,11 @@ _allocate_navsto_system(void)
   /* Main set of variables */
   navsto->velocity = NULL;
   navsto->pressure = NULL;
+
+  /* Advection field */
+  navsto->adv_field = NULL;
+  navsto->mass_flux_array = NULL;
+  navsto->mass_flux_array_pre = NULL;
 
   /* Post-processing fields */
   navsto->velocity_divergence = NULL;
@@ -228,13 +243,13 @@ cs_navsto_system_update_model(bool   with_thermal)
   if (with_thermal) { /* Thermal system is switch on and relies on the mass flux
                          for the advection */
 
-    if ((nsp->model & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
-                       CS_NAVSTO_MODEL_BOUSSINESQ |
-                       CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
+    if ((nsp->model_flag & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
+                            CS_NAVSTO_MODEL_BOUSSINESQ |
+                            CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
 
-      /* Thermal system is linked the Navier-Stokes one but nothing has been
-       * set. Add a flag. */
-      nsp->model |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
+      /* Thermal system is linked to the Navier-Stokes one but nothing has been
+       * set. Add the expected flag. */
+      nsp->model_flag |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
 
     }
 
@@ -248,9 +263,9 @@ cs_navsto_system_update_model(bool   with_thermal)
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
+ * \param[in] model_flag     additional high-level model options
  * \param[in] algo_coupling  algorithm used for solving the NS system
- * \param[in] option_flag    additional high-level numerical options
- * \param[in] post_flag      predefined post-processings
+ * \param[in] post_flag      predefined post-processings options
  *
  * \return a pointer to a new allocated cs_navsto_system_t structure
  */
@@ -259,9 +274,9 @@ cs_navsto_system_update_model(bool   with_thermal)
 cs_navsto_system_t *
 cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_navsto_param_model_t        model,
+                          cs_navsto_param_model_flag_t   model_flag,
                           cs_navsto_param_coupling_t     algo_coupling,
-                          cs_flag_t                      option_flag,
-                          cs_flag_t                      post_flag)
+                          cs_navsto_param_post_flag_t    post_flag)
 {
   /* Sanity checks */
   if (model < 1)
@@ -272,8 +287,10 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   cs_navsto_system_t  *navsto = _allocate_navsto_system();
 
   /* Initialize the set of parameters */
-  navsto->param = cs_navsto_param_create(boundaries, model, algo_coupling,
-                                         option_flag, post_flag);
+  navsto->param = cs_navsto_param_create(boundaries,
+                                         model, model_flag,
+                                         algo_coupling,
+                                         post_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
@@ -294,20 +311,29 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   } /* End of switch */
 
+  /* Advection field related to the resolved velocity */
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (cs_navsto_param_is_steady(navsto->param))
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  navsto->adv_field = cs_advection_field_add("mass_flux", adv_status);
+
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->coupling_context = cs_navsto_ac_create_context(navsto->param,
-                                                           default_bc);
+    navsto->coupling_context =
+      cs_navsto_ac_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    navsto->coupling_context
-      = cs_navsto_monolithic_create_context(navsto->param, default_bc);
+    navsto->coupling_context =
+      cs_navsto_monolithic_create_context(default_bc, navsto->param);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
-      cs_navsto_projection_create_context(navsto->param, default_bc);
+      cs_navsto_projection_create_context(default_bc, navsto->param);
     break;
 
   default:
@@ -342,6 +368,9 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   }
 
+  /* Create the main structure to handle the turbulence modelling */
+  navsto->turbulence = cs_turbulence_create(navsto->param->turbulence);
+
   /* Set the static variable */
   cs_navsto_system = navsto;
 
@@ -365,11 +394,14 @@ cs_navsto_system_destroy(void)
   BFT_FREE(navsto->bf_type);
 
   /*
-    Properties, advection fields, equations and fields are all destroyed
-    respectively inside cs_property_destroy_all(),
-    cs_advection_field_destroy_all(), cs_equation_destroy_all() and
-    cs_field_destroy_all()
-  */
+   * Properties, advection fields, equations and fields are all destroyed
+   * respectively inside cs_property_destroy_all(),
+   * cs_advection_field_destroy_all(), cs_equation_destroy_all() and
+   * cs_field_destroy_all()
+   */
+
+  BFT_FREE(navsto->mass_flux_array);
+  BFT_FREE(navsto->mass_flux_array_pre);
 
   cs_navsto_param_t  *nsp = navsto->param;
 
@@ -378,17 +410,17 @@ cs_navsto_system_destroy(void)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     navsto->coupling_context =
-      cs_navsto_ac_free_context(nsp, navsto->coupling_context);
+      cs_navsto_ac_free_context(navsto->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context =
-      cs_navsto_monolithic_free_context(nsp, navsto->coupling_context);
+      cs_navsto_monolithic_free_context(navsto->coupling_context);
     if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB)
       cs_cdofb_monolithic_finalize_common(nsp);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
-      cs_navsto_projection_free_context(nsp, navsto->coupling_context);
+      cs_navsto_projection_free_context(navsto->coupling_context);
     break;
 
   default:
@@ -396,8 +428,14 @@ cs_navsto_system_destroy(void)
     break;
   }
 
+  if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB)
+    cs_cdofb_navsto_finalize();
+
   /* Destroy the context related to the discretization scheme */
   navsto->free_scheme_context(navsto->scheme_context);
+
+  /* Free the context and the structure related to the turbulence modelling */
+  cs_turbulence_free(&(navsto->turbulence));
 
   /* Set of numerical parameters */
   navsto->param = cs_navsto_param_free(nsp);
@@ -482,27 +520,7 @@ cs_navsto_get_adv_field(void)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_adv_field_t  *adv = NULL;
-
-  switch (ns->param->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    adv = cs_navsto_ac_get_adv_field(ns->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    adv = cs_navsto_monolithic_get_adv_field(ns->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    adv = cs_navsto_projection_get_adv_field(ns->coupling_context);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-
-  }
-
-  return adv;
+  return ns->adv_field;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -523,28 +541,9 @@ cs_navsto_get_mass_flux(bool   previous)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_real_t  *mass_flux = NULL;
-
-  switch (ns->param->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    mass_flux = cs_navsto_ac_get_mass_flux(ns->coupling_context,
-                                           previous);
-    break;
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    mass_flux = cs_navsto_monolithic_get_mass_flux(ns->coupling_context,
-                                                   previous);
-    break;
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    mass_flux = cs_navsto_projection_get_mass_flux(ns->coupling_context,
-                                                   previous);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-
-  }
+  cs_real_t  *mass_flux = ns->mass_flux_array;
+  if (previous)
+    mass_flux = ns->mass_flux_array_pre;
 
   return mass_flux;
 }
@@ -565,9 +564,6 @@ cs_navsto_system_init_setup(void)
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   cs_navsto_param_t  *nsp = ns->param;
-
-  /* Set shared pointers for the turbulence modelling */
-  cs_cdo_turbulence_init(nsp->turbulence_struct);
 
   /* Set field metadata */
   const int  log_key = cs_field_key_id("log");
@@ -622,19 +618,17 @@ cs_navsto_system_init_setup(void)
   int  p_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
   nsp->post_flag |= CS_NAVSTO_POST_VELOCITY_DIVERGENCE;
-  if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE) {
 
-    ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
-                                                      p_mask,
-                                                      location_id,
-                                                      1, /* dimension */
-                                                      has_previous);
+  /* Always post-process the velocity divergence */
+  ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
+                                                    p_mask,
+                                                    location_id,
+                                                    1, /* dimension */
+                                                    has_previous);
 
-    /* Set default value for keys related to log and post-processing */
-    cs_field_set_key_int(ns->velocity_divergence, log_key, 1);
-    cs_field_set_key_int(ns->velocity_divergence, post_key, field_post_flag);
-
-  }
+  /* Set default value for keys related to log and post-processing */
+  cs_field_set_key_int(ns->velocity_divergence, log_key, 1);
+  cs_field_set_key_int(ns->velocity_divergence, post_key, field_post_flag);
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
@@ -711,17 +705,19 @@ cs_navsto_system_init_setup(void)
 
   }
 
-  /* Setup data according to the type of coupling */
+  /* Setup data according to the type of coupling (add the advection field in
+     case of Navier-Stokes equations) */
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    cs_navsto_ac_init_setup(nsp, ns->coupling_context);
+    cs_navsto_ac_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    cs_navsto_monolithic_init_setup(nsp, ns->coupling_context);
+    cs_navsto_monolithic_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_init_setup(nsp,
+                                    ns->adv_field,
                                     location_id,
                                     has_previous,
                                     ns->coupling_context);
@@ -732,6 +728,9 @@ cs_navsto_system_init_setup(void)
     break;
 
   }
+
+  /* Initialize the turbulence modelling */
+  cs_turbulence_init_setup(ns->turbulence);
 
 }
 
@@ -819,9 +818,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Setup checkings */
-  if ((nsp->model & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
-                     CS_NAVSTO_MODEL_BOUSSINESQ |
-                     CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
+  if ((nsp->model_flag & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
+                          CS_NAVSTO_MODEL_BOUSSINESQ |
+                          CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
 
     if (cs_thermal_system_is_activated() == false)
       bft_error(__FILE__, __LINE__, 0,
@@ -850,18 +849,48 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   cs_navsto_set_symmetries(nsp);
   cs_navsto_set_outlets(nsp);
 
+  /* Define the advection field which relies on the mass flux. */
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    {
+      BFT_MALLOC(ns->mass_flux_array, quant->n_faces, cs_real_t);
+      memset(ns->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      BFT_MALLOC(ns->mass_flux_array_pre, quant->n_faces, cs_real_t);
+      memset(ns->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      cs_flag_t loc_flag =
+        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+
+      cs_advection_field_def_by_array(ns->adv_field,
+                                      loc_flag,
+                                      ns->mass_flux_array,
+                                      false, /* advection field is not owner */
+                                      NULL); /* index (not useful here) */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* End of switch on space_scheme */
+
   /* Last setup stage according to the type of coupling (not related to
      space discretization scheme */
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    cs_navsto_ac_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_ac_last_setup(nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    cs_navsto_monolithic_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_monolithic_last_setup(nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    cs_navsto_projection_last_setup(connect, quant, nsp, ns->coupling_context);
+    cs_navsto_projection_last_setup(quant, nsp, ns->coupling_context);
     break;
 
   default:
@@ -1023,7 +1052,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   }
 
-  if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
     cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
@@ -1069,12 +1098,16 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   } /* Post-processing of the stream function is requested */
 
+  /* Finalize the setting of the turbulence modelling */
+  cs_turbulence_finalize_setup(mesh, connect, quant, time_step,
+                               ns->turbulence);
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context structure used to build the algebraic system
- *         This is done after the setup step.
+ * \brief  Initialize the scheme context structure used to build the algebraic
+ *         system. This is done after the setup step.
  *         Set an initial value for the velocity and pressure field if needed
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
@@ -1106,6 +1139,9 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   /* Allocate and initialize the scheme context structure */
   ns->scheme_context = ns->init_scheme_context(nsp,
+                                               ns->adv_field,
+                                               ns->mass_flux_array,
+                                               ns->mass_flux_array_pre,
                                                ns->bf_type,
                                                ns->coupling_context);
 
@@ -1128,7 +1164,14 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
       cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
     }
 
+    /* Initialize the mass flux */
+    const cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
+    const cs_real_t  *face_vel = cs_equation_get_face_values(mom_eq, false);
+    cs_cdofb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
+
   } /* Face-based schemes */
+
+  cs_turbulence_initialize(mesh, connect, quant, ts, ns->turbulence);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1232,7 +1275,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   /* First resolve the thermal system if needed */
   cs_equation_t  *th_eq = cs_thermal_system_get_equation();
 
-  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     assert(th_eq != NULL);
 
@@ -1244,7 +1287,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       cs_thermal_system_compute_steady_state(mesh, time_step, connect, cdoq);
 
   }
-  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
@@ -1342,7 +1385,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
   const cs_navsto_param_t  *nsp = ns->param;
 
-  if (nsp->model & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
+  if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     /* First resolve the thermal system if needed */
     cs_equation_t  *th_eq = cs_thermal_system_get_equation();
@@ -1358,7 +1401,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       cs_thermal_system_compute(true, mesh, time_step, connect, cdoq);
 
   }
-  else if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
@@ -1429,12 +1472,17 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
+      /* Get the current values not the previous one */
       bool  need_prev = false;
-      cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
+
+      /* Mass flux is a scalar associated to each face (first interior faces
+         then border faces */
+      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
+
+      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
+      const cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
       const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
       const cs_real_t  *u_cell = navsto->velocity->val;
-      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
-      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
 
       cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect, ts,
                                adv, mass_flux,
@@ -1488,6 +1536,7 @@ cs_navsto_system_extra_post(void                      *input,
                             const cs_time_step_t      *time_step)
 {
   CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
@@ -1507,7 +1556,13 @@ cs_navsto_system_extra_post(void                      *input,
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
       {
-        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(false);
+        /* Get the current values not the previous one */
+        bool  need_prev = false;
+
+        /* Mass flux is a scalar associated to each face (first interior faces
+           then border faces */
+        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
+        const cs_real_t  *mass_bflux = mass_flux + cs_glob_mesh->n_i_faces;
 
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_DEFAULT,
@@ -1518,7 +1573,7 @@ cs_navsto_system_extra_post(void                      *input,
                           CS_POST_TYPE_cs_real_t,
                           NULL,                   // values on cells
                           NULL,                   // values at internal faces
-                          mass_flux + n_i_faces,  // values at border faces
+                          mass_bflux,             // values at border faces
                           time_step);             // time step management struct.
 
       }

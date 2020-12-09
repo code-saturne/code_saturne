@@ -70,6 +70,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_beta
+double precision, dimension(:), pointer :: cpro_met_p
 
 logical activate
 
@@ -85,6 +86,10 @@ ivart = -1
 
 if (idilat.eq.0) then
   call field_get_val_s_by_name("thermal_expansion", cpro_beta)
+endif
+
+if (imeteo.ge.2) then
+  call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
 endif
 
 ! This routine computes the density and the thermodynamic temperature.
@@ -136,11 +141,13 @@ do iel = 1, ncel
   ! Reference pressure
   if (imeteo.eq.0) then
     call atmstd(zent,pp,dum,dum)
-  else
+  else if (imeteo.eq.1) then
     ! Pressure profile from meteo file:
     call intprf &
        ( nbmett, nbmetm,                                            &
          ztmet , tmmet , phmet , zent, ttcabs, pp )
+  else
+    pp = cpro_met_p(iel)
   endif
 
   ! Potential temperature
@@ -235,11 +242,12 @@ double precision a_coeff
 double precision alpha,al
 double precision sig_flu ! standard deviation of qw'-alpha*theta'
 double precision var_tl,var_q,cov_tlq
-double precision q1,qsup
+double precision q1,qsup, rvap
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: nn, nebdia
 
-! rvap = rair*rvsra
+rvap = rair*rvsra
 
 allocate(dtlsd(3,ncelet))
 allocate(dqsd(3,ncelet))
@@ -255,6 +263,8 @@ call field_gradient_scalar(ivarfl(isca(iymw)), 1, 0, inc, iccocg, dqsd)
 
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
+call field_get_val_s_by_name("nebulosity_frac", nn)
+call field_get_val_s_by_name("nebulosity_diag", nebdia)
 
 ! -------------------------------------------------------------
 ! Gradients are used for estimating standard deviations of the
@@ -277,9 +287,11 @@ do iel = 1, ncel
 
   if (imeteo.eq.0) then
     call atmstd(zent,pp,dum,dum)
-  else
+  else if (imeteo.eq.1) then
     ! Pressure profile from meteo file:
     call intprf(nbmett, nbmetm, ztmet , tmmet , phmet , zent, ttcabs, pp)
+  else
+    pp = cpro_met_p(iel)
   endif
 
   xvart = cvar_vart(iel) ! thermal scalar: liquid potential temperature

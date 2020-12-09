@@ -193,6 +193,9 @@ struct _cs_file_t {
   FILE              *sh;           /* Serial file handle */
 
 #if defined(HAVE_MPI)
+  int                rank_step;    /* Rank step between ranks and io ranks */
+  cs_gnum_t         *block_size;   /* Block sizes on IO ranks in case
+                                      of rank stepping */
   MPI_Comm           comm;         /* Associated MPI communicator */
   MPI_Comm           io_comm;      /* Associated MPI-IO communicator */
 #endif
@@ -260,7 +263,6 @@ static cs_file_access_t _default_access_w = CS_FILE_DEFAULT;
 
 static bool     _mpi_defaults_are_set = false;
 static int      _mpi_rank_step = 1;
-static size_t   _mpi_min_coll_buf_size = 1024*1024*8;
 static MPI_Comm _mpi_comm = MPI_COMM_NULL;
 static MPI_Comm _mpi_io_comm = MPI_COMM_NULL;
 static MPI_Info _mpi_io_hints_r = MPI_INFO_NULL;
@@ -1068,7 +1070,7 @@ _file_write_block_s(cs_file_t  *f,
                      global_num_end,
                      0,
                      buf,
-                     f->comm);
+                     f->io_comm);
 
     do {
 
@@ -1172,6 +1174,318 @@ _file_write_block_p(cs_file_t  *f,
 
   return retval;
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Gather blocks sizes across several ranks and allocates matching buffer
+ *
+ * The caller is responsible for freeing the returned buffer once it is
+ * no longer needed.
+ *
+ * parameters:
+ *   f                <-- cs_file_t descriptor
+ *   size             <-- size of each item of data in bytes
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-> pointer to global number of past-the end block item
+ *                        (1 to n numbering)
+ *
+ * returns:
+ *   pointer to gathered values buffer for gathering rank, NULL for others
+ *----------------------------------------------------------------------------*/
+
+static void *
+_gather_block_sizes(cs_file_t   *f,
+                    size_t       size,
+                    cs_gnum_t    global_num_start,
+                    cs_gnum_t   *global_num_end)
+{
+  unsigned char *gather_buf = NULL;
+
+  assert(f != NULL);
+
+  cs_gnum_t _global_num_end = *global_num_end;
+
+  static const int tag = 'f'+'a'+'g'+'g'+'r'+'e'+'g'+'a'+'t'+'e';
+
+  /* Aggregator rank */
+
+  if (f->rank % f->rank_step == 0) {
+
+    f->block_size[0] = _global_num_end - global_num_start;
+    size_t block_size = f->block_size[0];
+
+    int rank_end = f->rank + f->rank_step;
+    if (rank_end >= f->n_ranks)
+      rank_end = f->n_ranks;
+
+    int n_aggr = rank_end - f->rank;
+
+    /* Receive counts */
+
+    for (int i = 1; i < n_aggr; i++) {
+      int src_rank = f->rank + i;
+      MPI_Status status;
+      MPI_Recv(f->block_size + i, 1, CS_MPI_GNUM,
+               src_rank, tag, f->comm, &status);
+      block_size += f->block_size[i];
+    }
+
+    /* Allocate buffer */
+
+    size_t alloc_size = size * (size_t)block_size;
+    BFT_MALLOC(gather_buf, alloc_size, unsigned char);
+
+    *global_num_end = global_num_start + block_size;
+  }
+
+  /* Sending rank */
+
+  else {
+
+    int dest_rank = f->rank - (f->rank % f->rank_step);
+    cs_gnum_t block_size = _global_num_end - global_num_start;
+    f->block_size[0] = block_size;
+
+    /* Send counts */
+
+    MPI_Send(&block_size, 1, CS_MPI_GNUM,
+             dest_rank, tag, f->comm);
+
+    *global_num_end = global_num_start;  /* For empty message */
+  }
+
+  return (void *)gather_buf;
+}
+
+/*----------------------------------------------------------------------------
+ * Gather blocks across several ranks
+ *
+ * The caller is responsible for freeing the returned buffer once it is
+ * no longer needed.
+ *
+ * parameters:
+ * parameters:
+ *   f                <-- cs_file_t descriptor
+ *   buf              <-> pointer to location containing data
+ *   size             <-- size of each item of data in bytes
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-> pointer to global number of past-the end block item
+ *                        (1 to n numbering)
+ *
+ * returns:
+ *   pointer to gathered values buffer for gathering rank, NULL for others
+ *----------------------------------------------------------------------------*/
+
+static void *
+_gather_blocks(cs_file_t   *f,
+               void        *buf,
+               size_t       size,
+               cs_gnum_t    global_num_start,
+               cs_gnum_t   *global_num_end)
+{
+  assert(f != NULL);
+
+  unsigned char *gather_buf = _gather_block_sizes(f,
+                                                  size,
+                                                  global_num_start,
+                                                  global_num_end);
+
+  MPI_Datatype ent_type = MPI_BYTE;
+  size_t _size = size;
+
+  static const int tag = 'f'+'a'+'g'+'g'+'r'+'e'+'g'+'a'+'t'+'e';
+
+  /* Aggregator rank */
+
+  if (f->rank % f->rank_step == 0) {
+
+    int rank_end = f->rank + f->rank_step;
+    if (rank_end >= f->n_ranks)
+      rank_end = f->n_ranks;
+
+    int n_aggr = rank_end - f->rank;
+
+    /* Precaution for large messages */
+
+    for (int i = 1; i < n_aggr; i++) {
+      if (_size > 1 && (size * (size_t)(f->block_size[i])) > INT_MAX) {
+        MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+        MPI_Type_commit(&ent_type);
+        _size = 1;
+      }
+    }
+
+    /* Copy local data to gather buffer */
+
+    size_t gather_buf_count = size * (size_t)(f->block_size[0]);
+    memcpy(gather_buf, buf, gather_buf_count);
+
+    /* Receive data */
+
+    for (int i = 1; i < n_aggr; i++) {
+      int src_rank = f->rank + i;
+      MPI_Status status;
+      size_t add_buf_count = size * (size_t)(f->block_size[i]);
+      int recv_count = f->block_size[i];
+      if (recv_count == 0)
+        continue;
+      if (size * (size_t)recv_count > INT_MAX) {
+        MPI_Recv(gather_buf + gather_buf_count, recv_count, ent_type,
+                 src_rank, tag, f->comm, &status);
+      }
+      else {
+        recv_count *= size;
+        MPI_Recv(gather_buf + gather_buf_count, recv_count, MPI_BYTE,
+                 src_rank, tag, f->comm, &status);
+      }
+      gather_buf_count += add_buf_count;
+    }
+
+  }
+
+  /* Sending rank */
+
+  else {
+
+    int dest_rank = f->rank - (f->rank % f->rank_step);
+    cs_gnum_t block_size = f->block_size[0];
+
+    size_t message_size = _size * (size_t)block_size;
+
+    /* Precaution for large messages */
+
+    if (message_size > INT_MAX) {
+      MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+      MPI_Type_commit(&ent_type);
+      _size = 1;
+    }
+
+    int send_count = _size * block_size;
+
+    /* Send data */
+
+    if (send_count > 0)
+      MPI_Send(buf, send_count, ent_type, dest_rank, tag, f->comm);
+  }
+
+  if (ent_type != MPI_BYTE)
+    MPI_Type_free(&ent_type);
+
+  return (void *)gather_buf;
+}
+
+/*----------------------------------------------------------------------------
+ * Gather blocks across several ranks
+ *
+ * The caller is responsible for freeing the returned buffer once it is
+ * no longer needed.
+ *
+ * parameters:
+ * parameters:
+ *   f                <-- cs_file_t descriptor
+ *   io_buf           <-> pointer to location containing read data
+ *   buf              <-> pointer to location containing scattered data
+ *   size             <-- size of each item of data in bytes
+ *
+ * returns:
+ *   number of values in block after scatter
+ *----------------------------------------------------------------------------*/
+
+static int
+_scatter_blocks(cs_file_t   *f,
+                void        *io_buf,
+                void        *buf,
+                size_t       size)
+{
+  assert(f != NULL);
+
+  MPI_Datatype ent_type = MPI_BYTE;
+  size_t _size = size;
+
+  static const int tag = 'f'+'a'+'g'+'g'+'r'+'e'+'g'+'a'+'t'+'e';
+
+  /* Aggregator rank */
+
+  if (f->rank % f->rank_step == 0) {
+
+    int rank_end = f->rank + f->rank_step;
+    if (rank_end >= f->n_ranks)
+      rank_end = f->n_ranks;
+
+    int n_aggr = rank_end - f->rank;
+
+    /* Precaution for large messages */
+
+    for (int i = 1; i < n_aggr; i++) {
+      if (_size > 1 && (size * (size_t)(f->block_size[i])) > INT_MAX) {
+        MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+        MPI_Type_commit(&ent_type);
+        _size = 1;
+      }
+    }
+
+    /* Send local data to destination buffer */
+
+    unsigned char *scatter_buf = io_buf;
+    size_t scatter_buf_count = size * (size_t)(f->block_size[0]);
+    memcpy(buf, io_buf, scatter_buf_count);
+
+    /* Send data */
+
+    for (int i = 1; i < n_aggr; i++) {
+      int src_rank = f->rank + i;
+      size_t add_buf_count = size * (size_t)(f->block_size[i]);
+      int send_count = f->block_size[i];
+      if (send_count == 0)
+        continue;
+      if (size * (size_t)send_count > INT_MAX) {
+        MPI_Send(scatter_buf + scatter_buf_count, send_count, ent_type,
+                 src_rank, tag, f->comm);
+      }
+      else {
+        send_count *= size;
+        MPI_Send(scatter_buf + scatter_buf_count, send_count, MPI_BYTE,
+                 src_rank, tag, f->comm);
+      }
+      scatter_buf_count += add_buf_count;
+    }
+
+  }
+
+  /* Receving rank */
+
+  else {
+
+    int dest_rank = f->rank - (f->rank % f->rank_step);
+    cs_gnum_t block_size = f->block_size[0];
+
+    size_t message_size = _size * (size_t)block_size;
+
+    /* Precaution for large messages */
+
+    if (message_size > INT_MAX) {
+      MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+      MPI_Type_commit(&ent_type);
+      _size = 1;
+    }
+
+    int recv_count = _size * block_size;
+    MPI_Status status;
+
+    /* Receive data */
+
+    if (recv_count > 0)
+      MPI_Recv(buf, recv_count, ent_type, dest_rank, tag, f->comm, &status);
+  }
+
+  if (ent_type != MPI_BYTE)
+    MPI_Type_free(&ent_type);
+
+  return f->block_size[0];
+}
+
+#endif /* defined(HAVE_MPI) */
 
 #if defined(HAVE_MPI_IO)
 
@@ -1789,10 +2103,15 @@ _cs_file_compare_names(const void  *a,
  * By default, data is written or read as native data. This behavior may be
  * modified by cs_file_set_swap_endian().
  *
- * \param[in]  name    file name
- * \param[in]  mode    file access mode: read, write, or append
- * \param[in]  method  file access method (currently only C standard-IO when
- *                     built without MPI)
+ * \param[in]  name        file name
+ * \param[in]  mode        file access mode: read, write, or append
+ * \param[in]  method      file access method (currently only C standard-IO
+ *                         when built without MPI)
+ * \param[in]  hints       associated hints for MPI-IO, or MPI_INFO_NULL
+ * \param[in]  block_comm  handle to MPI communicator used for distributed
+ *                         file block access (may be a subset of comm if some
+ *                         ranks do not directly access distributed data blocks)
+ * \param[in]  comm        handle to main MPI communicator
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
@@ -1853,18 +2172,42 @@ cs_file_open(const char        *name,
 
 #if defined(HAVE_MPI)
   {
+    int n_io_ranks = f->n_ranks;
+
     if (comm != MPI_COMM_NULL) {
       MPI_Comm_size(comm, &(f->n_ranks));
       if (f->n_ranks > 1) {
         f->comm = comm;
         f->io_comm = block_comm;
         MPI_Comm_rank(f->comm, &(f->rank));
+        if (f->io_comm != f->comm) {
+          int _n_io_ranks = 0;
+          if (f->io_comm != MPI_COMM_NULL)
+            MPI_Comm_size(f->io_comm, &_n_io_ranks);
+          MPI_Allreduce(&_n_io_ranks, &n_io_ranks, 1, MPI_INT, MPI_MAX,
+                        f->comm);
+        }
       }
       else {
         f->comm = MPI_COMM_NULL;
         f->io_comm = MPI_COMM_NULL;
       }
     }
+
+    if (n_io_ranks < 1)
+      n_io_ranks = 1;
+    f->rank_step = f->n_ranks / n_io_ranks;
+    if (f->n_ranks % n_io_ranks)
+      f->rank_step += 1;
+
+    f->block_size = NULL;
+    if (f->rank_step > 1) {
+      if (f->io_comm != MPI_COMM_NULL)
+        BFT_MALLOC(f->block_size, f->rank_step, cs_gnum_t);
+      else
+        BFT_MALLOC(f->block_size, 1, cs_gnum_t);
+    }
+
     if (f->comm == MPI_COMM_NULL)
       f->method = CS_FILE_STDIO_SERIAL;
   }
@@ -2016,6 +2359,7 @@ cs_file_free(cs_file_t  *f)
 #if defined(HAVE_MPI_IO)
   else if (_f->fh != MPI_FILE_NULL)
     _mpi_file_close(_f);
+  BFT_FREE(f->block_size);
 #endif
 
   BFT_FREE(_f->name);
@@ -2366,8 +2710,21 @@ cs_file_read_block(cs_file_t  *f,
 
   cs_gnum_t global_num_end_last = global_num_end;
 
-  const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
-  const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+  cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
+  cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+
+  if (_global_num_end < _global_num_start)
+    _global_num_end = _global_num_start;
+
+  void *_buf = buf;
+
+#if defined(HAVE_MPI)
+  if (f->rank_step > 1)
+    _buf = _gather_block_sizes(f,
+                               size,
+                               _global_num_start,
+                               &_global_num_end);
+#endif
 
   assert(global_num_end >= global_num_start);
 
@@ -2375,7 +2732,7 @@ cs_file_read_block(cs_file_t  *f,
 
   case CS_FILE_STDIO_SERIAL:
     retval = _file_read_block_s(f,
-                                buf,
+                                _buf,
                                 size,
                                 _global_num_start,
                                 _global_num_end);
@@ -2383,7 +2740,7 @@ cs_file_read_block(cs_file_t  *f,
 
   case CS_FILE_STDIO_PARALLEL:
     retval = _file_read_block_p(f,
-                                buf,
+                                _buf,
                                 size,
                                 _global_num_start,
                                 _global_num_end);
@@ -2394,7 +2751,7 @@ cs_file_read_block(cs_file_t  *f,
   case CS_FILE_MPI_INDEPENDENT:
   case CS_FILE_MPI_NON_COLLECTIVE:
     retval = _mpi_file_read_block_noncoll(f,
-                                          buf,
+                                          _buf,
                                           size,
                                           _global_num_start,
                                           _global_num_end);
@@ -2404,13 +2761,13 @@ cs_file_read_block(cs_file_t  *f,
 
     if (_mpi_io_positioning == CS_FILE_MPI_EXPLICIT_OFFSETS)
       retval = _mpi_file_read_block_eo(f,
-                                       buf,
+                                       _buf,
                                        size,
                                        _global_num_start,
                                        _global_num_end);
     else
       retval = _mpi_file_read_block_ip(f,
-                                       buf,
+                                       _buf,
                                        size,
                                        _global_num_start,
                                        _global_num_end);
@@ -2432,6 +2789,14 @@ cs_file_read_block(cs_file_t  *f,
 #endif
 
   f->offset += ((global_num_end_last - 1) * size * stride);
+
+#if defined(HAVE_MPI)
+  if (f->rank_step > 1) {
+    retval = _scatter_blocks(f, _buf, buf, size);
+    if (_buf != buf)
+      BFT_FREE(_buf);
+  }
+#endif
 
   if (f->swap_endian == true && size > 1)
     _swap_endian(buf, buf, size, retval);
@@ -2484,8 +2849,16 @@ cs_file_write_block(cs_file_t   *f,
 
   /* Copy contents to ensure buffer constedness if necessary */
 
-  if (   (f->swap_endian == true && size > 1)
-      || (f->n_ranks > 1 && f->method != CS_FILE_STDIO_PARALLEL)) {
+  bool direct_w = true;
+
+  if (f->swap_endian == true && size > 1)
+    direct_w = false;
+  if (f->n_ranks > 1) {
+    if (f->rank_step > 1 || f->method != CS_FILE_STDIO_PARALLEL)
+      direct_w = false;
+  }
+
+  if (direct_w == false) {
 
     unsigned char *copybuf = NULL;
 
@@ -2582,8 +2955,13 @@ cs_file_write_block_buffer(cs_file_t  *f,
 
   cs_gnum_t global_num_end_last = global_num_end;
 
-  const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
-  const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+  cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
+  cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+
+  if (_global_num_end < _global_num_start)
+    _global_num_end = _global_num_start;
+
+  void *_buf = buf;
 
   /* Swap bytes prior to writing if necessary */
 
@@ -2593,13 +2971,19 @@ cs_file_write_block_buffer(cs_file_t  *f,
                  size,
                  (_global_num_end - _global_num_start));
 
+#if defined(HAVE_MPI)
+   if (f->rank_step > 1)
+    _buf = _gather_blocks(f, buf, size, _global_num_start,
+                          &_global_num_end);
+#endif
+
   /* Write to file using chosen method */
 
   switch(f->method) {
 
   case CS_FILE_STDIO_SERIAL:
     retval = _file_write_block_s(f,
-                                 buf,
+                                 _buf,
                                  size,
                                  _global_num_start,
                                  _global_num_end);
@@ -2607,7 +2991,7 @@ cs_file_write_block_buffer(cs_file_t  *f,
 
   case CS_FILE_STDIO_PARALLEL:
     retval = _file_write_block_p(f,
-                                 buf,
+                                 _buf,
                                  size,
                                  _global_num_start,
                                  _global_num_end);
@@ -2618,7 +3002,7 @@ cs_file_write_block_buffer(cs_file_t  *f,
   case CS_FILE_MPI_INDEPENDENT:
   case CS_FILE_MPI_NON_COLLECTIVE:
       retval = _mpi_file_write_block_noncoll(f,
-                                             buf,
+                                             _buf,
                                              size,
                                              _global_num_start,
                                              _global_num_end);
@@ -2627,13 +3011,13 @@ cs_file_write_block_buffer(cs_file_t  *f,
   case CS_FILE_MPI_COLLECTIVE:
     if (_mpi_io_positioning == CS_FILE_MPI_EXPLICIT_OFFSETS)
       retval = _mpi_file_write_block_eo(f,
-                                        buf,
+                                        _buf,
                                         size,
                                         _global_num_start,
                                         _global_num_end);
     else
       retval = _mpi_file_write_block_ip(f,
-                                        buf,
+                                        _buf,
                                         size,
                                         _global_num_start,
                                         _global_num_end);
@@ -2645,9 +3029,27 @@ cs_file_write_block_buffer(cs_file_t  *f,
     assert(0);
   }
 
+#if defined(HAVE_MPI)
+  if (f->rank_step > 1) {
+    if (f->rank % f->rank_step == 0) {
+      /* Check for inconsistent read sizes */
+      int rank_end = f->rank + f->rank_step;
+      if (rank_end >= f->n_ranks)
+        rank_end = f->n_ranks;
+      int n_aggr = rank_end - f->rank;
+      cs_gnum_t retval_cmp = 0;
+      for (int i = 0; i < n_aggr; i++)
+        retval_cmp += f->block_size[i];
+      if (retval_cmp != retval)  /* Error in this case */
+        f->block_size[0] = retval_cmp;
+    }
+    retval = f->block_size[0];
+    if (_buf != buf)
+      BFT_FREE(_buf);
+  }
+
   /* Update offset */
 
-#if defined(HAVE_MPI)
   if (f->n_ranks > 1)
     MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
 #endif
@@ -2827,10 +3229,11 @@ cs_file_dump(const cs_file_t  *f)
              "Access method:               %s\n"
              "Rank:                        %d\n"
              "N ranks:                     %d\n"
+             "rank step:                   %d\n"
              "Swap endian:                 %d\n"
              "Serial handle:               %p\n",
              f->name, mode_name[f->mode], access_name[f->method-1],
-             f->rank, f->n_ranks, (int)(f->swap_endian),
+             f->rank, f->n_ranks, f->rank_step, (int)(f->swap_endian),
              (const void *)f->sh);
 
 #if defined(HAVE_MPI)
@@ -2868,7 +3271,6 @@ cs_file_free_defaults(void)
 #if defined(HAVE_MPI)
   _mpi_defaults_are_set = false;
   _mpi_rank_step = 1;
-  _mpi_min_coll_buf_size = 1024*1024*8;
   _mpi_comm = MPI_COMM_NULL;
 
   if (_mpi_io_comm != MPI_COMM_NULL) {
@@ -3048,14 +3450,7 @@ cs_file_set_default_access(cs_file_mode_t    mode,
  * guaranteed to be empty for block reads and writes with files opened using
  * this default.
  *
- * A minimum block size target may also be used, so as to limit the number
- * of active blocks to a value proportional to the data size (limiting
- * latency issues for small data sets, while not requiring too much local
- * memory).
- *
  * \param[out]   block_rank_step  MPI rank stepping between non-empty
- *                                distributed blocks, or NULL
- * \param[out]   block_min_size   minimum block size target for non-empty
  *                                distributed blocks, or NULL
  * \param[out]   block_comm       Handle to MPI communicator used for
  *                                distributed file block access, or NULL
@@ -3065,14 +3460,13 @@ cs_file_set_default_access(cs_file_mode_t    mode,
 
 void
 cs_file_get_default_comm(int       *block_rank_step,
-                         int       *block_min_size,
                          MPI_Comm  *block_comm,
                          MPI_Comm  *comm)
 {
   /* Initialize defauts if not already done */
 
   if (_mpi_defaults_are_set == false && cs_glob_mpi_comm != MPI_COMM_NULL) {
-    cs_file_set_default_comm(0, -1, MPI_COMM_SELF);
+    cs_file_set_default_comm(0, MPI_COMM_SELF);
     _mpi_defaults_are_set = true;
   }
 
@@ -3080,9 +3474,6 @@ cs_file_get_default_comm(int       *block_rank_step,
 
   if (block_rank_step != NULL)
     *block_rank_step = _mpi_rank_step;
-
-  if (block_min_size != NULL)
-    *block_min_size = _mpi_min_coll_buf_size;
 
   if (block_comm != NULL) {
     if (_mpi_comm != MPI_COMM_NULL)
@@ -3109,18 +3500,11 @@ cs_file_get_default_comm(int       *block_rank_step,
  * guaranteed to be empty for block reads and writes with files opened using
  * this default.
  *
- * A minimum block size target may also be used, so as to limit the number
- * of active blocks to a value proportional to the data size (limiting
- * latency issues for small data sets, while not requiring too much local
- * memory).
- *
  * For each argument, an "out of range" value may be used to avoid modifying
  * the previous default for that argument.
  *
  * \param[in]  block_rank_step  MPI rank stepping between non-empty blocks for
  *                              file block reads and writes (not set if <= 0)
- * \param[in]  block_min_size   minimum block size target for non-empty
- *                              distributed blocks (not set if  < 1)
  * \param[in]  comm             Handle to main MPI communicator
  *                              (not set if MPI_COMM_SELF)
  */
@@ -3128,7 +3512,6 @@ cs_file_get_default_comm(int       *block_rank_step,
 
 void
 cs_file_set_default_comm(int       block_rank_step,
-                         int       block_min_size,
                          MPI_Comm  comm)
 {
   if (block_rank_step > 0) {
@@ -3136,9 +3519,6 @@ cs_file_set_default_comm(int       block_rank_step,
       block_rank_step = cs_glob_n_ranks;
     _mpi_rank_step = block_rank_step;
   }
-
-  if (block_min_size > -1)
-    _mpi_min_coll_buf_size = block_min_size;
 
   if (comm != MPI_COMM_SELF)
     _mpi_comm = comm;
@@ -3355,7 +3735,7 @@ cs_file_defaults_info(void)
 
   if (cs_glob_n_ranks > 1) {
     int block_rank_step;
-    cs_file_get_default_comm(&block_rank_step, NULL, NULL, NULL);
+    cs_file_get_default_comm(&block_rank_step, NULL, NULL);
     for (log_id = 0; log_id < 2; log_id++)
       cs_log_printf(logs[log_id],
                     _("  I/O rank step:        %d\n"), block_rank_step);

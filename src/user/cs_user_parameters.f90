@@ -212,6 +212,11 @@ use field
 use cavitation
 use post
 use rotation
+use atincl
+use atsoil
+use atchem
+use atimbr
+use sshaerosol
 use cs_c_bindings
 
 !===============================================================================
@@ -287,52 +292,6 @@ integer nmodpp
 
 return
 end subroutine usipes
-
-
-!===============================================================================
-
-
-!> \brief Initialize non-standard calculation options for the atmospheric version.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-
-subroutine usati1
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use ppppar
-use atincl
-use atsoil
-use atchem
-use atimbr
-use sshaerosol
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!----
-! End
-!----
-
-return
-end subroutine usati1
-
 
 !===============================================================================
 ! Purpose:

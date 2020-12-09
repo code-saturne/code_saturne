@@ -60,7 +60,7 @@ double precision turb_schmidt
 !===============================================================================
 
 !===============================================================================
-! 0. VERIFICATIONS
+! 1. VERIFICATIONS
 !===============================================================================
 
 if (ippmod(iatmos).le.1) then
@@ -69,23 +69,6 @@ if (ippmod(iatmos).le.1) then
     call csexit(1)
   endif
 endif
-
-!===============================================================================
-! 1. INFORMATIONS GENERALES
-!===============================================================================
-
-!--> constants used in the atmospheric physics module
-!    (see definition in atincl.h):
-
-ps = 1.0d5
-cpvcpa = 1.866d0
-gammat = -6.5d-03
-rvap = rvsra*rair
-
-! Density and viscosity
-
-irovar = 0
-ivivar = 0
 
 !===============================================================================
 ! 2. Transported variables for IPPMOD(IATMOS) = 0, 1 or 2
@@ -169,13 +152,34 @@ if (nscal.gt.0) then
 endif
 
 !===============================================================================
-! 6. Force RIJ Matrix stabilisation for all atmospheric models
+! 6. Force Rij Matrix stabilisation for all atmospheric models
 !===============================================================================
 
 if (itytur.eq.3) irijnu = 1
 
+!===============================================================================
+! 7. Some initialization for meteo...
+!===============================================================================
+
+if (ippmod(iatmos).ge.0) then
+
+  call init_meteo
+
+  if (imbrication_flag) then
+    call activate_imbrication
+  endif
+
+  call cs_at_data_assim_build_ops
+
+  if (ifilechemistry.ge.1) then
+    call init_chemistry
+  endif
+
+endif
+
+
 !--------
-! FORMATS
+! Formats
 !--------
 
  1003 format(                                                     &

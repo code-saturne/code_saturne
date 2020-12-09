@@ -399,6 +399,13 @@ cs_boundary_id_by_zone_id(const cs_boundary_t  *boundaries,
   if (boundaries == NULL)
     return -1;
 
+  /* Fast test in case boundariy numbers are aligned with zones */
+  if (z_id > -1 && z_id < boundaries->n_boundaries) {
+    if (boundaries->zone_ids[z_id] == z_id)
+      return z_id;
+  }
+
+  /* General test */
   for (int i = 0; i < boundaries->n_boundaries; i++) {
     if (boundaries->zone_ids[i] == z_id)
       return i;
@@ -591,7 +598,7 @@ cs_boundary_def_wall_zones(cs_boundary_t   *boundaries)
  *         Use in CDO schemes for Navier--Stokes
  *
  * \param[in] n_b_faces    number of border faces
- * \param[in] bf_type      array of types of boundary for each boudary face
+ * \param[in] bf_type      array of types of boundary for each boundary face
  *
  * \return 1 if a pressure rescaling is needed otherwise 0
  */

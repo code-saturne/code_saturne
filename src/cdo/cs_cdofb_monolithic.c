@@ -149,21 +149,22 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
+  /* Cell unknows (velocity, pressure, velocity divergence) */
   cs_field_current_to_previous(sc->velocity);
   cs_field_current_to_previous(sc->pressure);
   cs_field_current_to_previous(sc->divergence);
 
-  /* Face velocity arrays */
+  /* Mass flux */
+  memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
+         quant->n_faces * sizeof(cs_real_t));
+
+  /* Face velocity */
   cs_cdofb_vecteq_t  *mom_eqc
     = (cs_cdofb_vecteq_t *)cc->momentum->scheme_context;
 
   if (mom_eqc->face_values_pre != NULL)
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3 * quant->n_faces * sizeof(cs_real_t));
-
-  /* Mass flux arrays */
-  memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
-         quant->n_faces * sizeof(cs_real_t));
 
 }
 
@@ -786,7 +787,7 @@ _add_gravity_source_term(const cs_navsto_param_t           *nsp,
                          const cs_cdofb_navsto_builder_t   *nsb,
                          cs_cell_sys_t                     *csys)
 {
-  assert(nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
+  assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
 
   const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
   const cs_real_t  cell_contrib[3] =
@@ -1894,18 +1895,24 @@ cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp)
 /*!
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
- * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in] bf_type     type of boundary for each boundary face
- * \param[in] cc_context  pointer to a \ref cs_navsto_monolithic_t structure
+ * \param[in] nsp          pointer to a \ref cs_navsto_param_t structure
+ * \param[in] adv_field    pointer to \ref cs_adv_field_t structure
+ * \param[in] mflux        current values of the mass flux across primal faces
+ * \param[in] mflux_pre    current values of the mass flux across primal faces
+ * \param[in] bf_type      type of boundary for each boundary face
+ * \param[in] cc_context   pointer to a \ref cs_navsto_monolithic_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
-                                        cs_boundary_type_t        *bf_type,
-                                        void                      *cc_context)
+cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
+                                        cs_adv_field_t           *adv_field,
+                                        cs_real_t                *mflux,
+                                        cs_real_t                *mflux_pre,
+                                        cs_boundary_type_t       *bf_type,
+                                        void                     *cc_context)
 {
   /* Sanity checks */
   assert(nsp != NULL && cc_context != NULL);
@@ -1923,7 +1930,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
-  sc->coupling_context = cc; /* shared with cs_navsto_system_t */
+  /* Quantities shared with the cs_navsto_system_t structure */
+  sc->coupling_context = cc;
+  sc->adv_field = adv_field;
+  sc->mass_flux_array = mflux;
+  sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");
@@ -1980,10 +1991,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
               __func__);
 
   }
-  /* Source terme induced by the gravity (not the Boussinesq approximation but
+
+  /* Source term induced by the gravity (not the Boussinesq approximation but
      only rho.g) */
   sc->add_gravity_source_term = NULL;
-  if (nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
+  if (nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
     sc->add_gravity_source_term = _add_gravity_source_term;
 
   /* Set the build function */
@@ -2242,7 +2254,8 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   if (nsp->verbosity > 1) {
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2349,16 +2362,17 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
 
-  /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  /* Compute the new current mass flux used as the advection field */
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
   cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
+                                    sc->mass_flux_array_pre,
+                                    sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
 
@@ -2399,16 +2413,17 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                                           sc->divergence->val);
 
     /* Compute the new mass flux used as the advection field */
-    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+    memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
            n_faces*sizeof(cs_real_t));
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                              sc->mass_flux_array);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      cc->mass_flux_array_pre,
-                                      cc->mass_flux_array,
+                                      sc->mass_flux_array_pre,
+                                      sc->mass_flux_array,
                                       div_l2_norm,
                                       nl_info);
 
@@ -2420,16 +2435,15 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Picard iteration for equation \"%s\" diverged.\n",
-              __func__, mom_eqp->name);
+              "%s: Picard iteration for equation \"%s\" diverged.\n"
+              " %s: last_iter=%d; last residual=%5.3e\n",
+              __func__, mom_eqp->name, __func__, nl_info->n_algo_iter,
+              nl_info->res);
   else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
-                  "within the prescribed max. number of iterations.\n",
-                  "Picard", nl_info->res);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf( "%s: Picard algorithm reaches the max. number of iterations\n",
-                __func__);
+    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n"
+               " %s: max_iter=%d; last residual=%5.3e\n",
+               __func__, __func__, nl_info->n_max_algo_iter, nl_info->res);
   }
 
   /* Now compute/update the velocity and pressure fields */
@@ -2493,9 +2507,9 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->build(nsp, dir_values,
+  sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
-            enforced_ids, sc);
+            dir_values, enforced_ids, sc);
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
@@ -2538,7 +2552,8 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   if (nsp->verbosity > 1) {
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2623,9 +2638,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_timer_t  t_solve_start = cs_timer_time();
-
-  cs_iter_algo_reset(nl_info);
-
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
   msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
@@ -2634,6 +2646,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
+  cs_iter_algo_reset(nl_info);
+
   nl_info->n_inner_iter =
     (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
@@ -2649,17 +2663,24 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
-  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+  cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                            sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
+  /* Since a current to previous op. has been done:
+   *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (not t^(n-1)
+   *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
   cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
+                                    sc->mass_flux_array_pre,
+                                    sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
+
+  cs_real_t  *mass_flux_array_k = NULL;
+  cs_real_t  *mass_flux_array_kp1 = sc->mass_flux_array;
 
   while (nl_info->cvg == CS_SLES_ITERATING) {
 
@@ -2697,13 +2718,19 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
+    /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
+    if (mass_flux_array_k == NULL)
+      BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
+    memcpy(mass_flux_array_k, mass_flux_array_kp1, n_faces*sizeof(cs_real_t));
+
+    cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
+                              mass_flux_array_kp1);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      cc->mass_flux_array_pre,
-                                      cc->mass_flux_array,
+                                      mass_flux_array_k,
+                                      mass_flux_array_kp1,
                                       div_l2_norm,
                                       nl_info);
 
@@ -2715,16 +2742,15 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Picard iteration for equation \"%s\" diverged.\n",
-              __func__, mom_eqp->name);
+              "%s: Picard iteration for equation \"%s\" diverged.\n"
+              " %s: last_iter=%d; last residual=%5.3e\n",
+              __func__, mom_eqp->name, __func__, nl_info->n_algo_iter,
+              nl_info->res);
   else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
-                  "within the prescribed max. number of iterations.\n",
-                  "Picard", nl_info->res);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n",
-                __func__);
+    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n"
+               " %s: max_iter=%d; last residual=%5.3e\n",
+               __func__, __func__, nl_info->n_max_algo_iter, nl_info->res);
   }
 
   /* Now compute/update the velocity and pressure fields */
@@ -2734,6 +2760,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
+  if (mass_flux_array_k != NULL)
+    BFT_FREE(mass_flux_array_k);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);

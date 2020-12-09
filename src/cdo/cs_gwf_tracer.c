@@ -89,24 +89,24 @@ static const char _err_empty_tracer[] =
 /*!
  * \brief  Define the coefficient appearing in time-dependent term of the
  *         simulation of tracer equations
- *         This function fits the generic prototype of cs_xdef_cell_eval_t
+ *         This function fits the generic prototype of cs_xdef_eval_t
  *
- * \param[in]      n_elts    number of elements to consider
- * \param[in]      elt_ids   list of element ids
- * \param[in]      compact   indirection for output (true or false)
- * \param[in]      mesh      pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      input     pointer to an input structure cast on-the_fly
- * \param[in, out] result    array storing the result (must be allocated)
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      input         NULL or pointer to a structure cast on-the_fly
+ * \param[in, out] result        array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
                          const cs_lnum_t              elt_ids[],
-                         bool                         compact,
+                         bool                         dense_output,
                          const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
@@ -135,7 +135,7 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  c_id = elt_ids[i];
-      const cs_lnum_t  id = compact ? i : c_id;
+      const cs_lnum_t  id = dense_output ? i : c_id;
       result[id] = theta[c_id] + law->rho_kd[c2s[c_id]];
     }
 
@@ -180,22 +180,22 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
  *         simulation of standard tracer equations.
  *         This function fits the generic prototype of cs_xdef_cell_eval_t
  *
- * \param[in]      n_elts    number of elements to consider
- * \param[in]      elt_ids   list of element ids
- * \param[in]      compact   indirection for output (true or false)
- * \param[in]      mesh      pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      input     pointer to an input structure cast on-the_fly
- * \param[in, out] result    array storing the result (must be allocated)
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  indirection for output (true or false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval        time at which one performs the evaluation
+ * \param[in]      input         NULL or pointer to a structure cast on-the_fly
+ * \param[in, out] result        array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
                              const cs_lnum_t              elt_ids[],
-                             bool                         compact,
+                             bool                         dense_output,
                              const cs_mesh_t             *mesh,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
@@ -230,7 +230,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
 
       const cs_lnum_t  c_id = elt_ids[i];
       const int  s = c2s[c_id];
-      const cs_lnum_t  id = (compact) ? i : c_id;
+      const cs_lnum_t  id = (dense_output) ? i : c_id;
 
       result[id] = (theta[c_id] + law->rho_kd[s]) * law->reaction_rate[s];
 
@@ -248,7 +248,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      input    pointer to an input structure cast on-the_fly
+ * \param[in]      input    NULL or pointer to a structure cast on-the_fly
  * \param[in, out] result   array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/

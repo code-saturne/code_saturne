@@ -77,27 +77,28 @@ static const double k1 = 1e5, k2 = 1;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the explicit definition of the problem for the Richards eq.
- *         pt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
- *         Rely on a generic function pointer for an analytic function
+ *         Generic function pointer for an evaluation relying on an analytic
+ *         function
+ *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         array with an indirection. The same indirection can be applied to
+ *         fill retval if dense_output is set to false.
  *
- * \param[in]      time      when ?
- * \param[in]      n_elts    number of elements to consider
- * \param[in]      pt_ids    list of elements ids (to access coords and fill)
- * \param[in]      coords    where ?
- * \param[in]      compact   true:no indirection, false:indirection for filling
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval    result of the function
+ * \param[in]      time          when ?
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      pt_ids        list of elements ids (in coords and retval)
+ * \param[in]      xyz           where ? Coordinates array
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 get_tracer_sol(cs_real_t          time,
-               cs_lnum_t          n_points,
+               cs_lnum_t          n_elts,
                const cs_lnum_t   *pt_ids,
                const cs_real_t   *xyz,
-               bool               compact,
+               bool               dense_output,
                void              *input,
                cs_real_t         *retval)
 {
@@ -107,9 +108,9 @@ get_tracer_sol(cs_real_t          time,
   const double  magnitude = 2*k1/(k1 + k2);
   const double  x_front = magnitude * time;
 
-  if (pt_ids != NULL && !compact) {
+  if (pt_ids != NULL && !dense_output) {
 
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
+    for (cs_lnum_t  i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = pt_ids[i];
       const double  x = xyz[3*id];
@@ -120,9 +121,9 @@ get_tracer_sol(cs_real_t          time,
     }
 
   }
-  else if (pt_ids != NULL && compact) {
+  else if (pt_ids != NULL && dense_output) {
 
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
+    for (cs_lnum_t  i = 0; i < n_elts; i++) {
       const double  x = xyz[3*pt_ids[i]];
       if (x <= x_front)
         retval[i] = 1;
@@ -133,7 +134,7 @@ get_tracer_sol(cs_real_t          time,
   }
   else {
 
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
+    for (cs_lnum_t  i = 0; i < n_elts; i++) {
       const double  x = xyz[3*i];
       if (x <= x_front)
         retval[i] = 1;

@@ -324,7 +324,7 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
                        const cs_param_sles_t           slesp,
                        KSP                             ksp)
 {
-  if (model & CS_NAVSTO_MODEL_STOKES)
+  if (model == CS_NAVSTO_MODEL_STOKES)
     KSPSetType(ksp, KSPFCG);
 
   else { /* Advection is present, so one needs a more genric iterative solver */
@@ -333,6 +333,7 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
 
     KSPSetType(ksp, KSPFGMRES);
     KSPGMRESSetRestart(ksp, n_max_restart);
+
   }
 
   /* Set KSP tolerances */
@@ -1555,15 +1556,14 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   cs_real_t  normalization = 1.0; /* TODO */
 
   /* Modifiy the tolerance in order to be more accurate on this step */
-  cs_equation_param_t  *_eqp = NULL;
+  cs_param_sles_t  slesp;
 
-  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
-  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
-  sprintf(_eqp->name, "%s:gkb_transfo", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+  cs_param_sles_copy_from(eqp->sles_param, &slesp);
+  slesp.eps = nslesp.il_algo_rtol;
 
-  cs_equation_param_update_from(eqp, _eqp);
-  _eqp->sles_param.eps = nslesp.il_algo_rtol;
+  char  *system_name = NULL;
+  BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
+  sprintf(system_name, "%s:gkb_transfo", eqp->name);
 
   if (gkb->gamma > 0) {
 
@@ -1586,7 +1586,8 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter
         = cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          _eqp,
+                                          system_name,
+                                          slesp,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
@@ -1607,7 +1608,8 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
     gkb->b_tilda[ip] = b_c[ip] - gkb->d__v[ip];
 
-  cs_equation_free_param(_eqp);
+  /* Free memory */
+  BFT_FREE(system_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1721,7 +1723,8 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter =
         cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                        eqp,
+                                        eqp->name,
+                                        eqp->sles_param,
                                         matrix,
                                         cs_shared_range_set,
                                         normalization,
@@ -2365,19 +2368,19 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   double  residual = DBL_MAX;
 
   /* Prepare solving (handle parallelism) */
-  cs_gnum_t  nnz = cs_equation_prepare_system(1,     /* stride */
-                                              n_scatter_elts,
-                                              matrix,
-                                              rset,
-                                              true,  /* rhs_redux */
-                                              xsol, b);
+  cs_equation_prepare_system(1,     /* stride */
+                             n_scatter_elts,
+                             matrix,
+                             rset,
+                             true,  /* rhs_redux */
+                             xsol, b);
 
   /* Solve the linear solver */
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   const cs_param_sles_t  sles_param = eqp->sles_param;
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
   cs_real_t  rtol = sles_param.eps;
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   if (nslesp.strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp.strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
@@ -2399,9 +2402,9 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Output information about the convergence of the resolution */
   if (sles_param.verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "####  %s/SLES: code %-d n_iters %d"
-                  " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
+                  " residual % -8.4e\n",
+                  eqp->name, code, n_iters, residual);
 
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
@@ -2567,7 +2570,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     gkb->info->n_inner_iter
       += (gkb->info->last_inner_iter =
           cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          eqp,
+                                          eqp->name,
+                                          eqp->sles_param,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
@@ -2691,14 +2695,8 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   /* Main loop */
   /* ========= */
 
-  cs_equation_param_t  *_eqp = NULL;
-  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
-  BFT_MALLOC(_eqp->name, strlen(eqp->name)+1, char);
-
-  cs_equation_param_update_from(eqp, _eqp);
-
-  sprintf(_eqp->name, "%s", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+  cs_param_sles_t  slesp;
+  cs_param_sles_copy_from(eqp->sles_param, &slesp);
 
   while (uza->info->cvg == CS_SLES_ITERATING) {
 
@@ -2719,21 +2717,22 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
     /* Solve AL.u_f = rhs */
     cs_real_t  normalization = 1.; /* No need to change this */
-    if (_eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+    if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS) {
 
       /* Inexact algorithm: adaptive tolerance criterion */
       cs_real_t  eps = fmin(1e-2, 0.1*uza->info->res);
-      _eqp->sles_param.eps = fmax(eps, eqp->sles_param.eps);
+      slesp.eps = fmax(eps, eqp->sles_param.eps);
       if (uza->info->verbosity > 1)
         cs_log_printf(CS_LOG_DEFAULT, "### UZA.It%02d-- eps=%5.3e\n",
-                      uza->info->n_algo_iter, _eqp->sles_param.eps);
+                      uza->info->n_algo_iter, slesp.eps);
 
     }
 
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          _eqp,
+                                          eqp->name,
+                                          slesp,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
                                           normalization,
@@ -2759,7 +2758,6 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   int n_inner_iter = uza->info->n_inner_iter;
 
   /* Last step: Free temporary memory */
-  _eqp = cs_equation_free_param(_eqp);
   _free_uza_builder(&uza);
 
   return  n_inner_iter;
@@ -2856,15 +2854,13 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   /* Solve AL.u_f = rhs */
   /* Modifiy the tolerance in order to be more accurate on this step */
-  cs_equation_param_t  *_eqp = NULL;
+  cs_param_sles_t  slesp;
+  cs_param_sles_copy_from(eqp->sles_param, &slesp);
+  slesp.eps = nsp->sles_param.il_algo_rtol;
 
-  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
-  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":alu0") + 1, char);
-  sprintf(_eqp->name, "%s:alu0", eqp->name);
-  _eqp->sles_param.field_id = eqp->sles_param.field_id;
-
-  cs_equation_param_update_from(eqp, _eqp);
-  _eqp->sles_param.eps = nsp->sles_param.il_algo_rtol;
+  char  *system_name = NULL;
+  BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":alu0") + 1, char);
+  sprintf(system_name, "%s:alu0", eqp->name);
 
   cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
                                                             c2f,
@@ -2877,7 +2873,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   uza->info->n_inner_iter
     += (uza->info->last_inner_iter =
         cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        _eqp,
+                                        system_name,
+                                        slesp,
                                         msles->block_matrices[0],
                                         cs_shared_range_set,
                                         normalization,
@@ -2886,7 +2883,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         u_f,
                                         uza->rhs));
 
-  cs_equation_free_param(_eqp);
+  BFT_FREE(system_name);
 
   /* Main loop */
   /* ========= */
@@ -2927,7 +2924,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp,
+                                          eqp->name,
+                                          eqp->sles_param,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
                                           delta_u_l2, /* normalization */

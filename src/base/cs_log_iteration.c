@@ -63,7 +63,6 @@
 #include "cs_lagr_stat.h"
 #include "cs_lagr_log.h"
 
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -169,7 +168,9 @@ static cs_time_plot_t  *_l2_residual_plot = NULL;
  *   -1 if x < y, 0 if x = y, or 1 if x > y
  *----------------------------------------------------------------------------*/
 
-static int _compare_sstats(const void *x, const void *y)
+static int
+_compare_sstats(const void *x,
+                const void *y)
 {
   int retval = 1;
 

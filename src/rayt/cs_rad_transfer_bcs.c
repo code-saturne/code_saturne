@@ -252,7 +252,7 @@ cs_rad_transfer_bcs(int         nvar,
   cs_real_t xmtk;
   if (cs_glob_thermal_model->itpscl == 2)
     xmtk = -tkelvi;
-  else if (cs_glob_thermal_model->itpscl == 1)
+  else
     xmtk = 0.0;
 
   /* Wall temperature */

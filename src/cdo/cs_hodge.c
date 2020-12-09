@@ -3920,7 +3920,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   }
   assert(connect != NULL && quant != NULL); /* Sanity checks */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)              \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)             \
   shared(quant, connect, in_vals, t_eval, result, pty, func_name)  \
   firstprivate(hodgep)
   {
@@ -4140,7 +4140,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
   }
   assert(connect != NULL && quant != NULL); /* Sanity checks */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, flux, t_eval, circul, pty, func_name)          \
   firstprivate(hodgep)
   {

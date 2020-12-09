@@ -104,8 +104,7 @@ class QMegHighlighter(QSyntaxHighlighter):
          'cos', 'sin', 'tan', 'exp', 'sqrt', 'log',
          'acos', 'asin', 'atan', 'atan2', 'cosh', 'sinh',
          'tanh', 'abs', 'mod', 'int', 'min', 'max',
-         'pi', 'e', 'while', 'if', 'else', 'print',
-         'while'
+         'pi', 'e', 'while', 'if', 'else'
     ]
 
     operators = [
@@ -262,7 +261,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
                   "<big><u>Operators and statements:</u></big><br>"\
                   "<b><code> + - * / ^ </code></b><br>"\
                   "<b><code>! &lt; &gt; &lt;= &gt;= == != && || </code></b><br>"\
-                  "<b><code>while if else print</code></b><br>"\
+                  "<b><code>while if else</code></b><br>"\
                   "")
 
         # lay out the text

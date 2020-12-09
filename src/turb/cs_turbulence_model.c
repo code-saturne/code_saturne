@@ -1451,7 +1451,8 @@ cs_turb_compute_constants(void)
       cs_turb_cddes = 0.65;
     else if (cs_glob_turb_model->hybrid_turb == 1)
       cs_turb_cddes = 0.61;
-  } else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K){
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     cs_turb_cddes = 0.60;
   }
 
@@ -2014,7 +2015,9 @@ cs_turb_constants_log_setup(void)
  *
  *----------------------------------------------------------------------------*/
 
-void cs_clip_turbulent_fluxes(int flux_id, int variance_id)
+void
+cs_clip_turbulent_fluxes(int  flux_id,
+                         int  variance_id)
 {
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
@@ -2024,7 +2027,6 @@ void cs_clip_turbulent_fluxes(int flux_id, int variance_id)
   cs_real_3_t *cvar_clip_rit = NULL;
 
   cs_field_t *field_rit = cs_field_by_id(flux_id);
-  cs_field_t *field_tt = cs_field_by_id(variance_id);
 
   /* Local variables */
   const cs_real_t tol_jacobi = 1.0e-12;
@@ -2038,7 +2040,7 @@ void cs_clip_turbulent_fluxes(int flux_id, int variance_id)
   cs_real_3_t rit;
 
   /* Get clippings field for DFM */
-  cs_lnum_t kclipp, kclipp2, clip_rit_id;
+  cs_lnum_t kclipp, clip_rit_id;
   kclipp = cs_field_key_id("clipping_id");
   clip_rit_id = cs_field_get_key_int(field_rit, kclipp);
   if (clip_rit_id >= 0) {

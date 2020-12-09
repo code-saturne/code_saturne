@@ -268,7 +268,10 @@ class StartRestartModel(Model):
         """
         self.isOnOff(status)
         node = self.node_start.xmlInitNode('restart_with_auxiliary', 'status')
-        node['status'] = status
+        if status != self._defaultStartRestartValues()['restart_with_auxiliary']:
+            node['status'] = status
+        else:
+            node.xmlRemoveNode()
 
 
     @Variables.undoLocal

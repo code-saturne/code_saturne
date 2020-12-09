@@ -54,6 +54,7 @@
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_mesh.h"
+#include "cs_mesh_cartesian.h"
 #include "cs_mesh_from_builder.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
@@ -351,28 +352,30 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   }
 
-  bool partition_preprocess = cs_partition_get_preprocess();
+  bool need_partition = cs_partition_get_preprocess();
+  if (cs_glob_mesh->modified & CS_MESH_MODIFIED_BALANCE)
+    need_partition = true;
+
   bool need_save = false;
   if (   (cs_glob_mesh->modified > 0 && cs_glob_mesh->save_if_modified > 0)
       || cs_glob_mesh->save_if_modified > 1)
     need_save = true;
 
-  if (cs_glob_mesh->modified > 0 || partition_preprocess) {
-    if (partition_preprocess) {
-      if (need_save) {
-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output.csm");
-        need_save = false;
-      }
-      else
-        cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
-      cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
-      cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
-      cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-      cs_mesh_update_auxiliary(cs_glob_mesh);
+  if (need_partition) {
+    if (need_save) {
+      cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output.csm");
+      need_save = false;
     }
+    else
+      cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
+
+    cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+    cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
+    cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
+    cs_mesh_update_auxiliary(cs_glob_mesh);
   }
 
-  if (need_save)
+  else if (need_save)
     cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output.csm");
 
   cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
@@ -381,6 +384,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+
+  /* Destroy cartesian mesh builder if necessary */
+  cs_mesh_cartesian_params_destroy();
 
   /* Renumber mesh based on code options */
 

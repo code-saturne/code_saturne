@@ -90,10 +90,44 @@ cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
 static const char
 cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
   { N_("Steady-state"),
-    N_("Implicit"),
-    N_("Explicit"),
+    N_("1st order Forward Euler (Implicit)"),
+    N_("1st order Backward Euler (Explicit)"),
     N_("Crank-Nicolson"),
     N_("Theta scheme")
+  };
+
+static const char
+cs_param_adv_form_name[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
+  { N_("Conservative"),
+    N_("Non-Conservative"),
+    N_("Skew-symmetric"),
+  };
+
+static const char
+cs_param_adv_scheme_name[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
+  { N_("Centered"),
+    N_("Continuous interior penalty"),
+    N_("Continuous interior penalty (cellwise)"),
+    N_("Hybrid centered-upwind"),
+    N_("Upwind with the Samarskii weight function "),
+    N_("Upwind with the Scharfetter-Gummel weight function"),
+    N_("Upwind"),
+  };
+
+static const char
+cs_param_adv_strategy_name
+[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
+  { N_("Fully implicit"),
+    N_("Linearized (implicit)"),
+    N_("Explicit"),
+  };
+
+static const char
+cs_param_adv_extrapol_name
+[CS_PARAM_N_ADVECTION_EXTRAPOLATIONS][CS_BASE_STRING_LEN] =
+  { N_("None"),
+    N_("2nd order Taylor expansion"),
+    N_("2nd order Adams-Bashforth technique"),
   };
 
 static const char
@@ -124,6 +158,36 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Copy a cs_param_sles_t structure from src to dst
+ *
+ * \param[in]   src      reference cs_param_sles_t structure to copy
+ * \param[out]  dst      copy of the reference at exit
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_copy_from(cs_param_sles_t    src,
+                        cs_param_sles_t   *dst)
+{
+  if (dst == NULL)
+    return;
+
+  dst->setup_done = src.setup_done;
+  dst->verbosity = src.verbosity;
+  dst->field_id = src.field_id;
+
+  dst->solver_class = src.solver_class;
+  dst->precond = src.precond;
+  dst->solver = src.solver;
+  dst->amg_type = src.amg_type;
+
+  dst->resnorm_type = src.resnorm_type;
+  dst->n_max_iter = src.n_max_iter;
+  dst->eps = src.eps;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,10 +225,20 @@ cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 {
-  if (scheme == CS_SPACE_N_SCHEMES)
-    return NULL;
-  else
+  switch (scheme) {
+  case CS_SPACE_SCHEME_LEGACY:
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+  case CS_SPACE_SCHEME_CDOEB:
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
     return cs_param_space_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -180,10 +254,118 @@ cs_param_get_space_scheme_name(cs_param_space_scheme_t    scheme)
 const char *
 cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 {
-  if (scheme == CS_TIME_N_SCHEMES)
-    return NULL;
-  else
+  switch (scheme) {
+  case CS_TIME_SCHEME_STEADY:
+  case CS_TIME_SCHEME_EULER_IMPLICIT:
+  case CS_TIME_SCHEME_EULER_EXPLICIT:
+  case CS_TIME_SCHEME_CRANKNICO:
+  case CS_TIME_SCHEME_THETA:
     return cs_param_time_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label associated to the advection formulation
+ *
+ * \param[in] adv_form      type of advection formulation
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_form_name(cs_param_advection_form_t    adv_form)
+{
+  switch (adv_form) {
+  case CS_PARAM_ADVECTION_FORM_CONSERV:
+  case CS_PARAM_ADVECTION_FORM_NONCONS:
+  case CS_PARAM_ADVECTION_FORM_SKEWSYM:
+    return cs_param_adv_form_name[adv_form];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label of the advection scheme
+ *
+ * \param[in] scheme      type of advection scheme
+ *
+ * \return the associated advection scheme label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_scheme_name(cs_param_advection_scheme_t    scheme)
+{
+  switch (scheme) {
+  case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+  case CS_PARAM_ADVECTION_SCHEME_CIP:
+  case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
+  case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
+  case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
+  case CS_PARAM_ADVECTION_SCHEME_SG:
+  case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+    return cs_param_adv_scheme_name[scheme];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label associated to the advection strategy
+ *
+ * \param[in] adv_stra      type of advection strategy
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_strategy_name(cs_param_advection_strategy_t   adv_stra)
+{
+  switch (adv_stra) {
+  case CS_PARAM_ADVECTION_IMPLICIT_FULL:
+  case CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED:
+  case CS_PARAM_ADVECTION_EXPLICIT:
+    return cs_param_adv_strategy_name[adv_stra];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the label associated to the extrapolation used for the advection
+ *         field
+ *
+ * \param[in] adv_stra      type of extrapolation for the advection field
+ *
+ * \return the associated label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_advection_extrapol_name(cs_param_advection_extrapol_t   extrapol)
+{
+  switch (extrapol) {
+  case CS_PARAM_ADVECTION_EXTRAPOL_NONE:
+  case CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2:
+  case CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2:
+    return cs_param_adv_extrapol_name[extrapol];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -199,10 +381,19 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
 const char *
 cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
-  if (type == CS_PARAM_N_BC_TYPES)
-    return NULL;
-  else
+  switch (type) {
+  case CS_PARAM_BC_HMG_DIRICHLET:
+  case CS_PARAM_BC_DIRICHLET:
+  case CS_PARAM_BC_HMG_NEUMANN:
+  case CS_PARAM_BC_NEUMANN:
+  case CS_PARAM_BC_ROBIN:
+  case CS_PARAM_BC_SLIDING:
+  case CS_PARAM_BC_CIRCULATION:
     return cs_param_bc_type_name[type];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -218,10 +409,16 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
 const char *
 cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
 {
-  if (type == CS_PARAM_N_BC_ENFORCEMENTS)
-    return NULL;
-  else
+  switch (type) {
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     return cs_param_bc_enforcement_name[type];
+
+  default:
+    return NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1206,6 +1206,20 @@ _set_key(cs_equation_param_t   *eqp,
 
   switch(key) {
 
+  case CS_EQKEY_ADV_EXTRAPOL:
+    if (strcmp(keyval, "none") == 0)
+      eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
+    else if (strcmp(keyval, "taylor") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
+    else if (strcmp(keyval, "adams_bashforth") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_EXTRAPOL");
+    }
+    break;
+
   case CS_EQKEY_ADV_FORMULATION:
     if (strcmp(keyval, "conservative") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -1246,6 +1260,22 @@ _set_key(cs_equation_param_t   *eqp,
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_ADV_SCHEME");
+    }
+    break;
+
+  case CS_EQKEY_ADV_STRATEGY:
+    if (strcmp(keyval, "fully_implicit") == 0 ||
+        strcmp(keyval, "implicit") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
+    else if (strcmp(keyval, "implicit_linear") == 0 ||
+             strcmp(keyval, "linearized") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
+    else if (strcmp(keyval, "explicit") == 0)
+      eqp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_STRATEGY");
     }
     break;
 
@@ -1687,7 +1717,8 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_SPACE_SCHEME:
-    if (strcmp(keyval, "cdo_vb") == 0) {
+    if (strcmp(keyval, "cdo_vb") == 0 ||
+        strcmp(keyval, "cdovb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
@@ -1697,7 +1728,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
-    else if (strcmp(keyval, "cdo_vcb") == 0) {
+    else if (strcmp(keyval, "cdo_vcb") == 0 ||
+             strcmp(keyval, "cdovcb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
@@ -1706,7 +1738,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
-    else if (strcmp(keyval, "cdo_fb") == 0) {
+    else if (strcmp(keyval, "cdo_fb") == 0 ||
+             strcmp(keyval, "cdofb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
@@ -1714,7 +1747,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
-    else if (strcmp(keyval, "cdo_eb") == 0) {
+    else if (strcmp(keyval, "cdo_eb") == 0 ||
+             strcmp(keyval, "cdoeb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
       eqp->space_poly_degree = 0;
       eqp->time_hodgep.type = CS_HODGE_TYPE_EPFD;
@@ -1753,11 +1787,13 @@ _set_key(cs_equation_param_t   *eqp,
     if (strcmp(keyval, "no") == 0 || strcmp(keyval, "steady") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_STEADY;
     }
-    else if (strcmp(keyval, "euler_implicit") == 0) {
+    else if (strcmp(keyval, "euler_implicit") == 0 ||
+             strcmp(keyval, "forward_euler") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
       eqp->theta = 1.;
     }
-    else if (strcmp(keyval, "euler_explicit") == 0) {
+    else if (strcmp(keyval, "euler_explicit") == 0 ||
+             strcmp(keyval, "backward_euler") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_EULER_EXPLICIT;
       eqp->theta = 0.;
     }
@@ -1928,8 +1964,10 @@ cs_equation_create_param(const char            *name,
   /* Advection term */
   eqp->adv_field = NULL;
   eqp->adv_scaling_property = NULL;
+  eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   eqp->upwind_portion = 0.15;
 
   /* Description of the discretization of the reaction term.
@@ -1990,16 +2028,18 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one
+ *         another one. The name is not copied.
  *
- * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      copy_fid  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_update_from(const cs_equation_param_t   *ref,
-                              cs_equation_param_t         *dst)
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
+                            cs_equation_param_t         *dst,
+                            bool                         copy_fid)
 {
   /* Generic members */
   dst->type = ref->type;
@@ -2079,8 +2119,10 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   cs_hodge_copy_parameters(&(ref->graddiv_hodgep), &(dst->graddiv_hodgep));
 
   /* Advection term */
+  dst->adv_extrapol = ref->adv_extrapol;
   dst->adv_formulation = ref->adv_formulation;
   dst->adv_scheme = ref->adv_scheme;
+  dst->adv_strategy = ref->adv_strategy;
   dst->upwind_portion = ref->upwind_portion;
   dst->adv_field = ref->adv_field;
   dst->adv_scaling_property = ref->adv_scaling_property;
@@ -2148,18 +2190,19 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
   }
 
-  /* Settings for driving the linear algebra.
-     Field id is not copied at this stage. */
-  dst->sles_param.verbosity = ref->sles_param.verbosity;
-  dst->sles_param.solver_class = ref->sles_param.solver_class;
-  dst->sles_param.precond = ref->sles_param.precond;
-  dst->sles_param.solver = ref->sles_param.solver;
-  dst->sles_param.amg_type = ref->sles_param.amg_type;
-  dst->sles_param.n_max_iter = ref->sles_param.n_max_iter;
-  dst->sles_param.eps = ref->sles_param.eps;
-  dst->sles_param.resnorm_type = ref->sles_param.resnorm_type;
+  /* Copy the settings driving the linear algebra algorithms */
+  if (copy_fid)
+    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
 
-  /* Settings for performance */
+  else {
+
+    int save_field_id = dst->sles_param.field_id;
+    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
+    dst->sles_param.field_id = save_field_id;
+
+  }
+
+  /* Settings related to the performance */
   dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
@@ -2664,53 +2707,22 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
                     eqname, cs_property_get_name(eqp->adv_scaling_property));
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation:", eqname);
-    switch(eqp->adv_formulation) {
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation: %s\n",
+                  eqname,
+                  cs_param_get_advection_form_name(eqp->adv_formulation));
 
-    case CS_PARAM_ADVECTION_FORM_CONSERV:
-      cs_log_printf(CS_LOG_SETUP, " Conservative\n");
-      break;
-    case CS_PARAM_ADVECTION_FORM_NONCONS:
-      cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
-      break;
-    case CS_PARAM_ADVECTION_FORM_SKEWSYM:
-      cs_log_printf(CS_LOG_SETUP, " Skew-symmetric\n");
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid operator type for advection.");
-
-    } /* Switch on formulation */
-
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme:", eqname);
-    switch(eqp->adv_scheme) {
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-      cs_log_printf(CS_LOG_SETUP, " centered\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_CIP:
-      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
-      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty (CellWise)\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
-      cs_log_printf(CS_LOG_SETUP, " centered-upwind (%3.2f %% of upwind)\n",
-                    100*eqp->upwind_portion);
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
-      cs_log_printf(CS_LOG_SETUP,
-                    " upwind weighted with Samarskii function\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_SG:
-      cs_log_printf(CS_LOG_SETUP,
-                    " upwind weighted with Scharfetter-Gummel function\n");
-      break;
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-      cs_log_printf(CS_LOG_SETUP, " upwind\n");
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0, " Invalid scheme for advection.");
-    }
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme: %s\n",
+                  eqname,
+                  cs_param_get_advection_scheme_name(eqp->adv_scheme));
+    if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Upwind.Portion: %3.2f %%\n",
+                    eqname, 100*eqp->upwind_portion);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
+                  eqname,
+                  cs_param_get_advection_strategy_name(eqp->adv_strategy));
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Extrapolation: %s\n",
+                  eqname,
+                  cs_param_get_advection_extrapol_name(eqp->adv_extrapol));
 
   } /* Advection term */
 
@@ -2853,7 +2865,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         eqp->dim,
                                         z_id,
-                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        CS_FLAG_STATE_UNIFORM, /* state flag */
                                         meta_flag,
                                         val);
 
@@ -2901,7 +2913,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
                                         eqp->dim,
                                         z_id,
-                                        0, // state flag
+                                        0, /* state flag */
                                         meta_flag,
                                         &quantity);
 
@@ -2953,7 +2965,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
-                                        0, // state flag
+                                        0, /* state flag */
                                         meta_flag,
                                         &ac);
 
@@ -3028,13 +3040,14 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
-  cs_flag_t  bc_flag = cs_cdo_bc_get_flag(bc_type);
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
                                           cs_get_bdy_zone_id(z_name),
-                                          CS_FLAG_STATE_UNIFORM, // state flag
-                                          bc_flag, // meta
+                                          CS_FLAG_STATE_UNIFORM, /* state flag */
+                                          meta_flag,
                                           (void *)values);
 
   int  new_id = eqp->n_bc_defs;
@@ -3108,11 +3121,14 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
   }
 
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,
                                           z_id,
                                           state_flag,
-                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          meta_flag,
                                           (void *)&input);
 
   int  new_id = eqp->n_bc_defs;
@@ -3179,16 +3195,19 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   /* Add a new cs_xdef_t structure */
-  cs_xdef_analytic_context_t  ac = { .z_id = z_id,
-                                     .func = analytic,
-                                     .input = input,
-                                     .free_input = NULL };
+  cs_xdef_analytic_context_t  ac = {.z_id = z_id,
+                                    .func = analytic,
+                                    .input = input,
+                                    .free_input = NULL};
+
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
                                           z_id,
-                                          0, // state
-                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          0, /* state */
+                                          meta_flag,
                                           &ac);
 
   int  new_id = eqp->n_bc_defs;
@@ -3197,6 +3216,171 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
   eqp->bc_defs[new_id] = d;
 
   return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given cs_equation_param_t structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type   type of boundary condition to add
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  location where values are computed
+ * \param[in]      func      pointer to cs_dof_func_t function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
+                               const cs_param_bc_type_t    bc_type,
+                               const char                 *z_name,
+                               cs_flag_t                   loc_flag,
+                               cs_dof_func_t              *func,
+                               void                       *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Set the value for dim */
+  int dim = eqp->dim;
+
+  if (bc_type == CS_PARAM_BC_NEUMANN ||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
+
+  if (bc_type == CS_PARAM_BC_CIRCULATION) {
+    /* This is a vector-valued equation but the DoF is scalar-valued since
+     * it is a circulation associated to each edge */
+    if (eqp->dim == 3)
+      dim = 1;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled.\n", __func__);
+  }
+
+  if (bc_type == CS_PARAM_BC_ROBIN) {
+    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    if (eqp->dim == 1)
+      dim = 3;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled yet.\n", __func__);
+  }
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_dof_context_t  cx = { .z_id = z_id,
+                                .loc = loc_flag,
+                                .func = func,
+                                .input = input,
+                                .free_input = NULL };
+
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_DOF_FUNCTION,
+                                          dim,
+                                          z_id,
+                                          0, /* state */
+                                          meta_flag,
+                                          &cx);
+
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return pointer to existing boundary condition definition structure
+ *         for the given equation param structure and zone.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ *
+ * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_find_bc(cs_equation_param_t   *eqp,
+                    const char            *z_name)
+{
+  if (eqp == NULL)
+    return NULL;
+
+  int z_id = -2;
+
+  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+  if (z != NULL)
+    z_id = z->id;
+
+  /* Search for given BC. */
+  for (int i = 0; i < eqp->n_bc_defs; i++) {
+    if (eqp->bc_defs[i]->z_id == z_id) {
+      return eqp->bc_defs[i];
+    }
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove boundary condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_bc(cs_equation_param_t   *eqp,
+                      const char            *z_name)
+{
+  if (eqp == NULL)
+    return;
+
+  int z_id = -2;
+
+  const cs_zone_t  *z = cs_boundary_zone_by_name_try(z_name);
+  if (z != NULL)
+    z_id = z->id;
+
+  /* Search for given BC. */
+  int j = -1;
+  for (int i = 0; i < eqp->n_bc_defs; i++) {
+    if (eqp->bc_defs[i]->z_id == z_id) {
+      j = i;
+      break;
+    }
+  }
+
+  /* Remove it if found */
+  if (j > -1) {
+    eqp->bc_defs[j] = cs_xdef_free(eqp->bc_defs[j]);
+    for (int i = j+1; i < eqp->n_bc_defs; i++) {
+      eqp->bc_defs[i-1] = eqp->bc_defs[i];
+    }
+    eqp->n_bc_defs -= 1;
+    BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -43,6 +43,7 @@ use cstphy
 use ppppar
 use optcal
 use atincl
+use ctincl, only: cp_a, cp_v
 use cs_c_bindings
 
 !===============================================================================
@@ -58,6 +59,8 @@ integer           imode
 
 ! Local variables
 
+character(len=80) :: ficmet
+
 integer itp, ii, ios, k
 integer year, quant,hour,minute, month, day
 integer ih2o
@@ -67,6 +70,7 @@ double precision sjday, jday
 double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
+double precision cpvcpa
 
 character(len=80) :: ccomnt,oneline
 character(len=1)  :: csaute
@@ -86,6 +90,8 @@ endif
 CSAUTE = '/'
 
 ! --> Opens the meteo file
+call atmo_get_meteo_file_name(ficmet)
+
 open (unit=impmet, file=ficmet,                                  &
      status='old', form='formatted', access='sequential',       &
      iostat=ios, err=99)
@@ -93,6 +99,8 @@ rewind(unit=impmet, err=99)
 
 itp=0
 ih2o = 0
+
+cpvcpa = cp_v / cp_a
 
 if (imode.eq.1) then
   rscp=rair/cp0
@@ -149,7 +157,7 @@ else
     call csexit (1)
   endif
 
-  ! --> if the date and time are not completed in usati1.f90,
+  ! --> if the date and time are not completed in usppmo / cs_user_model
   !     the date and time of the first meteo profile are taken as the
   !     starting time of the simulation
 

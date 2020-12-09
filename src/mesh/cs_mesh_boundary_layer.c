@@ -631,7 +631,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   cs_mesh_quantities_free_all(mq);
 
-  m->modified = 1;
+  m->modified |= CS_MESH_MODIFIED;
 }
 
 /*---------------------------------------------------------------------------*/

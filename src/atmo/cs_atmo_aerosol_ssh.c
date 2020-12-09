@@ -442,7 +442,7 @@ cs_atmo_aerosol_ssh_initialize(void)
 
   /* Get the number of aerosol layers */
   cs_glob_atmo_chemistry->n_layer = _recv_int(_aerosol_so,
-                                              "api_sshaerosol_get_nlayer_");
+                                              "api_sshaerosol_get_n_aerosol_layers_");
 
   /* Get the number of aerosols */
   cs_glob_atmo_chemistry->n_size = _recv_int(_aerosol_so,

@@ -78,18 +78,19 @@ static FILE  *resume = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function pointer for an analytic function
- *         elt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
+ * \brief  Generic function pointer for an evaluation relying on an analytic
+ *         function
+ *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         array with an indirection. The same indirection can be applied to
+ *         fill retval if dense_output is set to false.
  *
- * \param[in]      time     when ?
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids (to access coords and fill)
- * \param[in]      coords   where ?
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      time          when ?
+ * \param[in]      n_pts         number of elements to consider
+ * \param[in]      pt_ids        list of elements ids (in coords and retval)
+ * \param[in]      xyz           where ? Coordinates array
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -98,7 +99,7 @@ _get_sol(cs_real_t          time,
          cs_lnum_t          n_pts,
          const cs_lnum_t    pt_ids[],
          const cs_real_t   *xyz,
-         bool               compact,
+         bool               dense_output,
          void              *input,
          cs_real_t         *retval)
 {
@@ -106,7 +107,7 @@ _get_sol(cs_real_t          time,
   CS_UNUSED(input);
 
   const double  pi = 4.0*atan(1.0);
-  if (pt_ids != NULL && !compact) {
+  if (pt_ids != NULL && !dense_output) {
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
 
@@ -119,7 +120,7 @@ _get_sol(cs_real_t          time,
     }
 
   }
-  else if (pt_ids != NULL && compact) {
+  else if (pt_ids != NULL && dense_output) {
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
       const cs_real_t  *_xyz = xyz + 3*pt_ids[p];

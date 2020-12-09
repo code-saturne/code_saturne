@@ -153,7 +153,7 @@ def update_case(options, pkg):
         # (we should try to deprecate the copying of reference data
         # or use the GUI to align it with the active options)
         if os.path.exists(user):
-            abs_f = os.path.join(datadir, 'cs_user_scripts.py')
+            abs_f = os.path.join(datadir, 'data', 'user', 'cs_user_scripts.py')
             shutil.copy(abs_f, user)
             unset_executable(user)
 
@@ -169,34 +169,14 @@ def update_case(options, pkg):
         if not os.path.isdir(src):
             os.mkdir(src)
 
-        user_ref_distpath = os.path.join(datadir, 'user')
-        user_examples_distpath = os.path.join(datadir, 'user_examples')
+        user_ref_distpath = os.path.join(datadir, 'user_sources')
+        for srcdir in ('REFERENCE', 'EXAMPLES', 'EXAMPLES_neptune_cfd'):
+            if os.path.isdir(os.path.join(user_ref_distpath, srcdir)):
+                copy_directory(os.path.join(user_ref_distpath, srcdir),
+                               os.path.join(src, srcdir),
+                               True)
 
-        user_ref = os.path.join(src, 'REFERENCE')
-        user_examples = os.path.join(src, 'EXAMPLES')
-
-        copy_directory(user_ref_distpath, user_ref, True)
-        copy_directory(user_examples_distpath, user_examples, True)
-
-        add_datadirs = []
-
-        # If neptune_cfd is present, copy user functions to EXAMPLES folder
-        ncfd_user_examples = os.path.join(pkg.get_dir("datadir"),
-                                          "neptune_cfd")
-        if os.path.isdir(ncfd_user_examples):
-            add_datadirs.append(ncfd_user_examples)
-
-        for d in add_datadirs:
-            user_ref_distpath = os.path.join(d, 'user')
-            if os.path.isdir(user_ref_distpath):
-                copy_directory(user_ref_distpath, user, True)
-
-            user_examples_distpath = os.path.join(d, 'user_examples')
-            if os.path.isdir(user_examples_distpath):
-                copy_directory(user_examples_distpath, user_examples, True)
-
-        unset_executable(user_ref)
-        unset_executable(user_examples)
+            unset_executable(os.path.join(src, srcdir))
 
         # Results directory (only one for all instances)
 

@@ -1819,33 +1819,37 @@ _scotch_cell_cells(size_t        n_cells,
   start_id = _cell_idx[0]; /* also = 0 */
   end_id = 0;
 
-  for (i = 0; i < n_cells; i++) {
+  if (_cell_neighbors != NULL) {
 
-    SCOTCH_Num j, n_prev;
+    for (i = 0; i < n_cells; i++) {
 
-    end_id = _cell_idx[i+1];
+      SCOTCH_Num j, n_prev;
 
-    _scotch_sort_shell(start_id, end_id, _cell_neighbors);
+      end_id = _cell_idx[i+1];
 
-    n_prev = _cell_neighbors[start_id];
-    _cell_neighbors[c_id] = n_prev;
-    c_id += 1;
+      _scotch_sort_shell(start_id, end_id, _cell_neighbors);
 
-    for (j = start_id + 1; j < end_id; j++) {
-      if (_cell_neighbors[j] != n_prev) {
-        n_prev = _cell_neighbors[j];
-        _cell_neighbors[c_id] = n_prev;
-        c_id += 1;
+      n_prev = _cell_neighbors[start_id];
+      _cell_neighbors[c_id] = n_prev;
+      c_id += 1;
+
+      for (j = start_id + 1; j < end_id; j++) {
+        if (_cell_neighbors[j] != n_prev) {
+          n_prev = _cell_neighbors[j];
+          _cell_neighbors[c_id] = n_prev;
+          c_id += 1;
+        }
       }
+
+      start_id = end_id;
+      _cell_idx[i+1] = c_id;
+
     }
 
-    start_id = end_id;
-    _cell_idx[i+1] = c_id;
+    if (c_id < end_id)
+      BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   }
-
-  if (c_id < end_id)
-    BFT_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
 
   /* Set return values */
 
@@ -2404,7 +2408,7 @@ _write_output(cs_gnum_t  n_g_cells,
     MPI_Info  hints;
     MPI_Comm  block_comm, comm;
     cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
     fh = cs_io_initialize(filename,
                           magic_string,
@@ -2522,7 +2526,7 @@ _read_cell_rank(cs_mesh_t          *mesh,
     MPI_Info           hints;
     MPI_Comm           block_comm, comm;
     cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
     rank_pp_in = cs_io_initialize(file_name,
                                   magic_string,

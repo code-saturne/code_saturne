@@ -87,6 +87,10 @@ def process_cmd_line(argv, pkg):
                       action="store_false",
                       help="don't copy references")
 
+    parser.add_option("--copy-ref", dest="use_ref",
+                      action="store_true",
+                      help="copy references and examples")
+
     parser.add_option("-q", "--quiet",
                       action="store_const", const=0, dest="verbose",
                       help="do not output any information")
@@ -107,8 +111,8 @@ def process_cmd_line(argv, pkg):
                       metavar="<py_case>",
                       help="create a new Python script case.")
 
-    parser.set_defaults(use_ref=True)
-    parser.set_defaults(study_name=os.path.basename(os.getcwd()))
+    parser.set_defaults(use_ref=False)
+    parser.set_defaults(study_name=None)
     parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
     parser.set_defaults(verbose=1)
@@ -239,7 +243,7 @@ class study:
 
     def __init__(self,
                  package,
-                 name,
+                 study_name,
                  cases=[],
                  syr_case_names=[],
                  cat_case_name=None,
@@ -255,7 +259,7 @@ class study:
 
         self.package = package
 
-        self.name = name
+        self.study_name = study_name
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
@@ -275,18 +279,20 @@ class study:
 
         self.py_case_name = py_case_name
 
+    #---------------------------------------------------------------------------
 
     def create(self):
         """
         Create a study.
         """
 
-        if self.name != os.path.basename(os.getcwd()):
+        cur_dir = os.getcwd()
 
+        if self.study_name:
             if self.verbose > 0:
-                sys.stdout.write("  o Creating study '%s'...\n" % self.name)
-            os.mkdir(self.name)
-            os.chdir(self.name)
+                sys.stdout.write("  o Creating study '%s'...\n" % self.study_name)
+            os.mkdir(self.study_name)
+            os.chdir(self.study_name)
             os.mkdir('MESH')
             os.mkdir('POST')
 
@@ -302,13 +308,7 @@ class study:
 
         # Creating Cathare case
         if self.cat_case_name is not None:
-            config = configparser.ConfigParser()
-            config.read(self.package.get_configfiles())
-            if config.has_option('install', 'cathare'):
-                self.create_cathare_case(repbase, config.get('install', 'cathare'))
-            else:
-                sys.stderr.write("Cannot locate Cathare installation.")
-                sys.exit(1)
+            self.create_cathare_case(repbase)
 
         # Creating the Python script case
         if self.py_case_name is not None:
@@ -320,6 +320,10 @@ class study:
             self.create_coupling(repbase)
             create_local_launcher(self.package, repbase)
 
+        if repbase != cur_dir:
+            os.chdir(cur_dir)
+
+    #---------------------------------------------------------------------------
 
     def create_syrthes_cases(self, repbase):
         """
@@ -340,8 +344,9 @@ class study:
 
         os_environ = os_env_save
 
+    #---------------------------------------------------------------------------
 
-    def create_cathare_case(self, repbase, cathare_path):
+    def create_cathare_case(self, repbase):
         """
         Create and initialize Cathare case directory for coupling.
         """
@@ -349,6 +354,7 @@ class study:
         os.chdir(repbase)
         self.create_case(self.cat_case_name)
 
+    #---------------------------------------------------------------------------
 
     def create_python_case(self, repbase):
         """
@@ -372,6 +378,7 @@ class study:
             if not os.path.isdir(d):
                 os.mkdir(d)
 
+    #---------------------------------------------------------------------------
 
     def create_coupling(self, repbase):
         """
@@ -442,21 +449,13 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-
-        if self.cat_case_name is not None:
-            config = configparser.ConfigParser()
-            config.read(self.package.get_configfiles())
-            cathare_libpath=config.get('install', 'cathare')
-        else:
-            cathare_libpath=None
-
         self.__build_run_cfg__(distrep = repbase,
-                               casename = 'coupling',
-                               cathare_path = cathare_libpath)
+                               casename = 'coupling')
 
         self.__coupled_run_cfg__(distrep = repbase,
                                  coupled_domains = coupled_domains)
 
+    #---------------------------------------------------------------------------
 
     def create_case(self, casename):
         """
@@ -465,17 +464,17 @@ class study:
 
         casedirname = casename
 
-        if self.verbose > 0:
-            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
-
         datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
 
-        try:
-            os.mkdir(casedirname)
-        except:
-            sys.exit(1)
+        if os.path.exists(casedirname):
+            sys.stdout.write("  o Case  '%s' already exists\n" % casename)
+            return
 
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
+
+        os.mkdir(casedirname)
         os.chdir(casedirname)
 
         if self.copy is not None:
@@ -494,18 +493,9 @@ class study:
             unset_executable(data)
 
         if self.use_ref:
-
-            thch_distpath = os.path.join(data_distpath, 'thch')
+            thch_distpath = os.path.join(data_distpath, 'user')
             ref           = os.path.join(data, 'REFERENCE')
-            os.mkdir(ref)
-            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_C4P', 'dp_ELE',
-                      'dp_FUE', 'dp_transformers', 'meteo']:
-                abs_f = os.path.join(thch_distpath, f)
-                if os.path.isfile(abs_f):
-                    shutil.copy(abs_f, ref)
-                    unset_executable(ref)
-            abs_f = os.path.join(datadir, 'cs_user_scripts.py')
-            shutil.copy(abs_f, ref)
+            shutil.copytree(thch_distpath, ref)
             unset_executable(ref)
 
         # Write a wrapper for code and launching
@@ -525,43 +515,13 @@ class study:
         # User source files directory
 
         src = 'SRC'
-        os.mkdir(src)
 
         if self.use_ref:
-
-            user_distpath = os.path.join(datadir, 'user')
-            user_examples_distpath = os.path.join(datadir, 'user_examples')
-
-            user = os.path.join(src, 'REFERENCE')
-            user_examples = os.path.join(src, 'EXAMPLES')
-            shutil.copytree(user_distpath, user)
-            shutil.copytree(user_examples_distpath, user_examples)
-
-            add_datadirs = []
-
-            # If neptune_cfd is present, copy user functions to EXAMPLES folder
-            ncfd_user_examples = os.path.join(self.package.get_dir("datadir"),
-                                              "neptune_cfd")
-            if os.path.isdir(ncfd_user_examples):
-                add_datadirs.append(ncfd_user_examples)
-
-            for d in add_datadirs:
-                user_distpath = os.path.join(d, 'user')
-                user_examples_distpath = os.path.join(d, 'user_examples')
-
-                if os.path.isdir(user_distpath):
-                    s_files = os.listdir(user_distpath)
-                    for f in s_files:
-                        shutil.copy(os.path.join(user_distpath, f), user)
-
-                if os.path.isdir(user_examples_distpath):
-                    s_files = os.listdir(user_examples_distpath)
-                    for f in s_files:
-                        shutil.copy(os.path.join(user_examples_distpath, f),
-                                    user_examples)
-
-            unset_executable(user)
-            unset_executable(user_examples)
+            user_distpath = os.path.join(datadir, 'user_sources')
+            shutil.copytree(user_distpath, src)
+            unset_executable(src)
+        else:
+            os.mkdir(src)
 
         # Copy data and source files from another case
 
@@ -632,6 +592,8 @@ class study:
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
+    #---------------------------------------------------------------------------
+
     def __coupled_run_cfg__(self,
                           distrep,
                           coupled_domains=[]):
@@ -663,10 +625,11 @@ class study:
 
         run_conf.save()
 
+    #---------------------------------------------------------------------------
+
     def __build_run_cfg__(self,
                           distrep,
-                          casename,
-                          cathare_path=None):
+                          casename):
         """
         Retrieve batch file for the current system
         Update batch file for the study
@@ -687,20 +650,9 @@ class study:
                                         package=self.package,
                                         create_if_missing=True)
 
-        # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
-        # This modification is needed for the dlopen of the cathare .so file
-        if cathare_path:
-            i_c = cs_run_conf.get_install_config_info(self.package)
-            resource_name = cs_run_conf.get_resource_name(i_c)
-            v25_3_line="export v25_3=%s\n" % cathare_path
-            new_line="export LD_PATH_LIBRARY=$v25_3/%s/"+":$LD_LIBRARY_PATH\n"
-            add_lines = v25_3_line
-            add_lines += new_line % ("lib")
-            add_lines += new_line % ("ICoCo/lib")
-            run_conf.set(resource_name, 'compute_prologue', add_lines)
-
         run_conf.save()
 
+    #---------------------------------------------------------------------------
 
     def dump(self):
         """
@@ -708,7 +660,12 @@ class study:
         """
 
         print()
-        print("Name  of the study:", self.name)
+
+        name = self.study_name
+        if not name:
+            name = os.path.basename(os.getcwd())
+
+        print("Name  of the study:", name)
         print("Names of the cases:", self.cases)
         if self.copy is not None:
             print("Copy from case:", self.copy)
@@ -724,7 +681,6 @@ class study:
             for c in self.py_case_name:
                 print("  " + c)
         print()
-
 
 #-------------------------------------------------------------------------------
 # Creation of the case of study directory tree

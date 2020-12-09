@@ -35,4 +35,4 @@ else
 fi
 
 bindir=`dirname $0`
-exec "@PYTHON@" "$bindir/code_saturne.py" $@
+exec "@PYTHON@" "$bindir/code_saturne.py" "$@"

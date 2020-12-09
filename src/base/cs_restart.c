@@ -197,7 +197,8 @@ static int _restart_present = 0;
 /* Restart time steps and frequency */
 
 static int    _checkpoint_mesh = 1;          /* checkpoint mesh if possible */
-static int    _checkpoint_nt_interval = -1;  /* time step interval */
+/* time step interval */
+static int    _checkpoint_nt_interval = CS_RESTART_INTERVAL_ONLY_AT_END;
 static int    _checkpoint_nt_next = -1;      /* next forced time step */
 static int    _checkpoint_nt_last = -1;      /* last checkpoint time step */
 static double _checkpoint_t_interval = -1.;  /* physical time interval */
@@ -345,15 +346,13 @@ _add_file(cs_restart_t  *r)
 
 #if defined(HAVE_MPI)
   {
-    int                block_rank_step, min_block_size;
     MPI_Info           hints;
     MPI_Comm           block_comm, comm;
 
-    cs_file_get_default_comm(&block_rank_step, &min_block_size,
-                             &block_comm, &comm);
+    cs_file_get_default_comm(NULL, &block_comm, &comm);
 
-    r->rank_step = block_rank_step;
-    r->min_block_size = min_block_size;
+    r->rank_step = 1;
+    r->min_block_size = cs_parall_get_min_coll_buf_size();
     assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
 
     if (r->mode == CS_RESTART_MODE_READ) {
@@ -532,7 +531,7 @@ _write_ent_values(const cs_restart_t     *r,
   cs_lnum_t  block_buf_size = 0;
 
   cs_datatype_t elt_type = CS_DATATYPE_NULL;
-  size_t      nbr_byte_ent;
+  size_t      nbr_byte_ent = 0;
   cs_byte_t  *buffer = NULL;
 
   cs_block_dist_info_t bi;
@@ -1988,12 +1987,12 @@ cs_restart_checkpoint_required(const cs_time_step_t  *ts)
 
   bool retval = false;
 
-  if (_checkpoint_nt_interval > -2) {
+  if (_checkpoint_nt_interval > CS_RESTART_INTERVAL_NONE) {
 
-    if (ts->nt_cur == ts->nt_max)
+    if (ts->nt_cur == ts->nt_max)    /* Output at the last time step */
       retval = true;
 
-    else if (_checkpoint_nt_interval == 0) {
+    else if (_checkpoint_nt_interval == CS_RESTART_INTERVAL_DEFAULT) {
       /* default interval: current number of expected time_steps for this run,
          with a minimum of 10. */
       int nt_def = (ts->nt_max - ts->nt_prev)/4;
@@ -2003,10 +2002,12 @@ cs_restart_checkpoint_required(const cs_time_step_t  *ts)
         retval = true;
     }
 
-    else if (_checkpoint_nt_interval > 0 && nt % _checkpoint_nt_interval == 0)
+    else if (_checkpoint_nt_interval > CS_RESTART_INTERVAL_DEFAULT &&
+             nt % _checkpoint_nt_interval == 0)
       retval = true;
 
-    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_last > -1) {
+    else if (_checkpoint_nt_interval > CS_RESTART_INTERVAL_DEFAULT &&
+             _checkpoint_nt_last > -1) {
       if (ts->nt_cur >= _checkpoint_nt_interval + _checkpoint_nt_last)
         retval = true;
     }
@@ -4029,8 +4030,11 @@ void
 cs_restart_set_n_max_checkpoints(int  n_checkpoints)
 {
   if (n_checkpoints <= 0) {
-    _checkpoint_nt_interval = -2;          /* deactivate checkpointing */
+
+    /* deactivate checkpointing */
+    _checkpoint_nt_interval = CS_RESTART_INTERVAL_NONE;
     _n_restart_directories_to_write = 0;
+
   }
   else
     _n_restart_directories_to_write = n_checkpoints;

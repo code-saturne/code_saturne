@@ -141,7 +141,9 @@ cs_f_coincl_get_pointers(double  **coefeg,
 void
 cs_f_cpincl_get_pointers(int     **ico2,
                          int     **ih2o,
+                         int     **ncharb,
                          int     **nclacp,
+                         int     **nclpch,
                          int     **ichcor,
                          double  **xashch,
                          double  **diam20,
@@ -254,6 +256,7 @@ cs_f_coincl_get_pointers(double  **coefeg,
  *   ico2   --> pointer to cs_glob_combustion_model->ico2
  *   ih2o   --> pointer to cs_glob_combustion_model->ih2o
  *   nclacp --> pointer to cs_glob_combustion_model->coal.nclacp
+ *   nclacp --> pointer to cs_glob_combustion_model->coal.n_classes_per_coal
  *   ichcor --> pointer to cs_glob_combustion_model->coal.ichcor
  *   xashch --> pointer to cs_glob_combustion_model->coal.xashch
  *   diam20 --> pointer to cs_glob_combustion_model->coal.diam20
@@ -267,7 +270,9 @@ cs_f_coincl_get_pointers(double  **coefeg,
 void
 cs_f_cpincl_get_pointers(int     **ico2,
                          int     **ih2o,
+                         int     **ncharb,
                          int     **nclacp,
+                         int     **nclpch,
                          int     **ichcor,
                          double  **xashch,
                          double  **diam20,
@@ -279,7 +284,9 @@ cs_f_cpincl_get_pointers(int     **ico2,
 {
   *ico2   = &(cs_glob_combustion_model->ico2);
   *ih2o   = &(cs_glob_combustion_model->ih2o);
+  *ncharb = &(cs_glob_combustion_model->coal.n_coals);
   *nclacp = &(cs_glob_combustion_model->coal.nclacp);
+  *nclpch = &(cs_glob_combustion_model->coal.n_classes_per_coal);
   *ichcor = cs_glob_combustion_model->coal.ichcor;
   *xashch = cs_glob_combustion_model->coal.xashch;
   *diam20 = cs_glob_combustion_model->coal.diam20;

@@ -205,7 +205,7 @@ _he_fraction_05_select(void        *input,
 
   const cs_mesh_t *m = cs_glob_mesh;
 
-  cs_field_t *f = cs_field_by_name("He_fraction"); /* Get access to field */
+  cs_field_t *f = cs_field_by_name_try("He_fraction"); /* Get access to field */
 
   if (f == NULL)
     bft_error(__FILE__, __LINE__, 0,

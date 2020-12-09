@@ -107,11 +107,11 @@ BEGIN_C_DECLS
         Please refer to the
         <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
         of the theory guide for more informations.
-  \var  cs_stokes_model_t::mass_preconditioner
-        <a name="mass_preconditioner"></a>
-        Preconditioner for mass:\n
-         - 0: dt (by default).\n
-         - 1: 1/A_u\n
+  \var  cs_stokes_model_t::rcfact
+        <a name="rcfact"></a>
+        Factor of the Rhie and Chow filter:\n
+        - 0: dt (by default),\n
+        - 1: 1/A_u.\n
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -136,7 +136,7 @@ BEGIN_C_DECLS
         \f$>\f$ 0 and the calculation is a restart.
   \var  cs_stokes_model_t::idilat
         algorithm to take into account the density variation in time
-        - 0: Boussinesq approximation (rho constant expect in the buoyant
+        - 0: Boussinesq approximation (rho constant except in the buoyant
              term where \f$\Delta \rho \vect{g} = - \rho \beta \Delta T \vect{g} \f$
         - 1: dilatable steady algorithm (default)
         - 2: dilatable unsteady algorithm
@@ -244,7 +244,7 @@ static cs_stokes_model_t  _stokes_model = {
   .irevmc = 0,
   .iprco  = 1,
   .arak   = 1.0,
-  .mass_preconditioner = 0,
+  .rcfact = 0,
   .ipucou = 0,
   .iccvfg = 0,
   .idilat = 1,
@@ -270,7 +270,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
-                                 int     **mass_preconditioner,
+                                 int     **rcfact,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -299,8 +299,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
  *   arak    --> pointer to cs_glob_stokes_model->arak
- *   mass_preconditioner
- *           --> pointer to cs_glob_stokes_model->mass_preconditioner
+ *   rcfact  --> pointer to cs_glob_stokes_model->rcfact
  *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
  *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
  *   idilat  --> pointer to cs_glob_stokes_model->idilat
@@ -320,7 +319,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
-                                 int     **mass_preconditioner,
+                                 int     **rcfact,
                                  int     **ipucou,
                                  int     **iccvfg,
                                  int     **idilat,
@@ -338,7 +337,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);
   *arak   = &(_stokes_model.arak);
-  *mass_preconditioner = &(_stokes_model.mass_preconditioner);
+  *rcfact = &(_stokes_model.rcfact);
   *ipucou = &(_stokes_model.ipucou);
   *iccvfg = &(_stokes_model.iccvfg);
   *idilat = &(_stokes_model.idilat);
@@ -558,10 +557,9 @@ cs_stokes_model_log_setup(void)
        var_cal_opt.relaxv * stokes_model->arak);
   }
   cs_log_printf
-    (CS_LOG_SETUP,
-     _("    mass_preconditioner %d\n"),
-     stokes_model->mass_preconditioner);
-
+      (CS_LOG_SETUP,
+       _("  Factor of Rhie and Chow %d\n"),
+       stokes_model->rcfact);
   if (stokes_model->fluid_solid)
     cs_log_printf
       (CS_LOG_SETUP,

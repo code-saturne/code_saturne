@@ -103,9 +103,9 @@ cs_rad_transfer_write(void)
                   "      -----------------------------------\n"
                   "    Writing a restart file\n"));
 
-  cs_restart_t *rp = cs_restart_create ("radiative_transfer.csc",
-                                        NULL,
-                                        CS_RESTART_MODE_WRITE);
+  cs_restart_t *rp = cs_restart_create("radiative_transfer.csc",
+                                       NULL,
+                                       CS_RESTART_MODE_WRITE);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("      Write start\n"));

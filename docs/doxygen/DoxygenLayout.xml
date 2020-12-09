@@ -12,6 +12,9 @@
       <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
       <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
       <tab type="user" visible="yes" url="@ref cs_ug_output" title="Managing and analyzing the output"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_udf" title="User-defined functions"/>
+    </tab>
+    <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup">
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">

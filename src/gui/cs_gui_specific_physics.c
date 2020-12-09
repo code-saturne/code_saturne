@@ -53,7 +53,6 @@
 #include "cs_cf_model.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
-#include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -527,6 +526,38 @@ _get_nox_reburning(cs_tree_node_t  *tn_nox,
     *keyword = 2;
 }
 
+/*----------------------------------------------------------------------------
+ * Atmospheric flows: read of meteorological file of data
+ *----------------------------------------------------------------------------*/
+
+static void
+_gui_atmo_get_set_meteo_file(void)
+{
+  const char path_af[] = "thermophysical_models/atmospheric_flows";
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_af);
+
+  if (tn == NULL)
+    return;
+
+  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
+
+  if (cs_glob_atmo_option->meteo_profile == 1) {
+
+    const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
+
+    /* Copy string */
+    if (cstr != NULL)
+      cs_atmo_set_meteo_file_name(cstr);
+
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
+#endif
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -547,22 +578,26 @@ _get_nox_reburning(cs_tree_node_t  *tn_nox,
 void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
                                 double *const diftl0)
 {
-  cs_var_t  *vars = cs_glob_var;
-
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "numerical_parameters/density_relaxation");
 
   cs_gui_node_get_real(tn, srrom);
 
-  if (cs_gui_strcmp(vars->model, "gas_combustion") ||
-      cs_gui_strcmp(vars->model, "solid_fuels")) {
-    cs_gui_properties_value("dynamic_diffusion", diftl0);
+  bool gas_combustion = false;
+  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+       m_type <= CS_COMBUSTION_FUEL;
+       m_type++) {
+    if (cs_glob_physical_model_flag[m_type] > -1)
+      gas_combustion = true;
   }
+
+  if (gas_combustion)
+    cs_gui_properties_value("dynamic_diffusion", diftl0);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--srrom  = %f\n", *srrom);
-  if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+  if (gas_combustion) {
     bft_printf("--diftl0  = %f\n", *diftl0);
   }
 #endif
@@ -586,62 +621,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
   bft_printf("==> %s\n", __func__);
   bft_printf("--toxy  = %f\n", *toxy);
   bft_printf("--tfuel  = %f\n", *tfuel);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Atmospheric flows: read of meteorological file of data
- *
- * Fortran Interface:
- *
- * subroutine uiati1
- * *****************
- * char(*)         fmeteo   <--   meteo file name
- * int             len      <--   meteo file name destination string length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiati1, UIATI1) (char          *fmeteo,
-                                int           *len
-                                CS_ARGF_SUPP_CHAINE)
-{
-  const char path_af[] = "thermophysical_models/atmospheric_flows";
-
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path_af);
-
-  if (tn == NULL)
-    return;
-
-  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
-
-  if (cs_glob_atmo_option->meteo_profile) {
-
-    const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
-
-    /* Copy string */
-
-    if (cstr != NULL) {
-
-      /* Compute string length (removing start or end blanks) */
-
-      int l = strlen(cstr);
-      if (l > *len)
-        l = *len;
-
-      for (int i = 0; i < l; i++)
-        fmeteo[i] = cstr[i];
-
-      /* Pad with blanks if necessary */
-
-      for (int i = l; i < *len; i++)
-        fmeteo[i] = ' ';
-
-    }
-
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
 #endif
 }
 
@@ -716,8 +695,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
                                 double       *repnle,
                                 double       *repnlo)
 {
-  cs_var_t  *vars = cs_glob_var;
-
   /* Read gas mix absorption coefficient */
   if (*iirayo > 0)
     *ckabs1 = _get_absorption_coefficient();
@@ -734,7 +711,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
   /* Heterogeneous combustion options (shrinking sphere model) */
   cs_gui_node_get_child_status_int(tn_sf, "CO2_kinetics", ihtco2);
   cs_gui_node_get_child_status_int(tn_sf, "H2O_kinetics", ihth2o);
-
 
   /* Kinetic model (CO2 or CO transport) */
   _get_kinetic_model(tn_sf, ieqco2);
@@ -919,12 +895,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
     rho0ch[icha] = _get_solid_fuel_child_real(tn, "density");
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
-    if (vars != NULL && thcdch != NULL)
-      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture")) {
-        thcdch[icha] = 1e-5; /* default */
-        cs_gui_node_get_child_real(tn, "thermal_conductivity",
-                                   &(thcdch[icha]));
-      }
+    if (   thcdch != NULL
+        && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] == 1) {
+      thcdch[icha] = 1e-5; /* default */
+      cs_gui_node_get_child_real(tn, "thermal_conductivity",
+                                 &(thcdch[icha]));
+    }
 
     /* Ash characteristics */
 
@@ -1244,6 +1220,76 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
 #endif
 }
 
+/*-----------------------------------------------------------------------------
+ * Return 1 if a specific physics model is activated, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_active_thermophysical_model(char  **model_name,
+                                 char  **model_value)
+{
+  int isactiv = 0;
+
+  if (*model_name != NULL && *model_value != NULL) {
+    isactiv = 1;
+    return isactiv;
+  }
+  else {
+    BFT_FREE(*model_name);
+    BFT_FREE(*model_value);
+  }
+
+  const char *model = NULL, *name = NULL;
+
+  const char *name_m[] = {"solid_fuels",
+                          "joule_effect",
+                          "atmospheric_flows",
+                          "compressible_model",
+                          "groundwater_model",
+                          "hgn_model"};
+  const char *name_o[] = {"gas_combustion"};
+
+  int n_names_m = sizeof(name_m) / sizeof(name_m[0]);
+  int n_names_o = sizeof(name_o) / sizeof(name_o[0]);
+
+  cs_tree_node_t *tn0 = cs_tree_get_node(cs_glob_tree, "thermophysical_models");
+
+  /* Loop on model nodes to compare to the listed ones */
+
+  if (tn0 != NULL) {
+    for (cs_tree_node_t *tn = tn0->children;
+         tn != NULL && name == NULL;
+         tn = tn->next) {
+      for (int j = 0; j < n_names_m && name == NULL; j++) {
+        if (! strcmp(tn->name, name_m[j])) {
+          model = cs_tree_node_get_tag(tn, "model");
+          if (model != NULL && !cs_gui_strcmp(model, "off"))
+            name = name_m[j];
+        }
+      }
+      for (int j = 0; j < n_names_o && name == NULL; j++) {
+        if (! strcmp(tn->name, name_o[j])) {
+          model = cs_tree_node_get_tag(tn, "option");
+          if (model != NULL && !cs_gui_strcmp(model, "off"))
+            name = name_o[j];
+        }
+      }
+    }
+  }
+
+  if (name != NULL) {
+    BFT_MALLOC(*model_name, strlen(name)+1, char);
+    strcpy(*model_name, name);
+
+    BFT_MALLOC(*model_value, strlen(model)+1, char);
+    strcpy(*model_value, model);
+
+    isactiv = 1;
+  }
+
+  return isactiv;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1257,25 +1303,26 @@ cs_gui_physical_model_select(void)
 {
   int isactiv = 0;
 
-  cs_var_t  *vars = cs_glob_var;
-
   /* Look for the active specific physics and give the value of the associated
      model attribute */
-  isactiv = cs_gui_get_activ_thermophysical_model();
+
+  char *model_name = NULL, *model_value = NULL;
+
+  isactiv = _get_active_thermophysical_model(&model_name, &model_value);
 
   if (isactiv)  {
 
-    if (cs_gui_strcmp(vars->model, "solid_fuels")) {
-      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
+    if (cs_gui_strcmp(model_name, "solid_fuels")) {
+      if (cs_gui_strcmp(model_value, "homogeneous_fuel"))
         cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 0;
-      else if (cs_gui_strcmp(vars->model_value,
+      else if (cs_gui_strcmp(model_value,
                              "homogeneous_fuel_moisture"))
         cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
       else
         bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid coal model: %s."), vars->model_value);
+                  _("Invalid coal model: %s."), model_value);
     }
-    else if (cs_gui_strcmp(vars->model, "gas_combustion")) {
+    else if (cs_gui_strcmp(model_name, "gas_combustion")) {
 
       cs_tree_node_t *tn
         = cs_tree_get_node(cs_glob_tree, "thermophysical_models/gas_combustion");
@@ -1286,29 +1333,29 @@ cs_gui_physical_model_select(void)
 
       if (model != NULL && !cs_gui_strcmp(model, "off")) {
 
-        if (cs_gui_strcmp(vars->model_value, "adiabatic"))
+        if (cs_gui_strcmp(model_value, "adiabatic"))
           cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "extended"))
+        else if (cs_gui_strcmp(model_value, "extended"))
           cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "spalding"))
+        else if (cs_gui_strcmp(model_value, "spalding"))
           cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
+        else if (cs_gui_strcmp(model_value, "enthalpy_st"))
           cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
+        else if (cs_gui_strcmp(model_value, "mixture_st"))
           cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 2;
-        else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
+        else if (cs_gui_strcmp(model_value, "enthalpy_mixture_st"))
           cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 3;
-        else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
+        else if (cs_gui_strcmp(model_value, "2-peak_adiabatic"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
+        else if (cs_gui_strcmp(model_value, "2-peak_enthalpy"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
+        else if (cs_gui_strcmp(model_value, "3-peak_adiabatic"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 2;
-        else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
+        else if (cs_gui_strcmp(model_value, "3-peak_enthalpy"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 3;
-        else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
+        else if (cs_gui_strcmp(model_value, "4-peak_adiabatic"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 4;
-        else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
+        else if (cs_gui_strcmp(model_value, "4-peak_enthalpy"))
           cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 5;
         else
           bft_error(__FILE__, __LINE__, 0,
@@ -1337,20 +1384,24 @@ cs_gui_physical_model_select(void)
         }
       }
     }
-    else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-      if (cs_gui_strcmp(vars->model_value, "constant"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "dry"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 1;
-      else if (cs_gui_strcmp(vars->model_value, "humid"))
-        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 2;
+    else if (cs_gui_strcmp(model_name, "atmospheric_flows")) {
+      if (cs_gui_strcmp(model_value, "constant"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_CONSTANT_DENSITY;
+      else if (cs_gui_strcmp(model_value, "dry"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
+      else if (cs_gui_strcmp(model_value, "humid"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_HUMID;
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid atmospheric flow model: %s."),
-                  vars->model_value);
+                  model_value);
+
+      /* Get and set meteo file if given */
+      _gui_atmo_get_set_meteo_file();
+
     }
-    else if (cs_gui_strcmp(vars->model, "joule_effect")) {
-      if (cs_gui_strcmp(vars->model_value, "joule")) {
+    else if (cs_gui_strcmp(model_name, "joule_effect")) {
+      if (cs_gui_strcmp(model_value, "joule")) {
 
         cs_tree_node_t *tn
           = cs_tree_get_node(cs_glob_tree,
@@ -1368,18 +1419,18 @@ cs_gui_physical_model_select(void)
         else
           bft_error(__FILE__, __LINE__, 0,
                     _("Invalid joule model: %s."),
-                    vars->model_value);
+                    model_value);
 
       }
-      else if (cs_gui_strcmp(vars->model_value, "arc"))
+      else if (cs_gui_strcmp(model_value, "arc"))
         cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] = 2;
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid electrical model: %s."),
-                  vars->model_value);
+                  model_value);
     }
-    else if (cs_gui_strcmp(vars->model, "compressible_model")) {
-      if (cs_gui_strcmp(vars->model_value, "constant_gamma")) {
+    else if (cs_gui_strcmp(model_name, "compressible_model")) {
+      if (cs_gui_strcmp(model_value, "constant_gamma")) {
         cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 0;
         cs_cf_model_t *cf_mdl = cs_get_glob_cf_model();
         cf_mdl->ieos = 1;
@@ -1387,15 +1438,15 @@ cs_gui_physical_model_select(void)
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("Invalid compressible model: %s."),
-                  vars->model_value);
+                  model_value);
     }
-    else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-      if (cs_gui_strcmp(vars->model_value, "groundwater"))
+    else if (cs_gui_strcmp(model_name, "groundwater_model")) {
+      if (cs_gui_strcmp(model_value, "groundwater"))
         cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
     }
-    else if (cs_gui_strcmp(vars->model, "hgn_model")) {
+    else if (cs_gui_strcmp(model_name, "hgn_model")) {
       cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
-      if (cs_gui_strcmp(vars->model_value, "merkle_model")) {
+      if (cs_gui_strcmp(model_value, "merkle_model")) {
         vof_param->vof_model = CS_VOF_ENABLED | CS_VOF_MERKLE_MASS_TRANSFER;
       } else {
         vof_param->vof_model = CS_VOF_ENABLED + CS_VOF_FREE_SURFACE;
@@ -1406,10 +1457,13 @@ cs_gui_physical_model_select(void)
 #if _XML_DEBUG_
   bft_printf("%s\n", __func__);
   if (isactiv) {
-    bft_printf("--thermophysical model: %s\n", vars->model);
-    bft_printf("--thermophysical value: %s\n", vars->model_value);
+    bft_printf("--thermophysical model: %s\n", model_name);
+    bft_printf("--thermophysical value: %s\n", model_value);
   }
 #endif
+
+  BFT_FREE(model_name);
+  BFT_FREE(model_value);
 }
 
 /*----------------------------------------------------------------------------
@@ -1545,82 +1599,6 @@ cs_gui_get_thermophysical_model(const char  *model_thermo)
   }
 
   return retval;
-}
-
-/*-----------------------------------------------------------------------------
- * Return 1 if a specific physics model is activated, 0 otherwise.
- *
- * Updates the cs_glob_vars global structure.
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_activ_thermophysical_model(void)
-{
-  int isactiv = 0;
-
-  if (cs_glob_var == NULL)
-    cs_gui_init();
-
-  cs_var_t  *vars = cs_glob_var;
-
-  if (vars->model != NULL && vars->model_value != NULL) {
-    isactiv = 1;
-    return isactiv;
-  }
-  else {
-    BFT_FREE(vars->model);
-    vars->model_value = NULL;
-  }
-
-  const char *model = NULL, *name = NULL;
-
-  const char *name_m[] = {"solid_fuels",
-                          "joule_effect",
-                          "atmospheric_flows",
-                          "compressible_model",
-                          "groundwater_model",
-                          "hgn_model"};
-  const char *name_o[] = {"gas_combustion"};
-
-  int n_names_m = sizeof(name_m) / sizeof(name_m[0]);
-  int n_names_o = sizeof(name_o) / sizeof(name_o[0]);
-
-  cs_tree_node_t *tn0 = cs_tree_get_node(cs_glob_tree, "thermophysical_models");
-
-  /* Loop on model nodes to compare to the listed ones */
-
-  if (tn0 != NULL) {
-    for (cs_tree_node_t *tn = tn0->children;
-         tn != NULL && name == NULL;
-         tn = tn->next) {
-      for (int j = 0; j < n_names_m && name == NULL; j++) {
-        if (! strcmp(tn->name, name_m[j])) {
-          model = cs_tree_node_get_tag(tn, "model");
-          if (model != NULL && !cs_gui_strcmp(model, "off"))
-            name = name_m[j];
-        }
-      }
-      for (int j = 0; j < n_names_o && name == NULL; j++) {
-        if (! strcmp(tn->name, name_o[j])) {
-          model = cs_tree_node_get_tag(tn, "option");
-          if (model != NULL && !cs_gui_strcmp(model, "off"))
-            name = name_o[j];
-        }
-      }
-    }
-  }
-
-  if (name != NULL) {
-    BFT_MALLOC(vars->model, strlen(name)+1, char);
-    strcpy(vars->model, name);
-
-    BFT_MALLOC(vars->model_value, strlen(model)+1, char);
-    strcpy(vars->model_value, model);
-
-    isactiv = 1;
-  }
-
-  return isactiv;
 }
 
 /*----------------------------------------------------------------------------*/

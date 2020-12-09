@@ -35,7 +35,7 @@ import platform
 import sys
 import stat
 
-from code_saturne import cs_exec_environment
+from code_saturne import cs_exec_environment, cs_run_conf
 
 from code_saturne.cs_case_domain import *
 
@@ -558,14 +558,10 @@ class case:
          + len(self.py_domains) > 1:
             r += '_COUPLING'
 
-        if os.path.isdir(r):
-            self.result_dir = os.path.join(r, self.run_id)
-        else:
-            err_str = \
-                    '\nResults directory: ' + r + '\n' \
-                    + 'does not exist.\n' \
-                    + 'Calculation will not be run.\n'
-            raise RunCaseError(err_str)
+        if not os.path.isdir(r):
+            os.mkdir(r)
+
+        self.result_dir = os.path.join(r, self.run_id)
 
     #---------------------------------------------------------------------------
 
@@ -1068,24 +1064,39 @@ class case:
             cs_exec_environment.write_prepend_path(s,
                                                    'LD_LIBRARY_PATH',
                                                    mpi_libdir)
+        s.write('\n')
 
         # HANDLE CATHARE COUPLING
+        wrote_cathare_path = False
         if self.domains:
             for d in self.domains:
                 if hasattr(d, "cathare_case_file"):
-                    config = configparser.ConfigParser()
-                    config.read(self.package.get_configfiles())
-                    cathare_path = config.get('install', 'cathare')
-                    for p in ['lib', 'ICoCo/lib']:
-                        lp = os.path.join(cathare_path, p)
-                        cs_exec_environment.write_prepend_path(s,
-                                                               "LD_LIBRARY_PATH",
-                                                               lp)
+                    if not wrote_cathare_path:
+                        cs_exec_environment.write_script_comment(s, \
+                            'Export paths necessary for CATHARE coupling.\n')
+                        config = configparser.ConfigParser()
+                        config.read(self.package.get_configfiles())
+                        cathare_path = config.get('install', 'cathare')
+                        for p in ['lib', 'ICoCo/lib']:
+                            lp = os.path.join(cathare_path, p)
+                            cs_exec_environment.write_prepend_path( \
+                                    s, "LD_LIBRARY_PATH", lp)
+
+                        wrote_cathare_path = True
+                        s.write('\n')
 
         # Handle python coupling
         if self.py_domains:
+            cs_exec_environment.write_script_comment(s, \
+                'Export paths necessary for python coupling.\n')
             pydir = self.package_compute.get_dir("pythondir")
             cs_exec_environment.write_prepend_path(s, "PYTHONPATH", pydir)
+            # This export is necessary fr PyPLE to work correctly
+            libdir = self.package_compute.get_dir("libdir")
+            cs_exec_environment.write_prepend_path(s,
+                                                   "LD_LIBRARY_PATH",
+                                                   libdir)
+            s.write('\n')
 
         # Handle environment modules if used
 
@@ -1392,6 +1403,14 @@ class case:
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
+
+        # Set run_id in run.cfg as a precaution
+
+        run_conf_path = os.path.join(self.result_dir, "run.cfg")
+        if os.path.isfile(run_conf_path):
+            run_conf = cs_run_conf.run_conf(run_conf_path, package=self.package)
+            run_conf.set('run', 'id', str(self.run_id))
+            run_conf.save()
 
         # Rename temporary file to indicate new status
 

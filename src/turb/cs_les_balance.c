@@ -60,6 +60,7 @@
 #include "cs_face_viscosity.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_geom.h"
@@ -326,8 +327,6 @@ _les_balance_laplacian(cs_real_t   *wa,
                        cs_real_t   *res,
                        int         type)
 {
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -366,11 +365,6 @@ _les_balance_laplacian(cs_real_t   *wa,
                                                 hint);
   }
 
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
-  var_cal_opt.iconv = 0; /* only diffusion */
-  var_cal_opt.thetav = 1.;
-
   cs_real_t *c_visc, *i_visc, *b_visc;
   BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -386,9 +380,14 @@ _les_balance_laplacian(cs_real_t   *wa,
                     b_visc);
   BFT_FREE(c_visc);
 
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
+  cs_equation_param_t _eqp = *eqp;
+  _eqp.iconv = 0; /* only diffusion */
+  _eqp.thetav = 1.;
+
   cs_convection_diffusion_scalar(0,           /* idtvar */
                                  -1,          /* f_id */
-                                 var_cal_opt,
+                                 _eqp,
                                  0,           /* icvflb (not used) */
                                  1,           /* inc */
                                  true,        /* recompute cocg */
@@ -434,15 +433,13 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const int *bc_type = cs_glob_bc_type;
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   int f_id, itypfl, iflmb0, init, inc;
 
   cs_real_t *i_massflux, *b_massflux;
   cs_real_3_t *coefav;
   cs_real_33_t *coefbv;
 
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
   BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
   BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
@@ -476,12 +473,12 @@ _les_balance_laplacian(cs_real_t   *wa,
                iflmb0,
                init,
                inc,
-               var_cal_opt.imrgra,
-               var_cal_opt.nswrgr,
-               var_cal_opt.imligr,
-               var_cal_opt.verbosity,
-               var_cal_opt.epsrgr,
-               var_cal_opt.climgr,
+               eqp->imrgra,
+               eqp->nswrgr,
+               eqp->imligr,
+               eqp->verbosity,
+               eqp->epsrgr,
+               eqp->climgr,
                NULL,
                NULL,
                (const cs_real_3_t *)wa,
@@ -509,20 +506,17 @@ _les_balance_laplacian(cs_real_t   *wa,
 static void
 _les_balance_compute_gradients(void)
 {
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const int *bc_type = cs_glob_bc_type;
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
   cs_real_t *coefas, *coefbs;
 
-  cs_var_cal_opt_t var_cal_opt;
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
 
   /* Computation of the velocity gradient */
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
-
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -557,14 +551,14 @@ _les_balance_compute_gradients(void)
                        halo_type,
                        inc,
                        true,
-                       var_cal_opt.nswrgr,
+                       eqp->nswrgr,
                        0,
                        0,
                        1,
-                       var_cal_opt.verbosity,
-                       var_cal_opt.imligr,
-                       var_cal_opt.epsrgr,
-                       var_cal_opt.climgr,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
                        NULL,
                        coefas,
                        coefbs,
@@ -587,9 +581,10 @@ _les_balance_compute_gradients(void)
       cs_field_t *f = cs_field_by_id(f_id);
       int isca = cs_field_get_key_int(f, keysca);
       if (isca > 0) {
-        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+        const cs_equation_param_t *eqps
+          = cs_field_get_equation_param_const(f);
 
-        cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+        cs_gradient_type_by_imrgra(eqps->imrgra,
                                    &gradient_type,
                                    &halo_type);
 
@@ -2837,32 +2832,33 @@ cs_les_balance_compute_rij(void)
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
+
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
 
   /* Rij balance structure */
   cs_les_balance_rij_t *brij = _les_balance.brij;
 
-  cs_real_t *p, *nut;
-  cs_real_3_t *ui, *pu, *nutui, *dnutdxkdukdxi, *dnutdxi;
-  cs_real_6_t *uiuj, *rij, *pduidxj, *duidxkdujdxk;
-  cs_real_6_t *nutduidxkdujdxk, *dnutdxkuidukdxjsym;
-  cs_real_33_t *nutduidxj, *uidtaujkdxk, *duidxj, *uidnutdxj;
+  cs_real_3_t *nutui = NULL, *dnutdxkdukdxi = NULL, *dnutdxi = NULL;
+  cs_real_6_t *nutduidxkdujdxk = NULL, *dnutdxkuidukdxjsym = NULL;
+  cs_real_33_t *uidtaujkdxk = NULL, *uidnutdxj = NULL;
 
   /* Time moments retrieved by name */
-  p            =                 _les_balance_get_tm_by_name("p_m")->val;
-  nut          =                 _les_balance_get_tm_by_name("nut_m")->val;
-  ui           = (cs_real_3_t  *)_les_balance_get_tm_by_name("ui_m")->val;
-  pu           = (cs_real_3_t  *)_les_balance_get_tm_by_name("pu_m")->val;
-  uiuj         = (cs_real_6_t  *)_les_balance_get_tm_by_name("uiuj_m")->val;
-  rij          = (cs_real_6_t  *)_les_balance_get_tm_by_name("u_v")->val;
-  nutduidxj    = (cs_real_33_t *)_les_balance_get_tm_by_name("nutdjui_m")->val;
-  pduidxj      = (cs_real_6_t  *)_les_balance_get_tm_by_name("pdjuisym_m")->val;
-  duidxj       = (cs_real_33_t *)_les_balance_get_tm_by_name("djui_m")->val;
-  duidxkdujdxk = (cs_real_6_t  *)_les_balance_get_tm_by_name("dkuidkuj_m")->val;
+  cs_real_t *p      =                 _les_balance_get_tm_by_name("p_m")->val;
+  cs_real_t *nut    =                 _les_balance_get_tm_by_name("nut_m")->val;
+  cs_real_3_t *ui   = (cs_real_3_t *)_les_balance_get_tm_by_name("ui_m")->val;
+  cs_real_3_t *pu   = (cs_real_3_t *)_les_balance_get_tm_by_name("pu_m")->val;
+  cs_real_6_t *uiuj = (cs_real_6_t  *)_les_balance_get_tm_by_name("uiuj_m")->val;
+  cs_real_6_t *rij  = (cs_real_6_t  *)_les_balance_get_tm_by_name("u_v")->val;
+  cs_real_33_t *nutduidxj
+    = (cs_real_33_t *)_les_balance_get_tm_by_name("nutdjui_m")->val;
+  cs_real_6_t * pduidxj
+    = (cs_real_6_t  *)_les_balance_get_tm_by_name("pdjuisym_m")->val;
+  cs_real_33_t * duidxj
+    = (cs_real_33_t *)_les_balance_get_tm_by_name("djui_m")->val;
+  cs_real_6_t *duidxkdujdxk
+    = (cs_real_6_t  *)_les_balance_get_tm_by_name("dkuidkuj_m")->val;
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
     uidtaujkdxk  = (cs_real_33_t *)_les_balance_get_tm_by_name("uidktaujk_m")->val;
@@ -2882,8 +2878,8 @@ cs_les_balance_compute_rij(void)
       = (cs_real_33_t *)_les_balance_get_tm_by_name("uidjnut_m")->val;
   }
 
-  /* Get the triple corrleations mean UiUjUk*/
-  cs_real_t** uiujuk;
+  /* Get the triple corrleations mean UiUjUk */
+  cs_real_t **uiujuk;
   BFT_MALLOC(uiujuk, 10, cs_real_t*);
 
   uiujuk[0] = cs_field_by_name("u1u2u3_m")->val;
@@ -2927,7 +2923,7 @@ cs_les_balance_compute_rij(void)
 
   inc = 1;
 
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -3144,14 +3140,14 @@ cs_les_balance_compute_rij(void)
                        halo_type,
                        inc,
                        true,
-                       var_cal_opt.nswrgr,
+                       eqp->nswrgr,
                        0,
                        0,
                        1,
-                       var_cal_opt.verbosity,
-                       var_cal_opt.imligr,
-                       var_cal_opt.epsrgr,
-                       var_cal_opt.climgr,
+                       eqp->verbosity,
+                       eqp->imligr,
+                       eqp->epsrgr,
+                       eqp->climgr,
                        NULL,
                        coefas,
                        coefbs,
@@ -3269,15 +3265,13 @@ cs_les_balance_compute_tui(void)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int *bc_type = cs_glob_bc_type;
 
-  cs_var_cal_opt_t var_cal_opt;
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -3310,7 +3304,6 @@ cs_les_balance_compute_tui(void)
   cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
   cs_real_t wvar, xx;
-  int iii, jjj;
 
   /* Working local arrays */
   cs_real_t *diverg, *lapl, *w2;
@@ -3424,7 +3417,7 @@ cs_les_balance_compute_tui(void)
         b_sca->epsti[iel][ii] = dtdxjduidxj[iel][ii];
 
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          iii = ipdirtens[ii][kk];
+          cs_lnum_t iii = ipdirtens[ii][kk];
           b_sca->prodtUi[iel][ii] -= b_sca->tpuip[iel][kk]*duidxj[iel][ii][kk];
           wvar = uiuj[iel][iii] - ui[iel][ii]*ui[iel][kk];
           b_sca->prodtTi[iel][ii] -= wvar*dtdxi[iel][kk];
@@ -3438,9 +3431,11 @@ cs_les_balance_compute_tui(void)
 
     /* convti */
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = ui[iel][kk]*b_sca->tpuip[iel][ii];
+      }
 
       _les_balance_divergence_vector(w1, diverg);
 
@@ -3450,7 +3445,7 @@ cs_les_balance_compute_tui(void)
       /* difftti */
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          jjj = ipdirtens[ii][kk];
+          cs_lnum_t jjj = ipdirtens[ii][kk];
           w1[iel][kk] = - tuiuj[iel][jjj] - 2.*t[iel]*ui[iel][ii]*ui[iel][kk]
                                              + ui[iel][ii]*tui[iel][kk]
                                              + ui[iel][kk]*tui[iel][ii]
@@ -3463,7 +3458,6 @@ cs_les_balance_compute_tui(void)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         b_sca->difftti[iel][ii] = diverg[iel];
 
-
       /* diffttpi */
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -3472,8 +3466,7 @@ cs_les_balance_compute_tui(void)
       _les_balance_divergence_vector(w1, diverg);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        b_sca->diffttpi[iel][iii] = diverg[iel]/ro0;
-
+        b_sca->diffttpi[iel][ii] = diverg[iel]/ro0;
 
       /* Laminar diffusion */
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
@@ -3647,14 +3640,14 @@ cs_les_balance_compute_tui(void)
                          halo_type,
                          1,
                          true,
-                         var_cal_opt.nswrgr,
+                         eqp->nswrgr,
                          0,
                          0,
                          1,
-                         var_cal_opt.verbosity,
-                         var_cal_opt.imligr,
-                         var_cal_opt.epsrgr,
-                         var_cal_opt.climgr,
+                         eqp->verbosity,
+                         eqp->imligr,
+                         eqp->epsrgr,
+                         eqp->climgr,
                          NULL,
                          coefas,
                          coefbs,
@@ -3690,7 +3683,7 @@ cs_les_balance_compute_tui(void)
                           +   dtdxi[iel][kk]
                             * (  nutui[iel][ii]
                                - nut[iel]*ui[iel][ii]) / sigmas;
-}
+        }
 
         _les_balance_divergence_vector(w1, diverg);
 
@@ -3713,7 +3706,6 @@ cs_les_balance_compute_tui(void)
           b_sca->budsgstuifull[7][iel][ii] /= ro0;
           b_sca->budsgstuifull[8][iel][ii] /= ro0;
         }
-
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t kk = 0; kk < 3; kk++)

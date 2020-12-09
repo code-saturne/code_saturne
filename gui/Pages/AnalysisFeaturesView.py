@@ -53,13 +53,11 @@ from code_saturne.model.Common import GuiParam
 import code_saturne.Base.QtPage as QtPage
 
 from code_saturne.Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
-from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 from code_saturne.model.ElectricalModel import ElectricalModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -332,7 +330,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.__hideComboBox()
 
-        self.turb  = TurbulenceModel(self.case)
         self.gas   = GasCombustionModel(self.case)
         self.pcoal = CoalCombustionModel(self.case)
         self.elect = ElectricalModel(self.case)
@@ -351,19 +348,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         gas = self.gas.getGasCombustionModel()
         compressible = self.comp.getCompressibleModel()
         homogeneous = self.hgn.getHgnModel()
-
-        # Compatibility between turbulence model and reactive flow models
-        if self.turb.getTurbulenceModel() not in self.turb.RANSmodels():
-            if coal != 'off':
-                self.pcoal.setCoalCombustionModel('off')
-                coal = 'off'
-            elif gas != 'off':
-                self.gas.setGasCombustionModel('off')
-                gas = 'off'
-
-            self.radioButtonReactiveFlows.setEnabled(False)
-        else:
-            self.radioButtonReactiveFlows.setEnabled(True)
 
         # Set combobox values
 
@@ -449,15 +433,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if coal == 'homogeneous_fuel_moisture':
             self.modelLagrangian.disableItem(str_model='two_way')
         self.modelLagrangian.enableItem(str_model='frozen')
-
-        if self.turb.getTurbulenceModel() not in \
-                ('off', 'k-epsilon', 'k-epsilon-PL',
-                 'Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'v2f-BL-v2/k',
-                 'k-omega-SST', 'Spalart-Allmaras'):
-            self.modelLagrangian.setItem(str_model='off')
-            self.comboBoxLagrangian.setEnabled(False)
-        else:
-            self.comboBoxLagrangian.setEnabled(True)
 
 
     def switch_case_to_neptune(self):

@@ -476,7 +476,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     fgets(line, 256, radfile);
     fscanf(radfile, "%d", &ntsto);
 
-    /* Number of tabulated gas phase temperatures    */
+    /* Number of tabulated gas phase temperatures */
     BFT_MALLOC(tsto, ntsto, cs_real_t);
 
     fgets(line, 256, radfile);

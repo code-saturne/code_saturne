@@ -137,7 +137,7 @@ tpent = 0.d0
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 
-if (imeteo.eq.2) then
+if (imeteo.ge.2) then
   call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
   call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
   call field_get_val_s_by_name('meteo_tke', cpro_met_k)
@@ -265,9 +265,9 @@ call field_get_coefa_s(ivarfl(ipr), coefap)
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
+  iel = ifabor(ifac)
 
   if (iprofm(izone).eq.1.and.imeteo.ge.1) then
-
 !     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
 !       ete modifie. Il servira si la face est une face d'entree ou si c'est une
 !       face de sortie (si le flux est rentrant).

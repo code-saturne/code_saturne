@@ -2151,7 +2151,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   BFT_FREE(l_faces);
   BFT_FREE(l_vertices);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= CS_MESH_MODIFIED;
 
   /* Rebuild ghosts */
 
@@ -2236,7 +2236,7 @@ cs_mesh_extrude_face_info_create(const cs_mesh_t  *m)
 
   BFT_MALLOC(efi->n_layers, n_faces, cs_lnum_t);
   BFT_MALLOC(efi->distance, n_faces, cs_real_t);
-  BFT_MALLOC(efi->expansion_factor, n_faces, float_t);
+  BFT_MALLOC(efi->expansion_factor, n_faces, float);
   BFT_MALLOC(efi->thickness_s, n_faces, cs_real_t);
   BFT_MALLOC(efi->thickness_e, n_faces, cs_real_t);
 

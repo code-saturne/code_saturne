@@ -100,7 +100,7 @@ cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
-cs_user_les_inflow.f90 \
+cs_user_les_inflow.c \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
 cs_user_metal_structures_source_terms.f90 \
@@ -206,7 +206,7 @@ cs_f_user_source_terms.lo cs_f_user_boundary_conditions.lo \
 cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
-userdir = $(pkgdatadir)/user
+userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_parameters.f90 \
@@ -228,13 +228,13 @@ install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(pkgdatadir)/user/$${file}"; \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
 	done ; \
-	cd $(DESTDIR)$(pkgdatadir)/user && \
+	cd $(DESTDIR)$(userdir) && \
 	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(VERSION)\n"; \
-	version2="\!                      --------------------------"; \
+	version1="\!                      code_saturne version $(cs_version_short)\n"; \
+	version2="\!                      ------------------------"; \
 	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
 	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
 	for file in $${f90_user_files}; do \

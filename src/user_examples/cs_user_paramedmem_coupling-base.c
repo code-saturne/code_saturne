@@ -173,10 +173,21 @@ cs_user_paramedmem_define_fields(void)
      *  (1) cs_paramedmeme_coupling_t pointer
      *  (2) field array associated name ("f1" here)
      *  (3) field array number of components (1 here)
-     *  (4) Localisation of values:
+     *  (4) Interpolation method for the field. Choice indicates whether
+     *      field is intensive or extensive, and whether interpolation shoud
+     *      ensure the maximum principle or volumic integral.
+     *      !! WARNING !!
+     *      This choice should be the same for both codes communicating
+     *      !! WARNING !!
+     *      Options are:
+     *        CS_MEDCPL_FIELD_EXT_CONSERVATION
+     *        CS_MEDCPL_FIELD_EXT_MAXIMUM
+     *        CS_MEDCPL_FIELD_INT_CONSERVATION
+     *        CS_MEDCPL_FIELD_INT_MAXIMUM
+     *  (5) Localisation of values:
      *        CS_MEDCPL_ON_CELLS -> Cell centers
      *        CS_MEDCPL_ON_NODES -> Vertices
-     *  (5) Time discretisation for coupling. options are:
+     *  (6) Time discretisation for coupling. options are:
      *        CS_MEDCPL_NO_TIME
      *        CS_MEDCPL_ONE_TIME
      *        CS_MEDCPL_LINEAR_TIME
@@ -186,6 +197,7 @@ cs_user_paramedmem_define_fields(void)
     int f_id1 = cs_paramedmem_def_coupled_field(c,
                                                 "f1",
                                                 1,
+                                                CS_MEDCPL_FIELD_INT_CONSERVATION,
                                                 CS_MEDCPL_ON_CELLS,
                                                 CS_MEDCPL_NO_TIME);
 
@@ -195,14 +207,27 @@ cs_user_paramedmem_define_fields(void)
      *
      *  (1) cs_paramedmeme_coupling_t pointer (c here)
      *  (2) cs_field_t pointer (f here)
-     *  (3) Time discretisation for coupling. options are:
+     *  (3) Interpolation method for the field. Choice indicates whether
+     *      field is intensive or extensive, and whether interpolation shoud
+     *      ensure the maximum principle or volumic integral.
+     *      !! WARNING !!
+     *      This choice should be the same for both codes communicating
+     *      !! WARNING !!
+     *      Options are:
+     *        CS_MEDCPL_FIELD_EXT_CONSERVATION
+     *        CS_MEDCPL_FIELD_EXT_MAXIMUM
+     *        CS_MEDCPL_FIELD_INT_CONSERVATION
+     *        CS_MEDCPL_FIELD_INT_MAXIMUM
+     *  (4) Time discretisation for coupling. options are:
      *        CS_MEDCPL_NO_TIME
      *        CS_MEDCPL_ONE_TIME
      *        CS_MEDCPL_LINEAR_TIME
      */
     cs_field_t *f = cs_field_by_name("coupling_field1");
     int f_id2 =
-      cs_paramedmem_def_coupled_field_from_cs_field(c, f, CS_MEDCPL_NO_TIME);
+      cs_paramedmem_def_coupled_field_from_cs_field(c, f,
+                                                    CS_MEDCPL_FIELD_INT_CONSERVATION,
+                                                    CS_MEDCPL_NO_TIME);
   }
   /*! [paramedmem_coupling_define_field1] */
 

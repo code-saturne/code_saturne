@@ -130,7 +130,7 @@ cs_rank_neighbors_destroy(cs_rank_neighbors_t  **n);
 void
 cs_rank_neighbors_to_index(const cs_rank_neighbors_t  *n,
                            size_t                      n_elts,
-                           int                        *elt_rank,
+                           const int                   elt_rank[],
                            int                        *elt_rank_index);
 
 /*----------------------------------------------------------------------------*/
@@ -190,6 +190,31 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
                              const cs_lnum_t             *send_count,
                              cs_lnum_t                  **recv_count,
                              MPI_Comm                     comm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange send and receive counts for rank neighborhoods,
+ *        using a given method.
+ *
+ * This allocates the n_recv ranks neighborhood structure and the
+ * recv_count counts array, which the caller is responsible for freeing.
+ *
+ * \param[in]   n_send         pointer to rank neighborhood used for sending
+ * \param[out]  n_recv         pointer to rank neighborhood used for receiving
+ * \param[in]   send_count     pointer to rank neighborhood used for sending
+ * \param[in]   recv_count     pointer to rank neighborhood used for sending
+ * \param[in]   exchange_type  exchange type
+ * \param[in]   comm           associated communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
+                               cs_rank_neighbors_t           **n_recv,
+                               const cs_lnum_t                *send_count,
+                               cs_lnum_t                     **recv_count,
+                               cs_rank_neighbors_exchange_t    exchange_type,
+                               MPI_Comm                        comm);
 
 #endif /* defined(HAVE_MPI) */
 

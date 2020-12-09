@@ -40,7 +40,7 @@ The equation for a variable \f$ \varia \f$ becomes:\f$ \frac{\Delta(\rho\varia)}
 \f$ \varia^{in} \f$ is the value of \f$ \varia \f$ associated to the injected mass.
 
 Two options are available:
-  - the mass flux is injected with the local value of variable \f$ \varia \f$: \f$ \varia^{in} = \varia^{(n+1)} \f$ (the equation for \f$ \varia \f$ is therefore not modified)
+  - the mass flux is injected with the local value of variable \f$ \varia \f$: \f$ \varia^{in} = \varia^{(n+1)} \f$ (the equation for \f$ \varia \f$ is therefore not modified, and no value needs to be assigned)
   - the mass flux is injected with a specific value for \f$ \varia \f$: \f$ \varia^{in} \f$ is specified by the user
 
 \section var_user Variables to be specified by the user

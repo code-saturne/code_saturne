@@ -47,6 +47,12 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Predefined checkpoint interval */
+
+#define CS_RESTART_INTERVAL_NONE         -2
+#define CS_RESTART_INTERVAL_ONLY_AT_END  -1
+#define CS_RESTART_INTERVAL_DEFAULT       0
+
 /* Error codes */
 
 #define CS_RESTART_SUCCESS        0 /*!< Success */

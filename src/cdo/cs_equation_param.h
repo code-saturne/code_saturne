@@ -629,6 +629,14 @@ typedef struct {
    * \var adv_scheme
    * Numerical scheme used for the discretization of the advection term
    *
+   * \var adv_strategy
+   * Strategy used to handle the advection term (please refer to \ref
+   * cs_param_advection_strategy_t)
+   *
+   * \var adv_extrapol
+   * Extrapolation used to estimate the advection field (please refer to \ref
+   * cs_param_advection_extrapol_t)
+   *
    * \var upwind_portion
    * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
    * Introduce a constant portion of upwinding in a centered scheme
@@ -647,11 +655,13 @@ typedef struct {
    * for instance or in the solidification module.
    */
 
-  cs_param_advection_form_t     adv_formulation;
-  cs_param_advection_scheme_t   adv_scheme;
-  cs_real_t                     upwind_portion;
-  cs_adv_field_t               *adv_field;
-  cs_property_t                *adv_scaling_property;
+  cs_param_advection_form_t        adv_formulation;
+  cs_param_advection_scheme_t      adv_scheme;
+  cs_param_advection_strategy_t    adv_strategy;
+  cs_param_advection_extrapol_t    adv_extrapol;
+  cs_real_t                        upwind_portion;
+  cs_adv_field_t                  *adv_field;
+  cs_property_t                   *adv_scaling_property;
 
   /*!
    * @}
@@ -798,6 +808,14 @@ typedef struct {
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
  *
+ * \var CS_EQKEY_ADV_EXTRAPOL
+ * Choice in the way to extrapolate the advection field when building the
+ * advection operator
+ * - "none" (default)
+ * - "taylor"
+ * - "adams_bashforth"
+ * Please refer to \ref cs_param_advection_extrapol_t for more details.
+ *
  * \var CS_EQKEY_ADV_FORMULATION
  * Kind of formulation of the advective term. Available choices are:
  * - "conservative"
@@ -821,6 +839,15 @@ typedef struct {
  *   Enable a better accuracy.
  *   Consider a cellwise approximation of the advection field.
  *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
+ *
+ * \var CS_EQKEY_ADV_STRATEGY
+ * Strategy used to handle the advection term
+ * - "fully_implicit" or "implicit" (default choice)
+ * - "linearized" or "implicit_linear"
+ * - "explicit"
+ * There is a difference between the two first choices when the advection term
+ * induces a non-linearity. In this situation, the first choice implies that a
+ * non-linear algorithm has to be used.
  *
  * \var CS_EQKEY_ADV_UPWIND_PORTION
  * Value between 0 and 1 specifying the portion of upwind added to a centered
@@ -1009,25 +1036,29 @@ typedef struct {
  *
  * \var CS_EQKEY_SPACE_SCHEME
  * Set the space discretization scheme. Available choices are:
- * - "cdo_vb"  for CDO vertex-based scheme
- * - "cdo_vcb" for CDO vertex+cell-based scheme
- * - "cdo_fb"  for CDO face-based scheme
- * - "cdo_eb"  for CDO edge-based scheme
- * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
- * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
+ * - "cdo_vb"  or "cdovb" for CDO vertex-based scheme
+ * - "cdo_vcb" or "cdovcb" for CDO vertex+cell-based scheme
+ * - "cdo_fb"  or "cdofb" for CDO face-based scheme
+ * - "cdo_eb"  or "cdoeb" for CDO edge-based scheme
+ * - "hho_p1" for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
+ * - "hho_p2" for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:
- * - "euler_implicit": first-order in time (inconditionnally stable)
- * - "euler_explicit":
- * - "crank_nicolson": second_order in time
- * - "theta_scheme": generic time scheme. One recovers "euler_implicit" with
- *   theta equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ * - "euler_implicit" or "forward_euler" (1st order)
+ * - "euler_explicit" or "backward_euler" (1st order, conditional stability)
+ * - "theta_scheme": Time scheme encompassing several other schemes according
+ *   to the value of theta. One recovers for instance "euler_implicit" with
+ *   theta equal to "1", "euler_explicit" with "0" or "crank_nicolson" with
+ *   theta equal to "0.5"
+ * - "crank_nicolson": Shortcut to set a theta scheme with theta equal to
+ *    0.5. This time discretization is second_order in time accurate.
  *
  * \var CS_EQKEY_TIME_THETA
- * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
- * "theta_scheme"
- * - Example: "0.75" (keyval must be between 0 and 1)
+ * Set a value betwwen 0 and 1 for the theta parameter when a "theta_scheme" is
+ * set for the time discretization. Only useful if CS_EQKEY_TIME_SCHEME is set
+ * to "theta_scheme".
+ * - Example: "0.75"
  *
  * \var CS_EQKEY_VERBOSITY
  * Set the level of details written by the code for an equation.
@@ -1040,8 +1071,10 @@ typedef struct {
 
 typedef enum {
 
+  CS_EQKEY_ADV_EXTRAPOL,
   CS_EQKEY_ADV_FORMULATION,
   CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_ADV_STRATEGY,
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
@@ -1256,6 +1289,32 @@ cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Ask if the parameters of the equation induces an implicit treatment
+ *         of the advection term
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_implicit_advection(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_CONVECTION) {
+    if (eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL ||
+        eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED)
+      return true;
+    else
+      return false;
+  }
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Ask if the parameters of the equation has activated a user hook
  *         to get a fine tuning of the cellwise system building
  *
@@ -1328,16 +1387,18 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one
+ *         another one. The name is not copied.
  *
- * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      copy_fid  copy also the field id or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_update_from(const cs_equation_param_t   *ref,
-                              cs_equation_param_t         *dst);
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
+                            cs_equation_param_t         *dst,
+                            bool                         copy_fid);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1590,6 +1651,67 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                const char                 *z_name,
                                cs_analytic_func_t         *analytic,
                                void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given cs_equation_param_t structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type   type of boundary condition to add
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  location where values are computed
+ * \param[in]      func      pointer to cs_dof_func_t function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
+                               const cs_param_bc_type_t    bc_type,
+                               const char                 *z_name,
+                               cs_flag_t                   loc_flag,
+                               cs_dof_func_t              *func,
+                               void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return pointer to existing boundary condition definition structure
+ *         for the given equation param structure and zone.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ *
+ * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_find_bc(cs_equation_param_t   *eqp,
+                    const char            *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Remove boundary condition from the given equation param structure
+ *         for a given zone.
+ *
+ * If no matching boundary condition is found, the function returns
+ * silently.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_remove_bc(cs_equation_param_t   *eqp,
+                      const char            *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

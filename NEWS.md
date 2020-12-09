@@ -3,6 +3,45 @@ Master (not on release branches yet)
 
 User changes:
 
+- Preprocessing: added mesh modification flag types to more easily
+  activate re-partitioning.
+
+- LES inflow synthetic turbulence configuration is now zone-based, with
+  a new, more consistent user API.
+
+- Add `cs_runaway_check` functions to try to detect diverging computations
+  early enough for clean stop.
+  * Default check is on velocity > 1e4 for incompressible computations,
+    1e5 for compressible computations.
+
+- Add possibility to generate a cartesian mesh on the fly
+  * The GUI now allows to define a cartesian mesh which will be
+    generated during runtime.
+  * Needed parameters are minimal and maximal values for X,Y and Z
+    coordinates, and number of cells per direction.
+  * User can define the progression law for cells' size :
+    - Constant step
+    - Geometric step
+    - Parabolic step (Geometric step with a symmetry w.r.t center-coordinate
+      of the direction)
+  * The newly created mesh contains 6 groups for boundary faces: X0, X1, Y0,
+    Y1, Z0 and Z1 for the respectively the min and max coordinate of each
+    direction (X,Y and Z)
+
+- When creating a case with `code_saturne create`, the `--noref` option is
+  enabled by default. It can be cancelled using the `--copy-ref` option.
+
+-GUI: user source file editor can now also use reference files from the
+  installation directory.
+
+- code_saturne mesh format (.csm) is now treated in the same way as external
+  formats.
+  * Multiple meshes can be added in the "Mesh" page.
+  * Preprocessor (read operation) is not done for these mesh, though mesh
+    modification is.
+  * For back compatibility matters, '.csm' files can still be used as a
+    "mesh_input"
+
 - When no boundary condition is provided for some boundary faces, a default
   (wall or symmetry) is used. This can be set using `cs_boundary_set_default`.
 
@@ -33,16 +72,51 @@ Bug fixes:
 
 Numerics and physical modelling:
 
+- CDO schemes: Add different strategies for the treatment of the advection term
+  in Navier-Stokes equations (linearized implicit and explicit treatment). The
+  Picard algorihtm (implicit) is the default as in the previous version. This is
+  based on results obtained during R. MILANI's PhD.
+
+- Amtospheric module: Major modification the scheme for Solar radiation based
+  on the PhD of L. Asmar.
+
+  In a previous version of the 1D solar radiation scheme of Code_Saturne, the
+  effect of aerosols has been introduced by making the approximation that
+  aerosols are purely diffusive. The same approximation was taken for
+  water vapor absorption in the UV-visible band (O3 band) but with
+  different optical properties.
+
+  In this new version, the aerosols are taken into account as absorbing
+  and diffusive particles characterized by their optical properties:
+  aerosol optical depth, single scattering albedo and asymmetry factor. To
+  do that, the adding method for multiple scattering has been added in the
+  UV-Visible band.
+
+  Other improvements have been made for:  the optical air mass, the
+  Rayleigh diffusion and the direct radiation estimation. In addition,
+  the absorption by minor gases has been introduced.
+
 - Remove "extrag" option for the pressure gradient, as its use was
   limited to orthogonal meshes and was long superceded by the
   `iphydr=1` option.
 
 Architectural changes:
 
+- For parallel IO, allow ranks stepping at the `cs_file` level so as to
+  allow using rank steps > 1 with all blocks, reducing the overhead
+  of using fewer and larger blocks.
+
+- In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
+
 - Add AmgX library support for linear system resolution on NVIDIA GPU's.
   * Associated matrices should be forced in CSR format.
   * In parallel, Mesh renumbering should be set
     to use `CS_RENUMBER_ADJACENT_LOW`.
+
+- Extend `cs_xdef_t` structure with definitions by DoF (degrees of freedom) for
+  advection fields, boundary and initial conditions (CDO schemes). This allow
+  one to add more generic/complex definitions at the user level or in existing
+  modules.
 
 Release 6.2.0 (August 27 2020)
 --------------------------

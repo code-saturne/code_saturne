@@ -167,8 +167,8 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
      with different groups, the first group wins */
 
   int *b_gc_id;
-  BFT_MALLOC(b_gc_id, n_cells, int);
-  for (cs_lnum_t i = 0; i < n_cells; i++)
+  BFT_MALLOC(b_gc_id, n_cells_ext, int);
+  for (cs_lnum_t i = 0; i < n_cells_ext; i++)
     b_gc_id[i] = default_family_id;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
@@ -218,7 +218,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
     BFT_MALLOC(sel_faces, n_b_add, cs_lnum_t);
     cs_lnum_t k = 0;
     for (cs_lnum_t i = 0; i < n_b_add; i++) {
-      cs_lnum_t j = n_b_add + i;
+      cs_lnum_t j = n_b_faces_ini + i;
       if (m->b_face_family[j] == default_family_id)
         sel_faces[k++] = j;
     }
@@ -319,7 +319,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
 
   BFT_FREE(c_o2n);
 
-  m->modified = CS_MAX(m->modified, 1);
+  m->modified |= CS_MESH_MODIFIED;
 
   /* Rebuild ghosts */
 

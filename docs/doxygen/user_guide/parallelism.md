@@ -27,25 +27,25 @@ Parallelism basics
 
 Parallelism is based on domain partitioning: each processor is assigned
 a part of the domain, and data for cells on parallel boundaries
-is duplicated on neighbouring processors in corresponding "ghost",
+is duplicated on neighboring processors in corresponding "ghost",
 or "halo" cells (both terms are used interchangeably). Values in
 these cells may be accessed just the same as values in regular cells.
 Communication is only required when cell values are modified
 using values from neighboring cells, as the values in the "halo" can
 not be computed correctly (since the halo does not have access to all
-its neighbours), so halo values must be updated by copying values from
-the corresponding cells on the neighbouring processor.
+its neighbors), so halo values must be updated by copying values from
+the corresponding cells on the neighboring processor.
 
 Compared to other tools using a similar system, a specificity of
 code_saturne is the separation of the halo in two parts: a standard part,
 containing cells shared through faces on parallel boundaries, and an
 extended part, containing cells shared through vertices, which is
 used mainly for least squares gradient reconstruction using an
-extended neighbourhood. Most updates need only to operate on the standard
+extended neighborhood. Most updates need only to operate on the standard
 halo, requiring less data communication than those on the extended halos.
 
 \anchor fig_halo
-![Parallel domain partitioning: halos](halo.svg)
+\image html halo.svg "Parallel domain partitioning: halos"
 
 Periodicity
 -----------
@@ -61,8 +61,7 @@ In this example, all periodic boundaries match with boundaries on
 the same domain, so halos are either parallel or periodic.
 
 \anchor fig_parperio_pump
-![Combined parallelism and periodicity: halos](rota_perio_parall.jpg)
-
+\image html rota_perio_parall.jpg "Combined parallelism and periodicity: halos" width=380px
 
 Coding operations in parallel mode
 ----------------------------------
@@ -86,6 +85,17 @@ global operations. The following list is not exhaustive:
   "synchronize" the ghost values for that array, using functions such
   as \ref synsca in Fortran or \ref cs_halo_sync_var in C, before
   using the face neighbor values.
+* In C code, the \ref cs_glob_rank_id and \ref cs_glob_n_ranks
+  global variables can be used to query the current rank id
+  (-1 in serial model, 0 to n-1 in parallel) and the number
+  of ranks.
+  - in Fortran, the matching variables are `irangp` and `nrangp`.
+* The presence of periodicity is tested with the variable
+  <tt>cs_glob_mesh->n_init_perio</tt> in C, `iperio` in Fortran
+  (> 1 if periodicity is activated);
+  - The presence of rotation periodicity is tested with the
+    <tt>cs_glob_mesh->have_rotation_perio</tt> variable in C
+    (`iperot` in Fortran).
 
 The user may refer to the different
 [parallel operation](@ref cs_user_extra_operations_examples_parallel_operations_p)

@@ -64,6 +64,18 @@ BEGIN_C_DECLS
  * Global static variables
  *============================================================================*/
 
+static const char *_xdef_type_name[]
+  = {"CS_XDEF_BY_ANALYTIC_FUNCTION",
+     "CS_XDEF_BY_ARRAY",
+     "CS_XDEF_BY_DOF_FUNCTION",
+     "CS_XDEF_BY_FIELD",
+     "CS_XDEF_BY_FUNCTION",
+     "CS_XDEF_BY_QOV",
+     "CS_XDEF_BY_SUB_DEFINITIONS",
+     "CS_XDEF_BY_TIME_FUNCTION",
+     "CS_XDEF_BY_VALUE",
+     "out of range"};
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -595,6 +607,63 @@ cs_xdef_copy(cs_xdef_t     *src)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief In the case of a definition by an analytic function, a time function
+ *        or a function relying on degrees of freedom (DoFs), this function
+ *        allows one to set a more or less complex input data structure.  This
+ *        call should be done before the first evaluation call of the
+ *        associated cs_xdef_t structure.
+ *
+ * \param[in, out]  d         pointer to a cs_xdef_t structure
+ * \param[in]       input     pointer to an input structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_input_context(cs_xdef_t       *d,
+                          void            *input)
+{
+  if (d == NULL)
+    return;
+
+  switch (d->type) {
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_context_t *c = (cs_xdef_analytic_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_context_t *c = (cs_xdef_dof_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t *c =
+        (cs_xdef_time_func_context_t *)d->context;
+
+      c->input = input;
+    }
+    break;
+
+  default:
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: Setting a free input function is ignored.\n"
+                  " The type of definition is not compatible.", __func__);
+    break; /* Nothing special to do */
+
+  } /* End of switch */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief In case of a definition by an analytic function, a time function or a
  *        function relying on degrees of freedom (DoFs). One can set a function
  *        to free a complex input data structure (please refer to \ref
@@ -927,6 +996,25 @@ cs_xdef_log(const char          *prefix,
   cs_log_printf(CS_LOG_SETUP, "%s | Quadrature: %s\n",
                 _p, cs_quadrature_get_type_name(d->qtype));
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the cs_xdef_type's name string
+ *
+ * \param[in] xdef_type  type to query
+ *
+ * \return a pointer to mathing name string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_xdef_type_get_name(cs_xdef_type_t  xdef_type)
+{
+  if (xdef_type < 0 || xdef_type >= CS_N_XDEF_TYPES)
+    xdef_type = CS_N_XDEF_TYPES;
+
+  return _xdef_type_name[xdef_type];
 }
 
 /*----------------------------------------------------------------------------*/

@@ -165,6 +165,40 @@ cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
                                           cs_lnum_t        *n_vertices,
                                           cs_lnum_t         vtx_ids[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of vertices verifying a given boundary selection criteria.
+ *
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_vertices_list(const char *criteria,
+                                     cs_lnum_t  *n_vertices,
+                                     cs_lnum_t   vtx_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of vertices belonging to a given list of boundary faces.
+ *
+ * \param[in]   n_cells     number of selected cells
+ * \param[in]   cell_ids    ids of selected cells
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_vertices_list_by_ids(cs_lnum_t         n_faces,
+                                            const cs_lnum_t   face_ids[],
+                                            cs_lnum_t        *n_vertices,
+                                            cs_lnum_t         vtx_ids[]);
+
 /*----------------------------------------------------------------------------
  * Fill lists of faces at the boundary of a set of cells verifying a given
  * selection criteria.
