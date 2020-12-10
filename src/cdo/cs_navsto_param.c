@@ -1002,6 +1002,8 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   if (nsp == NULL)
     return;
 
+  const char  navsto[16] = "  * NavSto |";
+
   /* Sanity checks */
   if (nsp->model < 1)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
@@ -1011,41 +1013,42 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
               "%s: Invalid way of coupling the Navier-Stokes equations.\n",
               __func__);
 
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Verbosity: %d\n", nsp->verbosity);
+  cs_log_printf(CS_LOG_SETUP, "%s Verbosity: %d\n", navsto, nsp->verbosity);
 
   /* Describe the physical modelling */
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                cs_navsto_param_get_model_name(nsp->model));
+  cs_log_printf(CS_LOG_SETUP, "%s Model: %s\n",
+                navsto, cs_navsto_param_get_model_name(nsp->model));
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                  "Gravity effect activated");
+    cs_log_printf(CS_LOG_SETUP, "%s Model: Gravity effect activated\n",
+                  navsto);
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_CORIOLIS_EFFECTS)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                  "Coriolis effect activated");
+    cs_log_printf(CS_LOG_SETUP, "%s Model: Coriolis effect activated\n",
+                  navsto);
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                  " Boussinesq approximation activated");
+    cs_log_printf(CS_LOG_SETUP, "%s Model:"
+                  "Boussinesq approximation activated\n", navsto);
   if (nsp->model_flag & CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                  " Boussinesq approximation for solidification activated");
+    cs_log_printf(CS_LOG_SETUP, "%s Model:"
+                  " Boussinesq approximation for solidification activated\n",
+                  navsto);
 
   /* Describe the space-time discretization */
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",
-                cs_navsto_param_coupling_name[nsp->coupling]);
+  cs_log_printf(CS_LOG_SETUP, "%s Coupling: %s\n",
+                navsto, cs_navsto_param_coupling_name[nsp->coupling]);
 
   if (cs_navsto_param_is_steady(nsp))
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Steady\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Time status: Steady\n", navsto);
 
   else {
 
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Unsteady\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Time status: Unsteady\n", navsto);
 
     const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
     if (time_scheme != NULL) {
-      cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time scheme: %s", time_scheme);
+      cs_log_printf(CS_LOG_SETUP, "%s Time scheme: %s", navsto, time_scheme);
       if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
         cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
       else
@@ -1058,21 +1061,22 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
   if (space_scheme != NULL)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Space scheme: %s\n",
-                  space_scheme);
+    cs_log_printf(CS_LOG_SETUP, "%s Space scheme: %s\n", navsto, space_scheme);
   else
     bft_error(__FILE__, __LINE__, 0, " %s: Undefined space scheme.", __func__);
 
   if (nsp->model == CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
 
     /* Advection treament */
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection scheme: %s\n",
-                  cs_param_get_advection_scheme_name(nsp->adv_scheme));
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection formulation: %s\n",
-                  cs_param_get_advection_form_name(nsp->adv_form));
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection strategy: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s Advection scheme: %s\n",
+                  navsto, cs_param_get_advection_scheme_name(nsp->adv_scheme));
+    cs_log_printf(CS_LOG_SETUP, "%s Advection formulation: %s\n",
+                  navsto, cs_param_get_advection_form_name(nsp->adv_form));
+    cs_log_printf(CS_LOG_SETUP, "%s Advection strategy: %s\n",
+                  navsto,
                   cs_param_get_advection_strategy_name(nsp->adv_strategy));
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Advection.Extrapolation: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "%s Advection extrapolation: %s\n",
+                  navsto,
                   cs_param_get_advection_extrapol_name(nsp->adv_extrapol));
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
@@ -1081,19 +1085,21 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
       bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.",
                 __func__);
 
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | %s: rtol: %5.3e;"
-                  " atol: %5.3e; dtol: %5.3e\n",
-                  algo_name, nsp->sles_param.nl_algo_rtol,
+    cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
+                  navsto, algo_name);
+    cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                  navsto, nsp->sles_param.nl_algo_rtol,
                   nsp->sles_param.nl_algo_atol, nsp->sles_param.nl_algo_dtol);
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | %s: Max.Iterations: %d\n",
-                  algo_name, nsp->sles_param.n_max_nl_algo_iter);
+    cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
+                  navsto, nsp->sles_param.n_max_nl_algo_iter);
 
   } /* Navier-Stokes */
 
   /* Describe the strategy to inverse the (inner) linear system */
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES.Strategy: ");
+  cs_log_printf(CS_LOG_SETUP, "%s SLES strategy: ", navsto);
   switch (nslesp.strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
@@ -1139,35 +1145,35 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   }
 
   if (nsp->gd_scale_coef > 0)
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Grad-div scaling %e\n",
-                  nsp->gd_scale_coef);
+    cs_log_printf(CS_LOG_SETUP, "%s Grad-div scaling %e\n",
+                  navsto, nsp->gd_scale_coef);
 
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | InnerLinear.Algo.Tolerances:"
+  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the inner solver:"
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                nslesp.il_algo_rtol, nslesp.il_algo_atol, nslesp.il_algo_dtol);
+                navsto, nslesp.il_algo_rtol, nslesp.il_algo_atol,
+                nslesp.il_algo_dtol);
 
   /* Default quadrature type */
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Default quadrature: %s\n",
-                cs_quadrature_get_type_name(nsp->qtype));
+  cs_log_printf(CS_LOG_SETUP, "%s Default quadrature: %s\n",
+                navsto, cs_quadrature_get_type_name(nsp->qtype));
 
   /* Initial conditions for the velocity */
-  char  prefix[256];
-
   cs_log_printf(CS_LOG_SETUP,
-                "  * NavSto | Velocity.Init.Cond | Number of definitions %2d\n",
-                nsp->n_velocity_ic_defs);
+                "%s Velocity.Init.Cond | Number of definitions %2d\n",
+                navsto, nsp->n_velocity_ic_defs);
 
+  char  prefix[256];
   for (int i = 0; i < nsp->n_velocity_ic_defs; i++) {
-    sprintf(prefix, "  * NavSto | Velocity.Init.Cond | Definition %2d", i);
+    sprintf(prefix, "%s Velocity.Init.Cond | Definition %2d",  navsto, i);
     cs_xdef_log(prefix, nsp->velocity_ic_defs[i]);
   }
 
   /* Initial conditions for the pressure */
   cs_log_printf(CS_LOG_SETUP,
-                "  * NavSto | Pressure.Init.Cond | Number of definitions: %d\n",
-                nsp->n_pressure_ic_defs);
+                "%s Pressure.Init.Cond | Number of definitions: %d\n",
+                navsto, nsp->n_pressure_ic_defs);
   for (int i = 0; i < nsp->n_pressure_ic_defs; i++) {
-    sprintf(prefix, "  * NavSto | Pressure.Init.Cond | Definition %2d", i);
+    sprintf(prefix, "%s Pressure.Init.Cond | Definition %2d",  navsto, i);
     cs_xdef_log(prefix, nsp->pressure_ic_defs[i]);
   }
 }
