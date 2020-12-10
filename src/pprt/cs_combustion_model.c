@@ -361,8 +361,8 @@ cs_combustion_log_setup(void)
         break;
     }
   
-    const char *ipthrm_value_str[] = {N_("0 (NOT uniform variable thermodynamic pressure)"),
-                                      N_("1 (uniform variable thermodynamic pressure)")};
+    const char *ipthrm_value_str[] = {N_("0 (NO mean pressure computation)"),
+                                      N_("1 (mean pressure computation)")};
     cs_log_printf(CS_LOG_SETUP,
                 _("    ipthrm:    %s\n"),
                 _(ipthrm_value_str[cs_glob_fluid_properties->ipthrm]));

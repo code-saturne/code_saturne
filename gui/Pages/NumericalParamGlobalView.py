@@ -195,6 +195,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelDensityVar.disableItem(str_model = 'algo_fire')
         if modl_gas != 'off':
             self.modelDensityVar.enableItem(str_model = 'algo_fire')
+        
+        # For the moment, the Low Mach algorithm is disabled in the GUI
+        self.modelDensityVar.disableItem(str_model = 'low_mach')
 
 
         # Update the Tree files and folders
