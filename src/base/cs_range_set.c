@@ -208,7 +208,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
 
   /* For balancing option, elements belonging to 2 ranks
      should have a final value, but those belonging to 3
-     might have inconsistant values between ranks, so
+     might have inconsistent values between ranks, so
      take highest rank for those (should cause only a
      slight imbalance) */
 
@@ -587,6 +587,16 @@ cs_range_set_create_from_shared(const cs_interface_set_t  *ifs,
 
   rs->n_elts[1] = n_elts;
 
+  /* First set of compact values */
+
+  rs->n_elts[2] = n_elts;
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    if (g_id[i] != (l_range[0] + i)) {
+      rs->n_elts[2] = i;
+      break;
+    }
+  }
+
   rs->l_range[0] = l_range[0];
   rs->l_range[1] = l_range[1];
 
@@ -815,38 +825,28 @@ cs_range_set_gather(const cs_range_set_t  *rs,
   else if (rs->halo != NULL)
     return;
 
-  cs_lnum_t n_elts = rs->n_elts[1];
-  cs_lnum_t d_size = cs_datatype_size[datatype]*stride;
-  const cs_gnum_t  l_range[2] = {rs->l_range[0], rs->l_range[1]};
-  const cs_gnum_t  *g_id = rs->g_id;
+  const size_t n_elts = rs->n_elts[1];
+  const size_t d_size = cs_datatype_size[datatype]*stride;
+
+  const cs_gnum_t l_range[2] = {rs->l_range[0], rs->l_range[1]};
+  const cs_gnum_t *g_id = rs->g_id;
+
+  const unsigned char *src = src_val;
+  unsigned char *dest = dest_val;
 
   /* Case with overlapping source and destination */
 
   if (src_val == dest_val) {
 
-    unsigned char *src = dest_val;
-    unsigned char *dest = dest_val;
+    const size_t lb = rs->n_elts[2];
 
-    cs_lnum_t i = 0;
-
-    /* First set of compact values */
-
-    while (i < n_elts) {
-      if (g_id[i] < l_range[0] || g_id[i] >= l_range[1])
-        break;
-      i++;
-    }
-
-    src += i*d_size;
-    dest += i*d_size;
-
-    while (i < n_elts) {
+    for (size_t i = lb; i < n_elts; i++) {
       if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        memcpy(dest, src, d_size);
-        dest += d_size;
+        size_t j = g_id[i] - l_range[0];
+        if (i >= j) {/* additional check in case of same-rank perdiodicity */
+          memcpy(dest + j*d_size, src + i*d_size, d_size);
+        }
       }
-      src += d_size;
-      i++;
     }
 
   }
@@ -855,15 +855,11 @@ cs_range_set_gather(const cs_range_set_t  *rs,
 
   else { /* src_val != dest_val */
 
-    const unsigned char *src = src_val;
-    unsigned char *dest = dest_val;
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (size_t i = 0; i < n_elts; i++) {
       if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        memcpy(dest, src, d_size);
-        dest += d_size;
+        size_t j = g_id[i] - l_range[0];
+        memcpy(dest + j*d_size, src + i*d_size, d_size);
       }
-      src += d_size;
     }
 
   }
@@ -900,35 +896,29 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
     return;
   }
 
-  cs_lnum_t d_size = cs_datatype_size[datatype]*stride;
-  const cs_gnum_t  l_range[2] = {rs->l_range[0], rs->l_range[1]};
-  const cs_gnum_t  *g_id = rs->g_id;
+  const size_t n_elts = rs->n_elts[1];
+  const size_t d_size = cs_datatype_size[datatype]*stride;
 
-  /* Case with overlapping source and destination */
+  const cs_gnum_t l_range[2] = {rs->l_range[0], rs->l_range[1]};
+  const cs_gnum_t *g_id = rs->g_id;
+
+  const unsigned char *src = src_val;
+  unsigned char *dest = dest_val;
+
+  /* Case with overlapping source and destination
+     (work from end down to avoid overwrites); */
 
   if (src_val == dest_val) {
 
-    cs_lnum_t i_d = rs->n_elts[1] - 1;
-    cs_lnum_t i_s = rs->n_elts[0] - 1;
+    const cs_lnum_t lb = rs->n_elts[2];
 
-    /* First set of compact values */
-
-    unsigned char *src = (unsigned char *)dest_val + i_s*d_size;
-    unsigned char *dest = (unsigned char *)dest_val + i_d*d_size;
-
-    while (i_d >= 0) {
-
-      if (g_id[i_d] >= l_range[0] && g_id[i_d] < l_range[1]) {
-        memmove(dest, src, d_size);
-        src -= d_size;
-        i_s--;
+    for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
+      if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+        size_t j = g_id[i] - l_range[0];
+        if (i >= j) { /* additional check in case of same-rank perdiodicity */
+          memcpy(dest + i*d_size, src + j*d_size, d_size);
+        }
       }
-      dest -= d_size;
-      i_d--;
-
-      if (i_d == i_s)
-        break;
-
     }
 
   }
@@ -937,17 +927,11 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
   else { /* src_val != dest_val */
 
-    cs_lnum_t n_elts = rs->n_elts[1];
-
-    const unsigned char *src = src_val;
-    unsigned char *dest = dest_val;
-
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        memcpy(dest, src, d_size);
-        src += d_size;
+        size_t j = g_id[i] - l_range[0];
+        memcpy(dest + i*d_size, src + j*d_size, d_size);
       }
-      dest += d_size;
     }
 
   }

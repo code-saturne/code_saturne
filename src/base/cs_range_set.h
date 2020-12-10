@@ -56,8 +56,9 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_lnum_t  n_elts[2];             /*!< Number of associated local elements
-                                         (0: local range, 1: total) */
+  cs_lnum_t  n_elts[3];             /*!< Number of associated local elements
+                                         (0: local range, 1: total,
+                                         2: first "out of local range" id) */
 
   cs_gnum_t  l_range[2];            /*!< global id range assigned to local
                                          rank: [start, past-the-end[ */
