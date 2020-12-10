@@ -91,7 +91,7 @@ struct _cs_interface_t {
   cs_lnum_t   *match_id;       /* Matching element ids for same-rank interface,
                                   distant element ids such that match_id[i]
                                   on distant rank matches local_id[i]
-                                  (temporary life cycle enven in parallel) */
+                                  (temporary life cycle even in parallel) */
   cs_lnum_t   *send_order;     /* Local element ids ordered so that
                                   receive matches elt_id for other-rank
                                   interfaces, and match_id[send_order[i]]
@@ -110,6 +110,8 @@ struct _cs_interface_set_t {
   cs_interface_t          **interfaces;    /* Interface structures array */
 
   const fvm_periodicity_t  *periodicity;   /* Optional periodicity structure */
+
+  int                       match_id_rc;   /* Match_id reference count */
 
 #if defined(HAVE_MPI)
   MPI_Comm                  comm;          /* Associated communicator */
@@ -3189,6 +3191,108 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
   BFT_FREE(send_buf);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply strided subdivision of elements to id array;
+ *
+ * \param[in]  size     original array size
+ * \param[in]  stride   number of sub-elements per element
+ * \param[in]  array_o  original array
+ *
+ * \return  subdivided array
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t *
+_copy_sub_strided(cs_lnum_t   size_old,
+                  cs_lnum_t   stride,
+                  cs_lnum_t  *array_o)
+{
+  cs_lnum_t  size_new = size_old*stride;
+
+  cs_lnum_t *array_n = NULL;
+
+  if (array_o != NULL) {
+    BFT_MALLOC(array_n, size_new, cs_lnum_t);
+    for (cs_lnum_t i = 0; i < size_new; i++)
+      array_n[i] = array_o[i/stride]*stride + i%stride;
+  }
+
+  return array_n;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply bloc subdivision of elements to interface;
+ *
+ * The match ids of interfaces should be available for this operation.
+ *
+ * \param[in]  o             reference interface
+ * \param[in]  l_block_size  local block size
+ * \param[in]  d_block_size  distant block size
+ * \param[in]  n_blocks      number of blocks in new interface
+ *
+ * \return  blocked interface
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_interface_t  *
+_copy_sub_blocked(cs_interface_t  *o,
+                  cs_lnum_t        l_block_size,
+                  cs_lnum_t        d_block_size,
+                  cs_lnum_t        n_blocks)
+{
+  cs_interface_t *n = _cs_interface_create();
+
+  n->rank = o->rank;
+  n->size = o->size * n_blocks;
+
+  n->tr_index_size = o->tr_index_size;
+  if (o->tr_index != NULL) {
+    BFT_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
+    for (int j = 0; j < n->tr_index_size; j++)
+      n->tr_index[j] = o->tr_index[j] * n_blocks;
+  }
+
+  const int _tr_index[2] = {0, o->size};
+  const int *tr_index = (o->tr_index != NULL) ? o->tr_index : _tr_index;
+  const int n_tr = (o->tr_index != NULL) ? o->tr_index_size - 1: 1;
+
+  cs_lnum_t  size_new = o->size * n_blocks;
+
+  if (o->elt_id != NULL) {
+
+    BFT_MALLOC(n->elt_id, size_new, cs_lnum_t);
+
+    cs_lnum_t j = 0;
+    for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+      cs_lnum_t s_id = tr_index[tr_id];
+      cs_lnum_t e_id = tr_index[tr_id+1];
+      for (cs_lnum_t b_id = 0; b_id < n_blocks; b_id++) {
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          n->elt_id[j++] = o->elt_id[i] + l_block_size*b_id;
+        }
+      }
+    }
+
+
+    BFT_MALLOC(n->match_id, size_new, cs_lnum_t);
+
+    j = 0;
+    for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+      cs_lnum_t s_id = tr_index[tr_id];
+      cs_lnum_t e_id = tr_index[tr_id+1];
+      for (cs_lnum_t b_id = 0; b_id < n_blocks; b_id++) {
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+          n->match_id[j++] = o->match_id[i] + d_block_size*b_id;
+        }
+      }
+    }
+  }
+
+  return n;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -3408,6 +3512,7 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
   ifs->size = 0;
   ifs->interfaces = NULL;
   ifs->periodicity = periodicity;
+  ifs->match_id_rc = 0;
 
 #if defined(HAVE_MPI)
 
@@ -3502,6 +3607,197 @@ cs_interface_set_destroy(cs_interface_set_t  **ifs)
     BFT_FREE(itfs);
     *ifs = itfs;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Duplicate an interface set, applying an optional constant stride.
+ *
+ * \param[in, out]  ifs     pointer to interface set structure
+ * \param[in]       stride  if > 1, each element subdivided in stride elements
+ *
+ * \return  pointer to new interface set
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t  *
+cs_interface_set_dup(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  stride)
+{
+  if (stride < 1)
+    stride = 1;
+
+  cs_interface_set_t  *ifs_new;
+  BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
+
+  ifs_new->size = ifs->size;
+  ifs_new->periodicity = ifs->periodicity;
+  ifs_new->match_id_rc = 0;
+
+#if defined(HAVE_MPI)
+  ifs_new->comm = ifs->comm;
+#endif
+
+  BFT_MALLOC(ifs_new->interfaces,
+             ifs->size,
+             cs_interface_t *);
+
+  /* Loop on interfaces */
+
+  for (int i = 0; i < ifs->size; i++) {
+
+    cs_interface_t *o = ifs->interfaces[i];
+    cs_interface_t *n = _cs_interface_create();
+
+    n->rank = o->rank;
+    n->size = o->size * stride;
+
+    n->tr_index_size = o->tr_index_size;
+    if (o->tr_index != NULL) {
+      BFT_MALLOC(n->tr_index, n->tr_index_size, cs_lnum_t);
+      for (int j = 0; j < n->tr_index_size; j++)
+        n->tr_index[j] = o->tr_index[j] * stride;
+    }
+
+    n->elt_id = _copy_sub_strided(o->size, stride, o->elt_id);
+    n->send_order = _copy_sub_strided(o->size, stride, o->send_order);
+
+    n->match_id = NULL;
+
+    ifs_new->interfaces[i] = n;
+  }
+
+  return ifs_new;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Duplicate an interface set for coupled variable blocks.
+ *
+ * \param[in, out]  ifs         pointer to interface set structure
+ * \param[in]       block_size  local block size (number of elements)
+ * \param[in]       n_blocks    number of associated blocks
+ *
+ * \return  pointer to new interface set
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t  *
+cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
+                            cs_lnum_t            block_size,
+                            cs_lnum_t            n_blocks)
+{
+  if (n_blocks < 1)
+    n_blocks = 1;
+
+  cs_interface_set_t  *ifs_new;
+  BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
+  ifs->match_id_rc = 0;
+
+  ifs_new->size = ifs->size;
+  ifs_new->periodicity = ifs->periodicity;
+
+  cs_lnum_t *d_block_size;
+  BFT_MALLOC(d_block_size, ifs->size, cs_lnum_t);
+
+  int n_ranks = 1;
+
+#if defined(HAVE_MPI)
+
+  ifs_new->comm = ifs->comm;
+
+  /* Exchange block sizes */
+
+  int request_count = 0, local_rank = -1;
+  MPI_Request *request = NULL;
+  MPI_Status *status  = NULL;
+
+  if (ifs->comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(ifs->comm, &local_rank);
+    MPI_Comm_size(ifs->comm, &n_ranks);
+  }
+
+  if (n_ranks > 1) {
+
+    cs_lnum_t send_buf[1] = {block_size};
+
+    BFT_MALLOC(request, ifs->size*2, MPI_Request);
+    BFT_MALLOC(status, ifs->size*2, MPI_Status);
+
+    for (int i = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      if (itf->rank != local_rank)
+        MPI_Irecv(d_block_size + i,
+                  1,
+                  CS_MPI_LNUM,
+                  itf->rank,
+                  itf->rank,
+                  ifs->comm,
+                  &(request[request_count++]));
+      else
+        d_block_size[i] = block_size;
+    }
+
+    for (int i = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      if (itf->rank != local_rank)
+        MPI_Isend(send_buf,
+                  1,
+                  CS_MPI_LNUM,
+                  itf->rank,
+                  local_rank,
+                  ifs->comm,
+                  &(request[request_count++]));
+    }
+
+    MPI_Waitall(request_count, request, status);
+
+    BFT_FREE(request);
+    BFT_FREE(status);
+
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  if (n_ranks <= 1 && ifs->size > 0) {
+    cs_interface_t *itf = ifs->interfaces[0];
+
+    assert(ifs->size <= 1);
+    assert(itf->rank == 0);
+
+    d_block_size[0] = block_size;
+  }
+
+  /* Ensure match ids are available on reference interface */
+
+  cs_interface_set_add_match_ids(ifs);
+
+  /* Build new interface
+     ------------------- */
+
+  BFT_MALLOC(ifs_new->interfaces,
+             ifs->size,
+             cs_interface_t *);
+
+  /* Loop on interfaces */
+
+  for (int i = 0; i < ifs->size; i++) {
+    cs_interface_t *o = ifs->interfaces[i];
+    ifs_new->interfaces[i]
+      = _copy_sub_blocked(o, block_size, d_block_size[i], n_blocks);
+  }
+
+  /* Free memory */
+
+  cs_interface_set_free_match_ids(ifs);
+
+  BFT_FREE(d_block_size);
+
+  /* Finish preparation of interface set and return */
+
+  _match_id_to_send_order(ifs_new);
+
+  return ifs_new;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5537,7 +5833,7 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
 /*!
  * \brief Add matching element id information to an interface set.
  *
- * This information is required by calls to cs_interface_get_dist_ids(),
+ * This information is required by calls to cs_interface_get_match_ids(),
  * and may be freed using cs_interface_set_free_match_ids().
  *
  * \param[in]  ifs  pointer to interface set structure
@@ -5547,6 +5843,11 @@ cs_interface_set_max_tr(const cs_interface_set_t  *ifs,
 void
 cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 {
+  ifs->match_id_rc += 1;
+
+  if (ifs->match_id_rc > 1)
+    return;
+
   int i;
   cs_lnum_t j;
   int local_rank = 0;
@@ -5657,7 +5958,7 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 /*!
  * \brief Free matching element id information of an interface set.
  *
- * This information is used by calls to cs_interface_get_dist_ids(),
+ * This information is used by calls to cs_interface_get_match_ids(),
  * and may be defined using cs_interface_set_add_match_ids().
  *
  * \param[in]  ifs  pointer to interface set structure
@@ -5667,16 +5968,88 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
 void
 cs_interface_set_free_match_ids(cs_interface_set_t  *ifs)
 {
-  int i;
-
   assert(ifs != NULL);
 
-  for (i = 0; i < ifs->size; i++) {
+  if (ifs->match_id_rc > 0)
+    ifs->match_id_rc -= 1;
+
+  if (ifs->match_id_rc > 0)
+    return;
+
+  for (int i = 0; i < ifs->size; i++) {
     cs_interface_t *itf = ifs->interfaces[i];
     assert(itf->send_order != NULL || itf->size == 0);
     BFT_FREE(itf->match_id);
   }
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tag mutiple elements of local interface with a given values.
+ *
+ * This is effective only on an interface matching the current rank,
+ * and when multiple (periodic) instances of a given element appear on that
+ * rank, al instances except the first are tagged with the chosen value.
+ *
+ * \param[in]       ifs          pointer to interface set structure
+ * \param[in]       periodicity  periodicity information (NULL if none)
+ * \param[in]       tr_ignore   if > 0, ignore periodicity with rotation;
+ *                              if > 1, ignore all periodic transforms
+ * \param[in]       tag_value   tag to assign
+ * \param[in, out]  tag         global tag array for elements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_tag_local_matches(const cs_interface_t     *itf,
+                               const fvm_periodicity_t  *periodicity,
+                               int                       tr_ignore,
+                               cs_gnum_t                 tag_value,
+                               cs_gnum_t                *tag)
+{
+  int l_rank = CS_MAX(cs_glob_rank_id, 0);
+
+  if (itf->rank != l_rank)
+    return;
+
+  /* Build temporary local match id */
+
+  cs_lnum_t  *match_id;
+  BFT_MALLOC(match_id, itf->size, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < itf->size; i++)
+    match_id[i] = itf->elt_id[itf->send_order[i]];
+
+  /* Also filter by transform type if needed */
+
+  fvm_periodicity_type_t p_type_max = FVM_PERIODICITY_MIXED;
+  int n_tr_max = itf->tr_index_size - 2;
+
+  assert(n_tr_max == fvm_periodicity_get_n_transforms(periodicity));
+
+  if (tr_ignore == 1)
+    p_type_max = FVM_PERIODICITY_TRANSLATION;
+  else if (tr_ignore  == 2)
+    p_type_max = FVM_PERIODICITY_NULL;
+
+  const cs_lnum_t *tr_index = itf->tr_index;
+
+  for (int tr_id = 0; tr_id < n_tr_max; tr_id++) {
+
+    if (fvm_periodicity_get_type(periodicity, tr_id) > p_type_max)
+      continue;
+
+    cs_lnum_t s_id = tr_index[tr_id+1];
+    cs_lnum_t e_id = tr_index[tr_id+2];
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t k = CS_MAX(itf->elt_id[j], match_id[j]);
+      tag[k] = tag_value;
+    }
+
+  }
+
+  BFT_FREE(match_id);
 }
 
 /*----------------------------------------------------------------------------*/

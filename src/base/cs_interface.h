@@ -168,6 +168,30 @@ cs_interface_get_tr_index_size(const cs_interface_t  *itf);
 const cs_lnum_t *
 cs_interface_get_tr_index(const cs_interface_t  *itf);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tag mutiple elements of local interface with a given values.
+ *
+ * This is effective only on an interface matching the current rank,
+ * and when multiple (periodic) instances of a given element appear on that
+ * rank, al instances except the first are tagged with the chosen value.
+ *
+ * \param[in]       ifs          pointer to interface set structure
+ * \param[in]       periodicity  periodicity information (NULL if none)
+ * \param[in]       tr_ignore   if > 0, ignore periodicity with rotation;
+ *                              if > 1, ignore all periodic transforms
+ * \param[in]       tag_value   tag to assign
+ * \param[in, out]  tag         global tag array for elements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_tag_local_matches(const cs_interface_t     *itf,
+                               const fvm_periodicity_t  *periodicity,
+                               int                       tr_ignore,
+                               cs_gnum_t                 tag_value,
+                               cs_gnum_t                *tag);
+
 /*----------------------------------------------------------------------------
  * Creation of a list of interfaces between elements of a same type.
  *
@@ -224,6 +248,38 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
 void
 cs_interface_set_destroy(cs_interface_set_t  **ifs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Duplicate an interface set, applying an optional constant stride.
+ *
+ * \param[in, out]  ifs     pointer to interface set structure
+ * \param[in]       stride  if > 1, each element subdivided in stride elements
+ *
+ * \return  pointer to new interface set
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t  *
+cs_interface_set_dup(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  stride);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Duplicate an interface set for coupled variable blocks.
+ *
+ * \param[in, out]  ifs         pointer to interface set structure
+ * \param[in]       block_size  local block size (number of elements)
+ * \param[in]       n_blocks    number of associated blocks
+ *
+ * \return  pointer to new interface set
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t  *
+cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
+                            cs_lnum_t            block_size,
+                            cs_lnum_t            n_blocks);
 
 /*----------------------------------------------------------------------------
  * Return number of interfaces associated with an interface set.
@@ -300,7 +356,7 @@ cs_interface_set_renumber(cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------
  * Add matching element id information to an interface set.
  *
- * This information is required by calls to cs_interface_get_dist_ids(),
+ * This information is required by calls to cs_interface_get_match_ids(),
  * and may be freed using cs_interface_set_free_match_ids().
  *
  * parameters:
@@ -313,7 +369,7 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs);
 /*----------------------------------------------------------------------------
  * Free matching element id information of an interface set.
  *
- * This information is used by calls to cs_interface_get_dist_ids(),
+ * This information is used by calls to cs_interface_get_match_ids(),
  * and may be defined using cs_interface_set_add_match_ids().
  *
  * parameters:

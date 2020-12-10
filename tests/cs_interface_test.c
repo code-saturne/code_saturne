@@ -215,6 +215,22 @@ _periodic_is_test(int                       ordered_gnum,
     bft_printf("%2d: %12.3f %12.3f\n", (int)ii, var[ii], var[ii + n_elements]);
   BFT_FREE(var);
 
+  /* Test duplications */
+
+  bft_printf("\nInterface set dup test:\n\n");
+
+  cs_interface_set_t  *d3 = cs_interface_set_dup(ifset, 3);
+  cs_interface_set_dump(d3);
+  cs_interface_set_destroy(&d3);
+
+  bft_printf("\nInterface set block test:\n\n");
+
+  cs_interface_set_t  *b3 = cs_interface_set_dup_blocks(ifset,
+                                                        1000 + 10*(comm_rank%3),
+                                                        3);
+  cs_interface_set_dump(b3);
+  cs_interface_set_destroy(&b3);
+
   cs_interface_set_destroy(&ifset);
 }
 
