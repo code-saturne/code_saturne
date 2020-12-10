@@ -914,7 +914,7 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
     for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
       if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        size_t j = g_id[i] - l_range[0];
+        cs_lnum_t j = g_id[i] - l_range[0];
         if (i >= j) { /* additional check in case of same-rank perdiodicity */
           memcpy(dest + i*d_size, src + j*d_size, d_size);
         }
@@ -927,7 +927,7 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
   else { /* src_val != dest_val */
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (size_t i = 0; i < n_elts; i++) {
       if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
         size_t j = g_id[i] - l_range[0];
         memcpy(dest + i*d_size, src + j*d_size, d_size);
