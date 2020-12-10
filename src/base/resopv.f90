@@ -218,8 +218,8 @@ double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 double precision, allocatable, dimension(:) :: adxk, adxkm1, dphim1, rhs0
-double precision, allocatable, dimension(:,:) :: weighf
-double precision, allocatable, dimension(:) :: weighb
+double precision, allocatable, dimension(:,:) :: weighf, weighftp
+double precision, allocatable, dimension(:) :: weighb, weighbtp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
@@ -994,44 +994,44 @@ if (arak.gt.0.d0) then
   allocate(ipro_visc(nfac))
   allocate(bpro_visc(nfabor))
 
-  if (ivofmt.gt.0) then
-    imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
-  else
-    imvisp = imvisf
-  endif
-
-  allocate(cpro_visc(ncelet))
-
-  if (idilat.eq.4.or.ivofmt.gt.0) then
-    do iel = 1, ncel
-      cpro_visc(iel) = arak * da_u(iel) / crom(iel)
-    enddo
-  else
-    do iel = 1, ncel
-      cpro_visc(iel) = arak * da_u(iel)
-    enddo
-  endif
-
-  call viscfa &
-    !==========
-  ( imvisp ,            &
-    cpro_visc ,            &
-    ipro_visc, bpro_visc)
-
-  ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
-  ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
-  ! de pression et le filtre sont annules.
-  if (nbrcpl.gt.0) then
-    do ifac = 1, nfabor
-      if (itypfb(ifac).eq.icscpd) then
-        bpro_visc(ifac) = 0.d0
-      endif
-    enddo
-  endif
-
   ! Scalar diffusivity
   !-------------------
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+
+    allocate(cpro_visc(ncelet))
+
+    if (idilat.eq.4.or.ivofmt.gt.0) then
+      do iel = 1, ncel
+        cpro_visc(iel) = arak * da_u(iel) / crom(iel)
+      enddo
+    else
+      do iel = 1, ncel
+        cpro_visc(iel) = arak * da_u(iel)
+      enddo
+    endif
+
+    if (ivofmt.gt.0) then
+      imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
+    else
+      imvisp = imvisf
+    endif
+
+    call viscfa &
+    !==========
+  ( imvisp ,               &
+    cpro_visc ,            &
+    ipro_visc , bpro_visc)
+
+    ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
+    ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
+    ! de pression et le filtre sont annules.
+    if (nbrcpl.gt.0) then
+      do ifac = 1, nfabor
+        if (itypfb(ifac).eq.icscpd) then
+          bpro_visc(ifac) = 0.d0
+        endif
+      enddo
+    endif
 
     imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
@@ -1075,6 +1075,7 @@ if (arak.gt.0.d0) then
 
     endif
 
+    deallocate(cpro_visc)
 
   ! Tensor diffusivity
   !-------------------
@@ -1089,6 +1090,29 @@ if (arak.gt.0.d0) then
       cpro_vitenp(5,iel) = arak*vitenp(5,iel)
       cpro_vitenp(6,iel) = arak*vitenp(6,iel)
     enddo
+
+    allocate(weighftp(2,nfac))
+    allocate(weighbtp(ndimfb))
+
+    call vitens &
+    !==========
+   ( cpro_vitenp, iwarnp   ,             &
+     weighftp   , weighbtp ,             &
+     ipro_visc  , bpro_visc)
+
+    deallocate(weighftp)
+    deallocate(weighbtp)
+
+    ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
+    ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
+    ! de pression et le filtre sont annules.
+    if (nbrcpl.gt.0) then
+      do ifac = 1, nfabor
+        if (itypfb(ifac).eq.icscpd) then
+          bpro_visc(ifac) = 0.d0
+        endif
+      enddo
+    endif
 
     imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
@@ -1140,7 +1164,6 @@ if (arak.gt.0.d0) then
 
   deallocate(ipro_visc)
   deallocate(bpro_visc)
-  deallocate(cpro_visc)
 
 endif
 
