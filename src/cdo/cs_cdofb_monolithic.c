@@ -320,79 +320,25 @@ _build_shared_structures(void)
 
   const cs_mesh_t  *m = cs_shared_mesh;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
-  const cs_lnum_t  n_i_faces = m->n_i_faces;
-  const cs_lnum_t  n_b_faces = m->n_b_faces;
   const cs_lnum_t  size = 3*n_faces + m->n_cells;
-  const cs_gnum_t  n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
 
-  /* 1. Build the global numbering */
-  cs_gnum_t  *gnum = NULL;
-  BFT_MALLOC(gnum, size, cs_gnum_t);
+  /* 1. Build the interface set and the range set structures */
 
-  if (cs_glob_n_ranks > 1) {
+  cs_interface_set_t *ifs
+    = cs_cdo_connect_define_face_interface(m);
 
-    for (int xyz = 0; xyz < 3; xyz++) {
+  _shared_interface_set
+    = cs_interface_set_dup_blocks(ifs, n_faces, 3);
 
-      cs_gnum_t  *_ignum = gnum + xyz * n_faces;
-      cs_gnum_t  *_bgnum = _ignum + n_i_faces;
-      const cs_gnum_t  igshift = xyz * n_g_faces;
-      const cs_gnum_t  bgshift = igshift + m->n_g_i_faces;
-
-#     pragma omp parallel if (n_i_faces > CS_THR_MIN)
-      {
-        /* Interior faces (X, Y or Z) */
-#       pragma omp for nowait
-        for (cs_lnum_t i = 0; i < n_i_faces; i++)
-          _ignum[i] = igshift + m->global_i_face_num[i];
-
-        /* Boundary faces (X, Y or Z) */
-#       pragma omp for nowait
-        for (cs_lnum_t i = 0; i < n_b_faces; i++)
-          _bgnum[i] = bgshift + m->global_b_face_num[i];
-
-      } /* End of the OpenMP region */
-
-    } /* Loop on components */
-
-    /* Add pressure DoFs */
-    cs_gnum_t  *_pgnum = gnum + 3*n_faces;
-    const cs_gnum_t  pgshift = 3*n_g_faces;
-
-#   pragma omp parallel if (n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < m->n_cells; i++)
-      _pgnum[i] = m->global_cell_num[i] + pgshift;
-
-  }
-  else {
-
-#   pragma omp parallel for if (size > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < (cs_gnum_t)size; i++)
-      gnum[i] = i + 1;
-
-  } /* Sequential or parallel run */
-
-  /* 2. Build the interface set and the range set structures */
-
-  /* Do not consider periodicity up to now. Should split the face interface
-     into interior and border faces to do this, since only boundary faces
-     can be associated to a periodicity */
-
-  _shared_interface_set = cs_interface_set_create(size,
-                                                  NULL,
-                                                  gnum,
-                                                  m->periodicity,
-                                                  0, NULL, NULL, NULL);
+  cs_interface_set_destroy(&ifs);
 
   _shared_range_set = cs_range_set_create(_shared_interface_set,
-                                          NULL,      /* halo */
+                                          NULL,   /* halo */
                                           size,
-                                          false,     /* TODO: Ask Yvan */
-                                          0);        /* g_id_base */
+                                          false,  /* TODO: add balance option */
+                                          0);     /* g_id_base */
 
-  /* Free memory */
-  BFT_FREE(gnum);
-
-  /* 3. Build the matrix assembler structure */
+  /* 2. Build the matrix assembler structure */
   const cs_adjacency_t  *f2f = cs_shared_connect->f2f;
   const cs_adjacency_t  *f2c = cs_shared_connect->f2c;
 
@@ -502,12 +448,12 @@ _build_shared_structures(void)
 
   } /* Loop on face entities */
 
-  /* 4. Build the matrix structure */
+  /* 3. Build the matrix structure */
   cs_matrix_assembler_compute(_shared_matrix_assembler);
 
-  _shared_matrix_structure =
-    cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR,
-                                              _shared_matrix_assembler);
+  _shared_matrix_structure
+    = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR,
+                                                _shared_matrix_assembler);
 
   /* Free temporary buffers */
   BFT_FREE(grows);

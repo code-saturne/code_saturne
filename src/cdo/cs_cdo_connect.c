@@ -784,7 +784,7 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
     rs = cs_range_set_create(ifs,   /* interface set */
                              NULL,  /* halo */
                              n_edges,
-                             false, /* TODO: Ask Yvan */
+                             false, /* TODO: add option for balance */
                              0);    /* g_id_base */
 
   }
@@ -817,58 +817,22 @@ _assign_face_ifs_rs(const cs_mesh_t       *mesh,
                     cs_interface_set_t   **p_ifs,
                     cs_range_set_t       **p_rs)
 {
+  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(mesh);
+
+  if (n_face_dofs > 1) {
+    cs_interface_set_t  *ifs_s = cs_interface_set_dup(ifs, n_face_dofs);
+    cs_interface_set_destroy(&ifs);
+    ifs = ifs_s;
+  }
+
   const cs_lnum_t  n_elts = n_faces * n_face_dofs;
 
-  cs_gnum_t *face_gnum = NULL;
-  BFT_MALLOC(face_gnum, n_elts, cs_gnum_t);
-
-  if (cs_glob_n_ranks > 1) {
-
-    const cs_lnum_t  i_lshift = mesh->n_i_faces * n_face_dofs;
-    const cs_gnum_t  i_gshift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
-
-#   pragma omp parallel for if (mesh->n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
-      const cs_gnum_t  o =  n_face_dofs * mesh->global_i_face_num[i];
-      cs_gnum_t  *_gnum = face_gnum + i*n_face_dofs;
-      for (int j = 0; j < n_face_dofs; j++)
-        _gnum[j] = o + (cs_gnum_t)j;
-    }
-
-#   pragma omp parallel for if (mesh->n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
-      const cs_gnum_t  o = n_face_dofs * mesh->global_b_face_num[i] + i_gshift;
-       cs_gnum_t  *_gnum = face_gnum + i*n_face_dofs + i_lshift;
-      for (int j = 0; j < n_face_dofs; j++)
-        _gnum[j] = o + (cs_gnum_t)j;
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
-      face_gnum[i] = i + 1;
-
-  } /* Sequential or parallel run */
-
-  /* Do not consider periodicity up to now. Should split the face interface
-     into interior and border faces to do this, since only boundary faces
-     can be associated to a periodicity */
-  cs_interface_set_t  *ifs = NULL;
-  ifs = cs_interface_set_create(n_elts,
-                                NULL,
-                                face_gnum,
-                                mesh->periodicity, 0, NULL, NULL, NULL);
-
-  cs_range_set_t  *rs = cs_range_set_create(ifs,   /* interface set */
-                                            NULL,  /* halo */
-                                            n_elts,
-                                            false, /* TODO: Ask Yvan */
-                                            0);    /* g_id_base */
-
-  /* Free memory */
-  BFT_FREE(face_gnum);
+  cs_range_set_t
+    *rs = cs_range_set_create(ifs,    /* interface set */
+                              NULL,   /* halo */
+                              n_elts,
+                              false,  /* TODO: add option for balance */
+                              0);     /* g_id_base */
 
   /* Return pointers */
   *p_ifs = ifs;
@@ -907,56 +871,19 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
   case 1: /* Scalar-valued */
     ifs = *p_ifs;
     assert(ifs != NULL);        /* Should be already set */
-    rs = cs_range_set_create(ifs,
-                             NULL,
-                             n_vertices,
-                             false,    /* TODO: Ask Yvan */
-                             0);       /* g_id_base */
     break;
 
   default:
-    {
-      cs_gnum_t *v_gnum = NULL;
-      BFT_MALLOC(v_gnum, n_elts, cs_gnum_t);
-
-      if (cs_glob_n_ranks > 1) {
-
-#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_vertices; i++) {
-          const cs_gnum_t  o =  n_vtx_dofs * mesh->global_vtx_num[i];
-          cs_gnum_t  *_gnum = v_gnum + i*n_vtx_dofs;
-          for (int j = 0; j < n_vtx_dofs; j++)
-            _gnum[j] = o + (cs_gnum_t)j;
-        }
-
-      }
-      else {
-
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-        for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
-          v_gnum[i] = i + 1;
-
-      } /* Sequential or parallel run */
-
-      /* Do not consider periodicity up to now. Should split the vertex
-         interface into interior and border vertices to do this, since only
-         boundary vertices can be associated to a periodicity */
-      ifs = cs_interface_set_create(n_elts,
-                                    NULL,
-                                    v_gnum,
-                                    mesh->periodicity, 0, NULL, NULL, NULL);
-      rs = cs_range_set_create(ifs,
-                               NULL,
-                               n_elts,
-                               false,  /* TODO: Ask Yvan */
-                               0);      /* g_id_base */
-
-      /* Free memory */
-      BFT_FREE(v_gnum);
-    }
+    ifs = cs_interface_set_dup(*p_ifs, n_vtx_dofs);
     break;
 
   } /* End of switch on dimension */
+
+  rs = cs_range_set_create(ifs,
+                           NULL,
+                           n_elts,
+                           false,  /* TODO: add option for balance */
+                           0);     /* g_id_base */
 
   /* Return pointers */
   *p_ifs = ifs;
@@ -980,47 +907,59 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 /*----------------------------------------------------------------------------*/
 
 cs_interface_set_t *
-cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh)
+cs_cdo_connect_define_face_interface(const cs_mesh_t  *mesh)
 {
   cs_interface_set_t  *ifs = NULL;
 
-  const cs_lnum_t  n_elts = mesh->n_i_faces + mesh->n_b_faces;
+  const cs_gnum_t *face_gnum = mesh->global_i_face_num;
+  cs_gnum_t *_face_gnum = NULL;
 
-  cs_gnum_t *face_gnum = NULL;
-  BFT_MALLOC(face_gnum, n_elts, cs_gnum_t);
+  if (face_gnum == NULL) {
+    cs_lnum_t _n_faces = mesh->n_i_faces;
+    BFT_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
 
-  if (cs_glob_n_ranks > 1) {
+#   pragma omp parallel for if (_n_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < _n_faces; i++)
+      _face_gnum[i] = i+1;
 
-    memcpy(face_gnum, mesh->global_i_face_num,
-           mesh->n_i_faces*sizeof(cs_gnum_t));
-
-    cs_gnum_t  *_fg = face_gnum + mesh->n_i_faces;
-#   pragma omp parallel for if (mesh->n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
-      _fg[i] = mesh->n_g_i_faces + mesh->global_b_face_num[i];
-
+    face_gnum = _face_gnum;
   }
-  else {
 
-#   pragma omp parallel for if (n_elts > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
-      face_gnum[i] = i + 1;
+  int n_perio = mesh->n_init_perio;
+  int *perio_num = NULL;
+  cs_lnum_t *n_perio_face_couples = NULL;
+  cs_gnum_t **perio_face_couples = NULL;
 
-  } /* Sequential or parallel run */
+  if (n_perio > 0) {
+    BFT_MALLOC(perio_num, n_perio, int);
+    for (int i = 0; i < n_perio; i++)
+      perio_num[i] = i+1;
+  }
 
-  /* Do not consider periodicity up to now. Should split the face interface
-     into interior and border faces to do this, since only boundary faces
-     can be associated to a periodicity */
-  ifs = cs_interface_set_create(n_elts,
+  cs_mesh_get_perio_faces(mesh,
+                          &n_perio_face_couples,
+                          &perio_face_couples);
+
+  ifs = cs_interface_set_create(mesh->n_i_faces,
                                 NULL,
                                 face_gnum,
-                                mesh->periodicity, 0, NULL, NULL, NULL);
+                                mesh->periodicity,
+                                n_perio,
+                                perio_num,
+                                n_perio_face_couples,
+                                (const cs_gnum_t *const *)perio_face_couples);
 
-  /* Free memory */
-  BFT_FREE(face_gnum);
+  if (n_perio > 0) {
+    for (int i = 0; i < n_perio; i++)
+      BFT_FREE(perio_face_couples[i]);
+    BFT_FREE(perio_face_couples);
+    BFT_FREE(n_perio_face_couples);
+    BFT_FREE(perio_num);
+  }
 
-  /* Return pointers */
-  return  ifs;
+  BFT_FREE(_face_gnum);
+
+  return ifs;
 }
 
 /*----------------------------------------------------------------------------*/
