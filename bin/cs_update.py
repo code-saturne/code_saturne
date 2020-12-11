@@ -53,6 +53,7 @@ except Exception:
 from code_saturne import cs_exec_environment
 from code_saturne import cs_runcase
 from code_saturne import cs_run_conf
+from code_saturne.cs_case import get_case_dir
 from code_saturne.cs_create import set_executable, unset_executable
 from code_saturne.cs_create import create_local_launcher
 
@@ -130,7 +131,12 @@ def update_case(options, pkg):
         os.chdir(topdir)
 
         if case == ".":
-            casename = os.path.split(topdir)[-1]
+            case, staging_dir = get_case_dir()
+            if not case:
+                sys.stderr.write("  o Skipping '%s', which  does not seem "
+                                 "to be a case directory\n" % topdir)
+                continue
+            casename = os.path.basename(case)
         else:
             casename = case
 
