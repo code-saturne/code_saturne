@@ -753,7 +753,8 @@ main (int argc, char *argv[])
 
   BFT_FREE(g_vtx_num);
 
-  cs_range_set_t *rs = cs_range_set_create(vtx_ifs, NULL, _n_vtx, true, 0);
+  cs_range_set_t *rs = cs_range_set_create(vtx_ifs, NULL,
+                                           _n_vtx, true, 0, 0);
 
   cs_real_t *v0, *v1, *v2;
   BFT_MALLOC(v0, _n_vtx, cs_real_t);
