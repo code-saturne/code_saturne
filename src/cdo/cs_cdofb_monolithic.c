@@ -339,7 +339,7 @@ _build_shared_structures(void)
                                           NULL,   /* halo */
                                           size,
                                           false,  /* TODO: add balance option */
-                                          2,      /* tr_ignore */
+                                          1,      /* tr_ignore */
                                           0);     /* g_id_base */
 
   /* 2. Build the matrix assembler structure */

@@ -833,7 +833,7 @@ _assign_face_ifs_rs(const cs_mesh_t       *mesh,
                               NULL,   /* halo */
                               n_elts,
                               false,  /* TODO: add option for balance */
-                              2,      /* tr_ignore */
+                              1,      /* tr_ignore */
                               0);     /* g_id_base */
 
   /* Return pointers */
@@ -885,7 +885,7 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
                            NULL,
                            n_elts,
                            false,  /* TODO: add option for balance */
-                           2,      /* tr_ignore */
+                           1,      /* tr_ignore */
                            0);     /* g_id_base */
 
   /* Return pointers */
