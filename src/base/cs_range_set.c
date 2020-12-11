@@ -169,7 +169,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
                     _("%s: ignoring only rotational periodicity not supported."),
                     __func__);
       }
-      tr_ignore = 2;
+      tr_ignore = 0;
     }
   }
   else
