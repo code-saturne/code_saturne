@@ -182,6 +182,7 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
                       halo,
                       n_rows,
                       false,
+                      2, /* tr_ignore */
                       0, /* g_id_base */
                       _l_range,
                       _global_row_id);

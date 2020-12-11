@@ -83,7 +83,8 @@ BEGIN_C_DECLS
   elements which may be on parallel boundaries, such as vertices, edges,
   and faces).
 
-  Elements and their periodic matches always have distinct global ids;
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the range set options.
  */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -126,12 +127,15 @@ BEGIN_C_DECLS
  * elements which may be on parallel boundaries, such as vertices, edges,
  * and faces.
  *
- * Periodicity is ignored for this operation (i.e. elements and their periodic
- * matches are considered distinct).
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the tr_ignore argument.
  *
  * \param[in]   ifs          pointer to interface set structure
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks ?
+ * \param[in]   tr_ignore    0: periodic elements will share global ids
+ *                           > 0: ignore periodicity with rotation;
+ *                           > 1: ignore all periodic transforms
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)
  * \param[out]  l_range      global id range assigned to local rank:
@@ -144,10 +148,33 @@ static void
 _interface_set_partition_ids(const cs_interface_set_t  *ifs,
                              cs_lnum_t                  n_elts,
                              bool                       balance,
+                             int                        tr_ignore,
                              cs_gnum_t                  g_id_base,
                              cs_gnum_t                  l_range[2],
                              cs_gnum_t                 *g_id)
 {
+  int ifs_size = cs_interface_set_size(ifs);
+
+  /* Check for periodicity */
+
+  const fvm_periodicity_t *periodicity
+    = cs_interface_set_periodicity(ifs);
+  if (periodicity != NULL) {
+    if (tr_ignore == 1) {
+      int n_tr_max = fvm_periodicity_get_n_transforms(periodicity);
+      for (int tr_id = 0; tr_id < n_tr_max; tr_id++) {
+        if (   fvm_periodicity_get_type(periodicity, tr_id)
+            >= FVM_PERIODICITY_ROTATION)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("%s: ignoring only rotational periodicity not supported."),
+                    __func__);
+      }
+      tr_ignore = 2;
+    }
+  }
+  else
+    tr_ignore = 0;
+
   /* Use OpenMP pragma in case of first touch */
 
 # pragma omp parallel for
@@ -155,32 +182,30 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
     g_id[i] = 0;
 
   /* Second stage: mark elements which are not only local,
-     with the corresponding min or max rank, +1
+     with the corresponding min or max rank, +2
      (as g_id is used as a work array first and cannot have
-     negative values, mark with rank + 1 instead of rank */
+     negative values, we use 0 for unmarked, 1 for reverse
+     periodicity on the same rank, rank + 2 for interfaces
+     with different ranks) */
 
   int l_rank = CS_MAX(cs_glob_rank_id, 0);
-
-  int ifs_size = cs_interface_set_size(ifs);
 
   for (int i = 0; i < ifs_size; i++) {
 
     const cs_interface_t *itf = cs_interface_set_get(ifs, i);
 
-    cs_lnum_t   _tr_index[2] = {0, 0};
-    const cs_lnum_t *tr_index = cs_interface_get_tr_index(itf);
+    cs_lnum_t start_id = 0;
+    cs_lnum_t end_id = cs_interface_size(itf);
 
-    if (tr_index == NULL) {
-      _tr_index[1] = cs_interface_size(itf);
-      tr_index = _tr_index;
+    if (tr_ignore > 1) {
+      const cs_lnum_t *tr_index = cs_interface_get_tr_index(itf);
+      if (tr_index != NULL)
+        end_id = tr_index[1];
     }
 
     int itf_rank = cs_interface_rank(itf);
 
-    cs_lnum_t start_id = tr_index[0];
-    cs_lnum_t end_id = tr_index[1];
-
-    cs_gnum_t max_rank = CS_MAX(cs_glob_rank_id, itf_rank) + 1;
+    cs_gnum_t max_rank = CS_MAX(l_rank, itf_rank) + 2;
 
     const cs_lnum_t *elt_ids = cs_interface_get_elt_ids(itf);
 
@@ -188,7 +213,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
        of elements to lowest rank, 2nd half to highest rank */
 
     if (balance) {
-      cs_gnum_t min_rank= CS_MIN(l_rank, itf_rank) + 1;
+      cs_gnum_t min_rank= CS_MIN(l_rank, itf_rank) + 2;
       cs_lnum_t mid_id = (start_id + end_id) / 2;
       for (cs_lnum_t j = start_id; j < mid_id; j++) {
         cs_lnum_t k = elt_ids[j];
@@ -204,6 +229,19 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
       cs_lnum_t k = elt_ids[j];
       g_id[k] = CS_MAX(g_id[k], max_rank);
     }
+
+    /* Special case for local periodicity; for even (reverse)
+       transform ids, we set the global id to 1 (lower than then
+       minimum mark of 2);
+       For periodicity across multiple ranks, the standard
+       mechanism is sufficient. */
+
+    if (itf_rank == l_rank)
+      cs_interface_tag_local_matches(itf,
+                                     periodicity,
+                                     tr_ignore,
+                                     1,
+                                     g_id);
   }
 
   /* For balancing option, elements belonging to 2 ranks
@@ -218,7 +256,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
                             1,
                             true,
                             CS_GNUM_TYPE,
-                            2,
+                            tr_ignore,
                             g_id);
 
   /* Now count and mark of global elements */
@@ -226,7 +264,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
   l_range[0] = 0;
   l_range[1] = 0;
 
-  cs_gnum_t l_rank_mark = cs_glob_rank_id + 1;
+  cs_gnum_t l_rank_mark = cs_glob_rank_id + 2;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     if (g_id[i] == 0 || g_id[i] == l_rank_mark)
@@ -243,7 +281,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
 
   /* Mark with 1-based global id, 0 for non owned */
 
-  cs_gnum_t g_id_next = l_range[0] + 1;
+  cs_gnum_t g_id_next = l_range[0] + 2;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     if (g_id[i] == 0 || g_id[i] == l_rank_mark) {
@@ -251,7 +289,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
       g_id_next++;
     }
     else
-      g_id[i] = 0;
+      g_id[i] = 1;
   }
 
   cs_interface_set_max_tr(ifs,
@@ -259,42 +297,29 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
                           1,
                           true,
                           CS_GNUM_TYPE,
-                          2,
+                          tr_ignore,
                           g_id);
 
   /* Now assign to correct base */
 
-  if (g_id_base != 1) {
-    int64_t g_id_shift = (int64_t)g_id_base - 1;
-    for (cs_lnum_t i = 0; i < n_elts; i++)
+  if (g_id_base != 2) {
+    int64_t g_id_shift = (int64_t)g_id_base - 2;
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      assert(g_id[i] != 0);
       g_id[i] += g_id_shift;
+    }
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define global ids and a partitioning of data based on local ranges
- *        for elements which may be shared across ranks.
- *
- * Global id ranges are assigned to each rank of the interface set's associated
- * communicator, and global ids are defined by a parallel scan type operation
- * counting elements on parallel interfaces only once. Each element will
- * appear inside one rank's range and outside the range of all other ranks.
- * Ranges across different ranks are contiguous.
- *
- * This allows building distribution information such as that used in many
- * external libraries, such as PETSc, HYPRE, and may also simplify many
- * internal operations, where it is needed that elements have a unique owner
- * rank, and are ghosted on others (such as linear solvers operating on
- * elements which may be on parallel boundaries, such as vertices, edges,
- * and faces.
- *
- * Periodicity is ignored for this operation (i.e. elements and their periodic
- * matches are considered distinct).
+ * \brief Zero array values for elements whose global ids are
+ *        outside the local range, using an interface set to loop only
+ *        on relevant elements.
  *
  * \param[in]       ifs        pointer to interface set structure
- * \param[in]       stride     number of (interlaced) values by entity
  * \param[in]       datatype   type of data considered
+ * \param[in]       stride     number of (interlaced) values by entity
  * \param[in]       l_range    global id range assigned to local rank:
  *                             [start, past-the-end[
  * \param[in]       g_id       global id assigned to elements
@@ -429,13 +454,17 @@ _interface_set_zero_out_of_range(const cs_interface_set_t  *ifs,
  * elements which may be on parallel boundaries, such as vertices, edges,
  * and faces).
  *
- * Elements and their periodic matches allways have distinct global ids;
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the tr_ignore argument.
  *
  * \param[in]   ifs          pointer to interface set structure, or NULL
  * \param[in]   halo         pointer to halo structure, or NULL
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks ?
  *                           (for elements shared across an interface set)
+ * \param[in]   tr_ignore    0: periodic elements will share global ids
+ *                           > 0: ignore periodicity with rotation;
+ *                           > 1: ignore all periodic transforms
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)
  * \param[out]  l_range      global id range assigned to local rank:
@@ -449,6 +478,7 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
                     const cs_halo_t           *halo,
                     cs_lnum_t                  n_elts,
                     bool                       balance,
+                    int                        tr_ignore,
                     cs_gnum_t                  g_id_base,
                     cs_gnum_t                  l_range[2],
                     cs_gnum_t                 *g_id)
@@ -459,11 +489,33 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
     _interface_set_partition_ids(ifs,
                                  n_elts,
                                  balance,
+                                 tr_ignore,
                                  g_id_base,
                                  l_range,
                                  g_id);
 
   else {
+
+    if (tr_ignore < 2 && halo != NULL) {
+      if (halo->periodicity != NULL) {
+        bool handled = true;
+        if (tr_ignore == 0)
+          handled = false;
+        else { /* tr_ignore == 1 */
+          int n_tr_max = fvm_periodicity_get_n_transforms(halo->periodicity);
+          for (int tr_id = 0; tr_id < n_tr_max; tr_id++) {
+            if (  fvm_periodicity_get_type(halo->periodicity, tr_id)
+                < FVM_PERIODICITY_ROTATION)
+              handled = false;
+          }
+        }
+        if (handled == false)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("%s: merge of periodic elements not supported yet\n."
+                      "using halo information"),
+                    __func__);
+      }
+    }
 
     l_range[0] = g_id_base;
     l_range[1] = g_id_base + n_elts;
@@ -503,6 +555,9 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * appear inside one rank's range and outside the range of all other ranks.
  * Ranges across different ranks are contiguous.
  *
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the tr_ignore argument.
+ *
  * The range set maintains pointers to the optional interface set and halo
  * structures, but does not copy them, so those structures should have a
  * lifetime at least as long as the returned range set.
@@ -512,6 +567,9 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks?
  *                           (for elements shared across an interface set)
+ * \param[in]   tr_ignore    0: periodic elements will share global ids
+ *                           > 0: ignore periodicity with rotation;
+ *                           > 1: ignore all periodic transforms
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)
  *
@@ -524,6 +582,7 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
                     const cs_halo_t           *halo,
                     cs_lnum_t                  n_elts,
                     bool                       balance,
+                    int                        tr_ignore,
                     cs_gnum_t                  g_id_base)
 {
   cs_gnum_t  *g_id;
@@ -535,6 +594,7 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
                       halo,
                       n_elts,
                       balance,
+                      tr_ignore,
                       g_id_base,
                       l_range,
                       g_id);

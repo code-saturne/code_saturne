@@ -99,6 +99,7 @@ typedef struct {
  * by a parallel scan type operation counting elements on parallel
  * interfaces only once. Each element will appear inside one rank's range
  * and outside the range of all other ranks.
+ * Ranges across different ranks are contiguous.
  *
  * This allows building distribution information such as that used in many
  * external libraries, such as PETSc, HYPRE, and may also simplify many
@@ -107,13 +108,17 @@ typedef struct {
  * elements which may be on parallel boundaries, such as vertices, edges,
  * and faces).
  *
- * Elements and their periodic matches allways have distinct global ids;
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the tr_ignore argument.
  *
  * \param[in]   ifs          pointer to interface set structure, or NULL
  * \param[in]   halo         pointer to halo structure, or NULL
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks ?
  *                           (for elements shared across an interface set)
+ * \param[in]   tr_ignore    0: periodic elements will share global ids
+ *                           > 0: ignore periodicity with rotation;
+ *                           > 1: ignore all periodic transforms
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)
  * \param[out]  l_range      global id range assigned to local rank:
@@ -127,6 +132,7 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
                     const cs_halo_t           *halo,
                     cs_lnum_t                  n_elts,
                     bool                       balance,
+                    int                        tr_ignore,
                     cs_gnum_t                  g_id_base,
                     cs_gnum_t                  l_range[2],
                     cs_gnum_t                 *g_id);
@@ -143,6 +149,9 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * appear inside one rank's range and outside the range of all other ranks.
  * Ranges across different ranks are contiguous.
  *
+ * Elements and their periodic matches will have identical or distinct
+ * global ids depending on the tr_ignore argument.
+ *
  * The range set maintains pointers to the optional interface set and halo
  * structures, but does not copy them, so those structures should have a
  * lifetime at least as long as the returned range set.
@@ -150,8 +159,11 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * \param[in]   ifs          pointer to interface set structure, or NULL
  * \param[in]   halo         pointer to halo structure, or NULL
  * \param[in]   n_elts       number of elements
- * \param[in]   balance      try to balance shared elements across ranks ?
+ * \param[in]   balance      try to balance shared elements across ranks?
  *                           (for elements shared across an interface set)
+ * \param[in]   tr_ignore    0: periodic elements will share global ids
+ *                           > 0: ignore periodicity with rotation;
+ *                           > 1: ignore all periodic transforms
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)
  *
@@ -164,6 +176,7 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
                     const cs_halo_t           *halo,
                     cs_lnum_t                  n_elts,
                     bool                       balance,
+                    int                        tr_ignore,
                     cs_gnum_t                  g_id_base);
 
 /*----------------------------------------------------------------------------*/

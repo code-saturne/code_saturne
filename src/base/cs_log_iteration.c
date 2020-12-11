@@ -676,6 +676,7 @@ _log_fields(void)
                                                    NULL,
                                                    m->n_vertices,
                                                    false, /* balance */
+                                                   2,  /* tr_ignore */
                                                    0); /* g_id_base */
 
           if (f->dim > 1)
