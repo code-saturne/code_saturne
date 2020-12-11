@@ -327,10 +327,13 @@ _build_shared_structures(void)
   cs_interface_set_t *ifs
     = cs_cdo_connect_define_face_interface(m);
 
-  _shared_interface_set
-    = cs_interface_set_dup_blocks(ifs, n_faces, 3);
-
-  cs_interface_set_destroy(&ifs);
+  if (ifs != NULL) {
+    _shared_interface_set
+      = cs_interface_set_dup_blocks(ifs, n_faces, 3);
+    cs_interface_set_destroy(&ifs);
+  }
+  else
+    _shared_interface_set = NULL;
 
   _shared_range_set = cs_range_set_create(_shared_interface_set,
                                           NULL,   /* halo */
