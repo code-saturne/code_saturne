@@ -1005,7 +1005,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   const char  navsto[16] = "  * NavSto |";
 
   /* Sanity checks */
-  if (nsp->model < 1)
+  if (nsp->model == CS_NAVSTO_N_MODELS)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
               __func__);
   if (nsp->coupling == CS_NAVSTO_N_COUPLINGS)
