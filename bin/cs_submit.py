@@ -36,6 +36,7 @@ This module defines the following functions:
 
 import os, sys, subprocess
 import types, string
+from argparse import ArgumentParser
 
 from code_saturne import cs_batch
 from code_saturne.cs_exec_environment import enquote_arg, get_shell_type
@@ -98,11 +99,21 @@ def main(argv, pkg):
     if not submit_cmd:
         submit_cmd = get_shell_type()
 
-    submit_args = []
-    for a in argv:
-        submit_args.append(a)
+    epilog = ("Options not listed above are passed to the batch "
+              "submission commands; see your batch documentation for this.")
 
-    retcode, result_path, r_c = cs_run.run(pkg=pkg, submit_args=submit_args)
+    run_parser = cs_run.arg_parser(argv, pkg)
+    parser = ArgumentParser(parents=[run_parser],
+                            description="Submit a case or specified run stages.",
+                            usage='%(prog)s [run options] [batch options]',
+                            epilog=epilog,
+                            conflict_handler='resolve')
+
+    run_args, submit_args = parser.parse_known_args(argv)
+
+    retcode, result_path, r_c = cs_run.run(pkg=pkg,
+                                           run_args=run_args,
+                                           submit_args=submit_args)
 
     # Now prepare runcase for submission
 

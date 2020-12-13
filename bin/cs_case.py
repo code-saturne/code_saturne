@@ -714,7 +714,7 @@ class case:
         # Copy single file
 
         dest = os.path.join(self.result_dir, os.path.basename(src))
-        if os.path.isfile(src) and src != dest:
+        if os.path.isfile(src) and os.path.abspath(src) != os.path.abspath(dest):
             shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------

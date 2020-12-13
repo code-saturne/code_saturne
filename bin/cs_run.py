@@ -24,10 +24,6 @@
 
 """
 This module describes the script used to run a study/case for Code_Saturne.
-
-This module defines the following functions:
-- process_cmd_line
-- main
 """
 
 #===============================================================================
@@ -38,7 +34,6 @@ from __future__ import print_function
 
 import os, sys
 import types, string, re, fnmatch
-from argparse import ArgumentParser
 try:
     import ConfigParser  # Python2
     configparser = ConfigParser
@@ -108,13 +103,15 @@ def update_run_steps(s_c, run_conf, final=False):
             s_c[k] = True
 
 #-------------------------------------------------------------------------------
-# Process the command line arguments
+# Build command-line arguments parser
 #-------------------------------------------------------------------------------
 
-def process_cmd_line(argv, pkg):
+def arg_parser(argv, pkg):
     """
     Process the passed command line arguments.
     """
+
+    from argparse import ArgumentParser
 
     parser = ArgumentParser(description="Run a case or specified run stages.")
 
@@ -150,11 +147,12 @@ def process_cmd_line(argv, pkg):
                         help="suffix the run id with the given string")
 
     parser.add_argument("--suggest-id", dest="suggest_id",
-                      action="store_true",
-                      help="suggest a run id for the next run")
+                        action="store_true",
+                        help="suggest a run id for the next run")
 
     parser.add_argument("--force", dest="force",
                         action="store_true",
+
                         help="run the data preparation stage even if " \
                               + "the matching execution directory exists")
 
@@ -186,10 +184,33 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(nprocs=None)
     parser.set_defaults(nthreads=None)
 
+    return parser
+
+#-------------------------------------------------------------------------------
+# Process the command line arguments
+#-------------------------------------------------------------------------------
+
+def parse_cmd_line(argv, pkg):
+    """
+    Process the passed command line arguments.
+    """
+
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
 
+    parser = arg_parser(argv, pkg)
     options = parser.parse_args(argv)
+
+    return options
+
+#-------------------------------------------------------------------------------
+# Process the command line arguments
+#-------------------------------------------------------------------------------
+
+def process_options(options, pkg):
+    """
+    Process the passed command line arguments.
+    """
 
     # Stages to run (if no filter given, all are done).
 
@@ -507,7 +528,7 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
 # Run the calculation
 #===============================================================================
 
-def run(argv=[], pkg=None, submit_args=None):
+def run(argv=[], pkg=None, run_args=None, submit_args=None):
     """
     Run calculation;
     returns return code, run id, and results directory path when created.
@@ -517,9 +538,14 @@ def run(argv=[], pkg=None, submit_args=None):
         from code_saturne.cs_package import package
         pkg = package()
 
+    if run_args == None:
+        options = parse_cmd_line(argv, pkg)
+    else:
+        options = run_args
+
     i_c = cs_run_conf.get_install_config_info(pkg)
 
-    r_c, s_c, run_conf = process_cmd_line(argv, pkg)
+    r_c, s_c, run_conf = process_options(options, pkg)
 
     casedir = r_c['casedir']
 

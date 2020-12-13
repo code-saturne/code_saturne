@@ -145,7 +145,7 @@ _code_saturne() {
                 *) cmdOpts="-r --reader -g --guide --modules --version"
             esac
             ;;
-        run)
+        run | submit)
             case ${prev} in
                 -p|--param)              _filedir; return 0;;
                 --case)                  _filedir -d; return 0;;
@@ -172,9 +172,6 @@ _code_saturne() {
                 -p|--param)  _filedir; return 0;;
                 *) cmdOpts="-p --param -n --new";;
             esac
-            ;;
-        submit)
-            _filedir; return 0
             ;;
         trackcvg)
             case ${prev} in
