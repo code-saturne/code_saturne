@@ -3624,10 +3624,14 @@ cs_interface_set_t  *
 cs_interface_set_dup(const cs_interface_set_t  *ifs,
                      cs_lnum_t                  stride)
 {
+  cs_interface_set_t  *ifs_new = NULL;
+
+  if (ifs == NULL)
+    return ifs_new;
+
   if (stride < 1)
     stride = 1;
 
-  cs_interface_set_t  *ifs_new;
   BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
 
   ifs_new->size = ifs->size;
@@ -3687,10 +3691,14 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
                             cs_lnum_t            block_size,
                             cs_lnum_t            n_blocks)
 {
+  cs_interface_set_t  *ifs_new = NULL;
+
+  if (ifs == NULL)
+    return ifs_new;
+
   if (n_blocks < 1)
     n_blocks = 1;
 
-  cs_interface_set_t  *ifs_new;
   BFT_MALLOC(ifs_new, 1, cs_interface_set_t);
   ifs->match_id_rc = 0;
 
