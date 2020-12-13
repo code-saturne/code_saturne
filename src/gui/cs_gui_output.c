@@ -478,6 +478,7 @@ _define_profiles(void)
         output_frequency = v[0];
       else
         output_frequency = 1;
+      output_at_end = true;  /* Debatable, but consistent with v6.0 behavior */
     }
     else if (cs_gui_strcmp(output_type, "end")) {
       output_at_end = true;
