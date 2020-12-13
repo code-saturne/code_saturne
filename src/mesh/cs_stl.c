@@ -317,23 +317,23 @@ _polygon_plane_intersection(int         *nb_vertex,
   for (int i = 0; i < n_vtx; i++) {
     int v1 = i;
     int v2 = (i+1) % n_vtx;
- 
+
     cs_real_t xn = cs_math_3_distance_dot_product(vtx[v1], &plane[0], &plane[3]);
     cs_real_t xd = cs_math_3_distance_dot_product(vtx[v1],   vtx[v2], &plane[3]);
 
-    // if the edge is //, we keep the vertex 
+    // if the edge is //, we keep the vertex
     if ( CS_ABS(xd) < 1.0e-12 ) {
-      
+
       if(_is_point_inside_plane(plane, vtx[v2])){
         for (int dir = 0; dir < 3; dir ++)
           new_vtx[j][dir] = vtx[v2][dir];
         j++;
       }
-      
+
     // if the edge is not // to the plane
     } else {
       cs_real_t t = xn/xd;
-      
+
       // If intersection, new vertex
       if (t > 0 && t < 1.0){
         for (int dir = 0; dir < 3; dir ++)
@@ -353,7 +353,7 @@ _polygon_plane_intersection(int         *nb_vertex,
 
   BFT_REALLOC(new_vtx, j, cs_real_3_t);
   BFT_REALLOC(vtx, j, cs_real_3_t);
- 
+
   for (int i = 0; i < j; i++) {
     for (int dir = 0; dir < 3; dir ++)
       vtx[i][dir] = new_vtx[i][dir];
@@ -366,8 +366,8 @@ _polygon_plane_intersection(int         *nb_vertex,
 }
 
 /*----------------------------------------------------------------------------
- * Function to compute the approximate surface of a triangle overlapping 
- * an AABB (Axis Aligned Bounding Box). It is based on a Monte-Carlo like 
+ * Function to compute the approximate surface of a triangle overlapping
+ * an AABB (Axis Aligned Bounding Box). It is based on a Monte-Carlo like
  * method that randomly draw points in the triangle.
  *
  * parameters:
@@ -456,7 +456,7 @@ _triangle_box_surface_intersection(const cs_real_t  box_extents[6],
 }
 
 /*----------------------------------------------------------------------------
- * Function to compute the exact surface of a triangle overlapping 
+ * Function to compute the exact surface of a triangle overlapping
  * an AABB (Axis Aligned Bounding Box). It is based on recursive cut
  * of the triangle by the planes defined by the AABB faces.
  *
@@ -519,7 +519,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
 
   /* Polygon init */
   for (int i = 0; i < nv; i ++){
-    for (int dir = 0; dir < 3; dir ++) 
+    for (int dir = 0; dir < 3; dir ++)
       coords[i][dir] = tria_coords[i][dir];
   }
 
@@ -575,7 +575,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
       vc0[dir] = coords[v0][dir] - a_center[dir];
       vc1[dir] = coords[v1][dir] - a_center[dir];
     }
-    
+
     cs_math_3_cross_product(vc0, vc1, vn);
 
     for (cs_lnum_t dir = 0; dir < 3; dir++)
@@ -1233,7 +1233,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     fclose(fp);
 
   }
-   
+
   /* Broadcast to other ranks */
 
   cs_parall_bcast(0, /* root_rank */
