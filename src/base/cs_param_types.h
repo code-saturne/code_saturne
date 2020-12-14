@@ -226,6 +226,9 @@ typedef enum {
  *
  * \var CS_TIME_SCHEME_THETA
  * theta-scheme
+ *
+ * \var CS_TIME_SCHEME_BDF2
+ * theta-scheme
  */
 
 typedef enum {
@@ -235,6 +238,7 @@ typedef enum {
   CS_TIME_SCHEME_EULER_EXPLICIT,
   CS_TIME_SCHEME_CRANKNICO,
   CS_TIME_SCHEME_THETA,
+  CS_TIME_SCHEME_BDF2,
 
   CS_TIME_N_SCHEMES
 

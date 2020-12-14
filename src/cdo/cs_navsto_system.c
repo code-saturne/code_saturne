@@ -936,6 +936,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
+        case CS_TIME_SCHEME_BDF2:
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Time scheme not implemented for the AC coupling",
                     __func__);
@@ -983,6 +984,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
           ns->compute = cs_cdofb_monolithic;
         break;
 
+      case CS_TIME_SCHEME_BDF2:
       default:
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid time scheme for the monolithic coupling",
@@ -1017,6 +1019,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
+      case CS_TIME_SCHEME_BDF2:
       default:
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid time scheme for the projection coupling"

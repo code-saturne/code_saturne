@@ -2369,7 +2369,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       cb->t_st_eval = t_cur + dt_cur;
       break;
 
-    default:                  /* Implicit */
+    default:                    /* Implicit (Forward Euler or BDF2) */
       cb->t_pty_eval = t_cur + dt_cur;
       cb->t_bc_eval = t_cur + dt_cur;
       cb->t_st_eval = t_cur + dt_cur;
@@ -2468,7 +2468,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
           p_theta[i] = eqp->theta*p_cur[i] + (1-eqp->theta)*p_prev[i];
         break;
 
-      default:                  /* Implicit */
+      default:                  /* Implicit (Euler or BDF2) */
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_cur[i];
         break;

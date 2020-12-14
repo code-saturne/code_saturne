@@ -1053,6 +1053,7 @@ typedef struct {
  *   theta equal to "0.5"
  * - "crank_nicolson": Shortcut to set a theta scheme with theta equal to
  *    0.5. This time discretization is second_order in time accurate.
+ * - "bdf2": 2nd order, implicit time scheme
  *
  * \var CS_EQKEY_TIME_THETA
  * Set a value betwwen 0 and 1 for the theta parameter when a "theta_scheme" is

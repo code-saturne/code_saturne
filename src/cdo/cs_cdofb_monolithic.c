@@ -1992,6 +1992,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->build = _theta_scheme_build;
     break;
 
+  case CS_TIME_SCHEME_BDF2:
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
 

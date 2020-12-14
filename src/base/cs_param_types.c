@@ -93,7 +93,8 @@ cs_param_time_scheme_name[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
     N_("1st order Forward Euler (Implicit)"),
     N_("1st order Backward Euler (Explicit)"),
     N_("Crank-Nicolson"),
-    N_("Theta scheme")
+    N_("Theta scheme"),
+    N_("BDF2 (Implicit, 2nd order)")
   };
 
 static const char
@@ -260,6 +261,7 @@ cs_param_get_time_scheme_name(cs_param_time_scheme_t    scheme)
   case CS_TIME_SCHEME_EULER_EXPLICIT:
   case CS_TIME_SCHEME_CRANKNICO:
   case CS_TIME_SCHEME_THETA:
+  case CS_TIME_SCHEME_BDF2:
     return cs_param_time_scheme_name[scheme];
 
   default:

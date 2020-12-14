@@ -971,6 +971,7 @@ cs_equation_get_theta_time_val(const cs_equation_t    *eq)
     case CS_TIME_SCHEME_CRANKNICO:
       theta = 0.5;
       break;
+    case CS_TIME_SCHEME_BDF2:
     case CS_TIME_SCHEME_EULER_IMPLICIT:
       theta = 1;
       break;
@@ -1967,6 +1968,7 @@ cs_equation_set_functions(void)
           eq->solve = cs_cdovb_scaleq_solve_theta;
           break;
 
+        case CS_TIME_SCHEME_BDF2:
         default:
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
@@ -2008,6 +2010,7 @@ cs_equation_set_functions(void)
         case CS_TIME_SCHEME_STEADY:
         eq->solve = eq->solve_steady_state;
           break;
+        case CS_TIME_SCHEME_BDF2:
         case CS_TIME_SCHEME_EULER_IMPLICIT:
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
@@ -2067,6 +2070,7 @@ cs_equation_set_functions(void)
           eq->solve = cs_cdovcb_scaleq_solve_theta;
           break;
 
+        case CS_TIME_SCHEME_BDF2:
         default:
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
@@ -2123,6 +2127,7 @@ cs_equation_set_functions(void)
           eq->solve = cs_cdofb_scaleq_solve_theta;
           break;
 
+        case CS_TIME_SCHEME_BDF2:
         default:
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
@@ -2172,6 +2177,13 @@ cs_equation_set_functions(void)
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
           eq->solve = cs_cdofb_vecteq_solve_theta;
+          break;
+
+        case CS_TIME_SCHEME_BDF2:
+          eq->solve = NULL; /* cs_cdofb_vecteq_solve_bdf2 */
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
           break;
 
         default:

@@ -2488,7 +2488,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
           p_theta[v] = eqp->theta*p_cur[v] + (1-eqp->theta)*p_prev[v];
         break;
 
-      default:
+      default: /* Implicit (Euler or BDF2) */
         for (short int v = 0; v < cm->n_vc; v++)
           p_theta[v] = p_cur[v];
         break;

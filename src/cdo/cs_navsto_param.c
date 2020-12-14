@@ -118,7 +118,8 @@ _time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
     "euler_implicit",
     "euler_explicit",
     "crank_nicolson",
-    "theta_scheme"
+    "theta_scheme",
+    "bdf2"
   };
 
 static const char
@@ -896,13 +897,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     }
     else if (strcmp(val, "theta_scheme") == 0)
       nsp->time_scheme = CS_TIME_SCHEME_THETA;
+    else if (strcmp(val, "bdf2") == 0)
+      nsp->time_scheme = CS_TIME_SCHEME_BDF2;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
                   " Valid choices are \"euler_implicit\","
                   " \"euler_explicit\"," " \"crank_nicolson\","
-                  " and \"theta_scheme\"."), __func__, _val);
+                  " \"theta_scheme\" and \"bdf2\"."), __func__, _val);
     }
     break;
 

@@ -1803,6 +1803,10 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "theta_scheme") == 0)
       eqp->time_scheme = CS_TIME_SCHEME_THETA;
+    else if (strcmp(keyval, "bdf2") == 0) {
+      eqp->time_scheme = CS_TIME_SCHEME_BDF2;
+      bft_error(__FILE__, __LINE__, 0, " Soon available...");
+    }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,

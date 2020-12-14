@@ -208,6 +208,7 @@ _get_time_eval(const cs_gwf_t  *const gw,
   case CS_TIME_SCHEME_EULER_EXPLICIT:
   case CS_TIME_SCHEME_THETA:    /* One assumes that theta != 0 and != 1 */
   case CS_TIME_SCHEME_CRANKNICO:
+  case CS_TIME_SCHEME_BDF2:
     theta = cs_equation_get_theta_time_val(gw->richards);
     t_eval = t_cur + theta*dt_cur;
     break;
