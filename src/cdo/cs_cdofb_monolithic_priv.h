@@ -136,11 +136,15 @@ typedef void
 /*!
  * \brief  Build a linear system for Stokes, Oseen or Navier-Stokes in the
  *         steady-state case. Specific case: GKB algorithm is used to solve
- *         the saddle-point system.
+ *         the saddle-point system. In case of unsteady computation, indice n
+ *         means the previous time step (one computes the new state at n+1) and
+ *         state at n-1 is the previous state of the previous state.
  *
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
- * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
+ * \param[in]      vel_f_n      velocity face DoFs at time step n
+ * \param[in]      vel_c_n      velocity cell DoFs at time step n
+ * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
+ * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
  * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
@@ -149,8 +153,10 @@ typedef void
 
 typedef void
 (cs_cdofb_monolithic_build_t)(const cs_navsto_param_t      *nsp,
-                              const cs_real_t               vel_f_pre[],
-                              const cs_real_t               vel_c_pre[],
+                              const cs_real_t               vel_f_n[],
+                              const cs_real_t               vel_c_n[],
+                              const cs_real_t               vel_f_nm1[],
+                              const cs_real_t               vel_c_nm1[],
                               const cs_real_t              *dir_values,
                               const cs_lnum_t               forced_ids[],
                               cs_cdofb_monolithic_t        *sc);

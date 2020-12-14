@@ -1049,6 +1049,8 @@ _full_assembly(const cs_cell_sys_t            *csys,
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
  * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
  * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
+ * \param[in]      vel_f_nm1    NULL (for unsteady computations)
+ * \param[in]      vel_c_nm1    NULL (for unsteady computations)
  * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
@@ -1059,10 +1061,15 @@ static void
 _steady_build(const cs_navsto_param_t      *nsp,
               const cs_real_t               vel_f_pre[],
               const cs_real_t               vel_c_pre[],
+              const cs_real_t               vel_f_nm1[],
+              const cs_real_t               vel_c_nm1[],
               const cs_real_t              *dir_values,
               const cs_lnum_t               forced_ids[],
               cs_cdofb_monolithic_t        *sc)
 {
+  CS_UNUSED(vel_f_nm1);
+  CS_UNUSED(vel_c_nm1);
+
   /* Retrieve shared structures */
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1145,7 +1152,9 @@ _steady_build(const cs_navsto_param_t      *nsp,
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, forced_ids,
-                                       vel_f_pre, vel_c_pre, csys, cb);
+                                       vel_f_pre, vel_c_pre,
+                                       NULL, NULL, /* no n-1 state is given */
+                                       csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER
        * =================================
@@ -1240,8 +1249,10 @@ _steady_build(const cs_navsto_param_t      *nsp,
  *         case of an implicit Euler time scheme
  *
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
- * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
+ * \param[in]      vel_f_n      velocity face DoFs at time step n
+ * \param[in]      vel_c_n      velocity cell DoFs at time step n
+ * \param[in]      vel_f_nm1    NULL (not needed for this time scheme)
+ * \param[in]      vel_c_nm1    NULL (not needed for this time scheme)
  * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
@@ -1250,12 +1261,17 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 static void
 _implicit_euler_build(const cs_navsto_param_t  *nsp,
-                      const cs_real_t           vel_f_pre[],
-                      const cs_real_t           vel_c_pre[],
+                      const cs_real_t           vel_f_n[],
+                      const cs_real_t           vel_c_n[],
+                      const cs_real_t           vel_f_nm1[],
+                      const cs_real_t           vel_c_nm1[],
                       const cs_real_t          *dir_values,
                       const cs_lnum_t           forced_ids[],
                       cs_cdofb_monolithic_t    *sc)
 {
+  CS_UNUSED(vel_f_nm1);
+  CS_UNUSED(vel_c_nm1);
+
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1341,7 +1357,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, forced_ids,
-                                       vel_f_pre, vel_c_pre,
+                                       vel_f_n, vel_c_n,
+                                       NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
@@ -1457,8 +1474,10 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
  *         case of a theta time scheme
  *
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
- * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
+ * \param[in]      vel_f_n      velocity face DoFs at time step n
+ * \param[in]      vel_c_n      velocity cell DoFs at time step n
+ * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
+ * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
  * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
@@ -1467,12 +1486,17 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 static void
 _theta_scheme_build(const cs_navsto_param_t  *nsp,
-                    const cs_real_t           vel_f_pre[],
-                    const cs_real_t           vel_c_pre[],
+                    const cs_real_t           vel_f_n[],
+                    const cs_real_t           vel_c_n[],
+                    const cs_real_t           vel_f_nm1[],
+                    const cs_real_t           vel_c_nm1[],
                     const cs_real_t          *dir_values,
                     const cs_lnum_t           forced_ids[],
                     cs_cdofb_monolithic_t    *sc)
 {
+  CS_UNUSED(vel_f_nm1);
+  CS_UNUSED(vel_c_nm1);
+
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1570,7 +1594,8 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, forced_ids,
-                                       vel_f_pre, vel_c_pre,
+                                       vel_f_n, vel_c_n,
+                                       NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
@@ -2161,6 +2186,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   /* Main loop on cells to define the linear system to solve */
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
+                   NULL, NULL,  /* no value at time step n-1 */
                    dir_values, enforced_ids, sc);
 
   /* Free temporary buffers and structures */
@@ -2272,6 +2298,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Main loop on cells to define the linear system to solve */
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
+                   NULL, NULL,  /* no value at time step n-1 */
                    dir_values, enforced_ids, sc);
 
   /* End of the system building */
@@ -2338,6 +2365,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     sc->steady_build(nsp,
                      /* A current to previous op. has been done */
                      mom_eqc->face_values_pre, sc->velocity->val_pre,
+                     NULL, NULL,  /* no value at time step n-1 */
                      dir_values, enforced_ids, sc);
 
     /* End of the system building */
@@ -2459,6 +2487,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   /* Main loop on cells to define the linear system to solve */
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
+            mom_eqc->face_values_pre, sc->velocity->val_pre,
             dir_values, enforced_ids, sc);
 
   /* Free temporary buffers and structures */
@@ -2573,6 +2602,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Main loop on cells to define the linear system to solve */
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
+            mom_eqc->face_values_pre, sc->velocity->val_pre,
             dir_values, enforced_ids, sc);
 
   /* End of the system building */
@@ -2645,6 +2675,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     sc->build(nsp,
               /* A current to previous op. has been done */
               mom_eqc->face_values_pre, sc->velocity->val_pre,
+              NULL, NULL, /* no n-1 state is given */
               dir_values, enforced_ids, sc);
 
     /* End of the system building */

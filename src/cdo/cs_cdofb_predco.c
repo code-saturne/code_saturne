@@ -1120,6 +1120,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, enforced_ids,
                                        mom_eqc->face_values, vel_c,
+                                       NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *

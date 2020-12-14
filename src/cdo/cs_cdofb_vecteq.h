@@ -197,16 +197,19 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 /*!
  * \brief   Initialize the local structure for the current cell
  *          The algebraic system for time t^{n+1} is going to be built knowing
- *          previous field at time t^{n}. Make sure to be consistent between
- *          the call to current_to_previous and the parameters vel_{f,c}_pre
+ *          previous field at time t^{n} and potentially the field at time
+ *          t^{n-1}. Make sure to be consistent between the call to
+ *          current_to_previous and the parameters vel_{f,c}_n/nm1 given
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      forced_ids  indirection in case of internal enforcement
- * \param[in]      val_f_pre   face values used as the previous one
- * \param[in]      val_c_pre   cell values used as the previous one
+ * \param[in]      val_f_n     face DoFs at time step n
+ * \param[in]      val_c_n     cell DoFs at time step n
+ * \param[in]      val_f_nm1   face DoFs at time step n-1 or NULL
+ * \param[in]      val_c_nm1   cell DoFs at time step n-1 or NULL
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -218,8 +221,10 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
                                  const cs_equation_builder_t  *eqb,
                                  const cs_real_t               dir_values[],
                                  const cs_lnum_t               forced_ids[],
-                                 const cs_real_t               val_f_pre[],
-                                 const cs_real_t               val_c_pre[],
+                                 const cs_real_t               val_f_n[],
+                                 const cs_real_t               val_c_n[],
+                                 const cs_real_t               val_f_nm1[],
+                                 const cs_real_t               val_c_nm1[],
                                  cs_cell_sys_t                *csys,
                                  cs_cell_builder_t            *cb);
 

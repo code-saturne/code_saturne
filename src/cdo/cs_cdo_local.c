@@ -255,6 +255,7 @@ cs_cell_sys_create(int      n_max_dofbyc,
   csys->rhs = NULL;
   csys->source = NULL;
   csys->val_n = NULL;
+  csys->val_nm1 = NULL;
 
   /* Internal enforcement */
   csys->has_internal_enforcement = false;
@@ -326,6 +327,7 @@ cs_cell_sys_create(int      n_max_dofbyc,
     BFT_MALLOC(csys->rhs       , n_max_dofbyc, double);
     BFT_MALLOC(csys->source    , n_max_dofbyc, double);
     BFT_MALLOC(csys->val_n     , n_max_dofbyc, double);
+    BFT_MALLOC(csys->val_nm1   , n_max_dofbyc, double);
     BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
     BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
 
@@ -334,6 +336,7 @@ cs_cell_sys_create(int      n_max_dofbyc,
     memset(csys->rhs       , 0, s);
     memset(csys->source    , 0, s);
     memset(csys->val_n     , 0, s);
+    memset(csys->val_nm1   , 0, s);
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
   }
@@ -427,6 +430,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   BFT_FREE(csys->rhs);
   BFT_FREE(csys->source);
   BFT_FREE(csys->val_n);
+  BFT_FREE(csys->val_nm1);
 
   BFT_FREE(csys->_f_ids);
   BFT_FREE(csys->bf_ids);
@@ -483,16 +487,17 @@ cs_cell_sys_dump(const char             msg[],
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    bft_printf(">> %-8s | %-10s | %-10s | %-10s | %-8s |"
-               " %-6s | %-10s\n",
-               "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED", "FLAG",
-               "DIR_VALS");
+    bft_printf(">> %-8s | %-6s | %-10s | %-10s | %-10s | %-8s |"
+               " %-10s |  %-10s\n",
+               "IDS", "FLAG", "RHS", "TS", "DIR_VALS", "ENFORCED", "VAL_N",
+               "VAL_N-1");
     for (int i = 0; i < csys->n_dofs; i++)
-      bft_printf(">> %8ld | % -.3e | % -.3e | % -.3e |"
-                 " %8ld | %6d | % -.3e\n",
-                 (long)csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                 csys->val_n[i], (long)csys->intern_forced_ids[i],
-                 csys->dof_flag[i], csys->dir_values[i]);
+      bft_printf(">> %8ld | %6d | % -.3e | % -.3e | % -.3e |"
+                 " %8ld | % -.3e | % -.3e\n",
+                 (long)csys->dof_ids[i], csys->dof_flag[i], csys->rhs[i],
+                 csys->source[i], csys->dir_values[i],
+                 (long)csys->intern_forced_ids[i],
+                 csys->val_n[i], csys->val_nm1[i]);
   }
 }
 

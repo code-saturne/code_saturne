@@ -717,6 +717,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, forced_ids,
                                        vel_f_pre, vel_c_pre,
+                                       NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *

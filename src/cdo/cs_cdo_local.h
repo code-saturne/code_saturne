@@ -116,6 +116,7 @@ typedef struct {
   double     *rhs;      /*!< cellwise view of the right-hand side */
   double     *source;   /*!< cellwise view of the source term array */
   double     *val_n;    /*!< values of the unkown at previous time t_n */
+  double     *val_nm1;  /*!< values of the unkown at previous time t_{n-1} */
 
   /* Boundary conditions for the local system */
   short int   n_bc_faces;  /*!< Number of border faces associated to a cell */
