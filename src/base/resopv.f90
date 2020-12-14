@@ -699,11 +699,7 @@ if (vcopt_p%idiff.ge.1) then
   ! Scalar diffusivity
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
-    if (ivofmt.gt.0) then
-      imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
-    else
-      imvisp = vcopt_p%imvisf
-    endif
+    imvisp = vcopt_p%imvisf
 
     call viscfa &
     !==========
@@ -967,11 +963,7 @@ if (arak.gt.0.d0) then
       cpro_visc(iel) = arak * viscap(iel)
     enddo
 
-    if (ivofmt.gt.0) then
-      imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
-    else
-      imvisp = vcopt_p%imvisf
-    endif
+    imvisp = vcopt_p%imvisf
 
     call viscfa &
     !==========

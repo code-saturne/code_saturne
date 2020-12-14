@@ -976,6 +976,11 @@ endif
 if (ivofmt.gt.0) then
   ro0    = rho2
   viscl0 = mu2
+
+  ! VOF algorithm: continuity of the flux across internal faces
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  vcopt%imvisf = 1
+  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 endif
 
 ! Anisotropic diffusion/permeability for Darcy module
