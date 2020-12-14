@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Make dynamic relaxation option for pure diffusion equation default option.
+  (iswdyn = 2). This make the iterative process solving of the legacy
+  solver more robust (especially for pressure).
+
 - Add a 'code_saturne parametric' command which currently allows the
   modification of several parameters of a case and the creation of a
   case  based on a reference case.
@@ -37,7 +41,7 @@ User changes:
 - When creating a case with `code_saturne create`, the `--noref` option is
   enabled by default. It can be cancelled using the `--copy-ref` option.
 
--GUI: user source file editor can now also use reference files from the
+- GUI: user source file editor can now also use reference files from the
   installation directory.
 
 - code_saturne mesh format (.csm) is now treated in the same way as external

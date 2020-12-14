@@ -987,6 +987,19 @@ if (ippmod(idarcy).eq.1) then
 
 endif
 
+! Set iswdyn to 2 by default if not modified for pure diffusion equations
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%iswdyn.eq.-1.and. vcopt%iconv.eq.0) then
+      vcopt%iswdyn = 2
+      call field_set_key_struct_var_cal_opt(f_id, vcopt)
+    endif
+  endif
+enddo
+
 !===============================================================================
 ! 5. ELEMENTS DE albase
 !===============================================================================

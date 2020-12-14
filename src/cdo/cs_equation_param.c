@@ -1888,7 +1888,7 @@ cs_equation_create_param(const char            *name,
   eqp->idiff  = 1;
   eqp->idifft = 1;
   eqp->idften = CS_ISOTROPIC_DIFFUSION;
-  eqp->iswdyn = 0;
+  eqp->iswdyn = -1;
   eqp->ischcv = 1;
   eqp->ibdtso = 1;
   eqp->isstpc = 1;

@@ -325,7 +325,7 @@ static cs_equation_param_t _equation_param_default
    .idiff  = 1,
    .idifft = 1,
    .idften = CS_ISOTROPIC_DIFFUSION,
-   .iswdyn = 0,
+   .iswdyn = -1,
    .ischcv = 1,
    .ibdtso = 1,
    .isstpc = 1,
