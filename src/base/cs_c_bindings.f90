@@ -93,6 +93,7 @@ module cs_c_bindings
     integer(c_int) :: isstpc
     integer(c_int) :: nswrgr
     integer(c_int) :: nswrsm
+    integer(c_int) :: imvisf
     integer(c_int) :: imrgra
     integer(c_int) :: imligr
     integer(c_int) :: ircflu

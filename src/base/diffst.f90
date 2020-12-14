@@ -79,7 +79,7 @@ integer          nscal , iterns
 integer          ivar  , iel   , ifac  , iscal, f_id0
 integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc, imrgrp
-integer          iconvp, idiffp, ircflp
+integer          iconvp, idiffp, ircflp, imvisp
 integer          ischcp, isstpp
 integer          iscacp, ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
@@ -226,7 +226,9 @@ do iscal = 1, nscal
       enddo
     endif
 
-    call viscfa ( imvisf , vistot , viscf , viscb )
+    imvisp = vcopt%imvisf
+
+    call viscfa ( imvisp , vistot , viscf , viscb )
 
   else
 

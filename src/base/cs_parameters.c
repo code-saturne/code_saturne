@@ -260,6 +260,7 @@ typedef struct {
   int     isstpc;
   int     nswrgr;
   int     nswrsm;
+  int     imvisf;
   int     imrgra;
   int     imligr;
   int     ircflu;
@@ -337,6 +338,7 @@ static cs_equation_param_t _equation_param_default
    .isstpc = 1,
    .nswrgr = 100,
    .nswrsm = 1,
+   .imvisf = 0,
    .imrgra = -1,
    .imligr = -1,
    .ircflu = 1,
@@ -540,6 +542,7 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrgr", _t->nswrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrsm", _t->nswrsm);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "imvisf", _t->imvisf);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "imrgra", _t->imrgra);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "imligr", _t->imligr);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ircflu", _t->ircflu);
@@ -718,6 +721,7 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
   eqp->isstpc = vcopt->isstpc;
   eqp->nswrgr = vcopt->nswrgr;
   eqp->nswrsm = vcopt->nswrsm;
+  eqp->imvisf = vcopt->imvisf;
   eqp->imrgra = vcopt->imrgra;
   eqp->imligr = vcopt->imligr;
   eqp->ircflu = vcopt->ircflu;
@@ -834,6 +838,7 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
   vcopt->isstpc = eqp->isstpc;
   vcopt->nswrgr = eqp->nswrgr;
   vcopt->nswrsm = eqp->nswrsm;
+  vcopt->imvisf = eqp->imvisf;
   vcopt->imrgra = eqp->imrgra;
   vcopt->imligr = eqp->imligr;
   vcopt->ircflu = eqp->ircflu;

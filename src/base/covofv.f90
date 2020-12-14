@@ -123,7 +123,7 @@ integer          ivarsc
 integer          iiscav
 integer          ifcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
 integer          idftnp, iswdyp
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
@@ -459,8 +459,10 @@ if (vcopt%idiff.ge.1) then
       call synsca(cpro_wgrec_s)
     endif
 
+    imvisp = vcopt%imvisf
+
     call viscfa &
-   ( imvisf ,                      &
+   ( imvisp ,                      &
      w1     ,                      &
      viscf  , viscb  )
 

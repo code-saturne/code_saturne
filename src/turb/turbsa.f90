@@ -94,7 +94,7 @@ double precision smacel(ncesmp,nvar)
 
 integer          iel   , ifac  , inc   , iccocg, iprev, ivar
 integer          imrgrp, nswrgp, imligp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
@@ -516,8 +516,10 @@ if (vcopt_nusa%idiff.ge.1) then
                         + vcopt_nusa%idifft*cvara_nusa(iel)*rom )
   enddo
 
+  imvisp = vcopt_nusa%imvisf
+
   call viscfa                                                     &
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 

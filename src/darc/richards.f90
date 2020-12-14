@@ -117,7 +117,7 @@ integer iccocg, inc   , iel, isou, init
 integer imrgrp, nswrgp, imligp, iwarnp
 integer imucpp, ircflp, isweep, isym, lchain
 integer ndircp, niterf, nswmpr
-integer iflmas, iflmab, iesize, idiffp, iconvp, ibsize
+integer iflmas, iflmab, iesize, idiffp, iconvp, ibsize, imvisp
 integer fid
 integer iflid , iflwgr, f_dim, f_id0, iwgrp, iprev, iitsm
 
@@ -277,8 +277,9 @@ endif
 
 ! Computation of diffusion coefficients at the centers of faces
 if (darcy_anisotropic_permeability.eq.0) then
+  imvisp = vcopt_p%imvisf
   call viscfa &
-  ( imvisf ,                                  &
+  ( imvisp ,                                  &
     cpro_permeability     ,                   &
     viscf  , viscb  )
   if (vcopt_p%iwgrec.eq.1) then

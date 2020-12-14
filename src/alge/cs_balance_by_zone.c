@@ -1084,7 +1084,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   }
 
   /* Face viscosity */
-  int imvisf = cs_glob_space_disc->imvisf;
+  int imvisf = var_cal_opt.imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
@@ -2605,7 +2605,7 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   /* Face viscosity */
-  int imvisf = cs_glob_space_disc->imvisf;
+  int imvisf = var_cal_opt.imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);

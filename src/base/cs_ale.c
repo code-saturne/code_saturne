@@ -1021,7 +1021,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
     cs_face_viscosity(m,
                       mq,
-                      cs_glob_space_disc->imvisf,
+                      var_cal_opt.imvisf,
                       CS_F_(vism)->val,
                       i_visc,
                       b_visc);
@@ -1033,7 +1033,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
     cs_face_anisotropic_viscosity_vector(m,
                                          mq,
-                                         cs_glob_space_disc->imvisf,
+                                         var_cal_opt.imvisf,
                                          (cs_real_6_t *)CS_F_(vism)->val,
                                          (cs_real_33_t *)i_visc,
                                          b_visc);

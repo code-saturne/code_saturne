@@ -102,7 +102,7 @@ double precision visvdr(ncelet)
 
 ! Local variables
 
-integer          idtva0, f_id  , iconvp, idiffp
+integer          idtva0, f_id  , iconvp, idiffp, imvisp
 integer          f_id_yplus
 integer          ndircp
 integer          iphydp
@@ -329,6 +329,7 @@ climgp = vcopt%climgr
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 iwarnp = vcopt%iwarni
+imvisp = vcopt%imvisf
 
 ! Pseudo viscosity, to compute the convective flux "1 grad(y). Sij"
 do iel = 1, ncelet
@@ -336,7 +337,7 @@ do iel = 1, ncelet
 enddo
 
 call viscfa &
-  ( imvisf ,          &
+  ( imvisp ,          &
   viscap ,            &
   viscf  , viscb  )
 

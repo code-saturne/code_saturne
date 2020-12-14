@@ -333,6 +333,11 @@ typedef struct {
    * scheme in time (\ref optcal::ischtp "ischtp" = 2) or LES, the default values
    * are 5 for pressure and 10 for the other variables.
    *
+   * \var imvisf
+   * Face viscosity field interpolation
+   * - 0: aritmetic (default)
+   * - 1: harmonic
+   *
    * \var imrgra
    * Type of gradient reconstruction
    * - 0: iterative reconstruction of the non-orthogonalities
@@ -463,6 +468,7 @@ typedef struct {
   int isstpc;
   int nswrgr;
   int nswrsm;
+  int imvisf;
   int imrgra;
   int imligr;
   int ircflu;

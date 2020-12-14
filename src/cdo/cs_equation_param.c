@@ -797,6 +797,7 @@ cs_equation_create_param(const char            *name,
   eqp->isstpc = 1;
   eqp->nswrgr = 100;
   eqp->nswrsm = 1;
+  eqp->imvisf = 0;
   eqp->imrgra = -1;
   eqp->imligr = -1;
   eqp->ircflu = 1;
@@ -956,6 +957,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->isstpc = ref->isstpc;
   dst->nswrgr = ref->nswrgr;
   dst->nswrsm = ref->nswrsm;
+  dst->imvisf = ref->imvisf;
   dst->imrgra = ref->imrgra;
   dst->imligr = ref->imligr;
   dst->ircflu = ref->ircflu;

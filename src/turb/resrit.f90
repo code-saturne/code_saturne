@@ -89,7 +89,7 @@ integer          iel
 integer          ii, ivar
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          st_prv_id
 integer          ivisep, ifcvsl
@@ -500,8 +500,10 @@ else
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
+  imvisp = vcopt%imvisf
+
   call viscfa                    &
-  ( imvisf ,                     &
+  ( imvisp ,                     &
    w1     ,                      &
    viscf  , viscb  )
 

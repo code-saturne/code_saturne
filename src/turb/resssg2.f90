@@ -129,7 +129,7 @@ integer          iel, isou, jsou
 integer          ii    , jj    , kk    , iii   , jjj
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          imrgrp, nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
@@ -988,8 +988,10 @@ else
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
+  imvisp = vcopt%imvisf
+
   call viscfa                    &
-  ( imvisf ,                     &
+  ( imvisp ,                     &
    w1     ,                      &
    viscf  , viscb  )
 

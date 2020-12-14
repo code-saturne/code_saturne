@@ -74,6 +74,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -97,6 +98,8 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cpro_viscv
 double precision, dimension(:), pointer :: cproa_viscl, cproa_visct
 
+type(var_cal_opt) :: vcopt_u
+
 !===============================================================================
 
 !===============================================================================
@@ -105,6 +108,7 @@ double precision, dimension(:), pointer :: cproa_viscl, cproa_visct
 
 ! Allocate temporary arrays
 allocate(secvis(ncelet))
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
@@ -185,7 +189,7 @@ endif
 ! --- Interior faces
 ! TODO we should (re)test the weigthen walue for imvisf=0
 
-if (imvisf.eq.0) then
+if (vcopt_u%imvisf.eq.0) then
   do ifac = 1, nfac
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)

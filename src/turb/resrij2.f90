@@ -127,7 +127,7 @@ integer          isou, jsou
 integer          ii    , jj    , kk
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          isoluc
@@ -758,7 +758,9 @@ else
     w1(iel) = viscl(iel) + vcopt_rij%idifft*rctse
   enddo
 
-  call viscfa(imvisf, w1, viscf, viscb)
+  imvisp = vcopt_rij%imvisf
+
+  call viscfa(imvisp, w1, viscf, viscb)
 
 endif
 

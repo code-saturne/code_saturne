@@ -173,7 +173,7 @@ integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl, n_fans
 integer          iccocg, inc   , iprev , init  , ii    , jj
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
-integer          iconvp, idiffp, ndircp, nswrsp
+integer          iconvp, idiffp, ndircp, nswrsp, imvisp
 integer          ircflp, ischcp, isstpp, iescap
 integer          iflmb0
 integer          idtva0, icvflb, f_oi_id
@@ -354,6 +354,7 @@ if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
 endif
 
 idftnp = vcopt_u%idften
+imvisp = vcopt_u%imvisf
 
 if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) allocate(viscce(6,ncelet))
 
@@ -1180,7 +1181,7 @@ if (vcopt_u%idiff.ge. 1) then
   if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
 
     call viscfa &
-   ( imvisf ,                                                       &
+   ( imvisp ,                                                       &
      w1     ,                                                       &
      viscf  , viscb  )
 
@@ -1193,7 +1194,7 @@ if (vcopt_u%idiff.ge. 1) then
       enddo
 
       call viscfa &
-   ( imvisf ,                                                       &
+   ( imvisp ,                                                       &
      w1     ,                                                       &
      viscfi , viscbi )
     endif
@@ -1211,7 +1212,7 @@ if (vcopt_u%idiff.ge. 1) then
     enddo
 
     call vistnv &
-     ( imvisf ,                                                       &
+     ( imvisp ,                                                       &
        viscce ,                                                       &
        viscf  , viscb  )
 
@@ -1233,7 +1234,7 @@ if (vcopt_u%idiff.ge. 1) then
       enddo
 
       call vistnv &
-       ( imvisf ,                                                       &
+       ( imvisp ,                                                       &
          viscce ,                                                       &
          viscfi , viscbi )
 

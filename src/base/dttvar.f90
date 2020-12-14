@@ -109,7 +109,7 @@ integer          modntl
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
-integer          imrgrp, nswrgp, imligp
+integer          imrgrp, nswrgp, imligp, imvisp
 integer          f_id
 integer          nbrval, nclptr
 integer          ntcam1
@@ -219,7 +219,10 @@ if (vcopt_u%idiff.ge.1) then
   do iel = 1, ncel
     w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
   enddo
-  call viscfa(imvisf, w1, viscf, viscb)
+
+  imvisp = vcopt_u%imvisf
+
+  call viscfa(imvisp, w1, viscf, viscb)
 
 else
   do ifac = 1, nfac
@@ -798,7 +801,7 @@ implicit none
 
 character(len=8) :: cnom
 
-integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym
+integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym, imvisp
 integer          modntl
 integer          iflmas, iflmab
 integer          nbrval
@@ -868,7 +871,10 @@ if (vcopt_u%idiff.ge.1) then
   do iel = 1, ncel
     w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
   enddo
-  call viscfa(imvisf, w1, viscf, viscb)
+
+  imvisp = vcopt_u%imvisf
+
+  call viscfa(imvisp, w1, viscf, viscb)
 
 else
   do ifac = 1, nfac

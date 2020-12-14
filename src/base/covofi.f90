@@ -152,7 +152,7 @@ integer          ivarsc
 integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
@@ -1128,9 +1128,11 @@ if (vcopt%idiff.ge.1) then
       endif
     endif
 
+    imvisp = vcopt%imvisf
+
     call viscfa &
     !==========
-   ( imvisf ,                      &
+   ( imvisp ,                      &
      w1     ,                      &
      viscf  , viscb  )
 

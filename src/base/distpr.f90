@@ -74,7 +74,7 @@ integer          itypfb(nfabor)
 
 ! Local variables
 
-integer          ndircp, iconvp, idiffp
+integer          ndircp, iconvp, idiffp, imvisp
 integer          iel   , ifac
 integer          inc   , iccocg, f_id
 integer          mmprpl, nswrsp
@@ -215,9 +215,11 @@ do iel = 1, ncel
   w1(iel) = 1.d0
 enddo
 
+imvisp = vcopt%imvisf
+
 call viscfa                                                       &
 !==========
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 

@@ -90,7 +90,7 @@ integer          ifac  , iel
 integer          init  , inc   , iccocg
 integer          ifcvsl, iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp
+integer          iconvp, idiffp, imvisp
 integer          ircflp, ischcp, isstpp
 integer          isou  , jsou
 integer          f_id  , f_id0
@@ -404,6 +404,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
     extrap = vcopt%extrag
+    imvisp = vcopt%imvisf
 
     ! Face diffusivity of rho to compute rho*(Grad K . n)_face
     do iel = 1, ncel
@@ -415,7 +416,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     endif
 
     call viscfa &
-    ( imvisf ,            &
+    ( imvisp ,            &
       w1     ,            &
       viscf  , viscb  )
 

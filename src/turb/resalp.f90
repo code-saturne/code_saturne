@@ -72,7 +72,7 @@ integer          iel
 integer          ii    , jj    , ifac
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
@@ -215,8 +215,10 @@ do iel = 1, ncel
   w1(iel) = 1.d0
 enddo
 
+imvisp = vcopt%imvisf
+
 call viscfa                                                       &
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 

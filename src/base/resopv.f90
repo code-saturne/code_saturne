@@ -702,7 +702,7 @@ if (vcopt_p%idiff.ge.1) then
     if (ivofmt.gt.0) then
       imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
     else
-      imvisp = imvisf
+      imvisp = vcopt_p%imvisf
     endif
 
     call viscfa &
@@ -970,7 +970,7 @@ if (arak.gt.0.d0) then
     if (ivofmt.gt.0) then
       imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
     else
-      imvisp = imvisf
+      imvisp = vcopt_p%imvisf
     endif
 
     call viscfa &
@@ -1921,11 +1921,12 @@ if (idilat.eq.5) then
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
+  imvisp = vcopt_u%imvisf
 
   itypfl = 0
 
   ! --- Viscosity
-  call viscfa (imvisf, dt, viscf, viscb)
+  call viscfa (imvisp, dt, viscf, viscb)
 
   ! --- Boundary Conditions for the convective flux
   do ifac = 1, nfabor

@@ -62,7 +62,7 @@ implicit none
 integer          f_id, n_moments
 integer          ii, jj, imom, iok, ikw
 integer          nbccou, flag
-integer          nscacp, iscal
+integer          nscacp, iscal, ivar
 integer          imrgrp
 integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
@@ -963,6 +963,15 @@ if (nscal.gt.0) then
   enddo
 endif
 
+! harmonic face viscosity interpolation
+if (imvisf.eq.1) then
+  do ivar = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    vcopt%imvisf = 1
+    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  enddo
+endif
+
 ! VoF model enabled
 if (ivofmt.gt.0) then
   ro0    = rho2
@@ -993,7 +1002,11 @@ if (ippmod(idarcy).eq.1) then
   enddo
 
   ! harmonic face viscosity interpolation
-  imvisf = 1
+  do ivar = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    vcopt%imvisf = 1
+    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  enddo
 
   ! reference values for pressure and density
   p0 = 0.d0

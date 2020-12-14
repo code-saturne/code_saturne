@@ -107,7 +107,7 @@ double precision vela  (3  ,ncelet)
 
 integer          ifac  , iel, ischcp, idftnp, ircflp
 integer          init  , inc   , iccocg, isstpp
-integer          imrgrp, nswrgp, imligp, iwarnp, iconvp, idiffp
+integer          imrgrp, nswrgp, imligp, iwarnp, iconvp, idiffp, imvisp
 integer          icvflb, f_id0
 integer          isou  , jsou
 integer          iflmb0, itypfl
@@ -266,6 +266,7 @@ if (itsqdm.ne.0) then
 
   ! ---> Face diffusivity for the velocity
   idiffp = vcopt_u%idiff
+  imvisp = vcopt_u%imvisf
   if (idiffp.ge. 1) then
 
      call field_get_val_s(iviscl, viscl)

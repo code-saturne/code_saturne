@@ -99,7 +99,7 @@ integer          nswmpr
 integer          isweep, niterf
 integer          iphydp
 integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp
-integer          idiffp, iconvp, ndircp
+integer          idiffp, iconvp, ndircp, imvisp
 integer          ibsize, iesize
 integer          imucpp, f_id0
 
@@ -234,8 +234,10 @@ do iel = 1, ncel
   viscce(iel) = 1.d0
 enddo
 
+imvisp = vcopt_pr%imvisf
+
 call viscfa &
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    viscce ,                                                       &
    viscf  , viscb  )
 

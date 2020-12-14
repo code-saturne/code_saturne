@@ -102,6 +102,8 @@ double precision, dimension(:,:), pointer :: cvar_vel, visten
 double precision, dimension(:), pointer :: cpro_vscalt
 double precision, dimension(:), pointer :: imasfl, bmasfl
 
+type(var_cal_opt), target   :: vcopt
+
 !===============================================================================
 
 allocate(lstelt(nfac))
@@ -130,7 +132,8 @@ if (mod(ntcabs,pas_iter).eq.0) then
   call field_get_key_int(ivarfl(isca(1)), kivisl, ifcvsl)
   call field_get_val_s(ifcvsl, cpro_vscalt)
   scalar_diffusion(1:ncel) = cpro_vscalt(1:ncel)
-  call viscfa (imvisf, scalar_diffusion, viscf, viscb)
+  call field_get_key_struct_var_cal_opt(ivarfl(isca(1)), vcopt)
+  call viscfa (vcopt%imvisf, scalar_diffusion, viscf, viscb)
 
 ! Example of tracer flux computation through an internal surface.
 ! Fluxes are calculated whithout reconstruction, and with a simple definition of the concentration at faces

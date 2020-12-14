@@ -94,7 +94,7 @@ integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp, iphydp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          istprv
 integer          imucpp, idftnp, iswdyp
@@ -334,8 +334,9 @@ endif
 do iel = 1, ncel
   w3(iel) = 1.d0
 enddo
+imvisp = vcopt%imvisf
 call viscfa                                                       &
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    w3     ,                                                       &
    viscf  , viscb  )
 
@@ -726,8 +727,10 @@ if (vcopt%idiff.ge.1) then
     endif
   enddo
 
+  imvisp = vcopt%imvisf
+
   call viscfa &
-( imvisf ,                                                       &
+( imvisp ,                                                       &
   w2     ,                                                       &
   viscf  , viscb  )
 

@@ -281,8 +281,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   const cs_real_t *distb = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  int imvisf = cs_glob_space_disc->imvisf;
-
   const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
   const cs_real_t thets  = time_scheme->thetst;
 
@@ -1002,7 +1000,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     cs_face_viscosity(m,
                       fvq,
-                      imvisf,
+                      vcopt_k->imvisf,
                       w3,
                       viscf,
                       viscb);
@@ -1563,7 +1561,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
       cs_face_viscosity(m,
                         fvq,
-                        imvisf,
+                        vcopt_k->imvisf,
                         w4,
                         viscf,
                         viscb);
@@ -1630,7 +1628,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
       cs_face_viscosity(m,
                         fvq,
-                        imvisf,
+                        vcopt_eps->imvisf,
                         w4,
                         viscf,
                         viscb);
@@ -1803,7 +1801,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     cs_face_viscosity(m,
                       fvq,
-                      imvisf,
+                      vcopt_k->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -1883,7 +1881,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     cs_face_viscosity(m,
                       fvq,
-                      imvisf,
+                      vcopt_eps->imvisf,
                       w1,
                       viscf,
                       viscb);

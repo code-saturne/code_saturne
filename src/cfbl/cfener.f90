@@ -106,7 +106,7 @@ integer          init  , iii
 integer          ifcvsl, iflmas, iflmab
 integer          icvflb
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp
+integer          iconvp, idiffp, ndircp, imvisp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 double precision epsrgp, climgp, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
@@ -405,9 +405,11 @@ if (vcopt_e%idiff.ge. 1) then
     enddo
   endif
 
+  imvisp = vcopt_u%imvisf
+
   call viscfa                                                     &
   !==========
- ( imvisf ,                                                       &
+ ( imvisp ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 
@@ -517,7 +519,9 @@ if (vcopt_e%idiff.ge. 1) then
       kspe(iel) = w1(iel)* cvar_tempk(iel)
     enddo
 
-    call viscfa(imvisf, kspe, viscfk, viscbk)
+    imvisp = vcopt_e%imvisf
+
+    call viscfa(imvisp, kspe, viscfk, viscbk)
 
     deallocate(kspe)
 
