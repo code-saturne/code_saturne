@@ -1193,6 +1193,7 @@ cs_1d_wall_thermal_free(void)
     BFT_FREE(_1d_wall_thermal.local_models->z);
   BFT_FREE(_1d_wall_thermal.local_models);
   BFT_FREE(_1d_wall_thermal.ifpt1d);
+  BFT_FREE(_1d_wall_thermal.tppt1d);
 }
 
 /*----------------------------------------------------------------------------*/
