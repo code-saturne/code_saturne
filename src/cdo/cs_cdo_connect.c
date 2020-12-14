@@ -876,7 +876,7 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
     break;
 
   default:
-    ifs = cs_interface_set_dup(*p_ifs, n_vtx_dofs);
+    ifs = cs_interface_set_dup(mesh->vtx_interfaces, n_vtx_dofs);
     break;
 
   } /* End of switch on dimension */
