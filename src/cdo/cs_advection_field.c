@@ -1576,7 +1576,7 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
         if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid location for definition by DoFs.\n", __func__);
-        assert(cs_equation_get_tmpbuf_size() <= cdoq->n_faces);
+        assert(cs_equation_get_tmpbuf_size() <= (size_t)cdoq->n_faces);
 
         /* Values of the function are defined at the primal faces */
         cx->func(cdoq->n_faces, NULL, true, /* dense output */
