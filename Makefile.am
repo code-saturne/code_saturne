@@ -272,6 +272,7 @@ bin/cs_control.py \
 bin/cs_create.py \
 bin/cs_debug_wrapper.py \
 bin/cs_exec_environment.py \
+bin/cs_parametric_study.py \
 bin/cs_studymanager_gui.py \
 bin/cs_trackcvg.py \
 bin/cs_gui.py \

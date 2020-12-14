@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add a 'code_saturne parametric' command which currently allows the
+  modification of several parameters of a case and the creation of a
+  case  based on a reference case.
+  Integration with studymanager and cfdstudy (for parametric studies)
+  is to be added soon (before v7.0 release).
+
 - Preprocessing: added mesh modification flag types to more easily
   activate re-partitioning.
 
