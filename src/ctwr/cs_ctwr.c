@@ -99,6 +99,8 @@ static cs_ctwr_option_t  _ctwr_option = {
   .evap_model = CS_CTWR_NONE,
   .has_rain = false};
 
+const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
+
 /* Cooling tower exchange zone structure definition */
 /*--------------------------------------------------*/
 
@@ -1717,7 +1719,6 @@ cs_ctwr_source_term(int              f_id,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[])
 {
-
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(m->i_face_cells);
@@ -1742,13 +1743,9 @@ cs_ctwr_source_term(int              f_id,
   cs_field_t *cfld_tp = cs_field_by_name_try("y_p_t_l");     /* Rain drops temperature */
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_p");
 
-  cs_real_t vertical[3], horizontal[3], norme_g;
+  cs_real_t vertical[3], horizontal[3];
 
-  cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
-
-  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+  const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
 
   int evap_model = ct_opt->evap_model;
 
@@ -1784,15 +1781,13 @@ cs_ctwr_source_term(int              f_id,
        Phase change source terms
        ========================= */
 
-    vertical[0] = -gravity[0];
-    vertical[1] = -gravity[1];
-    vertical[2] = -gravity[2];
+    cs_math_3_normalize(cs_glob_physical_constants->gravity,
+                        vertical);
 
-    norme_g = cs_math_3_norm(vertical);
+    vertical[0] *= -1;
+    vertical[1] *= -1;
+    vertical[2] *= -1;
 
-    vertical[0] /= norme_g;
-    vertical[1] /= norme_g;
-    vertical[2] /= norme_g;
     horizontal[0] = vertical[0] -1.;
     horizontal[1] = vertical[1] -1.;
     horizontal[2] = vertical[2] -1.;
@@ -2184,7 +2179,7 @@ cs_ctwr_source_term(int              f_id,
  *
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
- * \param[in]   mass_source     Mass source term
+ * \param[out]  mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2201,15 +2196,17 @@ cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
   BFT_MALLOC(imp_st, n_cells_with_ghosts, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+    mass_source[cell_id] = 0.0;
     imp_st[cell_id] = 0.0;
   }
 
-  cs_ctwr_source_term(CS_F_(p)->id, /* Bulk mass source term is
-                                       stored for pressure */
-      p0,
-      molmassrat,
-      mass_source,
-      imp_st);
+  /* Bulk mass source term is stored for pressure */
+
+  cs_ctwr_source_term(CS_F_(p)->id,
+                      p0,
+                      molmassrat,
+                      mass_source,
+                      imp_st);
 
   BFT_FREE(imp_st);
 }
