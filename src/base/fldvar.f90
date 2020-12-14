@@ -72,6 +72,7 @@ integer       nmodpp
 
 integer       ipp
 integer       iok, keycpl, nmodpp_compatibility, vof_mask
+integer       key_lim_id, kscmin, kscmax
 
 type(var_cal_opt) :: vcopt
 
@@ -222,11 +223,26 @@ if (ivofmt.gt.0) vcopt%iwgrec = 1
 call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! void fraction (VoF algorithm)
+
 if (ivofmt.gt.0) then
   call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
   vcopt%idiff = 0  ! pure convection equation
+
+  ! NVD/TVD scheme
+  vcopt%ischcv = 4
+  call field_get_key_id("limiter_choice", key_lim_id)
+  ! (CICSAM limiter)
+  call field_set_key_int(ivarfl(ivolf2), key_lim_id, 11)
+  ! Beta Limiter
+  vcopt%isstpc = 2
+
   call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
+  ! Bounds for the beta limiter
+  call field_get_key_id("min_scalar", kscmin)
+  call field_get_key_id("max_scalar", kscmax)
+  call field_set_key_double(ivarfl(ivolf2), kscmin, 0.d0)
+  call field_set_key_double(ivarfl(ivolf2), kscmax, 1.d0)
 endif
 
 ! Turbulence

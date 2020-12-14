@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Change default options for the VOF model (convective scheme is now
+ CICSAM by default, with a continuous limiter ensuring
+ bounds).
+
 - Make dynamic relaxation option for pure diffusion equation default option.
   (iswdyn = 2). This make the iterative process solving of the legacy
   solver more robust (especially for pressure).
