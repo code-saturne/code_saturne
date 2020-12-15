@@ -1806,6 +1806,16 @@ class meg_to_c_interpreter:
                                 self.init_block('ini', zone_name, mscalar,
                                                 exp, req, sym, [])
 
+                    # Combustion
+                    node_gas = im.models.xmlGetNode('gas_combustion')
+                    if node_gas:
+                        for mscalar in usm.getGasCombScalarsNameList():
+                            node = node_gas.xmlGetNode('variable', name=mscalar)
+                            if node.xmlGetString('formula', zone_id=z_id):
+                                exp,req,sym = im.getCombustionFormulaComponents(z_id,mscalar)
+                                self.init_block('ini', zone_name, mscalar,
+                                                exp, req, sym, [])
+
         else:
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel

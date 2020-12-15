@@ -2895,6 +2895,53 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
         }
 
+        /* Combustion Scalars initialization */
+        if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] > -1) {
+
+          cs_tree_node_t *tn_gas
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/gas_combustion");
+
+          const char *name       = NULL;
+          const char *formula_comb  = NULL;
+
+          int size = cs_tree_get_sub_node_count_simple(tn_gas, "variable");
+
+          for (int j = 0; j < size; j++) {
+            cs_tree_node_t *tn_combustion = cs_tree_get_node(tn_gas, "variable");
+            for (int i = 1;
+                 tn_combustion != NULL && i < j + 1;
+                 i++) {
+             tn_combustion = cs_tree_node_get_next_of_name(tn_combustion);
+            }
+
+            cs_tree_node_t *tn_combustion2 = tn_combustion;
+            tn_combustion = cs_tree_get_node(tn_combustion, "name");
+            name = cs_tree_node_get_value_str(tn_combustion);
+
+            tn_combustion2 = cs_tree_get_node(tn_combustion2, "formula");
+            tn_combustion2 = _add_zone_id_test_attribute(tn_combustion2, z->id);
+            const char *zone_id
+              = cs_tree_node_get_child_value_str(tn_combustion2, "zone_id");
+
+            cs_field_t *c_comb = cs_field_by_name_try(name);
+
+            formula_comb = cs_tree_node_get_value_str(tn_combustion2);
+
+            if (formula_comb != NULL) {
+              cs_real_t *ini_vals = cs_meg_initialization(z, c_comb->name);
+              if (ini_vals != NULL) {
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c_comb->val[c_id] = ini_vals[e_id];
+                }
+                BFT_FREE(ini_vals);
+              }
+            }
+          }
+
+        }
+
         if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
           const char *formula        = NULL;
           const char *buff           = NULL;
