@@ -4,14 +4,14 @@ Master (not on release branches yet)
 User changes:
 
 - Change default options for the VOF model (convective scheme is now
- CICSAM by default, with a continuous limiter ensuring
- bounds).
+  CICSAM by default, with a continuous limiter ensuring
+  bounds).
 
 - Make dynamic relaxation option for pure diffusion equation default option.
   (iswdyn = 2). This make the iterative process solving of the legacy
   solver more robust (especially for pressure).
 
-- Add a 'code_saturne parametric' command which currently allows the
+- Add a `code_saturne parametric` command which currently allows the
   modification of several parameters of a case and the creation of a
   case  based on a reference case.
   Integration with studymanager and cfdstudy (for parametric studies)
