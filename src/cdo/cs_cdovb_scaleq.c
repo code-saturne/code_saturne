@@ -48,7 +48,6 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
-#include "cs_cdo_time.h"
 #include "cs_cdovb_priv.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
