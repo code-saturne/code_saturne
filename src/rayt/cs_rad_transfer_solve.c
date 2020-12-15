@@ -1007,6 +1007,10 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Number of passes */
   ipadom++;
 
+  if (   ipadom > 1
+      && cs_glob_time_step->nt_cur%rt_params->nfreqr != 0)
+    return;
+
   /* Allocate temporary arrays for the radiative equations resolution */
   cs_real_t *viscf, *viscb, *rhs, *rovsdt;
   BFT_MALLOC(viscf,  n_i_faces, cs_real_t);
@@ -1108,11 +1112,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Initializations
      --------------- */
-
-  if (   ipadom > 1
-      && cs_glob_time_step->nt_cur%rt_params->nfreqr != 0)
-    return;
-
+  
   if (rt_params->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** Information on the radiative source term\n"
