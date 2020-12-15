@@ -58,6 +58,7 @@ from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -103,6 +104,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
         self.meteo_group = [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
         self.thermodynamic_list = ['Pressure', 'Density', 'Temperature', 'Energy']
+        self.combustion_group = [self.labelCombustion, self.comboBoxCombustion, self.pushButtonCombustion]
 
         # 1/ Combo box models
 
@@ -132,6 +134,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.comboBoxTurbulence.activated[str].connect(self.slotChoice)
         self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
         self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
+        self.comboBoxCombustion.activated[str].connect(self.slotCombustionChoice)
         self.checkBoxPressure.clicked.connect(self.slotPressure)
         self.checkBoxDensity.clicked.connect(self.slotDensity)
         self.checkBoxTemperature.clicked.connect(self.slotTemperature)
@@ -141,6 +144,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.pushButtonTurbulence.clicked.connect(self.slotTurbulenceFormula)
         self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
         self.pushButtonMeteo.clicked.connect(self.slotMeteoFormula)
+        self.pushButtonCombustion.clicked.connect(self.slotCombustionFormula)
         self.pushButtonPressure.clicked.connect(self.slotPressureFormula)
         self.pushButtonDensity.clicked.connect(self.slotDensityFormula)
         self.pushButtonTemperature.clicked.connect(self.slotTemperatureFormula)
@@ -206,6 +210,27 @@ class InitializationView(QWidget, Ui_InitializationForm):
             else:
                 self.pushButtonHydraulicHead.setStyleSheet("background-color: red")
 
+        # combustion
+        self.modelCombustion = ComboModel(self.comboBoxCombustion, 1, 1)
+        self.scalar_combustion = ""
+        scalar_combustion_list = DefineUserScalarsModel( self.case).getGasCombScalarsNameList()
+        if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
+            self.scalar_combustion = scalar_combustion_list[0]
+            for item in self.combustion_group:
+                item.show()
+            for scalar in scalar_combustion_list:
+                self.modelCombustion.addItem(self.tr(scalar), scalar)
+            self.modelCombustion.setItem(str_model = self.scalar_combustion)
+            exp = self.init.getCombustionFormula(self.zone_id, self.scalar_combustion)
+            if exp:
+                self.pushButtonCombustion.setStyleSheet("background-color: green")
+                self.pushButtonCombustion.setToolTip(exp)
+            else:
+                self.pushButtonCombustion.setStyleSheet("background-color: red")
+        else:
+            for item in self.combustion_group:
+                item.hide()
+
         # Initialize widget
         self.initializeVariables()
 
@@ -268,6 +293,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonMeteo.setToolTip(exp)
         else:
             self.pushButtonMeteo.setStyleSheet("background-color: red")
+
+
+    @pyqtSlot(str)
+    def slotCombustionChoice(self, text):
+        """
+        INPUT label for choice of zone_id
+        """
+        self.scalar_combustion = self.modelCombustion.dicoV2M[str(text)]
+        self.initializeVariables()
+        exp = self.init.getCombustionFormula(self.zone_id, self.scalar_combustion)
+        if exp:
+            self.pushButtonCombustion.setStyleSheet("background-color: green")
+            self.pushButtonCombustion.setToolTip(exp)
+        else:
+            self.pushButtonCombustion.setStyleSheet("background-color: red")
 
 
     @pyqtSlot(str)
@@ -427,6 +467,32 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setMeteoFormula(self.zone_id, self.scalar_meteo, str(result))
             self.pushButtonMeteo.setStyleSheet("background-color: green")
             self.pushButtonMeteo.setToolTip(result)
+
+
+    @pyqtSlot()
+    def slotCombustionFormula(self):
+        """
+        """
+        name = self.scalar_combustion
+        exa = """#example: \n""" + str(name) + """ = 0;\n"""
+
+        exp, req, sym = self.init.getCombustionFormulaComponents(self.zone_id, self.scalar_combustion)
+
+        dialog = QMegEditorView(parent=self,
+                                function_type="ini",
+                                zone_name=self.zone_name,
+                                variable_name=name,
+                                expression=exp,
+                                required=req,
+                                symbols=sym,
+                                examples=exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaCombustion -> %s" % str(result))
+            self.init.setCombustionFormula(self.zone_id, self.scalar_combustion, str(result))
+            self.pushButtonCombustion.setStyleSheet("background-color: green")
+            self.pushButtonCombustion.setToolTip(result)
 
 
     @pyqtSlot()
