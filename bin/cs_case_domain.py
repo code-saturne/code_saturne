@@ -836,15 +836,35 @@ class domain(base_domain):
 
         # Fixed parameter name
 
-        setup_ref = "setup.xml"
-        if self.param != None and self.param != "setup.xml":
-            link_path = os.path.join(self.exec_dir, setup_ref)
-            self.purge_result(link_path) # in case of previous run here
-            try:
-                os.symlink(self.param, link_path)
-            except Exception:
-                src_path = os.path.join(self.exec_dir, self.param)
-                shutil.copy2(src_path, link_path)
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+
+        if self.param != None:
+            param_base = os.path.basename(self.param)
+            src_path = os.path.join(self.exec_dir, param_base)
+            default_path = os.path.join(self.data_dir, 'setup.xml')
+            if param_base != "setup.xml":
+                if os.path.isfile(default_path):
+                    self.purge_result(setup_path) # in case of previous run here
+                    fmt = ('Warning:\n'
+                           '  Both {0} and {1} exist in\n'
+                           '    {2}.\n'
+                           '  {0} will be used for the computation.\n'
+                           '  Be aware that to follow best practices '
+                           'only one of the two should be present.\n\n')
+                    msg = fmt.format(os.path.basename(self.param),
+                                     os.path.basename(setup_path),
+                                     self.data_dir)
+                    print(msg, file = sys.stderr)
+                try:
+                    os.symlink(self.param, setup_path)
+                except Exception:
+                    shutil.copy2(src_path, setup_path)
+
+        if not os.path.isfile(setup_path):
+            msg  = ('Remark:\n'
+                    '  No setup.xml file was provided in the DATA folder.\n'
+                    '  Default settings will be used.\n')
+            print(msg, file = sys.stderr)
 
         if len(err_str) > 0:
             self.error = 'data preparation'

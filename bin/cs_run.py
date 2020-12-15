@@ -134,6 +134,10 @@ def arg_parser(argv, pkg):
                         metavar="<case>",
                         help="path to the case's directory")
 
+    parser.add_argument("--dest", dest="dest", type=str,
+                        metavar="<dest>",
+                        help="path to the destination top directory")
+
     parser.add_argument("--id", dest="id", type=str,
                         metavar="<id>",
                         help="use the given run id")
@@ -279,7 +283,7 @@ def process_options(options, pkg):
                                                 coupling=coupling,
                                                 id=run_id)
 
-    if casedir == None:
+    if casedir == None and staging_dir == None:
         cmd_line = sys.argv[0]
         for arg in sys.argv[1:]:
             cmd_line += ' ' + arg
@@ -289,12 +293,6 @@ def process_options(options, pkg):
         print('which does not seem to be inside a case directory.', file = sys.stderr)
 
     param = options.param
-
-    # If no parameter file passed, and a setup.xml is present in DATA, run it
-    if param is None:
-        has_setup = os.path.isfile(os.path.join(casedir, 'DATA', 'setup.xml'))
-        if has_setup:
-            param = "setup.xml"
 
     compute_build = options.compute_build
 
@@ -306,6 +304,7 @@ def process_options(options, pkg):
     # Return associated dictionary (also force number of ranks and threads)
 
     r_c = {'casedir': casedir,
+           'dest_dir': options.dest,
            'staging_dir': staging_dir,
            'run_id': run_id,
            'param': param,
@@ -330,15 +329,17 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     Process the passed command line arguments.
     """
 
-    casedir = r_c['casedir']
     run_config_path = ""
-    setup_default_path = ""
 
-    if r_c['coupled_domains'] != []:
-        run_config_path = os.path.join(casedir, 'run.cfg')
-    else:
-        run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
-        setup_default_path = os.path.join(casedir, 'DATA', 'setup.xml')
+    if r_c['staging_dir']:
+        run_config_path = os.path.join(r_c['staging_dir'], 'run.cfg')
+
+    elif r_c['casedir']:
+        casedir = r_c['casedir']
+        if r_c['coupled_domains'] != []:
+            run_config_path = os.path.join(casedir, 'run.cfg')
+        else:
+            run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
 
     # Ensure some keys are set in all cases to simplify future tests
 
@@ -367,38 +368,22 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     if not run_conf:
         run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
 
+    # Case path if not determined yet
+    # (when destination or staging directory is outside case directory)
+
+    if 'paths' in run_conf.sections:
+        if not r_c['casedir']:
+            if 'case' in run_conf.sections['paths']:
+                r_c['casedir'] = run_conf.sections['paths']['case']
+        if not r_c['dest_dir']:
+            if 'top_results_directory' in run_conf.sections['paths']:
+                r_c['dest_dir'] = run_conf.sections['paths']['top_results_directory']
+
     # Parameters file
 
     for kw in ('param',):
         if run_conf.get('setup', kw):
             r_c[kw] = run_conf.get('setup', kw)
-
-    if not r_c['param'] and setup_default_path:
-        if os.path.isfile(setup_default_path):
-            r_c['param'] = setup_default_path
-
-    # Print warning if setup.xml exists but another xml was provided
-    if r_c['param'] and setup_default_path:
-        if os.path.basename(r_c['param']) != os.path.basename(setup_default_path):
-            if os.path.isfile(setup_default_path):
-                msg  = '*****************************************************\n'
-                msg += 'Warning:\n'
-                msg += '  Both %s and %s exist in the DATA folder.\n' % \
-                         (os.path.basename(r_c['param']), \
-                         os.path.basename(setup_default_path))
-                msg += '  %s will be used for the computation.\n' % \
-                        os.path.basename(r_c['param'])
-                msg += '  Be aware that to follow code_saturne best practices\n'
-                msg += '  only one of the two should be present in DATA.\n'
-                msg += '*****************************************************\n'
-                print(msg, file = sys.stderr)
-
-    # Check that an XML file was provided
-    if not r_c['param'] and setup_default_path:
-        msg  = 'Remark:\n'
-        msg += '  No setup.xml file was provided in the DATA folder.\n'
-        msg += '  Default settings will be used.\n'
-        print(msg, file = sys.stderr)
 
     # Run id
 
@@ -488,6 +473,14 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
 
     sections = {}
 
+    if path and r_c['casedir']:
+        in_case = cs_case.is_exec_dir_in_case(r_c['casedir'],
+                                              os.path.dirname(path))
+        if not in_case:
+            sections['paths'] = {'case': r_c['casedir']}
+            if r_c['dest_dir']:
+                sections['paths']['top_results_directory'] = r_c['dest_dir']
+
     if 'coupled_domains' in r_c:
         if r_c['coupled_domains'] != []:
             dom_str=''
@@ -547,9 +540,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
 
     r_c, s_c, run_conf = process_options(options, pkg)
 
-    casedir = r_c['casedir']
-
-    if not casedir:
+    if not r_c['casedir'] and not r_c['staging_dir']:
         return 1, None, None
 
     # Read run configuration
@@ -588,7 +579,8 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
 
         c = cs_case_coupling.coupling(pkg,
                                       domains,
-                                      casedir,
+                                      r_c['casedir'],
+                                      r_c['dest_dir'],
                                       staging_dir=r_c['staging_dir'],
                                       verbose=verbose,
                                       package_compute=pkg_compute)
@@ -602,7 +594,8 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         # Now handle case for the corresponding calculation domain(s).
         c = cs_case.case(pkg,
                          package_compute=pkg_compute,
-                         case_dir=casedir,
+                         case_dir=r_c['casedir'],
+                         dest_dir=r_c['dest_dir'],
                          staging_dir=r_c['staging_dir'],
                          domains=d)
 

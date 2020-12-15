@@ -67,6 +67,35 @@ def check_exec_dir_stamp(d):
     return retval
 
 #-------------------------------------------------------------------------------
+# Check if an execution directory is inside a standard case structure
+#
+# This may not be the case if a separate staging directory or destination
+# directory has been specified.
+#-------------------------------------------------------------------------------
+
+def is_exec_dir_in_case(case_dir, exec_dir):
+    """
+    Check if an execution directory is inside a standard case structure.
+    """
+
+    in_case = False
+
+    if case_dir and exec_dir:
+        r_case_dir = os.path.normpath(case_dir)
+        r_exec_dir = os.path.normpath(exec_dir)
+        if not os.path.isabs(r_case_dir):
+            r_case_dir = os.path.abspath(r_case_dir)
+        if not os.path.isabs(r_exec_dir):
+            r_exec_dir = os.path.abspath(r_exec_dir)
+        if r_exec_dir.find(r_case_dir) == 0:
+            exec_parent_dir = os.path.split(r_exec_dir)[0]
+            if os.path.basename(exec_parent_dir) in ('RESU', 'RESU_COUPLING'):
+                if os.path.split(exec_parent_dir)[0] == case_dir:
+                    in_case = True
+
+    return in_case
+
+#-------------------------------------------------------------------------------
 
 def get_case_dir(case=None, param=None, coupling=None, id=None):
 
@@ -166,6 +195,7 @@ class case:
                  package,                     # main package
                  package_compute = None,      # package for compute environment
                  case_dir = None,
+                 dest_dir = None,
                  staging_dir = None,
                  domains = None,
                  syr_domains = None,
@@ -231,7 +261,12 @@ class case:
         # associate case domains and set case directory
 
         self.case_dir = case_dir
+        self.dest_dir = dest_dir
+        self.__define_dest_dir__()
+
         self.result_dir = None
+
+        # Determine parent (or coupling group) study directory
 
         if (os.path.isdir(os.path.join(case_dir, 'DATA')) and n_domains == 1):
             # Simple domain case from standard directory structure
@@ -253,8 +288,7 @@ class case:
 
         n_nc_solver = 0
 
-        for d in ( self.domains + self.syr_domains \
-                 + self.py_domains ):
+        for d in (self.domains + self.syr_domains + self.py_domains):
             d.set_case_dir(self.case_dir, staging_dir)
             try:
                 solver_name = os.path.basename(d.solver_path)
@@ -306,6 +340,16 @@ class case:
         # Error reporting
         self.error = ''
         self.error_long = ''
+
+    #---------------------------------------------------------------------------
+
+    def __define_dest_dir__(self):
+
+        if self.dest_dir != None:
+            if not os.path.isabs(self.dest_dir):
+                dest_dir = os.path.join(os.path.split(self.case_dir)[0],
+                                        self.dest_dir)
+                self.dest_dir = os.path.abspath(dest_dir)
 
     #---------------------------------------------------------------------------
 
@@ -512,11 +556,9 @@ class case:
             exec_dir_name += '.' + self.run_id
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
-            r = os.path.join(self.case_dir, 'RESU')
-            if len(self.domains) + len(self.syr_domains) \
-             + len(self.py_domains) > 1:
-                r += '_COUPLING'
-            self.exec_dir = os.path.join(r, self.run_id)
+            if not self.result_dir:
+                self.define_result_dir()
+            self.exec_dir = self.result_dir
 
     #---------------------------------------------------------------------------
 
@@ -551,7 +593,13 @@ class case:
 
     def define_result_dir(self):
 
-        r = os.path.join(self.case_dir, 'RESU')
+        if self.dest_dir != None:
+            base_dir = os.path.join(self.dest_dir,
+                                    os.path.basename(self.case_dir))
+        else:
+            base_dir = self.case_dir
+
+        r = os.path.join(base_dir, 'RESU')
 
         # Coupled case
         if len(self.domains) + len(self.syr_domains) \
@@ -559,7 +607,7 @@ class case:
             r += '_COUPLING'
 
         if not os.path.isdir(r):
-            os.mkdir(r)
+            os.makedirs(r)
 
         self.result_dir = os.path.join(r, self.run_id)
 
@@ -1747,6 +1795,23 @@ class case:
                       'run_solver':True,
                       'save_results':True}
 
+        # If preparation stage is not requested, it must have been done
+        # previously, and the id must be forced.
+
+        if not stages['prepare_data']:
+            force_id = True
+
+        # Run id and associated directories
+
+        self.set_run_id(run_id)
+        self.set_result_dir(force_id)
+
+        # If preparation stage is missing, force it
+        if stages['initialize'] and not stages['prepare_data']:
+            self.define_exec_dir()
+            if not os.path.isdir(self.exec_dir):
+                stages['prepare_data'] = True
+
         # Define scratch directory
         # priority: argument, environment variable, preference setting.
 
@@ -1767,7 +1832,7 @@ class case:
             if config.has_option('run', 'scratchdir'):
                 scratchdir = os.path.expanduser(config.get('run', 'scratchdir'))
                 scratchdir = os.path.realpath(os.path.expandvars(scratchdir))
-                if os.path.realpath(self.case_dir).find(scratchdir) == 0:
+                if os.path.realpath(self.result_dir).find(scratchdir) == 0:
                     scratchdir = None
 
         if scratchdir != None:
@@ -1778,26 +1843,6 @@ class case:
 
         if mpiexec_options == None:
             mpiexec_options = os.getenv('CS_MPIEXEC_OPTIONS')
-
-        # If preparation stage is not requested, it must have been done
-        # previously, and the id must be forced.
-
-        if not stages['prepare_data']:
-            force_id = True
-
-        # Run id and associated directories
-
-        self.set_run_id(run_id)
-
-        # If preparation stage is missing, force it
-        if stages['initialize'] and not stages['prepare_data']:
-            self.define_exec_dir()
-            if not os.path.isdir(self.exec_dir):
-                stages['prepare_data'] = True
-
-        # Set result copy mode
-
-        self.set_result_dir(force_id)
 
         # Set working directory
         # (nonlocal filesystem, reachable by all the processes)
@@ -1915,7 +1960,13 @@ class case:
         now = datetime.datetime.now()
         run_id_base = now.strftime('%Y%m%d-%H%M')
 
-        r = os.path.join(self.case_dir, 'RESU')
+        if self.dest_dir != None:
+            base_dir = os.path.join(self.dest_dir,
+                                    os.path.basename(self.case_dir))
+        else:
+            base_dir = self.case_dir
+
+        r = os.path.join(base_dir, 'RESU')
 
         if len(self.domains) + len(self.syr_domains) \
          + len(self.py_domains) > 1:

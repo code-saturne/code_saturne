@@ -150,6 +150,7 @@ _code_saturne() {
                 -p|--param)              _filedir; return 0;;
                 --case)                  _filedir -d; return 0;;
                 --compute-build)         _filedir -d; return 0;;
+                --dest)                  _filedir -d; return 0;;
                 --id)                    COMPREPLY=( ); return 0;;
                 --id-prefix)             COMPREPLY=( ); return 0;;
                 --id-suffix)             COMPREPLY=( ); return 0;;

@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add `--dest` option to `code_saturne run` and `code_saturne submit`
+  commands. This allows specifying a top directory separate from the
+  one in which a case is present.
+
 - Change default options for the VOF model (convective scheme is now
   CICSAM by default, with a continuous limiter ensuring
   bounds).
