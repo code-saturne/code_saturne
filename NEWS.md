@@ -42,6 +42,8 @@ User changes:
 
 Architectural changes:
 
+- Update MEDCoupling support for 64-bit id builds.
+
 - In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.
 
 - Improve Catalyst detection robustness for recent ParaView builds.

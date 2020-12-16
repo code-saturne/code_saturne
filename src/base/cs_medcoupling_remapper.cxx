@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -350,7 +350,7 @@ _copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
   cs_real_t *new_vals;
   BFT_MALLOC(new_vals, n_elts, cs_real_t);
 
-  for (int i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
     new_vals[i] = default_val;
   }
 
@@ -359,13 +359,13 @@ _copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
     MEDCouplingFieldDouble *source_field = r->source_fields[field_id];
     source_field->setNature(IntensiveMaximum);
 
-    MEDCouplingFieldDouble *target_field
+    MEDCouplingFieldDouble  *target_field
       = r->remapper->transferField(source_field, default_val);
 
 
     const double *val_ptr = target_field->getArray()->getConstPointer();
 
-    for (int i = 0; i < n_elts; i++) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
       new_vals[i] = val_ptr[i];
     }
   }
@@ -396,7 +396,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
 
   cs_real_t *new_vals;
   BFT_MALLOC(new_vals, n_elts_loc, cs_real_t);
-  for (int i = 0; i < n_elts_loc; i++) {
+  for (cs_lnum_t i = 0; i < n_elts_loc; i++) {
     new_vals[i] = default_val;
   }
 
@@ -404,7 +404,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
-    const DataArrayInt *subcells
+    const DataArrayIdType *subcells
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,  1.1);
 
     // Construct the subfields based on the subcells list
@@ -487,7 +487,7 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
-    const DataArrayInt *subcells
+    const DataArrayIdType *subcells
       = r->bbox_source_mesh->getCellsInBoundingBox(rbbox, 1.1);
 
     // Construction of a subfield and the submesh associated with it.
