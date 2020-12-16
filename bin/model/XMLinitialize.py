@@ -226,7 +226,7 @@ class XMLinit(BaseXmlInit):
             MobileMeshModel(self.case).getMethod()
             TurbulenceModel(self.case).getTurbulenceModel()
 
-            # First Volume Zone definition for all cells -> initialization
+            # First Volume Zone definition for all cells
 
             zones = LocalizationModel("VolumicZone", self.case).getZones()
             iok = 0

@@ -299,7 +299,7 @@ class VolumicZone(Zone):
         dico = Zone.defaultValues(self)
         dico['label'] = 'Zone_'
         dico['nature'] = {}
-        dico['nature']['initialization']       = "on"
+        dico['nature']['initialization']       = "off"
         dico['nature']['head_losses']          = "off"
         dico['nature']['porosity']             = "off"
         dico['nature']['momentum_source_term'] = "off"
