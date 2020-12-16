@@ -180,7 +180,7 @@ if (iatmst.eq.0) then
   endif
 endif
 
-if (mod(ntcabs,ntlist).eq.0.or.vcopt_pr%iwarni.ge.0) write(nfecra,1000)
+if (mod(ntcabs,ntlist).eq.0.or.vcopt_pr%iwarni.ge.1) write(nfecra,1000)
 
  1000 format(                                                           &
 '  Hydrostatic pressure computation: ',/,                   &
