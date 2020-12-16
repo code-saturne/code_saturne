@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #-------------------------------------------------------------------------------
 # Library modules import
@@ -7,7 +7,7 @@
 import sys
 
 if sys.version_info[:2] < (2,6):
-    sys.stderr.write("This script needs Python 2.6 at least\n")
+    sys.stderr.write("This script needs Python 3.4 at least\n")
 
 import platform
 
