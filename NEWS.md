@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix in the GUI for automatic BCs for atmospheric flow outlets.
+
 - Fix boundary reconstruction for hybrid Gauss + least-squares vector
   gradient (GitLab issue #247).
 
