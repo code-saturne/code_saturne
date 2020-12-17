@@ -69,6 +69,8 @@ double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 integer k,ii, isc
 double precision xcent
 
+type(var_cal_opt) :: vcopt_p, vcopt_u
+
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
@@ -86,6 +88,9 @@ double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
@@ -205,7 +210,13 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   call atleca()
 
   ! Initialization
-  if (isuite.eq.0 .or. (isuite.ne.0.and.init_at_chem.eq.1)) then
+  if (isuite.eq.0 .or. init_at_chem.eq.1) then
+
+    ! Writing
+    if (vcopt_u%iwarni.ge.1.or.vcopt_p%iwarni.ge.1) then
+      write(nfecra,2001)
+    endif
+
     do ii = 1, nlayer_aer*n_aer + n_aer
       isc = isca_chem(nespg + ii)
       call field_get_val_s(ivarfl(isca(isc)), cvar_sc)
@@ -289,6 +300,11 @@ if (isuite.eq.0) then
 
     ! Only if meteo file is present:
     else
+
+      ! Writing
+      if (vcopt_u%iwarni.ge.1.or.vcopt_p%iwarni.ge.1) then
+        write(nfecra,2000)
+      endif
 
       do iel = 1, ncel
 
@@ -416,6 +432,14 @@ endif
 !--------
 ! Formats
 !--------
+
+ 2000 format(/,                                                   &
+'   ** INIT DYNAMIC VARIABLES FROM METEO FILE'                ,/,&
+'      --------------------------------------'                ,/)
+
+ 2001 format(/,                                                   &
+'   ** INIT ATMO CHEMISTRY VARIABLE FROM FILE'                ,/,&
+'      --------------------------------------'                ,/)
 
  1000 format(                                                     &
 '@                                                            ',/,&
