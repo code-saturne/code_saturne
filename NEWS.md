@@ -3,6 +3,8 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Fix in the GUI for automatic atmo outlet BCs.
+
 - Major fix in hydrostatic pressure algorithm in the Rhie and Chow filter.
 
   It only impact cases where external force is not colinear to boundary
