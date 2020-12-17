@@ -1512,13 +1512,13 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
   ! Solving on the increment dphi
   !-------------------------------
-  if (iswdyp.eq.0) then
+  if (iswdyp.ge.1) then
     do iel = 1, ncel
+      dphim1(iel) = dphi(iel)
       dphi(iel) = 0.d0
     enddo
   else
     do iel = 1, ncel
-      dphim1(iel) = dphi(iel)
       dphi(iel) = 0.d0
     enddo
   endif
@@ -1650,7 +1650,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   ! Update the increment of pressure
   !---------------------------------
 
-  if (iswdyp.eq.0) then
+  if (iswdyp.le.0) then
     if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) then
       do iel = 1, ncel
         phia(iel) = phi(iel)

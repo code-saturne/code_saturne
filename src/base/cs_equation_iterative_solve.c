@@ -758,7 +758,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* --- Update the solution with the increment */
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         pvar[iel] += dpvar[iel];
@@ -786,7 +786,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     iccocg = 0;
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
@@ -1682,7 +1682,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /* --- Update the solution with the increment */
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for  if(n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t isou = 0; isou < 3; isou++)
@@ -1711,7 +1711,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /* --- Update the right hand and compute the new residual */
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for  if(n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
@@ -2488,7 +2488,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /* --- Update the solution with the increment */
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t isou = 0; isou < 6; isou++)
@@ -2514,7 +2514,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /* --- Update the right hand and compute the new residual */
 
-    if (iswdyp == 0) {
+    if (iswdyp <= 0) {
 #     pragma omp parallel for
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         /* smbini already contains unsteady terms and mass source terms
