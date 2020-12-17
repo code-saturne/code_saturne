@@ -2390,7 +2390,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
-            itypfb[face_id] = 0;
+            iautom[face_id] = 1;
           }
         }
       }
