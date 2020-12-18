@@ -2428,7 +2428,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];
-            iautom[face_id] = 1;
+            iautom[ifbr] = 1;
           }
         }
       }
