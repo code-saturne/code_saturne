@@ -395,16 +395,7 @@ static cs_equation_param_t _equation_param_default
    .enforced_dof_ids = NULL,
    .enforced_dof_values = NULL,
 
-   .sles_param = {.setup_done = false,
-                  .verbosity = 0,
-                  .field_id = -1,
-                  .solver_class = CS_PARAM_SLES_CLASS_CS,
-                  .precond = CS_PARAM_PRECOND_NONE,
-                  .solver = CS_PARAM_ITSOL_NONE,
-                  .amg_type = CS_PARAM_AMG_NONE,
-                  .resnorm_type = CS_PARAM_RESNORM_NONE,
-                  .n_max_iter = 0,
-                  .eps = 0},
+   .sles_param = NULL,
 
    .omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL
   };

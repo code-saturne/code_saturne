@@ -1053,7 +1053,7 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
 
-  mom_eqp->sles_param.field_id = field_id;
+  mom_eqp->sles_param->field_id = field_id;
 
   switch (nslesp.strategy) {
 
@@ -1063,11 +1063,11 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
 #if defined(HAVE_PETSC)
-    if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE) {
+    if (mom_eqp->sles_param->amg_type == CS_PARAM_AMG_NONE) {
 #if defined(PETSC_HAVE_HYPRE)
-      mom_eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
 #else
-      mom_eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
 #endif
     }
 
@@ -1193,10 +1193,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
   int  n_solver_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                       mom_eqp->name,
                                                        mom_eqp->sles_param,
                                                        matrix,
                                                        rs,
@@ -1354,11 +1353,10 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
   nl_info->n_inner_iter = (nl_info->last_inner_iter =
                            cs_equation_solve_scalar_system(3*n_faces,
-                                                           mom_eqp->name,
                                                            mom_eqp->sles_param,
                                                            matrix,
                                                            rs,
@@ -1433,12 +1431,11 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     t_solve_start = cs_timer_time();
 
     /* Redo the setup since the matrix is modified */
-    sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+    sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
     cs_sles_setup(sles, matrix);
 
     nl_info->n_inner_iter += (nl_info->last_inner_iter =
                          cs_equation_solve_scalar_system(3*n_faces,
-                                                         mom_eqp->name,
                                                          mom_eqp->sles_param,
                                                          matrix,
                                                          rs,

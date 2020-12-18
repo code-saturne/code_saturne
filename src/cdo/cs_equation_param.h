@@ -31,6 +31,7 @@
 
 #include "cs_advection_field.h"
 #include "cs_param_cdo.h"
+#include "cs_param_sles.h"
 #include "cs_hodge.h"
 #include "cs_property.h"
 #include "cs_xdef.h"
@@ -780,13 +781,13 @@ typedef struct {
    * @{
    *
    * \var sles_param
-   * Set of parameters to specify how to to solve the algebraic
-   * - iterative solver
-   * - preconditioner
-   * - tolerance...
+   * Set of parameters to specify how to to solve the algebraic system
+   *  - iterative solver
+   *  - preconditioner
+   *  - tolerance...
    */
 
-  cs_param_sles_t              sles_param;
+  cs_param_sles_t            *sles_param;
 
   /*!
    * @}
@@ -1453,12 +1454,12 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in, out]  eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  eqp           pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(cs_equation_param_t     *eqp);
+cs_equation_param_set_sles(cs_equation_param_t      *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!

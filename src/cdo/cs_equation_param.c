@@ -35,10 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(HAVE_PETSC)
-#include <petscversion.h>
-#endif
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -56,14 +52,6 @@
 #include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_volume_zone.h"
-
-#if defined(HAVE_MUMPS)
-#include "cs_sles_mumps.h"
-#endif
-
-#if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
-#endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -93,1096 +81,6 @@ static const char _err_empty_eqp[] =
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-#if defined(HAVE_PETSC)
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Predefined settings for GAMG as a preconditioner
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_petsc_pcmg_hook(void)
-{
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
-#else
-  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Predefined settings for GAMG as a preconditioner
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_petsc_pcgamg_hook(void)
-{
-  _petsc_pcmg_hook();
-
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
-#else
-  PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_petsc_pchypre_hook(void)
-{
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
-#else
-  PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set command line options for PC according to the kind of
- *        preconditionner
- *
- * \param[in]      slesp    set of parameters for the linear algebra
- * \param[in]      eqname   name of the equation to handle
- * \param[in, out] pc       PETSc preconditioner structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_set_pc_type(cs_param_sles_t    slesp,
-                   const char        *eqname,
-                   PC                 pc)
-{
-  if (slesp.solver == CS_PARAM_ITSOL_MUMPS ||
-      slesp.solver == CS_PARAM_ITSOL_MUMPS_LDLT)
-    return; /* Direct solver: Nothing to do at this stage */
-
-  switch (slesp.precond) {
-
-  case CS_PARAM_PRECOND_NONE:
-    PCSetType(pc, PCNONE);
-    break;
-
-  case CS_PARAM_PRECOND_DIAG:
-    PCSetType(pc, PCJACOBI);
-    break;
-
-  case CS_PARAM_PRECOND_BJACOB_ILU0:
-  case CS_PARAM_PRECOND_BJACOB_SGS:
-    PCSetType(pc, PCBJACOBI);
-    break;
-
-  case CS_PARAM_PRECOND_SSOR:
-    PCSetType(pc, PCSOR);
-    PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
-    break;
-
-  case CS_PARAM_PRECOND_ICC0:
-#if defined(PETSC_HAVE_HYPRE)
-    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-      PCSetType(pc, PCHYPRE);
-      PCHYPRESetType(pc, "euclid");
-    }
-    else {
-      PCSetType(pc, PCICC);
-      PCFactorSetLevels(pc, 0);
-    }
-#else
-    PCSetType(pc, PCICC);
-    PCFactorSetLevels(pc, 0);
-#endif
-    break;
-
-  case CS_PARAM_PRECOND_ILU0:
-#if defined(PETSC_HAVE_HYPRE)
-    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-      PCSetType(pc, PCHYPRE);
-      PCHYPRESetType(pc, "euclid");
-    }
-    else {
-      PCSetType(pc, PCBJACOBI);
-    }
-#else
-    PCSetType(pc, PCBJACOBI);
-#endif
-    break;
-
-  case CS_PARAM_PRECOND_AS:
-    PCSetType(pc, PCASM);
-    break;
-
-  case CS_PARAM_PRECOND_AMG:
-    {
-      switch (slesp.amg_type) {
-
-      case CS_PARAM_AMG_PETSC_GAMG:
-        PCSetType(pc, PCGAMG);
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        break;
-
-      case CS_PARAM_AMG_PETSC_PCMG:
-        PCSetType(pc, PCMG);
-        break;
-
-      case CS_PARAM_AMG_HYPRE_BOOMER:
-#if defined(PETSC_HAVE_HYPRE)
-        PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "boomeramg");
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Eq. %s: Switch to MG since BoomerAMG is not"
-                      " available.\n",
-                      __func__, eqname);
-#endif
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Eq. %s: Invalid AMG type for the PETSc library.",
-                  __func__, eqname);
-        break;
-
-      } /* End of switch on the AMG type */
-
-    } /* AMG as preconditioner */
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Eq. %s: Preconditioner not interfaced with PETSc.",
-              __func__, eqname);
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set command line options for PC according to the kind of
- *        preconditionner
- *
- * \param[in]    slesp     set of parameters for the linear algebra solver
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_set_pc_options_from_command_line(cs_param_sles_t    slesp)
-{
-
-  switch (slesp.precond) {
-
-#if defined(PETSC_HAVE_HYPRE)
-  case CS_PARAM_PRECOND_ILU0:
-  case CS_PARAM_PRECOND_ICC0:
-    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if PETSC_VERSION_GE(3,7,0)
-      PetscOptionsSetValue(NULL, "-pc_euclid_level", "-help");
-#else
-      PetscOptionsSetValue("-pc_euclid_level", "0");
-#endif
-    }
-    break;
-#endif  /* PETSc with HYPRE */
-
-  case CS_PARAM_PRECOND_AMG:
-    {
-      switch (slesp.amg_type) {
-
-      case CS_PARAM_AMG_PETSC_GAMG:
-        _petsc_pcgamg_hook();
-        break;
-
-      case CS_PARAM_AMG_PETSC_PCMG:
-        _petsc_pcmg_hook();
-        break;
-
-      case CS_PARAM_AMG_HYPRE_BOOMER:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_pchypre_hook();
-#else
-        _petsc_pcmg_hook();
-#endif
-        break;
-
-      default:
-        break; /* Nothing else to do at this stage */
-
-      } /* End of switch on the AMG type */
-
-    } /* AMG as preconditioner */
-    break;
-
-  default:
-    break; /* Nothing else to do at this stage */
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set PETSc solver
- *
- * \param[in]      slesp    pointer to SLES parameters
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_set_krylov_solver(cs_param_sles_t   slesp,
-                         KSP               ksp)
-{
-  /* 1) Set the type of normalization for the residual */
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
-
-  /* 2) Set the krylov solver */
-  switch (slesp.solver) {
-
-  case CS_PARAM_ITSOL_NONE:
-    KSPSetType(ksp, KSPPREONLY);
-    break;
-
-  case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
-    KSPSetType(ksp, KSPIBCGS);
-    /* No choice otherwise PETSc yields an error */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
-    KSPSetType(ksp, KSPBCGSL);
-    break;
-
-  case CS_PARAM_ITSOL_CG:        /* Preconditioned Conjugate Gradient */
-    if (slesp.precond == CS_PARAM_PRECOND_AMG ||
-        slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
-      KSPSetType(ksp, KSPFCG);
-    else
-      KSPSetType(ksp, KSPCG);
-    break;
-
-  case CS_PARAM_ITSOL_FCG:       /* Flexible Conjuguate Gradient */
-    KSPSetType(ksp, KSPFCG);
-    break;
-
-  case CS_PARAM_ITSOL_FGMRES:     /* Preconditioned flexible GMRES */
-    KSPSetType(ksp, KSPFGMRES);
-    break;
-
-  case CS_PARAM_ITSOL_GMRES:     /* Preconditioned GMRES */
-    KSPSetType(ksp, KSPLGMRES);
-    break;
-
-  case CS_PARAM_ITSOL_MINRES:    /* Minimal residual */
-    KSPSetType(ksp, KSPMINRES);
-    break;
-
-  case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-#if defined(PETSC_HAVE_MUMPS)
-    KSPSetType(ksp, KSPPREONLY);
-#else
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: MUMPS not interfaced with this installation of PETSc.",
-              __func__);
-#endif
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Iterative solver not interfaced with PETSc.", __func__);
-  }
-
-  /* 3) Additional settings arising from command lines */
-  switch (slesp.solver) {
-
-  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
-#if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-ksp_gmres_modifiedgramschmidt", "1");
-#else
-    PetscOptionsSetValue("-ksp_gmres_modifiedgramschmidt", "1");
-#endif
-    break;
-
-  default:
-    break; /* Nothing to do. Settings performed with another mechanism */
-
-  }
-
-  /* Apply modifications to the KSP structure given with command lines.
-   * This setting stands for a first setting and may be overwritten with
-   * parameters stored in the structure cs_param_sles_t
-   *
-   * Automatic monitoring
-   *  PetscOptionsSetValue(NULL, "-ksp_monitor", "");
-   *
-   */
-
-  KSPSetFromOptions(ksp);
-
-  /* Apply settings from the cs_param_sles_t structure */
-  switch (slesp.solver) {
-
-  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
-    {
-      const int  n_max_restart = 40;
-
-      KSPGMRESSetRestart(ksp, n_max_restart);
-    }
-    break;
-
-#if defined(PETSC_HAVE_MUMPS)
-  case CS_PARAM_ITSOL_MUMPS:
-    {
-      PC  pc;
-      KSPGetPC(ksp, &pc);
-      PCSetType(pc, PCLU);
-      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-    }
-    break;
-
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
-    {
-      PC  pc;
-      KSPGetPC(ksp, &pc);
-
-      /* Retrieve the matrices related to this KSP */
-      Mat a, pa;
-      KSPGetOperators(ksp, &a, &pa);
-
-      MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
-      PCSetType(pc, PCCHOLESKY);
-
-      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-      PCFactorSetUpMatSolverType(pc); /* call MatGetFactor() to create F */
-    }
-    break;
-#endif
-
-  default:
-    break; /* Nothing else to do */
-  }
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(ksp,
-                   slesp.eps,          /* relative convergence tolerance */
-                   abstol,             /* absolute convergence tolerance */
-                   dtol,               /* divergence tolerance */
-                   slesp.n_max_iter);  /* max number of iterations */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set PETSc solver and preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_setup_hook(void   *context,
-                  KSP     ksp)
-{
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* 1) Set the solver */
-  _petsc_set_krylov_solver(slesp, ksp);
-
-  /* Sanity checks */
-  if (cs_glob_n_ranks > 1 && slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-
-    if (slesp.precond == CS_PARAM_PRECOND_ILU0 ||
-        slesp.precond == CS_PARAM_PRECOND_ICC0) {
-#if defined(PETSC_HAVE_HYPRE)
-      slesp.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
-#else
-      slesp.precond = CS_PARAM_PRECOND_BJACOB_ILU0;
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: Eq. %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
-                    " Switch to a block jacobi preconditioner.\n"
-                    " Please check your settings.", __func__, eqp->name);
-#endif
-    }
-    else if (slesp.precond == CS_PARAM_PRECOND_SSOR) {
-
-      slesp.precond = CS_PARAM_PRECOND_BJACOB_SGS;
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: Eq. %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
-                    " Switch to a block jacobi preconditioner.\n"
-                    " Please check your settings.", __func__, eqp->name);
-
-    }
-
-  } /* Advanced check for parallel run */
-
-  /* 2) Set the preconditioner */
-  PC  pc;
-  KSPGetPC(ksp, &pc);
-  _petsc_set_pc_type(slesp, eqp->name, pc);
-
-  /* 3) Set PC options from command line */
-  _petsc_set_pc_options_from_command_line(slesp);
-
-  /* Apply modifications to the PC structure given with command lines.
-   * This setting stands for a first setting and may be overwritten with
-   * parameters stored in the structure cs_param_sles_t
-   * To get the last word use cs_user_sles_petsc_hook()  */
-  PCSetFromOptions(pc);
-
-  /* 4) User function for additional settings */
-  cs_user_sles_petsc_hook((void *)eqp, ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
-
-    KSPSetUp(ksp);
-
-    cs_sles_petsc_log_setup(ksp);
-    eqp->sles_param.setup_done = true;
-  }
-
-  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Common settings for block preconditioning (when a system is split
- *         according to the vector component x,y,z)
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_common_block_hook(cs_param_sles_t    slesp,
-                         KSP                ksp,
-                         PC                 pc,
-                         KSP              **xyz_subksp)
-{
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
-
-  PCSetType(pc, PCFIELDSPLIT);
-  PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
-
-  /* Apply modifications to the KSP structure */
-  PetscInt  id, n_split;
-
-  PCFieldSplitSetBlockSize(pc, 3);
-  id = 0;
-  PCFieldSplitSetFields(pc, "x", 1, &id, &id);
-  id = 1;
-  PCFieldSplitSetFields(pc, "y", 1, &id, &id);
-  id = 2;
-  PCFieldSplitSetFields(pc, "z", 1, &id, &id);
-
-  PCFieldSplitGetSubKSP(pc, &n_split, xyz_subksp);
-  assert(n_split == 3);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative AMG block preconditioner for a CG with GAMG
- *         as AMG type
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_amg_block_gamg_hook(void     *context,
-                           KSP       ksp)
-{
-  PC  pc;
-  KSP  *xyz_subksp;
-
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  assert(eqp->dim == 3);        /* This designed for this case */
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* Set the solver */
-  _petsc_set_krylov_solver(slesp, ksp);
-
-  /* Common settings to block preconditionner */
-  KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
-
-  /* Predefined settings when using AMG as a preconditioner */
-  _petsc_pcgamg_hook();
-
-  PC  _pc;
-  for (PetscInt id = 0; id < 3; id++) {
-
-    KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
-    KSPGetPC(_ksp, &_pc);
-    PCSetType(_pc, PCGAMG);
-
-  }
-
-  /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, ksp);
-
-  PCSetFromOptions(pc);
-  KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
-    cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
-  }
-
-  PetscFree(xyz_subksp);
-
-  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-}
-
-#if defined(PETSC_HAVE_HYPRE)
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative AMG block preconditioner for a CG with boomer
- *         as AMG type
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_amg_block_boomer_hook(void     *context,
-                             KSP       ksp)
-{
-  PC  pc;
-  KSP  *xyz_subksp;
-
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  assert(eqp->dim == 3);        /* This designed for this case */
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* Set the solver */
-  _petsc_set_krylov_solver(slesp, ksp);
-
-  /* Common settings to block preconditionner */
-  KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
-
-  /* Predefined settings when using AMG as a preconditioner */
-  _petsc_pchypre_hook();
-
-  PC  _pc;
-  for (PetscInt id = 0; id < 3; id++) {
-
-    KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
-    KSPGetPC(_ksp, &_pc);
-    PCSetType(_pc, PCHYPRE);
-    PCHYPRESetType(_pc, "boomeramg");
-
-  }
-
-  /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, ksp);
-
-  PCSetFromOptions(pc);
-  KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
-    cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
-  }
-
-  PetscFree(xyz_subksp);
-
-  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-}
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of block Jacobi preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_block_jacobi_hook(void     *context,
-                         KSP       ksp)
-{
-  PC  pc;
-  KSP  *xyz_subksp;
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  assert(eqp->dim == 3);        /* This designed for this case */
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* Set the solver (tolerance and max_it too) */
-  _petsc_set_krylov_solver(slesp, ksp);
-
-  /* Common settings to block preconditionner */
-  KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
-
-  KSPSetUp(ksp);
-
-  /* Predefined settings when using block-ILU as a preconditioner */
-  PC  _pc;
-  for (PetscInt id = 0; id < 3; id++) {
-
-    KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
-    KSPGetPC(_ksp, &_pc);
-    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if defined(PETSC_HAVE_HYPRE)
-      PCSetType(_pc, PCHYPRE);
-      PCHYPRESetType(_pc, "euclid"); /* ILU(1) by default */
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid option: HYPRE is not installed.", __func__);
-#endif
-    }
-    else {
-      PC  _subpc;
-      KSP *_subksp;
-
-      PCSetType(_pc, PCBJACOBI); /* Default for the block is an ILU(0) */
-      KSPSetUp(_ksp);
-      PCBJacobiGetSubKSP(_pc, NULL, NULL, &_subksp);
-      KSPSetType(_subksp[0], KSPPREONLY);
-      KSPGetPC(_subksp[0], &_subpc);
-
-      if (slesp.precond == CS_PARAM_PRECOND_BJACOB_SGS)
-        PCSetType(_subpc, PCEISENSTAT);
-      else if (slesp.precond == CS_PARAM_PRECOND_BJACOB_ILU0) {
-        PCFactorSetLevels(_pc, 0);
-        PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
-        PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid preconditioner.",__func__);
-
-    }
-
-  }
-
-  PCSetFromOptions(pc);
-  PCSetUp(pc);
-
-  /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, ksp);
-
-  KSPSetFromOptions(ksp);
-
-  /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
-    KSPSetUp(ksp);
-    cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
-  }
-
-  PetscFree(xyz_subksp);
-
-  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-}
-#endif /* defined(HAVE_PETSC) */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Case of saturne's own solvers.
- *
- * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_set_saturne_sles(cs_equation_param_t   *eqp)
-{
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  /* 1- Define the preconditioner */
-  /*    ========================= */
-
-  int  poly_degree;
-  cs_sles_pc_t *pc = NULL;
-
-  switch (slesp.precond) {
-
-  case CS_PARAM_PRECOND_DIAG:
-    poly_degree = 0;
-    break;
-
-  case CS_PARAM_PRECOND_POLY1:
-    poly_degree = 1;
-    break;
-
-  case CS_PARAM_PRECOND_POLY2:
-    poly_degree = 2;
-    break;
-
-  case CS_PARAM_PRECOND_AMG:
-    poly_degree = -1;
-    switch (slesp.amg_type) {
-
-    case CS_PARAM_AMG_HOUSE_V:
-      pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
-      break;
-    case CS_PARAM_AMG_HOUSE_K:
-      if (slesp.solver == CS_PARAM_ITSOL_CG)
-        slesp.solver = CS_PARAM_ITSOL_FCG;
-      pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Eq: %s; Invalid AMG type with Code_Saturne solvers.",
-                __func__, eqp->name);
-      break;
-
-    } /* Switch on the type of AMG */
-    break; /* AMG as preconditioner */
-
-  case CS_PARAM_PRECOND_GKB_CG:
-  case CS_PARAM_PRECOND_GKB_GMRES:
-    poly_degree = -1;
-    break;
-
-  case CS_PARAM_PRECOND_NONE:
-  default:
-    poly_degree = -1;       /* None or other */
-
-  } /* Switch on the preconditioner type */
-
-  /* 2- Define the iterative solver */
-  /*    =========================== */
-
-  cs_sles_it_t  *it = NULL;
-  cs_multigrid_t  *mg = NULL;
-
-  switch (slesp.solver) {
-
-  case CS_PARAM_ITSOL_AMG:
-    {
-      switch (slesp.amg_type) {
-
-      case CS_PARAM_AMG_HOUSE_V:
-        mg = cs_multigrid_define(slesp.field_id,
-                                 NULL,
-                                 CS_MULTIGRID_V_CYCLE);
-
-        /* Advanced setup (default is specified inside the brackets)
-         * for AMG as solver */
-        cs_multigrid_set_solver_options
-          (mg,
-           CS_SLES_JACOBI,   /* descent smoother type (CS_SLES_PCG) */
-           CS_SLES_JACOBI,   /* ascent smoother type (CS_SLES_PCG) */
-           CS_SLES_PCG,      /* coarse solver type (CS_SLES_PCG) */
-           slesp.n_max_iter, /* n max cycles (100) */
-           5,                /* n max iter for descent (10) */
-           5,                /* n max iter for ascent (10) */
-           1000,             /* n max iter coarse solver (10000) */
-           0,                /* polynomial precond. degree descent (0) */
-           0,                /* polynomial precond. degree ascent (0) */
-           -1,               /* polynomial precond. degree coarse (0) */
-           1.0,    /* precision multiplier descent (< 0 forces max iters) */
-           1.0,    /* precision multiplier ascent (< 0 forces max iters) */
-           1);     /* requested precision multiplier coarse (default 1) */
-        break;
-
-      case CS_PARAM_AMG_HOUSE_K:
-        mg = cs_multigrid_define(slesp.field_id,
-                                 NULL,
-                                 CS_MULTIGRID_K_CYCLE);
-
-        cs_multigrid_set_solver_options
-          (mg,
-           CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
-           CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
-           CS_SLES_PCG,                /* coarse smoother */
-           slesp.n_max_iter,           /* n_max_cycles */
-           1,                          /* n_max_iter_descent, */
-           1,                          /* n_max_iter_ascent */
-           100,                        /* n_max_iter_coarse */
-           0,                          /* poly_degree_descent */
-           0,                          /* poly_degree_ascent */
-           0,                          /* poly_degree_coarse */
-           -1.0,                       /* precision_mult_descent */
-           -1.0,                       /* precision_mult_ascent */
-           1);                         /* precision_mult_coarse */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s; eq: %s -- Invalid AMG type with Code_Saturne"
-                  " solvers.", __func__, eqp->name);
-        break;
-
-      } /* End of switch on the AMG type */
-
-    }
-    break; /* AMG as solver */
-
-  case CS_PARAM_ITSOL_BICG:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_BICGSTAB,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_BICGSTAB2:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_BICGSTAB2,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_CG:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_PCG,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_CR3:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_PCR3,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_FCG:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_IPCG,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_P_GAUSS_SEIDEL,
-                           -1, /* Not useful to apply a preconditioner */
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_GKB_CG:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_IPCG, /* Flexible CG */
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_GKB_GMRES:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_GMRES, /* Should a flexible GMRES */
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_GMRES:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_GMRES,
-                           poly_degree,
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_JACOBI:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_JACOBI,
-                           -1, /* Not useful to apply a preconditioner */
-                           slesp.n_max_iter);
-    break;
-
-  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-    it = cs_sles_it_define(slesp.field_id,
-                           NULL,
-                           CS_SLES_P_SYM_GAUSS_SEIDEL,
-                           -1, /* Not useful to apply a preconditioner */
-                           slesp.n_max_iter);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid iterative solver for solving equation %s.\n"
-              " Please modify your settings.", __func__, eqp->name);
-    break;
-
-  } /* end of switch */
-
-  /* Update the preconditioner settings if needed */
-  if (slesp.precond == CS_PARAM_PRECOND_AMG) {
-
-    assert(pc != NULL && it != NULL);
-
-    mg = cs_sles_pc_get_context(pc);
-    cs_sles_it_transfer_pc(it, &pc);
-
-    /* Change the default settings for CDO/HHO when used as preconditioner */
-    cs_multigrid_set_solver_options
-      (mg,
-       CS_SLES_PCG,       /* descent smoother */
-       CS_SLES_PCG,       /* ascent smoother */
-       CS_SLES_PCG,       /* coarse solver */
-       slesp.n_max_iter,  /* n_max_cycles */
-       4,                 /* n_max_iter_descent, */
-       4,                 /* n_max_iter_ascent */
-       200,               /* n_max_iter_coarse */
-       0,                 /* poly_degree_descent */
-       0,                 /* poly_degree_ascent */
-       0,                 /* poly_degree_coarse */
-       -1.0,              /* precision_mult_descent */
-       -1.0,              /* precision_mult_ascent */
-       1.0);              /* precision_mult_coarse */
-
-    /* If this is a K-cycle multigrid. Change the default aggregation
-       algorithm */
-    if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
-      cs_multigrid_set_coarsening_options(mg,
-                                          8,   /* aggregation_limit*/
-                                          CS_GRID_COARSENING_SPD_MX,
-                                          10,  /* n_max_levels */
-                                          50,  /* min_g_cells */
-                                          0.,  /* P0P1 relaxation */
-                                          0);  /* postprocess */
-
-  } /* AMG as preconditioner */
-
-  /* Define the level of verbosity for SLES structure */
-  if (slesp.verbosity > 3) {
-
-    cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
-    cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
-
-    cs_sles_it_set_plot_options(sles_it, eqp->name,
-                                true);    /* use_iteration instead of
-                                             wall clock time */
-
-  }
-
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1287,26 +185,26 @@ _set_key(cs_equation_param_t   *eqp,
 
   case CS_EQKEY_AMG_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "") == 0)
-      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
     else if (strcmp(keyval, "v_cycle") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_V;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_V;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     }
     else if (strcmp(keyval, "k_cycle") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     }
     else if (strcmp(keyval, "boomer") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
     }
     else if (strcmp(keyval, "gamg") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else if (strcmp(keyval, "pcmg") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_PCMG;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_PCMG;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else {
       const char *_val = keyval;
@@ -1469,46 +367,46 @@ _set_key(cs_equation_param_t   *eqp,
 
   case CS_EQKEY_ITSOL:
     if (strcmp(keyval, "amg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_AMG;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_AMG;
     else if (strcmp(keyval, "bicg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_BICG;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_BICG;
     else if (strcmp(keyval, "bicgstab2") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_BICGSTAB2;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_BICGSTAB2;
     else if (strcmp(keyval, "cg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_CG;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(keyval, "cr3") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_CR3;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_CR3;
     else if (strcmp(keyval, "fcg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(keyval, "gauss_seidel") == 0 ||
              strcmp(keyval, "gs") == 0) {
-      eqp->sles_param.solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
-      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
     }
     else if (strcmp(keyval, "gmres") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_FGMRES;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
     else if (strcmp(keyval, "jacobi") == 0) {
-      eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
-      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_JACOBI;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
     }
     else if (strcmp(keyval, "minres") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
 
     else if (strcmp(keyval, "mumps") == 0) {
-      eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
-      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
 
       /* Modify the default and check availability of MUMPS solvers */
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS ||
-          eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
+      if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS ||
+          eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
 #if defined(HAVE_MUMPS)
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Error detected while setting \"%s\" key for eq. %s\n"
@@ -1519,22 +417,22 @@ _set_key(cs_equation_param_t   *eqp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
       }
-      assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
-             eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+      assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
+             eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
 
     }
     else if (strcmp(keyval, "mumps_ldlt") == 0) {
-      eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
-      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
 
       /* Modify the default */
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+      if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS) {
 #if defined(HAVE_MUMPS)
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Error detected while setting \"%s\" key for eq. %s\n"
@@ -1545,12 +443,12 @@ _set_key(cs_equation_param_t   *eqp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
       }
-      assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
-             eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+      assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
+             eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
 
     }
     else if (strcmp(keyval, "none") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_NONE;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1559,25 +457,25 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->sles_param.n_max_iter = atoi(keyval);
+    eqp->sles_param->n_max_iter = atoi(keyval);
     break;
 
   case CS_EQKEY_ITSOL_EPS:
-    eqp->sles_param.eps = atof(keyval);
+    eqp->sles_param->eps = atof(keyval);
     break;
 
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0 ||
         strcmp(keyval, "") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NONE;
     else if (strcmp(keyval, "rhs") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
     else if (strcmp(keyval, "weighted_rhs") == 0 ||
              strcmp(keyval, "weighted") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
     else if (strcmp(keyval, "filtered_rhs") == 0 ||
              strcmp(keyval, "filtered") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1599,52 +497,52 @@ _set_key(cs_equation_param_t   *eqp,
 
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0) {
-      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
-      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
     }
     else if (strcmp(keyval, "jacobi") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0 ||
              strcmp(keyval, "block_jacobi_ilu0") == 0 ||
              strcmp(keyval, "jacobi_block") == 0) {
-      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
       /* Default when using PETSc */
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
     }
     else if (strcmp(keyval, "block_jacobi_sgs") == 0 ||
              strcmp(keyval, "block_jacobi_ssor") == 0) {
-      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_SGS;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_SGS;
       /* Default when using PETSc */
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
     }
     else if (strcmp(keyval, "poly1") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_POLY1;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY1;
     else if (strcmp(keyval, "poly2") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_POLY2;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY2;
     else if (strcmp(keyval, "ssor") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_SSOR;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_SSOR;
     else if (strcmp(keyval, "ilu0") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_ILU0;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
     else if (strcmp(keyval, "icc0") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_ICC0;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_ICC0;
     else if (strcmp(keyval, "amg") == 0) {
 
-      eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
 
       /* Set the default choice */
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
-        eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-        eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+      if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
+      else if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
         /* Default when using PETSc */
-        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
       }
 #if defined(PETSC_HAVE_HYPRE)
       /* Up to now HYPRE is available only through the PETSc interface */
-      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-        eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+      else if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
         /* Default when using PETSc */
-        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
       }
 #endif
       else
@@ -1657,38 +555,38 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "block_amg") == 0) {
       if (eqp->dim == 1) {  /* Switch to a classical AMG preconditioner */
 
-        eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+        eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
 
         /* Set the default choice */
-        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
-          eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-          eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
+          eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
+        if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
+          eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
           /* Default when using PETSc */
-          eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+          eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         }
 
       }
       else {
 
-        eqp->sles_param.precond = CS_PARAM_PRECOND_AMG_BLOCK;
+        eqp->sles_param->precond = CS_PARAM_PRECOND_AMG_BLOCK;
 
         /* Set the default choice */
 #if defined(PETSC_HAVE_HYPRE)
-        eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
-        eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
 
         /* Default when using PETSc */
-        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
       }
     }
     else if (strcmp(keyval, "as") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_AS;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_AS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1697,18 +595,18 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */
-    eqp->sles_param.verbosity = atoi(keyval);
+    eqp->sles_param->verbosity = atoi(keyval);
     break;
 
   case CS_EQKEY_SOLVER_FAMILY:
     if (strcmp(keyval, "cs") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     else if (strcmp(keyval, "hypre") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
     else if (strcmp(keyval, "mumps") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
     else if (strcmp(keyval, "petsc") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -2009,19 +907,7 @@ cs_equation_create_param(const char            *name,
   eqp->enforced_dof_values = NULL;
 
   /* Settings for driving the linear algebra */
-  eqp->sles_param = (cs_param_sles_t) {
-
-    .verbosity = 0,                         /* SLES verbosity */
-    .field_id = -1,                         /* associated field id */
-    .solver_class = CS_PARAM_SLES_CLASS_CS, /* built-in solver */
-    .precond = CS_PARAM_PRECOND_DIAG,       /* preconditioner */
-    .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
-    .amg_type = CS_PARAM_AMG_NONE,          /* no predefined AMG type */
-    .n_max_iter = 10000,                    /* max. number of iterations */
-    .eps = 1e-8,                   /* stopping criterion on the accuracy */
-    .resnorm_type = CS_PARAM_RESNORM_NONE,
-
-  };
+  eqp->sles_param = cs_param_sles_create(-1, name); /* field_id, system_name */
 
   /* Settings for the OpenMP strategy */
   eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
@@ -2196,13 +1082,13 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
   /* Copy the settings driving the linear algebra algorithms */
   if (copy_fid)
-    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
+    cs_param_sles_copy_from(ref->sles_param, dst->sles_param);
 
   else {
 
-    int save_field_id = dst->sles_param.field_id;
-    cs_param_sles_copy_from(ref->sles_param, &(dst->sles_param));
-    dst->sles_param.field_id = save_field_id;
+    int save_field_id = dst->sles_param->field_id;
+    cs_param_sles_copy_from(ref->sles_param, dst->sles_param);
+    dst->sles_param->field_id = save_field_id;
 
   }
 
@@ -2291,6 +1177,9 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
 
   }
 
+  /* Information related to the linear algebra settings */
+  cs_param_sles_free(&(eqp->sles_param));
+
   BFT_FREE(eqp->name);
 }
 
@@ -2360,117 +1249,22 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  *        resolution of the linear system.
  *        Settings are related to this equation.
  *
- * \param[in, out]  eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  eqp           pointer to a cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 {
-  cs_param_sles_t  slesp = eqp->sles_param;
+  /* Define a cs_sles_t structure using the field_id related to the variable
+   * field associated to this equation */
+  int  ierr = cs_param_sles_set(true, eqp->sles_param);
 
-  switch (slesp.solver_class) {
-
-  case CS_PARAM_SLES_CLASS_CS: /* Code_Saturne's own solvers */
-    _set_saturne_sles(eqp);
-    break;
-
-  case CS_PARAM_SLES_CLASS_MUMPS: /* MUMPS sparse direct solvers */
-#if defined(HAVE_MUMPS)
-    {
-      int  sym = 0; /* non-symmetric as default */
-      if (slesp.solver == CS_PARAM_ITSOL_MUMPS_LDLT)
-        sym = 1;
-
-      cs_sles_mumps_define(slesp.field_id,
-                           NULL,
-                           sym,
-                           slesp.verbosity,
-                           cs_user_sles_mumps_hook,
-                           (void *)eqp);
-    }
-#else
+  if (ierr == -1)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: MUMPS is not supported directly."
-              "Please check your settings or your code_saturne installation.",
-              __func__);
-#endif
-    break;
-
-  case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
-  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
-#if defined(HAVE_PETSC)
-
-    cs_sles_petsc_init();
-
-    if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK) {
-
-      if (slesp.amg_type == CS_PARAM_AMG_PETSC_GAMG) {
-        cs_sles_petsc_define(slesp.field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_amg_block_gamg_hook,
-                             (void *)eqp);
-      }
-      else if (slesp.amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
-#if defined(PETSC_HAVE_HYPRE)
-        cs_sles_petsc_define(slesp.field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_amg_block_boomer_hook,
-                             (void *)eqp);
-#else
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Boomer is not available. Switch to another AMG.",
-                  __func__);
-#endif
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid amg type for an AMG by block.", __func__);
-
-    }
-    else if ((slesp.precond == CS_PARAM_PRECOND_BJACOB_ILU0 ||
-              slesp.precond == CS_PARAM_PRECOND_BJACOB_SGS) && eqp->dim > 1)
-      cs_sles_petsc_define(slesp.field_id,
-                           NULL,
-                           MATMPIAIJ,
-                           _petsc_block_jacobi_hook,
-                           (void *)eqp);
-    else
-      cs_sles_petsc_define(slesp.field_id,
-                           NULL,
-                           MATMPIAIJ,
-                           _petsc_setup_hook,
-                           (void *)eqp);
-
-#else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: PETSC algorithms used to solve %s are not linked.\n"
-                " Please install Code_Saturne with PETSc."),
-              __func__, eqp->name);
-
-#endif /* HAVE_PETSC */
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Algorithm requested to solve %s is not implemented yet.\n"
-                " Please modify your settings."), __func__, eqp->name);
-    break;
-
-  } /* End of switch on class of solvers */
-
-  /* Define the level of verbosity for SLES structure */
-  if (slesp.verbosity > 1) {
-
-    cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
-
-    /* Set verbosity */
-    cs_sles_set_verbosity(sles, slesp.verbosity);
-
-  }
-
+              "%s: The requested class of solvers is not available"
+              " for the equation %s\n"
+              " Please modify your settings.", __func__, eqp->name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2755,58 +1549,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   } /* Source terms */
 
   /* Iterative solver information */
-  const cs_param_sles_t   slesp = eqp->sles_param;
+  cs_param_sles_log(eqp->sles_param);
 
-  cs_log_printf(CS_LOG_SETUP, "\n### %s | Linear algebra settings\n",
-                eqname);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Family:", eqname);
-  if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS)
-    cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
-  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_MUMPS)
-    cs_log_printf(CS_LOG_SETUP, "             MUMPS\n");
-  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
-    cs_log_printf(CS_LOG_SETUP, "             HYPRE\n");
-  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
-    cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Verbosity:          %d\n",
-                eqname, slesp.verbosity);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Field id:           %d\n",
-                eqname, slesp.field_id);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.MaxIter:     %d\n",
-                eqname, slesp.n_max_iter);
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:        %s\n",
-                eqname, cs_param_get_solver_name(slesp.solver));
-  if (slesp.solver == CS_PARAM_ITSOL_AMG)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
-                eqname, cs_param_get_precond_name(slesp.precond));
-  if (slesp.precond == CS_PARAM_PRECOND_AMG)
-    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
-                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Eps:        % -10.6e\n",
-                eqname, slesp.eps);
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ", eqname);
-  switch (slesp.resnorm_type) {
-  case CS_PARAM_RESNORM_NORM2_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Weighted Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_FILTERED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "Filtered Euclidean norm of the RHS\n");
-    break;
-  case CS_PARAM_RESNORM_NONE:
-  default:
-    cs_log_printf(CS_LOG_SETUP, "None\n");
-    break;
-  }
-  cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*----------------------------------------------------------------------------*/

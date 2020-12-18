@@ -1359,7 +1359,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* Compute a norm of the RHS for the normalization of the residual
          of the linear system to solve */
-      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                             cm, csys);
 
       /* Apply boundary conditions (those which are weakly enforced) */
@@ -1399,7 +1399,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      eqc->n_dofs, /* 3*n_vertices */
                                      rhs,
                                      &rhs_norm);
@@ -1414,10 +1414,9 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,

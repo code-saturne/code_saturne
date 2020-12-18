@@ -241,13 +241,18 @@ cs_user_sles_petsc_hook(void               *context,
   CS_UNUSED(ksp);
 
   /*! [sles_petsc_cdo_hook] */
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
 
-  if (cs_equation_param_has_name(eqp, "Name_Of_The_Equation")) {
+  if (slesp == NULL)
+    return;
+
+  /* Usually the name of the equation or the field id of the associated
+     variable */
+  if (strcmp(slesp->name, "Name_Of_The_System") == 0) {
 
     /* Assume a PETSc version greater or equal to 3.7.0 */
-    if (eqp->sles_param.precond == CS_PARAM_PRECOND_AMG) {
-      if (eqp->sles_param.amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
+    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
 
         PetscOptionsSetValue(NULL,
                              "-pc_hypre_boomeramg_strong_threshold", "0.7");

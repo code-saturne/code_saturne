@@ -74,6 +74,7 @@
 #include "cs_parall.h"
 #include "cs_porous_model.h"
 #include "cs_parameters.h"
+#include "cs_param_sles.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
@@ -1767,7 +1768,7 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       /* For CDO equation, if non-automatic value ie != -1 */
       cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
       if (eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0)
-        eqp->sles_param.eps = var_cal_opt.epsilo;
+        eqp->sles_param->eps = var_cal_opt.epsilo;
 
       /* convection scheme options */
       if (var_cal_opt.iconv > 0) {

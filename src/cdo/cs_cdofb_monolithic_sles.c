@@ -321,7 +321,7 @@ _face_gdot(cs_lnum_t    size,
 static void
 _set_petsc_main_solver(const cs_navsto_param_model_t   model,
                        const cs_navsto_param_sles_t    nslesp,
-                       const cs_param_sles_t           slesp,
+                       const cs_param_sles_t          *slesp,
                        KSP                             ksp)
 {
   if (model == CS_NAVSTO_MODEL_STOKES)
@@ -346,7 +346,7 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
                    dtol,                    /* divergence tolerance */
                    nslesp.n_max_il_algo_iter); /* max number of iterations */
 
-  switch (slesp.resnorm_type) {
+  switch (slesp->resnorm_type) {
 
   case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
     KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -489,11 +489,11 @@ _build_is_for_fieldsplit(IS   *isp,
 /*----------------------------------------------------------------------------*/
 
 static PCType
-_petsc_get_pc_type(const cs_param_sles_t    slesp)
+_petsc_get_pc_type(const cs_param_sles_t    *slesp)
 {
   PCType  pc_type = PCNONE;
 
-  switch (slesp.precond) {
+  switch (slesp->precond) {
 
   case CS_PARAM_PRECOND_NONE:
     return PCNONE;
@@ -519,7 +519,7 @@ _petsc_get_pc_type(const cs_param_sles_t    slesp)
 
   case CS_PARAM_PRECOND_AMG:
     {
-      switch (slesp.amg_type) {
+      switch (slesp->amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG:
         return PCGAMG;
@@ -577,7 +577,7 @@ _petsc_get_pc_type(const cs_param_sles_t    slesp)
  *----------------------------------------------------------------------------*/
 
 static void
-_set_velocity_ksp(const cs_param_sles_t    slesp,
+_set_velocity_ksp(const cs_param_sles_t   *slesp,
                   PetscReal                rtol,
                   PetscInt                 max_it,
                   KSP                      u_ksp)
@@ -586,7 +586,7 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   KSPGetPC(u_ksp, &u_pc);
   PCType  pc_type = _petsc_get_pc_type(slesp);
 
-  switch (slesp.resnorm_type) {
+  switch (slesp->resnorm_type) {
 
   case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
     KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
@@ -601,7 +601,7 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   }
 
   /* Set the solver */
-  switch (slesp.solver) {
+  switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_NONE:
     KSPSetType(u_ksp, KSPPREONLY);
@@ -644,14 +644,14 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
 
   } /* Switch on solver */
 
-  if (slesp.solver != CS_PARAM_ITSOL_MUMPS)
+  if (slesp->solver != CS_PARAM_ITSOL_MUMPS)
     PCSetType(u_pc, pc_type);
 
   /* Additional settings for the preconditioner */
-  switch (slesp.precond) {
+  switch (slesp->precond) {
 
   case CS_PARAM_PRECOND_AMG:
-    switch (slesp.amg_type) {
+    switch (slesp->amg_type) {
 
     case CS_PARAM_AMG_PETSC_GAMG:
       PCGAMGSetType(u_pc, PCGAMGAGG);
@@ -730,7 +730,7 @@ _additive_amg_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -772,7 +772,7 @@ _additive_amg_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the KSP used as preconditioner for the velocity block */
-  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -782,9 +782,9 @@ _additive_amg_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -814,7 +814,7 @@ _multiplicative_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   /* Set the main iterative solver for the velocity block */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
@@ -853,7 +853,7 @@ _multiplicative_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -863,9 +863,9 @@ _multiplicative_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -895,7 +895,7 @@ _diag_schur_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -939,7 +939,7 @@ _diag_schur_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -949,9 +949,9 @@ _diag_schur_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -980,7 +980,7 @@ _upper_schur_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1024,7 +1024,7 @@ _upper_schur_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -1034,9 +1034,9 @@ _upper_schur_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -1066,7 +1066,7 @@ _gkb_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1102,7 +1102,7 @@ _gkb_hook(void     *context,
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
   assert(n_split == 2);
 
-  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -1112,9 +1112,9 @@ _gkb_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -1143,7 +1143,7 @@ _gkb_precond_hook(void     *context,
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1158,8 +1158,8 @@ _gkb_precond_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc,  slesp.eps);
-  PCFieldSplitSetGKBMaxit(up_pc, slesp.n_max_iter);
+  PCFieldSplitSetGKBTol(up_pc,  slesp->eps);
+  PCFieldSplitSetGKBMaxit(up_pc, slesp->n_max_iter);
   PCFieldSplitSetGKBNu(up_pc, 0);
   PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
@@ -1193,9 +1193,9 @@ _gkb_precond_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   PetscFree(up_subksp);
@@ -1222,7 +1222,7 @@ _mumps_hook(void     *context,
             KSP       ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1237,18 +1237,18 @@ _mumps_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,   /* relative convergence tolerance */
+                   slesp->eps,   /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   slesp->n_max_iter); /* max number of iterations */
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
   }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -1556,14 +1556,15 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   cs_real_t  normalization = 1.0; /* TODO */
 
   /* Modifiy the tolerance in order to be more accurate on this step */
-  cs_param_sles_t  slesp;
-
-  cs_param_sles_copy_from(eqp->sles_param, &slesp);
-  slesp.eps = nslesp.il_algo_rtol;
-
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
   sprintf(system_name, "%s:gkb_transfo", eqp->name);
+
+  cs_param_sles_t  *slesp = cs_param_sles_create(-1, system_name);
+
+  cs_param_sles_copy_from(eqp->sles_param, slesp);
+
+  slesp->eps = nslesp.il_algo_rtol;
 
   if (gkb->gamma > 0) {
 
@@ -1586,7 +1587,6 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter
         = cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          system_name,
                                           slesp,
                                           matrix,
                                           cs_shared_range_set,
@@ -1610,6 +1610,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
 
   /* Free memory */
   BFT_FREE(system_name);
+  cs_param_sles_free(&slesp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1723,7 +1724,6 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter =
         cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                        eqp->name,
                                         eqp->sles_param,
                                         matrix,
                                         cs_shared_range_set,
@@ -2144,7 +2144,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
-  cs_param_sles_t  *mom_slesp = &(mom_eqp->sles_param);
+  cs_param_sles_t  *mom_slesp = mom_eqp->sles_param;
   int  field_id = cs_equation_get_field_id(nsc->momentum);
 
   mom_slesp->field_id = field_id;
@@ -2377,10 +2377,10 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Solve the linear solver */
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
-  const cs_param_sles_t  sles_param = eqp->sles_param;
+  const cs_param_sles_t  *sles_param = eqp->sles_param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
-  cs_real_t  rtol = sles_param.eps;
+  cs_real_t  rtol = sles_param->eps;
 
   if (nslesp.strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp.strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
@@ -2401,7 +2401,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
-  if (sles_param.verbosity > 1)
+  if (sles_param->verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
@@ -2570,7 +2570,6 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     gkb->info->n_inner_iter
       += (gkb->info->last_inner_iter =
           cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          eqp->name,
                                           eqp->sles_param,
                                           matrix,
                                           cs_shared_range_set,
@@ -2695,8 +2694,8 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   /* Main loop */
   /* ========= */
 
-  cs_param_sles_t  slesp;
-  cs_param_sles_copy_from(eqp->sles_param, &slesp);
+  cs_param_sles_t  *slesp = cs_param_sles_create(-1, eqp->sles_param->name);
+  cs_param_sles_copy_from(eqp->sles_param, slesp);
 
   while (uza->info->cvg == CS_SLES_ITERATING) {
 
@@ -2717,21 +2716,20 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
     /* Solve AL.u_f = rhs */
     cs_real_t  normalization = 1.; /* No need to change this */
-    if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS) {
+    if (slesp->solver_class == CS_PARAM_SLES_CLASS_CS) {
 
       /* Inexact algorithm: adaptive tolerance criterion */
       cs_real_t  eps = fmin(1e-2, 0.1*uza->info->res);
-      slesp.eps = fmax(eps, eqp->sles_param.eps);
+      slesp->eps = fmax(eps, eqp->sles_param->eps);
       if (uza->info->verbosity > 1)
         cs_log_printf(CS_LOG_DEFAULT, "### UZA.It%02d-- eps=%5.3e\n",
-                      uza->info->n_algo_iter, slesp.eps);
+                      uza->info->n_algo_iter, slesp->eps);
 
     }
 
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp->name,
                                           slesp,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
@@ -2759,6 +2757,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
   /* Last step: Free temporary memory */
   _free_uza_builder(&uza);
+  cs_param_sles_free(&slesp);
 
   return  n_inner_iter;
 }
@@ -2854,17 +2853,18 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   /* Solve AL.u_f = rhs */
   /* Modifiy the tolerance in order to be more accurate on this step */
-  cs_param_sles_t  slesp;
-  cs_param_sles_copy_from(eqp->sles_param, &slesp);
-  slesp.eps = nsp->sles_param.il_algo_rtol;
-
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":alu0") + 1, char);
   sprintf(system_name, "%s:alu0", eqp->name);
 
+  cs_param_sles_t  *slesp = cs_param_sles_create(-1, system_name);
+  cs_param_sles_copy_from(eqp->sles_param, slesp);
+  slesp->eps = nsp->sles_param.il_algo_rtol;
+
   cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
                                                             c2f,
                                                             quant->pvol_fc);
+
   if (fabs(normalization) > 0)
     normalization = sqrt(normalization);
   else
@@ -2873,7 +2873,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   uza->info->n_inner_iter
     += (uza->info->last_inner_iter =
         cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        system_name,
                                         slesp,
                                         msles->block_matrices[0],
                                         cs_shared_range_set,
@@ -2883,7 +2882,9 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         u_f,
                                         uza->rhs));
 
+  /* Partia free */
   BFT_FREE(system_name);
+  cs_param_sles_free(&slesp);
 
   /* Main loop */
   /* ========= */
@@ -2924,7 +2925,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp->name,
                                           eqp->sles_param,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,

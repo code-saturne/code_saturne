@@ -40,6 +40,7 @@
 #include "bft_mem.h"
 
 #include "cs_base.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -159,36 +160,6 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Copy a cs_param_sles_t structure from src to dst
- *
- * \param[in]   src      reference cs_param_sles_t structure to copy
- * \param[out]  dst      copy of the reference at exit
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_copy_from(cs_param_sles_t    src,
-                        cs_param_sles_t   *dst)
-{
-  if (dst == NULL)
-    return;
-
-  dst->setup_done = src.setup_done;
-  dst->verbosity = src.verbosity;
-  dst->field_id = src.field_id;
-
-  dst->solver_class = src.solver_class;
-  dst->precond = src.precond;
-  dst->solver = src.solver;
-  dst->amg_type = src.amg_type;
-
-  dst->resnorm_type = src.resnorm_type;
-  dst->n_max_iter = src.n_max_iter;
-  dst->eps = src.eps;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

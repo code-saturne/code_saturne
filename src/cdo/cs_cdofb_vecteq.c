@@ -919,10 +919,9 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
@@ -1151,10 +1150,9 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
@@ -1425,10 +1423,9 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,

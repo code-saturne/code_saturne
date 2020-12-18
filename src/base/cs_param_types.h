@@ -605,8 +605,8 @@ typedef enum {
   CS_PARAM_PRECOND_AMG_BLOCK,
   CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */
   CS_PARAM_PRECOND_DIAG,
-  CS_PARAM_PRECOND_GKB_CG,
-  CS_PARAM_PRECOND_GKB_GMRES,
+  CS_PARAM_PRECOND_GKB_CG,      /*!< Only with PETSc */
+  CS_PARAM_PRECOND_GKB_GMRES,   /*!< Only with PETSc */
   CS_PARAM_PRECOND_ILU0,        /*!< Only with PETSc */
   CS_PARAM_PRECOND_ICC0,        /*!< Only with PETSc*/
   CS_PARAM_PRECOND_POLY1,
@@ -699,8 +699,8 @@ typedef enum {
   CS_PARAM_ITSOL_GMRES,            /*!< Only with PETsc */
   CS_PARAM_ITSOL_JACOBI,
   CS_PARAM_ITSOL_MINRES,           /*!< Only with PETsc */
-  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc */
-  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc */
+  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc/MUMPS */
+  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc/MUMPS */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
 
   CS_PARAM_N_ITSOL_TYPES
@@ -727,34 +727,6 @@ typedef enum {
 
 } cs_param_resnorm_type_t;
 
-/*!
- * \struct cs_param_sles_t
- * \brief Structure storing all metadata related to the resolution of a linear
- *        system with an iterative solver.
- */
-
-typedef struct {
-
-  bool                     setup_done;   /*!< SLES setup step has been done */
-  int                      verbosity;    /*!< SLES verbosity */
-  int                      field_id;     /*!< Field id related to a SLES
-                                           By default, this is set to -1 */
-
-  cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */
-  cs_param_precond_type_t  precond;      /*!< type of preconditioner */
-  cs_param_itsol_type_t    solver;       /*!< type of solver */
-  cs_param_amg_type_t      amg_type;     /*!< type of AMG algorithm if needed */
-
-  /*! \var resnorm_type
-   *  normalized or not the norm of the residual used for the stopping criterion
-   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details.
-   */
-  cs_param_resnorm_type_t  resnorm_type;
-  int                      n_max_iter;   /*!< max. number of iterations */
-  double                   eps;          /*!< stopping criterion on accuracy */
-
-} cs_param_sles_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -768,19 +740,6 @@ extern const char cs_med_sepline[50];
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Copy a cs_param_sles_t structure from src to dst
- *
- * \param[in]   src      reference cs_param_sles_t structure to copy
- * \param[out]  dst      copy of the reference at exit
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_sles_copy_from(cs_param_sles_t    src,
-                        cs_param_sles_t   *dst);
 
 /*----------------------------------------------------------------------------*/
 /*!

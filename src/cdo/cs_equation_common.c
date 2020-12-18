@@ -520,8 +520,7 @@ cs_equation_prepare_system(int                     stride,
  * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
  *
  * \param[in]  n_dofs         local number of DoFs
- * \param[in]  eqname         name of the equation to solve
- * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  normalization  value used for the residual normalization
  * \param[in, out] sles       pointer to a cs_sles_t structure
@@ -534,8 +533,7 @@ cs_equation_prepare_system(int                     stride,
 
 int
 cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
-                                     const char              *eqname,
-                                     const cs_param_sles_t    slesp,
+                                     const cs_param_sles_t   *slesp,
                                      const cs_matrix_t       *matrix,
                                      cs_real_t                normalization,
                                      cs_sles_t               *sles,
@@ -547,8 +545,8 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   /* Retrieve the solving info structure stored in the cs_field_t structure */
   cs_solving_info_t  sinfo;
   cs_field_t  *fld = NULL;
-  if (slesp.field_id > -1) {
-    fld = cs_field_by_id(slesp.field_id);
+  if (slesp->field_id > -1) {
+    fld = cs_field_by_id(slesp->field_id);
     cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
   }
 
@@ -560,7 +558,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
-                                                    slesp.eps,
+                                                    slesp->eps,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),
                                                     &(sinfo.res_norm),
@@ -570,12 +568,13 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
-  if (slesp.verbosity > 0)
+  if (slesp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e | normalization % -8.4e\n",
-                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+                  slesp->name, code,
+                  sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
-  if (slesp.field_id > -1)
+  if (slesp->field_id > -1)
     cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
   return (sinfo.n_it);
@@ -587,8 +586,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
  *         degrees of freedom
  *
  * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
- * \param[in]  eqname         name of the equation to solve
- * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
@@ -603,8 +601,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
 int
 cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
-                                const char                   *eqname,
-                                const cs_param_sles_t         slesp,
+                                const cs_param_sles_t        *slesp,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,
@@ -626,7 +623,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
     xsol = x;
 
   /* Retrieve the solving info structure stored in the cs_field_t structure */
-  cs_field_t  *fld = cs_field_by_id(slesp.field_id);
+  cs_field_t  *fld = cs_field_by_id(slesp->field_id);
   cs_solving_info_t  sinfo;
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
@@ -643,7 +640,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
-                                                    slesp.eps,
+                                                    slesp->eps,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),
                                                     &(sinfo.res_norm),
@@ -653,10 +650,11 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
-  if (slesp.verbosity > 0)
+  if (slesp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e | normalization % -8.4e\n",
-                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+                  slesp->name, code,
+                  sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
     cs_range_set_scatter(rset,
@@ -668,8 +666,8 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
-  cs_dbg_fprintf_system(eqname, cs_shared_time_step->nt_cur,
-                        slesp.verbosity,
+  cs_dbg_fprintf_system(slesp->name, cs_shared_time_step->nt_cur,
+                        slesp->verbosity,
                         x, b, n_scatter_dofs);
 #endif
 

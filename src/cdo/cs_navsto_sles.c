@@ -211,7 +211,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
   const cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
 
   cs_equation_param_t  *eqp = cs_navsto_param_get_velocity_param(nsp);
-  cs_param_sles_t  slesp = eqp->sles_param;
+  cs_param_sles_t  *slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -227,12 +227,12 @@ cs_navsto_sles_amg_block_hook(void     *context,
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
+                   slesp->eps,        /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
                    dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   slesp->n_max_iter); /* max number of iterations */
 
-  switch (slesp.resnorm_type) {
+  switch (slesp->resnorm_type) {
 
   case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
     KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -268,7 +268,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
   PCFieldSplitGetSubKSP(pc, &n_split, &uvw_subksp);
   assert(n_split == 3);
 
-  switch(slesp.amg_type) {
+  switch(slesp->amg_type) {
 
   case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
@@ -296,7 +296,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
 
-    switch(slesp.amg_type) {
+    switch(slesp->amg_type) {
 
     case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
@@ -332,10 +332,10 @@ cs_navsto_sles_amg_block_hook(void     *context,
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!slesp.setup_done) {
+  if (!slesp->setup_done) {
 
     cs_sles_petsc_log_setup(ksp);
-    slesp.setup_done = true;
+    slesp->setup_done = true;
 
   }
 

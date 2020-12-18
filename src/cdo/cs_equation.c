@@ -2368,7 +2368,7 @@ cs_equation_create_fields(void)
                                                 has_previous);
 
     /* SLES is associated to a field_id */
-    eqp->sles_param.field_id = eq->field_id;
+    eqp->sles_param->field_id = eq->field_id;
 
     if (eqp->process_flag & CS_EQUATION_POST_NORMAL_FLUX) {
 
@@ -2531,7 +2531,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_sles_t  sles_param = eqp->sles_param;
+  const cs_param_sles_t  *sles_param = eqp->sles_param;
 
   /* Sanity checks (up to now, only scalar field are handled) */
   assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
@@ -2554,7 +2554,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
                                                    CS_HALO_ROTATION_IGNORE,
-                                                   sles_param.eps,
+                                                   sles_param->eps,
                                                    r_norm,
                                                    &n_iters,
                                                    &residual,
@@ -2563,7 +2563,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                                                    0,      /* aux. size */
                                                    NULL);  /* aux. buffers */
 
-  if (sles_param.verbosity > 0) {
+  if (sles_param->verbosity > 0) {
 
     const cs_lnum_t  size = eq->n_sles_gather_elts;
     const cs_lnum_t  *row_index, *col_id;

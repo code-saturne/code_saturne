@@ -115,6 +115,7 @@ cs_navsto_param.h \
 cs_navsto_sles.h \
 cs_navsto_system.h \
 cs_param_cdo.h \
+cs_param_sles.h \
 cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
@@ -162,6 +163,7 @@ cs_equation.c \
 cs_equation_assemble.c \
 cs_equation_bc.c \
 cs_equation_common.c \
+cs_equation_param.c \
 cs_evaluate.c \
 cs_flag.c \
 cs_gwf.c \
@@ -201,7 +203,7 @@ libcscdo_extension_la_SOURCES = \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
-cs_equation_param.c \
+cs_param_sles.c \
 cs_navsto_param.c \
 cs_navsto_sles.c
 

@@ -387,8 +387,7 @@ cs_equation_prepare_system(int                     stride,
  * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
  *
  * \param[in]  n_dofs         local number of DoFs
- * \param[in]  eqname         name of the equation to solve
- * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  normalization  value used for the residual normalization
  * \param[in, out] sles       pointer to a cs_sles_t structure
@@ -401,8 +400,7 @@ cs_equation_prepare_system(int                     stride,
 
 int
 cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
-                                     const char              *eqname,
-                                     const cs_param_sles_t    slesp,
+                                     const cs_param_sles_t   *slesp,
                                      const cs_matrix_t       *matrix,
                                      cs_real_t                normalization,
                                      cs_sles_t               *sles,
@@ -415,8 +413,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
  *         degrees of freedom
  *
  * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
- * \param[in]  eqname         name of the equation to solve
- * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
@@ -431,8 +428,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
 int
 cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
-                                const char                   *eqname,
-                                const cs_param_sles_t         slesp,
+                                const cs_param_sles_t        *slesp,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,

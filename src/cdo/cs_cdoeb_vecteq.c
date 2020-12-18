@@ -746,7 +746,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOEB,
                                            CS_CDO_CONNECT_EDGE_SCAL);
 
-  if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
+  if (eqp->sles_param->resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
     eqb->msh_flag |= CS_FLAG_COMP_PEC;
 
   return eqc;
@@ -1023,7 +1023,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* Compute a norm of the RHS for the normalization of the residual
          of the linear system to solve */
-      rhs_norm += _eb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _eb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                            cm, csys);
 
       /* Boundary conditions */
@@ -1051,7 +1051,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      eqc->n_dofs,
                                      rhs,
                                      &rhs_norm);
@@ -1061,14 +1061,13 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Solve the linear system */
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   /* Update edge arrays */
   if (cur2prev && eqc->edge_values_pre != NULL)
     memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
 
   cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,

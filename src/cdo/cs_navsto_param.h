@@ -33,6 +33,7 @@
 #include "cs_cdo_turbulence.h"
 #include "cs_equation_param.h"
 #include "cs_math.h"
+#include "cs_param_sles.h"
 #include "cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------*/

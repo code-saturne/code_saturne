@@ -933,7 +933,7 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->prediction);
   int  field_id = cs_equation_get_field_id(nsc->prediction);
 
-  mom_eqp->sles_param.field_id = field_id;
+  mom_eqp->sles_param->field_id = field_id;
 
   switch (nslesp.strategy) {
 
@@ -943,11 +943,11 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
 #if defined(HAVE_PETSC)
-    if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE) {
+    if (mom_eqp->sles_param->amg_type == CS_PARAM_AMG_NONE) {
 #if defined(PETSC_HAVE_HYPRE)
-      mom_eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
 #else
-      mom_eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+      mom_eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
 #endif
     }
 
@@ -975,7 +975,7 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   /* For the correction step, use the generic way to setup the SLES */
   cs_equation_param_t  *corr_eqp = cs_equation_get_param(nsc->correction);
 
-  corr_eqp->sles_param.field_id = cs_equation_get_field_id(nsc->correction);
+  corr_eqp->sles_param->field_id = cs_equation_get_field_id(nsc->correction);
   cs_equation_param_set_sles(corr_eqp);
 
 }
@@ -1251,10 +1251,9 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(3*n_faces,
-                                  mom_eqp->name,
                                   mom_eqp->sles_param,
                                   matrix,
                                   mom_rs,

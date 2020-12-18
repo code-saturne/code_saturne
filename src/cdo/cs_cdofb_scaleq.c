@@ -1051,7 +1051,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                            CS_CDO_CONNECT_FACE_SP0);
 
   /* Renormalization of the residual */
-  if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
+  if (eqp->sles_param->resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
     eqb->msh_flag |= CS_FLAG_COMP_PFC;
 
   return eqc;
@@ -1394,7 +1394,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       /* Compute a cellwise norm of the RHS for the normalization of the
          residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                             cm, csys);
 
       /* Remaining part of boundary conditions */
@@ -1427,15 +1427,14 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* ======================= */
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
                                      &rhs_norm);
 
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
@@ -1613,7 +1612,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
       /* Compute a cellwise norm of the RHS for the normalization of the
          residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                             cm, csys);
 
       /* Remaining part of boundary conditions */
@@ -1649,15 +1648,14 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   /* ======================= */
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
                                      &rhs_norm);
 
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
@@ -1892,7 +1890,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
       /* Compute a cellwise norm of the RHS for the normalization of the
          residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                             cm, csys);
 
       /* Remaining part of BOUNDARY CONDITIONS
@@ -1931,15 +1929,14 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   /* ======================= */
 
     /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
                                      &rhs_norm);
 
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
@@ -2227,7 +2224,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
       /* Compute a cellwise norm of the RHS for the normalization of the
          residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                             cm, csys);
 
       /* Remaining part of BOUNDARY CONDITIONS
@@ -2264,15 +2261,14 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   /* ======================= */
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
                                      &rhs_norm);
 
-  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
-                                  eqp->name,
                                   eqp->sles_param,
                                   matrix,
                                   rs,
