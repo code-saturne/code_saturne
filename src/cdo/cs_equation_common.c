@@ -517,6 +517,72 @@ cs_equation_prepare_system(int                     stride,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
+ *
+ * \param[in]  n_dofs         local number of DoFs
+ * \param[in]  eqname         name of the equation to solve
+ * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  matrix         pointer to a cs_matrix_t structure
+ * \param[in]  normalization  value used for the residual normalization
+ * \param[in, out] sles       pointer to a cs_sles_t structure
+ * \param[in, out] x          solution of the linear system (in: initial guess)
+ * \param[in, out] b          right-hand side (scatter/gather if needed)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
+                                     const char              *eqname,
+                                     const cs_param_sles_t    slesp,
+                                     const cs_matrix_t       *matrix,
+                                     cs_real_t                normalization,
+                                     cs_sles_t               *sles,
+                                     cs_real_t               *x,
+                                     cs_real_t               *b)
+{
+  assert(n_dofs == cs_matrix_get_n_rows(matrix));
+
+  /* Retrieve the solving info structure stored in the cs_field_t structure */
+  cs_solving_info_t  sinfo;
+  cs_field_t  *fld = NULL;
+  if (slesp.field_id > -1) {
+    fld = cs_field_by_id(slesp.field_id);
+    cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  }
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+  sinfo.rhs_norm = normalization;
+
+  /* Solve the linear solver */
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    CS_HALO_ROTATION_IGNORE,
+                                                    slesp.eps,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
+                                                    b,
+                                                    x,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+  if (slesp.verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%18s/sles_cvg_code=%-d> n_iters %d |"
+                  " residual % -8.4e | normalization % -8.4e\n",
+                  eqname, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+
+  if (slesp.field_id > -1)
+    cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from CDO schemes with scalar-valued
  *         degrees of freedom
  *

@@ -384,6 +384,33 @@ cs_equation_prepare_system(int                     stride,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
+ *
+ * \param[in]  n_dofs         local number of DoFs
+ * \param[in]  eqname         name of the equation to solve
+ * \param[in]  slesp          cs_param_sles_t structure
+ * \param[in]  matrix         pointer to a cs_matrix_t structure
+ * \param[in]  normalization  value used for the residual normalization
+ * \param[in, out] sles       pointer to a cs_sles_t structure
+ * \param[in, out] x          solution of the linear system (in: initial guess)
+ * \param[in, out] b          right-hand side (scatter/gather if needed)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
+                                     const char              *eqname,
+                                     const cs_param_sles_t    slesp,
+                                     const cs_matrix_t       *matrix,
+                                     cs_real_t                normalization,
+                                     cs_sles_t               *sles,
+                                     cs_real_t               *x,
+                                     cs_real_t               *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from CDO schemes with scalar-valued
  *         degrees of freedom
  *
