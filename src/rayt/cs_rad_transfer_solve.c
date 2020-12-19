@@ -1112,7 +1112,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Initializations
      --------------- */
-  
+
   if (rt_params->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** Information on the radiative source term\n"
