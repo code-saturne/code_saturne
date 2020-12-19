@@ -53,6 +53,10 @@ User changes:
 
 Architectural changes:
 
+- Ensure only one MPI rank participates in most directory creation and
+  query functions, to avoid issues at high rank counts on LUSTRE
+  file system.
+
 - Update MEDCoupling support for 64-bit id builds.
 
 - In-situ postprocessing: add support for ParaView 5.9/Catalyst 2 pipelines.

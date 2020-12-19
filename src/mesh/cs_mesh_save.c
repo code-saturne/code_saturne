@@ -170,9 +170,17 @@ cs_mesh_save(cs_mesh_t          *mesh,
     ldir = strlen(path);
 
   if (ldir > 0) {
-    if (cs_file_mkdir_default(path) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be created"), path);
+
+    if (cs_glob_rank_id < 1) {
+      if (cs_file_mkdir_default(path) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be created"), path);
+    }
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1)
+      MPI_Barrier(cs_glob_mpi_comm);
+#endif
 
     BFT_MALLOC(_name, ldir + lname + 2, char);
     sprintf(_name, "%s%c%s",
