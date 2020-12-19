@@ -192,7 +192,7 @@ static double _restart_wtime[2] = {0.0, 0.0};
 
 /* Do we have a restart directory ? */
 
-static int _restart_present = 0;
+static int _restart_present = -1;
 
 /* Restart time steps and frequency */
 
@@ -1549,10 +1549,12 @@ _update_mesh_checkpoint(void)
 {
   if (cs_glob_rank_id < 1 && _checkpoint_mesh > 0) {
 
-    const char _checkpoint[] = "checkpoint";
-    if (cs_file_mkdir_default(_checkpoint) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be created"), _checkpoint);
+    if (cs_glob_rank_id < 1) {
+      const char _checkpoint[] = "checkpoint";
+      if (cs_file_mkdir_default(_checkpoint) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be created"), _checkpoint);
+    }
 
     /* Move mesh_output if present */
 
@@ -2089,9 +2091,14 @@ cs_restart_checkpoint_done(const cs_time_step_t  *ts)
 int
 cs_restart_present(void)
 {
-  if (! _restart_present) {
-     if (cs_file_isdir("restart"))
-       _restart_present = 1;
+  if (_restart_present < 0) {
+    if (cs_glob_rank_id < 1) {
+      if (cs_file_isdir("restart"))
+        _restart_present = 1;
+      else
+        _restart_present = 0;
+    }
+    cs_parall_bcast(0, 1, CS_INT_TYPE, &_restart_present);
   }
 
   return _restart_present;
@@ -2154,17 +2161,23 @@ cs_restart_create(const char         *name,
 
   /* Create 'checkpoint' directory or read from 'restart' directory */
 
-  if (mode == CS_RESTART_MODE_WRITE) {
-    if (cs_file_mkdir_default(_path) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be created"), _path);
-  }
-  else if (mode == CS_RESTART_MODE_READ) {
-    if (cs_file_isdir(_path) == 0) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be found"), _path);
+  if (cs_glob_rank_id < 1) {
+    if (mode == CS_RESTART_MODE_WRITE) {
+      if (cs_file_mkdir_default(_path) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be created"), _path);
+    }
+    else if (mode == CS_RESTART_MODE_READ) {
+      if (cs_file_isdir(_path) == 0) {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be found"), _path);
+      }
     }
   }
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    MPI_Barrier(cs_glob_mpi_comm);
+#endif
 
   ldir = strlen(_path);
   lname = strlen(name);
@@ -2217,9 +2230,15 @@ cs_restart_create(const char         *name,
       strcat(_re_name, _subdir);
 
       /* Check that the sub-directory exists or can be created */
-      if (cs_file_mkdir_default(_re_name) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The %s directory cannot be created"), _re_name);
+      if (cs_glob_rank_id < 1) {
+        if (cs_file_mkdir_default(_re_name) != 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("The %s directory cannot be created"), _re_name);
+      }
+#if defined(HAVE_MPI)
+      if (cs_glob_n_ranks > 1)
+        MPI_Barrier(cs_glob_mpi_comm);
+#endif
 
       _re_name[ldir+lsdir+1] = _dir_separator;
       _re_name[ldir+lsdir+2] = '\0';

@@ -662,7 +662,14 @@ _format_writer_init(fvm_writer_t  *this_writer,
       strcpy(tmp_path, this_writer->path);
       if (tmp_path[l - 1] == DIR_SEPARATOR)
         tmp_path[l - 1] = '\0';
-      if (cs_file_mkdir_default(this_writer->path) == 1)
+      int dir_err = 0;
+      if (cs_glob_rank_id < 1)
+        dir_err = cs_file_mkdir_default(this_writer->path);
+#if defined(HAVE_MPI)
+      if (cs_glob_n_ranks > 1)
+        MPI_Bcast(&dir_err, 1, MPI_INT, 0, cs_glob_mpi_comm);
+#endif
+      if (dir_err == 1)
         tmp_path[0] = '\0';
       else {
         l = strlen(tmp_path);

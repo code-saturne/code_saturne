@@ -2388,6 +2388,10 @@ _write_output(cs_gnum_t  n_g_cells,
                   _("The partitioning directory cannot be created"));
     }
   }
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    MPI_Barrier(cs_glob_mpi_comm);
+#endif
 
   /* Open file */
 
