@@ -98,7 +98,6 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         self.case.undoStartGlobal()
 
     def _setValidators(self):
-        validatorNbSets = IntValidator(self.lineEditNbSets, min=0)
         validatorIJNBP = IntValidator(self.lineEditIJNBP, min=0)
         validatorIJFRE = IntValidator(self.lineEditIJFRE, min=0)
         validatorICLST = IntValidator(self.lineEditICLST, min=0)
@@ -119,7 +118,6 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         validatorIVDPT = DoubleValidator(self.lineEditIVDPT)
         validatorINUCHL = IntValidator(self.lineEditINUCHL, min=0)
         validatorIHPT = DoubleValidator(self.lineEditIHPT)
-        self.lineEditNbSets.setValidator(validatorNbSets)
         self.lineEditIJNBP.setValidator(validatorIJNBP)
         self.lineEditIJFRE.setValidator(validatorIJFRE)
         self.lineEditICLST.setValidator(validatorICLST)
@@ -141,7 +139,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
 
     def _setConnections(self):
         self.comboBoxBoundary.activated[str].connect(self.slotSetParticleBoundary)
-        self.lineEditNbSets.textChanged[str].connect(self.slotNbSets)
+        self.lineEditNbSets.editingFinished.connect(self.slotNbSets)
         self.spinBoxICLAS.valueChanged[int].connect(self.slotICLAS)
         self.lineEditIJNBP.textChanged[str].connect(self.slotIJNBP)
         self.lineEditIJFRE.textChanged[str].connect(self.slotIJFRE)
@@ -252,15 +250,13 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.dicoM2V[interaction])  # this is needed because setItem does not trigger comboBox activation
         if interaction == "inlet":
             nb_sets = self.model.getNumberOfSetsValue(label)
-            self.lineEditNbSets.setText(str(nb_sets))
+            self.updateInletDisplay(nb_sets)
 
     def hideWidget(self):
         self.hide()
 
-    @pyqtSlot(str)
-    def slotNbSets(self, nb_sets):
-        nb_sets = int(nb_sets)
-        self.model.setNumberOfSetsValue(self.zone.getLabel(), nb_sets)
+    def updateInletDisplay(self, nb_sets):
+        self.lineEditNbSets.setText(str(nb_sets))
         if int(nb_sets) > 0:
             self.groupBoxSetNumber.show()
             self.spinBoxICLAS.setMinimum(1)
@@ -275,6 +271,19 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.groupBoxTemperature.hide()
             self.groupBoxDiameter.hide()
             self.groupBoxCoal.hide()
+
+    @pyqtSlot()
+    def slotNbSets(self):
+        nb_sets = from_qvariant(self.lineEditNbSets.text(), to_text_string)
+        try:
+            nb_sets = int(nb_sets)
+        except Exception:
+            label = self.zone.getLabel()
+            nb_sets = self.model.getNumberOfSetsValue(label)
+            self.lineEditNbSets.setText(str(nb_sets))
+            return
+        self.model.setNumberOfSetsValue(self.zone.getLabel(), nb_sets)
+        self.updateInletDisplay(nb_sets)
 
         return
 

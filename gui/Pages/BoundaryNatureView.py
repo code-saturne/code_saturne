@@ -25,11 +25,9 @@
 """
 This module contains the following classes:
 - LabelDelegate
-- CodeNumberDelegate
 - LocalizationSelectorDelegate
 - StandardItemModelLocalization
 - LocalizationView
-- BoundaryLocalizationView
 """
 
 # -------------------------------------------------------------------------------
@@ -50,14 +48,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 # -------------------------------------------------------------------------------
 
-from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.BoundaryNatureForm import Ui_BoundaryNatureForm
-from code_saturne.Pages.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
-from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
-from code_saturne.model.OutputControlModel import OutputControlModel
 
 # -------------------------------------------------------------------------------
 # log config
@@ -66,96 +61,6 @@ from code_saturne.model.OutputControlModel import OutputControlModel
 logging.basicConfig()
 log = logging.getLogger("BoundaryNatureView")
 log.setLevel(GuiParam.DEBUG)
-
-
-# -------------------------------------------------------------------------------
-# Line edit delegate for the label
-# -------------------------------------------------------------------------------
-
-class LabelDelegate(QItemDelegate):
-    """
-    Use of a QLineEdit in the table.
-    """
-
-    def __init__(self, parent, mdl):
-        super(LabelDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = mdl
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        self.regExp = QRegExp(rx)
-        v = RegExpValidator(editor, self.regExp)
-        editor.setValidator(v)
-        return editor
-
-    def setEditorData(self, editor, index):
-        editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        self.p_value = str(v)
-        editor.setText(v)
-
-    def setModelData(self, editor, model, index):
-        if not editor.isModified():
-            return
-
-        if editor.validator().state == QValidator.Acceptable:
-            p_value = str(editor.text())
-
-            if p_value in self.mdl.getLabelsZonesList():
-                default = {}
-                default['label'] = self.p_value
-                default['list'] = self.mdl.getLabelsZonesList()
-                default['regexp'] = self.regExp
-                log.debug("setModelData-> default = %s" % default)
-
-                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
-                dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
-                    result = dialog.get_result()
-                    p_value = result['label']
-                    log.debug("setModelData-> result = %s" % result)
-                else:
-                    p_value = self.p_value
-
-            model.setData(index, p_value, Qt.DisplayRole)
-
-
-# -------------------------------------------------------------------------------
-# QLineEdit delegate for the zone
-# -------------------------------------------------------------------------------
-
-class CodeNumberDelegate(QItemDelegate):
-    def __init__(self, parent, mdl):
-        super(CodeNumberDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = mdl
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        validator = IntValidator(editor, min=0, max=999)
-        editor.setValidator(validator)
-        return editor
-
-    def setEditorData(self, editor, index):
-        editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(self.value)
-
-    def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
-            value = from_qvariant(editor.text(), int)
-
-            # Check for unicity
-            if value != self.value and str(value) in self.mdl.getCodeNumbersList():
-                title = self.tr("Warning")
-                msg = self.tr("Zone number can be used only once.\n" \
-                              "Please give another value.")
-                QMessageBox.warning(self.parent, title, msg)
-                return
-
-            model.setData(index, value, Qt.DisplayRole)
 
 
 # -------------------------------------------------------------------------------
@@ -201,54 +106,6 @@ class BoundaryNatureDelegate(QItemDelegate):
 
 
 # -------------------------------------------------------------------------------
-# QLineEdit delegate for localization
-# -------------------------------------------------------------------------------
-
-class LocalizationSelectorDelegate(QItemDelegate):
-    def __init__(self, parent, mdl):
-        super(LocalizationSelectorDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = mdl
-
-    def createEditor(self, parent, option, index):
-
-        editor = QLineEdit(parent)
-
-        # Autocompletion for selection criteria!
-        GuiLM = GuiLabelManager()
-        comp_list = GuiLM.getCompleter("mesh_selection")
-        comp_list += GuiLM.getCompleter("mesh_normal")
-
-        completer = QCompleter()
-        editor.setCompleter(completer)
-        model = QStringListModel()
-        completer.setModel(model)
-        model.setStringList(comp_list)
-
-        return editor
-
-    def setEditorData(self, editor, index):
-        # This line is used to avoid an overlay of old and new text
-        editor.setAutoFillBackground(True)
-
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(self.value)
-
-    def setModelData(self, editor, model, index):
-        value = editor.text()
-
-        if value != self.value and str(value) in self.mdl.getLocalizationsZonesList():
-            title = self.tr("Warning")
-            msg = self.tr("This localization is already used.\n" \
-                          "Please give another one.")
-            QMessageBox.information(self.parent, title, msg)
-            return
-
-        if str(value) != "":
-            model.setData(index, value, Qt.DisplayRole)
-
-
-# -------------------------------------------------------------------------------
 # StandarItemModel class
 # -------------------------------------------------------------------------------
 
@@ -258,9 +115,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
         self.headers = [self.tr("Label"),
-                        self.tr("Zone"),
-                        self.tr("Nature"),
-                        self.tr("Selection criteria")]
+                        self.tr("Nature")]
         self.setColumnCount(len(self.headers))
 
         self.mdl = mdl
@@ -280,27 +135,20 @@ class StandardItemModelLocalization(QStandardItemModel):
             row = index.row()
             col = index.column()
 
-            if col in [0, 1, 3]:
+            if col == 0:
                 return self._data[row][col]
 
-            elif col == 2:
-                if self.zoneType == "VolumicZone":
-                    data = self._data[row][col]
-                    item = "\n".join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"])
-
-                    return item
-
-                elif self.zoneType == "BoundaryZone":
-                    key = self._data[row][col]
-                    return self.dicoM2V[key]
+            elif col == 1:
+                key = self._data[row][col]
+                return self.dicoM2V[key]
 
         return None
 
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        if (index.row(), index.column()) in self._disable:
-            return Qt.ItemIsSelectable
+        if index.column() == 0:
+            return Qt.ItemIsEnabled
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role):
@@ -309,113 +157,37 @@ class StandardItemModelLocalization(QStandardItemModel):
         return None
 
     def setData(self, index, value, role):
-        row = index.row()
         col = index.column()
 
-        [old_label, old_code, old_nature, old_local] = self._data[row]
+        if col == 1:
+            row = index.row()
 
-        old_zone = Zone(self.zoneType,
-                        case=self.case,
-                        label=old_label,
-                        codeNumber=old_code,
-                        localization=old_local,
-                        nature=old_nature)
+            nature = str(from_qvariant(value, to_text_string))
+            self._data[row][1] = nature
 
-        new_label = old_label
-        new_code = old_code
-        new_nature = old_nature
-        new_local = old_local
-
-        if col == 0:
-            new_label = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_label
-
-        elif col == 1:
-            new_code = from_qvariant(value, int)
-            self._data[row][col] = new_code
-
-        elif col == 2:
-
-            if self.zoneType == "VolumicZone":
-                # We modify the dictionary here
-                nature_list = str(from_qvariant(value, to_text_string)).split(";")
-
-                for key in list(self._data[row][col].keys()):
-                    if key in nature_list:
-                        self._data[row][col][key] = "on"
-                    else:
-                        self._data[row][col][key] = "off"
-
-                    new_nature = self._data[row][col].copy()
-
-            elif self.zoneType == "BoundaryZone":
-                new_nature = str(from_qvariant(value, to_text_string))
-                self._data[row][col] = new_nature
-
-        elif col == 3:
-            new_local = str(from_qvariant(value, to_text_string))
-            self._data[row][col] = new_local
-
-        new_zone = Zone(self.zoneType,
-                        case=self.case,
-                        label=new_label,
-                        codeNumber=new_code,
-                        localization=new_local,
-                        nature=new_nature)
-
-        self.mdl.replaceZone(old_zone, new_zone)
+            self.mdl.setNature(self._data[row][0], nature)
 
         self.dataChanged.emit(index, index)
         self.browser.configureTree(self.case)
         return True
 
-    def addItem(self, zone=None):
+    def addItem(self, zone):
         """
         Add an element in the table view.
         """
-        if not zone:
-            zone = self.mdl.addZone(Zone(self.zoneType, case=self.case))
-
         line = [zone.getLabel(),
-                zone.getCodeNumber(),
-                zone.getNature(),
-                zone.getLocalization()]
+                zone.getNature()]
         self._data.append(line)
         row = self.rowCount()
         self.setRowCount(row + 1)
 
-        # Warning: the Volume region 'all_cells' is mandatory, and can not be removed.
-        if zone.getLabel() == "all_cells":
-            for c in [0, 2]:
-                self._disable.append((row, c))
-        self._disable.append((row, 1))
+        # If row is disabled, it appears in light gray
+        # self._disable.append((row, 0))
         self.browser.configureTree(self.case)
         return zone
 
     def getItem(self, row):
         return self._data[row]
-
-    def updateItem(self):
-        # update zone Id
-        for id in range(0, len(self.mdl.getCodeNumbersList())):
-            self._data[id][1] = id + 1
-
-    def updateZone(self, index, nature):
-        self._data[index.row()][2] = nature
-        self.dataChanged.emit(index, index)
-
-    def deleteItem(self, irow):
-        del self._data[irow]
-        nb_rows = self.rowCount()
-        self.setRowCount(nb_rows - 1)
-        self.updateItem()
-        if irow < nb_rows:
-            self.browser.configureTree(self.case)
-
-    def deleteItems(self):
-        for row in range(self.rowCount()):
-            del self._data[0]
-        self.setRowCount(0)
 
     def getData(self, row, column):
         return self._data[row][column]
@@ -452,25 +224,17 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         self.browser = tree
 
         # Delegates
-        delegateLabel = LabelDelegate(self.tableView, self.mdl)
-        delegateCode = CodeNumberDelegate(self.tableView, self.mdl)
-        delegateLocal = LocalizationSelectorDelegate(self.tableView, self.mdl)
+        delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
 
         # Model for table View
-        if zoneType == "BoundaryZone":
-            self.modelLocalization = StandardItemModelLocalization(self.mdl, zoneType, dicoM2V, tree, case)
-            self.tableView.setModel(self.modelLocalization)
-            self.tableView.setItemDelegateForColumn(0, delegateLabel)
-            self.tableView.setItemDelegateForColumn(1, delegateCode)
-            self.tableView.setItemDelegateForColumn(3, delegateLocal)
-            last_section = 3
-        else:
-            self.modelLocalization = VolumeZonesTableModel(self.mdl, zoneType, tree, case)
-            self.tableView.setModel(self.modelLocalization)
-            last_section = 2
-            self.tableView.setItemDelegateForColumn(0, delegateLabel)
-            self.tableView.setItemDelegateForColumn(1, delegateCode)
-            self.tableView.setItemDelegateForColumn(2, delegateLocal)
+        self.modelLocalization = StandardItemModelLocalization(self.mdl,
+                                                               zoneType,
+                                                               dicoM2V,
+                                                               tree,
+                                                               case)
+        self.tableView.setModel(self.modelLocalization)
+        self.tableView.setItemDelegateForColumn(1, delegateNature)
+        last_section = 1
 
         # Populate QTableView model
         for zone in self.mdl.getZones():
@@ -486,16 +250,8 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
             self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
 
         # Connections
-        self.pushButtonNew.clicked.connect(self.slotAddZone)
-        self.pushButtonDelete.clicked.connect(self.slotDeleteZone)
-        self.toolButtonCreation.clicked.connect(self.slotAddFromPrePro)
         self.modelLocalization.dataChanged.connect(self.dataChanged)
         self.tableView.clicked.connect(self.slotChangeSelection)
-
-        self.pushButtonSalome.hide()
-        if case['salome']:
-            self.pushButtonSalome.show()
-            self.pushButtonSalome.clicked.connect(self.slotAddFromSalome)
 
         # Context menu
         self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -509,59 +265,6 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         current = self.tableView.currentIndex()
 
     @pyqtSlot()
-    def slotAddZone(self):
-        """
-        Insert a new item in the table view.
-        """
-        zone = self.modelLocalization.addItem()
-        self.slotChangeSelection()
-
-    @pyqtSlot()
-    def slotDeleteZone(self):
-        """
-        Private Slot.
-        Warning: the Volume region 'all_cells' is mandatory, therefore it can not be deleted.
-        """
-        lst = []
-        for index in self.tableView.selectionModel().selectedRows():
-            row = index.row()
-            lst.append(row)
-
-        lst.sort()
-        lst.reverse()
-
-        for row in lst:
-            label = self.modelLocalization.getItem(row)[0]
-            if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
-                # We also need to delete postprocessing meshes based on the zone
-                OutputControlModel(self.case).deleteZone(label, self.zoneType)
-                # Delete the zone itself
-                self.mdl.deleteZone(label)
-                self.modelLocalization.deleteItem(row)
-        self.slotChangeSelection()
-        for index in self.tableView.selectionModel().selectedRows():
-            self.modelLocalization.dataChanged.emit(index, index)
-
-    @pyqtSlot()
-    def slotAddFromPrePro(self):
-        """
-        Research a preprocessor log to pick colors or groups of cells or faces.
-        """
-        if self.zoneType == 'VolumicZone':
-            entity = 'cells'
-        elif self.zoneType == 'BoundaryZone':
-            entity = 'faces'
-
-        file_name = preprocessorFile(self, self.case['resu_path'])
-
-        if file_name:
-            for loc in Informations(file_name, entity).getLocalizations():
-                if loc not in self.mdl.getLocalizationsZonesList():
-                    zone = Zone(self.zoneType, case=self.case, localization=loc)
-                    self.mdl.addZone(zone)
-                    self.modelLocalization.addItem(zone)
-
-    @pyqtSlot()
     def slotContextMenu(self):
         """
         Public slot
@@ -570,79 +273,24 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         """
         fileMenu = QMenu(self.tableView)
 
-        actionMerge = QAction(self.tr("Merge selected zones"), self.tableView)
-        actionMerge.triggered.connect(self.slotMerge)
-        fileMenu.addAction(actionMerge)
+        self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
+        self.actionInlet.triggered.connect(self.slotSelectBoundaries)
+        fileMenu.addAction(self.actionInlet)
 
-        if self.zoneType == 'BoundaryZone':
-            fileMenu.addSeparator()
+        self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
+        self.actionOutlet.triggered.connect(self.slotSelectBoundaries)
+        fileMenu.addAction(self.actionOutlet)
 
-            self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
-            self.actionInlet.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionInlet)
+        self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
+        self.actionWall.triggered.connect(self.slotSelectBoundaries)
+        fileMenu.addAction(self.actionWall)
 
-            self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
-            self.actionOutlet.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionOutlet)
-
-            self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
-            self.actionWall.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionWall)
-
-            self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
-            self.actionSymmetry.triggered.connect(self.slotSelectBoudaries)
-            fileMenu.addAction(self.actionSymmetry)
+        self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
+        self.actionSymmetry.triggered.connect(self.slotSelectBoundaries)
+        fileMenu.addAction(self.actionSymmetry)
 
         fileMenu.popup(QCursor().pos())
         fileMenu.show()
-
-    @pyqtSlot()
-    def slotMerge(self):
-        """
-        public slot
-        """
-        lst = []
-        for index in self.tableView.selectionModel().selectedRows():
-            lst.append(index.row())
-
-        row = lst.pop(0)
-        [label, code, nature, new_localization] = self.modelLocalization.getItem(row)
-        ll = label
-
-        for row in lst:
-            [label, code, nature, localization] = self.modelLocalization.getItem(row)
-            if "all[]" not in new_localization.split(" "):
-                new_localization += " or " + localization
-            if localization == "all[]":
-                new_localization = "all[]"
-
-        self.modelLocalization.deleteItems()
-        self.mdl.mergeZones(ll, new_localization, lst)
-
-        # Populate QTableView model
-        for zone in self.mdl.getZones():
-            self.modelLocalization.addItem(zone)
-
-    @pyqtSlot()
-    def slotAddFromSalome(self):
-        """
-        When GUI is embeded in the Salome desktop. Add selection criteria from
-        graphical selection in the VTK viwver, or in the ObjectBrowser.
-        """
-        if self.case['salome']:
-            from code_saturne.Pages.SalomeHandler import BoundaryGroup, VolumeGroup
-
-            log.debug("slotAddFromSalome: zoneType -> %s" % self.zoneType)
-            if self.zoneType == 'VolumicZone':
-                loc = VolumeGroup()
-            elif self.zoneType == 'BoundaryZone':
-                loc = BoundaryGroup()
-
-            log.debug("slotAddFromSalome: selection criteria -> %s" % loc)
-            if loc not in self.mdl.getLocalizationsZonesList() and loc != "":
-                zone = Zone(self.zoneType, localization=loc, case=self.case)
-                self.mdl.addZone(zone)
-                self.modelLocalization.addItem(zone)
 
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row() + 1):
@@ -650,32 +298,33 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         for col in range(topLeft.column(), bottomRight.column() + 1):
             self.tableView.resizeColumnToContents(col)
 
-
-# -------------------------------------------------------------------------------
-# Define Boundary regions class
-# -------------------------------------------------------------------------------
-
-class BoundaryLocalizationView(BoundaryNatureView):
-    """
-    Define boundary regions class.
-    """
-
-    def __init__(self, parent=None, case=None, tree=None):
+    @pyqtSlot()
+    def slotSelectBoundaries(self):
         """
-        Constructor.
+        Public slot.
+
+        Warning: works only if the selection mode of the view is set to MultiSelection.
         """
-        self.case = case
-        dicoM2V = Zone("BoundaryZone", case=self.case).getModel2ViewDictionary()
-        self.browser = tree
+        previous_selecion_mode = self.tableView.selectionMode()
+        self.tableView.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.tableView.clearSelection()
 
-        LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)
+        if self.sender() == self.actionInlet:
+            select = "inlet"
+        elif self.sender() == self.actionOutlet:
+            select = "outlet"
+        elif self.sender() == self.actionWall:
+            select = "wall"
+        elif self.sender() == self.actionSymmetry:
+            select = "symmetry"
 
-        title = self.tr("Boundary regions definition")
-        self.groupBoxLocalization.setTitle(title)
+        for row in range(self.modelLocalization.rowCount()):
+            [label, nature] = self.modelLocalization.getItem(row)
+            if nature == select:
+                self.tableView.selectRow(row)
 
-        # Delegates
-        delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
-        self.tableView.setItemDelegateForColumn(2, delegateNature)
+        self.tableView.setSelectionMode(previous_selecion_mode)
+
 
 # -------------------------------------------------------------------------------
 # End

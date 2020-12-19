@@ -32,7 +32,6 @@ This module contains the following classes:
 - FlagBox
 - VolumeNatureDelegate
 - LocalizationSelectorDelegate
-- StandardItemModelLocalization
 - LocalizationView
 - VolumeLocalizationView
 - BoundaryLocalizationView
@@ -324,9 +323,6 @@ class DefineZonesTableModel(QStandardItemModel):
         for id in range(0, len(self.mdl.getCodeNumbersList())):
             self._data[id][1] = id + 1
 
-    def updateZone(self, index, nature):
-        return
-
     def deleteItem(self, irow):
         del self._data[irow]
         nb_rows = self.rowCount()
@@ -490,25 +486,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         actionMerge.triggered.connect(self.slotMerge)
         fileMenu.addAction(actionMerge)
 
-        # if self.zoneType == 'BoundaryZone':
-        #     fileMenu.addSeparator()
-        #
-        #     self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
-        #     self.actionInlet.triggered.connect(self.slotSelectBoudaries)
-        #     fileMenu.addAction(self.actionInlet)
-        #
-        #     self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
-        #     self.actionOutlet.triggered.connect(self.slotSelectBoudaries)
-        #     fileMenu.addAction(self.actionOutlet)
-        #
-        #     self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
-        #     self.actionWall.triggered.connect(self.slotSelectBoudaries)
-        #     fileMenu.addAction(self.actionWall)
-        #
-        #     self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
-        #     self.actionSymmetry.triggered.connect(self.slotSelectBoudaries)
-        #     fileMenu.addAction(self.actionSymmetry)
-
         fileMenu.popup(QCursor().pos())
         fileMenu.show()
 
@@ -615,32 +592,6 @@ class BoundaryLocalizationView(LocalizationView):
         title = self.tr("Boundary regions definition")
         self.groupBoxLocalization.setTitle(title)
 
-# @pyqtSlot()
-# def slotSelectBoudaries(self):
-    #     """
-    #     Public slot.
-    #
-    #     Warning: works only if the selection mode of the view is set to MultiSelection.
-    #     """
-    #     previous_selecion_mode = self.tableView.selectionMode()
-    #     self.tableView.setSelectionMode(QAbstractItemView.MultiSelection)
-    #     self.tableView.clearSelection()
-    #
-    #     if self.sender() == self.actionInlet:
-    #         select = "inlet"
-    #     elif self.sender() == self.actionOutlet:
-    #         select = "outlet"
-    #     elif self.sender() == self.actionWall:
-    #         select = "wall"
-    #     elif self.sender() == self.actionSymmetry:
-    #         select = "symmetry"
-    #
-    #     for row in range(self.modelLocalization.rowCount()):
-    #         [label, code, nature, localization] = self.modelLocalization.getItem(row)
-    #         if nature == select:
-    #             self.tableView.selectRow(row)
-    #
-    #     self.tableView.setSelectionMode(previous_selecion_mode)
 
 #-------------------------------------------------------------------------------
 # End

@@ -32,7 +32,11 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="1">
-          <widget class="QComboBox" name="comboBoxBoundary"/>
+          <widget class="QComboBox" name="comboBoxBoundary">
+           <property name="focusPolicy">
+            <enum>Qt::ClickFocus</enum>
+           </property>
+          </widget>
          </item>
          <item row="0" column="0">
           <spacer name="horizontalSpacer_3">

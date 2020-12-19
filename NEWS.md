@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: volume and boundary zones are now defined under the "Mesh"
+  section, so that their selection can be used in a consistent
+  manner in all following sections.
+  * some specific boundary conditions, such as those for the Lagrangian
+    model, are now grouped with standard zone boundary conditions rather
+    than appeating in a separate "Additional BC models" section.
+
 - Add `--dest` option to `code_saturne run` and `code_saturne submit`
   commands. This allows specifying a top directory separate from the
   one in which a case is present.
