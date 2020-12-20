@@ -956,7 +956,7 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          cs_navsto_sles_amg_block_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
 #else
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
