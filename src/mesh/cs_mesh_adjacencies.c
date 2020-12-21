@@ -569,8 +569,8 @@ cs_mesh_adjacencies_update_cell_cells_e(void)
  * \brief  Return cell -> vertex connectivites in
  *         mesh adjacencies helper API relative to mesh.
  *
- * This connectivity is built only when first requested, the updated
- * later if needed.
+ * This connectivity is built only when first requested, then updated later if
+ * needed.
  */
 /*----------------------------------------------------------------------------*/
 

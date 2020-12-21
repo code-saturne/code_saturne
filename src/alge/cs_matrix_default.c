@@ -598,7 +598,7 @@ cs_matrix_msr(bool              symmetric,
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_native(bool             symmetric,
+cs_matrix_native(bool              symmetric,
                  const cs_lnum_t  *diag_block_size,
                  const cs_lnum_t  *extra_diag_block_size)
 {
