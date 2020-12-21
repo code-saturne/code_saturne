@@ -568,44 +568,6 @@ endif
 ! 3. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
 
-!     LES
-if (itytur.eq.4) then
-  if (xlesfl.lt.0.d0) then
-    write(nfecra,2511) 'XLESFL', xlesfl
-    iok = iok + 1
-  endif
-  if (ales  .lt.0.d0) then
-    write(nfecra,2511) 'ALES  ', ales
-    iok = iok + 1
-  endif
-  if (bles  .lt.0.d0) then
-    write(nfecra,2511) 'BLES  ', bles
-    iok = iok + 1
-  endif
-  if (csmago.lt.0.d0) then
-    write(nfecra,2511) 'CSMAGO', csmago
-    iok = iok + 1
-  endif
-  if (cwale.lt.0.d0) then
-    write(nfecra,2511) 'CWALE', cwale
-    iok = iok + 1
-  endif
-  if (idries.eq.1.and.cdries.lt.0) then
-    write(nfecra,2511) 'CDRIES', cdries
-    iok = iok + 1
-  endif
-  if (iturb.eq.41) then
-    if (xlesfd.lt.0.d0) then
-      write(nfecra,2511) 'XLESFD', xlesfd
-      iok = iok + 1
-    endif
-    if (smagmx.lt.0.d0) then
-      write(nfecra,2511) 'SMAGMX', smagmx
-      iok = iok + 1
-    endif
-  endif
-endif
-
 ! --- Scalaires
 
 if (nscal.gt.0) then

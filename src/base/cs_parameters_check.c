@@ -2014,16 +2014,16 @@ cs_parameters_check(void)
 
       cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                       _("LES dynamic model constant"),
-                                      "cs_turb_smagmx",
-                                      cs_turb_smagmx,
+                                      "cs_turb_csmago_max",
+                                      cs_turb_csmago_max,
                                       0.);
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _("LES dynamic model constant"),
-                                       "cs_turb_smagmn (must be < "
-                                       "cs_turb_smagmx)",
-                                       cs_turb_smagmn,
-                                       0., cs_turb_smagmx);
+                                       "cs_turb_csmago_min (must be < "
+                                       "cs_turb_csmago_max)",
+                                       cs_turb_csmago_min,
+                                       0., cs_turb_csmago_max);
     }
   }
 

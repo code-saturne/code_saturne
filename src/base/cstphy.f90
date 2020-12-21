@@ -587,24 +587,6 @@ module cstphy
   !> constant of the Spalart-Shur rotation/curvature correction
   double precision, save :: cssr3
 
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccaze2
-
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccazsc
-
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccaza
-
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccazb
-
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccazc
-
-  !> constants of the Cazalbou rotation/curvature correction
-  double precision, save :: ccazd
-
   !> is a characteristic macroscopic
   !> length of the domain, used for the initialization of the turbulence and
   !> the potential clipping (with \ref optcal::iclkep "iclkep"=1)
@@ -634,14 +616,14 @@ module cstphy
   !> each cell \f$\omega_i\f$, the width of the (implicit) filter:
   !> \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
   !> Useful if and only if \ref iturb = 40 or 41
-  double precision, save :: xlesfl
+  real(c_double), pointer, save :: xlesfl
 
   !> constant used to define, for each cell \f$Omega_i\f$,
   !> the width of the (implicit) filter:
   !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
   !>
   !> Useful if and only if \ref iturb = 40 or 41.
-  double precision, save :: ales
+  real(c_double), pointer, save :: ales
 
   !> constant used to define, for each cell \f$Omega_i\f$,
   !>
@@ -649,7 +631,7 @@ module cstphy
   !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
   !>
   !> Useful if and only if \ref iturb = 40 or 41
-  double precision, save :: bles
+  real(c_double), pointer, save :: bles
 
   !> Smagorinsky constant used in the Smagorinsky model for LES.
   !> The sub-grid scale viscosity is calculated by
@@ -661,7 +643,7 @@ module cstphy
   !> Useful if and only if \ref iturb = 40
   !> \note In theory Smagorinsky constant is 0.18.
   !> For a planar canal plan, 0.065 value is rather taken.
-  double precision, save :: csmago
+  real(c_double), pointer, save :: csmago
 
   !> ratio between
   !> explicit and explicit filter width for a dynamic model
@@ -671,7 +653,7 @@ module cstphy
   !> \f$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}\f$.
   !>
   !> Useful if and only if \ref iturb = 41
-  double precision, save :: xlesfd
+  real(c_double), pointer, save :: xlesfd
 
   !> maximum allowed value for the variable \f$C\f$ appearing in the LES dynamic
   !> model.
@@ -679,7 +661,7 @@ module cstphy
   !> procedure of the dynamic model will be clipped to \f$ smagmx\f$.
   !>
   !> Useful if and only if \ref iturb = 41
-  double precision, save :: smagmx
+  real(c_double), pointer, save :: smagmx
 
   !> minimum allowed value for the variable \f$C\f$ appearing in the LES dynamic
   !> model.
@@ -687,14 +669,14 @@ module cstphy
   !> procedure of the dynamic model will be clipped to \f$ smagmn\f$.
   !>
   !> Useful if and only if \ref iturb = 41
-  double precision, save :: smagmn
+  real(c_double), pointer, save :: smagmn
 
   !> van Driest constant appearing in the van Driest damping function
   !> applied to the Smagorinsky constant:
   !>  - \f$ (1-\exp^{(-y^+/cdries}) \f$.
   !>
   !> Useful if and only if \ref iturb = 40 or 41
-  double precision, save :: cdries
+  real(c_double), pointer, save :: cdries
 
   !> minimal control volume
   double precision, save :: volmin
@@ -744,7 +726,7 @@ module cstphy
   double precision, save :: cv2fet
 
   !> constant of the WALE LES method
-  double precision, save :: cwale
+  real(c_double), pointer, save :: cwale
   !> coefficient of turbulent AFM flow model
   double precision, save :: xiafm
   !> coefficient of turbulent AFM flow model
@@ -868,11 +850,14 @@ module cstphy
     ! Interface to C function retrieving pointers to constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_model_constants_get_pointers(cmu, cmu025, crij1, crij2) &
+    subroutine cs_f_turb_model_constants_get_pointers(cmu, cmu025, crij1, crij2, &
+        csmago, xlesfd, smagmx, smagmn, cwale, xlesfl, ales, bles, cdries) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: cmu  , cmu025 , crij1 , crij2
+      type(c_ptr), intent(out) :: csmago, xlesfd, smagmx, smagmn
+      type(c_ptr), intent(out) :: cwale, xlesfl, ales, bles, cdries
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -1000,13 +985,28 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_cmu, c_cmu025, c_crij1, c_crij2
+    type(c_ptr) :: c_csmago, c_xlesfd, c_smagmx, c_smagmn, c_cwale
+    type(c_ptr) :: c_xlesfl, c_ales, c_bles, c_cdries
 
-    call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025, c_crij1, c_crij2)
+    call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025, c_crij1,    &
+                                                c_crij2, c_csmago, c_xlesfd, &
+                                                c_smagmx, c_smagmn, c_cwale, &
+                                                c_xlesfl, c_ales, c_bles,    &
+                                                c_cdries  )
 
     call c_f_pointer(c_cmu    , cmu   )
     call c_f_pointer(c_cmu025 , cmu025)
     call c_f_pointer(c_crij1 , crij1)
     call c_f_pointer(c_crij2 , crij2)
+    call c_f_pointer(c_csmago, csmago)
+    call c_f_pointer(c_xlesfd, xlesfd)
+    call c_f_pointer(c_smagmx, smagmx)
+    call c_f_pointer(c_smagmn, smagmn)
+    call c_f_pointer(c_cwale, cwale)
+    call c_f_pointer(c_xlesfl, xlesfl)
+    call c_f_pointer(c_ales  , ales  )
+    call c_f_pointer(c_bles  , bles  )
+    call c_f_pointer(c_cdries, cdries)
 
   end subroutine turb_model_constants_init
 
