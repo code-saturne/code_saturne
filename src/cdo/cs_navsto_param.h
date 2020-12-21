@@ -407,7 +407,7 @@ typedef struct {
   /*! \var il_algo_verbosity
    *  Level of verbosity related to the inner linear system
    */
-  cs_real_t                     il_algo_verbosity;
+  int                           il_algo_verbosity;
 
   /*!
    * @}
@@ -449,7 +449,7 @@ typedef struct {
   /*! \var il_algo_verbosity
    *  Level of verbosity related to the non-linear algorithm
    */
-  cs_real_t                     nl_algo_verbosity;
+  int                           nl_algo_verbosity;
 
   /*! @} */
 
