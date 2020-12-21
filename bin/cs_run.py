@@ -119,7 +119,7 @@ def arg_parser(argv, pkg):
                         metavar="<build>",
                         help="base name or full path to the compute build")
 
-    parser.add_argument("-n", "--nprocs", dest="nprocs", type=int,
+    parser.add_argument("-n", "--nprocs" , "--n-procs", dest="nprocs", type=int,
                         metavar="<nprocs>",
                         help="number of MPI processes for the computation")
 
