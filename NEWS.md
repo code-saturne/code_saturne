@@ -3,6 +3,9 @@ Release 6.1.3 (unreleased)
 
 Bug fixes:
 
+- Fix GUI handling of post-processing and logging behavior for
+  time moments.
+
 - Fix in the GUI for automatic BCs for atmospheric flow outlets.
 
 - Fix boundary reconstruction for hybrid Gauss + least-squares vector

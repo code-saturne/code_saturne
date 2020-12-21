@@ -368,11 +368,14 @@ cs_gui_output(void)
     if (f->type & CS_FIELD_VARIABLE)
       _field_post("variable", f->id);
     else if (   (f->type & CS_FIELD_PROPERTY)
-             || (f->type & CS_FIELD_POSTPROCESS))
+             || (f->type & CS_FIELD_POSTPROCESS)) {
+      if (moment_id != NULL) {
+        if (moment_id[f_id] > -1) {
+          _field_post("time_average", f->id);
+          continue;
+        }
+      }
       _field_post("property", f->id);
-    else if (moment_id != NULL) {
-      if (moment_id[f_id] > -1)
-        _field_post("time_average", f->id);
     }
   }
 
