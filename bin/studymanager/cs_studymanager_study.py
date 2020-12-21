@@ -403,6 +403,10 @@ class Case(object):
 
         run_cmd = enquote_arg(self.exe) + " run --id=" + enquote_arg(self.run_id)
 
+        n_procs = self.__data['n_procs']
+        if n_procs:
+            run_cmd += " -n " + n_procs
+
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
         if not error:
