@@ -495,7 +495,8 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
 
             sections['setup'] = {'coupled_domains': dom_str}
 
-    sections['run'] = {'id': r_c['run_id'],
+    sections['run'] = {'compute_build': r_c['compute_build'],
+                       'id': r_c['run_id'],
                        'stage': False,
                        'initialize': s_c['initialize'],
                        'compute': s_c['run_solver'],
