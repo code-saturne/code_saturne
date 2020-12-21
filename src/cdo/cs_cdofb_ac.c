@@ -987,13 +987,13 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
   }
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->algo_info = cs_iter_algo_define(nslesp.nl_algo_verbosity,
-                                      nslesp.n_max_nl_algo_iter,
-                                      nslesp.nl_algo_atol,
-                                      nslesp.nl_algo_rtol,
-                                      nslesp.nl_algo_dtol);
+  sc->algo_info = cs_iter_algo_define(nslesp->nl_algo_verbosity,
+                                      nslesp->n_max_nl_algo_iter,
+                                      nslesp->nl_algo_atol,
+                                      nslesp->nl_algo_rtol,
+                                      nslesp->nl_algo_dtol);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -1049,13 +1049,13 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 
   assert(nsp != NULL && nsc != NULL);
 
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
 
   mom_eqp->sles_param->field_id = field_id;
 
-  switch (nslesp.strategy) {
+  switch (nslesp->strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);

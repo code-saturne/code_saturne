@@ -607,7 +607,7 @@ typedef struct {
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
    */
-  cs_navsto_param_sles_t         sles_param;
+  cs_navsto_param_sles_t        *sles_param;
 
   /*! \var delta_thermal_tolerance
    * Value under which one considers that the thermal equation is converged
@@ -631,12 +631,12 @@ typedef struct {
    * \var verbosity
    * Level of display of the information related to the Navier-Stokes system
    */
-  int                           verbosity;
+  int                            verbosity;
 
   /*! \var post_flag
    * Flag storing which predefined post-processing has to be done
    */
-  cs_navsto_param_post_flag_t   post_flag;
+  cs_navsto_param_post_flag_t    post_flag;
 
   /*!
    * @}

@@ -274,6 +274,164 @@ _propagate_qtype(cs_navsto_param_t    *nsp)
     cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], nsp->qtype);
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a new structure to store the settings related to the
+ *         resolution of the Navier-Stokes (NS) system: linear or non-linear
+ *         algorithms
+ *
+ * \param[in] model           type of model related to the NS system
+ * \param[in] model_flag      additional high-level model options
+ * \param[in] algo_coupling   algorithm used for solving the NS system
+ *
+ * \return a pointer to a new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_navsto_param_sles_t *
+_navsto_param_sles_create(cs_navsto_param_model_t         model,
+                          cs_navsto_param_model_flag_t    model_flag,
+                          cs_navsto_param_coupling_t      algo_coupling)
+{
+  cs_navsto_param_sles_t  *nslesp = NULL;
+  BFT_MALLOC(nslesp, 1, cs_navsto_param_sles_t);
+
+  /* Set the non-linear algorithm (only useful if advection is implicit and
+   * Navier-Stokes or Oseen model is set) */
+  nslesp->nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+  nslesp->n_max_nl_algo_iter = 25;
+  nslesp->nl_algo_rtol = 1e-5;
+  nslesp->nl_algo_atol = 1e-5;
+  nslesp->nl_algo_dtol = 1e3;
+  nslesp->nl_algo_verbosity = 1;
+
+  /* Set the default solver options for the main linear algorithm */
+  nslesp->n_max_il_algo_iter = 100;
+  nslesp->il_algo_rtol = 1e-08;
+  nslesp->il_algo_atol = 1e-08;
+  nslesp->il_algo_dtol = 1e3;
+  nslesp->il_algo_verbosity = 0;
+
+  switch (algo_coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    nslesp->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    break;
+
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    if (model == CS_NAVSTO_MODEL_STOKES)
+      nslesp->strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+    else
+      nslesp->strategy = CS_NAVSTO_SLES_UZAWA_AL;
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    nslesp->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    break;
+
+  default:
+    /* Nothing done */
+    break;
+
+  }
+
+  return nslesp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_navsto_param_sles_t structure
+ *
+ * \param[in] p_nslesp   double pointer on the cs_navsto_param_sles_t to free
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_navsto_param_sles_free(cs_navsto_param_sles_t    **p_nslesp)
+{
+  if (p_nslesp == NULL)
+    return;
+
+  cs_navsto_param_sles_t  *nslesp = *p_nslesp;
+  if (nslesp == NULL)
+    return;
+
+
+  BFT_FREE(nslesp);
+
+  *p_nslesp = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log the settings related to the resolution of the Navier-Stokes (NS)
+ *         system: linear algorithms only (non-linear algo. depends on the
+ *         choice of the model and is this treated in cs_navsto_param_log())
+ *
+ * \param[in] nslesp   pointer to the cs_navsto_param_sles_t structure to log
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
+{
+  if (nslesp == NULL)
+    return;
+
+  const char  navsto[16] = "  * NavSto |";
+
+  cs_log_printf(CS_LOG_SETUP, "%s SLES strategy: ", navsto);
+  switch (nslesp->strategy) {
+
+  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Handle the full system as it is.\n");
+    break;
+  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
+    cs_log_printf(CS_LOG_SETUP, "Block AMG + CG\n");
+    break;
+  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner"
+                  " + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
+                  " + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
+                  " + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_GKB_PETSC:
+    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (through PETSc)\n");
+    break;
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
+    break;
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (In-House)\n");
+    break;
+  case CS_NAVSTO_SLES_MUMPS:
+    cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
+    break;
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
+    break;
+  default:
+    cs_log_printf(CS_LOG_SETUP, "Not set\n");
+    break;
+  }
+
+  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the main inner linear solver:"
+                " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
+                navsto, nslesp->il_algo_rtol, nslesp->il_algo_atol,
+                nslesp->il_algo_dtol, nslesp->il_algo_verbosity);
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -302,84 +460,72 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
                        cs_navsto_param_coupling_t      algo_coupling,
                        cs_navsto_param_post_flag_t     post_flag)
 {
-  cs_navsto_param_t  *param = NULL;
-  BFT_MALLOC(param, 1, cs_navsto_param_t);
+  cs_navsto_param_t  *nsp = NULL;
+  BFT_MALLOC(nsp, 1, cs_navsto_param_t);
 
   /* Physical modelling */
   /* ------------------ */
 
   /* Which equations are solved and which terms are needed */
-  param->model = model;
-  param->model_flag = model_flag;
+  nsp->model = model;
+  nsp->model_flag = model_flag;
 
   /* Turbulence modelling (pointer to global structures) */
-  param->turbulence = cs_turbulence_param_create();
+  nsp->turbulence = cs_turbulence_param_create();
 
   /* Main set of properties */
   /* ---------------------- */
 
-  param->phys_constants = cs_get_glob_physical_constants();
+  nsp->phys_constants = cs_get_glob_physical_constants();
 
-  param->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-  if (param->mass_density == NULL)
-    param->mass_density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
+  nsp->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  if (nsp->mass_density == NULL)
+    nsp->mass_density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
                                           CS_PROPERTY_ISO);
 
-  param->lam_viscosity = cs_property_add(CS_NAVSTO_LAM_VISCOSITY,
+  nsp->lam_viscosity = cs_property_add(CS_NAVSTO_LAM_VISCOSITY,
                                          CS_PROPERTY_ISO);
 
-  if (param->turbulence->model->iturb == CS_TURB_NONE)
-    param->tot_viscosity = param->lam_viscosity;
+  if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+    nsp->tot_viscosity = nsp->lam_viscosity;
   else
-    param->tot_viscosity = cs_property_add(CS_NAVSTO_TOTAL_VISCOSITY,
+    nsp->tot_viscosity = cs_property_add(CS_NAVSTO_TOTAL_VISCOSITY,
                                            CS_PROPERTY_ISO);
 
   /* Default numerical settings */
   /* -------------------------- */
 
-  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
-  param->coupling = algo_coupling;
-  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
+  nsp->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+  nsp->coupling = algo_coupling;
+  nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
   /* Advection settings */
-  param->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
-  param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-  param->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
-  param->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
+  nsp->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
+  nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
+  nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
 
   /* Forcing steady state in order to avoid inconsistencies */
   if (model_flag & CS_NAVSTO_MODEL_STEADY)
-    param->time_scheme = CS_TIME_SCHEME_STEADY;
+    nsp->time_scheme = CS_TIME_SCHEME_STEADY;
   else
-    param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
-  param->theta = 1.0;
+    nsp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
+  nsp->theta = 1.0;
 
   /* Default level of quadrature */
-  param->qtype = CS_QUADRATURE_BARY;
+  nsp->qtype = CS_QUADRATURE_BARY;
 
   /* Resolution parameters (inner linear system then the non-linear system )*/
-  param->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-  param->sles_param.n_max_il_algo_iter = 100;
-  param->sles_param.il_algo_rtol = 1e-08;
-  param->sles_param.il_algo_atol = 1e-08;
-  param->sles_param.il_algo_dtol = 1e3;
-  param->sles_param.il_algo_verbosity = 0;
-
-  param->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
-  param->sles_param.n_max_nl_algo_iter = 25;
-  param->sles_param.nl_algo_rtol = 1e-5;
-  param->sles_param.nl_algo_atol = 1e-5;
-  param->sles_param.nl_algo_dtol = 1e3;
-  param->sles_param.nl_algo_verbosity = 1;
+  nsp->sles_param = _navsto_param_sles_create(model, model_flag, algo_coupling);
 
   /* Management of the outer resolution steps (i.e. the full system including
      the turbulence modelling or the the thermal system) */
-  param->n_max_outer_iter = 5;
-  param->delta_thermal_tolerance = 1e-2;
+  nsp->n_max_outer_iter = 5;
+  nsp->delta_thermal_tolerance = 1e-2;
 
   /* Output indicators */
-  param->verbosity = 1;
-  param->post_flag = post_flag;
+  nsp->verbosity = 1;
+  nsp->post_flag = post_flag;
 
   /* Initial conditions
    * ------------------
@@ -391,31 +537,31 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   switch (algo_coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
+    nsp->gd_scale_coef = 1.0;    /* Default value if not set by the user */
 
-    param->velocity_ic_is_owner = false;
-    param->velocity_bc_is_owner = false;
-    param->pressure_ic_is_owner = true;
-    param->pressure_bc_is_owner = true;
+    nsp->velocity_ic_is_owner = false;
+    nsp->velocity_bc_is_owner = false;
+    nsp->pressure_ic_is_owner = true;
+    nsp->pressure_bc_is_owner = true;
     break;
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    param->sles_param.strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
-    param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
+    nsp->sles_param->strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
+    nsp->gd_scale_coef = 0.0;    /* Default value if not set by the user */
 
-    param->velocity_ic_is_owner = false;
-    param->velocity_bc_is_owner = false;
-    param->pressure_ic_is_owner = true;
-    param->pressure_bc_is_owner = true;
+    nsp->velocity_ic_is_owner = false;
+    nsp->velocity_bc_is_owner = false;
+    nsp->pressure_ic_is_owner = true;
+    nsp->pressure_bc_is_owner = true;
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
+    nsp->gd_scale_coef = 0.0;    /* Default value if not set by the user */
 
-    param->velocity_ic_is_owner = false;
-    param->velocity_bc_is_owner = false;
-    param->pressure_ic_is_owner = false;
-    param->pressure_bc_is_owner = false;
+    nsp->velocity_ic_is_owner = false;
+    nsp->velocity_bc_is_owner = false;
+    nsp->pressure_ic_is_owner = false;
+    nsp->pressure_bc_is_owner = false;
     break;
 
   default:
@@ -424,38 +570,38 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   }
 
   /* Initial conditions for the pressure field */
-  param->n_pressure_ic_defs = 0;
-  param->pressure_ic_defs = NULL;
+  nsp->n_pressure_ic_defs = 0;
+  nsp->pressure_ic_defs = NULL;
 
   /* Initial conditions for the velocity field */
-  param->n_velocity_ic_defs = 0;
-  param->velocity_ic_defs = NULL;
+  nsp->n_velocity_ic_defs = 0;
+  nsp->velocity_ic_defs = NULL;
 
   /* Boundary conditions */
   /* ------------------- */
 
   /* Physical boundaries specific to the problem at stake */
-  param->boundaries = boundaries; /* shared structure */
+  nsp->boundaries = boundaries; /* shared structure */
 
   /* Boundary conditions for the pressure field */
-  param->n_pressure_bc_defs = 0;
-  param->pressure_bc_defs = NULL;
+  nsp->n_pressure_bc_defs = 0;
+  nsp->pressure_bc_defs = NULL;
 
   /* Boundary conditions for the velocity field */
-  param->n_velocity_bc_defs = 0;
-  param->velocity_bc_defs = NULL;
+  nsp->n_velocity_bc_defs = 0;
+  nsp->velocity_bc_defs = NULL;
 
   /* Other conditions */
   /* ---------------- */
 
   /* Rescaling of the pressure */
-  param->reference_pressure = 0.;
+  nsp->reference_pressure = 0.;
 
   /* Enforcement of a solid zone */
-  param->n_solid_cells = 0;
-  param->solid_cell_ids = NULL;
+  nsp->n_solid_cells = 0;
+  nsp->solid_cell_ids = NULL;
 
-  return param;
+  return nsp;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -530,6 +676,8 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
   }
 
   BFT_FREE(param->solid_cell_ids);
+
+  _navsto_param_sles_free(&(param->sles_param));
 
   /* Free the main structure */
   BFT_FREE(param);
@@ -682,36 +830,36 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_IL_ALGO_ATOL:
-    nsp->sles_param.il_algo_atol = atof(val);
-    if (nsp->sles_param.il_algo_rtol < 0)
+    nsp->sles_param->il_algo_atol = atof(val);
+    if (nsp->sles_param->il_algo_rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance\n", __func__);
     break;
 
   case CS_NSKEY_IL_ALGO_DTOL:
-    nsp->sles_param.il_algo_dtol = atof(val);
-    if (nsp->sles_param.il_algo_dtol < 0)
+    nsp->sles_param->il_algo_dtol = atof(val);
+    if (nsp->sles_param->il_algo_dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance\n", __func__);
     break;
 
   case CS_NSKEY_IL_ALGO_RTOL:
-    nsp->sles_param.il_algo_rtol = atof(val);
-    if (nsp->sles_param.il_algo_rtol < 0)
+    nsp->sles_param->il_algo_rtol = atof(val);
+    if (nsp->sles_param->il_algo_rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the residual tolerance\n", __func__);
     break;
 
   case CS_NSKEY_IL_ALGO_VERBOSITY:
-    nsp->sles_param.il_algo_verbosity = atoi(val);
+    nsp->sles_param->il_algo_verbosity = atoi(val);
     break;
 
   case CS_NSKEY_MAX_IL_ALGO_ITER:
-    nsp->sles_param.n_max_il_algo_iter = atoi(val);
+    nsp->sles_param->n_max_il_algo_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_NL_ALGO_ITER:
-    nsp->sles_param.n_max_nl_algo_iter = atoi(val);
+    nsp->sles_param->n_max_nl_algo_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_OUTER_ITER:
@@ -722,7 +870,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     {
       if (strcmp(val, "picard") == 0 ||
           strcmp(val, "fixed-point") == 0)
-        nsp->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+        nsp->sles_param->nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
@@ -735,8 +883,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break; /* Non-linear algorithm */
 
   case CS_NSKEY_NL_ALGO_ATOL:
-    nsp->sles_param.nl_algo_atol = atof(val);
-    if (nsp->sles_param.il_algo_atol < 0)
+    nsp->sles_param->nl_algo_atol = atof(val);
+    if (nsp->sles_param->il_algo_atol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance of the"
                 " non-linear algorithm\n",
@@ -744,8 +892,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_DTOL:
-    nsp->sles_param.nl_algo_dtol = atof(val);
-    if (nsp->sles_param.nl_algo_dtol < 0)
+    nsp->sles_param->nl_algo_dtol = atof(val);
+    if (nsp->sles_param->nl_algo_dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance of the"
                 " non-linear algorithm\n",
@@ -753,8 +901,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_RTOL:
-    nsp->sles_param.nl_algo_rtol = atof(val);
-    if (nsp->sles_param.nl_algo_rtol < 0)
+    nsp->sles_param->nl_algo_rtol = atof(val);
+    if (nsp->sles_param->nl_algo_rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the relative tolerance of the"
                 " non-linear algorithm\n",
@@ -762,7 +910,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_VERBOSITY:
-    nsp->sles_param.nl_algo_verbosity = atoi(val);
+    nsp->sles_param->nl_algo_verbosity = atoi(val);
     break;
 
   case CS_NSKEY_QUADRATURE:
@@ -791,47 +939,48 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     else if (strcmp(val, "by_blocks") == 0)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_BY_BLOCKS;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_BY_BLOCKS;
     else if (strcmp(val, "block_amg_cg") == 0)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
     else if (strcmp(val, "gkb_saturne") == 0 ||
              strcmp(val, "gkb") == 0)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_GKB_SATURNE;
     else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_UZAWA_AL;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
+    else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0)
 
     /* All the following options need either PETSC or MUMPS */
     /* ---------------------------------------------------- */
 
     else if (strcmp(val, "additive_gmres") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK);
     else if (strcmp(val, "multiplicative_gmres") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val,
                               CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK);
     else if (strcmp(val, "diag_schur_gmres") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_DIAG_SCHUR_GMRES);
     else if (strcmp(val, "upper_schur_gmres") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_UPPER_SCHUR_GMRES);
     else if (strcmp(val, "gkb_gmres") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_GMRES);
     else if (strcmp(val, "gkb_petsc") == 0)
-      nsp->sles_param.strategy =
+      nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_PETSC);
 
     else if (strcmp(val, "mumps") == 0) {
 #if defined(HAVE_MUMPS)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_MUMPS;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_MUMPS;
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_MUMPS;
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_MUMPS;
 #else
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting \"%s\" key\n"
@@ -1084,7 +1233,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
     const char algo_name[] = "Picard";
-    if (nsp->sles_param.nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
+    if (nsp->sles_param->nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
       bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.",
                 __func__);
 
@@ -1092,69 +1241,19 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   navsto, algo_name);
     cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
                   " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                  navsto, nsp->sles_param.nl_algo_rtol,
-                  nsp->sles_param.nl_algo_atol, nsp->sles_param.nl_algo_dtol);
+                  navsto, nsp->sles_param->nl_algo_rtol,
+                  nsp->sles_param->nl_algo_atol, nsp->sles_param->nl_algo_dtol);
     cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
-                  navsto, nsp->sles_param.n_max_nl_algo_iter);
+                  navsto, nsp->sles_param->n_max_nl_algo_iter);
 
   } /* Navier-Stokes */
 
   /* Describe the strategy to inverse the (inner) linear system */
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
-
-  cs_log_printf(CS_LOG_SETUP, "%s SLES strategy: ", navsto);
-  switch (nslesp.strategy) {
-
-  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "No specific strategy. System as it is.\n");
-    break;
-  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
-    cs_log_printf(CS_LOG_SETUP, "Block AMG + CG\n");
-    break;
-  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
-    break;
-  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner"
-                  " + GMRES\n");
-    break;
-  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
-    cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
-                  " + GMRES\n");
-    break;
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
-                  " + GMRES\n");
-    break;
-  case CS_NAVSTO_SLES_GKB_PETSC:
-    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (through PETSc)\n");
-    break;
-  case CS_NAVSTO_SLES_GKB_GMRES:
-    cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
-    break;
-  case CS_NAVSTO_SLES_GKB_SATURNE:
-    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (In-House)\n");
-    break;
-  case CS_NAVSTO_SLES_MUMPS:
-    cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
-    break;
-  case CS_NAVSTO_SLES_UZAWA_AL:
-    cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
-    break;
-
-  default:
-    cs_log_printf(CS_LOG_SETUP, "Not set\n");
-    break;
-  }
+  _navsto_param_sles_log(nsp->sles_param);
 
   if (nsp->gd_scale_coef > 0)
     cs_log_printf(CS_LOG_SETUP, "%s Grad-div scaling %e\n",
                   navsto, nsp->gd_scale_coef);
-
-  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the inner solver:"
-                " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                navsto, nslesp.il_algo_rtol, nslesp.il_algo_atol,
-                nslesp.il_algo_dtol);
 
   /* Default quadrature type */
   cs_log_printf(CS_LOG_SETUP, "%s Default quadrature: %s\n",

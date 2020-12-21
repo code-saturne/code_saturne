@@ -320,7 +320,7 @@ _face_gdot(cs_lnum_t    size,
 
 static void
 _set_petsc_main_solver(const cs_navsto_param_model_t   model,
-                       const cs_navsto_param_sles_t    nslesp,
+                       const cs_navsto_param_sles_t   *nslesp,
                        const cs_param_sles_t          *slesp,
                        KSP                             ksp)
 {
@@ -341,10 +341,10 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nslesp.il_algo_rtol,   /* relative convergence tolerance */
+                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
                    abstol,                  /* absolute convergence tolerance */
                    dtol,                    /* divergence tolerance */
-                   nslesp.n_max_il_algo_iter); /* max number of iterations */
+                   nslesp->n_max_il_algo_iter); /* max number of iterations */
 
   switch (slesp->resnorm_type) {
 
@@ -728,7 +728,7 @@ _additive_amg_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -812,7 +812,7 @@ _multiplicative_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -893,7 +893,7 @@ _diag_schur_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -978,7 +978,7 @@ _upper_schur_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -1064,7 +1064,7 @@ _gkb_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -1080,8 +1080,8 @@ _gkb_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc, 10*nslesp.il_algo_rtol);
-  PCFieldSplitSetGKBMaxit(up_pc, nslesp.n_max_il_algo_iter);
+  PCFieldSplitSetGKBTol(up_pc, 10*nslesp->il_algo_rtol);
+  PCFieldSplitSetGKBMaxit(up_pc, nslesp->n_max_il_algo_iter);
   PCFieldSplitSetGKBNu(up_pc, 0);
   PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
@@ -1141,7 +1141,7 @@ _gkb_precond_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
-  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
@@ -1323,13 +1323,13 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
 
   gkb->zeta_square_sum = 0.;
 
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  gkb->info = cs_iter_algo_define(nslesp.il_algo_verbosity,
-                                  nslesp.n_max_il_algo_iter,
-                                  nslesp.il_algo_atol,
-                                  nslesp.il_algo_rtol,
-                                  nslesp.il_algo_dtol);
+  gkb->info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+                                  nslesp->n_max_il_algo_iter,
+                                  nslesp->il_algo_atol,
+                                  nslesp->il_algo_rtol,
+                                  nslesp->il_algo_dtol);
 
   return gkb;
 }
@@ -1409,13 +1409,14 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
   BFT_MALLOC(uza->d__v, n_p_dofs, cs_real_t);
   BFT_MALLOC(uza->rhs, n_u_dofs, cs_real_t);
 
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  uza->ck = NULL;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  uza->info = cs_iter_algo_define(nslesp.il_algo_verbosity,
-                                  nslesp.n_max_il_algo_iter,
-                                  nslesp.il_algo_atol,
-                                  nslesp.il_algo_rtol,
-                                  nslesp.il_algo_dtol);
+  uza->info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+                                  nslesp->n_max_il_algo_iter,
+                                  nslesp->il_algo_atol,
+                                  nslesp->il_algo_rtol,
+                                  nslesp->il_algo_dtol);
 
   return uza;
 }
@@ -1541,15 +1542,15 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
 /*----------------------------------------------------------------------------*/
 
 static void
-_transform_gkb_system(const cs_matrix_t             *matrix,
-                      const cs_equation_param_t     *eqp,
-                      const cs_navsto_param_sles_t   nslesp,
-                      const cs_real_t               *div_op,
-                      cs_gkb_builder_t              *gkb,
-                      cs_sles_t                     *sles,
-                      cs_real_t                     *u_f,
-                      cs_real_t                     *b_f,
-                      cs_real_t                     *b_c)
+_transform_gkb_system(const cs_matrix_t              *matrix,
+                      const cs_equation_param_t      *eqp,
+                      const cs_navsto_param_sles_t   *nslesp,
+                      const cs_real_t                *div_op,
+                      cs_gkb_builder_t               *gkb,
+                      cs_sles_t                      *sles,
+                      cs_real_t                      *u_f,
+                      cs_real_t                      *b_f,
+                      cs_real_t                      *b_c)
 {
   assert(gkb != NULL);
 
@@ -1564,7 +1565,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
 
   cs_param_sles_copy_from(eqp->sles_param, slesp);
 
-  slesp->eps = nslesp.il_algo_rtol;
+  slesp->eps = nslesp->il_algo_rtol;
 
   if (gkb->gamma > 0) {
 
@@ -1583,7 +1584,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   else
     memcpy(gkb->b_tilda, b_f, gkb->n_u_dofs*sizeof(cs_real_t));
 
-  /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) up to now gamma = 0 */
+  /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
   gkb->info->n_inner_iter
     += (gkb->info->last_inner_iter
         = cs_equation_solve_scalar_system(gkb->n_u_dofs,
@@ -1596,7 +1597,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
                                           gkb->v,
                                           gkb->b_tilda));
 
-  /* Compute the initial u_tilda := u_f - M^-1.b_f */
+  /* Compute the initial u_tilda := u_f - M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 # pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
   for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
     gkb->u_tilda[iu] = u_f[iu] - gkb->v[iu];
@@ -2142,7 +2143,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   assert(nsp != NULL && nsc != NULL);
 
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   cs_param_sles_t  *mom_slesp = mom_eqp->sles_param;
   int  field_id = cs_equation_get_field_id(nsc->momentum);
@@ -2155,7 +2156,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
      it does not need to be called before calling
      cs_sles_petsc_define(), as this is handled automatically. */
 
-  switch (nslesp.strategy) {
+  switch (nslesp->strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);
@@ -2376,17 +2377,17 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                              xsol, b);
 
   /* Solve the linear solver */
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   const cs_param_sles_t  *sles_param = eqp->sles_param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
   cs_real_t  rtol = sles_param->eps;
 
-  if (nslesp.strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
-      nslesp.strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
-      nslesp.strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK  ||
-      nslesp.strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
-    rtol = nslesp.il_algo_rtol;
+  if (nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
+      nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
+      nslesp->strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK  ||
+      nslesp->strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
+    rtol = nslesp->il_algo_rtol;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
@@ -2494,10 +2495,10 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               cs_cdofb_monolithic_sles_t    *msles)
 {
   assert(nsp != NULL);
-  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
   /* Sanity checks */
-  assert(nslesp.strategy == CS_NAVSTO_SLES_GKB_SATURNE);
+  assert(nslesp->strategy == CS_NAVSTO_SLES_GKB_SATURNE);
   assert(cs_shared_range_set != NULL);
 
   const cs_real_t  *vol = cs_shared_quant->cell_vol;
@@ -2644,7 +2645,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_param.strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
   const cs_real_t  gamma = msles->graddiv_coef;
@@ -2783,7 +2784,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_param.strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -2859,7 +2860,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   cs_param_sles_t  *slesp = cs_param_sles_create(-1, system_name);
   cs_param_sles_copy_from(eqp->sles_param, slesp);
-  slesp->eps = nsp->sles_param.il_algo_rtol;
+  slesp->eps = nsp->sles_param->il_algo_rtol;
 
   cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
                                                             c2f,
