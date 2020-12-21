@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 6.3.0 (unreleased)
+--------------------------
+
 User changes:
 
 - GUI: volume and boundary zones are now defined under the "Mesh"
@@ -144,7 +147,7 @@ Architectural changes:
   modules.
 
 Release 6.2.0 (August 27 2020)
---------------------------
+------------------------------
 
 User changes:
 
