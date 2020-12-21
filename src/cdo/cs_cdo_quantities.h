@@ -135,8 +135,8 @@ typedef struct { /* Specific mesh quantities */
 
   cs_lnum_t         n_cells;        /* Local number of cells */
   cs_gnum_t         n_g_cells;      /* Global number of cells */
-  cs_real_t        *cell_centers;
-  cs_real_t        *cell_vol;
+  cs_real_t        *cell_centers;   /* May be shared according to options */
+  const cs_real_t  *cell_vol;       /* Shared with cs_mesh_quantities_t */
 
   cs_quant_info_t   cell_info;
 
