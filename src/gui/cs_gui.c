@@ -2085,32 +2085,29 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
     if (f->type & CS_FIELD_VARIABLE) { /* variable ? */
       int i = cs_field_get_key_int(f, keysca) - 1;
       if (i > -1) { /* additional user or model variable ? */
-        if (cs_field_get_key_int(f, kscavr) < 0) { /* not a variance ? */
 
-          double scal_min = cs_field_get_key_double(f, kscmin);
-          double scal_max = cs_field_get_key_double(f, kscmax);
+        double scal_min = cs_field_get_key_double(f, kscmin);
+        double scal_max = cs_field_get_key_double(f, kscmax);
 
-          cs_tree_node_t *tn_v = _find_node_variable(f->name);
-          if (tn_v != NULL) { /* variable is in xml ? */
-            cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
-            cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
-            cs_field_set_key_double(f, kscmin, scal_min);
-            cs_field_set_key_double(f, kscmax, scal_max);
+        cs_tree_node_t *tn_v = _find_node_variable(f->name);
+        if (tn_v != NULL) { /* variable is in xml ? */
+          cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
+          cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
+          cs_field_set_key_double(f, kscmin, scal_min);
+          cs_field_set_key_double(f, kscmax, scal_max);
 
 #if _XML_DEBUG_
-            bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
-            bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
+          bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
+          bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
 #endif
 
-            if (turb_model->order == CS_TURB_SECOND_ORDER) {
-              int turb_mdl;
-              _variable_turbulent_flux_model(tn_v, &turb_mdl);
-              iturt[i] = turb_mdl;
+          if (turb_model->order == CS_TURB_SECOND_ORDER) {
+            int turb_mdl;
+            _variable_turbulent_flux_model(tn_v, &turb_mdl);
+            iturt[i] = turb_mdl;
 #if _XML_DEBUG_
-              bft_printf("--iturt[%i] = %d\n", i, iturt[i]);
+            bft_printf("--iturt[%i] = %d\n", i, iturt[i]);
 #endif
-            }
-
           }
 
         }
