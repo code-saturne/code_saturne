@@ -107,7 +107,7 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
             self.tabWidget.setTabEnabled(1, False)
         if not (self.zone.isNatureActivated("head_losses")):
             self.tabWidget.setTabEnabled(2, False)
-        if not (self.zone.isNatureActivated("source_terms")):
+        if not (self.zone.isNatureActivated("source_term")):
             self.tabWidget.setTabEnabled(3, False)
         if not (self.zone.isNatureActivated("groundwater_law")):
             self.tabWidget.setTabEnabled(4, False)
