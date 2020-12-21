@@ -101,13 +101,17 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
             self.saturneSourceTermsWidget.setup(self.case, self.zone_name)
         self.groundwaterLawPage.setup(self.case, self.zone_name)
 
-        if not (self.zone.isNatureActivated("initialization")):
-            self.tabWidget.setTabEnabled(0, False)
-        if not (self.zone.isNatureActivated("porosity")):
-            self.tabWidget.setTabEnabled(1, False)
-        if not (self.zone.isNatureActivated("head_losses")):
-            self.tabWidget.setTabEnabled(2, False)
-        if not (self.zone.isNatureActivated("source_term")):
-            self.tabWidget.setTabEnabled(3, False)
         if not (self.zone.isNatureActivated("groundwater_law")):
-            self.tabWidget.setTabEnabled(4, False)
+            self.tabWidget.removeTab(4)
+        if not (self.zone.isNatureActivated("source_term")):
+            self.tabWidget.removeTab(3)
+        if not (self.zone.isNatureActivated("head_losses")):
+            self.tabWidget.removeTab(2)
+        if not (self.zone.isNatureActivated("porosity")):
+            self.tabWidget.removeTab(1)
+        if not (self.zone.isNatureActivated("initialization")):
+            self.tabWidget.removeTab(0)
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------
