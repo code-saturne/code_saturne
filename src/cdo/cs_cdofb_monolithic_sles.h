@@ -76,10 +76,15 @@ typedef struct {
   /* Blocks related to the velocity momentum */
   cs_matrix_t  **block_matrices;
 
+  /* B^t.Diag(A)^-1.B which corresponds to a compatible discretization of the
+     discrete Laplacian on the pressure space */
+  cs_matrix_t   *compatible_laplacian;
+
   cs_real_t     *div_op;    /* Block related to the -divergence (block A_{10} */
 
   /* Arrays split according to the block shape. U is interlaced or not
-   * according to the SLES strategy */
+   * according to the SLES strategy
+   */
 
   cs_lnum_t      n_faces;       /* local number of DoFs for each component
                                  * of the velocity */
@@ -92,6 +97,8 @@ typedef struct {
   cs_real_t     *b_c;           /* RHS for the mass equation (size = n_cells) */
 
   cs_sles_t     *sles;          /* main SLES structure */
+  cs_sles_t     *schur_sles;    /* auxiliary SLES for the Schur complement
+                                 * May be NULL */
 
   cs_real_t      graddiv_coef;  /* value of the grad-div coefficient in case
                                  * of augmented system */
@@ -250,6 +257,25 @@ int
 cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
                               cs_cdofb_monolithic_sles_t    *msles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
+ *         problem arising from CDO-Fb schemes for Stokes, Oseen and
+ *         Navier-Stokes with a monolithic coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
+                                   const cs_equation_param_t     *eqp,
+                                   cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!

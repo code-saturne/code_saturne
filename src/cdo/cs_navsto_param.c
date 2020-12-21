@@ -336,6 +336,19 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   }
 
+  /* Settings for driving the linear algebra related to the Schur complement
+     approximation */
+  cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1,
+                                                       "schur_approximation");
+
+  schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
+  schur_slesp->solver = CS_PARAM_ITSOL_CG;       /* iterative solver */
+  schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
+  schur_slesp->eps = 1e-4;                       /* relative tolerance to stop
+                                                    an iterative solver */
+
+  nslesp->schur_sles_param = schur_slesp;
+
   return nslesp;
 }
 
@@ -357,6 +370,7 @@ _navsto_param_sles_free(cs_navsto_param_sles_t    **p_nslesp)
   if (nslesp == NULL)
     return;
 
+  cs_param_sles_free(&nslesp->schur_sles_param);
 
   BFT_FREE(nslesp);
 
@@ -420,6 +434,10 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_UZAWA_AL:
     cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
     break;
+  case CS_NAVSTO_SLES_UZAWA_CG:
+    cs_log_printf(CS_LOG_SETUP, "Uzawa-Conjugate Gradient\n");
+    break;
+
   default:
     cs_log_printf(CS_LOG_SETUP, "Not set\n");
     break;
@@ -429,6 +447,9 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
                 navsto, nslesp->il_algo_rtol, nslesp->il_algo_atol,
                 nslesp->il_algo_dtol, nslesp->il_algo_verbosity);
+
+  if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG)
+    cs_param_sles_log(nslesp->schur_sles_param);
 
 }
 
@@ -950,6 +971,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
     else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_CG;
 
     /* All the following options need either PETSC or MUMPS */
     /* ---------------------------------------------------- */

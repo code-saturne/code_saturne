@@ -256,7 +256,8 @@ _set_scheme_flags(cs_domain_t    *domain)
     case CS_SPACE_SCHEME_CDOFB:
       quant_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      if (nsp->sles_param.strategy == CS_NAVSTO_SLES_BY_BLOCKS)
+      if (nsp->sles_param->strategy == CS_NAVSTO_SLES_BY_BLOCKS)
+          //          nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG)
         cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       break;
 

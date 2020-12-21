@@ -1811,6 +1811,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
   case CS_NAVSTO_SLES_UZAWA_AL:
+  case CS_NAVSTO_SLES_UZAWA_CG:
     cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
     break;
@@ -2048,6 +2049,23 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
     msles->graddiv_coef = nsp->gd_scale_coef;
+    msles->n_row_blocks = 1;
+    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
+    BFT_MALLOC(msles->div_op,
+               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
+               cs_real_t);
+    break;
+
+  case CS_NAVSTO_SLES_UZAWA_CG:
+    sc->init_system = _init_system_default;
+    sc->solve = cs_cdofb_monolithic_uzawa_cg_solve;
+    sc->assemble = _velocity_full_assembly;
+    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                                      CS_CDO_CONNECT_FACE_VP0);
+
+    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+
+    msles->graddiv_coef = 0;    /* No augmentation */
     msles->n_row_blocks = 1;
     BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
     BFT_MALLOC(msles->div_op,

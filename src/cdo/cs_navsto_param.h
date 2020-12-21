@@ -299,13 +299,11 @@ typedef enum {
  * This option is only available with the support to the PETSc library up to
  * now.
  *
- *
  * \var CS_NAVSTO_SLES_MUMPS
  * Associated keyword: "mumps"
  *
  * Direct solver to solve systems arising from the discretization of the
  * Navier-Stokes equations
- *
  *
  * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
  * Associated keyword: "upper_schur_gmres"
@@ -319,10 +317,18 @@ typedef enum {
  * GMRES. This option is only available with the support to the PETSc
  * library up to now.
  *
- *
  * \var CS_NAVSTO_SLES_UZAWA_AL
  * Associated keyword: "uzawa_al"
+ *
  * Resolution using an uzawa algorithm with an Augmented Lagrangian approach
+ *
+ * \var CS_NAVSTO_SLES_UZAWA_CG
+ * Associated keyword: "uzawa_cg"
+ *
+ * Resolution using an uzawa algorithm optimized using a conjugate gradient
+ * reformulation. Two systems are solved at each iteration (one related to the
+ * velocity block, one related to the Schur complement approximation - size of
+ * the pressure space).
  */
 
 typedef enum {
@@ -339,6 +345,7 @@ typedef enum {
   CS_NAVSTO_SLES_MUMPS,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_UZAWA_AL,
+  CS_NAVSTO_SLES_UZAWA_CG,
 
   CS_NAVSTO_SLES_N_TYPES
 
@@ -451,6 +458,18 @@ typedef struct {
    *  Level of verbosity related to the non-linear algorithm
    */
   int                           nl_algo_verbosity;
+
+  /*! @} */
+
+  /*!
+   * @}
+   * @name Block preconditioning or Schur complement approximation
+   * Set of parameters to drive the resolution of the pressure-related
+   * block. This is often a Schur complement approximation to B.A^-1.Bt
+   * @{
+   */
+
+  cs_param_sles_t             *schur_sles_param;
 
   /*! @} */
 
