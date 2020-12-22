@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2020-08-28 02:57+0200\n"
+"POT-Creation-Date: 2020-12-22 04:02+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6197,6 +6197,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"%s: field %s does not maintain previous time step values\n"
+"so \"use_previous_t\" can not be handled."
+msgstr ""
+
+#, c-format
+msgid ""
 "%s: field enum %d is already mapped as non-indexed\n"
 "to field id %d (%s), so it cannot be mapped as indexed."
 msgstr ""
@@ -6346,6 +6352,10 @@ msgstr ""
 
 #, c-format
 msgid "Called cs_interface_set_max with unhandled datatype (%d)."
+msgstr ""
+
+#, c-format
+msgid "Called %s with unhandled datatype (%d)."
 msgstr ""
 
 msgid "Extended neighborhood not implemented for internal coupling."
@@ -8009,10 +8019,6 @@ msgstr ""
 " Sondes : \"%s\":\n"
 "   distance maximale entre centres cellules et coordonnées demandées : "
 "%5.3e\n"
-
-#, c-format
-msgid "Called %s with unhandled datatype (%d)."
-msgstr ""
 
 #, c-format
 msgid ""
@@ -10969,10 +10975,28 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
+#, fuzzy, c-format
+msgid ""
+"\n"
+"File \"%s\"\n"
+"does not seem to contain a Catalyst Python pipeline.\n"
+msgstr ""
+"Le fichier \"%s\" ne semble pas être un fichier\n"
+"case EnSight 6 ou Gold valide"
+
 #, c-format
 msgid ""
-"Error initializing pipeline from \"%s\":\n"
 "\n"
+"File \"%s\"\n"
+"seems to contain a Catalyst V2 Python pipeline but the version.\n"
+"of Catalyst linked with only supports version 1 pipelines.\n"
+"\n"
+"You may need to use a more recent Catalyst version or downgrade\n"
+"to earlier V1 pipelines.\n"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "Error initializing pipeline from \"%s\""
 msgstr ""
 "Erreur à l'initialisation du pipeline depuis \"%s\" :\n"
 "\n"
