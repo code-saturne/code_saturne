@@ -1459,7 +1459,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    ICLVFL(',i10,   ') MUST BE AN INTEGER  EGAL A 0, 1 or 2', /,&
+'@    ICLVFL(',i10, ') MUST BE AN INTEGER EQUAL TO 0, 1 or 2',  /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
@@ -1520,8 +1520,8 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    SCAMIN(',i10,   ') IS EQUAL', e14.5,                      /,&
-'@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
+'@    SCAMIN(',i10,   ') IS EQUAL TO', e14.5,                   /,&
+'@      WITH ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
@@ -1546,8 +1546,8 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    SCAMAX(',i10,   ') IS EQUAL', e14.5,                      /,&
-'@      AVEC ICLVFL(',i10,   ') = ', i10,                       /,&
+'@    SCAMAX(',i10,   ') IS EQUAL TO', e14.5,                   /,&
+'@      WITH ICLVFL(',i10,   ') = ', i10,                       /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
