@@ -387,7 +387,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_FGMRES;
-    else if (strcmp(keyval, "jacobi") == 0) {
+    else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0 ||
+             strcmp(keyval, "diagonal") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_JACOBI;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
     }

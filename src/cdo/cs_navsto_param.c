@@ -481,7 +481,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   if (nsp->mass_density == NULL)
     nsp->mass_density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
-                                          CS_PROPERTY_ISO);
+                                        CS_PROPERTY_ISO);
 
   nsp->lam_viscosity = cs_property_add(CS_NAVSTO_LAM_VISCOSITY,
                                          CS_PROPERTY_ISO);
@@ -490,7 +490,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     nsp->tot_viscosity = nsp->lam_viscosity;
   else
     nsp->tot_viscosity = cs_property_add(CS_NAVSTO_TOTAL_VISCOSITY,
-                                           CS_PROPERTY_ISO);
+                                         CS_PROPERTY_ISO);
 
   /* Default numerical settings */
   /* -------------------------- */
@@ -500,7 +500,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
   /* Advection settings */
-  nsp->adv_form   = CS_PARAM_ADVECTION_FORM_NONCONS;
+  nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
   nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;

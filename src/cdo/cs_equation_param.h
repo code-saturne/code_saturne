@@ -1019,17 +1019,17 @@ typedef struct {
  * \var CS_EQKEY_PRECOND
  * Specify the preconditioner associated to an iterative solver. Available
  * choices are:
- * - "jacobi" --> diagonal preconditoner
- * - "block_jacobi" --> Only with PETSc
- * - "poly1" --> Neumann polynomial of order 1 (only with Code_Saturne)
- * - "poly2" --> Neumann polynomial of order 2 (only with Code_Saturne)
- * - "ssor" --> symmetric successive over-relaxation (only with PETSC)
- * - "ilu0" --> incomplete LU factorization (only with PETSc)
- * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
+ * - "jacobi" or "diag" or "diagonal": diagonal preconditoner
+ * - "block_jacobi": Only with PETSc
+ * - "poly1": Neumann polynomial of order 1 (only with Code_Saturne)
+ * - "poly2": Neumann polynomial of order 2 (only with Code_Saturne)
+ * - "ssor": symmetric successive over-relaxation (only with PETSC)
+ * - "ilu0": incomplete LU factorization (only with PETSc)
+ * - "icc0": incomplete Cholesky factorization (for symmetric matrices and
  *   only with PETSc)
- * - "amg" --> algebraic multigrid
- * - "amg_block" --> algebraic multigrid by block (useful for vector-valued
- *                   equations)
+ * - "amg": algebraic multigrid
+ * - "amg_block": algebraic multigrid by block (useful for vector-valued
+ *                equations)
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system
