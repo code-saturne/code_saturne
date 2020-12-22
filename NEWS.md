@@ -1,5 +1,7 @@
-Release 6.1.3 (unreleased)
---------------------------
+Release 6.1.3 (December 21 2020)
+--------------------------------
+
+This is the last release of the 6.1 series.
 
 Bug fixes:
 
