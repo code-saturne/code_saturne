@@ -271,6 +271,7 @@ _lages1(cs_real_t           dtp,
     cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
 
     cs_real_t displ_r[3], orient_loc_sphere[3];
+    cs_real_t trans_m[3][3];
 
     if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
         && cs_glob_lagr_model->modcpl == 1) {
@@ -287,8 +288,6 @@ _lages1(cs_real_t           dtp,
 
     /* Global reference frame --> local reference frame depending on model
        =================================================================== */
-
-      cs_real_t trans_m[3][3];  /* rotation matrix */
 
       switch (cs_glob_lagr_model->shape) {
 
@@ -611,87 +610,6 @@ _lages1(cs_real_t           dtp,
      * ================================================ */
 
     if (local_reference_frame) {
-
-      cs_real_t trans_m[3][3];
-
-      switch (cs_glob_lagr_model->shape) {
-
-      case CS_LAGR_SHAPE_SPHERE_MODEL:
-        {
-          // Rotate the frame of reference with respect to the
-          // relative particle direction.
-
-          // The rotation axis is the result of the cross product between
-          // the new direction vector and the main axis.
-          cs_real_t n_rot[3];
-          const cs_real_t main_axis[3] = {1.0, 0.0, 0.0};
-          cs_math_3_cross_product(orient_loc_sphere, main_axis, n_rot);
-          cs_math_3_normalize(n_rot, n_rot);
-
-          // Compute the rotation angle between the main axis and
-          // the new direction
-          cs_real_t cosa = cs_math_3_dot_product(orient_loc_sphere, main_axis);
-          cs_real_t sina = sin(acos(cosa));
-
-          // Compute the rotation matrix
-          trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina;
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina;
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina;
-          trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina;
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina;
-          trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
-        }
-        break;
-
-      case CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL:
-        {
-          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
-          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
-          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
-          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
-          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
-          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
-          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
-        }
-        break;
-
-      case CS_LAGR_SHAPE_SPHEROID_STOC_MODEL:
-        {
-          // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
-          cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
-          // Get vector for rotation
-          cs_real_t n_rot[3];
-          cs_math_3_cross_product(orient_loc, singularity_axis, n_rot);
-          cs_math_3_normalize(n_rot, n_rot);
-
-          // Compute rotation angle
-          cs_real_t cosa = cs_math_3_dot_product(orient_loc, singularity_axis);
-          cs_real_t sina = sin(acos(cosa));
-
-          // Compute the rotation matrix
-          trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina;
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina;
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina;
-          trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina;
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina;
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
-          trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
-        }
-        break;
-
-      default:
-        assert(0);
-      }
 
       /* Displacement */
       cs_real_t displ[3];
