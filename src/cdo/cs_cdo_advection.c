@@ -1483,9 +1483,9 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
     return;         /* Nothing to do. No advection in the current cell volume */
 
-  /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
-  cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
-                                  cb->adv_fluxes);
+  /* Remark: The flux across the primal faces is stored in cb->adv_fluxes and
+     should have been computed previously in a function compliant with the
+     cs_cdofb_adv_open_hook_t prototype */
 
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
