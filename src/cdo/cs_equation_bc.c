@@ -211,9 +211,8 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
 
   } /* Loop on definitions */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
 
-    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
     /* Last definition is used if there is a conflict between several
        definitions */
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
@@ -999,16 +998,13 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   } /* Loop on border faces */
 #endif
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
     cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                                   n_vertices,
                                   1,             /* stride */
                                   false,         /* interlace */
                                   CS_FLAG_TYPE,  /* unsigned short int */
                                   vflag);
-
   }
 }
 
@@ -1062,16 +1058,13 @@ cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
   } /* Loop on border faces */
 #endif
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
+  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
     cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                                   n_edges,
                                   1,             /* stride */
                                   false,         /* interlace */
                                   CS_FLAG_TYPE,  /* unsigned short int */
                                   edge_flag);
-
   }
 }
 

@@ -1706,8 +1706,8 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
     /* Compute the vector-valued vector at each vertex */
     _compute_adv_vector_at_vertices(cdoq, connect, def, vtx_values);
 
-    /* Parallel synchronization of values at vertices */
-    if (cs_glob_n_ranks > 1)
+    /* Synchronization of values at vertices */
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
       cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            cdoq->n_vertices,
                            3,             /* stride */
@@ -1719,7 +1719,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
     BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
     cs_cdo_quantities_compute_dual_volumes(cdoq, connect->c2v, dual_vol);
 
-    if (cs_glob_n_ranks > 1)
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
       cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            cdoq->n_vertices,
                            1,             /* stride */
@@ -3463,8 +3463,8 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
   } /* Boundary part */
 
-#if defined(HAVE_MPI) /* Parallel synchronisation if needed */
-  if (cs_glob_n_ranks > 1)
+#if defined(HAVE_MPI) /* Synchronization if needed */
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          cdoq->n_vertices,
                          1,             /* stride */

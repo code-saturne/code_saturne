@@ -2634,11 +2634,13 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
   } /* OpenMP Block */
 
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    eb->balance[v_id] = eb->unsteady_term[v_id] +
-      eb->reaction_term[v_id]  + eb->diffusion_term[v_id] +
-      eb->advection_term[v_id] + eb->source_term[v_id];
+    eb->balance[v_id] =   eb->unsteady_term[v_id]
+                        + eb->reaction_term[v_id]
+                        + eb->diffusion_term[v_id]
+                        + eb->advection_term[v_id]
+                        + eb->source_term[v_id];
 
-  /* Parallel synchronisation */
+  /* Parallel or periodic synchronisation */
   cs_equation_balance_sync(connect, eb);
 
   cs_timer_t  t1 = cs_timer_time();

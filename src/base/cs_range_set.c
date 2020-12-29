@@ -898,15 +898,19 @@ cs_range_set_gather(const cs_range_set_t  *rs,
 
   if (src_val == dest_val) {
 
-    const size_t lb = rs->n_elts[2];
+    if (rs->ifs != NULL) {  /* otherwise we have a no-op */
 
-    for (size_t i = lb; i < n_elts; i++) {
-      if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        size_t j = g_id[i] - l_range[0];
-        if (i >= j) {/* additional check in case of same-rank perdiodicity */
-          memcpy(dest + j*d_size, src + i*d_size, d_size);
+      const size_t lb = rs->n_elts[2];
+
+      for (size_t i = lb; i < n_elts; i++) {
+        if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+          size_t j = g_id[i] - l_range[0];
+          if (i >= j) {/* additional check in case of same-rank perdiodicity */
+            memcpy(dest + j*d_size, src + i*d_size, d_size);
+          }
         }
       }
+
     }
 
   }
@@ -970,15 +974,19 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
   if (src_val == dest_val) {
 
-    const cs_lnum_t lb = rs->n_elts[2];
+    if (rs->ifs != NULL) {  /* otherwise we have a no-op */
 
-    for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
-      if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-        cs_lnum_t j = g_id[i] - l_range[0];
-        if (i >= j) { /* additional check in case of same-rank perdiodicity */
-          memcpy(dest + i*d_size, src + j*d_size, d_size);
+      const cs_lnum_t lb = rs->n_elts[2];
+
+      for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
+        if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+          cs_lnum_t j = g_id[i] - l_range[0];
+          if (i >= j) { /* additional check in case of same-rank perdiodicity */
+            memcpy(dest + i*d_size, src + j*d_size, d_size);
+          }
         }
       }
+
     }
 
   }

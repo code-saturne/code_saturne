@@ -231,7 +231,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
   } /* Loop on cells */
 
-  if (cs_glob_n_ranks > 1) {
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
 
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          connect->n_vertices,

@@ -473,8 +473,8 @@ cs_equation_prepare_system(int                     stride,
                 cs_matrix_get_n_columns(matrix));
 #endif
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-                             /* ============= */
+  if (rset != NULL) { /* Parallel or periodic mode
+                         ========================= */
 
     /* x and b should be changed to have a "gathered" view through the range set
        operation.  Their size is equal to n_sles_gather_elts <=
@@ -490,7 +490,7 @@ cs_equation_prepare_system(int                     stride,
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
-    if (rhs_redux)
+    if (rhs_redux && rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
                            n_scatter_elts, stride, false, CS_REAL_TYPE,
                            b);
@@ -656,14 +656,12 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                   slesp->name, code,
                   sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         xsol, x);
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         b, b);
-  }
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       xsol, x);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       b, b);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
   cs_dbg_fprintf_system(slesp->name, cs_shared_time_step->nt_cur,
@@ -1215,20 +1213,20 @@ void
 cs_equation_balance_sync(const cs_cdo_connect_t    *connect,
                          cs_equation_balance_t     *b)
 {
-  if (cs_glob_n_ranks < 2)
-    return;
   if (b == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: structure not allocated", __func__);
 
   if (cs_flag_test(b->location, cs_flag_primal_vtx)) {
 
     assert(b->size == connect->n_vertices);
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         b->size,
-                         7,   /* stride: 1 for each kind of balance */
-                         false,
-                         CS_REAL_TYPE,
-                         b->balance);
+
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
+      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                           b->size,
+                           7,   /* stride: 1 for each kind of balance */
+                           false,
+                           CS_REAL_TYPE,
+                           b->balance);
 
   }
 
@@ -1314,18 +1312,14 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
 
   } /* Loop on definitions */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
-    /* Last definition is used if there is a conflict between several
-       definitions */
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+    /* Last definition is used in case of conflict */
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          v2def_ids);
-
   }
 
   /* 0. Initialization */
@@ -1415,18 +1409,14 @@ cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
 
   } /* Loop on definitions */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
-    /* Last definition is used if there is a conflict between several
-       definitions */
+  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
+    /* Last definition is used in case of conflict */
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                          n_edges,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          e2def_ids);
-
   }
 
   /* 0. Initialization */
@@ -1516,18 +1506,14 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
 
   } /* Loop on definitions */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL);
-    /* Last definition is used if there is a conflict between several
-       definitions */
+  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
+    /* Last definition is used in case of conflict */
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          f2def_ids);
-
   }
 
   /* 0. Initialization */
@@ -1578,9 +1564,7 @@ cs_equation_sync_vertex_mean_values(const cs_cdo_connect_t     *connect,
 {
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
 
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,

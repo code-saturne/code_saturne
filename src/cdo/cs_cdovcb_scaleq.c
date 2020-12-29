@@ -3180,7 +3180,7 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     } /* Loop on cells */
 
-    if (cs_glob_n_ranks > 1) {
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
 
       cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            connect->n_vertices,

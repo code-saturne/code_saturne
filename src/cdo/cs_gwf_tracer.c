@@ -442,7 +442,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   } /* Loop on soils */
 
   /* Parallel synchronization (in case of dissolution) */
-  if (cs_glob_n_ranks > 1)
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          quant->n_vertices,
                          1,             /* stride */

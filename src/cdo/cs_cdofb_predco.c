@@ -645,9 +645,8 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
   } /* OpenMP block */
 
-  /* Parallel sum */
-  if (cs_glob_n_ranks > 1) {
-    assert(connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL);
+  /* Parallel or periodic sum */
+  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
                          3,

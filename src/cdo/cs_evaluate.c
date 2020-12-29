@@ -337,7 +337,7 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
   BFT_FREE(c_tags);
 
   /* Handle parallelism (always the scalar interface) */
-  if (cs_glob_n_ranks > 1)
+  if (cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
     cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
                          1,           /* stride */
@@ -393,8 +393,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   } /* Loop on selected cells */
 
   /* Handle parallelism */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)
@@ -1615,8 +1614,7 @@ cs_evaluate_square_wc2x_norm(const cs_real_t        *array,
   } /* OpenMP block */
 
   /* Parallel treatment */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;
 }
@@ -3356,8 +3354,7 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid array location. Stop evaluation.", __func__);
 
-  if (cs_glob_n_ranks > 1)      /* MPI synchronization */
-    cs_parall_sum(1, CS_REAL_TYPE, &result);
+  cs_parall_sum(1, CS_REAL_TYPE, &result);
 
   return result;
 }

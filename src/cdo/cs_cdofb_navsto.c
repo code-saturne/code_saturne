@@ -804,8 +804,7 @@ cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
 
   cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
 
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+  cs_parall_sum(1, CS_REAL_TYPE, &intgr);
 
   assert(quant->vol_tot > 0.);
   const cs_real_t  g_avg = intgr / quant->vol_tot;
@@ -850,8 +849,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
   cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
 
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+  cs_parall_sum(1, CS_REAL_TYPE, &intgr);
 
   assert(quant->vol_tot > 0.);
   const cs_real_t  g_avg = intgr / quant->vol_tot;

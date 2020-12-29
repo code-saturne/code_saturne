@@ -622,8 +622,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
       }
     } /* Loop on border faces */
 
-    /* Synchronization needed in parallel computations */
-    if (cs_glob_n_ranks > 1)
+    /* Synchronization needed in parallel or periodic computations */
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
       cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            n_vertices,
                            1,             /* stride */
@@ -659,8 +659,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
       }
     } /* Loop on border faces */
 
-    /* Synchronization needed in parallel computations */
-    if (cs_glob_n_ranks > 1)
+    /* Synchronization needed in parallel or periodic computations */
+    if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL)
       cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                            n_edges,
                            1,             /* stride */

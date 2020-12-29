@@ -318,38 +318,31 @@ _face_gdot(cs_lnum_t    size,
 
   /* x and y are scattered arrays. One assumes that values are synchronized
      across ranks (for instance by using a cs_interface_set_sum()) */
-  if (cs_glob_n_ranks > 1) {
 
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE,/* type */
-                        1,           /* stride (treated as scalar up to now) */
-                        x,           /* in: size = n_sles_scatter_elts */
-                        x);          /* out: size = n_sles_gather_elts */
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE,/* type */
+                      1,           /* stride (treated as scalar up to now) */
+                      x,           /* in: size = n_sles_scatter_elts */
+                      x);          /* out: size = n_sles_gather_elts */
 
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE,/* type */
-                        1,           /* stride (treated as scalar up to now) */
-                        y,           /* in: size = n_sles_scatter_elts */
-                        y);          /* out: size = n_sles_gather_elts */
-
-  }
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE,/* type */
+                      1,           /* stride (treated as scalar up to now) */
+                      y,           /* in: size = n_sles_scatter_elts */
+                      y);          /* out: size = n_sles_gather_elts */
 
   cs_real_t  result = cs_gdot(rset->n_elts[0], x, y);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE,
-                         1,
-                         x,
-                         x);
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE,
-                         1,
-                         y,
-                         y);
-
-  }
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE,
+                       1,
+                       x,
+                       x);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE,
+                       1,
+                       y,
+                       y);
 
   return result;
 }
@@ -412,8 +405,9 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
 
   BFT_FREE(visc_val);
 
-  /* Synchromize the diagonal values for A ( */
-  cs_real_t  *_diagA =  NULL;
+  /* Synchromize the diagonal values for A */
+  const cs_real_t  *diagA = NULL;
+  cs_real_t  *_diagA = NULL;
 
   if (cs_glob_n_ranks > 1) {
 
@@ -425,11 +419,12 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                          cs_matrix_get_diagonal(a), /* gathered view */
                          _diagA);
 
+    diagA = _diagA; /* scatter view (synchronized)*/
   }
-  else
-    _diagA = cs_matrix_get_diagonal(a);
-
-  const cs_real_t  *diagA = _diagA; /* scatter view (synchronized)*/
+  else {
+    diagA = cs_matrix_get_diagonal(a);
+    assert(m->periodicity == NULL); /* TODO */
+  }
 
   /* Native format for the Schur approximation matrix */
   cs_real_t   *diagK = NULL;
@@ -504,8 +499,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   *p_diagK = diagK;
   *p_xtraK = xtraK;
 
-  if (cs_glob_n_ranks > 1)
-    BFT_FREE(_diagA);
+  BFT_FREE(_diagA);
 
   return K;
 }
@@ -1938,7 +1932,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   /* Solve M.w = Dt.q */
   _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_shared_range_set->ifs != NULL)
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          gkb->n_u_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -2704,16 +2698,14 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
 
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         xsol, xsol);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       xsol, xsol);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 1
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         b, b);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       b, b);
 
   cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
                         CS_CDOFB_MONOLITHIC_DBG,
@@ -2850,7 +2842,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     /* Solve M.w_tilda = Dt.q */
     _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
 
-    if (cs_glob_n_ranks > 1)
+    if (cs_shared_range_set->ifs != NULL)
       cs_interface_set_sum(cs_shared_range_set->ifs,
                            gkb->n_u_dofs,
                            1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -2979,7 +2971,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */
   _apply_div_op_transpose(B_op, p_c, uza->rhs);
 
-  if (cs_glob_n_ranks > 1) {
+  if (cs_shared_range_set->ifs != NULL) {
 
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
@@ -3075,7 +3067,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   _apply_div_op_transpose(B_op, dk, uza->rhs);
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_shared_range_set->ifs != NULL)
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -3156,7 +3148,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     /* Compute the rhs for A.zk = B^t.dk */
     _apply_div_op_transpose(B_op, dk, uza->rhs);
 
-    if (cs_glob_n_ranks > 1)
+    if (cs_shared_range_set->ifs != NULL)
       cs_interface_set_sum(cs_shared_range_set->ifs,
                            uza->n_u_dofs,
                            1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -3266,7 +3258,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
   _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
 
-  if (cs_glob_n_ranks > 1) {
+  if (cs_shared_range_set->ifs != NULL) {
 
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
@@ -3298,7 +3290,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
     /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
     _apply_div_op_transpose(div_op, p_c, uza->rhs);
 
-    if (cs_glob_n_ranks > 1)
+    if (cs_shared_range_set->ifs != NULL)
       cs_interface_set_sum(cs_shared_range_set->ifs,
                            uza->n_u_dofs,
                            1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -3408,7 +3400,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
 
-  if (cs_glob_n_ranks > 1) {
+  if (cs_shared_range_set->ifs != NULL) {
 
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
@@ -3435,7 +3427,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
   _apply_div_op_transpose(div_op, p_c, uza->rhs);
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_shared_range_set->ifs != NULL)
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -3505,7 +3497,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     /* Continue building the RHS */
     _apply_div_op_transpose(div_op, uza->res_p, uza->rhs);
 
-    if (cs_glob_n_ranks > 1)
+    if (cs_shared_range_set->ifs != NULL)
       cs_interface_set_sum(cs_shared_range_set->ifs,
                            uza->n_u_dofs,
                            1, false, CS_REAL_TYPE, /* stride, interlaced */
