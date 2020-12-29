@@ -840,10 +840,7 @@ cs_user_parameters(cs_domain_t *domain)
      This parameter computes automatically a dynamic relax factor,
      and can be activated for any variable.
       - iswdyn = 1: means that the last increment is relaxed
-      - iswdyn = 2: means that the last two increments are used to
-                         relax
-     NB: when iswdyn is greater than 1, then the number of
-         non-orthogonality sweeps is increased to 20. */
+      - iswdyn = 2: means that the last two increments are used to relax. */
   {
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
