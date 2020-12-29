@@ -754,41 +754,48 @@ class domain(base_domain):
 
         # Handle automatic case first
 
-        if self.restart_input == '*':
-            self.__set_auto_restart__()
+        ignore_checkpoint = False
+        if self.solver_args:
+            for a in ('--preprocess', '--quality', '-q'):
+                if a in self.solver_args:
+                    ignore_checkpoint = True
 
-        if self.restart_input != None:
+        if not ignore_checkpoint:
+            if self.restart_input == '*':
+                self.__set_auto_restart__()
 
-            restart_input =  os.path.expanduser(self.restart_input)
-            if not os.path.isabs(restart_input):
-                restart_input = os.path.join(self.case_dir, restart_input)
+            if self.restart_input != None:
 
-            if not os.path.exists(restart_input):
-                err_str += restart_input + ' does not exist.\n\n'
-            elif not os.path.isdir(restart_input):
-                err_str += restart_input + ' is not a directory.\n\n.'
-            else:
-                self.symlink(restart_input,
-                             os.path.join(self.exec_dir, 'restart'))
+                restart_input =  os.path.expanduser(self.restart_input)
+                if not os.path.isabs(restart_input):
+                    restart_input = os.path.join(self.case_dir, restart_input)
 
-            print(' Restart from ' + self.restart_input + '\n')
+                if not os.path.exists(restart_input):
+                    err_str += restart_input + ' does not exist.\n\n'
+                elif not os.path.isdir(restart_input):
+                    err_str += restart_input + ' is not a directory.\n\n.'
+                else:
+                    self.symlink(restart_input,
+                                 os.path.join(self.exec_dir, 'restart'))
 
-        if self.restart_mesh_input != None and err_str == '':
+                print(' Restart from ' + self.restart_input + '\n')
 
-            restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
-            if not os.path.isabs(restart_mesh_input):
-                restart_mesh_input = os.path.join(self.case_dir,
-                                                  restart_mesh_input)
+            if self.restart_mesh_input != None and err_str == '':
 
-            if not os.path.exists(restart_mesh_input):
-                err_str += restart_mesh_input + ' does not exist.\n\n'
-            elif not os.path.isfile(restart_mesh_input):
-                err_str += restart_mesh_input + ' is not a file.\n\n.'
-            else:
-                self.symlink(restart_mesh_input,
-                             os.path.join(self.exec_dir, 'restart_mesh_input'))
+                restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
+                if not os.path.isabs(restart_mesh_input):
+                    restart_mesh_input = os.path.join(self.case_dir,
+                                                      restart_mesh_input)
 
-            print(' Restart mesh ' + self.restart_mesh_input + '\n')
+                if not os.path.exists(restart_mesh_input):
+                    err_str += restart_mesh_input + ' does not exist.\n\n'
+                elif not os.path.isfile(restart_mesh_input):
+                    err_str += restart_mesh_input + ' is not a file.\n\n.'
+                else:
+                    self.symlink(restart_mesh_input,
+                                 os.path.join(self.exec_dir, 'restart_mesh_input'))
+
+                print(' Restart mesh ' + self.restart_mesh_input + '\n')
 
         # Mesh input file
 
