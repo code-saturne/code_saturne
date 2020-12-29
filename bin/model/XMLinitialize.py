@@ -98,7 +98,7 @@ class BaseXmlInit(Variables):
         known_versions = ["3.0", "3.1", "3.2", "3.3",
                           "4.0", "4.1", "4.2", "4.3",
                           "5.0", "5.1", "5.2", "5.3",
-                          "6.0"]
+                          "6.0", "6.1", "6.2", "6.3"]
         j = -2
         for i in range(0, len(known_versions)):
             if vers.find(known_versions[i]) == 0:
@@ -311,8 +311,7 @@ class XMLinit(BaseXmlInit):
                 self.__backwardCompatibilityFrom_3_1()
             if from_vers[:3] < "3.3.0":
                 self.__backwardCompatibilityFrom_3_2()
-            if from_vers[:3] < "4.0.0":
-                self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_3_3()
 
         if from_vers[:3] < "5.0.0":
             if from_vers[:3] < "4.1.0":
@@ -321,8 +320,7 @@ class XMLinit(BaseXmlInit):
                 self.__backwardCompatibilityFrom_4_1()
             if from_vers[:3] < "4.3.0":
                 self.__backwardCompatibilityFrom_4_2()
-            if from_vers[:3] < "5.0.0":
-                self.__backwardCompatibilityFrom_4_3()
+            self.__backwardCompatibilityFrom_4_3()
 
         if from_vers[:3] < "6.0.0":
             if from_vers[:3] < "5.1.0":
@@ -331,14 +329,15 @@ class XMLinit(BaseXmlInit):
                 self.__backwardCompatibilityFrom_5_1()
             if from_vers[:3] < "5.3.0":
                 self.__backwardCompatibilityFrom_5_2()
-            if from_vers[:3] < "6.0.0":
-                self.__backwardCompatibilityFrom_5_3()
+            self.__backwardCompatibilityFrom_5_3()
 
         if from_vers[:3] < "7.0.0":
             if from_vers[:3] < "6.1.0":
                 self.__backwardCompatibilityFrom_6_0()
             if from_vers[:3] < "6.2.0":
                 self.__backwardCompatibilityFrom_6_1()
+            if from_vers[:3] < "6.3.0":
+                self.__backwardCompatibilityFrom_6_2()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1900,6 +1899,12 @@ class XMLinit(BaseXmlInit):
                         f = f.replace(k, d[k])
 
                     nf.xmlSetTextNode(f)
+
+    def __backwardCompatibilityFrom_6_2(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
 
     def _backwardCompatibilityCurrentVersion(self):
         """
