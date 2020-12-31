@@ -125,6 +125,7 @@ typedef struct {
 
 typedef struct {
 
+  int            n_fields; /* number of handled fields */
   int            n_zones;  /* number of associated zones */
 
   const char   **label;    /* pointer to label for each boundary zone */
@@ -936,6 +937,7 @@ _init_boundaries(void)
 
   BFT_MALLOC(boundaries, 1, cs_gui_boundary_t);
 
+  boundaries->n_fields = n_fields;
   boundaries->n_zones = n_zones;
 
   BFT_MALLOC(boundaries->label,     n_zones,    const char *);
@@ -2920,7 +2922,7 @@ cs_gui_boundary_conditions_free_memory(void)
 
     n_zones = boundaries->n_zones;
 
-    for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+    for (int f_id = 0; f_id < boundaries->n_fields; f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
         if (boundaries->type_code != NULL)
