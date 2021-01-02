@@ -908,7 +908,7 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 static void
 _add_global_equiv(cs_interface_set_t  *ifs,
                   cs_lnum_t            n_elts,
-                  cs_gnum_t            global_num[],
+                  const cs_gnum_t      global_num[],
                   MPI_Comm             comm)
 {
   /* Initialization */
@@ -2049,7 +2049,7 @@ _merge_periodic_equiv(cs_lnum_t             n_block_elts,
 static void
 _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                            cs_lnum_t                 n_elts,
-                           cs_gnum_t                 global_num[],
+                           const cs_gnum_t           global_num[],
                            const fvm_periodicity_t  *periodicity,
                            int                       n_periodic_lists,
                            const int                 periodicity_num[],
@@ -2090,10 +2090,6 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                                          comm);
 
   assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
-
-  /* As data is sorted by increasing base global numbering, we do not
-     need to build an extra array, but only to send the correct parts
-     of the global_num[] array to the correct processors */
 
   cs_gnum_t *recv_global_num = cs_all_to_all_copy_array(d,
                                                         CS_GNUM_TYPE,
@@ -2561,6 +2557,8 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
  *
  * parameters:
  *   ifs                <-> pointer to structure that should be updated
+ *   n_elts              <-- local number of elements
+ *   global_num          <-- global number (id) associated with each element
  *   periodicity        <-- periodicity information (NULL if none)
  *   n_periodic_lists   <-- number of periodic lists (may be local)
  *   periodicity_num    <-- periodicity number (1 to n) associated with
@@ -2573,6 +2571,8 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
 
 static void
 _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
+                              cs_lnum_t                 n_elts,
+                              const cs_gnum_t           global_num[],
                               const fvm_periodicity_t  *periodicity,
                               int                       n_periodic_lists,
                               const int                 periodicity_num[],
@@ -2651,16 +2651,44 @@ _add_global_equiv_periodic_sp(cs_interface_set_t       *ifs,
 
   /* Build local and distant correspondants */
 
-  for (couple_id = 0; couple_id < n_couples; couple_id++) {
+  if (global_num == NULL) {
 
-    const int tr_id = couples[couple_id*3 + 2];
-    const cs_lnum_t j = _interface->tr_index[tr_id + 1] + n_elts_tr[tr_id];
+    for (couple_id = 0; couple_id < n_couples; couple_id++) {
 
-    _interface->elt_id[j] = couples[couple_id*3] - 1;
-    _interface->match_id[j] = couples[couple_id*3 + 1] - 1;
+      const int tr_id = couples[couple_id*3 + 2];
+      const cs_lnum_t j = _interface->tr_index[tr_id + 1] + n_elts_tr[tr_id];
 
-    n_elts_tr[tr_id] += 1;
+      _interface->elt_id[j] = couples[couple_id*3] - 1;
+      _interface->match_id[j] = couples[couple_id*3 + 1] - 1;
 
+      n_elts_tr[tr_id] += 1;
+
+    }
+
+  }
+  else {
+
+    cs_lnum_t *renum;
+    BFT_MALLOC(renum, n_elts, cs_lnum_t);
+    for (i = 0; i < n_elts; i++) {
+      cs_lnum_t j = global_num[i] - 1;
+      assert(j >= 0 && j < n_elts);
+      renum[j] = i;
+    }
+
+    for (couple_id = 0; couple_id < n_couples; couple_id++) {
+
+      const int tr_id = couples[couple_id*3 + 2];
+      const cs_lnum_t j = _interface->tr_index[tr_id + 1] + n_elts_tr[tr_id];
+
+      _interface->elt_id[j] = renum[couples[couple_id*3] - 1];
+      _interface->match_id[j] = renum[couples[couple_id*3 + 1] - 1];
+
+      n_elts_tr[tr_id] += 1;
+
+    }
+
+    BFT_FREE(renum);
   }
 
   /* Free temporary arrays */
@@ -3514,31 +3542,28 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
   ifs->periodicity = periodicity;
   ifs->match_id_rc = 0;
 
+  const cs_gnum_t  *global_num = global_number;
+
+  cs_gnum_t  *_global_num = NULL;
+
+  if (global_number != NULL && parent_element_id != NULL) {
+
+    BFT_MALLOC(_global_num, n_elts, cs_gnum_t);
+
+    for (size_t i = 0 ; i < (size_t)n_elts ; i++)
+      _global_num[i] = global_number[parent_element_id[i]];
+
+    global_num = _global_num;
+
+  }
+
+  /* Build interfaces */
+
 #if defined(HAVE_MPI)
 
   ifs->comm = cs_glob_mpi_comm;
 
   if (cs_glob_n_ranks > 1) {
-
-    size_t  i;
-    cs_gnum_t  *global_num = NULL;
-
-    if (n_elts > 0) {
-
-      BFT_MALLOC(global_num, n_elts, cs_gnum_t);
-
-      /* Assign initial global numbers */
-
-      if (parent_element_id != NULL) {
-        for (i = 0 ; i < (size_t)n_elts ; i++)
-          global_num[i] = global_number[parent_element_id[i]];
-      }
-      else {
-        for (i = 0 ; i < (size_t)n_elts ; i++)
-          global_num[i] = global_number[i];
-      }
-
-    }
 
     /* Build interfaces */
 
@@ -3559,8 +3584,6 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
                                  periodic_couples,
                                  cs_glob_mpi_comm);
 
-    BFT_FREE(global_num);
-
   }
 
 #endif /* defined(HAVE_MPI) */
@@ -3568,6 +3591,8 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
   if (cs_glob_n_ranks == 1 && (periodicity != NULL && n_periodic_lists > 0)) {
 
     _add_global_equiv_periodic_sp(ifs,
+                                  n_elts,
+                                  global_num,
                                   periodicity,
                                   n_periodic_lists,
                                   periodicity_num,
@@ -3576,6 +3601,8 @@ cs_interface_set_create(cs_lnum_t                 n_elts,
 
 
   }
+
+  BFT_FREE(_global_num);
 
   /* Finish preparation of interface set and return */
 
