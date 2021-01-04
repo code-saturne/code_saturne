@@ -299,8 +299,7 @@ elif test "x$cs_gcc" = "xicx" ; then
   test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
 
   # Default compiler flags
-  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -625,7 +624,7 @@ elif test "x$cs_gxx" = "xicpx"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
