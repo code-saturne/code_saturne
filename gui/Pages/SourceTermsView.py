@@ -266,6 +266,7 @@ Su = rho * (vel_x_imp - u) / tau;\n
 dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getMomentumFormulaComponents(self.zone_id)
+        knf = [('rho', 'density')]
         zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent=self,
@@ -275,6 +276,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 expression=exp,
                                 required=req,
                                 symbols=sym,
+                                known_fields=knf,
                                 examples=exa,
                                 source_type='momentum_source_term')
 
@@ -292,7 +294,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         exa = """#example: """
 
         exp, req, sym = self.mdl.getSpeciesFormulaComponents(self.zone_id, self.scalar)
-        knf = [(self.scalar, self.scalar)]
+        knf = [(self.scalar, self.scalar), ('rho', 'density')]
 
         zone_name = self.zone.getLabel()
 
@@ -322,7 +324,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone_id,
                                                                         self.scalar)
-        knf = [(self.scalar, self.scalar)]
+        knf = [(self.scalar, self.scalar), ('rho', 'density')]
         zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent=self,
@@ -379,7 +381,8 @@ dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone_id,
                                                              self.th_sca_name)
-        knf = [(self.th_sca_name, self.th_sca_name)]
+        knf = [(self.th_sca_name, self.th_sca_name),
+               ('rho', 'density')]
 
         zone_name = self.zone.getLabel()
 

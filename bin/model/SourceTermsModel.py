@@ -156,8 +156,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exp = self.getSpeciesFormula(zone, species)
         if not exp:
             exp = """S = 0;\ndS = 0;\n"""
-        req = [('S', 'species source term'),
-               ('dS', 'species source term derivative')]
+        req = [('S', 'Explcit species source term ([species]*kg/m^3/s)'),
+                ('dS', 'Species source term derivative (kg/m^3/s)')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
@@ -320,13 +320,14 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exp = self.getThermalFormula(zone, scalar)
         if not exp:
             exp = self.getDefaultThermalFormula(scalar)
-        req = [('S', 'thermal source term'),
-               ('dS', 'thermal source term derivative')]
+        req = [('S', 'Explicit thermal source term (W/m^3)'),
+               ('dS', 'Thermal source term derivative (W/m^3/[thermal scalar])')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
-               ('volume', 'Source terms zone volume')]
+               ('volume', 'Source terms zone volume'),
+               ('rho', 'density (kg/m^3)')]
 
         if self.case.module_name() == 'code_saturne':
             if self.therm.getThermalScalarModel() == 'enthalpy':
@@ -335,6 +336,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                 sym.append(('total_energy', 'thermal scalar'))
             else:
                 sym.append(('temperature', 'thermal scalar'))
+
         elif self.case.module_name() == 'neptune_cfd':
             sym.append(('enthalpy', 'Enthalpy'))
 

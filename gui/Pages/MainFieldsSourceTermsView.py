@@ -154,6 +154,8 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         name = 'enthalpy_%s' % (str(self.currentId))
         zone_name = self.zone.getLabel()
 
+        knf = self.mdl.getKnownFields(self.currentId)
+
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'src',
                                 zone_name     = zone_name,
@@ -161,6 +163,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                 expression    = exp,
                                 required      = req,
                                 symbols       = sym,
+                                known_fields  = knf,
                                 examples      = exa,
                                 source_type   = 'thermal_source_term')
 

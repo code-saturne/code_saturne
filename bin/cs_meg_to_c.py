@@ -1666,7 +1666,7 @@ class meg_to_c_interpreter:
                     if zone.getNature()['momentum_source_term'] == 'on':
                         if gwm.getGroundwaterModel() == 'off':
                             exp, req, sym = stm.getMomentumFormulaComponents(z_id)
-                            knf = []
+                            knf = [('rho','density')]
                             self.init_block('src', zone_name, "momentum",
                                             exp, req, sym, knf,
                                             source_type="momentum_source_term")

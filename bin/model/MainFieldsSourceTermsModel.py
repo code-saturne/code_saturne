@@ -78,7 +78,8 @@ class MainFieldsSourceTermsModel(Model):
     def getKnownFields(self, fieldId):
         field_name = self.mfm.getFieldLabelsList()[int(fieldId)-1]
 
-        known_fields = [('enthalpy_'+field_name, 'enthalpy_'+str(fieldId))]
+        known_fields = [('enthalpy_'+field_name, 'enthalpy_'+str(fieldId)),
+                        ('density_'+field_name, 'density_'+str(fieldId))]
 
         return known_fields
 
@@ -87,8 +88,8 @@ class MainFieldsSourceTermsModel(Model):
         exp = self.getThermalFormula(zone, fieldId, scalar)
         if not exp:
             exp = self.getDefaultThermalFormula(scalar)
-        req = [('S', 'thermal source term'),
-               ('dS', 'thermal source term derivative')]
+        req = [('S', 'Explicit thermal source term (W/m^3)'),
+               ('dS', 'Thermal source term derivative')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
