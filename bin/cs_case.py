@@ -219,6 +219,11 @@ class case:
         cs_exec_environment.set_modules(self.package_compute)
         cs_exec_environment.source_rcfile(self.package_compute)
 
+        # Re-clean os.environment as the above calls may have indirectly
+        # restored some unwanted variables (such as lmod macros).
+
+        cs_exec_environment.clean_os_environ_for_shell()
+
         # Ensure we have tuples or lists to simplify later tests
 
         if type(domains) == list:
@@ -1623,12 +1628,6 @@ class case:
             return 0
 
         os.chdir(self.exec_dir)
-
-        # In case LMOD is present, avoid warnings on macros
-        # for called scripts.
-        for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%'):
-            if ev in os.environ:
-                del os.environ[ev]
 
         # Indicate status using temporary file for SALOME.
 

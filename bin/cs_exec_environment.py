@@ -44,6 +44,8 @@ try:
 except Exception:
     import cs_batch
 
+saved_os_env_vars = {}
+
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -542,6 +544,51 @@ def get_script_return_code():
 
 #-------------------------------------------------------------------------------
 
+def clean_os_environ_for_shell():
+    """
+    Clean environment relative to sub-shells.
+    """
+    # In case LMOD is present, avoid warnings on macros
+    # for called scripts.
+
+    is_bash = False
+    shell = get_shell_type()
+    if 'bash' in shell:
+        is_bash = True
+
+    # In case LMOD is present, avoid warnings on macros
+    # for called scripts.
+    for ev in ('BASH_FUNC_module%%', 'BASH_FUNC_ml%%'):
+        if ev in os.environ:
+            if is_bash:
+                saved_os_env_vars[ev] = os.environ[ev]
+            del os.environ[ev]
+
+#-------------------------------------------------------------------------------
+
+def full_os_environ_for_shell(env=None):
+    """
+    Return environment relative to sub-shells.
+    """
+
+    if saved_os_env_vars:
+        if env:
+            s_env = env.copy()
+        else:
+            s_env = os.environ.copy()
+        for key in saved_os_env_vars.keys():
+            s_env[key] = saved_os_env_vars[key]
+
+    else:
+        if env:
+            s_env = env
+        else:
+            s_env = os.environ
+
+    return s_env
+
+#-------------------------------------------------------------------------------
+
 def run_command(args, pkg = None, echo = False,
                 stdout = sys.stdout, stderr = sys.stderr, env = None):
     """
@@ -587,10 +634,13 @@ def run_command(args, pkg = None, echo = False,
                                  shell=True,
                                  executable=get_shell_type(),
                                  universal_newlines=True,
-                                 env = env,
+                                 env=full_os_environ_for_shell(env),
                                  **kwargs)
         else:
-            p = subprocess.Popen(args, universal_newlines=True, env = env, **kwargs)
+            p = subprocess.Popen(args,
+                                 universal_newlines=True,
+                                 env=env,
+                                 **kwargs)
         p.communicate()
         returncode = p.returncode
     except Exception as e:
@@ -709,7 +759,8 @@ def source_shell_script(path):
                          executable=user_shell,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         universal_newlines=True)
+                         universal_newlines=True,
+                         env=full_os_environ_for_shell())
 
     output = p.communicate()[0]
 
