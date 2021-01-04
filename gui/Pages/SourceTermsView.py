@@ -262,11 +262,10 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         exa = """#example:\n
 tau = 10.; # relaxation time (s)\n
 vel_x_imp = 1.5; #target velocity (m/s)\n
-Su = rho * (vel_x_imp - velocity[0]) / tau;\n
+Su = rho * (vel_x_imp - u) / tau;\n
 dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getMomentumFormulaComponents(self.zone_id)
-
         zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent=self,

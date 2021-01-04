@@ -111,9 +111,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('t', 'current time'),
                ('volume', 'Source terms zone volume')]
 
-        sym.append( ("velocity[0]", 'x velocity component'))
-        sym.append( ("velocity[1]", 'y velocity component'))
-        sym.append( ("velocity[2]", 'z velocity component'))
+        sym.append( ("u", 'x velocity component'))
+        sym.append( ("v", 'y velocity component'))
+        sym.append( ("w", 'z velocity component'))
         sym.append( ("rho", 'local density (kg/m^3)'))
 
         for (nme, val) in self.notebook.getNotebookList():

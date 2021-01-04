@@ -654,6 +654,7 @@ class meg_to_c_interpreter:
 
         expression   = func_params['exp']
         symbols      = func_params['sym']
+
         known_fields = dict( zip([k[0] for k in func_params['knf']],
                                  [k[1] for k in func_params['knf']]))
         if type(func_params['req'][0]) == tuple:
@@ -696,17 +697,27 @@ class meg_to_c_interpreter:
         glob_tokens['xyz'] = \
         'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
+        # For momentum also define u,v and w:
+        if source_type == "momentum_source_term":
+            glob_tokens['velocity'] = \
+            'const cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;'
+            for i, key in enumerate(['u', 'v', 'w']):
+                loop_tokens[key] = \
+                'const cs_real_t %s = vel[c_id][%d];' % (key, i)
+
+
         # Notebook variables
         for kn in self.notebook.keys():
             glob_tokens[kn] = \
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
         for f in known_fields.keys():
+            knf_name = known_fields[f]
             glob_tokens[f] = \
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
-            % (f, known_fields[f])
+            % (f, knf_name)
 
-            loop_tokens[f] = 'const cs_real_t %s = %s_vals[c_id];' % (f, f)
+            loop_tokens[f] = 'const %s = %s_vals[c_id];' % (f, f)
         # ------------------------
 
         for r in required:
@@ -1655,8 +1666,9 @@ class meg_to_c_interpreter:
                     if zone.getNature()['momentum_source_term'] == 'on':
                         if gwm.getGroundwaterModel() == 'off':
                             exp, req, sym = stm.getMomentumFormulaComponents(z_id)
+                            knf = []
                             self.init_block('src', zone_name, "momentum",
-                                            exp, req, sym, [],
+                                            exp, req, sym, knf,
                                             source_type="momentum_source_term")
                         else:
                             exp, req, sym = stm.getRichardsFormulaComponents(z_id)
