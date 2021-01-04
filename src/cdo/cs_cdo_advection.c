@@ -1417,15 +1417,22 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
      treated here since there are always weakly enforced */
   build_func(eqp->dim, cm, csys, cb, adv);
 
-  /* Handle the specific case where there is no diffusion and no advection
+  /* Handle the specific case when there is no diffusion and no advection
    * flux. In this case, a zero row may appear leading to the divergence of
    * linear solver. To circumvent this issue, one set the boundary face value
-   * to the cell value. */
+   * to the cell value. This is equivalent to enforce a homogeneous Neumann
+   * behavior. */
   assert(cs_equation_param_has_diffusion(eqp) == false);
+
+  cs_real_t  max_abs_flux = 0.;
+  for (int f = 0; f < cm->n_fc; f++)
+    max_abs_flux = fmax(max_abs_flux, fabs(cb->adv_fluxes[f]));
+
+  const cs_real_t  threshold = max_abs_flux * cs_math_epzero;
 
   for (int f = 0; f < cm->n_fc; f++) {
 
-    if (fabs(cb->adv_fluxes[f]) < cs_math_zero_threshold) {
+    if (fabs(cb->adv_fluxes[f]) < threshold) {
 
       cs_real_t  *f_row = adv->val + f*adv->n_rows;
 
