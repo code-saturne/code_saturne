@@ -847,6 +847,8 @@ def source_syrthes_env(pkg, verbose=True):
                     sys.stderr.write("  Failed sourcing SYRTHES environment.\n")
 
     env_syrthes_home = os.getenv('SYRTHES4_HOME')
+    if not env_syrthes_home:
+        env_syrthes_home = os.getenv('SYRTHES_HOME')
 
     if not syrthes_home:
         if verbose:
