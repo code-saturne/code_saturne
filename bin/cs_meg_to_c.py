@@ -1671,15 +1671,21 @@ class meg_to_c_interpreter:
                         if gwm.getGroundwaterModel() == 'off':
                             for sca in sca_list:
                                 exp, req, sym = stm.getSpeciesFormulaComponents(z_id, sca)
+
+                                knf = [(sca, sca)]
+
                                 self.init_block('src', zone_name, sca,
-                                                exp, req, sym, [],
+                                                exp, req, sym, knf,
                                                 source_type="scalar_source_term")
                         else:
                             for sca in sca_list:
                                 exp, req, sym = \
                                 stm.getGroundWaterSpeciesFormulaComponents(z_id, sca)
+
+                                knf = [(sca, sca)]
+
                                 self.init_block('src', zone_name, sca,
-                                                exp, req, sym, [],
+                                                exp, req, sym, knf,
                                                 source_type="scalar_source_term")
 
                 if 'thermal_source_term' in nature_list:
@@ -1687,8 +1693,11 @@ class meg_to_c_interpreter:
                         th_sca_name = stm.therm.getThermalScalarName()
                         exp, req, sym = stm.getThermalFormulaComponents(z_id,
                                                                         th_sca_name)
+
+                        knf = [(th_sca_name, th_sca_name)]
+
                         self.init_block('src', zone_name, th_sca_name,
-                                        exp, req, sym, [],
+                                        exp, req, sym, knf,
                                         source_type="thermal_source_term")
         else:
             from code_saturne.model.LocalizationModel import LocalizationModel
