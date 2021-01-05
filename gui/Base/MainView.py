@@ -116,7 +116,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
     """
     Advanced dialog
     """
-    def __init__(self, parent, pkg):
+    def __init__(self, parent, pkg, path):
         """
         Constructor
         """
@@ -133,7 +133,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.copyFromName = None
         self.caseName = None
 
-        self.currentPath = str(QDir.currentPath())
+        self.currentPath = path
         self.model = QFileSystemModel(self)
         self.model.setRootPath(self.currentPath)
         self.model.setFilter(QDir.Dirs)
@@ -650,24 +650,18 @@ class MainView(object):
 
         create new Code_Saturne case
         """
-        if not hasattr(self, 'case') or not self.case['xmlfile']:
-            dialog = NewCaseDialogView(self, self.package)
-            if dialog.exec_():
-                self.case = QtCase.QtCase(package=self.package)
-                self.case.root()['version'] = self.XML_DOC_VERSION
-                self.initCase()
-                self.updateTitleBar()
-
-                self.Browser.configureTree(self.case)
-                self.dockWidgetBrowserDisplay(True)
-
-                self.case['salome'] = self.salome
-                self.scrollArea.setWidget(self.displayFirstPage())
-                self.case['saved'] = "yes"
-
-                self.case.undo_signal.connect(self.slotUndoRedoView)
-        else:
-            MainView(cmd_package=self.package, cmd_case="new case").show()
+        path = str(QDir.currentPath())
+        if hasattr(self, 'case') and self.case['xmlfile']:
+            path = os.path.dirname(self.case['xmlfile'])
+            path = os.path.split(path)[0]  # case directory
+            path = os.path.split(path)[0]  # parent directory
+        dialog = NewCaseDialogView(self, self.package, path)
+        if dialog.exec_():
+            if not hasattr(self, 'case'):
+                self.fileNew()
+            else:
+                new_view = MainView(cmd_package=self.package, cmd_case="setup.xml")
+                new_view.show()
 
 
     def fileAlreadyLoaded(self, f):
