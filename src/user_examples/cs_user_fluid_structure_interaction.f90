@@ -284,10 +284,8 @@ enddo
 !< [usstr2_example_1]
 
 ! --- Example 1): In following example structure '1' is defined as an isotropic
-!     system (i.e. matrices M, C and K are diagonal) : mass equals 5 kg,
-!     stiffness equals 2 N/m and friction
-!     =  =     =
-!     coefficient equals 3 kg.s .
+!     system (i.e. matrices M, C and K are diagonal): mass equals 5 kg,
+!     damping coefficient equals 2 N.s/m and stiffness equals 3 N/m.
 
 do ii = 1, 3
   xmstru(ii,ii,1) = 5.d0
