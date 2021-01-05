@@ -147,7 +147,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="fileNewAction"/>
+   <addaction name="caseNewAction"/>
    <addaction name="fileOpenAction"/>
    <addaction name="fileSaveAction"/>
   </widget>
