@@ -1,3 +1,10 @@
+Release 6.2.2 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- GUI: Fix handling of "New case" when case already loaded (GitLAb issue #250).
+
 Release 6.2.1 (December 22 2020)
 --------------------------------
 
