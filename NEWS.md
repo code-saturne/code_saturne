@@ -3,7 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
-- GUI: Fix C-syntax formula generation for source terms
+- GUI: Fix handling of "New case" when case already loaded (GitLAb issue #250).
+
+- GUI: Fix C-syntax formula generation for source terms.
 
 Release 6.3.0 (December 21 2020)
 --------------------------------
