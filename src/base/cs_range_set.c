@@ -424,6 +424,107 @@ _interface_set_zero_out_of_range(const cs_interface_set_t  *ifs,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Zero array values for elements whose matching direct periodic ids
+ *        are on the same rank, using an interface set to loop only
+ *        on relevant elements.
+ *
+ * \param[in]       ifs        pointer to interface set structure
+ * \param[in]       datatype   type of data considered
+ * \param[in]       stride     number of (interlaced) values by entity
+ * \param[in, out]  val        values buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_interface_set_zero_local_periodicity(const cs_interface_set_t  *ifs,
+                                      cs_datatype_t              datatype,
+                                      cs_lnum_t                  stride,
+                                      void                      *val)
+{
+  int ifs_size = cs_interface_set_size(ifs);
+  const cs_interface_t *itf = NULL;
+  int rank = CS_MAX(cs_glob_rank_id, 0);
+
+  for (int i = 0; i < ifs_size; i++) {
+    const cs_interface_t *_itf = cs_interface_set_get(ifs, i);
+    if (cs_interface_rank(_itf) == rank) {
+      itf = _itf;
+      break;
+    }
+  }
+
+  if (itf == NULL)
+    return;
+
+  const fvm_periodicity_t *periodicity
+    = cs_interface_set_periodicity(ifs);
+
+  int n_tr_max = fvm_periodicity_get_n_transforms(periodicity);
+  const cs_lnum_t *tr_index = cs_interface_get_tr_index(itf);
+
+  const cs_lnum_t *elt_ids = cs_interface_get_elt_ids(itf);
+
+  for (int tr_id = 1; tr_id < n_tr_max; tr_id += 2) {
+
+    cs_lnum_t s_id = tr_index[tr_id+1];
+    cs_lnum_t e_id = tr_index[tr_id+2];
+
+    switch(datatype) {
+
+    case CS_FLOAT:
+    {
+      float *v = val;
+      if (stride > 1) {
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t k = elt_ids[j];
+          for (cs_lnum_t l = 0; l < stride; l++)
+            v[k*stride + l] = 0;
+        }
+      }
+      else {
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t k = elt_ids[j];
+          v[k] = 0;
+        }
+      }
+    }
+    break;
+
+  case CS_DOUBLE:
+    {
+      double *v = val;
+      if (stride > 1) {
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t k = elt_ids[j];
+          for (cs_lnum_t l = 0; l < stride; l++)
+            v[k*stride + l] = 0;
+        }
+      }
+      else {
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t k = elt_ids[j];
+          v[k] = 0;
+        }
+      }
+    }
+    break;
+
+    default:
+      {
+        cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
+        unsigned char *v = val;
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t k = elt_ids[j];
+          memset(v + k*stride_size, 0, stride_size);
+        }
+      }
+      break;
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -842,6 +943,11 @@ cs_range_set_sync(const cs_range_set_t  *rs,
                                      rs->l_range,
                                      rs->g_id,
                                      val);
+    if (cs_interface_set_periodicity(rs->ifs) != NULL)
+      _interface_set_zero_local_periodicity(rs->ifs,
+                                            datatype,
+                                            stride,
+                                            val);
     cs_interface_set_sum(rs->ifs, n_elts, stride, true, datatype, val);
   }
 
@@ -981,7 +1087,7 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
       for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
         if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
           cs_lnum_t j = g_id[i] - l_range[0];
-          if (i >= j) { /* additional check in case of same-rank perdiodicity */
+          if (i >= j) { /* additional check in case of same-rank periodicity */
             memcpy(dest + i*d_size, src + j*d_size, d_size);
           }
         }
