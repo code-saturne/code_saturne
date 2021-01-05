@@ -263,6 +263,10 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
  *         problem arising from CDO-Fb schemes for Stokes, Oseen and
  *         Navier-Stokes with a monolithic coupling
+ *         This algorithm is based on the EDF report H-E40-1991-03299-FR
+ *         devoted the numerical algorithms used in the code N3S.
+ *         Specifically a Cahouet-Chabard preconditioning is used to
+ *         approximate the Schur complement.
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure

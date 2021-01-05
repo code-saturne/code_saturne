@@ -1188,6 +1188,8 @@ cs_cdofb_advection_close_std_scal(const cs_equation_param_t   *eqp,
                                   cs_cell_builder_t           *cb,
                                   cs_sdm_t                    *adv)
 {
+  CS_UNUSED(adv);
+
   /* Multiply by a scaling property if needed before adding it to the local
      system */
   if (eqp->adv_scaling_property == NULL)
@@ -1655,7 +1657,6 @@ cs_cdofb_advection_upwcsv(int                        dim,
 
       /* access the row containing the current face */
       double  *f_row = adv->val + f*adv->n_rows;
-
 
       f_row[f] += beta_plus;
       f_row[c] -= beta_plus;
