@@ -263,10 +263,9 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
  *         problem arising from CDO-Fb schemes for Stokes, Oseen and
  *         Navier-Stokes with a monolithic coupling
- *         This algorithm is based on the EDF report H-E40-1991-03299-FR
- *         devoted the numerical algorithms used in the code N3S.
- *         Specifically a Cahouet-Chabard preconditioning is used to
- *         approximate the Schur complement.
+ *         This algorithm is based on Koko's paper "Uzawa conjugate gradient
+ *         method for the Stokes problem: Matlab implementation with P1-iso-P2/
+ *         P1 finite element"
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -280,6 +279,29 @@ int
 cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
                                    cs_cdofb_monolithic_sles_t    *msles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
+ *         problem arising from CDO-Fb schemes for Stokes, Oseen and
+ *         Navier-Stokes with a monolithic coupling
+ *         This algorithm is based on the EDF report H-E40-1991-03299-FR
+ *         devoted the numerical algorithms used in the code N3S.
+ *         Specifically a Cahout-Chabard preconditioning is used to approximate
+ *         the Schur complement.
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
+                                    const cs_equation_param_t     *eqp,
+                                    cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!

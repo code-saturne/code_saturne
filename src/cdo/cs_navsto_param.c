@@ -321,7 +321,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     if (model == CS_NAVSTO_MODEL_STOKES)
-      nslesp->strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+      nslesp->strategy = CS_NAVSTO_SLES_UZAWA_CG;
     else
       nslesp->strategy = CS_NAVSTO_SLES_UZAWA_AL;
     break;
@@ -335,6 +335,8 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
     break;
 
   }
+
+  nslesp->schur_approximation = CS_NAVSTO_SCHUR_LUMPED_INVERSE;
 
   /* Settings for driving the linear algebra related to the Schur complement
      approximation */
@@ -436,6 +438,18 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     break;
   case CS_NAVSTO_SLES_UZAWA_CG:
     cs_log_printf(CS_LOG_SETUP, "Uzawa-Conjugate Gradient\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: ", navsto);
+    switch (nslesp->schur_approximation) {
+    case CS_NAVSTO_SCHUR_DIAG_INVERSE:
+      cs_log_printf(CS_LOG_SETUP, "Diagonal\n");
+      break;
+    case CS_NAVSTO_SCHUR_LUMPED_INVERSE:
+      cs_log_printf(CS_LOG_SETUP, "Lumped inverse\n");
+      break;
+    default:
+      cs_log_printf(CS_LOG_SETUP, "Undefined\n");
+      break;
+    }
     break;
 
   default:
@@ -957,6 +971,19 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       _propagate_qtype(nsp);
     }
     break; /* Quadrature */
+
+  case CS_NSKEY_SCHUR_STRATEGY:
+    if (strcmp(val, "diag_schur") == 0)
+      nsp->sles_param->schur_approximation = CS_NAVSTO_SCHUR_DIAG_INVERSE;
+    else if (strcmp(val, "lumped_schur") == 0)
+      nsp->sles_param->schur_approximation = CS_NAVSTO_SCHUR_LUMPED_INVERSE;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid value \"%s\" not among\n"
+                  " valid choices: \"diag_schur\", \"lumped_schur\"."),
+                __func__, _val);
+    }
 
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0)

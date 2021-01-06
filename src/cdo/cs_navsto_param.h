@@ -351,6 +351,34 @@ typedef enum {
 
 } cs_navsto_sles_t;
 
+/*! \enum cs_navsto_schur_approx_t
+ *
+ *  \brief Strategy to build the Schur complement approximation. This appears
+ *  in block preconditioning or uzawa algorithms when a monolithic (fully
+ *  coupled approach) is used.
+ *  | A   B^t|
+ *  | B   0  |
+ *
+ *  \var CS_NAVSTO_SCHUR_DIAG_INVERSE
+ *  Associated keyword: "diag_schur"
+ *  The schur complement approximation is defined as B.diag(A)^-1.B^t
+ *
+ *  \var CS_NAVSTO_SCHUR_LUMPED_INVERSE
+ *  Associated keyword: "lumped_schur"
+ *  The schur complement approximation is defined as B.lumped(A^-1).B^t where
+ *  x=lumped(A^-1) results from A.x = 1 (1 is the array fills with 1 in each
+ *  entry)
+ */
+
+typedef enum {
+
+  CS_NAVSTO_SCHUR_DIAG_INVERSE,
+  CS_NAVSTO_SCHUR_LUMPED_INVERSE,
+
+  CS_NAVSTO_N_SCHUR_APPROX
+
+} cs_navsto_schur_approx_t;
+
 /*! \enum cs_navsto_nl_algo_t
  *
  *  \brief Type of algorithm used to tackle the non-linearity arising from
@@ -380,6 +408,11 @@ typedef struct {
    *  Choice of strategy for solving the Navier--Stokes system
    */
   cs_navsto_sles_t              strategy;
+
+  /*! \var schur_strategy
+   *  Choice of the way of preconditioning the schur approximation
+   */
+  cs_navsto_schur_approx_t      schur_approximation;
 
   /*!
    * @name Inner and linear algorithm
@@ -869,6 +902,10 @@ typedef struct {
  * Set the type to use in all routines involving quadrature (similar to \ref
  * CS_EQKEY_BC_QUADRATURE)
  *
+ * \var CS_NSKEY_SCHUR_STRATEGY
+ * Set the way to define the Schur complement approximation
+ * (cf. \ref cs_navsto_schur_approx_t)
+ *
  * \var CS_NSKEY_SLES_STRATEGY
  * Strategy for solving the SLES arising from the discretization of the
  * Navier-Stokes system
@@ -915,6 +952,7 @@ typedef enum {
   CS_NSKEY_NL_ALGO_RTOL,
   CS_NSKEY_NL_ALGO_VERBOSITY,
   CS_NSKEY_QUADRATURE,
+  CS_NSKEY_SCHUR_STRATEGY,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
