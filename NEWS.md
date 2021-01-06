@@ -3,6 +3,8 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- GUI: Fix input of head loss coefficients.
+
 - GUI: Fix handling of "New case" when case already loaded (GitLAb issue #250).
 
 - GUI: Fix C-syntax formula generation for source terms.
