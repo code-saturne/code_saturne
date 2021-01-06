@@ -20,6 +20,18 @@
       <string>Boundary conditions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="3" column="0">
+       <widget class="BoundaryConditionsVelocityInletView" name="VelocityWidget" native="true"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="BoundaryConditionsPressureView" name="PressureWidget" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="BoundaryConditionsFractionView" name="FractionWidget" native="true"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="BoundaryConditionsTurbulenceInletView" name="TurbulenceWidget" native="true"/>
+      </item>
       <item row="0" column="0">
        <widget class="QTableView" name="tableViewFields">
         <property name="minimumSize">
@@ -36,18 +48,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="BoundaryConditionsPressureView" name="PressureWidget" native="true"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="BoundaryConditionsFractionView" name="FractionWidget" native="true"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="BoundaryConditionsVelocityInletView" name="VelocityWidget" native="true"/>
-      </item>
-      <item row="4" column="0">
-       <widget class="BoundaryConditionsTurbulenceInletView" name="TurbulenceWidget" native="true"/>
-      </item>
       <item row="5" column="0">
        <widget class="BoundaryConditionsEnergyView" name="EnergyWidget" native="true"/>
       </item>
@@ -63,23 +63,10 @@
       <item row="9" column="0">
        <widget class="BoundaryConditionsWallView" name="WallWidget" native="true"/>
       </item>
-      <item row="10" column="0">
-       <spacer>
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -92,19 +79,34 @@
      </property>
     </spacer>
    </item>
+   <item row="1" column="0">
+    <widget class="LagrangianBoundaryView" name="particlesWidget" native="true"/>
+   </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>BoundaryConditionsVelocityInletView</class>
    <extends>QWidget</extends>
-   <header>BoundaryConditionsVelocityInletViewNeptune.h</header>
+   <header location="global">BoundaryConditionsVelocityInletView.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsTurbulenceInletView</class>
    <extends>QWidget</extends>
-   <header>BoundaryConditionsTurbulenceInletViewNeptune.h</header>
+   <header location="global">BoundaryConditionsTurbulenceInletView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsPressureView</class>
+   <extends>QWidget</extends>
+   <header location="global">BoundaryConditionsPressureView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LagrangianBoundaryView</class>
+   <extends>QWidget</extends>
+   <header location="global">LagrangianBoundaryView.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -129,12 +131,6 @@
    <class>BoundaryConditionsScalarView</class>
    <extends>QWidget</extends>
    <header>BoundaryConditionsScalarViewNeptune.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>BoundaryConditionsPressureView</class>
-   <extends>QWidget</extends>
-   <header>BoundaryConditionsPressureViewNeptune.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
