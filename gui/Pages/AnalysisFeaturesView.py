@@ -240,11 +240,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.init_common()
 
-        if self.gas.getUniformVariableThermodynamicalPressure() == 'on':
-            self.checkBoxPther.setChecked(True)
-        else:
-            self.checkBoxPther.setChecked(False)
-
         # Update the Tree files and folders
 
         self.browser.configureTree(self.case)
@@ -415,6 +410,13 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         if self.checkPrev == 'SinglePhase':
             self.radioButtonSinglePhase.setChecked(True)
+
+        # Thermodynamic pressure
+
+        if self.gas.getUniformVariableThermodynamicalPressure() == 'on':
+            self.checkBoxPther.setChecked(True)
+        else:
+            self.checkBoxPther.setChecked(False)
 
         # Lagrangian model features
 
