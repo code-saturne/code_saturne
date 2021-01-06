@@ -495,6 +495,15 @@ void
 cs_space_disc_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print Velocity-pressure coupling options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_coupling_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

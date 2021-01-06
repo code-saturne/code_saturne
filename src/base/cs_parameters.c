@@ -1723,5 +1723,33 @@ cs_space_disc_log_setup(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print Velocity-pressure coupling options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_coupling_log_setup(void)
+{
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Velocity Pressure coupling\n"
+                 "--------------------------\n\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                  "    nterup:    %d (number of U-P sub iterations)\n"),
+                _piso.nterup);
+
+  if (_piso.nterup > 1) {
+    cs_log_printf(CS_LOG_SETUP,
+                  ("\n"
+                    "    epsup:     %f (number of U-P sub iterations)\n"),
+                  _piso.nterup);
+   }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

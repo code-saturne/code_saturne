@@ -138,6 +138,9 @@ _log_global_model_options(void)
   /* Stokes model*/
   cs_stokes_model_log_setup();
 
+  /* Velocity pressure coupling */
+  cs_velocity_pressure_coupling_log_setup();
+
   /* Atmospheric */
   cs_atmo_log_setup();
 
