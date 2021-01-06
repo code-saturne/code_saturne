@@ -18,11 +18,11 @@
     <widget class="QGroupBox" name="groupBoxBoundaries">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the
-       Lagrangian boundary conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+       Particles boundary conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
       </string>
      </property>
      <property name="title">
-      <string>Lagrangian boundary conditions</string>
+      <string>Particles boundary conditions</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>

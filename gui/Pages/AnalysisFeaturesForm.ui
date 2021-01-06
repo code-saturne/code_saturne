@@ -23,7 +23,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="labelLagrangian">
         <property name="text">
-         <string>Eulerian-Lagrangian model</string>
+         <string>Particles and droplets tracking</string>
         </property>
        </widget>
       </item>
