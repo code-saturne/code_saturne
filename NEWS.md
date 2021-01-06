@@ -3,6 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- GUI: Remove old placeholder for Lagrangian BC's, add missing Lagrangian
+       section in neptune_cfd BCs.
+
 - GUI: Fix input of head loss coefficients.
 
 - GUI: Fix handling of "New case" when case already loaded (GitLAb issue #250).

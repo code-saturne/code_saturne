@@ -509,8 +509,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         elif section == "Boundary conditions":
             return []
         elif section == 'Additional BC models':
-            return ['Particle boundary conditions',
-                    'Fluid structure interaction', 'Cathare Coupling',
+            return ['Fluid structure interaction', 'Cathare Coupling',
                     'Immersed Boundaries']
         elif section == 'Time settings':
             return ['Start/Restart']
@@ -805,7 +804,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         """
         self.setRowClose(self.tr('Boundary_conditions'))
-        self.setRowClose(self.tr('Particle boundary conditions'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Cathare Coupling'))
         self.setRowClose(self.tr('Immersed Boundaries'))
@@ -1027,13 +1025,12 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Boundary zones
 
         self.setRowShow(self.tr('Boundary conditions'))
-        self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
         # Immersed boundaries is deactivated for the moment. Will be
         # reactivated following v6.1 once Page is updated in NCFD
         self.setRowShow(self.tr('Immersed Boundaries'), False)
-        self.setRowShow(self.tr("Additional BC models"), m_lagr or m_ale or is_ncfd or False)
+        self.setRowShow(self.tr("Additional BC models"), m_ale or is_ncfd or False)
 
         # Time settings
 

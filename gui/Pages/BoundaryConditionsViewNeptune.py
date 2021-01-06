@@ -58,6 +58,7 @@ from code_saturne.Pages.BoundaryConditionsNeptune import Ui_BoundaryConditions
 from code_saturne.model.BoundaryNeptune import *
 from code_saturne.model.BoundaryConditionsModelNeptune import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -184,6 +185,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.__nature = self.zone.getNature()
         self.__label = self.zone.getLabel()
 
+        # Set the case for custom widgets
+        self.particlesWidget.setup(self.case)
+
         self.__hideAllWidgets()
         self.__slotSelectBoundary()
 
@@ -257,6 +261,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             if len(MainFieldsModel(self.case).getSolidFieldIdList()) > 0:
                 self.tableViewFields.show()
             self.__selectWallBoundary(boundary)
+
+        if LagrangianModel(self.case).getLagrangianModel() != 'off':
+            self.particlesWidget.showWidget(self.zone)
 
     def __selectInletBoundary(self, boundary):
         """
