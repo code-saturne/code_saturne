@@ -1904,12 +1904,14 @@ class XMLinit(BaseXmlInit):
         """
         Change XML in order to ensure backward compatibility.
         """
+
         return
 
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
+
         XMLLagrangianNode = self.case.xmlGetNode('lagrangian')
         if XMLLagrangianNode:
             for attr in ('complete_model',

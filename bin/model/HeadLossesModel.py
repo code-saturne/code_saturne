@@ -210,7 +210,7 @@ class HeadLossesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getMatrixComposant(self, zoneid, a):
+    def getMatrixComponent(self, zoneid, a):
         """
         Get values of one composant of the matrix of the change reference frame,
         for the head loss with zone's id.
@@ -222,7 +222,7 @@ class HeadLossesModel(Variables, Model):
         value = node.xmlGetDouble(a)
         if value == None:
             value = self.__defaultValues()[a]
-            self.setMatrixComposant(zoneid, a, value)
+            self.setMatrixComponent(zoneid, a, value)
 
         return value
 
@@ -235,21 +235,21 @@ class HeadLossesModel(Variables, Model):
         """
         self.isInt(int(zoneid))
 
-        a11 = self.getMatrixComposant(zoneid, 'a11')
-        a12 = self.getMatrixComposant(zoneid, 'a12')
-        a13 = self.getMatrixComposant(zoneid, 'a13')
-        a21 = self.getMatrixComposant(zoneid, 'a21')
-        a22 = self.getMatrixComposant(zoneid, 'a22')
-        a23 = self.getMatrixComposant(zoneid, 'a23')
-        a31 = self.getMatrixComposant(zoneid, 'a31')
-        a32 = self.getMatrixComposant(zoneid, 'a32')
-        a33 = self.getMatrixComposant(zoneid, 'a33')
+        a11 = self.getMatrixComponent(zoneid, 'a11')
+        a12 = self.getMatrixComponent(zoneid, 'a12')
+        a13 = self.getMatrixComponent(zoneid, 'a13')
+        a21 = self.getMatrixComponent(zoneid, 'a21')
+        a22 = self.getMatrixComponent(zoneid, 'a22')
+        a23 = self.getMatrixComponent(zoneid, 'a23')
+        a31 = self.getMatrixComponent(zoneid, 'a31')
+        a32 = self.getMatrixComponent(zoneid, 'a32')
+        a33 = self.getMatrixComponent(zoneid, 'a33')
 
         return a11, a12, a13, a21, a22, a23, a31, a32, a33
 
 
     @Variables.undoLocal
-    def setMatrixComposant(self, zoneid, a, value):
+    def setMatrixComponent(self, zoneid, a, value):
         """
         Set value of composant of matrix of the change reference frame,
         for the head loss with zone's id.
@@ -272,15 +272,15 @@ class HeadLossesModel(Variables, Model):
         for a in (a11, a12, a13, a21, a22, a23, a31, a32, a33):
             self.isFloat(a)
 
-        self.setMatrixComposant(zoneid, 'a11', a11)
-        self.setMatrixComposant(zoneid, 'a12', a12)
-        self.setMatrixComposant(zoneid, 'a13', a13)
-        self.setMatrixComposant(zoneid, 'a21', a21)
-        self.setMatrixComposant(zoneid, 'a22', a22)
-        self.setMatrixComposant(zoneid, 'a23', a23)
-        self.setMatrixComposant(zoneid, 'a31', a31)
-        self.setMatrixComposant(zoneid, 'a32', a32)
-        self.setMatrixComposant(zoneid, 'a33', a33)
+        self.setMatrixComponent(zoneid, 'a11', a11)
+        self.setMatrixComponent(zoneid, 'a12', a12)
+        self.setMatrixComponent(zoneid, 'a13', a13)
+        self.setMatrixComponent(zoneid, 'a21', a21)
+        self.setMatrixComponent(zoneid, 'a22', a22)
+        self.setMatrixComponent(zoneid, 'a23', a23)
+        self.setMatrixComponent(zoneid, 'a31', a31)
+        self.setMatrixComponent(zoneid, 'a32', a32)
+        self.setMatrixComponent(zoneid, 'a33', a33)
 
 
 #-------------------------------------------------------------------------------
@@ -414,7 +414,7 @@ class HeadLossesModelTestCase(ModelTest):
         assert mdl.getMatrix('2') == (1., 1.2, 1.5, 2., 2.2, 2.5, 3., 3.2, 3.5),\
             'Could not get matrix for head losses'
 
-        mdl.setMatrixComposant('2', 'a23', 2300.55)
+        mdl.setMatrixComponent('2', 'a23', 2300.55)
         doc2='''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>0</kxx>
@@ -433,7 +433,7 @@ class HeadLossesModelTestCase(ModelTest):
                 </head_losses>'''
         assert mdl.node_hloss == self.xmlNodeFromString(doc2),\
             'Could not set one composant of the matrix for head losses'
-        assert mdl.getMatrixComposant('2', 'a23') == 2300.55,\
+        assert mdl.getMatrixComponent('2', 'a23') == 2300.55,\
             'Could not get one composant of the matrix for head losses'
 
 

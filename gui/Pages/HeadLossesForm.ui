@@ -74,7 +74,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="lineEdit_kxx">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the first diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -104,7 +104,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_2">
+           <widget class="QLineEdit" name="lineEdit_kyy">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the second diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -134,7 +134,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3">
+           <widget class="QLineEdit" name="lineEdit_kzz">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the third diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -264,7 +264,7 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLineEdit" name="lineEdit_4">
+              <widget class="QLineEdit" name="lineEdit_a11">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -302,7 +302,7 @@
               </widget>
              </item>
              <item row="0" column="3">
-              <widget class="QLineEdit" name="lineEdit_5">
+              <widget class="QLineEdit" name="lineEdit_a12">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -338,7 +338,7 @@
               </widget>
              </item>
              <item row="0" column="5">
-              <widget class="QLineEdit" name="lineEdit_6">
+              <widget class="QLineEdit" name="lineEdit_a13">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -384,7 +384,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLineEdit" name="lineEdit_8">
+              <widget class="QLineEdit" name="lineEdit_a21">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -420,7 +420,7 @@
               </widget>
              </item>
              <item row="1" column="3">
-              <widget class="QLineEdit" name="lineEdit_9">
+              <widget class="QLineEdit" name="lineEdit_a22">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -456,7 +456,7 @@
               </widget>
              </item>
              <item row="1" column="5">
-              <widget class="QLineEdit" name="lineEdit_7">
+              <widget class="QLineEdit" name="lineEdit_a23">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -502,7 +502,7 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLineEdit" name="lineEdit_11">
+              <widget class="QLineEdit" name="lineEdit_a31">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -538,7 +538,7 @@
               </widget>
              </item>
              <item row="2" column="3">
-              <widget class="QLineEdit" name="lineEdit_12">
+              <widget class="QLineEdit" name="lineEdit_a32">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
@@ -574,7 +574,7 @@
               </widget>
              </item>
              <item row="2" column="5">
-              <widget class="QLineEdit" name="lineEdit_10">
+              <widget class="QLineEdit" name="lineEdit_a33">
                <property name="minimumSize">
                 <size>
                  <width>50</width>
