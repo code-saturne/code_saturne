@@ -1,6 +1,11 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Change default precision for linear solvers
+  from 1e-8 to 1e-5 except for the pressure field.
+
 Release 6.3.0 (December 21 2020)
 --------------------------------
 

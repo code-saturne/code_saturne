@@ -103,7 +103,7 @@ class NumericalParamEquationModel(Model):
         self.default = {}
         self.default['time_step_factor'] = 1.0
         self.default['verbosity'] = 0
-        self.default['solver_precision'] = 1e-8
+        self.default['solver_precision'] = 1e-5
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
             self.default['solver_precision'] = 1e-5

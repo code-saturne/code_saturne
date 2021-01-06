@@ -339,9 +339,9 @@ static cs_equation_param_t _equation_param_default
    .thetav = 1.,
    .blencv = 1.,
    .blend_st = 0.,
-   .epsilo = 1.e-8,
-   .epsrsm = 1.e-7,
-   .epsrgr = 1.e-5,
+   .epsilo = 1.e-5,
+   .epsrsm = 1.e-4,
+   .epsrgr = 1.e-4,
    .climgr = 1.5,
    .extrag = 0.,
    .relaxv = 1.,
@@ -426,7 +426,7 @@ const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
 static cs_piso_t  _piso =
 {
   .nterup = 1,
-  .epsup = 1e-5,
+  .epsup = 1e-4,
   .xnrmu = 0.,
   .xnrmu0 = 0.,
   .n_buoyant_scal = 0

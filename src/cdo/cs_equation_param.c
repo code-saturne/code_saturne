@@ -805,9 +805,9 @@ cs_equation_create_param(const char            *name,
   eqp->thetav = 1.;
   eqp->blencv = 1.;
   eqp->blend_st = 0.;
-  eqp->epsilo = 1.e-8;
-  eqp->epsrsm = 1.e-7;
-  eqp->epsrgr = 1.e-5;
+  eqp->epsilo = 1.e-5;
+  eqp->epsrsm = 1.e-4;
+  eqp->epsrgr = 1.e-4;
   eqp->climgr = 1.5;
   eqp->extrag = 0.;
   eqp->relaxv = 1.;

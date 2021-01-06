@@ -439,7 +439,10 @@ enddo
 !           a l'ordre 1 :
 !                  2  pour la pression
 !                  1  pour les autres variables
-!                  on initialise EPSILO a 1.D-8
+!                  on initialise EPSILO a 1.d-8
+!                     pour la pression
+!                  on initialise EPSILO a 1.d-5
+!                     pour les autres variables
 !                  on initialise EPSRSM a 10*EPSILO
 !           a l'ordre 2 :
 !                  5  pour la pression
@@ -470,9 +473,13 @@ if (ischtp.eq.2) then
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   enddo
 endif
+
+! For the pressure, default solver precision 1e-8
+! because the mass conservation is up to this precision
 ii = ipr
 call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 2
+if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-8
 call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
 do f_id = 0, nfld - 1
@@ -481,7 +488,7 @@ do f_id = 0, nfld - 1
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
     if (vcopt%nswrsm.eq.-1) vcopt%nswrsm = 1
-    if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-8
+    if (abs(vcopt%epsilo+1.d0).lt.epzero) vcopt%epsilo = 1.d-5
     if (abs(vcopt%epsrsm+1.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
     call field_set_key_struct_var_cal_opt(f_id, vcopt)
   endif
