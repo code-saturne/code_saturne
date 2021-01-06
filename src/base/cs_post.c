@@ -1692,7 +1692,6 @@ _define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
   assert(post_mesh != NULL);
 
   cs_probe_set_t     *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
-  fvm_nodal_t        *exp_mesh = NULL;
   cs_post_mesh_t     *post_mesh_loc = NULL;
   const fvm_nodal_t  *location_mesh = NULL;
 
@@ -1709,7 +1708,8 @@ _define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
 
   /* Create associated structure */
 
-  exp_mesh = cs_probe_set_export_mesh(pset, cs_probe_set_get_name(pset));
+  fvm_nodal_t *exp_mesh
+    = cs_probe_set_export_mesh(pset, cs_probe_set_get_name(pset));
 
   /* Link to newly created mesh */
 
@@ -2390,6 +2390,14 @@ _update_meshes(const cs_time_step_t  *ts)
       if (time_varying) {
         cs_post_mesh_t *post_mesh_loc = _cs_post_meshes + post_mesh->locate_ref;
         cs_probe_set_locate(pset, post_mesh_loc->exp_mesh);
+
+        /* Update associated mesh */
+        fvm_nodal_t *exp_mesh
+          = cs_probe_set_export_mesh(pset, cs_probe_set_get_name(pset));
+        if (post_mesh->_exp_mesh != NULL)
+          post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
+        post_mesh->_exp_mesh = exp_mesh;
+        post_mesh->exp_mesh = exp_mesh;
       }
     }
 
