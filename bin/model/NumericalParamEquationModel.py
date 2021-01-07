@@ -106,7 +106,6 @@ class NumericalParamEquationModel(Model):
         self.default['solver_precision'] = 1e-5
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
-            self.default['solver_precision'] = 1e-5
             self.default['solver_precision_pressure'] = 1e-5
         self.default['slope_test'] = 'on'
         self.default['flux_reconstruction'] = 'on'
