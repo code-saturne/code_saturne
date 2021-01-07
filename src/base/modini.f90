@@ -1006,13 +1006,6 @@ if (ippmod(idarcy).eq.1) then
     ctheta(iscal) = 1.d0
   enddo
 
-  ! harmonic face viscosity interpolation
-  do ivar = 1, nvar
-    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-    vcopt%imvisf = 1
-    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  enddo
-
   ! reference values for pressure and density
   p0 = 0.d0
   ro0 = 1.d0
