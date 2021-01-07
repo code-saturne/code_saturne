@@ -350,8 +350,11 @@ cs_syr_coupling_define(const char  *syrthes_name,
 
   /* Ensure name is available */
 
+#if defined(HAVE_MPI)
   if (syrthes_name == NULL)
     syrthes_name = _mpi_syr_default_name();
+#endif
+
   if (syrthes_name == NULL)
     syrthes_name = cs_empty_string;
 
@@ -426,8 +429,11 @@ cs_syr_coupling_add_zone(const char       *syrthes_name,
 {
   /* Ensure name is available */
 
+#if defined(HAVE_MPI)
   if (syrthes_name == NULL)
     syrthes_name = _mpi_syr_default_name();
+#endif
+
   if (syrthes_name == NULL)
     syrthes_name = cs_empty_string;
 

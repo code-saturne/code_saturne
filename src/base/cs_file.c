@@ -2853,10 +2853,13 @@ cs_file_write_block(cs_file_t   *f,
 
   if (f->swap_endian == true && size > 1)
     direct_w = false;
+
+#if defined(HAVE_MPI)
   if (f->n_ranks > 1) {
     if (f->rank_step > 1 || f->method != CS_FILE_STDIO_PARALLEL)
       direct_w = false;
   }
+#endif
 
   if (direct_w == false) {
 
@@ -3223,6 +3226,7 @@ cs_file_dump(const cs_file_t  *f)
     return;
   }
 
+#if defined(HAVE_MPI)
   bft_printf("\n"
              "File name:                   \"%s\"\n"
              "Access mode:                 %s\n"
@@ -3235,6 +3239,18 @@ cs_file_dump(const cs_file_t  *f)
              f->name, mode_name[f->mode], access_name[f->method-1],
              f->rank, f->n_ranks, f->rank_step, (int)(f->swap_endian),
              (const void *)f->sh);
+#else
+  bft_printf("\n"
+             "File name:                   \"%s\"\n"
+             "Access mode:                 %s\n"
+             "Access method:               %s\n"
+             "Rank:                        %d\n"
+             "N ranks:                     %d\n"
+             "Swap endian:                 %d\n"
+             "Serial handle:               %p\n",
+             f->name, mode_name[f->mode], access_name[f->method-1],
+             f->rank, f->n_ranks, (int)(f->swap_endian), (const void *)f->sh);
+#endif
 
 #if defined(HAVE_MPI)
   bft_printf("Associated io communicator:  %llu\n",
