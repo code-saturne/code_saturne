@@ -918,7 +918,7 @@ class case:
                 + ' to the executable files.\n\n')
 
         e.write('MPI_RANK=`'
-                + self.package.pkgdatadir_script('runcase_mpi_rank')
+                + self.package.get_pkgdatadir_script('runcase_mpi_rank')
                 + ' $@`\n')
 
         app_id = 0
