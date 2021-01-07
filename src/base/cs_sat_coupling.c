@@ -296,7 +296,7 @@ _sat_add_mpi(int builder_id,
   cs_sat_coupling_t *sat_coupling = NULL;
   _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + builder_id;
 
-  /* Similarly to SYRTHES 4, we might be able to add
+  /* Similarly to SYRTHES, we might be able to add
      Code_Saturne couplings directly (without resorting
      to a temporary builder), then match communications */
 

@@ -1206,7 +1206,7 @@ class domain(base_domain):
 
 #-------------------------------------------------------------------------------
 
-# SYRTHES 4 coupling
+# SYRTHES coupling
 
 class syrthes_domain(base_domain):
 
