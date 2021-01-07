@@ -36,6 +36,10 @@ Bug fixes:
 
 - GUI: Fix C-syntax formula generation for source terms.
 
+Architectural changes:
+
+- Fix build without MPI.
+
 Release 6.3.0 (December 21 2020)
 --------------------------------
 
