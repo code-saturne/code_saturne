@@ -1731,7 +1731,6 @@ cs_space_disc_log_setup(void)
 void
 cs_velocity_pressure_coupling_log_setup(void)
 {
-
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
                  "Velocity Pressure coupling\n"
@@ -1739,15 +1738,15 @@ cs_velocity_pressure_coupling_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
-                  "    nterup:    %d (number of U-P sub iterations)\n"),
+                 "    nterup:    %d (number of U-P sub iterations)\n"),
                 _piso.nterup);
 
   if (_piso.nterup > 1) {
     cs_log_printf(CS_LOG_SETUP,
                   ("\n"
-                    "    epsup:     %f (number of U-P sub iterations)\n"),
+                   "    epsup:     %f (number of U-P sub iterations)\n"),
                   _piso.nterup);
-   }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
