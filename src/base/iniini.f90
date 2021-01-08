@@ -411,9 +411,6 @@ epsup  = 1.d-5
 xnrmu0 = 0.d0
 xnrmu  = 0.d0
 
-!   -- Nb d'iter point fixe vitesse pression
-nterup = 1
-
 do iscal = 1, nscamx
 
 !   -- Termes sources des scalaires
