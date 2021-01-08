@@ -1428,9 +1428,9 @@ class case:
                 if need_compile == False: # Print banner on first pass
                     need_compile = True
                     msg = \
-                        " ****************************************\n" \
-                        "  Compiling user subroutines and linking\n" \
-                        " ****************************************\n\n"
+                        " *********************************************\n" \
+                        "  Compiling and linking user-defined functions\n" \
+                        " *********************************************\n\n"
                     sys.stdout.write(msg)
                     sys.stdout.flush()
                 d.compile_and_link()

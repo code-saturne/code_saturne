@@ -477,6 +477,29 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
+    def __xml_case_initialize__(self, path):
+        """
+        Build XML case object
+        """
+
+        from code_saturne.model.XMLengine import Case
+        from code_saturne.model.SolutionDomainModel import getRunType
+        case = Case(package=self.package, file_name=path)
+        case['xmlfile'] = path
+        case.xmlCleanAllBlank(case.xmlRootNode())
+        preprocess_only = (getRunType(case) != 'standard')
+        module_name = case.module_name()
+        if module_name == 'code_saturne':
+            from code_saturne.model.XMLinitialize import XMLinit
+            XMLinit(case).initialize(preprocess_only)
+        elif module_name == 'neptune_cfd':
+            from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
+            XMLinitNeptune(case).initialize(preprocess_only)
+
+        return case
+
+    #---------------------------------------------------------------------------
+
     def for_domain_str(self):
 
         if self.name == None:
@@ -612,27 +635,14 @@ class domain(base_domain):
             needs_comp = True
 
         if self.param != None:
-            from code_saturne.model.XMLengine import Case
-            from code_saturne.model.SolutionDomainModel import getRunType
-
             fp = os.path.join(self.data_dir, self.param)
-            case = Case(package=self.package, file_name=fp)
-            case['xmlfile'] = fp
-            case.xmlCleanAllBlank(case.xmlRootNode())
-
-            prepro = (getRunType(case) != 'standard')
-            module_name = case.module_name()
-            if module_name == 'code_saturne':
-                from code_saturne.model.XMLinitialize import XMLinit
-                XMLinit(case).initialize(prepro)
-            elif module_name == 'neptune_cfd':
-                from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
-                XMLinitNeptune(case).initialize(prepro)
+            case = self.__xml_case_initialize__(fp)
 
             # Do not call case.xmlSaveDocument() to avoid side effects in case
             # directory; is not required as meg_to_c_interpreter works from
             # case in memory
 
+            module_name = case.module_name()
             self.mci = meg_to_c_interpreter(case,
                                             module_name=module_name,
                                             wdir = os.path.join(self.exec_dir, 'src'))
@@ -867,7 +877,13 @@ class domain(base_domain):
                 except Exception:
                     shutil.copy2(src_path, setup_path)
 
-        if not os.path.isfile(setup_path):
+        # Ensure XML file is up to date as a precaution
+
+        if os.path.isfile(setup_path):
+            case = self.__xml_case_initialize__(setup_path)
+            case['xmlfile'] = setup_path
+            case.xmlSaveDocument()
+        else:
             msg  = ('Remark:\n'
                     '  No setup.xml file was provided in the DATA folder.\n'
                     '  Default settings will be used.\n')
