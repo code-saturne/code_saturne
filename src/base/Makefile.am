@@ -167,6 +167,7 @@ cs_syr_coupling.h \
 cs_system_info.h \
 cs_thermal_model.h \
 cs_time_moment.h \
+cs_time_control.h \
 cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
@@ -328,6 +329,7 @@ cs_syr_coupling.c \
 cs_thermal_model.c \
 cs_tagmri.f90 \
 cs_tagmro.f90 \
+cs_time_control.c \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
