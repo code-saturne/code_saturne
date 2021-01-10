@@ -204,7 +204,7 @@ typedef void
 /*!
  * \brief Define a writer; this objects manages a case's name, directory,
  *        and format, as well as associated mesh's time dependency, and the
- *        default output frequency for associated variables.
+ *        default output interval for associated variables.
  *
  * This function must be called before the time loop. If a writer with a
  * given id is defined multiple times, the last definition supercedes the
@@ -281,9 +281,9 @@ typedef void
  *                              connectivity changes
  * \param[in]  output_at_start  force output at calculation start if true
  * \param[in]  output_at_end    force output at calculation end if true
- * \param[in]  frequency_n      default output frequency in time-steps, or < 0
- * \param[in]  frequency_t      default output frequency in seconds, or < 0
- *                              (has priority over frequency_n)
+ * \param[in]  interval_n       default output interval in time-steps, or < 0
+ * \param[in]  interval_t       default output interval in seconds, or < 0
+ *                              (has priority over interval_n)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -296,8 +296,8 @@ cs_post_define_writer(int                     writer_id,
                       fvm_writer_time_dep_t   time_dep,
                       bool                    output_at_start,
                       bool                    output_at_end,
-                      int                     frequency_n,
-                      double                  frequency_t);
+                      int                     interval_n,
+                      double                  interval_t);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -892,7 +892,7 @@ cs_post_get_free_mesh_id(void);
 /*!
  * \brief Update "active" or "inactive" flag of writers based on the time step.
  *
- * Writers are activated if their output frequency is a divisor of the
+ * Writers are activated if their output interval is a divisor of the
  * current time step, or if their optional time step and value output lists
  * contain matches for the current time step.
  *

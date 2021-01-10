@@ -238,7 +238,7 @@ typedef enum {
 
 /* This object is based on a choice of a case, directory, and format,
    as well as a flag for associated mesh's time dependency, and the default
-   output frequency for associated variables. */
+   output interval for associated variables. */
 
 typedef struct {
 
@@ -246,8 +246,8 @@ typedef struct {
                                  * > 0 for user writer */
   int            output_start;  /* Output at start of calculation if nonzero */
   int            output_end;    /* Output at end of calculation if nonzero */
-  int            frequency_n;   /* Default output frequency in time-steps */
-  double         frequency_t;   /* Default output frequency in seconds */
+  int            interval_n;    /* Default output interval in time-steps */
+  double         interval_t;    /* Default output interval in seconds */
 
   int            active;        /* -1 if blocked at this stage,
                                    0 if no output at current time step,
@@ -500,7 +500,7 @@ _writer_info(void)
       const char  *fmt_name, *fmt_opts = NULL;
       const char  *case_name = NULL, *dir_name = NULL;
       const char empty[] = "";
-      char frequency_s[80] = "";
+      char interval_s[80] = "";
 
       const cs_post_writer_t  *writer = _cs_post_writers + i;
 
@@ -530,26 +530,26 @@ _writer_info(void)
         fmt_name = fvm_writer_version_string(fmt_id, 0, 0);
 
       if (writer->output_end != 0) {
-        if (writer->frequency_t > 0)
-          snprintf(frequency_s, 79,
+        if (writer->interval_t > 0)
+          snprintf(interval_s, 79,
                    _("every %12.5e s and at calculation end"),
-                   writer->frequency_t);
-        else if (writer->frequency_n >= 0)
-          snprintf(frequency_s, 79,
+                   writer->interval_t);
+        else if (writer->interval_n >= 0)
+          snprintf(interval_s, 79,
                    _("every %d time steps and at calculation end"),
-                   writer->frequency_n);
+                   writer->interval_n);
         else
-          snprintf(frequency_s, 79, _("at calculation end"));
+          snprintf(interval_s, 79, _("at calculation end"));
       }
       else {
-        if (writer->frequency_t > 0)
-          snprintf(frequency_s, 79, _("every %12.5e s"),
-                   writer->frequency_t);
-        else if (writer->frequency_n >= 0)
-          snprintf(frequency_s, 79, _("every %d time steps"),
-                   writer->frequency_n);
+        if (writer->interval_t > 0)
+          snprintf(interval_s, 79, _("every %12.5e s"),
+                   writer->interval_t);
+        else if (writer->interval_n >= 0)
+          snprintf(interval_s, 79, _("every %d time steps"),
+                   writer->interval_n);
       }
-      frequency_s[79] = '\0';
+      interval_s[79] = '\0';
 
       bft_printf(_("  %2d: name: %s\n"
                    "      directory: %s\n"
@@ -558,7 +558,7 @@ _writer_info(void)
                    "      time dependency: %s\n"
                    "      output: %s\n\n"),
                  writer->id, case_name, dir_name, fmt_name, fmt_opts,
-                 _(fvm_writer_time_dep_name[time_dep]), frequency_s);
+                 _(fvm_writer_time_dep_name[time_dep]), interval_s);
     }
   }
 }
@@ -3625,7 +3625,7 @@ _cs_post_define_probe_mesh(int                    mesh_id,
 /*----------------------------------------------------------------------------
  * Update "active" or "inactive" flag of writers based on the time step.
  *
- * Writers are activated if their output frequency is a divisor of the
+ * Writers are activated if their output interval is a divisor of the
  * current time step, or if their optional time step and value output lists
  * contain matches for the current time step.
  *----------------------------------------------------------------------------*/
@@ -3727,7 +3727,7 @@ _check_non_transient(const cs_post_writer_t  *writer,
 /*!
  * \brief Define a writer; this objects manages a case's name, directory,
  *        and format, as well as associated mesh's time dependency, and the
- *        default output frequency for associated variables.
+ *        default output interval for associated variables.
  *
  * This function must be called before the time loop. If a writer with a
  * given id is defined multiple times, the last definition supercedes the
@@ -3804,9 +3804,9 @@ _check_non_transient(const cs_post_writer_t  *writer,
  *                              connectivity changes
  * \param[in]  output_at_start  force output at calculation start if true
  * \param[in]  output_at_end    force output at calculation end if true
- * \param[in]  frequency_n      default output frequency in time-steps, or < 0
- * \param[in]  frequency_t      default output frequency in seconds, or < 0
- *                              (has priority over frequency_n)
+ * \param[in]  interval_n       default output interval in time-steps, or < 0
+ * \param[in]  interval_t       default output interval in seconds, or < 0
+ *                              (has priority over interval_n)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3819,8 +3819,8 @@ cs_post_define_writer(int                     writer_id,
                       fvm_writer_time_dep_t   time_dep,
                       bool                    output_at_start,
                       bool                    output_at_end,
-                      int                     frequency_n,
-                      double                  frequency_t)
+                      int                     interval_n,
+                      double                  interval_t)
 {
   /* local variables */
 
@@ -3884,16 +3884,16 @@ cs_post_define_writer(int                     writer_id,
   w->output_start = false;
   w->output_start = output_at_start;
   w->output_end = output_at_end;
-  w->frequency_n = frequency_n;
-  w->frequency_t = frequency_t;
+  w->interval_n = interval_n;
+  w->interval_t = interval_t;
   w->active = 0;
   w->n_last = -2;
   w->t_last = cs_glob_time_step->t_prev;
-  if (frequency_n < 0 && frequency_t > 0) {
-    int n_steps = w->t_last / frequency_t;
-    if (n_steps * frequency_t > w->t_last)
+  if (interval_n < 0 && interval_t > 0) {
+    int n_steps = w->t_last / interval_t;
+    if (n_steps * interval_t > w->t_last)
       n_steps -= 1;
-    w->t_last = n_steps * frequency_t;
+    w->t_last = n_steps * interval_t;
   }
   w->ot = NULL;
 
@@ -5162,7 +5162,7 @@ cs_post_get_free_mesh_id(void)
 /*!
  * \brief Update "active" or "inactive" flag of writers based on the time step.
  *
- * Writers are activated if their output frequency is a divisor of the
+ * Writers are activated if their output interval is a divisor of the
  * current time step, or if their optional time step and value output lists
  * contain matches for the current time step.
  *
@@ -5191,20 +5191,20 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
       continue;
     }
 
-    /* Activation based on frequency */
+    /* Activation based on interval */
 
     writer->active = 0;
 
-    if (writer->frequency_t > 0) {
+    if (writer->interval_t > 0) {
       double  delta_t = ts->t_cur - writer->t_last;
-      if (delta_t >= writer->frequency_t*(1-1e-6))
+      if (delta_t >= writer->interval_t*(1-1e-6))
         writer->active = 1;
       /* delta_t = ts->t_cur - ts->t_prev; */
-      /* if (delta_t < writer->frequency_t*(1-1e-6)) */
+      /* if (delta_t < writer->interval_t*(1-1e-6)) */
       /*   writer->active = 0; */
     }
-    else if (writer->frequency_n > 0) {
-      if (   ts->nt_cur % (writer->frequency_n) == 0
+    else if (writer->interval_n > 0) {
+      if (   ts->nt_cur % (writer->interval_n) == 0
           && ts->nt_cur > ts->nt_prev)
         writer->active = 1;
     }
@@ -6386,8 +6386,8 @@ cs_post_init_writers(void)
                           FVM_WRITER_FIXED_MESH,
                           false,                    /* output_at_start */
                           true,                     /* output at end */
-                          -1,                       /* time step frequency */
-                          -1.0);                    /* time value frequency */
+                          -1,                       /* time step interval */
+                          -1.0);                    /* time value interval */
 
   /* Additional writers for Lagrangian output */
 
@@ -6404,8 +6404,8 @@ cs_post_init_writers(void)
                             FVM_WRITER_TRANSIENT_CONNECT,
                             false,                  /* output_at_start */
                             true,                   /* output at end */
-                            -1,                     /* time step frequency */
-                            -1.0);                  /* time value frequency */
+                            -1,                     /* time step interval */
+                            -1.0);                  /* time value interval */
 
     if (!cs_post_writer_exists(CS_POST_WRITER_TRAJECTORIES))
       cs_post_define_writer(CS_POST_WRITER_TRAJECTORIES, /* writer_id */
@@ -6416,8 +6416,8 @@ cs_post_init_writers(void)
                             FVM_WRITER_FIXED_MESH,
                             false,                  /* output_at_start */
                             true,                   /* output at end */
-                            1,                      /* time step frequency */
-                            -1.0);                  /* time value frequency */
+                            1,                      /* time step interval */
+                            -1.0);                  /* time value interval */
 
   }
 
@@ -6432,8 +6432,8 @@ cs_post_init_writers(void)
                           FVM_WRITER_FIXED_MESH,
                           false,                    /* output_at_start */
                           false,                    /* output at end */
-                          1,                        /* time step frequency */
-                          -1.0);                    /* time value frequency */
+                          1,                        /* time step interval */
+                          -1.0);                    /* time value interval */
 
   if (!cs_post_writer_exists(CS_POST_WRITER_PROFILES))
     cs_post_define_writer(CS_POST_WRITER_PROFILES,  /* writer_id */
@@ -6444,8 +6444,8 @@ cs_post_init_writers(void)
                           FVM_WRITER_FIXED_MESH,
                           false,                    /* output_at_start */
                           true,                     /* output at end */
-                          -1,                       /* time step frequency */
-                          -1.0);                    /* time value frequency */
+                          -1,                       /* time step interval */
+                          -1.0);                    /* time value interval */
 
   /* Additional writers for histograms */
 
@@ -6458,8 +6458,8 @@ cs_post_init_writers(void)
                           FVM_WRITER_FIXED_MESH,
                           false,                      /* output_at_start */
                           true,                       /* output at end */
-                          -1,                         /* time step frequency */
-                          -1.0);                      /* time value frequency */
+                          -1,                         /* time step interval */
+                          -1.0);                      /* time value interval */
 
   /* Print info on writers */
 
