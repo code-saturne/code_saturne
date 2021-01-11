@@ -91,17 +91,16 @@ integer          iterns
 integer          ivar  , iel, ifac, f_id
 integer          init
 integer          nswrgp, imligp
-integer          iconvp, idiffp, ndircp
-integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap
+integer          imrgrp, iescap
 integer          iflmas, iflmab
 integer          iwarnp, i_mass_transfer
-integer          imucpp, idftnp, iswdyp
+integer          imucpp
 
 integer          icvflb, kiflux, kbflux, icflux_id, bcflux_id
 integer          ivoid(1)
 integer          kscmin, kscmax, iclmin(1), iclmax(1)
 
-double precision blencp, epsilp, epsrgp, climgp, relaxp, epsrsp, thetap
+double precision epsrgp, climgp
 
 double precision rvoid(1)
 double precision vmin(1), vmax(1)
@@ -120,6 +119,11 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr, icflux, bcflux
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr)       :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -320,46 +324,36 @@ enddo
 !===============================================================================
 
 ! Solving void fraction
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-ndircp = vcopt%ndircl
-nswrsp = vcopt%nswrsm
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = vcopt%idften
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
-thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 normp = -1.d0
 
-call codits &
- ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetap ,                                              &
-   cvara_voidf     , cvara_voidf     ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   ivolfl , bvolfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
-   rovsdt , smbrs  , cvar_voidf      , dpvar  ,                   &
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , iterns ,                             &
+   ivarfl(ivar)    , c_name ,                    &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_voidf     , cvara_voidf     ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   ivolfl , bvolfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   rvoid  , rvoid  , rvoid  ,                    &
+   icvflb , ivoid  ,                             &
+   rovsdt , smbrs  , cvar_voidf      , dpvar  ,  &
    rvoid  , rvoid  )
 
 !===============================================================================

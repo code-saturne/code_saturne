@@ -71,14 +71,12 @@ double precision c_durbin_l
 integer          iel
 integer          ii    , jj    , ifac
 integer          iflmas, iflmab
-integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imucpp, idftnp, iswdyp
+integer          imvisp
+integer          iescap
+integer          imucpp
 integer          icvflb
 integer          init
 integer          ivoid(1)
-double precision blencp, epsilp, epsrsp, epsrgp, climgp, relaxp
 double precision thetv , thetap
 double precision d1s4, d3s2, d1s2
 double precision xk, xnu, l2
@@ -88,6 +86,9 @@ double precision normp
 double precision rvoid(1)
 
 type(var_cal_opt), target   :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 
 character(len=80) :: label
 double precision, allocatable, dimension(:) :: viscf, viscb
@@ -102,6 +103,8 @@ double precision, dimension(:), pointer :: cvar_al, cvara_al, cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer :: cvara_rij
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -226,27 +229,8 @@ call viscfa                                                       &
 ! 2.3 Effective resolution of the equation of alpha
 !===============================================================================
 
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-ndircp = vcopt%ndircl ! Diagonal reinforcement: same as dynamic Alpha
-nswrsp = vcopt%nswrsm
-nswrgp = vcopt%nswrgr
-imrgrp = vcopt%imrgra
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = vcopt%idften
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
 
 ! all boundary convective flux with upwind
 icvflb = 0
@@ -254,20 +238,31 @@ normp = -1.d0
 
 init   = 1
 
-call codits &
- ( idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetv  ,                                              &
-   cvara_al        , cvara_al        ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , cvar_al         , dpvar  ,                   &
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%thetav = thetv
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , init   ,                             &
+   f_id   , c_name ,                             &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_al        , cvara_al        ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   imasfl , bmasfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   rvoid  , rvoid  , rvoid  ,                    &
+   icvflb , ivoid  ,                             &
+   rovsdt , smbr   , cvar_al, dpvar  ,           &
    rvoid  , rvoid  )
 
 !===============================================================================

@@ -125,12 +125,12 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          iel
 integer          ii    , jj    , kk    , iii   , jjj
 integer          iflmas, iflmab
-integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap
+integer          iwarnp
+integer          imvisp
+integer          iescap
 integer          st_prv_id, comp_id
 integer          iprev , inc, iccocg, ll
-integer          imucpp, idftnp, iswdyp
+integer          imucpp
 integer          ivar_r(3,3)
 integer          icvflb
 integer          init
@@ -138,8 +138,6 @@ integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
 
-double precision blencp, epsilp, epsrgp, climgp, relaxp
-double precision epsrsp
 double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
@@ -179,6 +177,11 @@ end type pmapper_double_r1
 type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_r
 
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -770,27 +773,8 @@ if (st_prv_id.ge.0) then
   enddo
 endif
 
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-ndircp = vcopt%ndircl
-imrgrp = vcopt%imrgra
-nswrsp = vcopt%nswrsm
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = vcopt%idften
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 normp = -1.d0
@@ -801,20 +785,31 @@ call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-call codits &
- ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetv  ,                                              &
-   cvara_var       , cvara_var       ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , viscce ,                   &
-   weighf , weighb ,                                              &
-   icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , cvar_var        , dpvar  ,                   &
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%thetav = thetv
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , init   ,                             &
+   ivarfl(ivar)    , c_name ,                    &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_var       , cvara_var       ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   imasfl , bmasfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   viscce , weighf , weighb ,                    &
+   icvflb , ivoid  ,                             &
+   rovsdt , smbr   , cvar_var        , dpvar  ,  &
    rvoid  , rvoid  )
 
 ! Free memory

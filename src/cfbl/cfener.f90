@@ -106,10 +106,10 @@ integer          init  , iii
 integer          ifcvsl, iflmas, iflmab
 integer          icvflb
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
-double precision epsrgp, climgp, blencp, epsilp
-double precision sclnor, thetap, epsrsp, relaxp
+integer          imvisp
+integer          iescap
+double precision epsrgp, climgp
+double precision sclnor
 double precision turb_schmidt, visls_0
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
@@ -149,7 +149,12 @@ double precision, dimension(:), pointer :: visct, cpro_cp, cpro_cv, cpro_viscls
 
 type(gas_mix_species_prop) :: s_k
 type(var_cal_opt) :: vcopt_u, vcopt_p, vcopt_e
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -737,24 +742,6 @@ endif
 ! 4. Solving
 !===============================================================================
 
-iconvp = vcopt_e%iconv
-idiffp = vcopt_e%idiff
-ndircp = vcopt_e%ndircl
-imrgrp = vcopt_e%imrgra
-nswrsp = vcopt_e%nswrsm
-nswrgp = vcopt_e%nswrgr
-imligp = vcopt_e%imligr
-ircflp = vcopt_e%ircflu
-ischcp = vcopt_e%ischcv
-isstpp = vcopt_e%isstpc
-iwarnp = vcopt_e%iwarni
-blencp = vcopt_e%blencv
-epsilp = vcopt_e%epsilo
-epsrsp = vcopt_e%epsrsm
-epsrgp = vcopt_e%epsrgr
-climgp = vcopt_e%climgr
-relaxp = vcopt_e%relaxv
-thetap = vcopt_e%thetav
 iescap = 0
 
 !  idtvar = 1  => unsteady
@@ -771,21 +758,33 @@ call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-call codits                                                      &
-( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-  imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-  ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  iwarnp , normp  ,                                              &
-  blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-  relaxp , thetap ,                                              &
-  cvara_energ     , cvara_energ     ,                            &
-  coefap , coefbp , cofafp , cofbfp ,                            &
-  imasfl, bmasfl,                                                &
-  viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-  rvoid  , rvoid  ,                                              &
-  icvflb , icvfli ,                                              &
-  rovsdt , smbrs  , cvar_energ      , dpvar  ,                   &
-  rvoid  , rvoid  )
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt_e
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%idften = idftnp
+vcopt_loc%iswdyn = iswdyp
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , init   ,                             &
+   ivarfl(ivar)    , c_name ,                    &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_energ     , cvara_energ     ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   imasfl , bmasfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   rvoid  , rvoid  , rvoid  ,                    &
+   icvflb , icvfli ,                             &
+   rovsdt , smbrs  , cvar_energ      , dpvar  ,  &
+   rvoid  , rvoid  )
 
 deallocate(viscf)
 deallocate(viscb)

@@ -93,14 +93,12 @@ double precision smacel(ncesmp,nvar)
 ! Local variables
 
 integer          iel   , ifac  , inc   , iccocg, iprev, ivar
-integer          imrgrp, nswrgp, imligp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          imvisp
+integer          iescap
 integer          iflmas, iflmab
-integer          iwarnp
 integer          istprv
 integer          ipatrg
-integer          imucpp, idftnp, iswdyp
+integer          imucpp
 integer          f_id
 integer          init
 integer          key_t_ext_id
@@ -109,9 +107,7 @@ integer          iviext
 
 double precision romvsd
 double precision visct , rom
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
-double precision epsrsp
-double precision thetv, thetp1, thetap
+double precision thetv, thetp1
 double precision tuexpn
 double precision cofbnu
 double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
@@ -140,6 +136,11 @@ double precision, dimension(:), pointer :: c_st_nusa_p
 double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_nusa
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 ! 1. Initialization
@@ -536,48 +537,37 @@ endif
 
 ! --- Solving
 
-iconvp = vcopt_nusa%iconv
-idiffp = vcopt_nusa%idiff
-ndircp = vcopt_nusa%ndircl
-nswrsp = vcopt_nusa%nswrsm
-imrgrp = vcopt_nusa%imrgra
-nswrgp = vcopt_nusa%nswrgr
-imligp = vcopt_nusa%imligr
-ircflp = vcopt_nusa%ircflu
-ischcp = vcopt_nusa%ischcv
-isstpp = vcopt_nusa%isstpc
 iescap = 0
 imucpp = 0
-idftnp = vcopt_nusa%idften
-iswdyp = vcopt_nusa%iswdyn
-iwarnp = vcopt_nusa%iwarni
-blencp = vcopt_nusa%blencv
-epsilp = vcopt_nusa%epsilo
-epsrsp = vcopt_nusa%epsrsm
-epsrgp = vcopt_nusa%epsrgr
-climgp = vcopt_nusa%climgr
-extrap = vcopt_nusa%extrag
-relaxp = vcopt_nusa%relaxv
-thetap = vcopt_nusa%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 normp = -1.d0
 init   = 1
 
-call codits &
- ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetap ,                                              &
-   cvara_nusa      , cvara_nusa      ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
-   tinssa , rhssa  , cvar_nusa       , dpvar ,                    &
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt_nusa
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , init   ,                             &
+   ivarfl(ivar)    , c_name ,                    &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_nusa      , cvara_nusa      ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   imasfl , bmasfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   rvoid  , rvoid  , rvoid  ,                    &
+   icvflb , ivoid  ,                             &
+   tinssa , rhssa  , cvar_nusa       , dpvar  ,  &
    rvoid  , rvoid  )
 
 !===============================================================================

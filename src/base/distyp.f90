@@ -102,15 +102,15 @@ double precision visvdr(ncelet)
 
 ! Local variables
 
-integer          idtva0, f_id  , iconvp, idiffp, imvisp
+integer          idtva0, f_id  , imvisp
 integer          f_id_yplus
 integer          ndircp
 integer          iphydp
 integer          ifac  , iel   , init
 integer          inc   , iccocg, isweep
-integer          imucpp, idftnp
-integer          imrgrp, nswrgp, nswrsp
-integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
+integer          imucpp
+integer          imrgrp, nswrgp
+integer          icvflb, iescap, imligp, iwarnp
 integer          iflmas, iflmab
 
 integer          infpar
@@ -118,8 +118,7 @@ save             infpar
 
 integer          ivoid(1)
 
-double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
-double precision thetap
+double precision climgp, epsrgp, extrap
 double precision wall_surf
 double precision xusnmx, xusnmn, xnorm0
 double precision dismax, dismin, usna
@@ -143,6 +142,11 @@ double precision, pointer, dimension(:) :: a_y, b_y
 double precision, pointer, dimension(:) :: af_y, bf_y
 double precision, dimension(:), pointer :: imasfl, bmasfl
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 integer          ipass
 data             ipass /0/
@@ -470,28 +474,9 @@ enddo
 
 ! Solving
 !=========
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-idftnp = vcopt%idften
-nswrsp = vcopt%nswrsm
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 ! No error estimate
 iescap = 0
 imucpp = 0
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
-thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 init   = 1
@@ -505,22 +490,34 @@ isweep = -1
 
 ! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
-call codits &
- ( idtva0 , isweep , f_id_yplus, iconvp , idiffp , ndircp ,       &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , xnorm0 ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetap ,                                              &
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%ndircl = ndircp
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar                           &
+ ( idtva0 , isweep ,                                              &
+   f_id_yplus      , c_name  ,                                    &
+   iescap , imucpp , xnorm0  , c_k_value      ,                   &
    dvarp  , dvarp  ,                                              &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
+   coefap , coefbp , cofafp  , cofbfp ,                           &
    imasfl , bmasfl ,                                              &
-   imasfl , bmasfl , imasfl , bmasfl , rvoid  ,                   &
-   rvoid  , rvoid  ,                                              &
+   imasfl , bmasfl , imasfl  , bmasfl ,                           &
+   rvoid  , rvoid  , rvoid   ,                                    &
    icvflb , ivoid  ,                                              &
-   rovsdp , smbdp  , dvarp  , dpvar  ,                            &
+   rovsdp , smbdp  , dvarp   , dpvar  ,                           &
    rvoid  , rvoid  )
+
+! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
 ! Clipping (indispensable si on initialise par u*/nu du pas de
 !==========                                   temps precedent)

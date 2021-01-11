@@ -201,6 +201,11 @@ double precision normp, rc1(3)
 
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p, vcopt_u
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 double precision rvoid(1)
 
@@ -2065,25 +2070,8 @@ if (idilat.eq.5) then
   idiffp = 1
   ! To reinforce the diagonal
   ndircp = 0
-  nswrsp = vcopt_p%nswrsm
-  imrgrp = vcopt_p%imrgra
-  nswrgp = vcopt_p%nswrgr
-  imligp = vcopt_p%imligr
-  ircflp = vcopt_p%ircflu
-  ischcp = vcopt_p%ischcv
-  isstpp = vcopt_p%isstpc
   iescap = 0
   imucpp = 0
-  idftnp = vcopt_p%idften
-  iswdyp = vcopt_p%iswdyn
-  iwarnp = vcopt_p%iwarni
-  blencp = vcopt_p%blencv
-  epsilp = vcopt_p%epsilo
-  epsrsp = vcopt_p%epsrsm
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  relaxp = vcopt_p%relaxv
-  thetap = vcopt_p%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
   normp = -1.d0
@@ -2094,18 +2082,32 @@ if (idilat.eq.5) then
 
   call sles_push(ivarfl(ipr), "Pr compress")
 
-  call codits &
-   ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-     imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-     ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-     iwarnp , normp  ,                                              &
-     blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-     relaxp , thetap ,                                              &
+  !From cs_c_bindings
+  c_name = trim(nomva0)//c_null_char
+
+  vcopt_loc = vcopt_p
+
+  vcopt_loc%iconv  = iconvp
+  vcopt_loc%istat  = -1
+  vcopt_loc%icoupl = -1
+  vcopt_loc%ndircl = ndircp
+  vcopt_loc%idiff  = idiffp
+  vcopt_loc%idifft = -1
+  vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+  vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+  p_k_value => vcopt_loc
+  c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+  call cs_equation_iterative_solve_scalar                           &
+   ( idtvar , iterns ,                                              &
+     ivarfl(ivar)    , c_name ,                                     &
+     iescap , imucpp , normp  , c_k_value       ,                   &
      dphi   , dphi   ,                                              &
-     coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
+     coefa_dp2       , coefb_p, coefaf_dp2      , coefbf_p        , &
      velflx , velflb ,                                              &
-     viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-     weighf , weighb ,                                              &
+     viscf  , viscb  , viscf  , viscb  ,                            &
+     rvoid  , weighf , weighb ,                                     &
      icvflb , ivoid  ,                                              &
      rovsdt , rhs    , dphi   , ddphi  ,                            &
      rvoid  , rvoid  )

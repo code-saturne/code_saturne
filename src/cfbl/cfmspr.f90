@@ -102,18 +102,15 @@ integer          init  , inc   , iccocg, ii, jj
 integer          iflmas, iflmab
 integer          iphydp, icvflb
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          istatp, iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          iescap
 integer          ivoid(1)
-double precision epsrgp, climgp, extrap, blencp, epsilp
-double precision epsrsp
+double precision epsrgp, climgp, extrap
 double precision sclnor, hint
 
-integer          imucpp, idftnp, iswdyp
+integer          imucpp
 integer          imvis1, f_id0
 integer          f_id
 
-double precision thetv, relaxp
 double precision normp
 
 double precision rvoid(1)
@@ -139,6 +136,11 @@ double precision, dimension(:), pointer :: cpro_divq
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 type(var_cal_opt) :: vcopt_p
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -323,48 +325,42 @@ call viscfa                                                                    &
 ! 4. SOLVING
 !===============================================================================
 
-istatp = vcopt_p%istat
-iconvp = vcopt_p%iconv
-idiffp = vcopt_p%idiff
-ndircp = vcopt_p%ndircl
-nswrsp = vcopt_p%nswrsm
 imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
-ircflp = vcopt_p%ircflu
-ischcp = vcopt_p%ischcv
-isstpp = vcopt_p%isstpc
 iescap = 0
 imucpp = 0
-idftnp = vcopt_p%idften
-iswdyp = vcopt_p%iswdyn
 iwarnp = vcopt_p%iwarni
-blencp = vcopt_p%blencv
-epsilp = vcopt_p%epsilo
-epsrsp = vcopt_p%epsrsm
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-relaxp = vcopt_p%relaxv
-thetv  = vcopt_p%thetav
 icvflb = 0
 normp = -1.d0
 
-call codits                                                                    &
-( idtvar , init   , ivarfl(ipr)     , iconvp , idiffp , ndircp ,               &
-  imrgrp , nswrsp , nswrgp , imligp , ircflp ,                                 &
-  ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
-  iwarnp , normp  ,                                                            &
-  blencp , epsilp , epsrsp , epsrgp , climgp ,                                 &
-  relaxp , thetv  ,                                                            &
-  cvara_pr        , cvara_pr        ,                                          &
-  wbfa   , wbfb   ,                                                            &
-  coefaf_p        , coefbf_p        ,                                          &
-  wflmas          , wflmab          ,                                          &
-  viscf  , viscb  , viscf  , viscb  , rvoid  ,                                 &
-  rvoid  , rvoid  ,                                                            &
-  icvflb , ivoid  ,                                                            &
-  rovsdt , smbrs  , cvar_pr         , dpvar  ,                                 &
-  rvoid  , rvoid  )
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt_p
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_scalar                 &
+ ( idtvar , init   ,                                    &
+   ivarfl(ipr)     , c_name ,                           &
+   iescap , imucpp , normp  , c_k_value       ,         &
+   cvara_pr        , cvara_pr        ,                  &
+   wbfa   , wbfb   , coefaf_p        , coefbf_p       , &
+   wflmas , wflmab ,                                    &
+   viscf  , viscb  , viscf  , viscb  ,                  &
+   rvoid  , rvoid  , rvoid  ,                           &
+   icvflb , ivoid  ,                                    &
+   rovsdt , smbrs  , cvar_pr, dpvar  ,                  &
+   rvoid  , rvoid  )
 
 !===============================================================================
 ! 5. PRINTINGS AND CLIPPINGS

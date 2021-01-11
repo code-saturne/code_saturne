@@ -74,18 +74,16 @@ integer          itypfb(nfabor)
 
 ! Local variables
 
-integer          ndircp, iconvp, idiffp, imvisp
+integer          ndircp, imvisp
 integer          iel   , ifac
 integer          inc   , iccocg, f_id
 integer          mmprpl, nswrsp
-integer          imucpp, idftnp
-integer          imrgrp, nswrgp
-integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
+integer          imucpp
+integer          icvflb, iescap, ircflp
 integer          ivoid(1)
 integer          init, counter
 
-double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp
-double precision dismax, dismin, hint, pimp, qimp, norm_grad, thetap
+double precision dismax, dismin, hint, pimp, qimp, norm_grad
 double precision normp
 
 double precision rvoid(1)
@@ -100,6 +98,11 @@ double precision, pointer, dimension(:)   :: cvara_var
 double precision, pointer, dimension(:) :: coefap, coefbp
 double precision, pointer, dimension(:) :: cofafp, cofbfp
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -229,31 +232,28 @@ call viscfa                                                       &
 
 ! Distance to wall is initialized to 0 for reconstruction
 
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-idftnp = vcopt%idften
 nswrsp = vcopt%nswrsm
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
 ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
-thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 init   = 1
 normp = -1.d0
+
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%ndircl = ndircp
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 110 continue
 
@@ -268,20 +268,17 @@ do iel = 1, ncel
   smbrp(iel)  = cell_f_vol(iel)
 enddo
 
-call codits &
- ( idtvar , init, f_id   , iconvp , idiffp , ndircp ,             &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetap ,                                              &
+call cs_equation_iterative_solve_scalar                           &
+ ( idtvar , init   ,                                              &
+   f_id   , c_name ,                                              &
+   iescap , imucpp , normp  , c_k_value       ,                   &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
-   rvoid  , rvoid  ,                                              &
+   viscf  , viscb  , viscf  , viscb  ,                            &
+   rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbrp  , cvar_var        , dpvar  ,                   &
+   rovsdt , smbrp  , cvar_var       , dpvar,                     &
    rvoid  , rvoid  )
 
 ! Count clippings

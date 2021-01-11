@@ -152,9 +152,9 @@ integer          ivarsc
 integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imucpp, idftnp, iswdyp
+integer          iconvp, imvisp
+integer          imrgrp, iescap
+integer          imucpp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          f_id_al
 integer          icvflb, f_dim, iflwgr
@@ -170,8 +170,7 @@ integer          scalar_turb_flux_model_type, variance_turb_flux_model_type
 
 integer          ivoid(1)
 
-double precision epsrgp, climgp, relaxp, blencp, epsilp
-double precision epsrsp
+double precision epsrgp, climgp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod
@@ -224,9 +223,13 @@ double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 ! Radiat arrays
 double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
 character(len=80) :: f_name
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 type(var_cal_opt) :: vcopt, vcopt_varsc
+type(var_cal_opt), target :: vcopt_loc
 type(gwf_soilwater_partition) :: sorption_scal
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 
 !===============================================================================
 ! Interfaces
@@ -1343,49 +1346,40 @@ else
   call field_get_val_s(ivarfl(ivar), cvark_var)
 endif
 
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-idftnp = vcopt%idften
-ndircp = vcopt%ndircl
-nswrsp = vcopt%nswrsm
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 normp = -1.d0
+
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%icoupl = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-call codits &
- ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp , normp  ,                                              &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
-   relaxp , thetv  ,                                              &
-   cvara_var       , cvark_var       ,                            &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscf  , viscb  , viscce ,                   &
-   weighf , weighb ,                                              &
-   icvflb , ivoid  ,                                              &
-   rovsdt , smbrs  , cvar_var        , dpvar  ,                   &
+call cs_equation_iterative_solve_scalar          &
+ ( idtvar , iterns ,                             &
+   ivarfl(ivar)    , c_name,                     &
+   iescap , imucpp , normp  , c_k_value       ,  &
+   cvara_var       , cvark_var       ,           &
+   coefap , coefbp , cofafp , cofbfp ,           &
+   imasfl , bmasfl ,                             &
+   viscf  , viscb  , viscf  , viscb  ,           &
+   viscce , weighf , weighb ,                    &
+   icvflb , ivoid  ,                             &
+   rovsdt , smbrs  , cvar_var        , dpvar  ,  &
    xcpp   , rvoid  )
 
 !===============================================================================
