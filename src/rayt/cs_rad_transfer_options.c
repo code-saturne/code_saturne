@@ -58,6 +58,7 @@
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_time_control.h"
 #include "cs_timer.h"
 #include "cs_thermal_model.h"
 #include "cs_gui_output.h"
@@ -159,7 +160,12 @@ cs_rad_transfer_options(void)
 
   /* ->  Radiation solver call frequency */
 
-  rt_params->nfreqr       = 1;
+  cs_time_control_init_by_time_step(&(rt_params->time_control),
+                                    - 1,     /* nt_start */
+                                    -1,      /* nt_end */
+                                    1,       /* interval */
+                                    true,    /* at start */
+                                    false);  /* at end */
 
   /* ->  Quadrature number and Tn parameter */
 
@@ -238,14 +244,14 @@ cs_rad_transfer_options(void)
 
     /* --> NFREQR */
 
-    if (rt_params->nfreqr <= 0)
+    if (rt_params->time_control.interval_nt <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Radiative module"),
          _("Thermal model resolution frequency"
-           " (cs_glob_rad_transfer_params->nfreqr)\n"
+           " (cs_glob_rad_transfer_params->time_control.interval_nt)\n"
            "must be > 0, and not %d.\n"),
-         rt_params->nfreqr);
+         rt_params->time_control.interval_nt);
 
     /* --> i_quadrature     */
 
@@ -328,9 +334,13 @@ cs_rad_transfer_log_setup(void)
                 _("    restart:       %s\n"),
                 _(restart_value_str[cs_glob_rad_transfer_params->restart]));
 
+  char buf[128];
+  cs_time_control_get_description(&(cs_glob_rad_transfer_params->time_control),
+                                  buf,
+                                  128);
+
   cs_log_printf(CS_LOG_SETUP,
-                _("    nrestart:      %d (Radiation pass frequency)\n"),
-                cs_glob_rad_transfer_params->nfreqr);
+                _("    time control:      %s\n"), buf);
 
   if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
     cs_log_printf

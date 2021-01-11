@@ -283,8 +283,6 @@ cs_gui_radiative_transfer_parameters(void)
                               &cs_glob_rad_transfer_params->i_quadrature);
     cs_gui_node_get_child_int(tn0, "directions_number",
                               &cs_glob_rad_transfer_params->ndirec);
-    cs_gui_node_get_child_int(tn0, "frequency",
-                              &cs_glob_rad_transfer_params->nfreqr);
     cs_gui_node_get_child_int(tn0, "thermal_radiative_source_term",
                               &cs_glob_rad_transfer_params->idiver);
     cs_gui_node_get_child_int(tn0, "temperature_listing_printing",
@@ -296,6 +294,10 @@ cs_gui_radiative_transfer_parameters(void)
       if (ac_type == 3)
         cs_glob_rad_transfer_params->imodak = 1;
     }
+    cs_gui_node_get_child_int
+      (tn0, "frequency",
+       &(cs_glob_rad_transfer_params->time_control.interval_nt));
+
   }
 #if _XML_DEBUG_
   bft_printf("==> cs_gui_radiative_transfer_parameters\n");
@@ -305,7 +307,8 @@ cs_gui_radiative_transfer_parameters(void)
     bft_printf("--isuird = %d\n", isuird);
     bft_printf("--quadra = %d\n", cs_glob_rad_transfer_params->i_quadrature);
     bft_printf("--ndirec = %d\n", cs_glob_rad_transfer_params->ndirec);
-    bft_printf("--nfreqr = %d\n", cs_glob_rad_transfer_params->nfreqr);
+    bft_printf("--interval_nt = %d\n",
+               cs_glob_rad_transfer_params->time_control.interval_nt);
     bft_printf("--idiver = %d\n", cs_glob_rad_transfer_params->idiver);
     bft_printf("--iimpar = %d\n", cs_glob_rad_transfer_params->iimpar);
     bft_printf("--verbosity = %d\n", cs_glob_rad_transfer_params->verbosity);

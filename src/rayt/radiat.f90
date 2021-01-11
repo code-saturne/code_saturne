@@ -44,15 +44,6 @@ module radiat
   !>  - 2: P1
   integer(c_int), pointer, save :: iirayo
 
-  !> Period of the radiation module.
-  !> The radiation module is called every \ref nfreqr time steps (more precisely,
-  !> every time \ref optcal::ntcabs "ntcabs" is a multiple of \ref nfreqr).
-  !> Also, in order to have proper initialization of the variables, whatever
-  !> the value of \ref nfreqr, the radiation module is called at
-  !> the first time step of a calculation (restart or not).
-  !> Useful if and only if the radiation module is activated}
-  integer(c_int), pointer, save ::           nfreqr
-
   !> Atmospheric radiation model:
   !> - Direct Solar the first bit
   !> - diFfuse Solar for the second bit
@@ -77,12 +68,12 @@ module radiat
     !---------------------------------------------------------------------------
 
     ! Interface to C function to retrieve pointers
-    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr, p_rad_atmo_model)  &
+    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_rad_atmo_model)  &
       bind(C, name='cs_rad_transfer_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
 
-      type(c_ptr), intent(out) :: p_iirayo, p_nfreqr, p_rad_atmo_model
+      type(c_ptr), intent(out) :: p_iirayo, p_rad_atmo_model
 
     end subroutine cs_rad_transfer_get_pointers
 
@@ -172,12 +163,11 @@ contains
     use ppcpfu
     use numvar
 
-    type(c_ptr) :: p_iirayo, p_nfreqr, p_rad_atmo_model
+    type(c_ptr) :: p_iirayo, p_rad_atmo_model
 
-    call cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr, p_rad_atmo_model)
+    call cs_rad_transfer_get_pointers(p_iirayo, p_rad_atmo_model)
 
     call c_f_pointer(p_iirayo, iirayo)
-    call c_f_pointer(p_nfreqr, nfreqr)
     call c_f_pointer(p_rad_atmo_model, rad_atmo_model)
 
   end subroutine radiat_init

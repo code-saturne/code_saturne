@@ -33,6 +33,8 @@
 
 #include "cs_defs.h"
 
+#include "cs_time_control.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -109,7 +111,6 @@ typedef struct {
   cs_real_3_t  *vect_s;
   cs_real_t    *angsol;
   int           restart;
-  int           nfreqr;
   int           nwsgg;
   cs_real_t    *wq;
   int           nzfrad;
@@ -147,6 +148,8 @@ typedef struct {
                                        with point source) test case; the default
                                        value of 1 already improves precision in
                                        both cases. */
+
+  cs_time_control_t  time_control;   /* Time control for radiation updates */
 
 
 } cs_rad_transfer_params_t;

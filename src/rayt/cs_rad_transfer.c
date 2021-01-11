@@ -155,13 +155,6 @@ BEGIN_C_DECLS
   \var  cs_rad_transfer_params_t::restart
         Indicates whether the radiation variables should be initialized or
         read from a restart file.
-  \var  cs_rad_transfer_params_t::nfreqr
-        Period of the radiation module.
-        The radiation module is called every \ref nfreqr time steps (more precisely,
-        every time \ref optcal::ntcabs "ntcabs" is a multiple of \ref nfreqr).
-        Also, in order to have proper initialization of the variables, whatever
-        the value of \ref nfreqr, the radiation module is called at
-        the first time step of a calculation (restart or not).
   \var  cs_rad_transfer_params_t::nwsgg
         Spectral radiation models (ADF and FSCK).\n
         Number of ETRs to solve.
@@ -186,6 +179,11 @@ BEGIN_C_DECLS
         which solves a heat equation.
   \var  cs_rad_transfer_params_t::ifinfe
         Modeling of an infinite extrusion for open boundaries.
+  \var  cs_rad_transfer_params_t::time_control
+        Determines at which time steps the variables are updated
+        Also, in order to have proper initialization of the variables,
+        the radiation module should always be called at
+        the first time step of a calculation (restart or not).
 */
 
 /*----------------------------------------------------------------------------*/
@@ -222,38 +220,53 @@ const char *cs_rad_transfer_quadrature_name[] = {
   "LC11",
   "DCT020_2468"};
 
-cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
-                                       .nrphas = 0,
-                                       .iimpar = 0,
-                                       .verbosity = 0,
-                                       .imodak = 0,
-                                       .imoadf = 0,
-                                       .iwrp1t = 0,
-                                       .imfsck = 0,
-                                       .xnp1mx = 0.,
-                                       .idiver = 0,
-                                       .i_quadrature = 0,
-                                       .ndirec = 0,
-                                       .ndirs = 0,
-                                       .vect_s = NULL,
-                                       .angsol = NULL,
-                                       .restart = 0,
-                                       .nfreqr = 0,
-                                       .nwsgg = 1,
-                                       .wq = NULL,
-                                       .itpimp = 1,
-                                       .ipgrno = 21,
-                                       .iprefl = 22,
-                                       .ifgrno = 31,
-                                       .ifrefl = 32,
-                                       .itpt1d = 4,
-                                       .ifinfe = 5,
-                                       .atmo_model = CS_RAD_ATMO_3D_NONE,
-                                       .atmo_dr_id = -1,
-                                       .atmo_df_id = -1,
-                                       .atmo_ir_id = -1,
-                                       .dispersion = false,
-                                       .dispersion_coeff = 1.};
+cs_rad_transfer_params_t _rt_params = {
+  .type = CS_RAD_TRANSFER_NONE,
+  .nrphas = 0,
+  .iimpar = 0,
+  .verbosity = 0,
+  .imodak = 0,
+  .imoadf = 0,
+  .iwrp1t = 0,
+  .imfsck = 0,
+  .xnp1mx = 0.,
+  .idiver = 0,
+  .i_quadrature = 0,
+  .ndirec = 0,
+  .ndirs = 0,
+  .vect_s = NULL,
+  .angsol = NULL,
+  .restart = 0,
+  .nwsgg = 1,
+  .wq = NULL,
+  .itpimp = 1,
+  .ipgrno = 21,
+  .iprefl = 22,
+  .ifgrno = 31,
+  .ifrefl = 32,
+  .itpt1d = 4,
+  .ifinfe = 5,
+  .atmo_model = CS_RAD_ATMO_3D_NONE,
+  .atmo_dr_id = -1,
+  .atmo_df_id = -1,
+  .atmo_ir_id = -1,
+  .dispersion = false,
+  .dispersion_coeff = 1.,
+  .time_control = {
+    .type = CS_TIME_CONTROL_TIME_STEP,
+    .at_start = false,
+    .at_end = false,
+    .start_nt = -1,
+    .end_nt = -1,
+    .interval_nt = 1,
+    .control_func = NULL,
+    .control_input = NULL,
+    .current_state = false,
+    .current_time_step = -1,
+    .last_nt = -2,
+    .last_t = -HUGE_VAL
+  }
+};
 
 cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
@@ -264,7 +277,6 @@ cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
-                             int  **p_nfreqr,
                              int  **p_rad_atmo_model);
 
 /*============================================================================
@@ -273,11 +285,9 @@ cs_rad_transfer_get_pointers(int  **p_iirayo,
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
-                             int  **p_nfreqr,
                              int  **p_rad_atmo_model)
 {
   *p_iirayo = &_rt_params.type;
-  *p_nfreqr = &_rt_params.nfreqr;
   *p_rad_atmo_model = &_rt_params.atmo_model;
 }
 

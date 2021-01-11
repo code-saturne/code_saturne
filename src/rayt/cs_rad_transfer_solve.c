@@ -1008,7 +1008,8 @@ cs_rad_transfer_solve(int               bc_type[],
   ipadom++;
 
   if (   ipadom > 1
-      && cs_glob_time_step->nt_cur%rt_params->nfreqr != 0)
+      && cs_time_control_is_active(&(rt_params->time_control),
+                                   cs_glob_time_step) == false)
     return;
 
   /* Allocate temporary arrays for the radiative equations resolution */
