@@ -6,6 +6,11 @@ User changes:
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
 
+Numerics and physical modeling:
+
+- Activate improved hydrostatic pressure interpolation (iphydr)
+  by default.
+
 Release 6.3.0 (December 21 2020)
 --------------------------------
 

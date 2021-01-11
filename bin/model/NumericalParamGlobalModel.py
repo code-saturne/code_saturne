@@ -72,10 +72,7 @@ class NumericalParamGlobalModel(Model):
         self.default['pressure_relaxation'] = 1.
         self.default['density_relaxation'] = 0.95
         self.default['velocity_pressure_coupling'] ='off'
-        self.default['hydrostatic_pressure'] ='off'
-        from code_saturne.model.HgnModel import HgnModel
-        if HgnModel(self.case).getHgnModel() == 'no_mass_transfer':
-            self.default['hydrostatic_pressure'] ='on'
+        self.default['hydrostatic_pressure'] ='on'
         self.default['hydrostatic_equilibrium'] ='off'
         self.default['time_scheme_order'] = 1
         self.default['gradient_reconstruction'] = 'default'
@@ -126,14 +123,15 @@ class NumericalParamGlobalModel(Model):
     @Variables.noUndo
     def getHydrostaticPressure(self):
         """
-        Return status of hydrostatic pressure :
+        Return status of hydrostatic pressure:
         'off' if standard, 'on' if improved
         """
-        node = self.node_np.xmlInitNode('hydrostatic_pressure', 'status')
-        status = node['status']
+        status = None
+        node = self.node_np.xmlGetNode('hydrostatic_pressure')
+        if node:
+            status = node['status']
         if not status:
             status = self._defaultValues()['hydrostatic_pressure']
-            self.setHydrostaticPressure(status)
         return status
 
 
@@ -236,7 +234,10 @@ class NumericalParamGlobalModel(Model):
         """
         self.isOnOff(var)
         node = self.node_np.xmlInitNode('hydrostatic_pressure', 'status')
-        node['status'] = var
+        if var == self._defaultValues()['hydrostatic_pressure']:
+            node.xmlRemoveNode()
+        else:
+            node['status'] = var
 
 
     @Variables.undoLocal

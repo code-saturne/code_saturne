@@ -67,10 +67,10 @@
       <item row="1" column="0">
        <widget class="QCheckBox" name="checkBoxImprovedPressure">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the method for taking into account the balance between the pressure gradient and the source terms (gravity and head losses):&lt;/p&gt;&lt;p&gt;- Standard algorithm (Unticked box),&lt;/p&gt;&lt;p&gt;- Improved algorithm (Ticked box).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;When the density effects are important, the choice of the improved algorithm allows to improve the interpolation of the pressure and correct the non-physical velocities which may appear in highly stratified areas or near horizontal walls. The improved algorithm also allows eradicating the velocity oscillations which tend toappear at the frontiers of areas with high head losses.&lt;/p&gt;&lt;p&gt;(key words: &lt;span style=&quot; font-weight:600;&quot;&gt;iphydr&lt;/span&gt; and &lt;span style=&quot; font-weight:600;&quot;&gt;icalhy&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The improved algorithm (which takes into account the balance between the pressure gradient and the source terms) is strongly recommended in the presence of gravity effects, head losses, or momentum source terms.&lt;/p&gt;&lt;p&gt;When none of the above is present (so that no external forces are present), the improved algorithm should reduce to the classical algorithm, though it may have a slightly  higher computational cost, and could be more sensitive to tuncation errors.&lt;/p&gt;&lt;p&gt;When the density effects are important, the choice of the improved algorithm allows to improve the interpolation of the pressure and correct the non-physical velocities which may appear in highly stratified areas or near horizontal walls. The improved algorithm also allows eradicating the velocity oscillations which tend to appear at the frontiers of areas with high head losses.&lt;/p&gt;&lt;p&gt;(key words: &lt;span style=&quot; font-weight:600;&quot;&gt;iphydr&lt;/span&gt; and &lt;span style=&quot; font-weight:600;&quot;&gt;icalhy&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Improved pressure interpolation in stratified flow</string>
+         <string>Improved pressure interpolation</string>
         </property>
        </widget>
       </item>

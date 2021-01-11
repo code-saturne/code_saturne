@@ -156,11 +156,8 @@ BEGIN_C_DECLS
         Take into account the balance or imbalance between the pressure
         gradient and source terms (as gravity and head losses)
         - 1: impose the equilibrium of the static part of the pressure with
-          any external force, even head losses
-        - 0: no treatment (default)
-        - 2: hydrostatic pressure computation with a apriori momentum equation
-             to obtain a hydrostatic pressure taking into account the imbalance
-             between the pressure gradient and the gravity source term.\n\n
+          any external force, even head losses (default)
+        - 0: no treatment\n\n
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
         non-physical velocities which may appear in highly stratified areas
@@ -250,7 +247,7 @@ static cs_stokes_model_t  _stokes_model = {
   .idilat = 1,
   .epsdp  = 1.e-12,
   .itbrrb = 0,
-  .iphydr = 0,
+  .iphydr = 1,
   .igprij = 0,
   .igpust = 1,
   .iifren = 0,
