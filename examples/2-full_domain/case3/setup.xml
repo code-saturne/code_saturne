@@ -262,7 +262,7 @@ density = temperature*(A*temperature +B) + C;</formula>
 		</joining>
 		<mesh_smoothing status="off"/>
 		<meshes_list>
-			<mesh name="downcomer.des"/>
+			<mesh name="downcomer.med"/>
 			<mesh name="fdc.des"/>
 			<mesh name="pic.des"/>
 		</meshes_list>
