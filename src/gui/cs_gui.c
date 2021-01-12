@@ -2059,13 +2059,9 @@ cs_gui_physical_properties(void)
 /*----------------------------------------------------------------------------
  * Read minimum / maximum values (used in clipping) and turbulent flux model
  * for additional user or model variables.
- *
- * Fortran Interface:
- *
- * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (int *iturt)
+void CS_PROCF (cssca2, CSSCA2) (void)
 {
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -2079,6 +2075,8 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
 
   /* Specific physics: the min max of the model scalar are not given */
   const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
+  const int kturt  = cs_field_key_id("turbulent_flux_model");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
@@ -2104,9 +2102,9 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
           if (turb_model->order == CS_TURB_SECOND_ORDER) {
             int turb_mdl;
             _variable_turbulent_flux_model(tn_v, &turb_mdl);
-            iturt[i] = turb_mdl;
+            cs_field_set_key_int(f, kturt, turb_mdl);
 #if _XML_DEBUG_
-            bft_printf("--iturt[%i] = %d\n", i, iturt[i]);
+            bft_printf("--turb_model[%i] = %d\n", i, turb_mdl);
 #endif
           }
 

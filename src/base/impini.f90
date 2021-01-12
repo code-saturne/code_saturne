@@ -79,6 +79,7 @@ integer          ii    , iiesca, iest
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
+integer          kturt, turb_flux_model
 double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
@@ -516,8 +517,12 @@ if (nscal.ge.1) then
   write(nfecra,6011)
   do ii = 1, nscal
     f_id = ivarfl(isca(ii))
+
+    call field_get_key_id('turbulent_flux_model', kturt)
+    call field_get_key_int(f_id, kturt, turb_flux_model)
+
     call field_get_label(f_id, chaine)
-    write(nfecra,6021) chaine(1:16), ii, iturt(ii)
+    write(nfecra,6021) chaine(1:16), ii, turb_flux_model
   enddo
   write(nfecra,6031)
   write(nfecra,6012)

@@ -85,7 +85,7 @@ integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 integer          f_id, potr, poti, flag
 integer          f_vis, f_log, ivtmp
-integer          kturt, kfturt
+integer          kturt, kfturt, turb_flux_model, turb_flux_model_type
 integer          kfturt_alpha
 integer          keycpl, keydri
 integer          ivar, iscdri
@@ -172,12 +172,14 @@ do ii = 1, nscal
 
     call field_get_key_int(ivarfl(ivar), keyvis, f_vis)
     call field_get_key_int(ivarfl(ivar), keylog, f_log)
+    call field_get_key_int(ivarfl(ivar), kturt, turb_flux_model)
+    turb_flux_model_type = turb_flux_model / 10
 
-    if (ityturt(ii).gt.0) then
+    if (turb_flux_model_type.gt.0) then
       call field_get_name (f_id, name)
       f_name = trim(name)//'_turbulent_flux'
 
-      if (ityturt(ii).eq.3) then
+      if (turb_flux_model_type.eq.3) then
         call add_variable_field(f_name, f_name, 3, ivtmp)
         iflid = ivarfl(ivtmp)
 
@@ -199,11 +201,10 @@ do ii = 1, nscal
         call field_set_key_int(iflid, keylog, f_log)
       endif
 
-      call field_set_key_int(ivarfl(ivar), kturt, iturt(ii))
       call field_set_key_int(ivarfl(ivar), kfturt, iflid)
 
       ! Elliptic Blending (AFM or DFM)
-      if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
+      if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
         f_name = trim(name)//'_alpha'
 
         call add_variable_field(f_name, f_name, 1, ivtmp)

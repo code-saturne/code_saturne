@@ -1855,6 +1855,7 @@ integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
 integer          f_id_rough
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
@@ -1925,9 +1926,13 @@ if (vcopt%idiff .eq. 0) then
   return
 endif
 
-if (     iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0    &
-    .or. ityturt(iscal).eq.3) then
-  if (iturb.ne.32.or.ityturt(iscal).eq.3) then
+! Get the turbulent flux model for the scalar
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+turb_flux_model_type = turb_flux_model / 10 
+
+if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.turb_flux_model_type.eq.3) then
+  if (iturb.ne.32.or.turb_flux_model_type.eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
     call field_get_val_v(ivstes, visten)
@@ -1968,7 +1973,7 @@ rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
 
-if (ityturt(iscal).eq.3) then
+if (turb_flux_model_type.eq.3) then
 
   ! Name of the scalar ivar
   call field_get_name(ivarfl(ivar), fname)
@@ -2248,7 +2253,7 @@ do ifac = 1, nfabor
       cofbfp(ifac) =  heq
 
       !--> Turbulent heat flux
-      if (ityturt(iscal).eq.3) then
+      if (turb_flux_model_type.eq.3) then
 
         phit = (cofafp(ifac) + cofbfp(ifac)*val_s(iel))
 

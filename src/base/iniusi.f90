@@ -290,7 +290,7 @@ call cs_gui_turb_ref_values
 call cs_f_turb_complete_constants
 
 ! Scamin, scamax, turbulent flux model
-call cssca2(iturt)
+call cssca2()
 
 ! Diffusivities
 call cssca3()

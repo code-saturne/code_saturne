@@ -720,21 +720,6 @@ module optcal
   !> Useful if \ref iturb =40, 41 or 42\n
   integer(c_int), pointer, save :: i_les_balance
 
-  !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
-  !> for any scalar \f$ \varia \f$, iturt(isca)
-  !>    - 0: SGDH
-  !>    - 10: GGDH
-  !>    - 11: EB-GGDH (Elliptic Blending)
-  !>    - 20: AFM
-  !>    - 21: EB-AFM (Elliptic Blending)
-  !>    - 30: DFM (Transport equation modelized)
-  !>    - 31: EB-DFM (Elliptic Blending)
-  !> GGDH, AFM and DFM are only available when a second order closure is used.
-  integer, save :: iturt(nscamx)
-
-  !> class turbulent flux model (=iturt/10)
-  integer, save :: ityturt(nscamx)
-
   !> number of variable (deprecated, used only for compatibility)
   integer, save :: nvarcl
 

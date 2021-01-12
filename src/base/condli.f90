@@ -213,6 +213,7 @@ integer          f_id, iut, ivt, iwt, ialt, iflmab
 integer          kbfid, b_f_id
 integer          keyvar
 integer          dimrij, f_dim
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision sigma , cpp   , rkl   , visls_0
 double precision hint  , hext  , pimp  , dimp, cfl
@@ -2583,6 +2584,8 @@ if (nscal.ge.1) then
     call field_get_val_s(icv, cpro_cv)
   endif
 
+  call field_get_key_id('turbulent_flux_model', kturt)
+
   do ii = 1, nscal
 
     ivar   = isca(ii)
@@ -2598,6 +2601,11 @@ if (nscal.ge.1) then
     endif
 
     call field_get_key_int(ivarfl(ivar), kscacp, iscacp)
+
+
+    ! Get the turbulent flux model for the scalar
+    call field_get_key_int(ivarfl(isca(ii)), kturt, turb_flux_model)
+    turb_flux_model_type = turb_flux_model / 10 
 
     ! --- Indicateur de prise en compte de Cp ou non
     !       (selon si le scalaire (scalaire associe pour une fluctuation)
@@ -2625,8 +2633,8 @@ if (nscal.ge.1) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(ii).eq.3) then
-      if (iturb.ne.32.or.ityturt(ii).eq.3) then
+    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.turb_flux_model_type.eq.3) then
+      if (iturb.ne.32.or.turb_flux_model_type.eq.3) then
         call field_get_val_v(ivsten, visten)
       else ! EBRSM and (GGDH or AFM)
         call field_get_val_v(ivstes, visten)
@@ -2872,7 +2880,7 @@ if (nscal.ge.1) then
         endif
 
         ! Thermal heat flux boundary conditions
-        if (ityturt(ii).eq.3) then
+        if (turb_flux_model_type.eq.3) then
 
           ! Name of the scalar ivar !TODO move outside of the loop
           call field_get_name(ivarfl(ivar), fname)
@@ -3265,7 +3273,7 @@ if (nscal.ge.1) then
     endif ! End of vector transported quantities
 
     ! EB-GGDH/AFM/DFM alpha boundary conditions
-    if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
+    if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
 
       ! Name of the scalar ivar
       call field_get_name(ivarfl(ivar), fname)

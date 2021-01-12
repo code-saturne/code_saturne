@@ -85,6 +85,7 @@ integer          key_t_ext_id, icpext
 integer          iviext, iscacp
 integer          iroext
 integer          ivisext
+integer          kturt, turb_flux_model
 double precision scmaxp, scminp
 double precision turb_schmidt, visls_0
 
@@ -477,19 +478,25 @@ if (nscal.ge.1) then
     iok = iok + 1
   endif
 
-  ! Turbulent flux model for scalar
-  if (iturt(iscal).ne. 0.and.iturt(iscal).ne.10 .and. &
-      iturt(iscal).ne.20.and.iturt(iscal).ne.30 .and. &
-      iturt(iscal).ne.11.and.iturt(iscal).ne.21 .and. &
-      iturt(iscal).ne.31                              &
-                   ) then
-    write(nfecra,2604) 'iturt  ',iturt(iscal)
-    write(nfecra,2610)                         &
-         'Index of the scalar: ', iscal,       &
-         'Number of scalars: ', nscal
 
-    iok = iok + 1
-  endif
+  do iscal = 1, nscal
+    call field_get_key_id('turbulent_flux_model', kturt)
+    call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+
+    ! Turbulent flux model for scalar
+    if (turb_flux_model.ne. 0.and.turb_flux_model.ne.10 .and. &
+        turb_flux_model.ne.20.and.turb_flux_model.ne.30 .and. &
+        turb_flux_model.ne.11.and.turb_flux_model.ne.21 .and. &
+        turb_flux_model.ne.31                              &
+                     ) then
+      write(nfecra,2604) 'turbulent_flux_model  ', turb_flux_model
+      write(nfecra,2610)                         &
+           'Index of the scalar: ', iscal,       &
+           'Number of scalars: ', nscal
+
+      iok = iok + 1
+    endif
+  enddo
 
 endif
 
@@ -1288,7 +1295,7 @@ endif
 '@'                                                            ,/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA'               ,/,&
 '@    ========='                                               ,/,&
-'@    ',a7,' MUST BE AN INTEGER EQUAL TO 0, 10, 11, 20, 21,'   ,/,&
+'@    ',a21,' MUST BE AN INTEGER EQUAL TO 0, 10, 11, 20, 21,'  ,/,&
 '@    30 OR 31'                                                ,/,&
 '@   IT HAS VALUE ',i10                                        ,/,&
 '@'                                                            ,/,&

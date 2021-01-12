@@ -89,6 +89,7 @@ integer          ivar , iel, ii, jj
 integer          itt
 integer          f_id, f_id0, f_id_al
 integer          ifcvsl
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
@@ -163,6 +164,11 @@ inc = 1
 
 call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, gradt)
 
+! Get the turbulent flux model
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+turb_flux_model_type = turb_flux_model / 10
+
 ! Name of the scalar ivar
 call field_get_name(ivarfl(ivar), fname)
 
@@ -172,7 +178,7 @@ call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 call field_get_val_v(f_id, xut)
 
 ! EB- AFM or EB-DFM: compute the gradient of alpha of the scalar
-if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
   ! Index of the corresponding alpha
   call field_get_id(trim(fname)//'_alpha', f_id_al)
   call field_get_val_s(f_id_al, cvar_al)
@@ -198,7 +204,7 @@ call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 ! Find the variance of the thermal scalar
 itt = -1
 if (((abs(gx)+abs(gy)+abs(gz)).gt.epzero).and.(irovar.gt.0.or.idilat.eq.0).and.   &
-    ((ityturt(iscal).eq.2).or.(ityturt(iscal).eq.3))) then
+    ((turb_flux_model_type.eq.2).or.(turb_flux_model_type.eq.3))) then
   grav(1) = gx
   grav(2) = gy
   grav(3) = gz
@@ -214,7 +220,7 @@ endif
 !===============================================================================
 ! 2. Agebraic models AFM
 !===============================================================================
-if (ityturt(iscal).ne.3) then
+if (turb_flux_model_type.ne.3) then
 
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
@@ -272,7 +278,7 @@ if (ityturt(iscal).ne.3) then
     !  Turbulent time-scale (constant in AFM)
     xtt = xk/xe
 
-    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21) then
+    if (turb_flux_model.eq.11.or.turb_flux_model.eq.21) then
 
       alpha_theta = cvar_al(iel)
 
@@ -321,7 +327,7 @@ if (ityturt(iscal).ne.3) then
     end if
 
     ! Constants for EB-GGDH
-    if (iturt(iscal).eq.11) then
+    if (turb_flux_model.eq.11) then
       xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
       xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
            *(xpk+xgk)/cvara_ep(iel))
@@ -332,7 +338,7 @@ if (ityturt(iscal).ne.3) then
 
       gamma_ebggdh = (1.d0-alpha_theta)*(xxc1 + xxc2)
     ! Constants for EB-AFM
-    elseif (iturt(iscal).eq.21) then
+    elseif (turb_flux_model.eq.21) then
       xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
       xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
            *(xpk+xgk)/cvara_ep(iel))
@@ -352,7 +358,7 @@ if (ityturt(iscal).ne.3) then
 
       ! AFM model
       !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-      if (iturt(iscal).eq.20) then
+      if (turb_flux_model.eq.20) then
         if (itt.gt.0.and.ibeta.ge.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
                      etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
@@ -373,7 +379,7 @@ if (ityturt(iscal).ne.3) then
 
       ! EB-AFM model
       !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)"
-      if(iturt(iscal).eq.21) then
+      if(turb_flux_model.eq.21) then
         if (itt.gt.0.and.ibeta.ge.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
                      eta_ebafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
@@ -398,7 +404,7 @@ if (ityturt(iscal).ne.3) then
 
       ! EB-GGDH model
       !  "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
-      if(iturt(iscal).eq.11) then
+      if(turb_flux_model.eq.11) then
         do jj = 1, 3
           ! Partial implicitation of "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
           ! Only the i.ne.j  components are added.
@@ -425,7 +431,7 @@ if (ityturt(iscal).ne.3) then
       ! if positive
       ! X_i = C*Y_ij*X_j -> X_i = Coeff_imp * Y_ij * X_j for i.ne.j
       ! with Coeff_imp = C/(1+C*Y_ii)
-      if (iturt(iscal).eq.20) then
+      if (turb_flux_model.eq.20) then
         ! AFM
         coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel), 0.d0)
 
@@ -435,7 +441,7 @@ if (ityturt(iscal).ne.3) then
         ! of the model computed in covofi.f90
         vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
-      else if(iturt(iscal).eq.21) then
+      else if(turb_flux_model.eq.21) then
         ! EB-AFM
         coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
                              + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii), 0.d0)
@@ -446,7 +452,7 @@ if (ityturt(iscal).ne.3) then
         ! of the model computed in covofi.f90
         vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
-      else if(iturt(iscal).eq.11) then
+      else if(turb_flux_model.eq.11) then
         ! EB-GGDH
         coeff_imp = 1.d0+ ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(ii)
 
@@ -464,7 +470,7 @@ if (ityturt(iscal).ne.3) then
     enddo
 
     ! Extra diag part of the diffusion tensor for covofi
-    if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
+    if(turb_flux_model.eq.11.or.turb_flux_model.eq.20.or.turb_flux_model.eq.21) then
       vistet(4,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,2)
       vistet(5,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(2,3)
       vistet(6,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,3)
@@ -579,7 +585,9 @@ endif
 ! 4. Add the divergence of the thermal flux to the thermal transport equation
 !===============================================================================
 
-if (iturt(iscal).eq.11.or.ityturt(iscal).eq.2.or.ityturt(iscal).eq.3) then
+if (turb_flux_model.eq.11    .or. &
+    turb_flux_model_type.eq.2.or. &
+    turb_flux_model_type.eq.3) then
   allocate(divut(ncelet))
 
   init = 1

@@ -794,11 +794,6 @@ do iscal = 1, nscamx
   rvarfl(iscal) = 0.8d0
 enddo
 
-! --- Turbulent flux for a scalar (Default: SGDH)
-do iscal = 1, nscamx
-  iturt(iscal) = 0
-enddo
-
 ! For the turbulent fluxes of the scalar
 c1trit = 4.15d0
 c2trit = 0.55d0

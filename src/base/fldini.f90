@@ -84,6 +84,7 @@ integer          ii, ivar
 integer          iflid, kcvlim, ifctsl, clip_id
 integer          kdflim
 integer          kturt, kfturt, kislts, keyvar, kclipp, kfturt_alpha
+integer          turb_flux_model, turb_flux_model_type
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_type
@@ -155,8 +156,11 @@ do ii = 1, nscal
     ivar = isca(ii)
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-    if (ityturt(ii).gt.0) then
-      if (ityturt(ii).eq.3) then
+    call field_get_key_int(ivarfl(ivar), kturt, turb_flux_model)
+    turb_flux_model_type = turb_flux_model / 10
+
+    if (turb_flux_model_type.gt.0) then
+      if (turb_flux_model_type.eq.3) then
         idfm = 1
       endif
 

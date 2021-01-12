@@ -115,6 +115,7 @@ double precision, pointer, dimension(:,:) :: rijipb
 integer          ifac, ii, isou
 integer          iel, f_dim, clsyme
 integer          iscal , ivar, idftnp
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision rnx, rny, rnz
 double precision upx, upy, upz, usn
@@ -274,6 +275,9 @@ if (itytur.eq.3) then
     coefbd_rij => null()
   endif
 endif
+
+! Get the turbulent flux model key id
+call field_get_key_id('turbulent_flux_model', kturt)
 
 ! --- Begin the loop over boundary faces
 do ifac = 1, nfabor
@@ -607,8 +611,13 @@ enddo
 !===========================================================================
 
 do iscal = 1, nscal
+
+  ! Get the associated turbulent flux model
+  call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+  turb_flux_model_type = turb_flux_model / 10
+
   ! u'T'
-  if (ityturt(iscal).eq.3) then
+  if (turb_flux_model_type.eq.3) then
     call clsyvt_scalar(iscal, icodcl)
   endif
 
@@ -784,6 +793,7 @@ integer          icodcl(nfabor,nvar)
 integer          ivar, f_id
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, visclc, visls_0
 double precision distbf, srfbnf
@@ -803,7 +813,12 @@ double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
 
 !===============================================================================
 
-if (ityturt(iscal).ne.3) return
+! Get the turbulent flux model for the scalar
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+turb_flux_model_type = turb_flux_model / 10 
+
+if (turb_flux_model_type.ne.3) return
 
 ivar = isca(iscal)
 f_id = ivarfl(ivar)
@@ -852,7 +867,7 @@ call field_get_coefad_v(f_id,cofarut)
 call field_get_coefbd_v(f_id,cofbrut)
 
 ! EB-GGDH/AFM/DFM alpha boundary conditions
-if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
 
   ! Name of the scalar ivar
   call field_get_name(ivarfl(ivar), fname)
@@ -949,7 +964,7 @@ do ifac = 1, nfabor
     enddo
 
     ! EB-GGDH/AFM/DFM alpha boundary conditions
-    if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+    if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
 
       ! Dirichlet Boundary Condition
       !-----------------------------

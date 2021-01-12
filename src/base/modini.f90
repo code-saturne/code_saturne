@@ -68,6 +68,7 @@ integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 logical          is_set
 
@@ -89,6 +90,7 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+call field_get_key_id('turbulent_flux_model', kturt)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -922,18 +924,22 @@ endif
 ! Turbulent fluxes constant for GGDH, AFM and DFM
 if (nscal.gt.0) then
   do iscal = 1, nscal
+
+    call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+    turb_flux_model_type = turb_flux_model / 10
+
     ! AFM and GGDH on the scalar
-    if (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
+    if (turb_flux_model_type.eq.1.or.turb_flux_model_type.eq.2) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
       ctheta(iscal) = cthafm
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     ! DFM on the scalar
-    elseif (ityturt(iscal).eq.3) then
+    elseif (turb_flux_model_type.eq.3) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       vcopt%idifft = 0
       vcopt%idften = ISOTROPIC_DIFFUSION
-      if (iturt(iscal).eq.31) then
+      if (turb_flux_model.eq.31) then
         ctheta(iscal) = cthebdfm
         c2trit = 0.3d0
       else

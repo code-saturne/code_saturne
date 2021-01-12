@@ -121,6 +121,7 @@ integer          keyvar, keycpl
 integer          iivar, icpl
 integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus, f_id_z_ground
 integer          modntl
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision pref
 double precision flumbf, flumty(ntypmx)
@@ -164,6 +165,8 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 call field_get_key_id("variable_id", keyvar)
+
+call field_get_key_id('turbulent_flux_model', kturt)
 
 call field_get_id_try("wall_yplus", f_id_yplus)
 call field_get_id_try("z_ground", f_id_z_ground)
@@ -1005,7 +1008,10 @@ enddo
 
 ! Turbulent fluxes
 do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) then
+  call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+  turb_flux_model_type = turb_flux_model / 10
+
+  if (turb_flux_model_type.eq.3) then
     ! Name of the scalar ivar
     call field_get_name(ivarfl(isca(iscal)), fname)
 
@@ -1031,7 +1037,7 @@ do iscal = 1, nscal
   endif
 
   ! EB-GGDH/AFM/DFM alpha boundary conditions
-  if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+  if (turb_flux_model.eq.11  .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
     ! Name of the scalar ivar
     call field_get_name(ivarfl(isca(iscal)), fname)
 
@@ -1115,7 +1121,10 @@ enddo
 
 ! Turbulent fluxes
 do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) then
+  call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+  turb_flux_model_type = turb_flux_model / 10
+
+  if (turb_flux_model_type.eq.3) then
     ! Name of the scalar ivar
     call field_get_name(ivarfl(isca(iscal)), fname)
 
@@ -1140,8 +1149,7 @@ do iscal = 1, nscal
     enddo
   endif
 
-  ! EB-GGDH/AFM/DFM alpha boundary conditions
-  if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+  if (turb_flux_model.eq.11  .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
     ! Name of the scalar ivar
     call field_get_name(ivarfl(isca(iscal)), fname)
 

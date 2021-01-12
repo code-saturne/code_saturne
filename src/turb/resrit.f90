@@ -99,6 +99,7 @@ integer          idftnp, iswdyp, icvflb
 integer          f_id
 integer          keyvar, iut
 integer          init
+integer          kturt, turb_flux_model
 
 integer          ivoid(1)
 
@@ -208,6 +209,10 @@ if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) trim(name)//'_turbulent_flux'
 endif
 
+! Get the turbulent flux model
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+
 ! S pour Source, V pour Variable
 thets  = thetst
 thetv  = vcopt%thetav
@@ -289,7 +294,7 @@ if (itt.gt.0) then
   call field_get_val_s(ivarfl(isca(itt)), cvar_tt)
   call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
 endif
-if (iturt(iscal).eq.31) then
+if (turb_flux_model.eq.31) then
   ! Name of the scalar
   call field_get_name(ivarfl(isca(iscal)), fname)
 
@@ -330,7 +335,7 @@ do iel = 1, ncel
   ! --- Compute Durbin time scheme
   xttke  = trrij/cvar_ep(iel)
 
-  if (iturt(iscal).eq.31) then
+  if (turb_flux_model.eq.31) then
     alpha = cvar_al(iel)
     !FIXME Warning / rhebdfm**0.5 compared to F Dehoux
     xttdrbt = xttke * sqrt( (1.d0-alpha)*prdtl/ rhebdfm + alpha )

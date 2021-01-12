@@ -206,10 +206,9 @@ void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
  * subroutine cssca2
  * *****************
  *
- * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (int        *iturt);
+void CS_PROCF (cssca2, CSSCA2) (void);
 
 /*----------------------------------------------------------------------------
  * Read reference dynamic and user scalar viscosity

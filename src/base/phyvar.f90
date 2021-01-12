@@ -97,7 +97,8 @@ integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
 integer          nn, isou
 integer          mbrom, ifcvsl, iscacp
 integer          iclipc, idftnp
-integer          iprev, inc, iccocg
+integer          iprev , inc, iccocg
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
@@ -527,12 +528,17 @@ idfm = 0
 iggafm = 0
 iebdfm = 0
 
+call field_get_key_id('turbulent_flux_model', kturt)
+
 do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) idfm = 1
-  if (iturt(iscal).eq.31) iebdfm = 1
+  call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+  turb_flux_model_type = turb_flux_model / 10
+
+  if (turb_flux_model_type.eq.3) idfm = 1
+  if (turb_flux_model.eq.31) iebdfm = 1
   ! GGDH or AFM on current scalar
   ! and if DFM, GGDH on the scalar variance
-  if (ityturt(iscal).gt.0) iggafm = 1
+  if (turb_flux_model_type.gt.0) iggafm = 1
 enddo
 
 if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then

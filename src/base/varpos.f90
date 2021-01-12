@@ -74,6 +74,7 @@ integer          iok
 integer          f_id, idftnp
 integer          iest
 integer          key_buoyant_id, is_buoyant_fld
+integer          kturt, turb_flux_model
 
 double precision gravn2
 
@@ -87,6 +88,7 @@ type(var_cal_opt) :: vcopt
 
 ! Key id for buoyant field (inside the Navier Stokes loop)
 call field_get_key_id("is_buoyant", key_buoyant_id)
+call field_get_key_id('turbulent_flux_model', kturt)
 
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
@@ -230,11 +232,10 @@ do iscal = 1, nscal
     endif
   endif
 
-  ! Model for turbulent fluxes u'T' (SGDH, GGDH, AFM, DFM)
-  ityturt(iscal) = iturt(iscal)/10
+  call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
 
   if (iscal.eq.iscalt) then
-    if (iturt(iscalt).gt.0.and.irovar.eq.1) then
+    if (turb_flux_model.gt.0.and.irovar.eq.1) then
       call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
     endif
   endif

@@ -165,6 +165,8 @@ integer          key_t_ext_id
 integer          iviext
 integer          key_turb_schmidt
 integer          t_scd_id
+integer          kturt, variance_turb_flux_model, scalar_turb_flux_model
+integer          scalar_turb_flux_model_type, variance_turb_flux_model_type
 
 integer          ivoid(1)
 
@@ -317,6 +319,17 @@ if (iiscav.gt.0.and.iiscav.le.nscal) then
 else
   ivarsc = 0
 endif
+
+!  Get the turbulent flux model for the scalar and its variance
+call field_get_key_id('turbulent_flux_model', kturt)
+
+call field_get_key_int(ivarfl(isca(iscal)) , kturt, scalar_turb_flux_model)
+if (ivarsc > 0) then
+  call field_get_key_int(ivarfl(ivarsc), kturt, variance_turb_flux_model)
+endif
+
+scalar_turb_flux_model_type = scalar_turb_flux_model / 10
+variance_turb_flux_model_type = variance_turb_flux_model / 10
 
 ! --- Numero des grandeurs physiques
 call field_get_key_int (iflid, kromsl, icrom_scal)
@@ -807,7 +820,7 @@ if (itspdv.eq.1) then
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
-      if (ityturt(iiscav).ge.1) then
+      if (variance_turb_flux_model_type.ge.1) then
 
         ! Name of the scalar iiscav associated to the variance iscal
         call field_get_name(ivarfl(ivarsc), fname)
@@ -851,7 +864,7 @@ if (itspdv.eq.1) then
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
-      if (ityturt(iiscav).ge.1) then
+      if (variance_turb_flux_model_type.ge.1) then
 
         ! Name of the scalar ivarsc associated to the variance iscal
         call field_get_name(ivarfl(ivarsc), fname)
@@ -943,7 +956,9 @@ if (itspdv.eq.1) then
         call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
       endif
       ! EB- AFM or EB-DFM or EB-GGDH
-      if (iturt(iiscav).eq.11 .or. iturt(iiscav).eq.21 .or. iturt(iiscav).eq.31) then
+      if (variance_turb_flux_model.eq.11 .or. &
+          variance_turb_flux_model.eq.21 .or. &
+          variance_turb_flux_model.eq.31      ) then
         ! Name of the scalar corresponding to the current variance
         call field_get_name(ivarfl(ivarsc), fname)
         ! Index of the corresponding alpha
@@ -978,7 +993,9 @@ if (itspdv.eq.1) then
       ! Rh = (1-alpha_T) * Pr + R * alpha_T
       ! with - R = 0.5
       !      - alpha_T = 1.0 for GGDH/DFM/AFM
-      if(iturt(iiscav).eq.11.or.iturt(iiscav).eq.21.or.iturt(iiscav).eq.31) then
+      if (variance_turb_flux_model.eq.11 .or. &
+          variance_turb_flux_model.eq.21 .or. &
+          variance_turb_flux_model.eq.31      ) then
         alpha_theta = cvar_al(iel)
       else
         alpha_theta = 1.d0
@@ -1042,10 +1059,12 @@ if (vcopt%idiff.ge.1) then
 
   ! AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
   ! Compute T'u' for GGDH
-  if (ityturt(iscal).ge.1) then
+  if (scalar_turb_flux_model_type.ge.1) then
 
     ! EB-GGDH/AFM/DFM: solving alpha for the scalar
-    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
+    if (scalar_turb_flux_model.eq.11 .or. &
+        scalar_turb_flux_model.eq.21 .or. &
+        scalar_turb_flux_model.eq.31      ) then
       ! Name of the scalar
       call field_get_name(iflid, fname)
 
@@ -1070,7 +1089,7 @@ if (vcopt%idiff.ge.1) then
   if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
     idifftp = vcopt%idifft
-    if (ityturt(iscal).eq.3) then
+    if (scalar_turb_flux_model_type.eq.3) then
       idifftp = 0
     endif
 
@@ -1129,7 +1148,9 @@ if (vcopt%idiff.ge.1) then
       call field_get_val_v(ivstes, visten)
     endif
 
-    if (iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
+    if (scalar_turb_flux_model.eq.11 .or. &
+        scalar_turb_flux_model.eq.21 .or. &
+        scalar_turb_flux_model.eq.31      ) then
       if (ifcvsl.lt.0) then
         do iel = 1, ncel
 

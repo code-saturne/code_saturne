@@ -2259,6 +2259,7 @@ integer          f_id_ut, f_id_al
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
 integer          f_id_rough
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
 double precision distfi, distbf, fikis, hint_al, heq, hflui, hext
@@ -2320,9 +2321,14 @@ if (vcopt%idiff .eq. 0) then
   return
 endif
 
-if (     iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0    &
-    .or. ityturt(iscal).eq.3) then
-  if (iturb.ne.32.or.ityturt(iscal).eq.3) then
+! Get the turbulent flux model for the scalar
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+turb_flux_model_type = turb_flux_model / 10 
+
+if (    iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0             &
+    .or.turb_flux_model_type.eq.3) then
+  if (iturb.ne.32.or.turb_flux_model_type.eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
     call field_get_val_v(ivstes, visten)
@@ -2365,7 +2371,7 @@ rinfiv(3) = rinfin
 
 ypth = 0.d0
 
-if (ityturt(iscal).eq.3) then
+if (turb_flux_model_type.eq.3) then
 
   ! Turbulent diffusive flux of the scalar T
   ! (blending factor so that the component v'T' have only
@@ -2387,7 +2393,7 @@ if (ityturt(iscal).eq.3) then
 endif
 
 ! EB-GGDH/AFM/DFM alpha boundary conditions
-if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31) then
 
   ! Name of the scalar ivar
   call field_get_name(ivarfl(ivar), fname)
@@ -2720,7 +2726,7 @@ do ifac = 1, nfabor
     if (icodcl(ifac,ivar).eq.5) then
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
-      if (ityturt(iscal).ge.1) then
+      if (turb_flux_model_type.ge.1) then
         ! In the log layer
         if (yplus.ge.ypth.and.iturb.ne.0) then
           xmutlm = xkappa*visclc*yplus
@@ -2798,7 +2804,7 @@ do ifac = 1, nfabor
     endif ! End if icodcl.eq.5
 
     !--> Turbulent heat flux
-    if (ityturt(iscal).eq.3) then
+    if (turb_flux_model_type.eq.3) then
 
       ! Turbulent diffusive flux of the scalar T
       ! (blending factor so that the component v'T' have only
@@ -2854,7 +2860,9 @@ do ifac = 1, nfabor
     endif
 
     ! EB-GGDH/AFM/DFM alpha boundary conditions
-    if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+    if (turb_flux_model.eq.11 .or. &
+        turb_flux_model.eq.21 .or. &
+        turb_flux_model.eq.31) then
 
       ! Dirichlet Boundary Condition
       !-----------------------------
@@ -3032,6 +3040,7 @@ integer          ivar, f_id, isvhbl
 integer          ifac, iel
 integer          iscacp, ifcvsl
 integer          f_id_rough
+integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision cpp, rkl, prdtl, visclc, romc, cofimp
 double precision distbf, heq, yptp, hflui, hext
@@ -3091,6 +3100,11 @@ call field_get_key_double(f_id, ksigmas, turb_schmidt)
 
 ! Reference diffusivity
 call field_get_key_double(f_id, kvisl0, visls_0)
+
+! Get the turbulent flux model 
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
+turb_flux_model_type = turb_flux_model / 10 
 
 isvhbl = 0
 if (iscal.eq.isvhb) then
@@ -3265,7 +3279,7 @@ do ifac = 1, nfabor
     if (icodcl(ifac,ivar).eq.5) then
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
-      if (ityturt(iscal).ge.1) then
+      if (turb_flux_model_type.ge.1) then
         ! In the log layer
         if (yplus.ge.ypth.and.iturb.ne.0) then
           xmutlm = xkappa*visclc*(yplus+dplus)
