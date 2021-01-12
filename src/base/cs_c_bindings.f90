@@ -1368,6 +1368,172 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function
+    !> \brief Get reference value of a physical property
+
+    !> \param[in] name  property name
+    !> \return reference value (c_double)
+
+    function cs_physical_property_get_ref_value(name) result(val) &
+      bind(C, name='cs_physical_property_get_ref_value')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      real(c_double)                                          :: val
+    end function cs_physical_property_get_ref_value
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Set reference value for a physical property
+
+    !> \param[in] name  property name
+    !> \param[in] val   new value to set
+
+    subroutine cs_physical_property_set_ref_value(name) &
+      bind(C, name='cs_physical_property_set_ref_value')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      real(kind=c_double), value, intent(in)                  :: val
+    end subroutine cs_physical_property_set_ref_value
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Create physical property
+
+    !> \param[in] name    property name
+    !> \param[in] dim     property dimension
+    !> \param[in] refval  reference value
+
+    subroutine cs_physical_property_create(name, dim, refval) &
+      bind(C, name='cs_physical_property_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int), value, intent(in)                       :: dim
+      real(kind=c_double), value, intent(int)                 :: refval
+    end subroutine cs_physical_property_create
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Get property reference values for a given zone
+
+    !> \param[in] name    property name
+    !> \param[in] zname   zone name
+    !> \param[in] retval  array of values to return
+
+    subroutine cs_physical_property_get_zone_values(name, zname, retval) &
+      bind(C, name='cs_physical_property_get_zone_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: zname
+      real(kind=c_double), dimension(*), intent(out)          :: retval
+    end subroutine cs_physical_property_get_zone_values
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Update reference values for a property on a given zone
+
+    !> \param[in] name   property name
+    !> \param[in] zname  zone name
+    !> \param[in] vals   array of values to set
+
+    subroutine cs_physical_property_update_zone_values(name, zname, vals) &
+      bind(C, name='cs_physical_property_update_zone_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: zname
+      real(kind=c_double), dimension(*), intent(in)           :: vals
+    end subroutine cs_physical_property_update_zone_values
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Add a property definition on a given zone using a single value
+
+    !> \param[in] name   property name
+    !> \param[in] zname  zone name
+    !> \param[in] dim    property dimension
+    !> \param[in] val    reference value for the zone
+
+    subroutine cs_physical_property_define_from_value(name, zname, dim, vval) &
+      bind(C, name='cs_physical_property_define_from_value')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: zname
+      integer(c_int), value                                   :: dim
+      real(kind=c_double), value, intent(in)                  :: val
+    end subroutine cs_physical_property_define_from_value
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Add a property multi-diemnsional definition on a given zone
+
+    !> \param[in] name   property name
+    !> \param[in] zname  zone name
+    !> \param[in] dim    property dimension (>1)
+    !> \param[in] vals   array of values to set
+
+    subroutine cs_physical_property_define_from_values(name, zname, dim, vals) &
+      bind(C, name='cs_physical_property_define_from_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: zname
+      integer(c_int), value                                   :: dim
+      real(kind=c_double), dimension(*), intent(in)           :: vals
+    end subroutine cs_physical_property_define_from_values
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Add a property definition based on a cs_field_t. Field is created if needed
+
+    !> \param[in] name          property name
+    !> \param[in] type_flag     field type flag
+    !> \param[in] location_id   location id flag
+    !> \param[in] dim           field dimension
+    !> \param[in] has_previous  does the field has val_pre
+
+    subroutine cs_physical_property_define_from_field(name, type_flag, &
+      location_id, dim, has_previous) &
+      bind(C, name='cs_physical_property_define_from_field')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int), value                                   :: type_flag
+      integer(c_int), value                                   :: location_id
+      integer(c_int), value                                   :: dim
+      logical(c_bool), value                                  :: has_previous
+    end subroutine cs_physical_property_define_from_field
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+    !> \brief Return id of field associated to property
+
+    !> \param[in] name  property name
+    !> \return field id (int)
+
+    function cs_physical_property_field_id_by_name(name) &
+      result(f_id) &
+      bind(C, name='cs_physical_property_field_id_by_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int)                                          :: f_id
+    end function cs_physical_property_field_id_by_name
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function for uniform distribution random number
 
     subroutine cs_random_uniform(n, a) &

@@ -503,6 +503,7 @@ use entsor
 use numvar
 use post
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -519,6 +520,11 @@ integer, intent(out)         :: f_id
 
 integer  type_flag, post_flag, location_id
 
+character(len=len_trim(name)+1, kind=c_char) :: c_name
+integer(c_int) :: c_type_flag
+integer(c_int) :: c_location_id
+integer(c_int) :: c_dim
+logical(c_bool) :: c_has_previous
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
@@ -533,8 +539,21 @@ if (f_id .ge. 0) then
 endif
 
 ! Create field
+c_name = trim(name)//c_null_char
+c_type_flag = type_flag
+c_location_id = location_id
+c_dim = dim
 
-call field_create(name, type_flag, location_id, dim, has_previous, f_id)
+if (has_previous) then
+  c_has_previous = .true.
+else
+  c_has_previous = .false.
+endif
+
+call cs_physical_property_define_from_field(c_name, c_type_flag, &
+  c_location_id, dim, c_has_previous)
+
+f_id = cs_physical_property_field_id_by_name(c_name)
 
 call field_set_key_int(f_id, keyvis, post_flag)
 call field_set_key_int(f_id, keylog, 1)

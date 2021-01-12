@@ -45,6 +45,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_property.h"
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -166,6 +167,11 @@ static void                     *_cs_coolprop_dl_lib = NULL;
 
 #endif
 
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
  * Create an empty thermal_table structure
  *----------------------------------------------------------------------------*/
@@ -186,7 +192,95 @@ _thermal_table_create(void)
   return tt;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get xdef of a property on a given zone.
+ *
+ * \param[in] pty    pointer to cs_property_t
+ * \param[in] zname  name of the zone. Can be NULL for 'all_cells'
+ *
+ * \return pointer to corresponding cs_xdef_t
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+_get_property_def_on_zone(const cs_property_t *pty,
+                          const char          *zname)
+{
+  cs_xdef_t *def = NULL;
+
+  const int z_id = cs_get_vol_zone_id(zname);
+  for (int i = 0; i < pty->n_definitions; i++) {
+    if (pty->defs[i]->z_id == z_id) {
+      def = pty->defs[i];
+      break;
+    }
+  }
+
+  return def;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief update values of a definition
+ *
+ * \param[in] def       pointer to cs_xdef_t structure
+ * \param[in] new_vals  array of new values
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_update_def_values(cs_xdef_t *def,
+                   cs_real_t *new_vals)
+{
+
+  cs_real_t *_context = (cs_real_t *)def->context;
+
+  for (int i = 0; i < def->dim; i++)
+    _context[i] = new_vals[i];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new physical property using the cs_property_t structure.
+ *
+ * \param[in] name   name of the property
+ * \param[in] dim    dimension of the property (1->scalar, 3->vector,..)
+ * \param[in] refval Reference value
+ *
+ * \return pointer to the newly created cs_property_t structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+_physical_property_create(const char      *name,
+                          const int        dim,
+                          const cs_real_t  refval)
+{
+  cs_property_t *pty = cs_property_by_name(name);
+  if (pty != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: property '%s' is allready defined.\n"),
+                name);
+
+  if (dim == 1)
+    pty = cs_property_add(name, CS_PROPERTY_ISO);
+  else if (dim == 3)
+    pty = cs_property_add(name, CS_PROPERTY_ORTHO);
+  else if (dim == 9)
+    pty = cs_property_add(name, CS_PROPERTY_ANISO);
+
+  cs_property_set_reference_value(pty, refval);
+
+  return pty;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 
 /*=============================================================================
  * Public function definitions
@@ -792,6 +886,289 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
   bft_error(__FILE__, __LINE__, 0,
             _("Freesteam support not available in this build."));
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/* TEST FUNCTIONS */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get reference value of a physical property
+ *
+ * \param[in] name  property name
+ *
+ * \return reference value (cs_real_t)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_physical_property_get_ref_value(const char *name)
+{
+
+  const cs_property_t *pty = cs_property_by_name(name);
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: property '%s' does not exist\n"),
+              name);
+
+  return pty->ref_value;
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set reference value for a physical property
+ *
+ * \param[in] name  property name
+ * \param[in] val   new value to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_set_ref_value(const char      *name,
+                                   const cs_real_t  val)
+{
+  const cs_property_t *pty = cs_property_by_name(name);
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: property '%s' does not exist\n"),
+              name);
+
+  cs_property_set_reference_value(pty, val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get property reference values for a given zone
+ *
+ * \param[in] name    property name
+ * \param[in] zname   zone name
+ * \param[in] retval  array of values to return
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_get_zone_values(const char *name,
+                                     const char *zname,
+                                     cs_real_t   retval[])
+{
+
+  const cs_property_t *pty = cs_property_by_name(name);
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: property '%s' does not exist\n"),
+              name);
+
+
+  cs_xdef_t *def = _get_property_def_on_zone(pty, zname);
+  if (def == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: property '%s' does not have a definition for "
+                "zone '%s'\n"),
+              name, zname);
+
+  /* Sanity check */
+  assert(def->type == CS_XDEF_BY_VALUE);
+
+  if (pty->type & CS_PROPERTY_ISO) {
+    const cs_real_t *_context = (cs_real_t *)def->context;
+    retval[0] = _context[0];
+
+  } else if (pty->type & CS_PROPERTY_ORTHO) {
+    const cs_real_t *_context = (cs_real_t *)def->context;
+    for (int j = 0; j < 3; j++)
+      retval[j] = _context[j];
+
+  } else if (pty->type & CS_PROPERTY_ANISO) {
+    const cs_real_3_t *_context = (cs_real_3_t *)def->context;
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 3; k++)
+        retval[3*j + k] = _context[j][k];
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update reference values for a property on a given zone
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] vals   array of values to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_update_zone_values(const char       *name,
+                                        const char       *zname,
+                                        const cs_real_t   vals[])
+{
+
+  cs_property_t *pty = cs_property_by_name(name);
+
+  cs_xdef_t *def = _get_property_def_on_zone(pty, zname);
+
+  _update_def_values(def, vals);
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create physical property
+ *
+ * \param[in] name    property name
+ * \param[in] dim     property dimension
+ * \param[in] refval  reference value
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_create(const char      *name,
+                            const int        dim,
+                            const cs_real_t  refval)
+{
+
+  cs_property_t *pty = _physical_property_create(name, dim, refval);
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property definition on a given zone using a single value
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] dim    property dimension
+ * \param[in] val    reference value for the zone
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_define_from_value(const char      *name,
+                                       const char      *zname,
+                                       const int        dim,
+                                       const cs_real_t  val)
+{
+
+  cs_property_t *pty = cs_property_by_name(name);
+  if (pty == NULL)
+    pty = _physical_property_create(name, dim, 0.);
+
+  if (dim == 1) {
+    cs_property_def_iso_by_value(pty, zname, val);
+  }
+  else if (dim == 3) {
+    cs_real_t dvals[3] = {val, val, val};
+    cs_property_def_ortho_by_value(pty, zname, dvals);
+  }
+  else if (dim == 9) {
+    cs_real_t dvals[3][3] = { {val, 0., 0.},
+                              {0., val, 0.},
+                              {0., 0., val} };
+    cs_property_def_aniso_by_value(pty, zname, ref);
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property multi-diemnsional definition on a given zone
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] dim    property dimension (>1)
+ * \param[in] vals   array of values to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_define_from_values(const char *name,
+                                        const char *zname,
+                                        const int   dim,
+                                        cs_real_t   vals[])
+{
+  assert(dim > 1 && vals != NULL)
+
+  cs_property_t *pty = cs_property_by_name(name);
+
+  if (pty == NULL)
+    pty = _physical_property_create(name, dim, 0.);
+
+  if (dim == 3)
+    cs_property_def_ortho_by_value(pty, zname, vals);
+  else if (dim == 9)
+    cs_property_def_aniso_by_value(pty, zname, vals);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property definition based on a cs_field_t. Field is created if needed
+ *
+ * \param[in] name          property name
+ * \param[in] type_flag     field type flag
+ * \param[in] location_id   location id flag
+ * \param[in] dim           field dimension
+ * \param[in] has_previous  does the field has val_pre
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_define_from_field(const char  *name,
+                                       const int    type_flag,
+                                       const int    location_id,
+                                       const int    dim,
+                                       bool         has_previous)
+{
+
+  cs_property_t *pty = cs_property_by_name(name);
+  if (pty == NULL)
+    pty = _physical_property_create(name, dim, 0.);
+
+  cs_field_t *f = cs_field_by_name_try(name);
+  if (f == NULL)
+    f = cs_field_create(name, type_flag, location_id, dim, has_previous);
+
+  cs_property_def_by_field(pty, f);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return id of field associated to property
+ *
+ * \param[in] name  property name
+ *
+ * \return field id (int)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_physical_property_field_id_by_name(const char *name)
+{
+  int retval = -1;
+
+  cs_field_t *f = cs_field_by_name_try(name);
+
+  if (f != NULL)
+    retval = f->id;
+
+  return retval;
+
 }
 
 /*----------------------------------------------------------------------------*/

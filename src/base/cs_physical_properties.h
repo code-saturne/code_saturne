@@ -139,6 +139,158 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                        const cs_real_t                    var2[],
                        cs_real_t                          val[]);
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get reference value of a physical property
+ *
+ * \param[in] name  property name
+ *
+ * \return reference value (cs_real_t)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_physical_property_get_ref_value(const char *name);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set reference value for a physical property
+ *
+ * \param[in] name  property name
+ * \param[in] val   new value to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_set_ref_value(const char      *name,
+                                   const cs_real_t  val);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get property reference values for a given zone
+ *
+ * \param[in] name    property name
+ * \param[in] zname   zone name
+ * \param[in] retval  array of values to return
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_get_zone_values(const char *name,
+                                     const char *zname,
+                                     cs_real_t   retval[]);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create physical property
+ *
+ * \param[in] name    property name
+ * \param[in] dim     property dimension
+ * \param[in] refval  reference value
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_create(const char      *name,
+                            const int        dim,
+                            const cs_real_t  refval);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update reference values for a property on a given zone
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] vals   array of values to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_update_zone_values(const char       *name,
+                                        const char       *zname,
+                                        const cs_real_t   vals[]);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property definition on a given zone using a single value
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] dim    property dimension
+ * \param[in] val    reference value for the zone
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_define_from_value(const char      *name,
+                                       const char      *zname,
+                                       const int        dim,
+                                       const cs_real_t  val);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property multi-diemnsional definition on a given zone
+ *
+ * \param[in] name   property name
+ * \param[in] zname  zone name
+ * \param[in] dim    property dimension (>1)
+ * \param[in] vals   array of values to set
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_physical_property_define_from_values(const char *name,
+                                        const char *zname,
+                                        const int   dim,
+                                        cs_real_t   vals[]);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property definition based on a cs_field_t. Field is created if needed
+ *
+ * \param[in] name          property name
+ * \param[in] type_flag     field type flag
+ * \param[in] location_id   location id flag
+ * \param[in] dim           field dimension
+ * \param[in] has_previous  does the field has val_pre
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_physical_property_define_from_field(const char  *name,
+                                       const int    type_flag,
+                                       const int    location_id,
+                                       const int    dim,
+                                       const bool   has_previous);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return id of field associated to property
+ *
+ * \param[in] name  property name
+ *
+ * \return field id (int)
+ */
+/*----------------------------------------------------------------------------*/
+int
+cs_physical_property_field_id_by_name(const char *name);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
