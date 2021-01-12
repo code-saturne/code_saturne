@@ -77,7 +77,6 @@ class StandardItemModelScalars(QStandardItemModel):
         self.dataScalars["XLAMP"] = bdModel.getThermalConductivity()
         self.dataScalars["EPAP"]  = bdModel.getThickness()
         self.dataScalars["TEXTP"] = bdModel.getExternalTemperatureProfile()
-        self.dataScalars["TINTP"] = bdModel.getInternalTemperatureProfile()
         self.dataScalars["FLUX"]  = bdModel.getFlux()
 
 
@@ -114,18 +113,15 @@ class StandardItemModelScalars(QStandardItemModel):
         cond = self.bdModel.getRadiativeChoice()
 
         if cond == 'itpimp':
-            lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
-                   (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+            lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity')]
         if cond == 'ipgrno':
             lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
                    (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'wall_thermal_conductivity'),
                    (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
-                   (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
-                   (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+                   (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile')]
         if cond == 'ifgrno':
             lst = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),
-                   (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux'),
-                   (2, self.tr("Inital temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
+                   (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux')]
         return lst
 
 #-------------------------------------------------------------------------------
@@ -157,9 +153,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         validatorExtTemperature = DoubleValidator(self.lineEditExtTemperature, min=0.0)
         self.lineEditExtTemperature.setValidator(validatorExtTemperature)
 
-        validatorIntTemperature = DoubleValidator(self.lineEditIntTemperature, min=0.0)
-        self.lineEditIntTemperature.setValidator(validatorIntTemperature)
-
         validatorConductionFlux = DoubleValidator(self.lineEditConductionFlux, min=0.0)
         self.lineEditConductionFlux.setValidator(validatorConductionFlux)
 
@@ -170,11 +163,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         #self.labelEmissivity.show()
         #self.lineEditEmissivity.show()
         self.lineEditEmissivity.setText(str(self.__boundary.getEmissivity()))
-
-        self.labelIntTemperature.setText("Interior temperature")
-        #self.lineEditIntTemperature.hide()
-        #self.labelIntTemperatureUnit.hide()
-        self.lineEditIntTemperature.setText(str(self.__boundary.getInternalTemperatureProfile()))
 
         self.labelConductivity.hide()
         self.lineEditConductivity.hide()
@@ -197,8 +185,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.lineEditConductionFlux.setText(str(self.__boundary.getFlux()))
 
         if cond == 'ipgrno':
-
-            self.labelIntTemperature.setText("Initial temperature")
 
             self.labelConductivity.show()
             self.lineEditConductivity.show()
@@ -230,7 +216,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
 
         # Combo
         self.modelRadiative = ComboModel(self.comboBoxRadiative,3,1)
-        self.modelRadiative.addItem(self.tr("Fixed interior temperature"), 'itpimp')
+        self.modelRadiative.addItem(self.tr("Temperature by main thermal BC"), 'itpimp')
         self.modelRadiative.addItem(self.tr("Fixed exterior temperature"), 'ipgrno')
         self.modelRadiative.addItem(self.tr("Fixed conduction flux"), 'ifgrno')
 
@@ -241,7 +227,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.lineEditConductivity.textChanged[str].connect(self.slotConductivity)
         self.lineEditThickness.textChanged[str].connect(self.slotThickness)
         self.lineEditExtTemperature.textChanged[str].connect(self.slotExtTemperature)
-        self.lineEditIntTemperature.textChanged[str].connect(self.slotIntTemperature)
         self.lineEditConductionFlux.textChanged[str].connect(self.slotConductionFlux)
 
         self.case.undoStartGlobal()
@@ -311,15 +296,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         if self.lineEditExtTemperature.validator().state == QValidator.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setExternalTemperatureProfile(c)
-
-
-    @pyqtSlot(str)
-    def slotIntTemperature(self, text):
-        """
-        """
-        if self.lineEditIntTemperature.validator().state == QValidator.Acceptable:
-            c  = from_qvariant(text, float)
-            self.__boundary.setInternalTemperatureProfile(c)
 
 
     @pyqtSlot(str)

@@ -199,15 +199,15 @@ _radiative_boundary_type(cs_tree_node_t  *tn_bc)
   const char *type = cs_tree_node_get_child_value_str(tn_bc, "choice");
 
   if (cs_gui_strcmp(type, "itpimp"))
-    result = cs_glob_rad_transfer_params->itpimp;
+    result = CS_BOUNDARY_RAD_WALL_GRAY;
   else if (cs_gui_strcmp(type, "ipgrno"))
-    result = cs_glob_rad_transfer_params->ipgrno;
+    result = CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T;
   else if (cs_gui_strcmp(type, "iprefl"))
-    result = cs_glob_rad_transfer_params->iprefl;
+    result = CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T;
   else if (cs_gui_strcmp(type, "ifgrno"))
-    result = cs_glob_rad_transfer_params->ifgrno;
+    result = CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX;
   else if (cs_gui_strcmp(type, "ifrefl"))
-    result = cs_glob_rad_transfer_params->ifrefl;
+    result = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX;
 
   if (result == -999)
     bft_error (__FILE__, __LINE__, 0,
@@ -442,7 +442,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               int           *isothp,
                               double        *epsp,
                               double        *epap,
-                              double        *tintp,
                               double        *textp,
                               double        *xlamp,
                               double        *rcodcl)
@@ -565,27 +564,23 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                "with these new natures.\n"));
 
         isothp[ifbr] = _boundary->type[izone];
-        if (isothp[ifbr] == cs_glob_rad_transfer_params->itpimp) {
+        if (isothp[ifbr] == CS_BOUNDARY_RAD_WALL_GRAY) {
           epsp[ifbr] = _boundary->emissivity[izone];
-          tintp[ifbr] = _boundary->internal_temp[izone];
         }
-        else if (isothp[ifbr] == cs_glob_rad_transfer_params->ipgrno) {
+        else if (isothp[ifbr] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
           xlamp[ifbr] = _boundary->thermal_conductivity[izone];
           epap[ifbr] = _boundary->thickness[izone];
           textp[ifbr] = _boundary->external_temp[izone];
-          tintp[ifbr] = _boundary->internal_temp[izone];
           epsp[ifbr] = _boundary->emissivity[izone];
           if (cs_gui_is_equal_real(_boundary->emissivity[izone], 0.))
-            isothp[ifbr] = cs_glob_rad_transfer_params->iprefl;
+            isothp[ifbr] = CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T;
         }
-        else if (isothp[ifbr] == cs_glob_rad_transfer_params->ifgrno) {
+        else if (isothp[ifbr] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
           rcodcl[2 * n_b_faces*_nvar + _ivart*n_b_faces + ifbr]
             = _boundary->conduction_flux[izone];
-          tintp[ifbr] = _boundary->internal_temp[izone];
+          epsp[ifbr] = _boundary->emissivity[izone];
           if (cs_gui_is_equal_real(_boundary->emissivity[izone], 0.))
-            isothp[ifbr] = cs_glob_rad_transfer_params->ifrefl;
-          else
-            epsp[ifbr] = _boundary->emissivity[izone];
+            isothp[ifbr] = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX;
         }
       }
 

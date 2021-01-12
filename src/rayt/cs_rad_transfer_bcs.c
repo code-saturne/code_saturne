@@ -143,7 +143,6 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
         cs_parall_bcast(irkerr, nerrcd, CS_INT_TYPE, znferr);
 
     }
-
   }
 }
 
@@ -211,11 +210,10 @@ cs_rad_transfer_bcs(int         nvar,
   /* Allocate temporary arrays */
 
   int  *isothm;
-  cs_real_t *tempk, *text, *tint, *twall;
+  cs_real_t *tempk, *text, *twall;
   BFT_MALLOC(isothm, n_b_faces, int);
   BFT_MALLOC(tempk, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(text, n_b_faces, cs_real_t);
-  BFT_MALLOC(tint, n_b_faces, cs_real_t);
   BFT_MALLOC(twall, n_b_faces, cs_real_t);
 
   /* Map field arrays */
@@ -271,7 +269,6 @@ cs_rad_transfer_bcs(int         nvar,
     f_bepa->val[face_id]  = -cs_math_big_r;
     f_beps->val[face_id]  = -cs_math_big_r;
     text[face_id] = -cs_math_big_r;
-    tint[face_id] = -cs_math_big_r;
   }
 
   /* Index of the thermal variable */
@@ -292,8 +289,7 @@ cs_rad_transfer_bcs(int         nvar,
   cs_field_t *f_bhconv = cs_field_by_name_try("rad_exchange_coefficient");
 
   /* If no restart info is available, then initialization at first pass,
-   * for twall and qincid:
-   *   twall <= tint
+   * for qincid:
    *   qincid <= stephn*tint**4
    * (if qincid is et to zero, there will be a deficit on the luminance
    *  BC at the first time step with DOM). */
@@ -325,7 +321,6 @@ cs_rad_transfer_bcs(int         nvar,
                                   isothm,
                                   f_beps->val,
                                   f_bepa->val,
-                                  tint,
                                   text,
                                   f_bxlam->val,
                                   rcodcl);
@@ -346,24 +341,21 @@ cs_rad_transfer_bcs(int         nvar,
                                    f_bxlam->val,
                                    f_bepa->val,
                                    f_beps->val,
-                                   text,
-                                   tint);
+                                   text);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "   ** Information on the radiative module\n"
                     "      -----------------------------------\n"
                     "    Initialization of the wall temperature\n"
-                    "    with user profile (tintp)\n"
-                    "    and incident flux at walls (qincid).\n"));
+                    "    with incident flux at walls (qincid).\n"));
 
     /* twall in Kelvin and qincid in W/m2  */
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (   bc_type[face_id] == CS_SMOOTHWALL
           || bc_type[face_id] == CS_ROUGHWALL) {
-        twall[face_id]         = tint[face_id];
-        f_bqinci->val[face_id] = stephn * cs_math_pow4(tint[face_id]);
+        f_bqinci->val[face_id] = stephn * cs_math_pow4(twall[face_id]);
       }
       else {
         twall[face_id]         = 0.0;
@@ -381,7 +373,6 @@ cs_rad_transfer_bcs(int         nvar,
                                 isothm,
                                 f_beps->val,
                                 f_bepa->val,
-                                tint,
                                 text,
                                 f_bxlam->val,
                                 rcodcl);
@@ -402,15 +393,14 @@ cs_rad_transfer_bcs(int         nvar,
                                  f_bxlam->val,
                                  f_bepa->val,
                                  f_beps->val,
-                                 text,
-                                 tint);
+                                 text);
 
   /* Check user BC definitions */
 
   const int *face_zone_id = cs_boundary_zone_face_zone_id();
 
   /* Error counter */
-  cs_gnum_t nrferr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  cs_gnum_t nrferr[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int       icoerr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   cs_real_t rvferr[27];
@@ -441,89 +431,72 @@ cs_rad_transfer_bcs(int         nvar,
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if ( isothm[face_id] == cs_glob_rad_transfer_params->itpimp){
+      int rad_bc_code = isothm[face_id];
+
+      if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY) {
         if (   f_beps->val[face_id] < 0.0
-            || f_beps->val[face_id] > 1.0
-            || tint[face_id] <= 0.0) {
+            || f_beps->val[face_id] > 1.0) {
           nrferr[4]++;
           icoerr[4]    = face_zone_id[face_id];
           rvferr[0]    = f_beps->val[face_id];
-          rvferr[1]    = tint[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ipgrno) {
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
         if (   f_beps->val[face_id] < 0.0
             || f_beps->val[face_id] > 1.0
             || f_bxlam->val[face_id] <= 0.0
             || f_bepa->val[face_id] <= 0.0
-            || text[face_id] <= 0.0
-            || tint[face_id] <= 0.0) {
+            || text[face_id] <= 0.0) {
           nrferr[5]++;
           icoerr[5]    = face_zone_id[face_id];
           rvferr[2]    = f_beps->val[face_id];
           rvferr[3]    = f_bxlam->val[face_id];
           rvferr[4]    = f_bepa->val[face_id];
           rvferr[5]    = text[face_id];
-          rvferr[6]    = tint[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
         if (   f_bxlam->val[face_id] <= 0.0
             || f_bepa->val[face_id] <= 0.0
-            || text[face_id] <= 0.0
-            || tint[face_id] <= 0.0) {
+            || text[face_id] <= 0.0) {
           nrferr[6]++;
           icoerr[6]    = face_zone_id[face_id];
           rvferr[7]    = f_bxlam->val[face_id];
           rvferr[8]    = f_bepa->val[face_id];
           rvferr[9]    = text[face_id];
-          rvferr[10]   = tint[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
         if (   f_beps->val[face_id] < 0.0
-            || f_beps->val[face_id] > 1.0
-            || tint[face_id] <= 0.0) {
+            || f_beps->val[face_id] > 1.0) {
           nrferr[7]++;
           icoerr[7]    = face_zone_id[face_id];
           rvferr[11]   = f_beps->val[face_id];
-          rvferr[12]   = tint[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
-        if (tint[face_id] <= 0.0) {
-          nrferr[8]++;
-          icoerr[8]    = face_zone_id[face_id];
-          rvferr[13]   = tint[face_id];
-          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
-        }
-      }
-
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->itpt1d) {
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
         if (   f_beps->val[face_id] < 0.0
-            || f_beps->val[face_id] > 1.0
-            || tint[face_id] <= 0.0) {
-          nrferr[14]++;
+            || f_beps->val[face_id] > 1.0) {
+          nrferr[13]++;
           icoerr[15]   = face_zone_id[face_id];
           rvferr[25]   = f_beps->val[face_id];
-          rvferr[26]   = tint[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
       }
 
-      else if (   isothm[face_id] !=  -1
-               && isothm[face_id] != cs_glob_rad_transfer_params->ifinfe) {
-        nrferr[9]++;
+      else if (   rad_bc_code !=  -1
+               && rad_bc_code != cs_glob_rad_transfer_params->ifinfe) {
+        nrferr[8]++;
         icoerr[9]    = face_zone_id[face_id];
-        icoerr[10]   = isothm[face_id];
+        icoerr[10]   = rad_bc_code;
         bc_type[face_id] = -CS_ABS(bc_type[face_id]);
       }
     }
@@ -532,11 +505,11 @@ cs_rad_transfer_bcs(int         nvar,
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if (isothm[face_id] == cs_glob_rad_transfer_params->itpimp) {
+      if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
         if (   f_bxlam->val[face_id] > 0.0
             || f_bepa->val[face_id] > 0.0
             || text[face_id] > 0.0) {
-          nrferr[10]++;
+          nrferr[9]++;
           icoerr[11]   = face_zone_id[face_id];
           rvferr[14]   = f_bxlam->val[face_id];
           rvferr[15]   = f_bepa->val[face_id];
@@ -545,20 +518,21 @@ cs_rad_transfer_bcs(int         nvar,
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
-        if (f_beps->val[face_id] >= 0.0) {
-          nrferr[11]++;
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
+        if (f_beps->val[face_id] > 0.0) {
+          nrferr[10]++;
           icoerr[12]   = face_zone_id[face_id];
           rvferr[17]   = f_beps->val[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
+        f_beps->val[face_id] = 0.;
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
         if (   f_bxlam->val[face_id] > 0.0
             || f_bepa->val[face_id] > 0.0
             || text[face_id] > 0.0) {
-          nrferr[12]++;
+          nrferr[11]++;
           icoerr[13]   = face_zone_id[face_id];
           rvferr[18]   = f_bxlam->val[face_id];
           rvferr[19]   = f_bepa->val[face_id];
@@ -567,12 +541,12 @@ cs_rad_transfer_bcs(int         nvar,
         }
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
-        if (   f_beps->val[face_id] >= 0.0
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
+        if (   f_beps->val[face_id] > 0.0
             || f_bxlam->val[face_id] > 0.0
             || f_bepa->val[face_id] > 0.0
             || text[face_id] > 0.0) {
-          nrferr[13]++;
+          nrferr[12]++;
           icoerr[14]   = face_zone_id[face_id];
           rvferr[21]   = f_beps->val[face_id];
           rvferr[22]   = f_bxlam->val[face_id];
@@ -580,6 +554,7 @@ cs_rad_transfer_bcs(int         nvar,
           rvferr[24]   = text[face_id];
           bc_type[face_id] = -CS_ABS(bc_type[face_id]);
         }
+        f_beps->val[face_id] = 0.;
       }
 
     }
@@ -631,17 +606,14 @@ cs_rad_transfer_bcs(int         nvar,
                     _("%s:\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
-                      "  TINTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
-                      "    EPSP  = %12.4e\n"
-                      "    TINTP = %12.4e\n"),
+                      "    EPSP  = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "ITPIMP",
+                    "CS_BOUNDARY_RAD_WALL_GRAY",
                     (unsigned long long)nrferr[4],
                     icoerr[4],
-                    rvferr[0],
-                    rvferr[1]);
+                    rvferr[0]);
     }
 
     _sync_rad_bc_err(&nrferr[5], 5, &icoerr[5], &rvferr[2]);
@@ -650,23 +622,21 @@ cs_rad_transfer_bcs(int         nvar,
                     _("%s:\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
-                      "  XLAMP, EPAP, TEXTP, and TINTP must be > 0\n\n"
+                      "  XLAMP, EPAP, and TEXTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
                       "    EPSP  = %12.4e\n"
                       "    XLAMP = %12.4e\n"
                       "    EPAP  = %12.4e\n"
-                      "    TEXTP = %12.4e\n"
-                      "    TINTP = %12.4e\n"),
+                      "    TEXTP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IPGRNO",
+                    "CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T",
                     (unsigned long long)nrferr[5],
                     icoerr[5],
                     rvferr[2],
                     rvferr[3],
                     rvferr[4],
-                    rvferr[5],
-                    rvferr[6]);
+                    rvferr[5]);
     }
 
     _sync_rad_bc_err (&nrferr[6], 4, &icoerr[6], &rvferr[7]);
@@ -674,21 +644,19 @@ cs_rad_transfer_bcs(int         nvar,
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
-                      "  XLAMP, EPAP, TEXTP, and TINTP must be > 0\n\n"
+                      "  XLAMP, EPAP and TEXTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
                       "    XLAMP = %12.4e\n"
                       "    EPAP  = %12.4e\n"
-                      "    TEXTP = %12.4e\n"
-                      "    TINTP = %12.4e\n"),
+                      "    TEXTP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IPREFL",
+                    "CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T",
                     (unsigned long long)nrferr[6],
                     icoerr[6],
                     rvferr[7],
                     rvferr[8],
-                    rvferr[9],
-                    rvferr[10]);
+                    rvferr[9]);
     }
 
     _sync_rad_bc_err(&nrferr[7], 2, &icoerr[7], &rvferr[11]);
@@ -697,56 +665,34 @@ cs_rad_transfer_bcs(int         nvar,
                     _("%s:\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
-                      "  TINTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
-                      "    EPSP  = %12.4e\n"
-                      "    TINTP = %12.4e\n"),
+                      "    EPSP  = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IFGRNO",
+                    "CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX",
                     (unsigned long long)nrferr[7],
                     icoerr[7],
-                    rvferr[11],
-                    rvferr[12]);
+                    rvferr[11]);
     }
 
-    _sync_rad_bc_err(&nrferr[8], 1, &icoerr[8], &rvferr[13]);
-    if (nrferr[8] > 0) {
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
-                      "With isothp = %s\n"
-                      "  TINTP must be > 0\n\n"
-                      "This is not the case for %llu faces.\n\n"
-                      "  last such face (zone  %d):\n"
-                      "    TINTP = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
-                    "IFREFL",
-                    (unsigned long long)nrferr[8],
-                    icoerr[8],
-                    rvferr[13]);
-    }
-
-    _sync_rad_bc_err(&nrferr[14], 2, &icoerr[14], &rvferr[25]);
-    if (nrferr[14] > 0) {
+    _sync_rad_bc_err(&nrferr[13], 2, &icoerr[14], &rvferr[25]);
+    if (nrferr[13] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
-                      "  TINTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
-                      "    EPSP  = %12.4e\n"
-                      "    TINTP = %12.4e\n"),
+                      "    EPSP  = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "ITPT1D",
+                    "CS_BOUNDARY_RAD_1D_WALL_T",
                     (unsigned long long)nrferr[14],
                     icoerr[15],
-                    rvferr[25],
-                    rvferr[26]);
+                    rvferr[25]);
     }
 
-    _sync_rad_bc_err(&nrferr[9], 2, &icoerr[9], NULL);
-    if (nrferr[9] > 0) {
+    _sync_rad_bc_err(&nrferr[8], 2, &icoerr[9], NULL);
+    if (nrferr[8] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "Forbidden value of ISOTHM for %llu faces.\n\n"
@@ -758,8 +704,8 @@ cs_rad_transfer_bcs(int         nvar,
                     icoerr[10]);
     }
 
-    _sync_rad_bc_err(&nrferr[10], 3, &icoerr[11], &rvferr[14]);
-    if (nrferr[10] > 0) {
+    _sync_rad_bc_err(&nrferr[9], 3, &icoerr[11], &rvferr[14]);
+    if (nrferr[9] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
@@ -770,7 +716,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "ITPIMP",
+                    "CS_BOUNDARY_RAD_WALL_GRAY",
                     (unsigned long long)nrferr[10],
                     icoerr[11],
                     rvferr[14],
@@ -778,8 +724,8 @@ cs_rad_transfer_bcs(int         nvar,
                     rvferr[16]);
     }
 
-    _sync_rad_bc_err(&nrferr[11], 1, &icoerr[12], &rvferr[17]);
-    if (nrferr[11] > 0) {
+    _sync_rad_bc_err(&nrferr[10], 1, &icoerr[12], &rvferr[17]);
+    if (nrferr[10] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
@@ -788,14 +734,14 @@ cs_rad_transfer_bcs(int         nvar,
                       "  last such face (zone  %d):\n"
                       "    EPSP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IPREFL",
+                    "CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T",
                     (unsigned long long)nrferr[11],
                     icoerr[12],
                     rvferr[17]);
     }
 
-    _sync_rad_bc_err(&nrferr[12], 3, &icoerr[13], &rvferr[18]);
-    if (nrferr[12] > 0) {
+    _sync_rad_bc_err(&nrferr[11], 3, &icoerr[13], &rvferr[18]);
+    if (nrferr[11] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
@@ -806,7 +752,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IFGRNO",
+                    "CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX",
                     (unsigned long long)nrferr[12],
                     icoerr[13],
                     rvferr[18],
@@ -814,8 +760,8 @@ cs_rad_transfer_bcs(int         nvar,
                     rvferr[20]);
     }
 
-    _sync_rad_bc_err(&nrferr[13], 4, &icoerr[14], &rvferr[21]);
-    if (nrferr[13] > 0) {
+    _sync_rad_bc_err(&nrferr[12], 4, &icoerr[14], &rvferr[21]);
+    if (nrferr[12] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%s:\n"
                       "With isothp = %s\n"
@@ -827,7 +773,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
                     _("Radiative boundary conditions errors:\n"),
-                    "IFREFL",
+                    "CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX",
                     (unsigned long long)nrferr[13],
                     icoerr[14],
                     rvferr[21],
@@ -849,43 +795,41 @@ cs_rad_transfer_bcs(int         nvar,
     else
       icodw = 5;
 
-    if (isothm[face_id] == cs_glob_rad_transfer_params->itpimp){
+    int rad_bc_code = isothm[face_id];
+
+    if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY
+        || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
+      icodcl[ivart*n_b_faces + face_id] = icodw;
+      if (ivahg >= 0)
+        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
+    }
+
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T){
       icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
 
-    else if (isothm[face_id] == cs_glob_rad_transfer_params->ipgrno){
-      icodcl[ivart*n_b_faces + face_id]   = icodw;
-      if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
-    }
-
-    else if(isothm[face_id] == cs_glob_rad_transfer_params->iprefl){
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
       icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
       f_beps->val[face_id]     = 0.0;
     }
 
-    else if(isothm[face_id] == cs_glob_rad_transfer_params->ifgrno){
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
       icodcl[ivart*n_b_faces + face_id]   = icodw;
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
 
-    else if(isothm[face_id] == cs_glob_rad_transfer_params->ifrefl){
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
       icodcl[ivart*n_b_faces + face_id]   = 3;
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = 3;
       f_beps->val[face_id]     = 0.0;
     }
 
-    else if(isothm[face_id] == cs_glob_rad_transfer_params->itpt1d){
-      icodcl[ivart*n_b_faces + face_id]   = icodw;
-      if (ivahg >= 0)
-        icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
-    }
   }
 
   /* Save temperature (in Kelvin) in tempk */
@@ -902,9 +846,9 @@ cs_rad_transfer_bcs(int         nvar,
         tempk[iel] = f_temp->vals[1][iel] + tkelvi;
 
     }
-    else if (cs_glob_thermal_model->itpscl == 1) {
+    else if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
 
-      /* val index to access, necessary for compatibility with neptune */
+      /* val index to access, necessary for compatibility with neptune_cfd */
       int tval_id = f_temp->n_time_vals - 1;
       for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
         tempk[iel] = f_temp->vals[tval_id][iel];
@@ -916,7 +860,7 @@ cs_rad_transfer_bcs(int         nvar,
 
     cs_field_t *f_enthalpy = CS_F_(h);
 
-    /* Resultat : T en K    */
+    /* Resultat : T en K */
     CS_PROCF(c_h_to_t, C_H_TO_T)(f_enthalpy->val, tempk);
 
   }
@@ -941,15 +885,17 @@ cs_rad_transfer_bcs(int         nvar,
   }
 
   /* The cases where twall must be computed first, are at first pass without
-     restart, cases with prescribed temperature twall = tint */
+     restart, cases with prescribed temperature twall */
 
   if (ideb == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      if (   isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[face_id] == cs_glob_rad_transfer_params->iprefl
-          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno
-          || isothm[face_id] == cs_glob_rad_transfer_params->itpt1d)
-        isothm[face_id] = cs_glob_rad_transfer_params->itpimp;
+      if (   isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
+        isothm[face_id] = CS_BOUNDARY_RAD_WALL_GRAY;
+        rcodcl[ivart*n_b_faces + face_id] = twall[face_id] + xmtk;
+      }
     }
   }
 
@@ -964,7 +910,6 @@ cs_rad_transfer_bcs(int         nvar,
                               twall,
                               f_bqinci->val,
                               text,
-                              tint,
                               f_bxlam->val,
                               f_bepa->val,
                               f_beps->val,
@@ -978,15 +923,7 @@ cs_rad_transfer_bcs(int         nvar,
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
-          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = twall[face_id] + xmtk;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id] = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
-      }
-
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+      if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = text[face_id] + xmtk;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
@@ -994,7 +931,7 @@ cs_rad_transfer_bcs(int         nvar,
         rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
       }
 
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
         icodcl[ivart*n_b_faces + face_id] = 3;
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id] = cs_math_infinite_r;
@@ -1018,9 +955,9 @@ cs_rad_transfer_bcs(int         nvar,
 
     int mode = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
-          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno)
+      if (   isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX)
         mode  =  -1;
     }
 
@@ -1038,7 +975,7 @@ cs_rad_transfer_bcs(int         nvar,
 
     mode = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+      if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
         mode = -1;
       }
     }
@@ -1052,7 +989,7 @@ cs_rad_transfer_bcs(int         nvar,
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
         if (   bc_type[face_id] == CS_SMOOTHWALL
             || bc_type[face_id] == CS_ROUGHWALL) {
-          lstfac[nlst] = face_id + 1;// for compatibility purpose with b_t_to_h
+          lstfac[nlst] = face_id + 1; // for compatibility purpose with b_t_to_h
           nlst++;
         }
       }
@@ -1060,9 +997,17 @@ cs_rad_transfer_bcs(int         nvar,
     }
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      if (   isothm[face_id] == cs_glob_rad_transfer_params->itpimp
-          || isothm[face_id] == cs_glob_rad_transfer_params->ipgrno
-          || isothm[face_id] == cs_glob_rad_transfer_params->ifgrno) {
+      if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
+        if (ivahg >= 0) {
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
+            = hwall[face_id];
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
+            = cs_math_infinite_r;
+          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id] = 0.0;
+        }
+      }
+      else if (  isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
+              || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = hwall[face_id];
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
@@ -1076,7 +1021,7 @@ cs_rad_transfer_bcs(int         nvar,
           rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id] = 0.0;
         }
       }
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->iprefl) {
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = hext[face_id];
         /* hext  */
@@ -1091,7 +1036,7 @@ cs_rad_transfer_bcs(int         nvar,
           rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id] = 0.0;
         }
       }
-      else if (isothm[face_id] == cs_glob_rad_transfer_params->ifrefl) {
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
         icodcl[ivart*n_b_faces + face_id] = 3;
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
@@ -1138,7 +1083,6 @@ cs_rad_transfer_bcs(int         nvar,
   BFT_FREE(isothm);
   BFT_FREE(tempk);
   BFT_FREE(text);
-  BFT_FREE(tint);
   BFT_FREE(twall);
 }
 

@@ -109,7 +109,6 @@ BEGIN_C_DECLS
  * \param[out] tparop   wall temperature in Kelvin
  * \param[in]  qincip   dradiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
- * \param[in]  tintp    interior boundary temperature in degrees C
  * \param[in]  xlamp    thermal conductivity coefficient of wall faces (w/m/k)
  * \param[in]  epap     wall thickness (m)
  * \param[in]  epsp     wall emissivity
@@ -130,7 +129,6 @@ cs_rad_transfer_wall_flux(int         nvar,
                           cs_real_t   tparop[],
                           cs_real_t   qincip[],
                           cs_real_t   textp[],
-                          cs_real_t   tintp[],
                           cs_real_t   xlamp[],
                           cs_real_t   epap[],
                           cs_real_t   epsp[],
@@ -208,18 +206,20 @@ cs_rad_transfer_wall_flux(int         nvar,
     cs_real_t qconv = 0.0;
     cs_real_t qrayt = 0.0;
 
+    cs_real_t detep = 0.0;
+
     int log_z_id = b_face_class_id[ifac];
 
+    int rad_bc_code = isothp[ifac];
+
     /* Isotherms */
-    if (isothp[ifac] == cs_glob_rad_transfer_params->itpimp) {
+    if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY) {
 
       /* Mark for logging */
       iitpim = 1;
-      indtp[log_z_id] = cs_glob_rad_transfer_params->itpimp;
+      indtp[log_z_id] = CS_BOUNDARY_RAD_WALL_GRAY;
 
       /* Computation */
-      tparop[ifac] = tintp[ifac];
-
       qconv = flconp[ifac];
       cs_real_t qinci = qincip[ifac];
       cs_real_t sigt4 = stephn * cs_math_pow4(tparop[ifac]);
@@ -227,110 +227,49 @@ cs_rad_transfer_wall_flux(int         nvar,
       qrayt = epp * (qinci - sigt4);
     }
 
-    /* Grey or black boundaries (non reflecting) */
-    else if (isothp[ifac] == cs_glob_rad_transfer_params->ipgrno) {
+    /* Grey or black boundaries (reflecting or not,
+       with fixed exterior temperature or conduction flux) */
+    else if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
+             || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
+             || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
 
       /* Mark for logging */
-      iipgrn = 1;
-      indtp[log_z_id] = cs_glob_rad_transfer_params->ipgrno;
-
-      /* Computation */
-      cs_real_t esl    = epap[ifac] / xlamp[ifac];
-      qconv  = flconp[ifac];
-      cs_real_t qinci  = qincip[ifac];
-      cs_real_t epp    = epsp[ifac];
-      cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
-      qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
-      cs_real_t detep  =   (esl * (qconv + qrayt) - (tparop[ifac] - textp[ifac]))
-                         / (1.0 + 4.0 * esl * epp * sigt3 + esl * hfconp[ifac]);
-      cs_real_t rapp   = detep / tparop[ifac];
-      cs_real_t abrapp = CS_ABS(rapp);
-
-      /* Relaxation */
-      if (abrapp >= tx) {
-        nrelax++;
-        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
-      }
-      else
-        tparop[ifac] += detep;
-
-      rapmax = CS_MAX(rapmax, abrapp);
-      if (rapp <= 0.0)
-        nmoins++;
-      else
-        nplus++;
-
-      /* Clipping */
-      if (tparop[ifac] < tmin) {
-        n1min++;
-        tparop[ifac] = tmin;
-      }
-      if (tparop[ifac] > tmax) {
-        n1max++;
-        tparop[ifac] = tmax;
-      }
-
-    }
-
-    /* Reflecting walls */
-    else if (isothp[ifac] == cs_glob_rad_transfer_params->iprefl) {
-
-      /* Mark for logging */
-      iipref = 1;
-      indtp[log_z_id] = cs_glob_rad_transfer_params->iprefl;
-
-      /* Computation */
-      cs_real_t esl    = epap[ifac] / xlamp[ifac];
-      qconv  = flconp[ifac];
-      cs_real_t detep  =  (esl * qconv - (tparop[ifac] - textp[ifac]))
-                        / (1.0 + esl * hfconp[ifac]);
-      cs_real_t rapp   = detep / tparop[ifac];
-      cs_real_t abrapp = CS_ABS(rapp);
-      qrayt = 0.0;
-
-      /* Relaxation */
-      if (abrapp >= tx) {
-        nrelax++;
-        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
-      }
-      else
-        tparop[ifac] += detep;
-
-      rapmax = CS_MAX(rapmax, abrapp);
-      if (rapp <= 0.0)
-        nmoins++;
-      else
-        nplus++;
-
-      /* Clipping */
-      if (tparop[ifac] < tmin) {
-        n1min++;
-        tparop[ifac] = tmin;
-      }
-      if (tparop[ifac] > tmax) {
-        n1max++;
-        tparop[ifac] = tmax;
-      }
-
-    }
-
-    /* Wall with non-reflecting conduction flux:
-     *   if the flux is zero, the wall is adiabatic
-     *   (radiative transfer is balanced by convection) */
-    else if (isothp[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-
-      /* Mark for logging */
-      iifgrn = 1;
-      indtp[log_z_id] = cs_glob_rad_transfer_params->ifgrno;
+      indtp[log_z_id] = rad_bc_code;
 
       /* Computation */
       qconv  = flconp[ifac];
       cs_real_t qinci  = qincip[ifac];
-      cs_real_t epp    = epsp[ifac];
-      cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
-      qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
-      cs_real_t detep  =  (qconv + qrayt - rcodcl[ifac + ircodcl])
-                        / (4.0 * epp * sigt3 + hfconp[ifac]);
+
+      if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
+        /* Non-reflecting, fixed exterior temperature */
+        iipgrn = 1;
+
+        cs_real_t esl    = epap[ifac] / xlamp[ifac];
+        cs_real_t epp    = epsp[ifac];
+        cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
+        qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
+        detep  =   (esl * (qconv + qrayt) - (tparop[ifac] - textp[ifac]))
+                 / (1.0 + 4.0*esl*epp*sigt3 + esl*hfconp[ifac]);
+      }
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
+        /* Reflecting, fixed exterior temperature */
+        iipref = 1;
+
+        cs_real_t esl    = epap[ifac] / xlamp[ifac];
+        detep  =   (esl * qconv - (tparop[ifac] - textp[ifac]))
+                 / (1.0 + esl*hfconp[ifac]);
+      }
+      else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
+        /* Non-reflecting, fixed conduction flux */
+        iifgrn = 1;
+
+        cs_real_t epp    = epsp[ifac];
+        cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
+        qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
+        detep  =   (qconv + qrayt - rcodcl[ifac + ircodcl])
+                 / (4.0 * epp * sigt3 + hfconp[ifac]);
+      }
+
       cs_real_t rapp   = detep / tparop[ifac];
       cs_real_t abrapp = CS_ABS(rapp);
 
@@ -360,18 +299,18 @@ cs_rad_transfer_wall_flux(int         nvar,
 
     }
 
-    /* 5) parois a flux de conduction imposee et reflechissante
-     *    equivalent a impose un flux total au fluide    */
-    else if (isothp[ifac] == cs_glob_rad_transfer_params->ifrefl) {
+    /* Reflecting wall with fixed conduction flux
+     * equivalent to total flux for fluid */
+    else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
 
       /* Mark for logging */
       iifref = 1;
-      indtp[log_z_id] = cs_glob_rad_transfer_params->ifrefl;
+      indtp[log_z_id] = rad_bc_code;
 
       /* Computation */
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
-      tparop[ifac] = hfconp[ifac] * tempkp[iel] - rcodcl[ifac + ircodcl];
-      tparop[ifac] = tparop[ifac] / CS_MAX(hfconp[ifac], cs_math_epzero);
+      tparop[ifac] =  (hfconp[ifac] * tempkp[iel] - rcodcl[ifac + ircodcl])
+                     / CS_MAX(hfconp[ifac], cs_math_epzero);
 
       qconv = flconp[ifac];
       qrayt = 0.0;
@@ -389,11 +328,11 @@ cs_rad_transfer_wall_flux(int         nvar,
     }
 
     /* Max-Min */
-    if (   isothp[ifac] == cs_glob_rad_transfer_params->itpimp
-        || isothp[ifac] == cs_glob_rad_transfer_params->ipgrno
-        || isothp[ifac] == cs_glob_rad_transfer_params->iprefl
-        || isothp[ifac] == cs_glob_rad_transfer_params->ifgrno
-        || isothp[ifac] == cs_glob_rad_transfer_params->ifrefl) {
+    if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY
+        || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
+        || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
+        || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
+        || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
       if (tpmax <= tparop[ifac]) {
         ifacmx = ifac;
         tpmax  = tparop[ifac];
@@ -598,7 +537,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                         " ------------------------------------------------"
                         "---------------------------\n"));
         for (int log_z_id = 0; log_z_id < n_zones; log_z_id++)
-          if (indtp[log_z_id] == cs_glob_rad_transfer_params->itpimp)
+          if (indtp[log_z_id] == CS_BOUNDARY_RAD_WALL_GRAY)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
                           log_z_id,
@@ -616,7 +555,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                         "------------------------------------------------"
                         "---------------------------\n"));
         for (int log_z_id = 0; log_z_id < n_zones; log_z_id++)
-          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ipgrno)
+          if (indtp[log_z_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
                           log_z_id,
@@ -634,7 +573,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                         "------------------------------------------------"
                         "---------------------------\n"));
         for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
-          if (indtp[log_z_id] == cs_glob_rad_transfer_params->iprefl)
+          if (indtp[log_z_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
                           log_z_id,
@@ -653,7 +592,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                         "------------------------------------------------"
                         "---------------------------\n"));
         for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
-          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ifgrno)
+          if (indtp[log_z_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
                           log_z_id,
@@ -673,7 +612,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                         "------------------------------------------------"
                         "---------------------------\n"));
         for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
-          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ifrefl)
+          if (indtp[log_z_id] == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
                           log_z_id,

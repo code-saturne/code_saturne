@@ -83,7 +83,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               int           *isothp,
                               double        *epsp,
                               double        *epap,
-                              double        *tintp,
                               double        *textp,
                               double        *xlamp,
                               double        *rcodcl);

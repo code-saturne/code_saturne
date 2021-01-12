@@ -1702,19 +1702,25 @@ each boundary face. There are five different types:
 
 \begin{list}{$\bullet$}{}
 
-\item \texttt{\textbf{itpimp}}: wall face with imposed temperature,
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GREY}}: grey of black wall, with
+      temperature defined by main (fluid) boundary conditions,
 
-\item \texttt{\textbf{ipgrno}}: for a grey or black wall face, calculation of the
-      temperature by means of a flux balance,
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GREY\_EXTERIOR\_T}}:
+       grey or black wall, calculation of the temperature by means of a flux balance
+       with an exterior temperature,
 
-\item \texttt{\textbf{iprefl}}: for a reflecting wall face, calculation of the
-      temperature by means of a flux balance.
- This is fixed at 2000 in \texttt{radiat} and cannot be modified.
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_REFL\_EXTERIOR\_T}}:
+      for a reflecting wall face, calculation of the
+      temperature by means of a flux balance. This is equivalent to
+      using \textbf{CS\_BOUNDARY\_RAD\_WALL\_GRAY\_EXTERIOR\_T},
+      with zero emissivity.
 
-\item \texttt{\textbf{ifgrno}}: grey or black wall face to which a conduction
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GRAY\_COND\_FLUX}}:
+      grey or black wall face to which a conduction
       flux is imposed,
 
-\item \texttt{\textbf{ifrefl}}: reflecting wall face to which a conduction
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_REFL\_COND\_FLUX}}:
+      reflecting wall face to which a conduction
       flux is imposed, which is equivalent to impose this flux directly
       to the fluid.
 
@@ -1730,30 +1736,33 @@ the code needs to be given some additional information:
 
 \begin{list}{$\bullet$}{}
 
-\item \texttt{\textbf{itpimp}}: the array \texttt{tintp} must be completed
-      with the imposed temperature value and the array \texttt{epsp} must
-      be completed with the emissivity value (strictly positive).
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GRAY}}: the array \texttt{epsp} must
+      be completed with the emissivity value (positive).
 
-\item \texttt{\textbf{ipgrno}}: must be given: an initialisation temperature in
-      the array \texttt{tintp}, the wall emissivity (strictly positive, in
-      \texttt{epsp}), thickness (in \texttt{epap}), thermal conductivity
-      (in \texttt{xlamp}) and an external temperature (in \texttt{textp})
-      in order to calculate a conduction flux across the wall.
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GREY\_EXTERIOR\_T}}: wall emissivity
+      (strictly positive, in \texttt{epsp}), thickness (in \texttt{epap}),
+      thermal conductivity (in \texttt{xlamp}) and external temperature
+      (in \texttt{textp}) in order to calculate a conduction flux across the wall.
 
-\item \texttt{\textbf{iprefl}}: must be given: an initialisation temperature (in
-      \texttt{tintp}), the wall thickness (in \texttt{epap}) and thermal conductivity (in
-      \texttt{xlamp}) and an external temperature (in \texttt{textp}).
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_REFL\_EXTERIOR\_T}}:
+      wall thickness (in \texttt{epap}) and thermal
+      conductivity (in \texttt{xlamp}) and an external temperature
+      (in \texttt{textp}).
+      This is equivalent to using \textbf{CS\_BOUNDARY\_RAD\_WALL\_GREY\_EXTERIOR\_T}
+      with a wall emissivity of 0, and an exchange coefficient-type boundary
+      condition, where the exchange coefficient is equal to
+      \texttt{xlamp} / \texttt{textp}.
 
-\item \texttt{\textbf{ifgrno}}: must be given: an initialisation temperature (in
-      \texttt{tintp}), the wall emissivity (in \texttt{epsp}) and the conduction
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_GRAY\_COND\_FLUX}}:
+      wall emissivity (in \texttt{epsp}) and conduction
       flux (in $W/m^2$ whatever the thermal scalar, enthalpy or temperature) in
       the array \texttt{rcodcl}. The value of \texttt{rcodcl} is positive when the
       conduction flux is directed from the inside of the fluid domain to the
       outside (for instance, when the fluid heats the walls). If the
       conduction flux is null, the wall is adiabatic.
 
-\item \texttt{\textbf{ifrefl}}: must be given: an initialisation temperature (in
-      \texttt{tintp}) and the conduction flux (in $W/m^2$ whatever the thermal
+\item \texttt{\textbf{CS\_BOUNDARY\_RAD\_WALL\_REFL\_COND\_FLUX}}:
+      must be given: the conduction flux (in $W/m^2$ whatever the thermal
       scalar) in the array \texttt{rcodcl}. The value of \texttt{rcodcl} is
       positive when the conduction flux is directed from the inside of the
       fluid domain to the outside (for instance, when the fluid heats the

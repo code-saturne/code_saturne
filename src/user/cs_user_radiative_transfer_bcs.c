@@ -85,15 +85,16 @@ BEGIN_C_DECLS
  *
  * The following face characteristics must be set:
  *  - isothp(face_id) boundary face type
- *               = itpimp -> Gray wall with fixed inside temperature
- *               = ipgrno -> Gray wall with fixed outside temperature
- *               = iprefl -> Reflecting wall with fixed outside temperature
- *               = ifgrno -> Gray wall with fixed conduction flux
- *               = ifrefl -> Reflecting wall with fixed conduction flux
- *  - tintp(face_id) inside wall temperature (Kelvin)
- *               initialize thwall at the first time step.
- *               If isothp = itpimp, the value of thwall is fixed to tintp
- *               In the other case, tintp is only for initialization.
+ *    * CS_BOUNDARY_RAD_WALL_GRAY:
+ *      Gray wall with temperature based on fluid BCs
+ *    * CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T:
+ *      Gray wall with fixed outside temperature
+ *    * CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T:
+ *      Reflecting wall with fixed outside temperature
+ *    * CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX:
+ *      Gray wall with fixed conduction flux
+ *    * CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX:
+ *      Reflecting wall with fixed conduction flux
  *
  * Depending on the value of isothp, other values may also need to be set:
  *  - rcodcl = conduction flux
@@ -105,23 +106,7 @@ BEGIN_C_DECLS
  * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types
  * \param[in]     icodcl        boundary face code
- *                                - 1  -> Dirichlet
- *                                - 2  -> convective outlet
- *                                - 3  -> flux density
- *                                - 4  -> sliding wall and u.n=0 (velocity)
- *                                - 5  -> friction and u.n=0 (velocity)
- *                                - 6  -> roughness and u.n=0 (velocity)
- *                                - 9  -> free inlet/outlet (velocity)
- *                                inflowing possibly blocked
  * \param[in]     isothp        boundary face type for radiative transfer
- *                                - itpimp -> Gray wall with fixed inside temp
- *                                - ipgrno -> Gray wall with fixed outside temp
- *                                - iprefl -> Reflecting wall with fixed
- *                                         outside temp
- *                                - ifgrno -> Gray wall with fixed
- *                                      conduction flux
- *                                - ifrefl -> Reflecting wall with fixed
- *                                      conduction flux
  * \param[out]    tmin          min allowed value of the wall temperature
  * \param[out]    tmax          max allowed value of the wall temperature
  * \param[in]     tx            relaxation coefficient (0 < tx < 1)
@@ -137,7 +122,6 @@ BEGIN_C_DECLS
  * \param[out]    epap          thickness (m)
  * \param[out]    epsp          emissivity (>0)
  * \param[out]    textp         outside temperature (K)
- * \param[out]    tintp         initial inside temperature (K)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -159,8 +143,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
                                cs_real_t         xlamp[],
                                cs_real_t         epap[],
                                cs_real_t         epsp[],
-                               cs_real_t         textp[],
-                               cs_real_t         tintp[])
+                               cs_real_t         textp[])
 {
   CS_UNUSED(nvar);
   CS_UNUSED(bc_type);
@@ -179,7 +162,6 @@ cs_user_radiative_transfer_bcs(int               nvar,
   CS_UNUSED(epap);
   CS_UNUSED(epsp);
   CS_UNUSED(textp);
-  CS_UNUSED(tintp);
 }
 
 /*----------------------------------------------------------------------------*/

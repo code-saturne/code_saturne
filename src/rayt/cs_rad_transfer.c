@@ -161,22 +161,17 @@ BEGIN_C_DECLS
   \var  cs_rad_transfer_params_t::wq
         Weights of the Gaussian quadrature
   \var  cs_rad_transfer_params_t::itpimp
-        Wall face with imposed temperature.
+        \deprecated See CS_BOUNDARY_RAD_WALL_GRAY.
   \var  cs_rad_transfer_params_t::ipgrno
-        For a grey or black wall face, calculation of the
-        temperature by means of a flux balance.
+        \deprecated See CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T.
   \var  cs_rad_transfer_params_t::iprefl
-        For a reflecting wall face, calculation of the
-        temperature by means of a flux balance. This is
-        fixed at 2000 in radiat and cannot be modified.
+        \deprecated See CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T.
   \var  cs_rad_transfer_params_t::ifgrno
-        Grey or black wall face to which a conduction flux is imposed.
+        \deprecated See CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX.
   \var  cs_rad_transfer_params_t::ifrefl
-        Reflecting wall face to which a conduction flux is imposed,
-        which is equivalent to impose this flux directly to the fluid.
+        \deprecated see CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX.
   \var  cs_rad_transfer_params_t::itpt1d
-        Calculation of the temperature with the 1D wall thermal module,
-        which solves a heat equation.
+        See CS_BOUNDARY_RAD_WALL_GRAY_1D_T
   \var  cs_rad_transfer_params_t::ifinfe
         Modeling of an infinite extrusion for open boundaries.
   \var  cs_rad_transfer_params_t::time_control
@@ -239,12 +234,12 @@ cs_rad_transfer_params_t _rt_params = {
   .restart = 0,
   .nwsgg = 1,
   .wq = NULL,
-  .itpimp = 1,
-  .ipgrno = 21,
-  .iprefl = 22,
-  .ifgrno = 31,
-  .ifrefl = 32,
-  .itpt1d = 4,
+  .itpimp = CS_BOUNDARY_RAD_WALL_GRAY,
+  .ipgrno = CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T,
+  .iprefl = CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T,
+  .ifgrno = CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX,
+  .ifrefl = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX,
+  .itpt1d = CS_BOUNDARY_RAD_WALL_GRAY_1D_T,
   .ifinfe = 5,
   .atmo_model = CS_RAD_ATMO_3D_NONE,
   .atmo_dr_id = -1,

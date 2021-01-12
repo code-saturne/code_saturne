@@ -621,8 +621,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
                                cs_real_t         xlamp[],
                                cs_real_t         epap[],
                                cs_real_t         epsp[],
-                               cs_real_t         textp[],
-                               cs_real_t         tintp[]);
+                               cs_real_t         textp[]);
 
 /*----------------------------------------------------------------------------
  * Define periodic faces.

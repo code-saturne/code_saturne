@@ -131,16 +131,18 @@ To access output zone ids (both for reading and modifying), use the
 \paragraph manda Mandatory data
 
   - \c isothp(ifac) boundary face type
-              -  \c itpimp -> Gray wall with fixed inside temperature
-              -  \c ipgrno -> Gray wall with fixed outside temperature
-              -  \c iprefl -> Reflecting wall with fixed outside temperature
-              -  \c ifgrno -> Gray wall with fixed conduction flux
-              -  \c ifrefl -> Reflecting wall with fixed conduction flux
+    - \c CS_BOUNDARY_RAD_WALL_GRAY:
+         Gray wall with temperature based on fluid BCs
+    - \c CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T:
+         Gray wall with fixed exterior temperature
+    - \c CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T:
+         Reflecting wall with fixed outside temperature
+         (same as Gray wall with zero emissivity)
+    - \c CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX:
+         Gray wall with fixed conduction flux
+    - \c CS_BOUNDARY_RAD_WALL_GRAY_REFL_FLUX:
+         Reflecting wall with fixed conduction flux
 
-  - \c tintp(ifac) inside wall temperature (Kelvin)
-                   initialize thwall at the first time step.
-                   If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
-                   In the other case, \c tintp is only for initialization.
 \subsubsection data Other data (depending of the isothp)
 
   - \c rcodcl = conduction flux
@@ -148,7 +150,6 @@ To access output zone ids (both for reading and modifying), use the
   - \c xlamp  = conductivity (\f$W.m^{-1}.K^{-1}\f$)
   - \c epap   = thickness (\f$m\f$)
   - \c textp  = outside temperature (\f$K\f$)
-
 
 \subsection ex Examples of boundary conditions
 

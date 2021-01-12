@@ -2079,7 +2079,6 @@ void CS_PROCF (cssca2, CSSCA2) (int *iturt)
 
   /* Specific physics: the min max of the model scalar are not given */
   const int keysca = cs_field_key_id("scalar_id");
-  const int kscavr = cs_field_key_id("first_moment_id");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);

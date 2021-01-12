@@ -79,7 +79,7 @@ integer          nvar   , nscal
 
 character(len=80) :: chaine
 integer          ivar  , iscal
-integer          iel
+integer          iel, ifac
 integer          iclip , iok   , ii
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_dim
@@ -99,7 +99,7 @@ double precision rvoid(1)
 double precision vvoid(3)
 
 double precision, dimension(:), pointer :: dt
-double precision, dimension(:), pointer :: field_s_v
+double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:,:), pointer :: field_v_v
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
@@ -108,6 +108,8 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_prtot
+
+double precision, dimension(:), allocatable :: ttmp
 
 type(var_cal_opt) :: vcopt
 
@@ -218,8 +220,6 @@ if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
   call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
 
 endif
-
-call user_extra_operations_initialize()
 
 ! Pressure / Total pressure initialisation
 
@@ -660,6 +660,50 @@ if (nscal.gt.0) then
   enddo
 
 endif
+
+! Initialize boundary temperature if present and not initialized yet
+!===================================================================
+
+call field_get_id_try('boundary_temperature', f_id)
+if (f_id .ge. 0) then
+  call field_get_val_s(f_id, field_s_b)
+  call field_get_id_try('temperature', f_id)
+  if (f_id .lt. 0) call field_get_id_try('t_gas', f_id)
+  if (f_id .ge. 0) then
+    call field_get_val_s(f_id, field_s_v)
+    do ifac = 1, nfabor
+      if (field_s_b(ifac) .le. -grand) then
+        iel = ifabor(ifac)
+        field_s_b(ifac) = field_s_v(iel)
+      endif
+    enddo
+  else if (itherm.eq.2) then
+    call field_get_id_try('enthalpy', f_id)
+    if (f_id .ge. 0) then
+      call field_get_val_s(f_id, field_s_v)
+      allocate(ttmp(ncelet))
+      call c_h_to_t(field_s_v, ttmp);
+      do ifac = 1, nfabor
+        if (field_s_b(ifac) .le. -grand) then
+          iel = ifabor(ifac)
+          field_s_b(ifac) = ttmp(iel)
+        endif
+      enddo
+      deallocate(ttmp)
+    endif
+  endif
+  ! Last resort
+  if (f_id .ge. 0) then
+    do ifac = 1, nfabor
+      if (field_s_b(ifac) .le. -grand) then
+        iel = ifabor(ifac)
+        field_s_b(ifac) = t0
+      endif
+    enddo
+  endif
+endif
+
+call user_extra_operations_initialize()
 
 !===============================================================================
 ! 5.  IMPRESSIONS DE CONTROLE POUR LES INCONNUES, LE PAS DE TEMPS

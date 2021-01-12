@@ -72,15 +72,48 @@ typedef enum {
 
 } cs_rad_quadrature_type_t;
 
+/* Radiative transfer model boundary condition type.
+   We use a naming similar to that of cs_boundary.h here, to ease
+   later migration. */
+
+enum {
+
+  /*! Grey or black wall with temperature based on fluid BCs */
+  CS_BOUNDARY_RAD_WALL_GRAY = 1,
+
+  /*! Grey or black wall with 1D wall model */
+  CS_BOUNDARY_RAD_WALL_GRAY_1D_T = 4,
+
+  /*! Grey or black wall with imposed exterior temperature;
+    interior wall temperature computed through a flux balance */
+  CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T = 21,
+
+  /*! Reflecting wall with imposed exterior temperature;
+    interior wall temperature computed through a flux balance
+    (same as CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T with
+    zero emissivity) */
+  CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T = 22,
+
+  /*! Grey or black wall with imposed conduction flux;
+    interior wall temperature computed through a flux balance */
+  CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX = 31,
+
+  /*! Reflecting wall face to which a conduction flux is imposed,
+    which is equivalent to impose this flux directly to the fluid. */
+  CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX = 32,
+
+};
+
 /* Radiative transfer model type for atmospheric module */
 
 enum {
+
   CS_RAD_ATMO_3D_NONE = 0,
   CS_RAD_ATMO_3D_INFRARED = 1 << 0,
   CS_RAD_ATMO_3D_DIRECT_SOLAR = 1 << 1,
   CS_RAD_ATMO_3D_DIFFUSE_SOLAR = 1 << 2
-};
 
+};
 
 /*============================================================================
  *  Global variables
