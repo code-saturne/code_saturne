@@ -171,16 +171,18 @@ if (itytur.eq.4.or.ischtp.eq.2) then
   if (vcopt%nswrsm.lt.iiidef) then
     write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
   endif
-endif
 
-do ii = 1, nscal
-  if (itytur.eq.4.or.ischtp.eq.2) then
+  ! Scalars
+  do ii = 1, nscal
     iiidef = 10
+    call field_get_label(ivarfl(isca(ii)), chaine)
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+    chaine = trim(chaine)
     if (vcopt%nswrsm.lt.iiidef) then
       write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
     endif
-  endif
-enddo
+  enddo
+endif
 
 !     Test du theta de la viscosite secondaire, du flux de masse et
 !     de la viscosite par rapport a celui de la vitesse
