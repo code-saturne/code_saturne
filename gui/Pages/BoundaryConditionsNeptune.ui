@@ -88,19 +88,19 @@
   <customwidget>
    <class>BoundaryConditionsVelocityInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsVelocityInletView.h</header>
+   <header location="global">BoundaryConditionsVelocityInletViewNeptune.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsTurbulenceInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsTurbulenceInletView.h</header>
+   <header location="global">BoundaryConditionsTurbulenceInletViewNeptune.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsPressureView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsPressureView.h</header>
+   <header location="global">BoundaryConditionsPressureViewNeptune.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

@@ -338,6 +338,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.InterfacialAreaWidget.hideWidget()
         self.ScalarWidget.hideWidget()
         self.WallWidget.hideWidget()
+        self.particlesWidget.hideWidget()
 
 
 #-------------------------------------------------------------------------------
