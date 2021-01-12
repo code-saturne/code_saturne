@@ -1076,7 +1076,7 @@ cs_physical_property_define_from_value(const char      *name,
     cs_real_t dvals[3][3] = { {val, 0., 0.},
                               {0., val, 0.},
                               {0., 0., val} };
-    cs_property_def_aniso_by_value(pty, zname, ref);
+    cs_property_def_aniso_by_value(pty, zname, dvals);
   }
 
 }
@@ -1100,7 +1100,7 @@ cs_physical_property_define_from_values(const char *name,
                                         const int   dim,
                                         cs_real_t   vals[])
 {
-  assert(dim > 1 && vals != NULL)
+  assert(dim > 1 && vals != NULL);
 
   cs_property_t *pty = cs_property_by_name(name);
 
@@ -1109,8 +1109,10 @@ cs_physical_property_define_from_values(const char *name,
 
   if (dim == 3)
     cs_property_def_ortho_by_value(pty, zname, vals);
-  else if (dim == 9)
-    cs_property_def_aniso_by_value(pty, zname, vals);
+  else if (dim == 9) {
+    cs_real_3_t *vals2use = (cs_real_3_t *)vals;
+    cs_property_def_aniso_by_value(pty, zname, vals2use);
+  }
 }
 
 

@@ -1390,7 +1390,7 @@ module cs_c_bindings
     !> \param[in] name  property name
     !> \param[in] val   new value to set
 
-    subroutine cs_physical_property_set_ref_value(name) &
+    subroutine cs_physical_property_set_ref_value(name, val) &
       bind(C, name='cs_physical_property_set_ref_value')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1413,7 +1413,7 @@ module cs_c_bindings
       implicit none
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       integer(c_int), value, intent(in)                       :: dim
-      real(kind=c_double), value, intent(int)                 :: refval
+      real(kind=c_double), value, intent(in)                  :: refval
     end subroutine cs_physical_property_create
 
     !---------------------------------------------------------------------------
@@ -1462,7 +1462,7 @@ module cs_c_bindings
     !> \param[in] dim    property dimension
     !> \param[in] val    reference value for the zone
 
-    subroutine cs_physical_property_define_from_value(name, zname, dim, vval) &
+    subroutine cs_physical_property_define_from_value(name, zname, dim, val) &
       bind(C, name='cs_physical_property_define_from_value')
       use, intrinsic :: iso_c_binding
       implicit none
