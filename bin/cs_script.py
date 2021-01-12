@@ -51,6 +51,7 @@ class master_script:
                          'run':self.run,
                          'salome':self.salome,
                          'submit':self.submit,
+                         'symbol2line':self.symbol2line,
                          'update':self.update,
                          'up':self.update}
 
@@ -122,6 +123,7 @@ Topics:
   info
   run
   submit
+  symbol2line
 
 Options:
   -h, --help  show this help message and exit"""
@@ -196,6 +198,10 @@ command"""
     def update(self, options = None):
         from code_saturne import cs_update
         return cs_update.main(options, self.package)
+
+    def symbol2line(self, options = None):
+        from code_saturne import cs_debug_symbol
+        return cs_debug_symbol.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End

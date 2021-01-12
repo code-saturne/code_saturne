@@ -3,6 +3,15 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add a 'code_saturne symbol2line' command.
+  This command can be used with debug symbols from a stack trace in order
+  to find the origin of the call.
+  Usage example for the line :
+  1: 0x55834c6102d7 <cs_function+0x17>             (cs_solver)
+  Run:
+  code_saturne symbol2line -s cs_user_zones+0x17
+  Additional info is provided using 'code_saturne symbol2line --help'
+
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
 
