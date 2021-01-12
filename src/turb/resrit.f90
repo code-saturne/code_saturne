@@ -88,14 +88,14 @@ double precision grad_al(3,ncelet)
 integer          iel
 integer          ii, ivar
 integer          iflmas, iflmab
-integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, imvisp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          iwarnp
+integer          imvisp
+integer          iescap
 integer          st_prv_id
 integer          ivisep, ifcvsl
 integer          isou, jsou
 integer          itt
-integer          idftnp, iswdyp, icvflb
+integer          icvflb
 integer          f_id
 integer          keyvar, iut
 integer          init
@@ -103,8 +103,6 @@ integer          kturt, turb_flux_model
 
 integer          ivoid(1)
 
-double precision blencp, epsilp, epsrgp, climgp, relaxp
-double precision epsrsp
 double precision trrij
 double precision thets , thetv , thetp1
 double precision xttke , prdtl
@@ -141,6 +139,11 @@ double precision, dimension(:), pointer :: cvar_tt, cvara_tt
 double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
 type(var_cal_opt) :: vcopt, vcopt_ut
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
+
+character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -533,26 +536,7 @@ call field_get_coefb_v(f_id,coefbv)
 call field_get_coefaf_v(f_id,cofafv)
 call field_get_coefbf_v(f_id,cofbfv)
 
-iconvp = vcopt%iconv
-idiffp = vcopt%idiff
-ndircp = vcopt%ndircl
-nswrsp = vcopt%nswrsm
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-ircflp = vcopt%ircflu
-ischcp = vcopt%ischcv
-isstpp = vcopt%isstpc
 iescap = 0
-idftnp = vcopt_ut%idften
-iswdyp = vcopt%iswdyn
-iwarnp = vcopt%iwarni
-blencp = vcopt%blencv
-epsilp = vcopt%epsilo
-epsrsp = vcopt%epsrsm
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-relaxp = vcopt%relaxv
 
 ! We do not take into account transpose of grad
 ivisep = 0
@@ -561,23 +545,31 @@ ivisep = 0
 icvflb = 0
 init   = 1
 
-call coditv &
-(idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
- imrgrp , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
- ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
- iwarnp ,                                                       &
- blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
- relaxp , thetv  ,                                              &
- xuta   , xuta   ,                                              &
- coefav , coefbv , cofafv , cofbfv ,                            &
- imasfl , bmasfl ,                                              &
- viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
- viscce , weighf , weighb ,                                     &
- icvflb , ivoid  ,                                              &
- fimp   ,                                                       &
- smbrut ,                                                       &
- xut    ,                                                       &
- rvoid  )
+c_name = trim(nomva0)//c_null_char
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0
+vcopt_loc%thetav = thetv
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+vcopt_loc%extrag = 0
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_vector                     &
+ ( idtvar , init   ,                                        &
+   f_id   , c_name ,                                        &
+   ivisep , iescap , c_k_value       ,                      &
+   xuta   , xuta   ,                                        &
+   coefav , coefbv , cofafv , cofbfv ,                      &
+   imasfl , bmasfl , viscf  ,                               &
+   viscb  , viscf  , viscb  , rvoid  ,                      &
+   rvoid  , viscce , weighf , weighb ,                      &
+   icvflb , ivoid  ,                                        &
+   fimp   , smbrut , xut    , rvoid )
 
 !===============================================================================
 ! 7. Writings
