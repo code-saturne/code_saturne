@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_property.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -264,7 +265,7 @@ _physical_property_create(const char      *name,
   cs_property_t *pty = cs_property_by_name(name);
   if (pty != NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: property '%s' is allready defined.\n"),
+              _("Error: property '%s' is already defined.\n"),
                 name);
 
   if (dim == 1)
@@ -273,6 +274,14 @@ _physical_property_create(const char      *name,
     pty = cs_property_add(name, CS_PROPERTY_ORTHO);
   else if (dim == 9)
     pty = cs_property_add(name, CS_PROPERTY_ANISO);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: for property '%s', dimension %d not supported.\n"),
+              name);
+
+  /* FIXME: CDO properties description seems to imply anisotropic
+     properties should be symmetric and be representable with 6 values,
+     but requires 9 values, while the legacy code stores this using 6 values */
 
   cs_property_set_reference_value(pty, refval);
 
@@ -280,7 +289,6 @@ _physical_property_create(const char      *name,
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 
 /*=============================================================================
  * Public function definitions
