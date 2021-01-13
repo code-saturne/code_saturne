@@ -1061,7 +1061,7 @@ cs_rad_transfer_bcs(int         nvar,
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL) {
 
-      if (cs_glob_thermal_model->itpscl == 2)
+      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
         f_b_temp->val[face_id] = twall[face_id] - tkelvi;
       else
         f_b_temp->val[face_id] = twall[face_id];
