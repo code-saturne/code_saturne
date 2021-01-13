@@ -31,6 +31,8 @@
  * PETSc headers
  *----------------------------------------------------------------------------*/
 
+#include <petscversion.h>
+#include <petscconf.h>
 #include <petscviewer.h>
 #include <petscksp.h>
 

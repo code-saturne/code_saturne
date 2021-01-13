@@ -57,9 +57,6 @@
 #include "cs_sles_amgx.h"
 #endif
 
-// Avoid extra warnings by not including this by default...
-// #include "cs_sles_petsc.h"
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* __CS_ALGE_HEADERS_H__ */
