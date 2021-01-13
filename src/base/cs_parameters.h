@@ -167,6 +167,8 @@ typedef struct {
 
 typedef struct {
 
+  int           time_order;   /* Global time order of the time stepping */
+
   int           isto2t;       /* time scheme activated for the source
                                  terms of turbulent equations */
 

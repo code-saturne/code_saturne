@@ -137,6 +137,11 @@ BEGIN_C_DECLS
   Members of the time scheme structure are publicly accessible, to allow for
   concise  syntax, as they are expected to be used in many places.
 
+  \var  cs_time_scheme_t::time_order
+        Global time order of time stepping
+        - 2: 2nd order
+        - 1: 1st order (default)
+
   \var  cs_time_scheme_t::isto2t
         \anchor isto2t
         Specifies the time scheme activated for
@@ -415,6 +420,7 @@ const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 
 static cs_time_scheme_t  _time_scheme =
 {
+  .time_order = -1,
   .isto2t = -999,
   .thetst = -999.0,
 };
@@ -496,7 +502,8 @@ cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **iflxmw);
 
 void
-cs_f_time_scheme_get_pointers(int     **isto2t,
+cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **isto2t,
                               double  **thetst);
 
 void
@@ -776,9 +783,11 @@ cs_f_space_disc_get_pointers(int     **imvisf,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_time_scheme_get_pointers(int     **isto2t,
+cs_f_time_scheme_get_pointers(int     **ischtp,
+                              int     **isto2t,
                               double  **thetst)
 {
+  *ischtp = &(_time_scheme.time_order);
   *isto2t = &(_time_scheme.isto2t);
   *thetst = &(_time_scheme.thetst);
 }

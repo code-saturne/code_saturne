@@ -322,8 +322,8 @@ elseif (iappel.eq.3) then
 !        On suppose qu'il n'y en a qu'un seul.
 
 !     si istmpf = 1 : standard : on ne fait rien
-!     si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
-!     si istmpf = 0 : explicite (thetfl = 0) : on remet F(n) dans
+!     si istmpf = 2 : ordre 2 : on ne fait rien
+!     si istmpf = 0 : explicite : on remet F(n) dans
 !       i_mass_flux sauf a la derniere iteration (un traitement
 !       complementaire sera fait en iappel=4)
 
@@ -358,8 +358,8 @@ elseif (iappel.eq.4) then
 !        On suppose qu'il n'y en a qu'un seul.
 
 !     Si istmpf = 1 : standard : on ne fait rien
-!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
-!     Si istmpf = 0 : explicite (thetfl = 0)
+!     Si istmpf = 2 : ordre 2 : on ne fait rien
+!     Si istmpf = 0 : explicite
 !       On sauvegarde F_(n+1) dans i_mass_flux_prev, mais on continue
 !       les calculs avec F_(n) mis dans i_mass_flux
 ! TODO it would be simpler to use the theta scheme of istmpf=2 with theta=0!
@@ -410,8 +410,8 @@ elseif (iappel.eq.5) then
 !       l'appel precedent afin d'etre pret pour le pas de temps suivant.
 
 !     Si istmpf = 1 : standard : on ne fait rien
-!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
-!     Si istmpf = 0 : explicite (thetfl = 0)
+!     Si istmpf = 2 : ordre 2 : on ne fait rien
+!     Si istmpf = 0 : explicite
 !       on remet F_(n+1) (stocke dans i_mass_flux_prev) dans i_mass_flux
 !       de sorte que les deux flux contiennent la meme chose
 

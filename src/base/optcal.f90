@@ -52,7 +52,7 @@ module optcal
   !> time order of time stepping
   !>    - 2: 2nd order
   !>    - 1: 1st order (default)
-  integer, save ::          ischtp
+  integer(c_int), pointer, save :: ischtp
 
   !> time order of the mass flux scheme
   !> The chosen value for \ref istmpf will automatically
@@ -168,16 +168,6 @@ module optcal
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetss(nscamx)
-
-  !> \f$ \theta \f$-scheme for the mass flux when a second-order
-  !> time scheme has been activated for the mass flow (see \ref istmpf).
-  !>    -  0 : explicit first-order (corresponds to \ref istmpf = 0 or 1)
-  !>    - 1/2: extrapolated in n+1/2 (corresponds to \ref istmpf = 2). The mass
-  !> flux will be interpolated according to the formula
-  !> \f$Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}\f$)
-  !>    -  1 : extrapolated in n+1\n
-  !> Generally, only the value 0.5 is used.
-  double precision, save :: thetfl
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "total viscosity" when the extrapolation
@@ -1395,11 +1385,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time schemeoptions structure
 
-    subroutine cs_f_time_scheme_get_pointers(isto2t, thetst)                &
+    subroutine cs_f_time_scheme_get_pointers(ischtp, isto2t, thetst)                &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: isto2t, thetst
+      type(c_ptr), intent(out) :: ischtp, isto2t, thetst
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1774,10 +1764,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_isto2t, c_thetst
+    type(c_ptr) :: c_ischtp, c_isto2t, c_thetst
 
-    call cs_f_time_scheme_get_pointers(c_isto2t, c_thetst)
+    call cs_f_time_scheme_get_pointers(c_ischtp, c_isto2t, c_thetst)
 
+    call c_f_pointer(c_ischtp, ischtp)
     call c_f_pointer(c_isto2t, isto2t)
     call c_f_pointer(c_thetst, thetst)
 

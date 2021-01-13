@@ -182,16 +182,6 @@ if (isuit1.eq.-1) isuit1 = isuite
 
 ! ---> Schema en temps
 
-!   -- Flux de masse
-if (abs(thetfl+999.d0).gt.epzero) then
-  write(nfecra,1001) istmpf
-  iok = iok + 1
-elseif (istmpf.eq.0) then
-  thetfl = 0.d0
-elseif (istmpf.eq.2) then
-  thetfl = 0.5d0
-endif
-
 !    -- Proprietes physiques
 call field_get_key_int(iviscl, key_t_ext_id, iviext)
 if (abs(thetvi+999.d0).gt.epzero) then

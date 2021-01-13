@@ -379,7 +379,7 @@ write(nfecra,9900)
 '                                                             '  )
 
 ! --- Stokes
-write(nfecra,4114)istmpf,thetfl,     &
+write(nfecra,4114)istmpf,     &
      thetvi,                  &
      thetcp,                  &
      thetsn,thetst,epsup
@@ -398,7 +398,6 @@ write(nfecra,9900)
 '                ',14x,       ' (0: explicit (THETFL = 0     )',/,&
 '                ',14x,       ' (1: std scheme (Saturne 1.0  )',/,&
 '                ',14x,       ' (2: 2nd-order (THETFL = 0.5  )',/,&
-'       THETFL = ', e14.5,    ' (theta for mass flow         )',/,&
 '       THETVI = ', e14.5,    ' (theta for total viscosity',    /,&
 '                               ((1+theta).new-theta.old',      /,&
 '       THETCP = ', e14.5,    ' (specific heat theta-scheme',   /,&

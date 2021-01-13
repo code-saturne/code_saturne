@@ -351,20 +351,11 @@ itempb = -1
 !       Les tests dans l'algo portent sur ces indicateurs
 
 
-!   -- Schema en temps (regroupera les options suivantes)
-!     = 1 Standard ordre 1
-!     = 2 Standard ordre 2
-!     si on veut, on peut en rajouter.
-!     Cette variable conditionne toutes les autres de maniere automatique,
-!     pour definir des schemas coherents dans modini.
-ischtp = -999
-
 !   -- Flux de masse (-999 = non initialise)
-!     = 1 Standard d'ordre 1 (THETFL = -999 inutile)
-!     = 0 Explicite (THETFL = 0)
-!     = 2 Ordre deux (THETFL = 0.5)
+!     = 1 Standard d'ordre 1
+!     = 0 Explicite
+!     = 2 Ordre deux
 istmpf = -999
-thetfl =-999.d0
 
 !   -- Termes sources Navier Stokes
 !     Pour les termes sources explicites en std, I..EXT definit

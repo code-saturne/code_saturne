@@ -171,10 +171,10 @@ else if (iphydr.eq.1.and.icalhy.eq.-1) then
   endif
 endif
 
-!   Schemas en temps
-!       en LES : Ordre 2 ; sinon Ordre 1
-!       (en particulier, ordre 2 impossible en k-eps couple)
-if (ischtp.eq.-999) then
+!   Global time stepping
+!       for LES: 2nd order; 1st order otherwise
+!       (2nd order forbidden for "coupled" k-epsilon)
+if (ischtp.eq.-1) then
   if (itytur.eq.4) then
     ischtp = 2
   else
