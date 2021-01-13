@@ -861,7 +861,7 @@ do iscal = 1, nscal
     if (iclvfl(iscal).eq.-1 .and. abs(scminp+grand).ge.epzero) then
       iclvfl(iscal) = 2
 
-    if (iclvfl(iscal).eq.-1) then
+    else if (iclvfl(iscal).eq.-1) then
       iclvfl(iscal) = 0
     endif
 
