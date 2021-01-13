@@ -105,92 +105,53 @@ do iel = 1, ncel
   vmax(1) = max(vmax(1),cvar_scal(iel))
 enddo
 
-if (iiscav.eq.0) then
+! Clipping of non-variance scalars
+! And first clippings for the variances (usually 0 for min and +grand for max)
 
-  ! Clipping of non-variance scalars
+iclmax(1) = 0
+iclmin(1) = 0
 
-  iclmax(1) = 0
-  iclmin(1) = 0
+! Get the min clipping
+call field_get_key_double(iflid, kscmin, scminp)
+call field_get_key_double(iflid, kscmax, scmaxp)
 
-  ! Get the min clipping
-  call field_get_key_double(iflid, kscmin, scminp)
-  call field_get_key_double(iflid, kscmax, scmaxp)
+if(scmaxp.gt.scminp)then
+  do iel = 1, ncel
+    if(cvar_scal(iel).gt.scmaxp)then
+      iclmax(1) = iclmax(1) + 1
+      cvar_scal(iel) = scmaxp
+    endif
+    if(cvar_scal(iel).lt.scminp)then
+      iclmin(1) = iclmin(1) + 1
+      cvar_scal(iel) = scminp
+    endif
+  enddo
+endif
 
-  if(scmaxp.gt.scminp)then
-    do iel = 1, ncel
-      if(cvar_scal(iel).gt.scmaxp)then
-        iclmax(1) = iclmax(1) + 1
-        cvar_scal(iel) = scmaxp
-      endif
-      if(cvar_scal(iel).lt.scminp)then
-        iclmin(1) = iclmin(1) + 1
-        cvar_scal(iel) = scminp
-      endif
-    enddo
-  endif
-
-else
+! Clipping of max of variances
+! Based on associated scalar values (or 0 at min.)
+if (iiscav.ne.0.and. iclvfl(iscal).eq.1) then
 
   ! Clipping of variances
 
-  f_id = ivarfl(isca(iiscav))
-  call field_get_val_s(f_id, cvar_scav)
 
   iclmax(1) = 0
   iclmin(1) = 0
 
-  ! Minimal clipping at minimum 0.
-  if(iclvfl(iscal).eq.0) then
-    do iel = 1, ncel
-      if(cvar_scal(iel).lt.0.d0) then
-        iclmin(1) = iclmin(1) + 1
-        cvar_scal(iel) = 0.d0
-      endif
-    enddo
+  ! Get the corresponding scalar
+  f_id = ivarfl(isca(iiscav))
+  call field_get_val_s(f_id, cvar_scav)
+  ! Get the min clipping of the corresponding scalar
+  call field_get_key_double(f_id, kscmin, scmin)
+  call field_get_key_double(f_id, kscmax, scmax)
 
-  ! Clipping based on associated scalar values (or 0 at min.)
-  elseif(iclvfl(iscal).eq.1) then
-    do iel = 1, ncel
-      if(cvar_scal(iel).lt.0.d0) then
-        iclmin(1) = iclmin(1) + 1
-        cvar_scal(iel) = 0.d0
-      endif
-    enddo
-
-    ! Get the min clipping
-    call field_get_key_double(f_id, kscmin, scmin)
-    call field_get_key_double(f_id, kscmax, scmax)
-
-    do iel = 1, ncel
-      vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
-      if(cvar_scal(iel).gt.vfmax) then
-        iclmax(1) = iclmax(1) + 1
-        cvar_scal(iel) = vfmax
-      endif
-    enddo
-
-!   -- Clipping a partir des valeurs donnees par l'utilisateur
-!        (ou 0 au min)
-  elseif(iclvfl(iscal).eq.2) then
-    vfmin = 0.d0
-    ! Get the min clipping
-    call field_get_key_double(iflid, kscmin, scminp)
-    call field_get_key_double(iflid, kscmax, scmaxp)
-    vfmin = max(scminp,vfmin)
-    vfmax = scmaxp
-    if(vfmax.gt.vfmin)then
-      do iel = 1, ncel
-        if(cvar_scal(iel).gt.vfmax)then
-          iclmax(1) = iclmax(1) + 1
-          cvar_scal(iel) = vfmax
-        endif
-        if(cvar_scal(iel).lt.vfmin)then
-          iclmin(1) = iclmin(1) + 1
-          cvar_scal(iel) = vfmin
-        endif
-      enddo
+  do iel = 1, ncel
+    vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
+    if(cvar_scal(iel).gt.vfmax) then
+      iclmax(1) = iclmax(1) + 1
+      cvar_scal(iel) = vfmax
     endif
-  endif
+  enddo
 
 endif
 

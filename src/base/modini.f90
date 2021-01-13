@@ -72,6 +72,7 @@ integer          iviext
 logical          is_set
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
+double precision scminp
 
 character(len=80) :: name
 
@@ -85,6 +86,9 @@ iok = 0
 call field_get_key_id("syrthes_coupling", kcpsyr)
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
@@ -846,12 +850,26 @@ endif
 !        0 pour les variances
 !      Les modifs adequates devront etre ajoutees pour les physiques
 !        particulieres
+!      If the user gives a value we put iclcfl to 2.
 
 do iscal = 1, nscal
   if (iscavr(iscal).gt.0) then
+
+    ! Get the min clipping
+    call field_get_key_double(ivarfl(isca(iscal)), kscmin, scminp)
+    ! If modified put 2
+    if (iclvfl(iscal).eq.-1 .and. abs(scminp+grand).ge.epzero) then
+      iclvfl(iscal) = 2
+
     if (iclvfl(iscal).eq.-1) then
       iclvfl(iscal) = 0
     endif
+
+    ! Min for variances is 0 or greater
+    call field_get_key_double(ivarfl(isca(iscal)), kscmin, scminp)
+    ! set min clipping to 0
+    scminp = max(0.d0, scminp)
+    call field_set_key_double(ivarfl(isca(iscal)), kscmin, scminp)
   endif
 enddo
 
@@ -1045,8 +1063,6 @@ endif
 !===============================================================================
 
 if (ivofmt.gt.0) then
-  call field_get_key_id("min_scalar_clipping", kscmin)
-  call field_get_key_id("max_scalar_clipping", kscmax)
   call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)
   call field_get_key_double(ivarfl(ivolf2), kscmax, clvfmx)
 
