@@ -615,36 +615,6 @@ if (nscal.gt.0) then
     endif
   enddo
 
-!     Si on n'utilise pas la borne inf de clipping, on demande
-!      a l'utilisateur de ne pas y toucher (ca permet d'etre sur
-!      qu'il sait ce qu'il fait)
-  do ii = 1, nscal
-    ! Get the min clipping
-    call field_get_key_double(ivarfl(isca(ii)), kscmin, scminp)
-
-    if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.abs(scminp+grand).ge.epzero) then
-      call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4360)chaine(1:16),ii,scminp,ii,iclvfl(ii)
-      iok = iok + 1
-    endif
-  enddo
-
-!     Si on n'utilise pas la borne sup de clipping, on demande
-!      a l'utilisateur de ne pas y toucher (ca permet d'etre sur
-!      qu'il sait ce qu'il fait)
-  do ii = 1, nscal
-    ! Get the max clipping
-    call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
-
-    if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.abs(scmaxp-grand).ge.epzero) then
-      call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4361)chaine(1:16),ii,scmaxp,ii,iclvfl(ii)
-      iok = iok + 1
-    endif
-  enddo
-
 !     Valeur de la borne sup de clipping si on l'utilise
   do ii = 1, nscal
     ! Get the max clipping
@@ -1510,58 +1480,6 @@ endif
 '@',                                                            /,&
 '@  SIFMAS(I) is the turbulent Prandtl turbulent',              /,&
 '@    associated to scalar I.',                                 /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4360 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    SCAMIN(',i10,   ') IS EQUAL TO', e14.5,                   /,&
-'@      WITH ICLVFL(',i10,   ') = ', i10,                       /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  SCAMIN(I) is the  minimale acceptable value for',           /,&
-'@    scalaire I. When this scalar is a variance',              /,&
-'@    (iscavr(I) > 0) value of SCAMIN is only used if',         /,&
-'@                  ICLVFL(I) = 2',                             /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4361 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    SCAMAX(',i10,   ') IS EQUAL TO', e14.5,                   /,&
-'@      WITH ICLVFL(',i10,   ') = ', i10,                       /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  SCAMAX(I) is the maximum acceptable value for',             /,&
-'@    scalar  I. When this is a variance',                      /,&
-'@    (iscavr(I) > 0) the value of SCAMAX is only used',        /,&
-'@               if ICLVFL(I) = 2',                             /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
