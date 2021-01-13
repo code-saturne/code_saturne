@@ -1704,9 +1704,10 @@ if (iappel.eq.1) then
 
     enddo
 
+    call syntis(da_uu)
+
   endif
 
-  call syntis(da_uu)
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized
