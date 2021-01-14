@@ -227,7 +227,6 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision temp, exchange_coef
 double precision turb_schmidt
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
-double precision, allocatable, dimension(:) :: tb_save
 double precision sigmae
 
 character(len=80) :: fname
@@ -620,17 +619,6 @@ call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 call field_get_key_id("boundary_value_id", kbfid)
 
-! In case of radiative model, save boundary temperature
-! to reduce enthalpy -> temperature conversion error.
-
-if (itherm.eq.2 .and. iirayo.ge.1) then
-  allocate(tb_save(nfabor))
-  call field_get_val_s(itempb, btemp_s)
-  do ifac = 1, nfabor
-    tb_save(ifac) = btemp_s(ifac)
-  enddo
-endif
-
 !===============================================================================
 ! 2. treatment of types of bcs given by itypfb
 !===============================================================================
@@ -728,6 +716,11 @@ do ii = 1, nscal
   call field_get_key_int(f_id, kbfid, b_f_id)
   call field_get_dim(f_id, f_dim)
 
+  ! if thermal variable has no boundary but temperature does, use it
+  if (b_f_id .lt. 0 .and. ii.eq.iscalt .and. itherm.eq.2) then
+    b_f_id = itempb
+  endif
+
   if (b_f_id .ge. 0) then
     if (f_dim.eq.1) then
       call field_get_val_s(b_f_id, bvar_s)
@@ -735,12 +728,7 @@ do ii = 1, nscal
       call field_get_val_v(b_f_id, bvar_v)
     endif
   else if (ii.eq.iscalt) then
-    bvar_s => null()
-    ! if thermal variable has no boundary but temperature does, use it
-    if (itempb.ge.0) then
-      b_f_id = itempb
-      call field_get_val_s(b_f_id, bvar_s)
-    endif
+    bvar_s => null()   ! no boundary field, but may need theipb
   else
     cycle ! nothing to do for this scalar
   endif
@@ -804,26 +792,14 @@ do ii = 1, nscal
 
     endif
 
-    ! Special case for first time step (TODO check why)
-
-    if (ntcabs.eq.1 .and. ii.eq.iscalt) then
-
-      call field_get_val_prev_s(ivarfl(ivar), cvara_s)
-
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        theipb(ifac) = cvara_s(iel)
-      enddo
-
     ! Copy bvar_s to theipb if both theipb and bvar_s present
 
-    else if (b_f_id .ge. 0 .and. ii.eq.iscalt) then
-
+    if (b_f_id .ge. 0 .and. ii.eq.iscalt) then
       do ifac = 1 , nfabor
         theipb(ifac) = bvar_s(ifac)
       enddo
-
     endif
+
   elseif (b_f_id.ge.0) then
     if (itbrrb.eq.1 .and. vcopt%ircflu.eq.1) then
       call field_get_val_v(ivarfl(ivar), cvar_v)
@@ -2654,7 +2630,16 @@ if (nscal.ge.1) then
       call field_get_coefaf_s(ivarfl(ivar), cofafp)
       call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-      if (b_f_id .ge. 0) call field_get_val_s(b_f_id, bvar_s)
+      ! if thermal variable has no boundary but temperature does, use it
+      if (b_f_id .lt. 0 .and. ii.eq.iscalt .and. itherm.eq.2) then
+        b_f_id = itempb
+      endif
+
+      if (b_f_id .ge. 0) then
+        call field_get_val_s(b_f_id, bvar_s)
+      else
+        bvar_s => null()
+      endif
 
       do ifac = 1, nfabor
 
@@ -3514,21 +3499,6 @@ if (itherm.eq.2 .and. itempb.ge.0) then
     call b_h_to_t(bvar_s, btemp_s)
   else
     call b_h_to_t(btemp_s, btemp_s)
-  endif
-
-  ! In case of radiative model, restore saved boundary temperature
-  ! for prescribed wall values so as to reduce
-  ! enthalpy -> temperature conversion error.
-
-  if (itherm.eq.2 .and. iirayo.ge.1) then
-    ii = isca(iscalt)
-    call field_get_val_s(itempb, btemp_s)
-    do ifac = 1, nfabor
-      if (icodcl(ifac,ii).eq.iparoi .or. icodcl(ifac,ii).eq.iparug) then
-        btemp_s(ifac) = tb_save(ifac)
-      endif
-    enddo
-    deallocate(tb_save)
   endif
 
 endif
