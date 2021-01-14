@@ -204,14 +204,14 @@ cs_syr_coupling_recv_boundary(int        nvar,
 /*!
  * \brief  Send field/variable values relative to a SYRTHES coupling.
  *
- * \param[in]  h_wall  wall thermal exchange coefficient
- * \param[in]  t_wall  wall thermal variable
+ * \param[in]  h_wall   wall thermal exchange coefficient
+ * \param[in]  v_fluid  near-wall fluid thermal variable
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
-                              cs_real_t        t_wall[]);
+                              cs_real_t        v_fluid[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
