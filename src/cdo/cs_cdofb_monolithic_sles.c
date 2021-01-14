@@ -3271,6 +3271,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     /* Solve A.wk = B^t.dk (should be -B^t this implies a sign modification
        during the update step) */
+    memset(wk, 0, sizeof(cs_real_t)*uza->n_u_dofs);
+
     uza->info->n_inner_iter
       += (uza->info->last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
