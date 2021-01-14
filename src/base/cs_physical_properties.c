@@ -896,9 +896,6 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
 #endif
 }
 
-/*----------------------------------------------------------------------------*/
-/* TEST FUNCTIONS */
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -987,6 +984,11 @@ cs_physical_property_get_zone_values(const char  *name,
     for (int j = 0; j < 3; j++)
       retval[j] = _context[j];
 
+  } else if (pty->type & CS_PROPERTY_ANISO_SYM) {
+    const cs_real_t *_context = (cs_real_t *)def->context;
+    for (int j = 0; j < 6; j++)
+      retval[j] = _context[j];
+
   } else if (pty->type & CS_PROPERTY_ANISO) {
     const cs_real_3_t *_context = (cs_real_3_t *)def->context;
     for (int j = 0; j < 3; j++)
@@ -1041,6 +1043,9 @@ cs_physical_property_define_from_value(const char       *name,
   else if (dim == 3) {
     cs_real_t dvals[3] = {val, val, val};
     cs_property_def_ortho_by_value(pty, zname, dvals);
+  } else if (dim == 6) {
+    cs_real_t dvals[6] = {val, val, val, val, val, val};
+    cs_property_def_aniso_sym_by_value(pty, zname, dvals);
   }
   else if (dim == 9) {
     cs_real_t dvals[3][3] = { {val, 0., 0.},
@@ -1076,6 +1081,8 @@ cs_physical_property_define_from_values(const char  *name,
 
   if (dim == 3)
     cs_property_def_ortho_by_value(pty, zname, vals);
+  else if (dim == 6)
+    cs_property_def_aniso_sym_by_value(pty, zname, vals);
   else if (dim == 9) {
     cs_real_3_t *vals2use = (cs_real_3_t *)vals;
     cs_property_def_aniso_by_value(pty, zname, vals2use);
