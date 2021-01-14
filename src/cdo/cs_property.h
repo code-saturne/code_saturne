@@ -80,14 +80,18 @@ BEGIN_C_DECLS
 /*! \var CS_PROPERTY_ANISO
  *  4: Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
  *  should be symmetric positive definite (i.e 6 real numbers describe the
- *  behavior). */
+ *  behavior) but by default a 3x3 tensor is used. */
 #define CS_PROPERTY_ANISO         (1 << 2)
 
+/*! \var CS_PROPERTY_ANISO_SYM
+ *  8: Anisotropic behavior. This tensor is represented with 6 real numbers
+ *  since the tensor is symmetric */
+#define CS_PROPERTY_ANISO_SYM     (1 << 3)
 
 /*! \var CS_PROPERTY_BY_PRODUCT
- *  8: The property is defined as the product of two other properties
+ *  16: The property is defined as the product of two other properties
  */
-#define CS_PROPERTY_BY_PRODUCT    (1 << 3)
+#define CS_PROPERTY_BY_PRODUCT    (1 << 4)
 
 /*! @} */
 
@@ -555,6 +559,25 @@ cs_xdef_t *
 cs_property_def_aniso_by_value(cs_property_t    *pty,
                                const char       *zname,
                                cs_real_t         tens[3][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define an anisotropic cs_property_t structure by value for entities
+ *         related to a volume zone
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       tens     values to set (3x3 tensor)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
+                                   const char       *zname,
+                                   cs_real_t         symtens[6]);
 
 /*----------------------------------------------------------------------------*/
 /*!
