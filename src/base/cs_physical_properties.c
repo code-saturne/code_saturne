@@ -270,6 +270,8 @@ _physical_property_create(const char      *name,
     pty = cs_property_add(name, CS_PROPERTY_ISO);
   else if (dim == 3)
     pty = cs_property_add(name, CS_PROPERTY_ORTHO);
+  else if (dim == 6)
+    pty = cs_property_add(name, CS_PROPERTY_ANISO_SYM);
   else if (dim == 9)
     pty = cs_property_add(name, CS_PROPERTY_ANISO);
   else
