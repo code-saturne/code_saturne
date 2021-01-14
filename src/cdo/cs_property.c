@@ -507,7 +507,7 @@ _define_pty_by_product(cs_property_t          *pty)
   assert(id == 0);
 
   int dim = 1;
-  if (pty->type == CS_PROPERTY_ORTHO)
+  if (pty->type & CS_PROPERTY_ORTHO)
     dim = 3;
   else if (pty->type == CS_PROPERTY_ANISO)
     dim = 9;
@@ -1192,7 +1192,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
-  if (pty->type != CS_PROPERTY_ORTHO)
+  if ((pty->type & CS_PROPERTY_ORTHO) == 0)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid setting: property %s is not orthotropic.\n"
               " Please check your settings.", pty->name);
@@ -1242,7 +1242,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
-  if (pty->type != CS_PROPERTY_ANISO)
+  if ((pty->type & CS_PROPERTY_ANISO) == 0)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid setting: property %s is not anisotropic.\n"
               " Please check your settings.", pty->name);
@@ -1381,9 +1381,9 @@ cs_property_def_by_analytic(cs_property_t        *pty,
                                      .free_input = NULL };
 
   int  dim = 1;
-  if (pty->type == CS_PROPERTY_ORTHO)
+  if (pty->type & CS_PROPERTY_ORTHO)
     dim = 3;
-  else if (pty->type == CS_PROPERTY_ANISO)
+  else if (pty->type & CS_PROPERTY_ANISO)
     dim = 9;
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
@@ -1431,9 +1431,9 @@ cs_property_def_by_func(cs_property_t         *pty,
   cs_flag_t  meta_flag = 0; /* metadata */
 
   int dim = 1;
-  if (pty->type == CS_PROPERTY_ORTHO)
+  if (pty->type & CS_PROPERTY_ORTHO)
     dim = 3;
-  else if (pty->type == CS_PROPERTY_ANISO)
+  else if (pty->type & CS_PROPERTY_ANISO)
     dim = 9;
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
@@ -1483,9 +1483,9 @@ cs_property_def_by_array(cs_property_t    *pty,
               pty->n_definitions, pty->name);
 
   int  dim = 1;
-  if (pty->type == CS_PROPERTY_ORTHO)
+  if (pty->type & CS_PROPERTY_ORTHO)
     dim = 3;
-  else if (pty->type == CS_PROPERTY_ANISO)
+  else if (pty->type & CS_PROPERTY_ANISO)
     dim = 9;
 
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
@@ -1544,9 +1544,9 @@ cs_property_def_by_field(cs_property_t    *pty,
   int  id = _add_new_def(pty);
 
   int dim = 1;
-  if (pty->type == CS_PROPERTY_ORTHO)
+  if (pty->type & CS_PROPERTY_ORTHO)
     dim = 3;
-  else if (pty->type == CS_PROPERTY_ANISO)
+  else if (pty->type & CS_PROPERTY_ANISO)
     dim = 9;
 
   /* Sanity checks */
