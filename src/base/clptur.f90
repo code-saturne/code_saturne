@@ -2272,7 +2272,7 @@ double precision rough_t
 
 character(len=80) :: fname
 
-double precision, dimension(:), pointer :: val_s, bvar_s, crom, viscls
+double precision, dimension(:), pointer :: val_s, bval_s, crom, viscls
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_cv
 
 double precision, dimension(:), pointer :: bpro_rough_t
@@ -2320,8 +2320,8 @@ if (vcopt%idiff .eq. 0) then
   return
 endif
 
-if (    iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0             &
-    .or.ityturt(iscal).eq.3) then
+if (     iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0    &
+    .or. ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -2454,15 +2454,15 @@ if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_int(f_id, kbfid, b_f_id)
 
+! if thermal variable has no boundary but temperature does, use it
+if (b_f_id .lt. 0 .and. iscal.eq.iscalt .and. itherm.eq.2) then
+  b_f_id = itempb
+endif
+
 if (b_f_id .ge. 0) then
-  call field_get_val_s(b_f_id, bvar_s)
+  call field_get_val_s(b_f_id, bval_s)
 else
-  bvar_s => null()
-  ! if thermal variable has no boundary but temperature does, use it
-  if (itherm.eq.2 .and. itempb.ge.0) then
-    b_f_id = itempb
-    call field_get_val_s(b_f_id, bvar_s)
-  endif
+  bval_s => null()
 endif
 
 ! Does the scalar behave as a temperature ?
@@ -2878,7 +2878,7 @@ do ifac = 1, nfabor
         if (iscal.eq.iscalt) then
           phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
         else
-          phit = cofafp(ifac)+cofbfp(ifac)*bvar_s(ifac)
+          phit = cofafp(ifac)+cofbfp(ifac)*bval_s(ifac)
         endif
       ! Imposed flux with wall function for post-processing
       elseif (icodcl(ifac,ivar).eq.3) then
@@ -2887,7 +2887,7 @@ do ifac = 1, nfabor
         if (iscal.eq.iscalt) then
           phit = heq *(theipb(ifac) - pimp)
         else
-          phit = heq *(bvar_s(ifac) - pimp)
+          phit = heq *(bval_s(ifac) - pimp)
         endif
       else
         phit = 0.d0
@@ -2910,7 +2910,7 @@ do ifac = 1, nfabor
       ! T+ = (T_I - T_w) / Tet
       tplus = max(yplus, epzero)/yptp(ifac)
 
-      if (b_f_id.ge.0) bvar_s(ifac) = bvar_s(ifac) - tplus*tet
+      if (b_f_id.ge.0) bval_s(ifac) = bval_s(ifac) - tplus*tet
 
       if (itplus.ge.0) tplusp(ifac) = tplus
       if (itstar.ge.0) tstarp(ifac) = tet

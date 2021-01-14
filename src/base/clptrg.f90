@@ -651,7 +651,6 @@ if (f_id_rough.ge.0) then
   call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
 
-
 if (ippmod(iatmos).ge.1) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
   if (ippmod(iatmos).eq.2) then
@@ -1926,7 +1925,8 @@ if (vcopt%idiff .eq. 0) then
   return
 endif
 
-if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(iscal).eq.3) then
+if (     iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0    &
+    .or. ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -2015,15 +2015,15 @@ if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_int(f_id, kbfid, b_f_id)
 
+! if thermal variable has no boundary but temperature does, use it
+if (b_f_id .lt. 0 .and. iscal.eq.iscalt .and. itherm.eq.2) then
+  b_f_id = itempb
+endif
+
 if (b_f_id .ge. 0) then
   call field_get_val_s(b_f_id, bval_s)
 else
   bval_s => null()
-  ! if thermal variable has no boundary but temperature does, use it
-  if (itherm.eq.2 .and. itempb.ge.0) then
-    b_f_id = itempb
-    call field_get_val_s(b_f_id, bval_s)
-  endif
 endif
 
 ! Does the scalar behave as a temperature ?
