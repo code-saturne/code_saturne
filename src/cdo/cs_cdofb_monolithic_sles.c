@@ -3342,9 +3342,6 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   } /* End of main loop */
 
-  /* Compute the ||div(u)||_2 */
-  _apply_div_op(B_op, u_f, uza->rhs);
-
   int n_inner_iter = uza->info->n_inner_iter;
 
   /* Last step: Free temporary memory */
