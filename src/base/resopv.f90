@@ -412,6 +412,7 @@ if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0 .and. rcfact.eq.0) then
       da_uu(ii,iel) = vitenp(ii,iel)
     enddo
   enddo
+  call syntis(da_uu)
 endif
 
 ! Calculation of dt/rho
