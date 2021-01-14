@@ -270,19 +270,8 @@ _lages1(cs_real_t           dtp,
     cs_real_t tlag_r[3] = {tlag[ip][0], tlag[ip][1], tlag[ip][2]};
     cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
 
-    cs_real_t displ_r[3], orient_loc_sphere[3];
+    cs_real_t displ_r[3];
     cs_real_t trans_m[3][3];
-
-    if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
-        && cs_glob_lagr_model->modcpl == 1) {
-      /* Obtain the mean particle velocity for each cell */
-      const cs_real_t *fluid_vel = cvar_vel[cell_id];
-      const cs_real_t *mean_part_vel = stat_vel->val + (cell_id * 3);
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        orient_loc_sphere[i] = mean_part_vel[i] - fluid_vel[i];
-      cs_math_3_normalize(orient_loc_sphere, orient_loc_sphere);
-    }
 
     if (local_reference_frame) {
 
@@ -293,31 +282,65 @@ _lages1(cs_real_t           dtp,
 
       case CS_LAGR_SHAPE_SPHERE_MODEL:
         {
+          /* Compute the main direction in the global reference
+           * frame */
+          cs_real_t dir[3];
+
+          /* Obtain the mean particle velocity for each cell */
+          const cs_real_t *fluid_vel = cvar_vel[cell_id];
+          const cs_real_t *mean_part_vel = stat_vel->val + (cell_id * 3);
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            dir[i] = mean_part_vel[i] - fluid_vel[i];
+          cs_math_3_normalize(dir, dir);
+
           // Rotate the frame of reference with respect to the
           // relative particle direction.
 
           // The rotation axis is the result of the cross product between
           // the new direction vector and the main axis.
           cs_real_t n_rot[3];
-          const cs_real_t main_axis[3] = {1.0, 0.0, 0.0};
-          cs_math_3_cross_product(orient_loc_sphere, main_axis, n_rot);
-          cs_math_3_normalize(n_rot, n_rot);
+          /* the direction in the local reference frame "_r" is (1, 0, 0)
+           * by convention */
+          const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
 
-          // Compute the rotation angle between the main axis and
-          // the new direction
-          cs_real_t cosa = cs_math_3_dot_product(orient_loc_sphere, main_axis);
-          cs_real_t sina = sin(acos(cosa));
+          // Use quaternion (cos(theta/2), sin(theta/2) n_rot)
+          // where n_rot = dir ^ dir_r normalised
+          // so also       dir ^ (dir + dir_r)
+          //
+          // cos(theta/2) = || dir + dir_r|| / 2
+          cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
+                                      dir[1] + dir_r[1],
+                                      dir[2] + dir_r[2]};
+          cs_real_t dir_p_dir_r_normed[3];
+          cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
 
-          // Compute the rotation matrix
-          trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina;
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina;
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina;
-          trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina;
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina;
-          trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
+          /* dir ^(dir + dir_r) / || dir + dir_r|| = sin(theta/2) n_rot
+           * for the quaternion */
+          cs_math_3_cross_product(dir, dir_p_dir_r_normed, n_rot);
+
+          /* quaternion, could be normalized afterwards
+           *
+           * Note that the division seems stupid but is not
+           * in case of degenerated case where dir is null
+           * */
+          const cs_real_t euler[4] =
+          {  cs_math_3_norm(dir_p_dir_r)
+            / (cs_math_3_norm(dir) + cs_math_3_norm(dir_r)),
+                n_rot[0],
+                n_rot[1],
+                n_rot[2]};
+
+          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
+          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
+          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
+          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
+          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
+          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
+          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
+          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
+          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
+
         }
         break;
 
