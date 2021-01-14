@@ -986,6 +986,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                   " valid choices: \"diag_schur\", \"lumped_schur\"."),
                 __func__, _val);
     }
+    break;
 
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0)
