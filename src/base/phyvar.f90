@@ -92,12 +92,12 @@ double precision dt(ncelet)
 ! Local variables
 
 character(len=80) :: chaine
-integer          ivar  , iel   , ifac  , iscal
-integer          ii    , jj    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
-integer          nn    , isou
-integer          mbrom , ifcvsl, iscacp
+integer          ivar, iel, ifac, iscal, f_id
+integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
+integer          nn, isou
+integer          mbrom, ifcvsl, iscacp
 integer          iclipc, idftnp
-integer          iprev , inc, iccocg
+integer          iprev, inc, iccocg
 
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
@@ -107,6 +107,7 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
+double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
 double precision, dimension(:), pointer :: cvar_al
@@ -118,6 +119,7 @@ double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
+double precision, allocatable, dimension(:) :: ttmp
 double precision, allocatable, dimension(:,:) :: grad
 
 integer          ipass
@@ -1047,6 +1049,48 @@ endif
 if (iok.ne.0) then
   write(nfecra,9999)iok
   call csexit (1)
+endif
+
+! Initialize boundary temperature if present and not initialized yet
+!===================================================================
+
+call field_get_id_try('boundary_temperature', f_id)
+if (f_id .ge. 0) then
+  call field_get_val_s(f_id, field_s_b)
+  call field_get_id_try('temperature', f_id)
+  if (f_id .lt. 0) call field_get_id_try('t_gas', f_id)
+  if (f_id .ge. 0) then
+    call field_get_val_s(f_id, field_s_v)
+    do ifac = 1, nfabor
+      if (field_s_b(ifac) .le. -grand) then
+        iel = ifabor(ifac)
+        field_s_b(ifac) = field_s_v(iel)
+      endif
+    enddo
+  else if (itherm.eq.2) then
+    call field_get_id_try('enthalpy', f_id)
+    if (f_id .ge. 0) then
+      call field_get_val_s(f_id, field_s_v)
+      allocate(ttmp(ncelet))
+      call c_h_to_t(field_s_v, ttmp);
+      do ifac = 1, nfabor
+        if (field_s_b(ifac) .le. -grand) then
+          iel = ifabor(ifac)
+          field_s_b(ifac) = ttmp(iel)
+        endif
+      enddo
+      deallocate(ttmp)
+    endif
+  endif
+  ! Last resort
+  if (f_id .ge. 0) then
+    do ifac = 1, nfabor
+      if (field_s_b(ifac) .le. -grand) then
+        iel = ifabor(ifac)
+        field_s_b(ifac) = t0
+      endif
+    enddo
+  endif
 endif
 
 !--------
