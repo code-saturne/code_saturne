@@ -41,6 +41,10 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Rescaling or not of the pressure */
+#define CS_BOUNDARY_PRESSURE_NO_RESCALING   1
+#define CS_BOUNDARY_PRESSURE_RESCALING      0
+
 /* Name of the boundary zone gathering all domain boundary walls */
 #define CS_BOUNDARY_WALLS_NAME   "auto:wall"
 

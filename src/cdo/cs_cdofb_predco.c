@@ -194,6 +194,7 @@ typedef struct {
    */
 
   cs_cdo_bc_face_t               *pressure_bc;
+  int                             pressure_rescaling;
 
   /*! \var apply_fixed_wall
    *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
@@ -831,6 +832,9 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
                                           nsp->pressure_bc_defs,
                                           cs_shared_quant->n_b_faces);
 
+  sc->pressure_rescaling =
+    cs_boundary_need_pressure_rescaling(quant->n_b_faces, fb_type);
+
   cs_equation_param_t  *mom_eqp = cc->prediction->param;
   cs_equation_builder_t  *mom_eqb = cc->prediction->builder;
 
@@ -1291,9 +1295,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   _update_variables(sc);
 
-  if (nsp->n_pressure_bc_defs == 0)
-    cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_c);
-
+  if (sc->pressure_rescaling == CS_BOUNDARY_PRESSURE_RESCALING)
+    cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, pr_c);
 }
 
 /*----------------------------------------------------------------------------*/

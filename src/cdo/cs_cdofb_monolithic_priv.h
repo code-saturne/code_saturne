@@ -266,7 +266,7 @@ struct _cdofb_monolithic_t {
    */
 
   cs_cdo_bc_face_t               *pressure_bc;
-  int                             need_pressure_rescaling;
+  int                             pressure_rescaling;
 
   /*!
    * \var add_gravity_source_term

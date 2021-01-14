@@ -600,7 +600,8 @@ cs_boundary_def_wall_zones(cs_boundary_t   *boundaries)
  * \param[in] n_b_faces    number of border faces
  * \param[in] bf_type      array of types of boundary for each boundary face
  *
- * \return 1 if a pressure rescaling is needed otherwise 0
+ * \return CS_BOUNDARY_PRESSURE_RESCALING (=0) or
+ *         CS_BOUNDARY_PRESSURE_NO_RESCALING (=1)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -610,22 +611,24 @@ cs_boundary_need_pressure_rescaling(cs_lnum_t                  n_b_faces,
 {
   /* Rescaling by default. No rescaling if no boundary face on this rank (case
      of parallel computation) */
-  int  rescale = (n_b_faces > 0) ? 1 : 0;
+  int  rescale = (n_b_faces > 0) ?
+    CS_BOUNDARY_PRESSURE_RESCALING : CS_BOUNDARY_PRESSURE_NO_RESCALING;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 
     if (bf_type[i] & CS_BOUNDARY_OUTLET) {
-      rescale = 0;
+      rescale = CS_BOUNDARY_PRESSURE_NO_RESCALING;
       break;
     }
     if (bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
-      rescale = 0;
+      rescale = CS_BOUNDARY_PRESSURE_NO_RESCALING;
       break;
     }
 
   } /* Loop on boundary faces */
 
-  /* All ranks needs to decide a rescaling to perform a rescaling */
+  /* All ranks needs to decide if one has to perform a rescaling. If one rank
+     says no then one does not perform a rescaling */
   cs_parall_max(1, CS_INT_TYPE, &rescale);
 
   return rescale;

@@ -291,9 +291,8 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
   /* Rescale pressure if needed */
   cs_field_t  *pr_fld = sc->pressure;
 
-  if (sc->need_pressure_rescaling) {
-    cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
-  }
+  if (sc->pressure_rescaling == CS_BOUNDARY_PRESSURE_RESCALING)
+    cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, pr_fld->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_darray_to_listing("VELOCITY", 3*quant->n_faces, vel_f, 9);
@@ -1932,7 +1931,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
                                           nsp->pressure_bc_defs,
                                           cs_shared_quant->n_b_faces);
 
-  sc->need_pressure_rescaling =
+  sc->pressure_rescaling =
     cs_boundary_need_pressure_rescaling(cs_shared_quant->n_b_faces, bf_type);
 
   /* Set the way to enforce the Dirichlet BC on the velocity
