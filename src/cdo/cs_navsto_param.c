@@ -294,6 +294,8 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
                           cs_navsto_param_model_flag_t    model_flag,
                           cs_navsto_param_coupling_t      algo_coupling)
 {
+  CS_UNUSED(model_flag);
+
   cs_navsto_param_sles_t  *nslesp = NULL;
   BFT_MALLOC(nslesp, 1, cs_navsto_param_sles_t);
 

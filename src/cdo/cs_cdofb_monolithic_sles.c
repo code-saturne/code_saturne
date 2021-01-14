@@ -462,7 +462,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   } /* Loop on interior faces */
 
   /* Add diagonal contributions from border faces*/
-  cs_real_t  *diagA_shift = diagA + 3*n_i_faces;
+  const cs_real_t  *diagA_shift = diagA + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     const cs_real_t  *a_ff = diagA_shift + 3*f_id;

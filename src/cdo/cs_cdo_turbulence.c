@@ -132,7 +132,11 @@ _tke_source_term(cs_lnum_t            n_elts,
                  cs_real_t           *retval)
 {
   /* TBD */
-
+  CS_UNUSED(n_elts);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(dense_output);
+  CS_UNUSED(input);
+  CS_UNUSED(retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -159,7 +163,11 @@ _tke_lin_source_term(cs_lnum_t            n_elts,
                      cs_real_t           *retval)
 {
   /* TBD */
-
+  CS_UNUSED(n_elts);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(dense_output);
+  CS_UNUSED(input);
+  CS_UNUSED(retval);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

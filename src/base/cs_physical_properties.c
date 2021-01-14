@@ -205,7 +205,7 @@ _thermal_table_create(void)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_xdef_t *
+static cs_xdef_t *
 _get_property_def_on_zone(const cs_property_t *pty,
                           const char          *zname)
 {
@@ -232,16 +232,14 @@ _get_property_def_on_zone(const cs_property_t *pty,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-_update_def_values(cs_xdef_t *def,
-                   cs_real_t *new_vals)
+static void
+_update_def_values(cs_xdef_t         *def,
+                   const cs_real_t   *new_vals)
 {
-
   cs_real_t *_context = (cs_real_t *)def->context;
 
   for (int i = 0; i < def->dim; i++)
     _context[i] = new_vals[i];
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -257,7 +255,7 @@ _update_def_values(cs_xdef_t *def,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_property_t *
+static cs_property_t *
 _physical_property_create(const char      *name,
                           const int        dim,
                           const cs_real_t  refval)
@@ -938,7 +936,7 @@ void
 cs_physical_property_set_ref_value(const char      *name,
                                    const cs_real_t  val)
 {
-  const cs_property_t *pty = cs_property_by_name(name);
+  cs_property_t *pty = cs_property_by_name(name);
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' does not exist\n"),
