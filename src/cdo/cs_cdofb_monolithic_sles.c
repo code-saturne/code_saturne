@@ -2219,13 +2219,16 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Test if one needs one more Uzawa iteration in case of an Uzawa
- *         CG (conjugate gradient variant)
+ *         CG (conjugate gradient variant). The residual criterion has to be
+ *         computed before calling this function.
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
+ *
+ * \return true (one moe iteration) otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static bool
 _uza_cg_cvg_test(cs_uza_builder_t           *uza)
 {
   /* Increment the number of algo. iterations */
@@ -2234,9 +2237,6 @@ _uza_cg_cvg_test(cs_uza_builder_t           *uza)
   /* Compute the new residual based on the norm of the divergence constraint */
   const cs_real_t  prev_res = uza->info->res;
   const double  tau = fmax(uza->info->rtol*uza->info->res0, uza->info->atol);
-
-  /* Updated in the algorithm */
-  //  uza->info->res = _get_cbscal_norm(uza->d__v);
 
   /* Set the convergence status */
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
@@ -2260,10 +2260,15 @@ _uza_cg_cvg_test(cs_uza_builder_t           *uza)
 
   if (uza->info->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "### UZACG.It%02d-- %5.3e %5d %6d | cvg:%d | eps: %5.3e\n",
+                  "<UZACG.It%02d> res %5.3e | %4d %6d cvg%d | fit.eps %5.3e\n",
                   uza->info->n_algo_iter, uza->info->res,
                   uza->info->last_inner_iter, uza->info->n_inner_iter,
                   uza->info->cvg, tau);
+
+  if (uza->info->cvg == CS_SLES_ITERATING)
+    return true;
+  else
+    return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3111,6 +3116,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
+  int  _n_iter;
+
   /* Sanity checks */
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG);
   assert(cs_shared_range_set != NULL);
@@ -3194,17 +3201,18 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   cs_param_sles_copy_from(eqp->sles_param, slesp0);
   slesp0->eps = fmin(1e-6, 0.05*nslesp->il_algo_rtol);
 
-  uza->info->n_inner_iter
-    += (uza->info->last_inner_iter =
-        cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        slesp0,
-                                        A,
-                                        cs_shared_range_set,
-                                        normalization,
-                                        false, /* rhs_redux --> already done */
-                                        msles->sles,
-                                        u_f,
-                                        uza->rhs));
+  _n_iter =
+    cs_equation_solve_scalar_system(uza->n_u_dofs,
+                                    slesp0,
+                                    A,
+                                    cs_shared_range_set,
+                                    normalization,
+                                    false, /* rhs_redux --> already done */
+                                    msles->sles,
+                                    u_f,
+                                    uza->rhs);
+  uza->info->n_inner_iter += _n_iter;
+  uza->info->last_inner_iter += _n_iter;
 
   /* Partial memory free */
   BFT_FREE(system_name);
@@ -3232,15 +3240,15 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
    *   g0 = alpha zk + nu Mp^-1 r0 */
   memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-  uza->info->n_inner_iter
-    += (uza->info->last_inner_iter =
-        cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                             schur_slesp,
-                                             K,
-                                             div_l2_norm,
-                                             msles->schur_sles,
-                                             zk,
-                                             rk));
+  _n_iter = cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
+                                                 schur_slesp,
+                                                 K,
+                                                 div_l2_norm,
+                                                 msles->schur_sles,
+                                                 zk,
+                                                 rk);
+  uza->info->n_inner_iter += _n_iter;
+  uza->info->last_inner_iter += _n_iter;
 
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
   for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -3255,7 +3263,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* Main loop knowing g0, r0, d0, u0, p0 */
   /* ------------------------------------ */
 
-  while (uza->info->cvg == CS_SLES_ITERATING) {
+  while (_uza_cg_cvg_test(uza)) {
 
     /* Sensitivity step: Compute wk as the solution of A.wk = B^t.dk */
 
@@ -3292,15 +3300,15 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     /* Solve K.zk = dwk */
     memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-    uza->info->n_inner_iter
-      += (uza->info->last_inner_iter =
-          cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                               schur_slesp,
-                                               K,
-                                               normalization,
-                                               msles->schur_sles,
-                                               zk,
-                                               dwk));
+    _n_iter = cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
+                                                   schur_slesp,
+                                                   K,
+                                                   normalization,
+                                                   msles->schur_sles,
+                                                   zk,
+                                                   dwk);
+    uza->info->n_inner_iter += _n_iter;
+    uza->info->last_inner_iter += _n_iter;
 
 #   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -3339,11 +3347,10 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
       dk[ip] = gk[ip] + beta_factor*dk[ip];
 
-    /* Update error norm and test if one needs one more iteration */
-    _uza_cg_cvg_test(uza);
-
   } /* End of main loop */
 
+  /* Cumulated sum of iterations to solve the Schur complement and the velocity
+     block (save before freeing the uzawa structure). */
   int n_inner_iter = uza->info->n_inner_iter;
 
   /* Last step: Free temporary memory */
