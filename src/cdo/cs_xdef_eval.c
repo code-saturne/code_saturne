@@ -205,6 +205,75 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a tensor-valued quantity for a list of elements with
+ *         symmetric storage.
+ *         This function complies with the generic function type defined as
+ *         cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_symtens_by_val(cs_lnum_t                    n_elts,
+                            const cs_lnum_t             *elt_ids,
+                            bool                         dense_output,
+                            const cs_mesh_t             *mesh,
+                            const cs_cdo_connect_t      *connect,
+                            const cs_cdo_quantities_t   *quant,
+                            cs_real_t                    time_eval,
+                            void                        *context,
+                            cs_real_t                   *eval)
+{
+  CS_UNUSED(quant);
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(time_eval);
+
+  if (n_elts == 0)
+    return;
+
+  const cs_real_t  *constant_val = (const cs_real_t *)context;
+
+  /* Sanity checks */
+  assert(eval != NULL && constant_val != NULL);
+
+  if (elt_ids != NULL && !dense_output) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_real_t  *shift_eval = eval + 6*elt_ids[i];
+      for (int k = 0; k < 6; k++)
+        shift_eval[k] = constant_val[k];
+
+    }
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_real_t  *shift_eval = eval + 6*i;
+      for (int k = 0; k < 6; k++)
+        shift_eval[k] = constant_val[k];
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a tensor-valued quantity for a list of elements
  *         This function complies with the generic function type defined as
  *         cs_xdef_eval_t
@@ -388,6 +457,67 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
     for (cs_lnum_t i = 0; i < n_elts; i++)
       for (int k = 0; k < 3; k++)
         eval[3*i+k] = _eval[k];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate a tensor-valued quantity with a symmetric storage and with
+ *        only a time-dependent variation for a list of elements
+ *        This function complies with the generic function type defined as
+ *        cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
+                                           const cs_lnum_t           *elt_ids,
+                                           bool                   dense_output,
+                                           const cs_mesh_t           *mesh,
+                                           const cs_cdo_connect_t    *connect,
+                                           const cs_cdo_quantities_t *quant,
+                                           cs_real_t                  time_eval,
+                                           void                      *context,
+                                           cs_real_t                 *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+
+  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
+
+  /* Sanity checks */
+  assert(tfc != NULL);
+
+  /* Evaluate the quantity */
+  cs_real_t  _eval[6];
+  tfc->func(time_eval, tfc->input, _eval);
+
+  if (elt_ids != NULL && !dense_output) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 6; k++)
+        eval[6*elt_ids[i] + k] = _eval[k];
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 6; k++)
+        eval[6*i+k] = _eval[k];
 
   }
 }

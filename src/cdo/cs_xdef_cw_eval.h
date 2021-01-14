@@ -196,6 +196,32 @@ cs_xdef_cw_eval_vector_by_val(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a tensor-valued quantity with a symmetric storage by a
+ *         cellwise process
+ *
+ * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_xdef_cw_eval_symtens_by_val(const cs_cell_mesh_t     *cm,
+                               cs_real_t                 time_eval,
+                               void                     *input,
+                               cs_real_t                *eval)
+{
+  CS_UNUSED(cm);
+  CS_UNUSED(time_eval);
+
+  const cs_real_t  *constant_val = (const cs_real_t *)input;
+  for (int k = 0; k < 6; k++)
+    eval[k] = constant_val[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a tensor-valued quantity by a cellwise process
  *
  * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
