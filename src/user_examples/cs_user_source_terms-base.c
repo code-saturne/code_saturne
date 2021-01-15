@@ -132,10 +132,9 @@ cs_user_source_terms(cs_domain_t  *domain,
 
     /* logging */
 
-    const cs_var_cal_opt_t  *var_cal_opt
-      = cs_field_get_key_struct_const_ptr(f,
-                                          cs_field_key_id("var_cal_opt"));
-    if (var_cal_opt->verbosity >= 1)
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    if (eqp->verbosity >= 1)
       bft_printf(" User source terms for variable %s\n",
                  cs_field_get_label(f));
 
@@ -180,10 +179,9 @@ cs_user_source_terms(cs_domain_t  *domain,
 
     /* logging */
 
-    const cs_var_cal_opt_t  *var_cal_opt
-      = cs_field_get_key_struct_const_ptr(f,
-                                          cs_field_key_id("var_cal_opt"));
-    if (var_cal_opt->verbosity >= 1)
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    if (eqp->verbosity >= 1)
       bft_printf(" User source terms for variable %s\n",
                  cs_field_get_label(f));
 

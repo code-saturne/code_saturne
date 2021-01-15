@@ -100,9 +100,8 @@ cs_user_source_terms(cs_domain_t  *domain,
   /* Define pointer f to the current turbulent variable field */
   const cs_field_t  *f = cs_field_by_id(f_id);
 
-  const cs_var_cal_opt_t  *var_cal_opt
-    = cs_field_get_key_struct_const_ptr(f,
-                                        cs_field_key_id("var_cal_opt"));
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
   /*! [current_turb_3] */
 
   /* Example of arbitrary source term for turbulence models
@@ -118,7 +117,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /*! [rem_code_3] */
   if (f == CS_F_(k)) {
 
-    if (var_cal_opt->verbosity >= 1)
+    if (eqp->verbosity >= 1)
       bft_printf(" User source terms for turbulence variable %s\n",
                  cs_field_get_label(f));
 

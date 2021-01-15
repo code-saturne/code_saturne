@@ -123,7 +123,7 @@ _define_injection(cs_real_t           time,
     if (_logged_mass_flux == false && cs_log_default_is_active()) {
 
       const cs_equation_param_t *eqp
-        = cs_field_get_key_struct_const_ptr(f, cs_field_key_id("var_cal_opt"));
+        = cs_field_get_equation_param(f);
 
       if (eqp->verbosity >= 1 || _logged_mass_flux == false) {
         cs_real_t flucel = 0.;
@@ -204,8 +204,6 @@ cs_user_finalize_setup(cs_domain_t   *domain)
      cs_glob_fluid_properties->viscl0);
 
   /* Scalars */
-
-  int ks = cs_field_key_id("scalar_id");
 
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {

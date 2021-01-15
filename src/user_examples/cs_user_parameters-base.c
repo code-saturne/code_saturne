@@ -793,9 +793,10 @@ cs_user_parameters(cs_domain_t *domain)
         may thus choose in this case:
 
         cs_field_t *f = cs_thermal_model_field();
-        cs_var_cal_opt_t *vcopt
-           = cs_field_get_key_struct_ptr(f, cs_field_key_id("var_cal_opt"));
-        vcopt->blencv = 1.;
+        cs_equation_param_t *eqp
+           =
+           = cs_field_get_equation_param(f);
+        eqp->blencv = 1.;
 
       For non-user scalars relative to specific physics
         implicitly defined by the model,
@@ -804,16 +805,15 @@ cs_user_parameters(cs_domain_t *domain)
 
   {
     int n_fields = cs_field_n_fields();
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t *vcopt
-          = cs_field_get_key_struct_ptr(f, key_cal_opt_id);
-        vcopt->blencv = 1.;
+        cs_equation_param_t *eqp
+          = cs_field_get_equation_param(f);
+        eqp->blencv = 1.;
       }
     }
   }
@@ -822,16 +822,14 @@ cs_user_parameters(cs_domain_t *domain)
      epsilo: relative precision for the solution of the linear system. */
   {
     int n_fields = cs_field_n_fields();
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t *vcopt
-          = cs_field_get_key_struct_ptr(f, key_cal_opt_id);
-        vcopt->epsilo = 1.e-6;
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->epsilo = 1.e-6;
       }
     }
   }
@@ -839,14 +837,12 @@ cs_user_parameters(cs_domain_t *domain)
   /* Dynamic reconstruction sweeps to handle non-orthogonlaities
      This parameter computes automatically a dynamic relax factor,
      and can be activated for any variable.
+      - iswdyn = 0: no relaxation
       - iswdyn = 1: means that the last increment is relaxed
-      - iswdyn = 2: means that the last two increments are used to relax. */
+      - iswdyn = 2: means that the last two increments are used to relax. (default) */
   {
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-    cs_var_cal_opt_t *vcopt
-      = cs_field_get_key_struct_ptr(CS_F_(p), key_cal_opt_id);
-    vcopt->iswdyn = 2;
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
+    eqp->iswdyn = 2;
   }
 
   /* Stabilization in turbulent regime
@@ -856,14 +852,13 @@ cs_user_parameters(cs_domain_t *domain)
     of the turbulence model, that is for k-epsilon models:
     */
   {
-    cs_var_cal_opt_t  *vcopt;
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+    cs_equation_param_t *eqp;
 
-    vcopt = cs_field_get_key_struct_ptr(CS_F_(k), key_cal_opt_id);
-    vcopt->ircflu = 0;
+    eqp = cs_field_get_equation_param(CS_F_(k));
+    eqp->ircflu = 0;
 
-    vcopt = cs_field_get_key_struct_ptr(CS_F_(eps), key_cal_opt_id);
-    vcopt->ircflu = 0;
+    eqp = cs_field_get_equation_param(CS_F_(eps));
+    eqp->ircflu = 0;
   }
 
   /* Example: choose a convective scheme and
@@ -887,13 +882,11 @@ cs_user_parameters(cs_domain_t *domain)
       1: slope test disabled (default)
       2: continuous limiter ensuring boundedness (beta limiter) enabled */
 
-    cs_var_cal_opt_t vcopt;
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+    cs_equation_param_t *eqp;
 
-    cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
-    vcopt.ischcv = 1;
-    vcopt.isstpc = 0;
-    cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
+    eqp = cs_field_get_equation_param(sca1);
+    eqp->ischcv = 1;
+    eqp->isstpc = 0;
 
     /* Min/Max limiter or NVD/TVD limiters
      * then "limiter_choice" keyword must be set:
@@ -963,12 +956,8 @@ cs_user_parameters(cs_domain_t *domain)
       0: full upwind (default)
       1: scheme without upwind */
 
-    cs_var_cal_opt_t vcopt;
-    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-    cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
-    vcopt.blend_st = 0.1;
-    cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(sca1);
+    eqp->blend_st = 0.1;
 
   }
   /*! [param_var_blend_st] */
