@@ -883,10 +883,8 @@ do ivar = 1, nvar
   endif
 enddo
 
-
 ! Free memory
 deallocate(pripb)
-
 
 ! Symmetry
 ! =========
@@ -1512,6 +1510,28 @@ do f_id = 0, nfld - 1
     endif
   endif
 enddo
+
+!===============================================================================
+! Automatic treatment for some variables
+!===============================================================================
+
+! Put homogeneous Neumann on hydrostatic pressure for iphydr=1
+! if not modified by the user
+
+call field_get_id_try("hydrostatic_pressure", f_id)
+if (f_id.ge.0) then
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+      call field_get_key_int(f_id, keyvar, ivar)
+
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar) = 3
+      endif
+    endif
+  endif
+endif
 
 ! ensure that for all variables of dimension higher than 1 and which components
 ! are coupled, icodcl is the same for all the components
