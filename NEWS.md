@@ -3,19 +3,26 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: when the thermal scalar is the enthalphy, Dirichlet-type
+  boundary conditions are now given based on the temperature, and
+  not directly in terms of enthalpy.
+
+- When solving for enthalpy, adding 1000 to a face's boundary condition
+  code (icodcl) allows defining it by temperature instead.
+
 - Add a 'code_saturne symbol2line' command.
   This command can be used with debug symbols from a stack trace in order
   to find the origin of the call.
-  Usage example for the line :
+  Usage example for the line:
   1: 0x55834c6102d7 <cs_function+0x17>             (cs_solver)
   Run:
   code_saturne symbol2line -s cs_user_zones+0x17
   Additional info is provided using 'code_saturne symbol2line --help'
 
+Numerics and physical modeling:
+
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
-
-Numerics and physical modeling:
 
 - Activate improved hydrostatic pressure interpolation (iphydr)
   by default.

@@ -189,7 +189,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal , iterns, isvhb
-integer          itrale , italim , itrfin , ineefl , itrfup
+integer          itrale , italim , itrfin , ineefl , itrfup, ncnv
 
 double precision, pointer, dimension(:) :: xprale
 double precision, pointer, dimension(:,:) :: cofale
@@ -198,6 +198,8 @@ integer, dimension(nfabor+1) :: isostd
 double precision, pointer, dimension(:) :: dt
 double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, pointer, dimension(:) :: visvdr, hbord, theipb
+
+integer, allocatable, dimension(:) :: lcnv
 
 ! Local variables
 
@@ -514,6 +516,31 @@ endif
 ! For internal coupling, set itypfb to wall function by default
 ! if not set by the user
 call cs_internal_coupling_bcs(itypfb)
+
+! Convert temperature to enthalpy for Dirichlet conditions
+
+if (itherm.eq.2) then
+
+  ncnv = 0
+  allocate(lcnv(nfabor))
+
+  ivar = isca(iscalt)
+
+  ! Filter Dirichlet/imposed value faces
+
+  do ii = 1, nfabor
+    if (icodcl(ii,ivar).gt.1000) then
+      ncnv = ncnv + 1
+      lcnv(ncnv) = ii
+      icodcl(ii,ivar) = icodcl(ii,ivar) - 1000
+    endif
+  enddo
+
+  call b_t_to_h(ncnv, lcnv, rcodcl(:,ivar,1), rcodcl(:,ivar,1))
+
+  deallocate(lcnv)
+
+endif
 
 !===============================================================================
 ! 1. initializations
@@ -3074,7 +3101,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3103,7 +3131,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3134,7 +3163,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3165,7 +3195,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3173,8 +3204,9 @@ if (nscal.ge.1) then
             enddo
           endif
 
-        ! convective boundary for Marangoni effects (generalized symmetry condition)
-        !---------------------------------------------------------------------------
+        ! convective boundary for Marangoni effects
+        !(generalized symmetry condition)
+        !------------------------------------------
 
         elseif (icodcl(ifac,ivar).eq.14) then
 
@@ -3203,7 +3235,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3243,7 +3276,8 @@ if (nscal.ge.1) then
             do isou = 1, 3
               b_pvari(isou) = 0.d0
               do jsou = 1, 3
-                b_pvari(isou) = b_pvari(isou)  +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
+                b_pvari(isou) =    b_pvari(isou)    &
+                                +  coefbv(jsou, isou, ifac) * bvar_v(jsou,ifac)
               enddo
             enddo
             do isou = 1, 3
@@ -3321,8 +3355,9 @@ if (nscal.ge.1) then
               coefbp(ifac), cofbfp(ifac),                        &
               pimp              , cfl               , hint )
 
-          ! Imposed value for the convection operator, imposed flux for diffusion
-          !----------------------------------------------------------------------
+          ! Imposed value for the convection operator,
+          ! imposed flux for diffusion
+          !-------------------------------------------
 
         elseif (icodcl(ifac,ialt).eq.13) then
 

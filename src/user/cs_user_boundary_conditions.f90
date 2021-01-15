@@ -235,16 +235,17 @@
 !>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad F).n
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 6:
-!>      Roughness lenght scale for the rough wall law
+!>      Roughness length scale for the rough wall law
 !>     - For velocities U, dynamic roughness
-!>         \c boundary_roughness field contains the dynamic roughness length scale
+!>         \c boundary_roughness field contains the dynamic roughness
+!>            length scale
 !>     - For other scalars, thermal roughness
 !>         \c boundary_thermal_roughness field contains the scalar roughness
 !>            length scale
 !>
-!> Note that if the user assigns a value to \c itypfb equal to \c ientre, \c isolib,
-!> \c isymet, \c iparoi, or \c iparug and does not modify \c icodcl (zero value by
-!>  default), \c itypfb will define the boundary condition type.
+!> Note that if the user assigns a value to \c itypfb equal to \c ientre,
+!> \c isolib, \c isymet, \c iparoi, or \c iparug and does not modify \c icodcl
+!> (zero value by default), \c itypfb will define the boundary condition type.
 !>
 !> To the contrary, if the user prescribes \c icodcl(ifac, ivar) (nonzero),
 !> the values assigned to \c rcodcl will be used for the considered face
@@ -269,6 +270,13 @@
 !> the 3 \c rcodcl fields (as the value of \c itypfb will not be predefined in
 !> the code).
 !>
+!>
+!> \subsection comp_bcs Boundary condition types for enthalpy
+!>
+!> For enthalpy, prescribed values (in rcodcl(ifac, ivar, 1)) may
+!> be defined using the temperature instead. In this case, icodcl(ifac, ivar)
+!> must be replaced by icodcl(ifac, ivar) + 1000 to mark the face for automatic
+!> conversion.
 !>
 !> \subsection comp_bcs Boundary condition types for compressible flows
 !>

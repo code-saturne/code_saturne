@@ -442,7 +442,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
   /* FIXME: we should not need a loop over components, but
      directly use vector values; if we do not yet have
-     multidimensional user variables in the GUI, we can hendle
+     multidimensional user variables in the GUI, we can handle
      this more cleanly */
 
   for (int i = 0; i < dim; i++) {
@@ -1617,7 +1617,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
     if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       if (boundaries->rough[izone] >= 0.0)
-        wall_type = 6;//TODO remove and use all roughness wall function
+        wall_type = 6; //TODO remove and use all roughness wall function
       else
         wall_type = 5;
     }
@@ -1629,6 +1629,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
       if (f->type & CS_FIELD_VARIABLE) {
+
+        int icodcl_shift = 0;
+        if (f == CS_F_(h))
+          icodcl_shift += 1000;
+
         switch (boundaries->type_code[f->id][izone]) {
 
           case DIRICHLET_FORMULA:
@@ -1639,7 +1644,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                   cs_lnum_t face_id = bz->elt_ids[elt_id];
-                  icodcl[(ivar + ii) *n_b_faces + face_id] = wall_type;
+                  icodcl[(ivar + ii) *n_b_faces + face_id]
+                    = wall_type + icodcl_shift;
                   rcodcl[(ivar + ii) * n_b_faces + face_id]
                     = new_vals[ii * bz->n_elts + elt_id];
                 }

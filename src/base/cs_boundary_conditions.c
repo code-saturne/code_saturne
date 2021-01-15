@@ -296,6 +296,7 @@ _inlet_sum(int                          var_id,
  * \param[in]       eqp         pointer to a cs_equation_param_t
  * \param[in]       def         pointer to a boundary condition definition
  * \param[in]       var_id      matching variable id
+ * \param[in]       icodcl_c    value by which to shift assigned icodcl values
  * \param[in, out]  icodcl      boundary conditions type array
  * \param[in, out]  rcodcl      boundary conditions values array
  */
@@ -307,6 +308,7 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
                           const cs_equation_param_t  *eqp,
                           const cs_xdef_t            *def,
                           cs_lnum_t                   var_id,
+                          int                         icodcl_c,
                           int                        *icodcl,
                           double                     *rcodcl)
 {
@@ -322,6 +324,8 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
     bc_type = 6;
+
+  bc_type += icodcl_c;
 
   for (int coo_id = 0; coo_id < def->dim; coo_id++) {
 
@@ -356,6 +360,7 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
  * \param[in]       def         pointer to a boundary condition definition
  * \param[in]       var_id      matching variable id
  * \param[in]       t_eval      time at which one evaluates the boundary cond.
+ * \param[in]       icodcl_c    value by which to shift assigned icodcl values
  * \param[in, out]  icodcl      boundary conditions type array
  * \param[in, out]  rcodcl      boundary conditions values array
  */
@@ -368,6 +373,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
                       const cs_xdef_t            *def,
                       cs_lnum_t                   var_id,
                       cs_real_t                   t_eval,
+                      int                         icodcl_c,
                       int                        *icodcl,
                       double                     *rcodcl)
 {
@@ -383,6 +389,8 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
     bc_type = 6;
+
+  bc_type += icodcl_c;
 
   switch(def->type) {
 
@@ -1265,6 +1273,12 @@ cs_boundary_conditions_compute(int         nvar,
     int var_id = cs_field_get_key_int(f, var_id_key) - 1;
     assert(var_id >= 0);
 
+    /* Conversion flag for enthalpy (temperature given) */
+
+    int icodcl_c = 0;
+    if (f == CS_F_(h))
+      icodcl_c = 1000;
+
     /* Loop on boundary conditions */
 
     for (int bc_id = 0; bc_id < eqp->n_bc_defs; bc_id++) {
@@ -1278,6 +1292,7 @@ cs_boundary_conditions_compute(int         nvar,
                                   eqp,
                                   def,
                                   var_id,
+                                  icodcl_c,
                                   icodcl,
                                   rcodcl);
         break;
@@ -1289,6 +1304,7 @@ cs_boundary_conditions_compute(int         nvar,
                               def,
                               var_id,
                               t_eval,
+                              icodcl_c,
                               icodcl,
                               rcodcl);
         break;

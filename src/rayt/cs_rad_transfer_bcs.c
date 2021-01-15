@@ -203,7 +203,7 @@ cs_rad_transfer_bcs(int         nvar,
 {
   cs_real_t stephn = cs_physical_constants_stephan;
 
-  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -247,17 +247,15 @@ cs_rad_transfer_bcs(int         nvar,
   cs_real_t tx = 0.1;
 
   /* Temperature scale */
-  cs_real_t xmtk;
-  if (cs_glob_thermal_model->itpscl == 2)
-    xmtk = -tkelvi;
-  else
-    xmtk = 0.0;
+  cs_real_t xmtk = 0.;
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+    xmtk = tkelvi;
 
   /* Wall temperature */
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL)
-      twall[face_id] = f_b_temp->val[face_id] - xmtk;
+      twall[face_id] = f_b_temp->val[face_id] + xmtk;
     else
       twall[face_id] = 0.0;
   }
@@ -836,9 +834,15 @@ cs_rad_transfer_bcs(int         nvar,
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
     cs_field_t *f_temp = CS_F_(t);
     if (f_temp == NULL)
-      f_temp = CS_FI_(t,0);
+      f_temp = CS_FI_(t, 0);
+
+    cs_real_t *cval_t = f_temp->val;
+    if (f_temp->n_time_vals > 1)
+      cval_t = f_temp->vals[1];
 
     if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
@@ -894,7 +898,7 @@ cs_rad_transfer_bcs(int         nvar,
           || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
           || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
         isothm[face_id] = CS_BOUNDARY_RAD_WALL_GRAY;
-        rcodcl[ivart*n_b_faces + face_id] = twall[face_id] + xmtk;
+        rcodcl[ivart*n_b_faces + face_id] = twall[face_id] - xmtk;
       }
     }
   }
@@ -925,7 +929,7 @@ cs_rad_transfer_bcs(int         nvar,
 
       if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
-          = text[face_id] + xmtk;
+          = text[face_id] - xmtk;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = f_bxlam->val[face_id] / f_bepa->val[face_id];
         rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
@@ -934,7 +938,8 @@ cs_rad_transfer_bcs(int         nvar,
       else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
         icodcl[ivart*n_b_faces + face_id] = 3;
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = 0.0;
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id] = cs_math_infinite_r;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = cs_math_infinite_r;
       }
 
     }
@@ -1008,11 +1013,15 @@ cs_rad_transfer_bcs(int         nvar,
       }
       else if (  isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
               || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = hwall[face_id];
+        /* use twall instad of hwall for ivart, to avoid extra conversions */
+        icodcl[ivart*n_b_faces + face_id] += 1000;
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
+          = twall[face_id] - xmtk;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
         rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = 0.0;
+
         if (ivahg >= 0) {
           rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = hwall[face_id];
@@ -1061,10 +1070,7 @@ cs_rad_transfer_bcs(int         nvar,
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL) {
 
-      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
-        f_b_temp->val[face_id] = twall[face_id] - tkelvi;
-      else
-        f_b_temp->val[face_id] = twall[face_id];
+      f_b_temp->val[face_id] = twall[face_id] - xmtk;
 
     }
 
@@ -1153,11 +1159,9 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);
-  cs_real_t xptk;
-  if (cs_glob_thermal_model->itpscl == 2)
-    xptk = cs_physical_constants_celsius_to_kelvin;
-  else
-    xptk = 0.0;
+  cs_real_t xmtk = 0;
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+    xmtk = cs_physical_constants_celsius_to_kelvin;
 
   /* -> Initialization to a non-admissible value for testing after raycll   */
 
@@ -1228,7 +1232,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
          * (warning: the treatment is different from than of P-1 model)
          * Symmetry: the reflecting boundary conditions (eps=0)
          * is not feasible (because that would required to couple directions)
-         * So we impose a homogeneous Neumann that models an infinite extrusion */
+         * So we impose a homogeneous Neumann that models an infinite
+         * extrusion */
         bool neumann = true;
 
         /* Entering intensity fixed to zero
@@ -1281,7 +1286,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /* Wall boundary face: calculated intensity */
       else if (   bc_type[face_id] == CS_SMOOTHWALL
                || bc_type[face_id] == CS_ROUGHWALL) {
-        cs_real_t twall = f_tempb->val[face_id] + xptk;
+        cs_real_t twall = f_tempb->val[face_id] + xmtk;
         /* Remember: In case of the usage of the standard radiation
            models of Code_Saturne, w_gg=1  */
         cs_real_t pimp;
@@ -1316,10 +1321,13 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
    * coefap and coefbp must be filled */
 
   else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1) {
+
+    const cs_real_t *b_dist =  cs_glob_mesh_quantities->b_dist;
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[face_id];
 
-      cs_real_t hint = 1.0 / (ckmel[iel] * cs_glob_mesh_quantities->b_dist[face_id]);
+      cs_real_t hint = 1.0 / (ckmel[iel] * b_dist[face_id]);
 
       /* Symmetry or reflecting wall (EPS = 0) : zero flux */
       if (   bc_type[face_id] == CS_SYMMETRY
@@ -1353,12 +1361,13 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /*  Wall boundary faces */
       else if (   bc_type[face_id] == CS_SMOOTHWALL
                || bc_type[face_id] == CS_ROUGHWALL) {
-        cs_real_t twall = f_tempb->val[face_id] + xptk;
+        cs_real_t twall = f_tempb->val[face_id] + xmtk;
         cs_real_t distbf  = cs_glob_mesh_quantities->b_dist[face_id];
         cs_real_t xit = 1.5 * distbf * ckmel[iel]
                             * (2.0 / (2.0 - bpro_eps[face_id]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
-        cs_real_t pimp = cs_math_pow4(twall) * w_gg[face_id + gg_id * n_b_faces];
+        cs_real_t pimp =   cs_math_pow4(twall)
+                         * w_gg[face_id + gg_id * n_b_faces];
         cs_boundary_conditions_set_convective_outlet_scalar(&coefap[face_id],
                                                             &cofafp[face_id],
                                                             &coefbp[face_id],
