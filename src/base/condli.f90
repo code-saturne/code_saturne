@@ -292,6 +292,18 @@ interface
 
   end subroutine b_h_to_t
 
+  subroutine b_t_to_h(nlst, lstfac, t_b, h_b)
+
+    use mesh, only: nfabor
+    implicit none
+
+    integer :: nlst
+    integer, dimension(nlst) :: lstfac
+    double precision, dimension(nfabor), intent(in) :: t_b
+    double precision, dimension(nfabor), intent(out), target :: h_b
+
+  end subroutine b_t_to_h
+
   subroutine clptur(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
                     visvdr, hbord, theipb)
 
