@@ -1575,10 +1575,28 @@ cs_ale_init_setup(cs_domain_t   *domain)
   /* Mesh viscosity (iso or ortho)
    * TODO declare it before: add in activate, def here...  */
   int dim = cs_field_by_name("mesh_viscosity")->dim;
-  cs_property_type_t type = (dim == 1) ? CS_PROPERTY_ISO : CS_PROPERTY_ORTHO;
-  cs_property_t  *viscosity = cs_property_add("mesh_viscosity", type);
 
-  cs_property_def_by_field(viscosity, cs_field_by_name("mesh_viscosity"));
+  cs_property_t  *mesh_visc = cs_property_by_name("mesh_viscosity");
+  if (mesh_visc == NULL)  {      /* Not already added */
+    cs_property_type_t  type = 0;
+    if (dim == 1)
+      type = CS_PROPERTY_ISO;
+    else if (dim == 3)
+      type = CS_PROPERTY_ORTHO;
+    else if (dim == 6)
+      type = CS_PROPERTY_ANISO_SYM;
+    else if (dim == 9)
+      type = CS_PROPERTY_ANISO;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid dimension (=%d)for mesh viscosity.\n",
+                __func__, dim);
+
+    /* Add and define this property */
+    mesh_visc = cs_property_add("mesh_viscosity", type);
+    cs_property_def_by_field(mesh_visc, cs_field_by_name("mesh_viscosity"));
+
+  }
 
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
@@ -1590,8 +1608,8 @@ cs_ale_init_setup(cs_domain_t   *domain)
                              var_cal_opt.verbosity);
 
   cs_equation_param_t  *eqp = cs_equation_param_by_name("mesh_velocity");
-
-  cs_equation_add_diffusion(eqp, viscosity);
+  assert(mesh_visc != NULL);
+  cs_equation_add_diffusion(eqp, mesh_visc);
 }
 
 /*----------------------------------------------------------------------------*/
