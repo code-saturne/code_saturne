@@ -279,10 +279,6 @@ _physical_property_create(const char      *name,
               _("Error: for property '%s', dimension %d not supported.\n"),
               name);
 
-  /* FIXME: CDO properties description seems to imply anisotropic
-     properties should be symmetric and be representable with 6 values,
-     but requires 9 values, while the legacy code stores this using 6 values */
-
   cs_property_set_reference_value(pty, refval);
 
   return pty;
