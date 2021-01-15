@@ -1630,9 +1630,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (f->type & CS_FIELD_VARIABLE) {
 
-        int icodcl_shift = 0;
+        int icodcl_m = 1;
         if (f == CS_F_(h))
-          icodcl_shift += 1000;
+          icodcl_m = -1;
 
         switch (boundaries->type_code[f->id][izone]) {
 
@@ -1645,7 +1645,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                 for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                   cs_lnum_t face_id = bz->elt_ids[elt_id];
                   icodcl[(ivar + ii) *n_b_faces + face_id]
-                    = wall_type + icodcl_shift;
+                    = wall_type * icodcl_m;
                   rcodcl[(ivar + ii) * n_b_faces + face_id]
                     = new_vals[ii * bz->n_elts + elt_id];
                 }

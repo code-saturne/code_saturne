@@ -273,9 +273,9 @@
 !>
 !> \subsection comp_bcs Boundary condition types for enthalpy
 !>
-!> For enthalpy, prescribed values (in rcodcl(ifac, ivar, 1)) may
+!> For enthalpy, prescribed values in rcodcl(ifac, ivar, 1) may
 !> be defined using the temperature instead. In this case, icodcl(ifac, ivar)
-!> must be replaced by icodcl(ifac, ivar) + 1000 to mark the face for automatic
+!> must be replaced by -icodcl(ifac, ivar) to mark the face for automatic
 !> conversion.
 !>
 !> \subsection comp_bcs Boundary condition types for compressible flows

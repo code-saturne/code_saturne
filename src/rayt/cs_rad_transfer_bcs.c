@@ -1014,7 +1014,7 @@ cs_rad_transfer_bcs(int         nvar,
       else if (  isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
               || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
         /* use twall instad of hwall for ivart, to avoid extra conversions */
-        icodcl[ivart*n_b_faces + face_id] += 1000;
+        icodcl[ivart*n_b_faces + face_id] *= -1;
         rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = twall[face_id] - xmtk;
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]

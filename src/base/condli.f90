@@ -529,10 +529,10 @@ if (itherm.eq.2) then
   ! Filter Dirichlet/imposed value faces
 
   do ii = 1, nfabor
-    if (icodcl(ii,ivar).gt.1000) then
+    if (icodcl(ii,ivar).lt.0) then
       ncnv = ncnv + 1
       lcnv(ncnv) = ii
-      icodcl(ii,ivar) = icodcl(ii,ivar) - 1000
+      icodcl(ii,ivar) = -icodcl(ii,ivar)
     endif
   enddo
 
