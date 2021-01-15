@@ -199,6 +199,10 @@ cs_lagr_resuspension(void)
   cs_lnum_t test_colli;
   cs_real_t adhesion_energ;
 
+  cs_real_t xmtk = 0;
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+    xmtk = tkelvi;
+
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     unsigned char *part = p_set->p_buffer + p_am->extents * ip;
@@ -221,14 +225,8 @@ cs_lagr_resuspension(void)
 
     if (extra->scal_t != NULL) {
 
-      if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-          && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
-        temp = extra->scal_t->val[iel] + tkelvi;
-
-      else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-               && cs_glob_thermal_model->itpscl ==
-                          CS_TEMPERATURE_SCALE_KELVIN)
-        temp = extra->scal_t->val[iel];
+      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
+        temp = extra->scal_t->val[iel] + xmtk;
 
       else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 

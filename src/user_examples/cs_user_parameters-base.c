@@ -368,7 +368,7 @@ cs_user_model(void)
    */
 
   cs_thermal_model_t *thermal_model = cs_get_glob_thermal_model();
-  thermal_model->itherm = 1;
+  thermal_model->itherm = CS_THERMAL_MODEL_TEMPERATURE;
 
   /*! [thermal_model_choice] */
 

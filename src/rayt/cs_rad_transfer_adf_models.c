@@ -177,7 +177,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
   BFT_MALLOC(y, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
-  if (cs_glob_thermal_model->itpscl == 2) {
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
     BFT_MALLOC(tpaadf, nfabor, cs_real_t );
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
@@ -446,7 +446,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
   cs_real_t *tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
 
-  if (cs_glob_thermal_model->itpscl == 2) {
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
     BFT_MALLOC(tpaadf, nfabor, cs_real_t );
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)

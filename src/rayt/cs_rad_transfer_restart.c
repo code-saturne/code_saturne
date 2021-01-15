@@ -143,7 +143,7 @@ cs_rad_transfer_write(void)
 
   cs_field_t *f_btemp = CS_F_(t_b);
 
-  if (cs_glob_thermal_model->itpscl == 1)
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
     cs_restart_write_field_vals(rp, f_btemp->id, 0);
 
   else {
@@ -269,7 +269,7 @@ cs_rad_transfer_read(void)
                                             f_btemp->val);
     nberro += ierror;
 
-    if (cs_glob_thermal_model->itpscl == 2) {
+    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
       for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++)
         f_btemp->val[ifac] -= 273.15;
     }

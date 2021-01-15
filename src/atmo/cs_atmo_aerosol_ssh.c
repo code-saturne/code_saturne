@@ -107,12 +107,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Pointer to SSH-aerosol .so */
-void *_aerosol_so = NULL;
-const char _lib_path[] = "libssh-aerosol.so";
-bool _allow_ssh_postprocess = false;
-bool _update_ssh_thermo = false;
-bool _verbose = false;
-cs_real_t _ssh_time_offset;
+
+static void *_aerosol_so = NULL;
+static const char _lib_path[] = "libssh-aerosol.so";
+
+static bool _allow_ssh_postprocess = false;
+static bool _update_ssh_thermo = false;
+static bool _verbose = false;
+static cs_real_t _ssh_time_offset = 0.0;
 
 /*============================================================================
  * Static global variables
@@ -146,12 +148,11 @@ static void
 _call(void               *handle,
       const char         *name)
 {
-
   typedef void* (*_tmp_sshaerosol_t)(void);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
+                                                          name,
+                                                          true);
   fct();
 }
 
@@ -162,7 +163,6 @@ _call(void               *handle,
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *   flag             --> boolean exchanged with the external code
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -194,12 +194,11 @@ _send_double(void               *handle,
              const char         *name,
              cs_real_t           val)
 {
-
   typedef void* (*_tmp_sshaerosol_t)(double*);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
+                                                          name,
+                                                          true);
   double tmp = val;
   fct(&tmp);
 }
@@ -211,20 +210,18 @@ _send_double(void               *handle,
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *
- * returns the boolean received from the external code
- *
+ * return: the boolean received from the external code
  *----------------------------------------------------------------------------*/
 
 static bool
 _recv_bool(void               *handle,
            const char         *name)
 {
-
   typedef bool (*_tmp_sshaerosol_t)(void);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
+                                                          name,
+                                                          true);
   bool res = fct();
 
   return res;
@@ -237,46 +234,42 @@ _recv_bool(void               *handle,
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *
- * returns the integer received from the external code
- *
+ * return: the integer received from the external code
  *----------------------------------------------------------------------------*/
 
 static int
 _recv_int(void               *handle,
           const char         *name)
 {
-
   typedef int (*_tmp_sshaerosol_t)(void);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t)cs_base_get_dl_function_pointer(handle,
+                                                         name,
+                                                         true);
   int res = fct();
 
   return res;
 }
 
 /*----------------------------------------------------------------------------
- * Receive a double from SSH-aerosol, returns it
+ * Receive a double from SSH-aerosol, return it
  *
  * parameters:
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *
- * returns the double received from the external code
- *
+ * return: the double received from the external code
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
 _recv_double(void               *handle,
              const char         *name)
 {
-
   typedef double (*_tmp_sshaerosol_t)(void);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t)cs_base_get_dl_function_pointer(handle,
+                                                         name,
+                                                         true);
   cs_real_t res = fct();
 
   return res;
@@ -289,7 +282,6 @@ _recv_double(void               *handle,
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *   array            <-- array exchanged with the external code
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -297,12 +289,11 @@ _exchange_char_array(void               *handle,
                      const char         *name,
                      const char         *array)
 {
-
   typedef void* (*_tmp_sshaerosol_t)(const char*);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
+                                                          name,
+                                                          true);
   fct(array);
 }
 
@@ -313,7 +304,6 @@ _exchange_char_array(void               *handle,
  *   handle           <-- pointer to shared library (result of dlopen)
  *   name             <-- name of function symbol in SSH-aerosol
  *   array            <-> array exchanged with the external code
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -321,12 +311,11 @@ _exchange_double_array(void               *handle,
                        const char         *name,
                        cs_real_t          *array)
 {
-
   typedef void* (*_tmp_sshaerosol_t)(double*);
-  _tmp_sshaerosol_t fct =
-    (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
-                                                        name,
-                                                        true);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t)cs_base_get_dl_function_pointer(handle,
+                                                         name,
+                                                         true);
   fct(array);
 }
 
@@ -348,6 +337,8 @@ void
 cs_atmo_aerosol_ssh_initialize(void)
 {
   assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
+
+  cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
 #if defined(HAVE_DLOPEN)
   /* Load the shared library */
@@ -372,10 +363,10 @@ cs_atmo_aerosol_ssh_initialize(void)
   /* Initialize SSH-aerosol (default file name is namelist.ssh) */
   {
     char namelist_ssh[41];
-    if (cs_glob_atmo_chemistry->aero_file_name == NULL) {
+    if (at_chem->aero_file_name == NULL) {
       strcpy(namelist_ssh, "namelist.ssh");
     } else {
-      strcpy(namelist_ssh, cs_glob_atmo_chemistry->aero_file_name);
+      strcpy(namelist_ssh, at_chem->aero_file_name);
     }
     _exchange_char_array(_aerosol_so,
                          "api_sshaerosol_initialize_",
@@ -398,14 +389,15 @@ cs_atmo_aerosol_ssh_initialize(void)
   }
 
   /* If homogeneous time step => set initial_time and set time step */
-  if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
+  if (   cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
       || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) {
 
     /* This is used and saved: time in Code_Saturne starts at zero */
     {
-      _ssh_time_offset = _recv_double(_aerosol_so, "api_sshaerosol_get_initial_t_");
+      _ssh_time_offset = _recv_double(_aerosol_so,
+                                      "api_sshaerosol_get_initial_t_");
       if (_verbose)
-        bft_printf(" Initial time from SSH-aerosol : %f\n", _ssh_time_offset);
+        bft_printf(" Initial time from SSH-aerosol: %f\n", _ssh_time_offset);
     }
 
     /* Grab initial time and time step from Code_Saturne */
@@ -419,43 +411,43 @@ cs_atmo_aerosol_ssh_initialize(void)
     _send_double(_aerosol_so, "api_sshaerosol_set_current_t_", initial_time);
     _send_double(_aerosol_so, "api_sshaerosol_set_dt_", dt);
 
-  } else {
+  }
+  else {
     bft_error(__FILE__, __LINE__, 0,
               _("Time scheme currently incompatible with SSH-aerosol\n"));
   }
 
   /* InitPhoto */
-  if (cs_glob_atmo_chemistry->chemistry_with_photolysis)
+  if (at_chem->chemistry_with_photolysis)
     _call(_aerosol_so, "api_sshaerosol_initphoto_");
 
   /* Last safety check */
-  if (_recv_bool(_aerosol_so, "api_sshaerosol_get_logger_") && cs_glob_rank_id > 0)
+  if (  _recv_bool(_aerosol_so, "api_sshaerosol_get_logger_")
+      && cs_glob_rank_id > 0)
     bft_printf(" Warning: SSH-logger is not parallel.\n");
 
   /***
-   *
    * At this stage, the external aerosol code SSH-aerosol is fully initialized
    *
-   * Below, we initialize some Code_Saturne specific structures / options
-   *
+   * Below, we initialize some code_saturne specific structures / options
    ***/
 
   /* Get the number of aerosol layers */
-  cs_glob_atmo_chemistry->n_layer = _recv_int(_aerosol_so,
-                                              "api_sshaerosol_get_n_aerosol_layers_");
+  at_chem->n_layer = _recv_int(_aerosol_so,
+                               "api_sshaerosol_get_n_aerosol_layers_");
 
   /* Get the number of aerosols */
-  cs_glob_atmo_chemistry->n_size = _recv_int(_aerosol_so,
-                                             "api_sshaerosol_get_nsize_");
+  at_chem->n_size = _recv_int(_aerosol_so,
+                              "api_sshaerosol_get_nsize_");
 
   /* Use shorter names for clarity */
-  const int nsp = cs_glob_atmo_chemistry->n_species;
-  const int nlr = cs_glob_atmo_chemistry->n_layer;
-  const int nsz = cs_glob_atmo_chemistry->n_size;
+  const int nsp = at_chem->n_species;
+  const int nlr = at_chem->n_layer;
+  const int nsz = at_chem->n_size;
 
   /* Reallocate arrays */
-  BFT_REALLOC(cs_glob_atmo_chemistry->species_to_field_id, nsp + nsz* (nlr + 1), int);
-  BFT_REALLOC(cs_glob_atmo_chemistry->species_to_scalar_id, nsp + nsz * (nlr + 1), int);
+  BFT_REALLOC(at_chem->species_to_field_id, nsp + nsz* (nlr + 1), int);
+  BFT_REALLOC(at_chem->species_to_scalar_id, nsp + nsz * (nlr + 1), int);
 
   /* For all aerosols */
   for (int i = nsp; i < nsp + nsz * (nlr + 1);  i++ ) {
@@ -470,30 +462,37 @@ cs_atmo_aerosol_ssh_initialize(void)
     const int isize = 1 + (i - nsp) - (ilr - 1) * nsz;
 
     /* Get the prefix */
-    if (ilr <= cs_glob_atmo_chemistry->n_layer) {
-      if (ilr < 0) bft_error(__FILE__, __LINE__, 0,
-                             _("Atmospheric aerosols : Number of layers negative."));
-      if (ilr > 9999) bft_error(__FILE__, __LINE__, 0,
-                                _("Atmospheric aerosols : Number of layers above limit."));
+    if (ilr <= at_chem->n_layer) {
+      if (ilr < 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Atmospheric aerosols: Number of layers negative."));
+      if (ilr > 9999)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Atmospheric aerosols: Number of layers above limit."));
       sprintf(name, "aerosol_layer_%04d", ilr);
-    } else {
+    }
+    else {
       strcpy(name, "aerosol_num");
     }
 
     /* Get the suffix */
-    if (isize < 0) bft_error(__FILE__, __LINE__, 0,
-                             _("Atmospheric aerosols : Number of aerosols negative."));
-    if (isize > 999) bft_error(__FILE__, __LINE__, 0,
-                               _("Atmospheric aerosols : Number of aerosols above limit."));
+    if (isize < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Atmospheric aerosols : Number of aerosols negative."));
+    if (isize > 999)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Atmospheric aerosols : Number of aerosols above limit."));
     char suffix[5];
     sprintf(suffix, "_%03d", isize);
     strcat(name, suffix);
 
     /* Field of dimension 1 */
-    cs_glob_atmo_chemistry->species_to_field_id[i] = cs_variable_field_create(name, name, CS_MESH_LOCATION_CELLS, 1);
+    at_chem->species_to_field_id[i]
+      = cs_variable_field_create(name, name, CS_MESH_LOCATION_CELLS, 1);
 
     /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
-    cs_glob_atmo_chemistry->species_to_scalar_id[i] = cs_add_model_field_indexes(cs_glob_atmo_chemistry->species_to_field_id[i]);
+    at_chem->species_to_scalar_id[i]
+      = cs_add_model_field_indexes(at_chem->species_to_field_id[i]);
 
   }
 
@@ -671,7 +670,8 @@ cs_atmo_aerosol_ssh_time_advance(void)
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
 
-  /* If homogeneous time step => set current_time and set time step and update photolysis*/
+  /* If homogeneous time step => set current_time and set time step
+     and update photolysis*/
   if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
       || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) {
 
@@ -736,8 +736,9 @@ cs_atmo_aerosol_ssh_time_advance(void)
         cs_real_t totwt = fld->val[cell_id];
         cs_real_t liqwt = cs_field_by_name("liquid_water")->val[cell_id];
         if (fabs(1. - liqwt) < cs_math_epzero)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Error when computing the relative humidity for SSH-aerosol."));
+          bft_error
+            (__FILE__,__LINE__, 0,
+             _("Error when computing the relative humidity for SSH-aerosol."));
         double rh = (totwt - liqwt)/(1. - liqwt);
         _send_double(_aerosol_so, "api_sshaerosol_set_relhumidity_", rh);
       }

@@ -397,6 +397,7 @@ cs_atmo_declare_chem_from_spack(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief 1D Radiative scheme - Solar data + zenithal angle)
+ *
  * Compute:
  *   - zenithal angle
  *   - solar contant (with correction for earth - solar length)

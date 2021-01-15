@@ -314,7 +314,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
         const cs_field_t *f = cs_field_by_name_try("temperature");
         if (f != NULL) {
           t = f->val;
-          if (cs_glob_thermal_model->itpscl == 1)
+          if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
             c_kelvin = 273.15;
         }
       }

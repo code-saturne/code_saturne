@@ -1081,7 +1081,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Wall temperature */
   cs_real_t xptk;
-  if (cs_glob_thermal_model->itpscl == 2)
+  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
     xptk = tkelvi;
   else
     xptk = 0.0;
@@ -1240,15 +1240,8 @@ cs_rad_transfer_solve(int               bc_type[],
     else
       cvara_scalt = CS_FI_(t,0)->val;
 
-    /* temperature is in Celsius */
-    if (cs_glob_thermal_model->itpscl == 2) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        tempk[cell_id] = cvara_scalt[cell_id] + tkelvi;
-    }
-    else {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        tempk[cell_id] = cvara_scalt[cell_id];
-    }
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      tempk[cell_id] = cvara_scalt[cell_id] + xptk;
 
   }
 

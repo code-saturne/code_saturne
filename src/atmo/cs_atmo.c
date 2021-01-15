@@ -1108,6 +1108,7 @@ cs_atmo_declare_chem_from_spack(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief 1D Radiative scheme - Solar data + zenithal angle)
+ *
  * Compute:
  *   - zenithal angle
  *   - solar contant (with correction for earth - solar length)
@@ -1331,6 +1332,9 @@ cs_atmo_log_setup(void)
 void
 cs_atmo_chemistry_log_setup(void)
 {
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+    return;
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Atmospheric chemistry options\n"
@@ -1393,6 +1397,9 @@ cs_atmo_chemistry_log_setup(void)
 void
 cs_atmo_aerosol_log_setup(void)
 {
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+    return;
+
   cs_log_printf
     (CS_LOG_SETUP,
      _("\nAtmospheric aerosols options\n"

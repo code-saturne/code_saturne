@@ -661,7 +661,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         cval_h = cs_field_by_name("enthalpy")->val;
     }
 
-    if (cs_glob_thermal_model->itpscl == 1) /* Kelvin */
+    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
       tscl_shift = - cs_physical_constants_celsius_to_kelvin;
   }
 
@@ -943,7 +943,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       }
 
       /* Other parameters */
-      cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
+      cs_real_t diam = cs_lagr_particle_get_real(particle, p_am,
+                                                 CS_LAGR_DIAMETER);
       cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
       if (cs_glob_lagr_model->clogging == 1) {
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
@@ -1241,14 +1242,16 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
                         _("Lagrangian %s zone %d, set %d:\n"
                           "  particle %ld has a negative %s: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
-                        (long)p_id, cs_lagr_attribute_name[attr], (double)vals[0]);
+                        (long)p_id, cs_lagr_attribute_name[attr],
+                        (double)vals[0]);
             else
               bft_error(__FILE__, __LINE__, 0,
                         _("Lagrangian %s zone %d, set %d:\n"
                           "  particle %ld has a negative %s\n"
                           "  in layer %d: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
-                        (long)p_id, cs_lagr_attribute_name[attr], l_id, (double)vals[l_id]);
+                        (long)p_id, cs_lagr_attribute_name[attr], l_id,
+                        (double)vals[l_id]);
           }
 
         }
