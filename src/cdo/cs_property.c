@@ -612,35 +612,47 @@ _create_property(const char           *name,
                  cs_property_type_t    type)
 {
   /* Check the sanity of type */
-  if (type & CS_PROPERTY_ISO) {
-    if (type & CS_PROPERTY_ANISO)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Detection of a wrong type for property %s\n"
-                "Set to CS_PROPERTY_ISO and CS_PROPERTY_ANISO.",
-                __func__, name);
-    if (type & CS_PROPERTY_ORTHO)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Detection of a wrong type for property %s\n"
-                "Set to CS_PROPERTY_ISO and CS_PROPERTY_ORTHO.",
-                __func__, name);
+
+  int n_types = 0;
+  const int flags[] = {CS_PROPERTY_ISO,
+                       CS_PROPERTY_ORTHO,
+                       CS_PROPERTY_ANISO_SYM,
+                       CS_PROPERTY_ANISO};
+
+  for (int i = 0; i < 4; i++) {
+    if (type & flags[i])
+      n_types += 1;
   }
-  else if (type & CS_PROPERTY_ORTHO) {
-    if (type & CS_PROPERTY_ANISO)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Detection of a wrong type for property %s\n"
-                "Set to CS_PROPERTY_ORTHO and CS_PROPERTY_ANISO.",
-                __func__, name);
+
+  if (n_types > 1) {
+
+    const char *names[] = {"CS_PROPERTY_ISO",
+                           "CS_PROPERTY_ORTHO",
+                           "CS_PROPERTY_ANISO_SYM",
+                           "CS_PROPERTY_ANISO"};
+    int l = 0;
+    char prop_list[256] = "";
+
+    for (int i = 0; i < 4 && l > 0; i++) {
+      if (type & flags[i]) {
+        snprintf(prop_list+l, 256-l, "  %s\n", names[i]);
+        prop_list[255] = '\0';
+        l = strlen(prop_list);
+      }
+    }
+
   }
-  else {
+  else if (n_types < 1)
     if ((type & CS_PROPERTY_ANISO) == 0)
       bft_error(__FILE__, __LINE__, 0,
-                "%s: No type specified for property %s\n"
-                " Set one among CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or"
-                " CS_PROPERTY_ANISO.", __func__, name);
-  }
+                "%s: No known type specified for property %s\n"
+                " Set one among\n"
+                "   CS_PROPERTY_ISO,\n"
+                "   CS_PROPERTY_ORTHO,\n"
+                "   CS_PROPERTY_ANISO_SYM,\n"
+                "   CS_PROPERTY_ANISO.\n", __func__, name);
 
   cs_property_t  *pty = NULL;
-
   BFT_MALLOC(pty, 1, cs_property_t);
 
   /* Copy name */
