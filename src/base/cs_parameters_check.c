@@ -824,8 +824,13 @@ cs_parameters_check(void)
                CDO schemes */
 
   cs_field_t *f_pot = NULL;
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0) {
     f_pot = CS_F_(head);
+    if (cs_glob_stokes_model->iphydr != 0) {
+      cs_stokes_model_t *vp = cs_get_glob_stokes_model();
+      vp->iphydr = 0;
+    }
+  }
   else
     f_pot = CS_F_(p);
 
@@ -1258,7 +1263,8 @@ cs_parameters_check(void)
                                "cs_glob_time_step_options->iptlro",
                                cs_glob_time_step_options->iptlro,
                                0);
-  } else if (cs_glob_time_step_options->idtvar == -1) {
+  }
+  else if (cs_glob_time_step_options->idtvar == -1) {
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"
                                  "a time-step clipping is enabled but a "

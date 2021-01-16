@@ -49,6 +49,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
 from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -149,6 +150,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
         modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp, modl_hgn = \
             fluid.getThermoPhysicalModel()
+        modl_gwf  = GroundwaterModel(self.case).getGroundwaterModel()
 
         if self.model.getHydrostaticPressure() == 'on':
             self.checkBoxImprovedPressure.setChecked(True)
@@ -198,6 +200,13 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         # For the moment, the Low Mach algorithm is disabled in the GUI
         self.modelDensityVar.disableItem(str_model = 'low_mach')
+
+        # Hide non relevant info for ground water flows
+
+        if modl_gwf != 'off':
+            self.groupBoxTerms.hide()
+            self.groupBoxVelPres.hide()
+            self.groupBoxDensityVar.hide()
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)
