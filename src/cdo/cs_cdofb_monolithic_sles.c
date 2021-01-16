@@ -3943,7 +3943,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *delta_u = uza->b_tilda;
   cs_real_t  delta_u_l2 = normalization;
 
-  /* Compute the divergence of u since this a stopping criteria */
+  /* Compute the divergence of u since this is a stopping criteria */
   _apply_div_op(div_op, u_f, uza->d__v);
 
   /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
