@@ -1265,7 +1265,13 @@ cs_boundary_conditions_compute(int         nvar,
 
     /* Only handle legacy discretization here */
 
-    if (eqp-> space_scheme != CS_SPACE_SCHEME_LEGACY)
+    if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY)
+      continue;
+
+    /* Settings in eqp may not be well-defined at this stage. The following
+       test should be more appropriate to decide if one skips this field or
+       not */
+    if (f->type & CS_FIELD_CDO)
       continue;
 
     /* Get associated variable id  */

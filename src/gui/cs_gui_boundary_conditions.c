@@ -1628,6 +1628,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       const int var_key_id = cs_field_key_id("variable_id");
       cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
+      if (f->type & CS_FIELD_CDO)
+        continue; /* TODO: Avoid a SIGSEV (when sharing CDO and FV, one has to
+                     find a better fix) */
+
       if (f->type & CS_FIELD_VARIABLE) {
 
         int icodcl_m = 1;
