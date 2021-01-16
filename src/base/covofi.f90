@@ -326,10 +326,10 @@ call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)) , kturt, scalar_turb_flux_model)
 if (ivarsc > 0) then
   call field_get_key_int(ivarfl(ivarsc), kturt, variance_turb_flux_model)
+  variance_turb_flux_model_type = variance_turb_flux_model / 10
 endif
 
 scalar_turb_flux_model_type = scalar_turb_flux_model / 10
-variance_turb_flux_model_type = variance_turb_flux_model / 10
 
 ! --- Numero des grandeurs physiques
 call field_get_key_int (iflid, kromsl, icrom_scal)
