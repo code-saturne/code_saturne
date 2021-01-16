@@ -406,7 +406,12 @@ typedef enum {
  * to zero.
  *
  * \var CS_PARAM_BC_NEUMANN
- * Neumann conditions. The value of the flux of variable is set to the user
+ * Neumann conditions (along the face normal). The value of the flux of
+ * variable is set to the user requirements.
+ *
+ * \var CS_PARAM_BC_NEUMANN_FULL
+ * Neumann conditions with full definition relative to all directions.
+ * The value of the flux of variable is set to the user
  * requirements.
  *
  * \var CS_PARAM_BC_ROBIN
@@ -429,6 +434,7 @@ typedef enum {
   CS_PARAM_BC_DIRICHLET,
   CS_PARAM_BC_HMG_NEUMANN,
   CS_PARAM_BC_NEUMANN,
+  CS_PARAM_BC_NEUMANN_FULL,
   CS_PARAM_BC_ROBIN,
   CS_PARAM_BC_SLIDING,
   CS_PARAM_BC_CIRCULATION,

@@ -138,6 +138,7 @@ cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
     N_("Dirichlet"),
     N_("Homogeneous Neumann"),
     N_("Neumann"),
+    N_("Neumann (full)"),
     N_("Robin"),
     N_("Sliding")
   };
@@ -359,6 +360,7 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
   case CS_PARAM_BC_DIRICHLET:
   case CS_PARAM_BC_HMG_NEUMANN:
   case CS_PARAM_BC_NEUMANN:
+  case CS_PARAM_BC_NEUMANN_FULL:
   case CS_PARAM_BC_ROBIN:
   case CS_PARAM_BC_SLIDING:
   case CS_PARAM_BC_CIRCULATION:

@@ -508,7 +508,7 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
                     int                        *icodcl,
                     double                     *rcodcl)
 {
-  assert(eqp->dim*3 == def->dim);
+  assert(eqp->dim == def->dim);
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
@@ -518,14 +518,12 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 
   case CS_XDEF_BY_VALUE:
     {
-      /* Vector values per component
-         for CDO, scalar (1st component) for legacy */
-      const int dim = def->dim/3;
+      const int dim = def->dim;
       const cs_real_t *constant_vals = (cs_real_t *)def->context;
 
       for (int coo_id = 0; coo_id < dim; coo_id++) {
 
-        const cs_real_t value = constant_vals[coo_id*3];
+        const cs_real_t value = constant_vals[coo_id];
 
         int        *_icodcl = icodcl + (var_id+coo_id)*n_b_faces;
         cs_real_t  *_rcodcl3 = rcodcl + 2*n_b_faces*nvar

@@ -433,9 +433,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   const char *z_name = boundaries->label[izone];
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
 
-  cs_real_t value[27] = {0, 0, 0, 0, 0, 0, 0, 0, 0,
-                         0, 0, 0, 0, 0, 0, 0, 0, 0,
-                         0, 0, 0, 0, 0, 0, 0, 0, 0};
+  cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   assert(dim <= 9);
 
   bool possibly_incomplete = false;
@@ -471,11 +469,9 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
           possibly_incomplete = true;
       }
       else if (! strcmp(choice, "neumann")) {
-        /* Vector values per component for CDO,
-           scalar (1st component) for legacy */
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
         if (v != NULL) {
-          value[i*3] = *v;
+          value[i] = *v;
         }
       }
       else if (! strcmp(choice, "dirichlet_formula")) {

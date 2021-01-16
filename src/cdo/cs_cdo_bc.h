@@ -214,6 +214,9 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
   case CS_PARAM_BC_NEUMANN:
     ret_flag = CS_CDO_BC_NEUMANN;
     break;
+  case CS_PARAM_BC_NEUMANN_FULL:
+    ret_flag = CS_CDO_BC_NEUMANN;
+    break;
   case CS_PARAM_BC_ROBIN:
     ret_flag = CS_CDO_BC_ROBIN;
     break;

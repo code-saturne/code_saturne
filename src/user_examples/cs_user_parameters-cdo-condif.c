@@ -521,7 +521,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
      -> eq is the structure related to the equation to set
      -> type of boundary condition:
         CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
-        CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
+        CS_PARAM_BC_NEUMANN_FULL, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
 
      >> cs_equation_add_bc_by_value(eqp,
                                     bc_type,
