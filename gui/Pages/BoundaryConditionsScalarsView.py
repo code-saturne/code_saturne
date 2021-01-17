@@ -144,11 +144,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
         self.modelTypeMeteo   = ComboModel(self.comboBoxTypeMeteo, 1, 1)
 
-        self.modelTypeThermal.addItem(self.tr("Prescribed temperature value"), 'dirichlet')
+        self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeMeteo.addItem(  self.tr("Prescribed value"), 'dirichlet')
 
-        self.modelTypeThermal.addItem(self.tr("Prescribed temperature value (user law)"), 'dirichlet_formula')
+        self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
         self.modelTypeMeteo.addItem(  self.tr("Prescribed value (user law)"), 'dirichlet_formula')
 

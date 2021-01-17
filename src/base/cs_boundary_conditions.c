@@ -1279,11 +1279,10 @@ cs_boundary_conditions_compute(int         nvar,
     int var_id = cs_field_get_key_int(f, var_id_key) - 1;
     assert(var_id >= 0);
 
-    /* Conversion flag for enthalpy (temperature given) */
+    /* Conversion flag for enthalpy (temperature given);
+       not active yet in GUI and XML. */
 
     int icodcl_m = 1;
-    if (f == CS_F_(h))
-      icodcl_m = -1;
 
     /* Loop on boundary conditions */
 

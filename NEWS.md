@@ -3,10 +3,6 @@ Master (not on release branches yet)
 
 User changes:
 
-- GUI: when the thermal scalar is the enthalphy, Dirichlet-type
-  boundary conditions are now given based on the temperature, and
-  not directly in terms of enthalpy.
-
 - When solving for enthalpy, multiplying a face's boundary condition
   code (icodcl) by -1 allows defining it by temperature instead.
 
