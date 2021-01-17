@@ -183,9 +183,9 @@ else if (ippmod(icfuel).ge.0) then
 
 else if (ippmod(ielarc).ge.1) then
 
-  allocate(cvar_ycoel(ngazg-1))
+  allocate(cvar_ycoel(ngazge-1))
 
-  do iesp = 1, ngazg-1
+  do iesp = 1, ngazge-1
     write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
     call field_get_val_prev_s_by_name(trim(f_name), cvar_ycoel(iesp)%p)
   enddo
