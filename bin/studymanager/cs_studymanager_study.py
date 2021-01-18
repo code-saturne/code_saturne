@@ -343,7 +343,7 @@ class Case(object):
 
             if len(src_files) > 0:
                 self.is_compiled = "OK"
-                retcode += compile_and_link(self.pkg, s, dest_dir,
+                retcode += compile_and_link(self.pkg, self.pkg.solver, s, dest_dir,
                                             stdout=log, stderr=log)
 
         if retcode > 0:
