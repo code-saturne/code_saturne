@@ -1929,7 +1929,7 @@ endif
 ! Get the turbulent flux model for the scalar
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
-turb_flux_model_type = turb_flux_model / 10 
+turb_flux_model_type = turb_flux_model / 10
 
 if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.turb_flux_model_type.eq.3) then
   if (iturb.ne.32.or.turb_flux_model_type.eq.3) then

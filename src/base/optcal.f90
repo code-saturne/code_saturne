@@ -1340,53 +1340,51 @@ module optcal
     end subroutine cs_f_porous_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
-    ! Stokes options structure
+    ! velocity pressure model options structure
 
-    subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
-                                                arak  , rcfact, ipucou, iccvfg,&
-                                                idilat, epsdp , itbrrb, iphydr,&
-                                                igprij, igpust,                &
-                                                iifren, icalhy, irecmf,        &
-                                                fluid_solid)                   &
-      bind(C, name='cs_f_stokes_options_get_pointers')
+    subroutine cs_f_velocity_pressure_model_get_pointers  &
+      (ivisse, idilat, fluid_solid, n_buoyant_scal)  &
+      bind(C, name='cs_f_velocity_pressure_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak, rcfact
-      type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
-      type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
-      type(c_ptr), intent(out) :: fluid_solid
-    end subroutine cs_f_stokes_options_get_pointers
+      type(c_ptr), intent(out) :: ivisse, idilat, fluid_solid, n_buoyant_scal
+    end subroutine cs_f_velocity_pressure_model_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
+    ! velocity pressure parameters structure
+
+    subroutine cs_f_velocity_pressure_param_get_pointers  &
+      (iphydr, icalhy, iprco, irevmc, iifren, irecmf,  &
+       igprij, igpust, ipucou, arak, rcfact, nterup, epsup,  &
+       xnrmu, xnrmu0, c_epsdp)  &
+      bind(C, name='cs_f_velocity_pressure_param_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iphydr, icalhy, iprco, irevmc, iifren
+      type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, arak
+      type(c_ptr), intent(out) :: rcfact, nterup, epsup
+      type(c_ptr), intent(out) :: xnrmu, xnrmu0, c_epsdp
+    end subroutine cs_f_velocity_pressure_param_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global spatial discretisation options structure
 
-    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra, iflxmw)         &
+    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra, iflxmw, itbrrb)   &
       bind(C, name='cs_f_space_disc_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: imvisf, imrgra, iflxmw
+      type(c_ptr), intent(out) :: imvisf, imrgra, iflxmw, itbrrb
     end subroutine cs_f_space_disc_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global time schemeoptions structure
 
-    subroutine cs_f_time_scheme_get_pointers(ischtp, isto2t, thetst)                &
+    subroutine cs_f_time_scheme_get_pointers(ischtp, isto2t, thetst, iccvfg)  &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ischtp, isto2t, thetst
+      type(c_ptr), intent(out) :: ischtp, isto2t, thetst, iccvfg
     end subroutine cs_f_time_scheme_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global velocity-pressure inner iterations structure
-
-    subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0,         &
-                                      n_buoyant_scal)                       &
-      bind(C, name='cs_f_piso_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: nterup, epsup, xnrmu, xnrmu0, n_buoyant_scal
-    end subroutine cs_f_piso_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global restart_auxiliary options structure
@@ -1677,7 +1675,7 @@ contains
   !> \brief Initialize Fortran Stokes options API.
   !> This maps Fortran pointers to global C structure members.
 
-  subroutine stokes_options_init
+  subroutine velocity_pressure_options_init
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1685,39 +1683,46 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact
-    type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
+    type(c_ptr) :: c_ipucou, c_idilat, c_epsdp, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
+    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
 
     call cs_f_porous_model_get_pointers(c_iporos)
-    call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_rcfact, c_ipucou,  &
-                                          c_iccvfg,  &
-                                          c_idilat, c_epsdp , c_itbrrb,  &
-                                          c_iphydr, c_igprij, c_igpust,  &
-                                          c_iifren, c_icalhy, c_irecmf,  &
-                                          c_fluid_solid)
 
     call c_f_pointer(c_iporos, iporos)
+
+    call cs_f_velocity_pressure_model_get_pointers  &
+      (c_ivisse, c_idilat, c_fluid_solid, c_n_buoyant_scal)
+
     call c_f_pointer(c_ivisse, ivisse)
-    call c_f_pointer(c_irevmc, irevmc)
-    call c_f_pointer(c_iprco , iprco )
-    call c_f_pointer(c_arak  , arak  )
-    call c_f_pointer(c_rcfact, rcfact)
-    call c_f_pointer(c_ipucou, ipucou)
-    call c_f_pointer(c_iccvfg, iccvfg)
     call c_f_pointer(c_idilat, idilat)
-    call c_f_pointer(c_epsdp , epsdp )
-    call c_f_pointer(c_itbrrb, itbrrb)
+    call c_f_pointer(c_fluid_solid, fluid_solid)
+    call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
+
+    call cs_f_velocity_pressure_param_get_pointers  &
+      (c_iphydr, c_icalhy, c_iprco, c_irevmc, c_iifren, c_irecmf,  &
+       c_igprij, c_igpust, c_ipucou, c_arak, c_rcfact, c_nterup, c_epsup,  &
+       c_xnrmu, c_xnrmu0, c_epsdp)
+
     call c_f_pointer(c_iphydr, iphydr)
+    call c_f_pointer(c_icalhy, icalhy)
+    call c_f_pointer(c_iprco , iprco )
+    call c_f_pointer(c_irevmc, irevmc)
+    call c_f_pointer(c_iifren, iifren)
+    call c_f_pointer(c_irecmf, irecmf)
     call c_f_pointer(c_igprij, igprij)
     call c_f_pointer(c_igpust, igpust)
-    call c_f_pointer(c_iifren, iifren)
-    call c_f_pointer(c_icalhy, icalhy)
-    call c_f_pointer(c_irecmf, irecmf)
-    call c_f_pointer(c_fluid_solid, fluid_solid)
+    call c_f_pointer(c_ipucou, ipucou)
+    call c_f_pointer(c_arak  , arak  )
+    call c_f_pointer(c_rcfact, rcfact)
+    call c_f_pointer(c_nterup, nterup)
+    call c_f_pointer(c_epsup, epsup)
+    call c_f_pointer(c_xnrmu, xnrmu)
+    call c_f_pointer(c_xnrmu0, xnrmu0)
+    call c_f_pointer(c_epsdp , epsdp )
 
-  end subroutine stokes_options_init
+  end subroutine velocity_pressure_options_init
 
   !> \brief Initialize Fortran space discretisation options API.
   !> This maps Fortran pointers to global C structure members.
@@ -1729,13 +1734,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_imvisf, c_imrgra, c_iflxmw
+    type(c_ptr) :: c_imvisf, c_imrgra, c_iflxmw, c_itbrrb
 
-    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra, c_iflxmw)
+    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra, c_iflxmw, c_itbrrb)
 
     call c_f_pointer(c_imvisf, imvisf)
     call c_f_pointer(c_imrgra, imrgra)
     call c_f_pointer(c_iflxmw, iflxmw)
+    call c_f_pointer(c_itbrrb, itbrrb)
 
   end subroutine space_disc_options_init
 
@@ -1749,38 +1755,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ischtp, c_isto2t, c_thetst
+    type(c_ptr) :: c_ischtp, c_isto2t, c_thetst, c_iccvfg
 
-    call cs_f_time_scheme_get_pointers(c_ischtp, c_isto2t, c_thetst)
+    call cs_f_time_scheme_get_pointers(c_ischtp, c_isto2t, c_thetst, c_iccvfg)
 
     call c_f_pointer(c_ischtp, ischtp)
     call c_f_pointer(c_isto2t, isto2t)
     call c_f_pointer(c_thetst, thetst)
+    call c_f_pointer(c_iccvfg, iccvfg)
 
   end subroutine time_scheme_options_init
-
-  !> \brief Initialize Fortran inner iteration options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine piso_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
-
-    call cs_f_piso_get_pointers(c_nterup, c_epsup, c_xnrmu, c_xnrmu0, &
-                                c_n_buoyant_scal)
-
-    call c_f_pointer(c_nterup, nterup)
-    call c_f_pointer(c_epsup, epsup)
-    call c_f_pointer(c_xnrmu, xnrmu)
-    call c_f_pointer(c_xnrmu0, xnrmu0)
-    call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
-
-  end subroutine piso_options_init
 
   !> \brief Initialize Fortran auxiliary options API.
   !> This maps Fortran pointers to global C structure members.

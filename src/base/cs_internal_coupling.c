@@ -57,6 +57,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_coupling.h"
 #include "cs_halo.h"
+#include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_quantities.h"
@@ -66,8 +67,7 @@
 #include "cs_selector.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
-#include "cs_stokes_model.h"
-#include "cs_matrix.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

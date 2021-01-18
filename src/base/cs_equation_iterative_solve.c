@@ -1230,7 +1230,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_solving_info_t sinfo;
 
   cs_field_t *f;
-  int coupling_id = -1;
 
   cs_real_t    *xam;
   cs_real_33_t *dam;
@@ -1278,7 +1277,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   }
 
   /* Name */

@@ -2620,7 +2620,7 @@ if (nscal.ge.1) then
 
     ! Get the turbulent flux model for the scalar
     call field_get_key_int(ivarfl(isca(ii)), kturt, turb_flux_model)
-    turb_flux_model_type = turb_flux_model / 10 
+    turb_flux_model_type = turb_flux_model / 10
 
     ! --- Indicateur de prise en compte de Cp ou non
     !       (selon si le scalaire (scalaire associe pour une fluctuation)

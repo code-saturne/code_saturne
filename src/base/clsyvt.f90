@@ -816,7 +816,7 @@ double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
 ! Get the turbulent flux model for the scalar
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
-turb_flux_model_type = turb_flux_model / 10 
+turb_flux_model_type = turb_flux_model / 10
 
 if (turb_flux_model_type.ne.3) return
 

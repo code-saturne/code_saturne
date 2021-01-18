@@ -49,8 +49,6 @@
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
-#include "cs_mesh_location.h"
-#include "cs_stokes_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -663,12 +661,6 @@ cs_time_step_log_setup(void)
 
     }
   }
-
-  /* Frozen velocity field */
-  if (cs_glob_stokes_model->iccvfg)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("  Frozen velocity field\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/

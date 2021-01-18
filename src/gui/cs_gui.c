@@ -65,6 +65,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_geom.h"
+#include "cs_gwf_physical_properties.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -91,12 +92,11 @@
 #include "cs_turbulence_model.h"
 #include "cs_wall_functions.h"
 #include "cs_physical_constants.h"
-#include "cs_stokes_model.h"
 #include "cs_balance_by_zone.h"
 #include "cs_fan.h"
-#include "cs_volume_zone.h"
-#include "cs_gwf_physical_properties.h"
+#include "cs_velocity_pressure.h"
 #include "cs_vof.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -584,7 +584,7 @@ _numerical_int_parameters(const char  *param,
     cs_gui_node_get_int(tn, &choice);
     *keyword = choice;
 
-  } else if (cs_gui_strcmp(param,"piso_sweep_number")) {
+  } else if (cs_gui_strcmp(param, "piso_sweep_number")) {
 
     tn = cs_tree_get_node(tn, "velocity_pressure_algo");
     tn = cs_tree_get_node(tn, param);
@@ -1578,17 +1578,18 @@ void CS_PROCF (csidtv, CSIDTV) (void)
 
 void CS_PROCF (csiphy, CSIPHY) (void)
 {
-  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-  int result = stokes->iphydr;
+  cs_velocity_pressure_param_t *vp_param
+    = cs_get_glob_velocity_pressure_param();
+  int result = vp_param->iphydr;
   cs_tree_node_t *tn
     = cs_tree_find_node(cs_glob_tree,
                         "numerical_parameters/hydrostatic_pressure");
   cs_gui_node_get_status_int(tn, &result);
-  stokes->iphydr = result;
+  vp_param->iphydr = result;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--iphydr = %i\n", stokes->iphydr);
+  bft_printf("--iphydr = %i\n", vp_model->iphydr);
 #endif
 }
 
@@ -1823,8 +1824,8 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
                                int     *imrgra)
 {
-  cs_piso_t *piso = cs_get_glob_piso();
-  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
+  cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
 
   const char *choice = NULL;
 
@@ -1886,19 +1887,19 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
     _idilat = 4;
 
   if (_idilat > -1)
-    stokes->idilat = _idilat;
+    vp_model->idilat = _idilat;
 
-  _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
-  _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
-  _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
+  _numerical_int_parameters("gradient_transposed", &(vp_model->ivisse));
+  _numerical_int_parameters("velocity_pressure_coupling", &(vp_param->ipucou));
+  _numerical_int_parameters("piso_sweep_number", &(vp_param->nterup));
   _numerical_double_parameters("pressure_relaxation", relaxp);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--ivisse = %i\n", stokes->ivisse);
-  bft_printf("--ipucou = %i\n", stokes->ipucou);
+  bft_printf("--ivisse = %i\n", vp_model->ivisse);
+  bft_printf("--ipucou = %i\n", vp_model->ipucou);
   bft_printf("--imrgra = %i\n", *imrgra);
-  bft_printf("--nterup = %i\n", piso->nterup);
+  bft_printf("--nterup = %i\n", vp_param->nterup);
   bft_printf("--relaxp = %f\n", *relaxp);
 #endif
 }
@@ -2075,7 +2076,6 @@ void CS_PROCF (cssca2, CSSCA2) (void)
 
   /* Specific physics: the min max of the model scalar are not given */
   const int keysca = cs_field_key_id("scalar_id");
-  const int kscavr = cs_field_key_id("first_moment_id");
   const int kturt  = cs_field_key_id("turbulent_flux_model");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {

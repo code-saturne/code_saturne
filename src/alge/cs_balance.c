@@ -58,6 +58,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_convection_diffusion.h"
 #include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
@@ -69,8 +70,7 @@
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
-#include "cs_stokes_model.h"
-#include "cs_convection_diffusion.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

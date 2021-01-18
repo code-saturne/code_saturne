@@ -46,6 +46,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_ctwr.h"
+#include "cs_combustion_model.h"
 #include "cs_domain.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -55,7 +56,6 @@
 #include "cs_physical_constants.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
-#include "cs_stokes_model.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_turbomachinery.h"
@@ -63,8 +63,8 @@
 #include "cs_rotation.h"
 #include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
+#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
-#include "cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -134,12 +134,13 @@ _log_global_model_options(void)
   cs_turb_constants_log_setup();
 
   cs_time_step_log_setup();
+  cs_time_scheme_log_setup();
 
-  /* Stokes model*/
-  cs_stokes_model_log_setup();
+  /* Velocity-pressure model*/
+  cs_velocity_pressure_model_log_setup();
 
-  /* Velocity pressure coupling */
-  cs_velocity_pressure_coupling_log_setup();
+  /* Velocity-pressure parameters */
+  cs_velocity_pressure_param_log_setup();
 
   /* Atmospheric */
   cs_atmo_log_setup();
@@ -153,7 +154,7 @@ _log_global_model_options(void)
   /* Combustion */
   cs_combustion_log_setup();
 
-  /* TODO : Partie iroext etc... */
+  /* TODO: iroext, etc... */
 
   /* Face viscosity */
   cs_space_disc_log_setup();

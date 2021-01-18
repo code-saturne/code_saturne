@@ -511,58 +511,13 @@ cs_user_parameters(cs_domain_t *domain)
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 
-  /* Members of the structure cs_glob_stokes_model:
-   *  ivisse: take viscous term of transposed velocity
-   *          gradient into account in momentum equation
-   *                   - 1: true (default)
-   *                   - 0: false
-   *  arak: Arakawa multiplicator for the Rhie and Chow
-   *        filter (1 by default)
-   *  ipucou: pseudo coupled pressure-velocity solver
-   *                   - 0: false (default)
-   *                   - 1: true
-   *  irevmc: reconstruct the velocity field after correction step
-   *                   - 0: with the pressure increment gradient (default)
-   *                   - 1: with an RT0 like formula using the mass fluxes
-   *  iccvfg: calculation with a fixed velocity field
-   *                   - 0: false (default)
-   *                   - 1: true
-   *  idilat: algorithm to take into account the density
-   *          variation in time
-   *                   - 0: Boussinesq approximation
-   *                   - 1: dilatable steady algorithm (default)
-   *                   - 2: dilatable unsteady algorithm
-   *                   - 3: low-Mach algorithm
-   *                   - 4: algorithm for fire
-   *                   - 0: boussinesq algorithm with constant
-   *                   density (not yet available)
-   *  iphydr: improve hydrostatic pressure algorithm
-   *                   - 0: no treatment (default)
-   *                   - 1: impose the equilibrium of the hydrostaic
-   *                     part of the pressure with any external force,
-   *                     even head losses
-   *                   - 2: compute an hydrostatic pressure due to
-   *                     buoyancy forces before the prediction step
-   *  igprij: improve static pressure algorithm
-   *                   - 0: no treatment (default)
-   *                   - 1: take -div(rho R) in the static pressure
-   *                     treatment IF iphydr=1
-   *  igpust: improve static pressure algorithm
-   *                   - 0: no treatment
-   *                   - 1: take user momemtum source terms in the
-   *                     static pressure treatment IF iphydr=1 (default)
-   *  fluid_solid: Has a solid zone where dynamics must be killed?
-   *                   - false (default)
-   *                   - true
-   *
-   */
-
-  /*! [param_stokes_model] */
+  /*! [param_vp_arak] */
   {
-    cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-    stokes->arak = 0.;
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    vp_param->arak = 0.;
   }
-  /*! [param_stokes_model] */
+  /*! [param_vp_arak] */
 
   /* Example: change Reference fluid properties options */
   /*----------------------------------------------------*/
@@ -736,12 +691,12 @@ cs_user_parameters(cs_domain_t *domain)
    * - epsup: relative precision (default 10e-5)
    *------------------------------------*/
 
-  /*! [param_piso] */
+  /*! [param_vp_netrup] */
   {
-    cs_piso_t *piso = cs_get_glob_piso();
-    piso->nterup = 3;
+    cs_velocity_pressure_param_t *vp_param = cs_get_glob_velocity_pressure_param();
+    vp_param->nterup = 3;
   }
-  /*! [param_piso] */
+  /*! [param_vp_netrup] */
 
   /* Example: activate the porous model
    * - 0 No porosity taken into account (Default)
@@ -1303,8 +1258,9 @@ cs_user_internal_coupling(void)
                                   "x<.5"); /* Solid volume criterion */
 
   /* Activate fluid-solid mode to kill dynamic in the solid */
-  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-  stokes->fluid_solid = true;
+  cs_velocity_pressure_model_t *vp_model
+    = cs_get_glob_velocity_pressure_model();
+  vp_model->fluid_solid = true;
 
   /*! [param_internal_coupling_add_volume] */
 

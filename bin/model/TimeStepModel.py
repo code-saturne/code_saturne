@@ -215,14 +215,14 @@ class TimeStepModel(Model):
         node = self.node_np.xmlInitNode('velocity_pressure_algo', 'choice')
         node['choice'] = value
         if value == 'simple' or value =='simplec':
-            self.setPisoSweepNumber(1)
-        elif self.getPisoSweepNumber() < self.defaultValues()['piso_sweep_number']:
+            self.setVelocityPressureParamSweepNumber(1)
+        elif self.getVelocityPressureParamSweepNumber() < self.defaultValues()['piso_sweep_number']:
             value = self.defaultValues()['piso_sweep_number']
-            self.setPisoSweepNumber(value)
+            self.setVelocityPressureParamSweepNumber(value)
 
 
     @Variables.noUndo
-    def getPisoSweepNumber(self):
+    def getVelocityPressureParamSweepNumber(self):
         """
         Return piso_sweep_number value
         """
@@ -230,12 +230,12 @@ class TimeStepModel(Model):
         value = self.node_algo.xmlGetInt('piso_sweep_number')
         if not value:
             value = self.defaultValues()['piso_sweep_number']
-            self.setPisoSweepNumber(value)
+            self.setVelocityPressureParamSweepNumber(value)
         return value
 
 
     @Variables.undoLocal
-    def setPisoSweepNumber(self, value):
+    def setVelocityPressureParamSweepNumber(self, value):
         """
         Put value of NTRUP
         """

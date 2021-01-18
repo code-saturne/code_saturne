@@ -161,7 +161,6 @@ cs_search.h \
 cs_selector.h \
 cs_sort.h \
 cs_sort_partition.h \
-cs_stokes_model.h \
 cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_system_info.h \
@@ -174,6 +173,7 @@ cs_timer.h \
 cs_timer_stats.h \
 cs_tree.h \
 cs_turbomachinery.h \
+cs_velocity_pressure.h \
 cs_vof.h \
 cs_volume_zone.h \
 cs_volume_mass_injection.h \
@@ -323,7 +323,6 @@ cs_selector.c \
 cs_selector_f2c.f90 \
 cs_sort.c \
 cs_sort_partition.c \
-cs_stokes_model.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
 cs_thermal_model.c \
@@ -335,6 +334,7 @@ cs_time_plot.c \
 cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
+cs_velocity_pressure.c \
 cs_vof.c \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \

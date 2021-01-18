@@ -70,13 +70,13 @@
 #include "cs_prototypes.h"
 #include "cs_renumber.h"
 #include "cs_rotation.h"
-#include "cs_stokes_model.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -964,7 +964,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
   BFT_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
 
-  int hyd_p_flag = cs_glob_stokes_model->iphydr;
+  int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
   cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
     (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val:NULL;
 

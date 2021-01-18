@@ -260,7 +260,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         else:
             self.spinBoxNTERUP.hide()
 
-        value = self.mdl.getPisoSweepNumber()
+        value = self.mdl.getVelocityPressureParamSweepNumber()
         self.spinBoxNTERUP.setValue(value)
 
         if idtvar == -1:
@@ -406,7 +406,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.mdl.setVelocityPressureAlgorithm(NTERUP)
         if NTERUP == 'piso':
             self.spinBoxNTERUP.show()
-            value = self.mdl.getPisoSweepNumber()
+            value = self.mdl.getVelocityPressureParamSweepNumber()
             self.spinBoxNTERUP.setValue(value)
         else:
             self.spinBoxNTERUP.hide()
@@ -417,9 +417,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
     @pyqtSlot(int)
     def slotNTERUP2(self, var):
         """
-        Set value for parameter piso sweep number
+        Set value for velocity-pressure parameter sweep number
         """
-        self.mdl.setPisoSweepNumber(var)
+        self.mdl.setVelocityPressureParamSweepNumber(var)
         log.debug("slotNTERUP2-> %s" % var)
 
 

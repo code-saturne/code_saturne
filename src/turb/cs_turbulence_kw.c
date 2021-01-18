@@ -68,11 +68,11 @@
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
-#include "cs_stokes_model.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_turbulence_rotation.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -693,7 +693,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     /* Boussinesq approximation, only for the thermal scalar for the moment */
 
-    if (cs_glob_stokes_model->idilat == 0) {
+    if (cs_glob_velocity_pressure_model->idilat == 0) {
 
       cs_field_gradient_scalar(f_thm,
                                true,

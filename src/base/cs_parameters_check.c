@@ -65,11 +65,11 @@
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_model.h"
-#include "cs_stokes_model.h"
 #include "cs_syr_coupling.h"
 #include "cs_wall_functions.h"
 #include "cs_convection_diffusion.h"
 #include "cs_thermal_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -818,6 +818,7 @@ cs_parameters_check(void)
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
 
+
   const cs_domain_t  *domain = cs_glob_domain;
   if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_ONLY)
     return; /* Avoid the detection of false setting errors when using
@@ -826,13 +827,19 @@ cs_parameters_check(void)
   cs_field_t *f_pot = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0) {
     f_pot = CS_F_(head);
-    if (cs_glob_stokes_model->iphydr != 0) {
-      cs_stokes_model_t *vp = cs_get_glob_stokes_model();
-      vp->iphydr = 0;
+    if (cs_glob_velocity_pressure_param->iphydr != 0) {
+      cs_velocity_pressure_param_t *_vp_param
+        = cs_get_glob_velocity_pressure_param();
+      _vp_param->iphydr = 0;
     }
   }
   else
     f_pot = CS_F_(p);
+
+  const cs_velocity_pressure_model_t *vp_model
+    = cs_glob_velocity_pressure_model;
+  const cs_velocity_pressure_param_t *vp_param
+    = cs_glob_velocity_pressure_param;
 
   cs_field_t *f_th = cs_thermal_model_field();
 
@@ -1075,10 +1082,11 @@ cs_parameters_check(void)
    * For the moment, we forbid nterup > 1 with
    * estimators, weight matrix (reinforced U-P coupling), hydrostatic pressure
    * and steady algorithm. */
-  cs_parameters_is_positive_int(CS_ABORT_DELAYED,
-                                _("while reading input data"),
-                                "cs_glob_piso->nterup (Navier-Stokes sub-iterations)",
-                                cs_glob_piso->nterup);
+  cs_parameters_is_positive_int
+    (CS_ABORT_DELAYED,
+     _("while reading input data"),
+     "cs_glob_velocity_pressure_param->nterup (Navier-Stokes sub-iterations)",
+     vp_param->nterup);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
@@ -1629,24 +1637,24 @@ cs_parameters_check(void)
   /* transposed velocity gradient term and secondary viscosity */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->ivisse",
-                                cs_glob_stokes_model->ivisse,
+                                "cs_glob_velocity_pressure_model->ivisse",
+                                vp_model->ivisse,
                                 0, 2);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->iprco",
-                                cs_glob_stokes_model->iprco,
+                                "cs_glob_velocity_pressure_param->iprco",
+                                vp_param->iprco,
                                 0, 2);
 
-  if (cs_glob_stokes_model->iprco == 1) {
+  if (vp_param->iprco == 1) {
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
-                                  "cs_glob_stokes_model->irevmc",
-                                  cs_glob_stokes_model->irevmc,
+                                  "cs_glob_velocity_pressure_param->irevmc",
+                                  vp_param->irevmc,
                                   0, 2);
 
-    cs_real_t arakfr = cs_glob_stokes_model->arak;
+    cs_real_t arakfr = vp_param->arak;
     if (cs_glob_time_step_options->idtvar < 0) {
       cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
       arakfr *= var_cal_opt.relaxv;
@@ -1654,7 +1662,7 @@ cs_parameters_check(void)
 
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                      _("while reading input data"),
-                                     "cs_glob_stokes_model->arak",
+                                     "cs_glob_velocity_pressure_param->arak",
                                      arakfr,
                                      0., 1.);
   }
@@ -1662,21 +1670,21 @@ cs_parameters_check(void)
   /* U-P reinforced coupling */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->ipucou",
-                                cs_glob_stokes_model->ipucou,
+                                "cs_glob_velocity_pressure_param->ipucou",
+                                vp_param->ipucou,
                                 0, 2);
 
   /* Dilatable algorithm: 0 to 5 */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->idilat",
-                                cs_glob_stokes_model->idilat,
+                                "cs_glob_velocity_pressure_model->idilat",
+                                vp_model->idilat,
                                 0, 6);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->iphydr",
-                                cs_glob_stokes_model->iphydr,
+                                "cs_glob_velocity_pressure_param->iphydr",
+                                vp_param->iphydr,
                                 0, 2);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -1718,7 +1726,7 @@ cs_parameters_check(void)
   }
   /* U-P reinforced coupling not compatible with theta scheme with theta
      different from 1 for the velocity */
-  if (cs_glob_stokes_model->ipucou == 1) {
+  if (vp_param->ipucou == 1) {
     cs_parameters_is_equal_double(CS_ABORT_DELAYED,
                                   _("while reading time scheme parameters,\n"
                                     "theta-scheme with theta different from 1 "
@@ -1733,8 +1741,8 @@ cs_parameters_check(void)
   /* frozen velocity field */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->iccvfg",
-                                cs_glob_stokes_model->iccvfg,
+                                "cs_glob_time_scheme->iccvfg",
+                                cs_glob_time_scheme->iccvfg,
                                 0, 2);
 
   /* face viscosity interpolation */
@@ -1819,8 +1827,8 @@ cs_parameters_check(void)
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_stokes_model->itbrrb",
-                                cs_glob_stokes_model->itbrrb,
+                                "cs_glob_space_disc->itbrrb",
+                                cs_glob_space_disc->itbrrb,
                                 0, 2);
 
   /* Dynamic relaxation option */

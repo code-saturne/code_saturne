@@ -125,6 +125,13 @@ BEGIN_C_DECLS
         method to compute interior mass flux due to ALE mesh velocity
         - 0: based on nodes displacement
         - 1: based on cell center mesh velocity
+
+  \var  cs_space_disc_t::itbrrb
+        accurate treatment of the wall temperature
+        (reconstruction of wall temperature)
+        - 1: true
+        - 0: false (default)
+        (see \ref condli, useful in case of coupling with syrthes)
 */
 
 /*----------------------------------------------------------------------------*/
@@ -183,28 +190,23 @@ BEGIN_C_DECLS
         -  0 : explicit
         - 1/2: extrapolated in n+1/2
         -  1 : extrapolated in n+1
-*/
 
-/*----------------------------------------------------------------------------*/
+  \var  cs_time_scheme_t::iccvfg
+        indicates whether the dynamic field should be frozen or not:
+           - 1: true
+           - 0: false (default)\n
+        In such a case, the values of velocity, pressure and the
+        variables related to the potential turbulence model
+        (\f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\varphi\f$,
+        \f$\bar{f}\f$, \f$\omega\f$, turbulent viscosity) are kept
+        constant over time and only the equations for the scalars
+        are solved.\n Also, if \ref iccvfg = 1, the physical properties
+        modified in \ref cs_user_physical_properties will keep being
+        updated. Beware of non-consistencies if these properties would
+        normally affect the dynamic field (modification of density for
+        instance).\n Useful if and only if \ref dimens::nscal "nscal"
+        \f$>\f$ 0 and the calculation is a restart.
 
-/*!
-  \struct cs_piso_t
-
-  \brief Inner velocity/pressure iteration options descriptor.
-
-  Members of this structure are publicly accessible, to allow for
-  concise  syntax, as they are expected to be used in many places.
-
-  \var  cs_piso_t::nterup
-        number of iterations on the pressure-velocity coupling on Navier-Stokes
-  \var  cs_piso_t::epsup
-        relative precision for the convergence test of the iterative process on
-        pressure-velocity coupling
-  \var  cs_piso_t::xnrmu
-        norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$ of the
-        iterative process on pressure-velocity coupling
-  \var  cs_piso_t::xnrmu0
-        norm of \f$ \vect{u}^0 \f$
 */
 
 /*----------------------------------------------------------------------------*/
@@ -322,7 +324,6 @@ static cs_equation_param_t _equation_param_default
    .dof_reduction = CS_PARAM_REDUCTION_AVERAGE,
    .space_poly_degree = 0,
 
-   .iwarni = 0,
    .iconv  = 1,
    .istat  = 1,
    .idircl = 1,
@@ -411,7 +412,8 @@ static cs_space_disc_t  _space_disc =
 {
   .imvisf = 0,
   .imrgra = 4,
-  .iflxmw = 0
+  .iflxmw = 0,
+  .itbrrb = 0
 };
 
 const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
@@ -423,22 +425,10 @@ static cs_time_scheme_t  _time_scheme =
   .time_order = -1,
   .isto2t = -999,
   .thetst = -999.0,
+  .iccvfg = 0
 };
 
 const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
-
-/* Velocity/pressure inner iterations structure and associated pointer */
-
-static cs_piso_t  _piso =
-{
-  .nterup = 1,
-  .epsup = 1e-4,
-  .xnrmu = 0.,
-  .xnrmu0 = 0.,
-  .n_buoyant_scal = 0
-};
-
-const cs_piso_t  *cs_glob_piso = &_piso;
 
 /* Auxiliary checkpoint/restart file parameters */
 
@@ -499,19 +489,15 @@ cs_tree_node_t  *cs_glob_tree = NULL;
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **imrgra,
-                             int     **iflxmw);
+                             int     **iflxmw,
+                             int     **itbrrb);
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **isto2t,
-                              double  **thetst);
-
-void
-cs_f_piso_get_pointers(int     **nterup,
-                       double  **epsup,
-                       double  **xnrmu,
-                       double  **xnrmu0,
-                       int     **n_buoyant_scal);
+                              double  **thetst,
+                              int     **iccvfg
+);
 
 void
 cs_f_restart_auxiliary_get_pointers(int  **ileaux,
@@ -758,21 +744,18 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
  *
  * This function is intended for use by Fortran wrappers, and
  * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   imvisf  --> pointer to cs_glob_space_disc->imvisf
- *   imrgra  --> pointer to cs_glob_space_disc->imrgra
- *   iflxmw  --> pointer to cs_glob_space_disc->iflxmw
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **imrgra,
-                             int     **iflxmw)
+                             int     **iflxmw,
+                             int     **itbrrb)
 {
   *imvisf = &(_space_disc.imvisf);
   *imrgra = &(_space_disc.imrgra);
   *iflxmw = &(_space_disc.iflxmw);
+  *itbrrb = &(_space_disc.itbrrb);
 }
 
 /*----------------------------------------------------------------------------
@@ -785,39 +768,13 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **isto2t,
-                              double  **thetst)
+                              double  **thetst,
+                              int     **iccvfg)
 {
   *ischtp = &(_time_scheme.time_order);
   *isto2t = &(_time_scheme.isto2t);
   *thetst = &(_time_scheme.thetst);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global piso structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   nterup          --> pointer to cs_glob_piso->nterup
- *   epsup           --> pointer to cs_glob_piso->epsup
- *   xnrmu           --> pointer to cs_glob_piso->xnrmu
- *   xnrmu0          --> pointer to cs_glob_piso->xnrmu0
- *   n_buoyant_scal  --> pointer to cs_glob_piso->n_buoyant_scal
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_piso_get_pointers(int     **nterup,
-                       double  **epsup,
-                       double  **xnrmu,
-                       double  **xnrmu0,
-                       int     **n_buoyant_scal)
-{
-  *nterup = &(_piso.nterup);
-  *epsup  = &(_piso.epsup);
-  *xnrmu  = &(_piso.xnrmu);
-  *xnrmu0 = &(_piso.xnrmu0);
-  *n_buoyant_scal = &(_piso.n_buoyant_scal);
+  *iccvfg = &(_time_scheme.iccvfg);
 }
 
 /*----------------------------------------------------------------------------
@@ -962,7 +919,7 @@ cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt)
  *
  * Needed to initialize structure with GUI and user C functions.
  *
- * \return  piso information structure
+ * \return  velocity_pressure information structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -986,46 +943,6 @@ cs_time_scheme_t *
 cs_get_glob_time_scheme(void)
 {
   return &_time_scheme;
-}
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Provide access to cs_glob_piso.
- *
- * Needed to initialize structure with GUI.
- *
- * \return  piso information structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_piso_t *
-cs_get_glob_piso(void)
-{
-  return &_piso;
-}
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Count and set number of buoyant scalars.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_set_n_buoyant_scalars(void)
-{
-  const int n_fields = cs_field_n_fields();
-  const int key_sca = cs_field_key_id("scalar_id");
-  const int key_buo = cs_field_key_id("is_buoyant");
-
-  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (   f->type & CS_FIELD_VARIABLE
-        && cs_field_get_key_int(f, key_sca) > -1) {
-      if (cs_field_get_key_int(f, key_buo)) {
-        _piso.n_buoyant_scal += 1;
-      }
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1679,6 +1596,32 @@ cs_parameters_var_cal_opt_default(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print the time scheme structure to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_scheme_log_setup(void)
+{
+  if (cs_glob_time_scheme->iccvfg == 0)
+    return;
+
+  /* TODO handle other terms */
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Time discretization options\n"
+                 "----------------------------\n\n"));
+
+  /* Frozen velocity field */
+  if (cs_glob_time_scheme->iccvfg)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Frozen velocity field\n\n"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the space discretization structure to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -1729,33 +1672,6 @@ cs_space_disc_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("    iflxmw:    %s\n"),
                 _(iflxmw_value_str[cs_glob_space_disc->iflxmw]));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print Velocity-pressure coupling options to setup.log.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_velocity_pressure_coupling_log_setup(void)
-{
-  cs_log_printf(CS_LOG_SETUP,
-                ("\n"
-                 "Velocity Pressure coupling\n"
-                 "--------------------------\n\n"));
-
-  cs_log_printf(CS_LOG_SETUP,
-                ("\n"
-                 "    nterup:    %d (number of U-P sub iterations)\n"),
-                _piso.nterup);
-
-  if (_piso.nterup > 1) {
-    cs_log_printf(CS_LOG_SETUP,
-                  ("\n"
-                   "    epsup:     %f (number of U-P sub iterations)\n"),
-                  _piso.nterup);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

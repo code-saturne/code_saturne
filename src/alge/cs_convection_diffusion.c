@@ -50,9 +50,12 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
+#include "cs_bad_cells_regularisation.h"
+#include "cs_boundary_conditions.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
@@ -67,10 +70,7 @@
 #include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
-#include "cs_stokes_model.h"
-#include "cs_boundary_conditions.h"
-#include "cs_internal_coupling.h"
-#include "cs_bad_cells_regularisation.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -11667,7 +11667,7 @@ cs_diffusion_potential(const int                 f_id,
 
   char var_name[64];
   int tr_dim = 0;
-  int mass_flux_rec_type = cs_glob_stokes_model->irecmf;
+  int mass_flux_rec_type = cs_glob_velocity_pressure_param->irecmf;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;

@@ -2324,7 +2324,7 @@ endif
 ! Get the turbulent flux model for the scalar
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
-turb_flux_model_type = turb_flux_model / 10 
+turb_flux_model_type = turb_flux_model / 10
 
 if (    iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0             &
     .or.turb_flux_model_type.eq.3) then
@@ -3101,10 +3101,10 @@ call field_get_key_double(f_id, ksigmas, turb_schmidt)
 ! Reference diffusivity
 call field_get_key_double(f_id, kvisl0, visls_0)
 
-! Get the turbulent flux model 
+! Get the turbulent flux model
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
-turb_flux_model_type = turb_flux_model / 10 
+turb_flux_model_type = turb_flux_model / 10
 
 isvhbl = 0
 if (iscal.eq.isvhb) then

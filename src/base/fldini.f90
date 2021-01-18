@@ -755,7 +755,7 @@ endif
 
 ! Check if scalars are buoyant and set n_buoyant_scal accordingly.
 ! It is then used in tridim to update buoyant scalars and density in U-P loop
-call cs_parameters_set_n_buoyant_scalars
+call cs_velocity_pressure_set_n_buoyant_scalars
 
 ! For Low Mach and compressible (increment) algorithms, a particular care
 ! must be taken when dealing with density in the unsteady term in the velocity

@@ -3073,11 +3073,11 @@ module cs_c_bindings
 
     ! Interface to C function to count number of buoyant scalars.
 
-    subroutine cs_parameters_set_n_buoyant_scalars()   &
-      bind(C, name='cs_parameters_set_n_buoyant_scalars')
+    subroutine cs_velocity_pressure_set_n_buoyant_scalars()   &
+      bind(C, name='cs_velocity_pressure_set_n_buoyant_scalars')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_parameters_set_n_buoyant_scalars
+    end subroutine cs_velocity_pressure_set_n_buoyant_scalars
 
     !---------------------------------------------------------------------------
 

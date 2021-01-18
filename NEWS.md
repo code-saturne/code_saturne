@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
+  * Structures are renamed to "cs_velocity_coupling_model_t" and
+    "cs_velocity_coupling_param_t", and members are distributed in a more
+    logical and consistent manner.
+
 - When solving for enthalpy, multiplying a face's boundary condition
   code (icodcl) by -1 allows defining it by temperature instead.
 

@@ -1,5 +1,5 @@
 /*============================================================================
- * Stokes equation model data.
+ * Velocity-pressure coupling model and parameters.
  *============================================================================*/
 
 /*
@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -62,7 +63,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_stokes_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -73,17 +74,21 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_stokes_model.c
-        Stokes equation model data.
+  \file cs_velocity_pressure.c
+        Velocity-pressure coupling model and parameters.
+*/
 
-  \struct cs_stokes_model_t
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \struct cs_velocity_pressure_model_t
 
   \brief Stokes equation model descriptor.
 
   Members of these Stokes equation model descriptor are publicly accessible, to
   allow for concise syntax, as it is expected to be used in many places.
 
-  \var  cs_stokes_model_t::ivisse
+  \var  cs_velocity_pressure_model_t::ivisse
         <a name="ivisse"></a>
         Indicates whether the source terms in transposed gradient
         and velocity divergence should be taken into account in the
@@ -94,47 +99,8 @@ BEGIN_C_DECLS
         +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
         - 0: not taken into account,
         - 1: taken into account.
-  \var  cs_stokes_model_t::irevmc
-        reconstruction of the velocity field with the updated pressure option
-        - 0: standard gradient of pressure increment (default)
-  \var  cs_stokes_model_t::iprco
-        compute the pressure step thanks to the continuity equation
-        - 1: true (default)
-        - 0: false
-  \var  cs_stokes_model_t::arak
-        <a name="arak"></a>
-        Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
-        Please refer to the
-        <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
-        of the theory guide for more informations.
-  \var  cs_stokes_model_t::rcfact
-        <a name="rcfact"></a>
-        Factor of the Rhie and Chow filter:\n
-        - 0: dt (by default),\n
-        - 1: 1/A_u.\n
-  \var  cs_stokes_model_t::ipucou
-        indicates the algorithm for velocity/pressure coupling:
-        - 0: standard algorithm,
-        - 1: reinforced coupling in case calculation with long time steps\n
-        Always useful (it is seldom advised, but it can prove very useful,
-        for instance, in case of flows with weak convection effects and
-        highly variable viscosity).
-  \var  cs_stokes_model_t::iccvfg
-        indicates whether the dynamic field should be frozen or not:
-           - 1: true
-           - 0: false (default)\n
-        In such a case, the values of velocity, pressure and the
-        variables related to the potential turbulence model
-        (\f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\varphi\f$,
-        \f$\bar{f}\f$, \f$\omega\f$, turbulent viscosity) are kept
-        constant over time and only the equations for the scalars
-        are solved.\n Also, if \ref iccvfg = 1, the physical properties
-        modified in \ref cs_user_physical_properties will keep being
-        updated. Beware of non-consistencies if these properties would
-        normally affect the dynamic field (modification of density for
-        instance).\n Useful if and only if \ref dimens::nscal "nscal"
-        \f$>\f$ 0 and the calculation is a restart.
-  \var  cs_stokes_model_t::idilat
+
+  \var  cs_velocity_pressure_model_t::idilat
         algorithm to take into account the density variation in time
         - 0: Boussinesq approximation (rho constant except in the buoyant
              term where \f$\Delta \rho \vect{g} = - \rho \beta \Delta T \vect{g} \f$
@@ -142,15 +108,24 @@ BEGIN_C_DECLS
         - 2: dilatable unsteady algorithm
         - 3: low-Mach algorithm
         - 4: algorithm for fire
-  \var  cs_stokes_model_t::epsdp
-        parameter of diagonal pressure strengthening
-  \var  cs_stokes_model_t::itbrrb
-        accurate treatment of the wall temperature
-        (reconstruction of wall temperature)
-        - 1: true
-        - 0: false (default)
-        (see \ref condli, useful in case of coupling with syrthes)
-  \var  cs_stokes_model_t::iphydr
+
+  \var  cs_velocity_pressure_model_t::fluid_solid
+        Has a solid zone where dynamics must be killed?
+        - false (default)
+        - true
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \struct cs_velocity_pressure_param_t
+
+  \brief Inner velocity/pressure iteration options descriptor.
+
+  Members of this structure are publicly accessible, to allow for
+  concise  syntax, as they are expected to be used in many places.
+
+  \var  cs_velocity_pressure_param_t::iphydr
         <a name="iphydr"></a>
         improve static pressure algorithm
         Take into account the balance or imbalance between the pressure
@@ -178,22 +153,8 @@ BEGIN_C_DECLS
         instabilities. Please refer to the
         <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
         section of the theory guide for more informations.
-  \var  cs_stokes_model_t::igprij
-        improve static pressure algorithm
-        - 1: take -div(rho R) in the static pressure
-          treatment IF iphydr=1
-        - 0: no treatment (default)
-  \var  cs_stokes_model_t::igpust
-        improve static pressure algorithm
-        - 1: take user momentum source terms in the static pressure
-          treatment IF iphydr=1
-        - 0: no treatment (default)
-  \var  cs_stokes_model_t::iifren
-        indicates the presence of a Bernoulli boundary face (automatically
-        computed)
-        - 0: no face
-        - 1: at least one face
-  \var  cs_stokes_model_t::icalhy
+
+  \var  cs_velocity_pressure_model_t::icalhy
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
         - 1: calculation of the hydrostatic pressure at the outlet boundary
@@ -207,17 +168,81 @@ BEGIN_C_DECLS
         just along an outlet boundary, it is necessary to specify \ref icalhy = 0
         in order to deactivate the recalculation of the hydrostatic pressure
         at the boundary, which may otherwise cause instabilities
-  \var  cs_stokes_model_t::irecmf
+
+  \var  cs_velocity_pressure_param_t::iprco
+        compute the pressure step thanks to the continuity equation
+        - 1: true (default)
+        - 0: false
+
+  \var  cs_velocity_pressure_param_t::irevmc
+        reconstruction of the velocity field with the updated pressure option
+        - 0: standard gradient of pressure increment (default)
+
+  \var  cs_velocity_pressure_model_t::iifren
+        indicates the presence of a Bernoulli boundary face (automatically
+        computed)
+        - 0: no face
+        - 1: at least one face
+
+  \var  cs_velocity_pressure_model_t::irecmf
         use interpolated face diffusion coefficient instead of cell diffusion
         coefficient for the mass flux reconstruction for the
         non-orthogonalities
         - 1: true
         - 0: false (default)
-  \var  cs_stokes_model_t::fluid_solid
-        Has a solid zone where dynamics must be killed?
-        - false (default)
-        - true
+
+  \var  cs_velocity_pressure_model_t::igprij
+        improve static pressure algorithm
+        - 1: take -div(rho R) in the static pressure
+          treatment IF iphydr=1
+        - 0: no treatment (default)
+
+  \var  cs_velocity_pressure_model_t::igpust
+        improve static pressure algorithm
+        - 1: take user momentum source terms in the static pressure
+          treatment IF iphydr=1
+        - 0: no treatment (default)
+
+  \var  cs_velocity_pressure_model_t::ipucou
+        indicates the algorithm for velocity/pressure coupling:
+        - 0: standard algorithm,
+        - 1: reinforced coupling in case calculation with long time steps\n
+        Always useful (it is seldom advised, but it can prove very useful,
+        for instance, in case of flows with weak convection effects and
+        highly variable viscosity).
+
+  \var  cs_velocity_pressure_model_t::arak
+        <a name="arak"></a>
+        Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
+        Please refer to the
+        <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
+        of the theory guide for more informations.
+
+  \var  cs_velocity_pressure_model_t::rcfact
+        <a name="rcfact"></a>
+        Factor of the Rhie and Chow filter:\n
+        - 0: dt (by default),\n
+        - 1: 1/A_u.\n
+
+  \var  cs_velocity_pressure_param_t::nterup
+        number of iterations on the pressure-velocity coupling on Navier-Stokes
+
+  \var  cs_velocity_pressure_param_t::epsup
+        relative precision for the convergence test of the iterative process on
+        pressure-velocity coupling
+
+  \var  cs_velocity_pressure_param_t::xnrmu
+        norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$ of the
+        iterative process on pressure-velocity coupling
+
+  \var  cs_velocity_pressure_param_t::xnrmu0
+        norm of \f$ \vect{u}^0 \f$
+
+  \var  cs_velocity_pressure_param_t::epsdp
+        parameter of diagonal pressure strengthening
 */
+
+/*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -236,26 +261,40 @@ BEGIN_C_DECLS
 /* main Stokes equation model descriptor structure and associated pointer:
  * Default Options */
 
-static cs_stokes_model_t  _stokes_model = {
+static cs_velocity_pressure_model_t  _velocity_pressure_model = {
   .ivisse = 1,
-  .irevmc = 0,
-  .iprco  = 1,
-  .arak   = 1.0,
-  .rcfact = 0,
-  .ipucou = 0,
-  .iccvfg = 0,
   .idilat = 1,
-  .epsdp  = 1.e-12,
-  .itbrrb = 0,
+  .fluid_solid = false,
+  .n_buoyant_scal = 0
+};
+
+const cs_velocity_pressure_model_t  *cs_glob_velocity_pressure_model
+  = &_velocity_pressure_model;
+
+/* Velocity/pressure inner iterations structure and associated pointer */
+
+static cs_velocity_pressure_param_t  _velocity_pressure_param =
+{
   .iphydr = 1,
+  .icalhy = -1,
+  .iprco  = 1,
+  .irevmc = 0,
+  .iifren = 0,
+  .irecmf = 0,
   .igprij = 0,
   .igpust = 1,
-  .iifren = 0,
-  .icalhy = -1,
-  .irecmf = 0,
-  .fluid_solid = false};
+  .ipucou = 0,
+  .arak   = 1.0,
+  .rcfact = 0,
+  .nterup = 1,
+  .epsup = 1e-4,
+  .xnrmu = 0.,
+  .xnrmu0 = 0.,
+  .epsdp  = 1.e-12,
+};
 
-const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
+const cs_velocity_pressure_param_t  *cs_glob_velocity_pressure_param
+  = &_velocity_pressure_param;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -263,23 +302,27 @@ const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
  *============================================================================*/
 
 void
-cs_f_stokes_options_get_pointers(int     **ivisse,
-                                 int     **irevmc,
-                                 int     **iprco,
-                                 double  **arak,
-                                 int     **rcfact,
-                                 int     **ipucou,
-                                 int     **iccvfg,
-                                 int     **idilat,
-                                 double  **epsdp,
-                                 int     **itbrrb,
-                                 int     **iphydr,
-                                 int     **igprij,
-                                 int     **igpust,
-                                 int     **iifren,
-                                 int     **icalhy,
-                                 int     **irecmf,
-                                 bool    **fluid_solid);
+cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
+                                          int     **idilat,
+                                          bool    **fluid_solid,
+                                          int     **n_buoyant_scal);
+void
+cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
+                                          int     **icalhy,
+                                          int     **iprco,
+                                          int     **irevmc,
+                                          int     **iifren,
+                                          int     **irecmf,
+                                          int     **igprij,
+                                          int     **igpust,
+                                          int     **ipucou,
+                                          double  **arak,
+                                          int     **rcfact,
+                                          int     **nterup,
+                                          double  **epsup,
+                                          double  **xnrmu,
+                                          double  **xnrmu0,
+                                          double  **epsdp);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -290,63 +333,61 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *
  * This function is intended for use by Fortran wrappers, and
  * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ivisse  --> pointer to cs_glob_stokes_model->ivisse
- *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
- *   iprco   --> pointer to cs_glob_stokes_model->iprco
- *   arak    --> pointer to cs_glob_stokes_model->arak
- *   rcfact  --> pointer to cs_glob_stokes_model->rcfact
- *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
- *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
- *   idilat  --> pointer to cs_glob_stokes_model->idilat
- *   epsdp   --> pointer to cs_glob_stokes_model->epsdp
- *   itbrrb  --> pointer to cs_glob_stokes_model->itbrrb
- *   iphydr  --> pointer to cs_glob_stokes_model->iphydr
- *   igprij  --> pointer to cs_glob_stokes_model->igprij
- *   igpust  --> pointer to cs_glob_stokes_model->igpust
- *   iifren  --> pointer to cs_glob_stokes_model->iifren
- *   icalhy  --> pointer to cs_glob_stokes_model->icalhy
- *   irecmf  --> pointer to cs_glob_stokes_model->irecmf
- *   fluid_solid --> Pointer to cs_glob_stokes_model->fluid_solid
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_stokes_options_get_pointers(int     **ivisse,
-                                 int     **irevmc,
-                                 int     **iprco,
-                                 double  **arak,
-                                 int     **rcfact,
-                                 int     **ipucou,
-                                 int     **iccvfg,
-                                 int     **idilat,
-                                 double  **epsdp,
-                                 int     **itbrrb,
-                                 int     **iphydr,
-                                 int     **igprij,
-                                 int     **igpust,
-                                 int     **iifren,
-                                 int     **icalhy,
-                                 int     **irecmf,
-                                 bool    **fluid_solid)
+cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
+                                          int     **idilat,
+                                          bool    **fluid_solid,
+                                          int     **n_buoyant_scal)
 {
-  *ivisse = &(_stokes_model.ivisse);
-  *irevmc = &(_stokes_model.irevmc);
-  *iprco  = &(_stokes_model.iprco);
-  *arak   = &(_stokes_model.arak);
-  *rcfact = &(_stokes_model.rcfact);
-  *ipucou = &(_stokes_model.ipucou);
-  *iccvfg = &(_stokes_model.iccvfg);
-  *idilat = &(_stokes_model.idilat);
-  *epsdp  = &(_stokes_model.epsdp );
-  *itbrrb = &(_stokes_model.itbrrb);
-  *iphydr = &(_stokes_model.iphydr);
-  *igprij = &(_stokes_model.igprij);
-  *igpust = &(_stokes_model.igpust);
-  *iifren = &(_stokes_model.iifren);
-  *icalhy = &(_stokes_model.icalhy);
-  *irecmf = &(_stokes_model.irecmf);
-  *fluid_solid = &(_stokes_model.fluid_solid);
+  *ivisse = &(_velocity_pressure_model.ivisse);
+  *idilat = &(_velocity_pressure_model.idilat);
+  *fluid_solid = &(_velocity_pressure_model.fluid_solid);
+  *n_buoyant_scal = &(_velocity_pressure_model.n_buoyant_scal);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global velocity_pressure structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
+                                          int     **icalhy,
+                                          int     **iprco,
+                                          int     **irevmc,
+                                          int     **iifren,
+                                          int     **irecmf,
+                                          int     **igprij,
+                                          int     **igpust,
+                                          int     **ipucou,
+                                          double  **arak,
+                                          int     **rcfact,
+                                          int     **nterup,
+                                          double  **epsup,
+                                          double  **xnrmu,
+                                          double  **xnrmu0,
+                                          double  **epsdp)
+{
+  *iphydr = &(_velocity_pressure_param.iphydr);
+  *icalhy = &(_velocity_pressure_param.icalhy);
+  *iprco  = &(_velocity_pressure_param.iprco);
+  *irevmc = &(_velocity_pressure_param.irevmc);
+  *iifren = &(_velocity_pressure_param.iifren);
+  *irecmf = &(_velocity_pressure_param.irecmf);
+  *igprij = &(_velocity_pressure_param.igprij);
+  *igpust = &(_velocity_pressure_param.igpust);
+  *ipucou = &(_velocity_pressure_param.ipucou);
+  *arak   = &(_velocity_pressure_param.arak);
+  *rcfact = &(_velocity_pressure_param.rcfact);
+  *nterup = &(_velocity_pressure_param.nterup);
+  *epsup  = &(_velocity_pressure_param.epsup);
+  *xnrmu  = &(_velocity_pressure_param.xnrmu);
+  *xnrmu0 = &(_velocity_pressure_param.xnrmu0);
+  *epsdp  = &(_velocity_pressure_param.epsdp );
 }
 
 /*============================================================================
@@ -361,67 +402,96 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide access to cs_glob_stokes_model
+ * \brief Provide read/write access to cs_glob_velocity_pressure_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
 
-cs_stokes_model_t *
-cs_get_glob_stokes_model(void)
+cs_velocity_pressure_model_t *
+cs_get_glob_velocity_pressure_model(void)
 {
-  return &_stokes_model;
+  return &_velocity_pressure_model;
 }
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to cs_glob_velocity_pressure_param.
+ *
+ * Needed to initialize structure with GUI.
+ *
+ * \return  velocity_pressure information structure
+ */
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Print the stokes model parameters to setup log.
+
+cs_velocity_pressure_param_t *
+cs_get_glob_velocity_pressure_param(void)
+{
+  return &_velocity_pressure_param;
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Count and set number of buoyant scalars.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_stokes_model_log_setup(void)
+cs_velocity_pressure_set_n_buoyant_scalars(void)
+{
+  const int n_fields = cs_field_n_fields();
+  const int key_sca = cs_field_key_id("scalar_id");
+  const int key_buo = cs_field_key_id("is_buoyant");
+
+  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (   f->type & CS_FIELD_VARIABLE
+        && cs_field_get_key_int(f, key_sca) > -1) {
+      if (cs_field_get_key_int(f, key_buo)) {
+        _velocity_pressure_model.n_buoyant_scal += 1;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the volocity-pressure model parameters to setup log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_model_log_setup(void)
 {
   if (cs_glob_field_pointers == NULL)
     return;
 
-  const cs_stokes_model_t *stokes_model = cs_glob_stokes_model;
+  const cs_velocity_pressure_model_t *vp_model = cs_glob_velocity_pressure_model;
 
-  cs_var_cal_opt_t var_cal_opt;
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-  cs_field_t *f_pot = NULL;
+  cs_field_t *f_p = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
-    f_pot = CS_F_(head);
+    f_p = CS_F_(head);
   else
-    f_pot = CS_F_(p);
+    f_p = CS_F_(p);
 
-  if (f_pot == NULL)
+  if (f_p == NULL)
     return;
 
-  const char *f_pot_label = cs_field_get_label(f_pot);
-
-  const char *ivisse_value_str[] = {N_("ignored"),
-                                    N_("taken into account")};
-
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
-                 "Secondary viscosity\n"
-                 "-------------------\n\n"
-                 "  Continuous phase:\n\n"));
+                 "Velocity-pressure model\n"
+                 "-----------------------\n"));
+
+  const char *ivisse_value_str[] = {N_("0 (ignored)"),
+                                    N_("1 (taken into account)")};
 
   cs_log_printf(CS_LOG_SETUP,
-                ("    Viscous term of transposed velocity gradient\n"));
+                _("\n  Viscous term of transposed velocity gradient:\n"));
   cs_log_printf(CS_LOG_SETUP,
-                _("    ivisse:        %d (%s)\n"),
-                stokes_model->ivisse,
-                _(ivisse_value_str[stokes_model->ivisse]));
-
+                _("    ivisse:        %s\n\n"),
+                _(ivisse_value_str[vp_model->ivisse]));
 
   cs_log_printf(CS_LOG_SETUP,
-                ("\n"
-                 "Stokes model\n"
-                 "-------------------\n\n"));
-
+                _("\n  Variable density / dilatable model:\n"));
   const char *idilat_value_str[]
     = {N_("0 (Boussinesq approximation)"),
        N_("1 (without unsteady term in the continuity equation)"),
@@ -433,8 +503,10 @@ cs_stokes_model_log_setup(void)
        N_("5 (for fire modelling)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    idilat:        %s\n"),
-                _(idilat_value_str[stokes_model->idilat]));
+                _(idilat_value_str[vp_model->idilat]));
 
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n  Porosity model:\n"));
   const char *iporos_value_str[]
     = {N_("0 (without porous media)"),
        N_("1 (with porous media)"),
@@ -446,6 +518,45 @@ cs_stokes_model_log_setup(void)
                 _("    iporos:        %s\n"),
                 _(iporos_value_str[cs_glob_porous_model]));
 
+  if (vp_model->fluid_solid)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "  Fluid-solid mode (disable dynamics in the solid part)\n\n"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print Velocity-pressure parameters to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_param_log_setup(void)
+{
+  cs_field_t *f_p = NULL;
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
+    f_p = CS_F_(head);
+  else
+    f_p = CS_F_(p);
+
+  if (f_p == NULL)
+    return;
+
+  const char *f_p_label = cs_field_get_label(f_p);
+
+  const cs_velocity_pressure_param_t *vp_param
+    = cs_glob_velocity_pressure_param;
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Velocity-pressure parameters\n"
+                 "----------------------------\n\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("    nterup:    %d (number of U-P sub iterations)\n"),
+                vp_param->nterup);
+
   const char *iphydr_value_str[]
     = {N_("0 (no treatment (default) for the improvement of\n"
           "                   "
@@ -455,10 +566,10 @@ cs_stokes_model_log_setup(void)
           "   gradient, gravity source terms and head losses)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    iphydr:        %s\n"),
-                _(iphydr_value_str[stokes_model->iphydr]));
+                _(iphydr_value_str[vp_param->iphydr]));
 
   /* Sub options of "iphydr=1" */
-  if (stokes_model->iphydr == 1) {
+  if (vp_param->iphydr == 1) {
 
     const char *icalhy_value_str[]
       = {N_("0 ((default)\n"
@@ -472,7 +583,7 @@ cs_stokes_model_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    icalhy:        %s\n"),
-                  _(icalhy_value_str[stokes_model->icalhy]));
+                  _(icalhy_value_str[vp_param->icalhy]));
 
     const char *igpust_value_str[]
       = {N_("0 (no treatment for the improvment of static\n"
@@ -484,7 +595,7 @@ cs_stokes_model_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    igpust:        %s\n"),
-                  _(igpust_value_str[stokes_model->igpust]));
+                  _(igpust_value_str[vp_param->igpust]));
 
     const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
     if (turb_model != NULL) {
@@ -499,7 +610,7 @@ cs_stokes_model_log_setup(void)
 
       cs_log_printf(CS_LOG_SETUP,
                     _("    igprij:        %s\n"),
-                    _(igprij_value_str[stokes_model->igprij]));
+                    _(igprij_value_str[vp_param->igprij]));
       }
     }
   }
@@ -520,50 +631,38 @@ cs_stokes_model_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                 _("    iprco:         %s\n"),
-                _(iprco_value_str[stokes_model->iprco]));
+                _(iprco_value_str[vp_param->iprco]));
 
   cs_log_printf(CS_LOG_SETUP,
                 _("    ipucou:        %s\n"),
-                _(ipucou_value_str[stokes_model->ipucou]));
+                _(ipucou_value_str[vp_param->ipucou]));
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    nterup:        %d (n: n sweeps on navsto for\n"
-       "                      velocity/pressure coupling)\n"),
-     cs_glob_piso->nterup);
+     _("    irevmc:     %5d (Velocity reconstruction mode)\n"),
+     vp_param->irevmc);
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n"
-       "  Continuous phase:\n\n"
-       "    irevmc:     %5d (Velocity reconstruction mode)\n"),
-     stokes_model->irevmc);
+  const cs_equation_param_t *eqp = NULL;
 
   if (cs_glob_time_step_options->idtvar >= 0) {
-    cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
+    eqp = cs_field_get_equation_param_const(f_p);
     cs_log_printf
       (CS_LOG_SETUP,
        _("    relaxv:      %14.5e for %s (relaxation)\n"
          "    arak:        %14.5e (Arakawa factor)\n"),
-       var_cal_opt.relaxv, f_pot_label, stokes_model->arak);
-  } else {
-    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+       eqp->relaxv, f_p_label, vp_param->arak);
+  }
+  else {
+    eqp = cs_field_get_equation_param_const(CS_F_(vel));
     cs_log_printf
       (CS_LOG_SETUP,
        _("    arak:        %14.5e (Arakawa factor)\n"),
-       var_cal_opt.relaxv * stokes_model->arak);
+       eqp->relaxv * vp_param->arak);
   }
   cs_log_printf
       (CS_LOG_SETUP,
-       _("  Factor of Rhie and Chow %d\n"),
-       stokes_model->rcfact);
-  if (stokes_model->fluid_solid)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("\n"
-         "  Fluid-solid mode (disable dynamics in the solid part)\n\n"));
-
-
+       _("\n  Factor of Rhie and Chow %d\n"),
+       vp_param->rcfact);
 }
 
 /*----------------------------------------------------------------------------*/

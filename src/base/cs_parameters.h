@@ -159,6 +159,10 @@ typedef struct {
                                  - 1: based on cell center mesh velocity
                                  - 0: based on nodes displacement */
 
+  int           itbrrb;       /* accurate treatment of the wall temperature
+                                 - 1: true
+                                 - 0: false (default) */
+
 } cs_space_disc_t;
 
 /*----------------------------------------------------------------------------
@@ -174,32 +178,10 @@ typedef struct {
 
   double        thetst;       /* value of \f$theta\f$ for turbulence */
 
+  int           iccvfg;       /* calculation with a fixed velocity field
+                                 - 1: true (default)
+                                 - 0: false */
 } cs_time_scheme_t;
-
-/*----------------------------------------------------------------------------
- * Inner iterations descriptor
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  int           nterup;         /* number of iterations on the pressure-velocity
-                                   coupling on Navier-Stokes */
-
-  double        epsup;          /* relative precision for the convergence test of
-                                   the iterative process on pressure-velocity
-                                   coupling */
-
-  double        xnrmu;          /* norm  of the increment
-                                   \f$ \vect{u}^{k+1} - \vect{u}^k \f$
-                                   of the iterative process on pressure-velocity
-                                   coupling */
-
-  double        xnrmu0;         /* norm of \f$ \vect{u}^0 \f$ */
-
-  int           n_buoyant_scal; /* number of buoyant scalars,
-                                   zero if there is no buoyant scalar */
-
-} cs_piso_t;
 
 /*----------------------------------------------------------------------------
  * Auxiliary checkpoint/restart file parameters
@@ -223,10 +205,6 @@ extern const cs_space_disc_t  *cs_glob_space_disc;
 /* Pointer to time scheme  options structure */
 
 extern const cs_time_scheme_t  *cs_glob_time_scheme;
-
-/* Pointer to inner iterations structure */
-
-extern const cs_piso_t  *cs_glob_piso;
 
 /* Pointer to auxiliary checkpoint/restart file parameters */
 
@@ -298,28 +276,6 @@ cs_get_glob_space_disc(void);
 
 cs_time_scheme_t *
 cs_get_glob_time_scheme(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to cs_glob_piso
- *
- * needed to initialize structure with GUI and user C functions.
- *
- * \return  piso information structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_piso_t *
-cs_get_glob_piso(void);
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Count and set number of buoyant scalars.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_set_n_buoyant_scalars(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -489,21 +445,21 @@ cs_parameters_var_cal_opt_default(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Print the time scheme structure to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_scheme_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the space discretization structure to setup.log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_space_disc_log_setup(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print Velocity-pressure coupling options to setup.log.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_velocity_pressure_coupling_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

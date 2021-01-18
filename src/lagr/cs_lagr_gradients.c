@@ -50,19 +50,16 @@
 
 #include "bft_mem.h"
 
-#include "cs_mesh.h"
-#include "cs_parameters.h"
-
-#include "cs_physical_constants.h"
-#include "cs_stokes_model.h"
-#include "cs_turbulence_model.h"
 #include "cs_field_operator.h"
-
-#include "cs_physical_model.h"
-
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_stat.h"
+#include "cs_mesh.h"
+#include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
+#include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -149,7 +146,7 @@ cs_lagr_gradients(int            time_id,
   cs_real_t *wpres = NULL;
 
   /* Hydrostatic pressure algorithm? */
-  int hyd_p_flag = cs_glob_stokes_model->iphydr;
+  int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
 
   cs_real_3_t *f_ext = NULL;
   if (hyd_p_flag == 1)
