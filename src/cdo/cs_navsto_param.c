@@ -338,7 +338,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   }
 
-  nslesp->schur_approximation = CS_NAVSTO_SCHUR_LUMPED_INVERSE;
+  nslesp->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
 
   /* Settings for driving the linear algebra related to the Schur complement
      approximation */
@@ -419,6 +419,12 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
                   " + GMRES\n");
     break;
+  case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
+    cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
+                  " + in-house MINRES\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
+    break;
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
                   " + GMRES\n");
@@ -432,6 +438,9 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_GKB_SATURNE:
     cs_log_printf(CS_LOG_SETUP, "GKB algorithm (In-House)\n");
     break;
+  case CS_NAVSTO_SLES_MINRES:
+    cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");
+    break;
   case CS_NAVSTO_SLES_MUMPS:
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
     break;
@@ -439,19 +448,9 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
     break;
   case CS_NAVSTO_SLES_UZAWA_CG:
-    cs_log_printf(CS_LOG_SETUP, "Uzawa-Conjugate Gradient\n");
-    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: ", navsto);
-    switch (nslesp->schur_approximation) {
-    case CS_NAVSTO_SCHUR_DIAG_INVERSE:
-      cs_log_printf(CS_LOG_SETUP, "Diagonal\n");
-      break;
-    case CS_NAVSTO_SCHUR_LUMPED_INVERSE:
-      cs_log_printf(CS_LOG_SETUP, "Lumped inverse\n");
-      break;
-    default:
-      cs_log_printf(CS_LOG_SETUP, "Undefined\n");
-      break;
-    }
+    cs_log_printf(CS_LOG_SETUP, "Uzawa accelerated with Conjugate Gradient\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
 
   default:
@@ -459,12 +458,14 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     break;
   }
 
-  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the main inner linear solver:"
+  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of inner linear algo:"
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
                 navsto, nslesp->il_algo_rtol, nslesp->il_algo_atol,
                 nslesp->il_algo_dtol, nslesp->il_algo_verbosity);
 
-  if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG)
+  /* Additional settings for the Schur complement solver */
+  if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG ||
+      nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES)
     cs_param_sles_log(nslesp->schur_sles_param);
 
 }
@@ -976,20 +977,29 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_SCHUR_STRATEGY:
     if (strcmp(val, "diag_schur") == 0)
-      nsp->sles_param->schur_approximation = CS_NAVSTO_SCHUR_DIAG_INVERSE;
+      nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_DIAG_INVERSE;
     else if (strcmp(val, "lumped_schur") == 0)
-      nsp->sles_param->schur_approximation = CS_NAVSTO_SCHUR_LUMPED_INVERSE;
+      nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_LUMPED_INVERSE;
+    else if (strcmp(val, "elman") == 0)
+      nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_ELMAN;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid value \"%s\" not among\n"
-                  " valid choices: \"diag_schur\", \"lumped_schur\"."),
+                _(" %s: Invalid value \"%s\" not among  valid choices:\n"
+                  " \"diag_schur\", \"lumped_schur\", \"elman\"."),
                 __func__, _val);
     }
     break;
 
   case CS_NSKEY_SLES_STRATEGY:
-    if (strcmp(val, "no_block") == 0)
+
+    /* In-house strategies. Do not need a third-part library. */
+    /* ------------------------------------------------------ */
+
+    if (strcmp(val, "diag_schur_minres") == 0 ||
+        strcmp(val, "schur_diag_minres") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_DIAG_SCHUR_MINRES;
+    else if (strcmp(val, "no_block") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     else if (strcmp(val, "minres") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;

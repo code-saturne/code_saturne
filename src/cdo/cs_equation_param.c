@@ -557,7 +557,7 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "block_amg") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
-      eqp->sles_param->pcd_block_type = CS_PARAM_PCD_BLOCK_DIAG;
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
       /* Set the default choice */
       switch (eqp->sles_param->solver_class) {

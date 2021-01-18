@@ -897,7 +897,7 @@ cs_param_sles_create(int          field_id,
   slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
   slesp->solver = CS_PARAM_ITSOL_GMRES;         /* iterative solver */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
-  slesp->pcd_block_type = CS_PARAM_PCD_BLOCK_NONE; /* no block by default */
+  slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
   slesp->n_max_iter = 10000;                    /* max. number of iterations */
   slesp->eps = 1e-8;                            /* relative tolerance to stop
                                                    an iterative solver */
@@ -983,9 +983,9 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
   if (slesp->precond == CS_PARAM_PRECOND_AMG)
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
                   slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
-  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:     %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:      %s\n",
                 slesp->name,
-                cs_param_get_pcd_block_type_name(slesp->pcd_block_type));
+                cs_param_get_precond_block_name(slesp->pcd_block_type));
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Eps:        % -10.6e\n",
                 slesp->name, slesp->eps);
@@ -1396,7 +1396,7 @@ cs_equation_param_set_petsc_hypre_sles(bool                 use_field_id,
   cs_sles_petsc_init();
 
   if (slesp->precond == CS_PARAM_PRECOND_AMG &&
-      slesp->pcd_block_type == CS_PARAM_PCD_BLOCK_DIAG) {
+      slesp->pcd_block_type == CS_PARAM_PRECOND_BLOCK_DIAG) {
 
     if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG) {
       cs_sles_petsc_define(slesp->field_id,

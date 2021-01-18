@@ -92,25 +92,90 @@ typedef struct {
 
 } cs_saddle_system_t;
 
+/* Structure handling the block preconditioning */
+
 typedef struct {
 
-  /* Block 11 settings */
+  /* Parameters */
+  cs_param_precond_block_t     block_type;
+  cs_param_schur_approx_t      schur_type;
+
+  /* Block 11 settings (mandatory) */
   cs_param_sles_t   *m11_slesp;
   cs_sles_t         *m11_sles;
 
-  /* Schur complement settings */
+  /* Schur complement settings (optional) */
   cs_matrix_t       *schur_matrix;
   cs_param_sles_t   *schur_slesp;
   cs_sles_t         *schur_sles;
   double             schur_scaling;
 
-  cs_real_t         *massp;       /* diagonal matrix */
+  /* Native arrays for the Schur matrix (optional) */
+  cs_real_t         *schur_diag;
+  cs_real_t         *schur_xtra;
+
+  /* Diagonal approximations of block matrices (optional) */
+  cs_real_t         *m11_diag;
+  cs_real_t         *mass22_diag;
 
 } cs_saddle_block_precond_t;
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize a cs_saddle_block_precond_t structure
+ *
+ * \param[in] block_type  type of block preconditioner
+ * \param[in] schur_type  type of Schur approximation
+ * \param[in] m11_slesp   pointer to the settings for the M11 block
+ * \param[in] m11_sles    pointer to the cs_sles_t struct. for the M11 block
+ *
+ * \return a pointer to the new allocated strcuture
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_saddle_block_precond_t *
+cs_saddle_block_precond_create(cs_param_precond_block_t    block_type,
+                               cs_param_schur_approx_t     schur_type,
+                               cs_param_sles_t            *m11_slesp,
+                               cs_sles_t                  *m11_sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free a cs_saddle_block_precond_t structure
+ *
+ * \param[in, out] p_sbp  double pointer to the structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the MINRES algorithm to a saddle point problem (the system is
+ *        stored in a hybrid way). Please refer to cs_saddle_system_t structure
+ *        definition.
+ *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
+ *        vector.
+ *
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_minres(cs_saddle_system_t          *ssys,
+                 cs_saddle_block_precond_t   *sbp,
+                 cs_real_t                   *x1,
+                 cs_real_t                   *x2,
+                 cs_iter_algo_info_t         *info);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,44 +226,6 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
                              cs_lnum_t                  vec_len,
                              cs_real_t                 *vec,
                              cs_real_t                **p_matvec);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the MINRES algorithm to a saddle point problem (the system is
- *        stored in a hybrid way). Please refer to cs_saddle_system_t structure
- *        definition.
- *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
- *        vector.
- *
- * \param[in]      ssys    pointer to a cs_saddle_system_t structure
- * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
- * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_saddle_minres(cs_saddle_system_t          *ssys,
-                 cs_saddle_block_precond_t   *sbp,
-                 cs_real_t                   *x1,
-                 cs_real_t                   *x2,
-                 cs_iter_algo_info_t         *info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Perform elementary tests to assess this module
- *
- * \param[in]      ssys      pointer to a cs_saddle_system_t structure
- * \param[in, out] x1        array for the first part
- * \param[in, out] x2        array for the second part
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_saddle_test(cs_saddle_system_t   *ssys,
-               cs_real_t            *x1,
-               cs_real_t            *x2);
 
 /*----------------------------------------------------------------------------*/
 

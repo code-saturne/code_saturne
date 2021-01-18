@@ -79,7 +79,7 @@ typedef struct {
   /*! \var pcd_block_type
    *  type of block preconditioner to use (only meaningful for vector-valued
    *  systems or more complex systems */
-  cs_param_pcd_block_type_t  pcd_block_type;
+  cs_param_precond_block_t   pcd_block_type;
 
   /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion

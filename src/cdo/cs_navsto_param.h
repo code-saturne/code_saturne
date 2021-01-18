@@ -230,6 +230,17 @@ typedef enum {
  * library up to now.
  *
  *
+ * \var CS_NAVSTO_SLES_DIAG_SCHUR_MINRES
+ * Associated keyword: "diag_schur_minres"
+ *
+ * The Stokes or Navier-Stokes system with an explicit advection is solved
+ * using a MINRES algorithm with a block diagonal preconditioner using an Schur
+ * approximation for the pressure block (the block 22). The system is stored
+ * using a hybrid assembled/unassembled blocks. The velocity block is assembled
+ * (with potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
+ *
+ *
  * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
  * Associated keyword: "no_block"
  *
@@ -283,8 +294,8 @@ typedef enum {
  * Associated keyword: "minres"
  *
  * The Stokes or Navier-Stokes system with an explicit advection is solved
- * using a MINRES algorithm. The system is stored using a hybrid
- * assembled/unassembled blocks. The velocity block is assembled (with
+ * using a MINRES algorithm without preconditioning. The system is stored using
+ * a hybrid assembled/unassembled blocks. The velocity block is assembled (with
  * potentially sub-blocks for each component) and the velocity
  * divergence/pressure gradient operators are unassembled.
  *
@@ -339,6 +350,7 @@ typedef enum {
   CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
   CS_NAVSTO_SLES_BY_BLOCKS,     /* deprecated */
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
+  CS_NAVSTO_SLES_DIAG_SCHUR_MINRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
   CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
@@ -353,34 +365,6 @@ typedef enum {
   CS_NAVSTO_SLES_N_TYPES
 
 } cs_navsto_sles_t;
-
-/*! \enum cs_navsto_schur_approx_t
- *
- *  \brief Strategy to build the Schur complement approximation. This appears
- *  in block preconditioning or uzawa algorithms when a monolithic (fully
- *  coupled approach) is used.
- *  | A   B^t|
- *  | B   0  |
- *
- *  \var CS_NAVSTO_SCHUR_DIAG_INVERSE
- *  Associated keyword: "diag_schur"
- *  The schur complement approximation is defined as B.diag(A)^-1.B^t
- *
- *  \var CS_NAVSTO_SCHUR_LUMPED_INVERSE
- *  Associated keyword: "lumped_schur"
- *  The schur complement approximation is defined as B.lumped(A^-1).B^t where
- *  x=lumped(A^-1) results from A.x = 1 (1 is the array fills with 1 in each
- *  entry)
- */
-
-typedef enum {
-
-  CS_NAVSTO_SCHUR_DIAG_INVERSE,
-  CS_NAVSTO_SCHUR_LUMPED_INVERSE,
-
-  CS_NAVSTO_N_SCHUR_APPROX
-
-} cs_navsto_schur_approx_t;
 
 /*! \enum cs_navsto_nl_algo_t
  *
@@ -415,7 +399,7 @@ typedef struct {
   /*! \var schur_strategy
    *  Choice of the way of preconditioning the schur approximation
    */
-  cs_navsto_schur_approx_t      schur_approximation;
+  cs_param_schur_approx_t       schur_approximation;
 
   /*!
    * @name Inner and linear algorithm
@@ -907,7 +891,7 @@ typedef struct {
  *
  * \var CS_NSKEY_SCHUR_STRATEGY
  * Set the way to define the Schur complement approximation
- * (cf. \ref cs_navsto_schur_approx_t)
+ * (cf. \ref cs_param_schur_approx_t)
  *
  * \var CS_NSKEY_SLES_STRATEGY
  * Strategy for solving the SLES arising from the discretization of the
