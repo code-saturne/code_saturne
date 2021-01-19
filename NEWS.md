@@ -1,5 +1,5 @@
-Master (not on release branches yet)
-------------------------------------
+Release 7.0 (unreleased)
+------------------------
 
 User changes:
 
