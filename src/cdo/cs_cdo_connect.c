@@ -872,7 +872,7 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 
   case 1: /* Scalar-valued */
     ifs = *p_ifs;
-    assert(ifs != NULL);        /* Should be already set */
+    assert(ifs != NULL || cs_glob_n_ranks < 2);  /* Should be already set */
     break;
 
   default:
