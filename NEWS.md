@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 7.0.0 (unreleased)
+--------------------------
+
 User changes:
 
 - Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
