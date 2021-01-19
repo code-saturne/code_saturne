@@ -90,13 +90,13 @@ class VolumicZoneNatureModel(QAbstractTableModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
         if role == Qt.DisplayRole and index.column() == 0:
-            return QVariant(self._data[index.row()][index.column()])
+            return self._data[index.row()][index.column()]
         elif role == Qt.CheckStateRole and index.column() > 0:
             return self.checkState(QPersistentModelIndex(index))
         else:
-            return QVariant()
+            return None
 
     def checkState(self, index):
         if not index.isValid():
@@ -136,7 +136,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self._headers[section])
+            return self._headers[section]
         return None
 
     def rowCount(self, index):
