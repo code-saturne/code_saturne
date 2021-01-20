@@ -178,9 +178,9 @@ integer          idiffp, iconvp, ndircp
 integer          indhyd
 integer          itypfl
 integer          isou  , ibsize, iesize
-integer          imucpp, idftnp, iswdyp
-integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
-integer          imrgrp, nswrsp, iwgrp
+integer          imucpp, iswdyp
+integer          iescap, ircflp, ivar, f_id0
+integer          imrgrp, iwgrp
 integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
 integer          f_id, f_id_ph, f_iddp
@@ -192,7 +192,7 @@ double precision arsr  , thetap
 double precision dtsrom
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , relaxp
-double precision hint, qimpv(3), epsrsp, blencp
+double precision hint, qimpv(3)
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
@@ -2026,7 +2026,6 @@ if (idilat.eq.5) then
   iconvp = 1
   imasac = 1
   idiffp = 0
-  nswrsp = 1
   inc    = 1
   iccocg = 1
   imucpp = 0
@@ -2034,7 +2033,6 @@ if (idilat.eq.5) then
   ! all boundary convective flux with upwind
   icvflb = 0
 
-  ! From cs_c_bindings
   vcopt_loc = vcopt_p
 
   vcopt_loc%iconv  = iconvp
@@ -2086,7 +2084,6 @@ if (idilat.eq.5) then
 
   call sles_push(ivarfl(ipr), "Pr compress")
 
-  !From cs_c_bindings
   c_name = trim(nomva0)//c_null_char
 
   vcopt_loc = vcopt_p

@@ -1648,7 +1648,6 @@ if (iappel.eq.1) then
 
   iescap = iescal(iespre)
 
-  !From cs_c_bindings
   c_name = trim(nomva0)//c_null_char
 
   vcopt_loc = vcopt_u
@@ -1728,7 +1727,6 @@ if (iappel.eq.1) then
     ! We do not take into account transpose of grad
     ivisep = 0
 
-    ! From cs_c_bindings
     vcopt_loc%nswrsm = nswrsp
 
     p_k_value => vcopt_loc
@@ -1781,7 +1779,6 @@ else if (iappel.eq.2) then
   idtva0 = 0
   imasac = 0
 
-  ! From cs_c_bindings
   vcopt_loc = vcopt_u
 
   vcopt_loc%istat  = -1
