@@ -91,23 +91,21 @@ integer          init  , inc   , iccocg
 integer          ifcvsl, iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, imvisp
-integer          ircflp, ischcp, isstpp
 integer          isou  , jsou
 integer          f_id  , f_id0
-integer          iflmb0, idftnp, iphydp, ivisep, itypfl
+integer          iflmb0, iphydp, ivisep, itypfl
 integer          keysca, iscal, keydri, iscdri, icvflb
 integer          keyccl
 integer          icla, jcla, jvar
 integer          ivoid(1)
 integer          ielup, id_x1, id_vdp_i, imasac, id_pro, id_drift
 
-double precision epsrgp, climgp, extrap, blencp
+double precision epsrgp, climgp, extrap
 double precision visls_0
 double precision thetap
 double precision rhovdt
 double precision omegaa
 double precision rho
-double precision relaxp
 
 double precision rvoid(1)
 
@@ -141,6 +139,9 @@ double precision, dimension(:), pointer :: visct, cpro_viscls
 double precision, dimension(:), pointer :: cvara_var
 
 type(var_cal_opt) :: vcopt, vcopt_u
+type(var_cal_opt), target   :: vcopt_loc
+type(var_cal_opt), pointer  :: p_k_value
+type(c_ptr)                 :: c_k_value
 
 !===============================================================================
 
@@ -465,21 +466,8 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     iconvp = 1
     idiffp = 0
-    imrgrp = vcopt_u%imrgra
-    nswrgp = vcopt_u%nswrgr
-    imligp = vcopt_u%imligr
-    ircflp = vcopt_u%ircflu
-    ischcp = vcopt_u%ischcv
-    isstpp = vcopt_u%isstpc
     inc    = 1
     ivisep = 0
-    iwarnp = vcopt_u%iwarni
-    idftnp = vcopt_u%idften
-    blencp = vcopt_u%blencv
-    epsrgp = vcopt_u%epsrgr
-    climgp = vcopt_u%climgr
-    thetap = vcopt_u%thetav
-    relaxp = vcopt_u%relaxv
     icvflb = 0
 
     ! Reset viscf and viscb
@@ -503,19 +491,30 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     ! has to impose 1 on mass accumulation.
     imasac = 1
 
-    ! Warning: bilsc adds "-( grad(u) . rho u)"
-    call bilscv &
-   ( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgrp , ivisep ,                            &
-     iwarnp , idftnp , imasac ,                                              &
-     blencp , epsrgp , climgp , relaxp , thetap ,                            &
-     vel    , vel    ,                                                       &
-     coefav , coefbv , cofafv , cofbfv ,                                     &
-     imasfl_mix , bmasfl_mix ,                                               &
-     viscf  , viscb  , rvoid  , rvoid  ,                                     &
-     rvoid  , rvoid  , rvoid  ,                                              &
-     icvflb , ivoid  ,                                                       &
-     dudt   )
+    vcopt_loc = vcopt_u
+
+    vcopt_loc%iconv  = iconvp
+    vcopt_loc%istat  = -1
+    vcopt_loc%idiff  = idiffp
+    vcopt_loc%idifft = -1
+    vcopt_loc%iswdyn = -1
+    vcopt_loc%nswrsm = -1
+    vcopt_loc%iwgrec = 0
+    vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+    vcopt_loc%epsilo = -1
+    vcopt_loc%epsrsm = -1
+    vcopt_loc%extrag = -1
+
+    p_k_value => vcopt_loc
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+    ! Warning: cs_balance_vector adds "-( grad(u) . rho u)"
+    call cs_balance_vector &
+   ( idtvar , ivarfl(iu)      , imasac , inc    , ivisep ,                   &
+     c_k_value                , vel    , vel    , coefav , coefbv , cofafv , &
+     cofbfv , imasfl_mix      , bmasfl_mix      , viscf  , viscb  , rvoid  , &
+     rvoid  , rvoid  , rvoid  , rvoid  ,                                     &
+     icvflb , ivoid  , dudt   )
 
     do iel = 1, ncel
       cpro_drift(1, iel) = cpro_drift(1, iel)                       &

@@ -1781,17 +1781,28 @@ else if (iappel.eq.2) then
   idtva0 = 0
   imasac = 0
 
-  call bilscv &
- ( idtva0 , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgrp , ivisse ,                            &
-   iwarnp , idftnp , imasac ,                                              &
-   blencp , epsrgp , climgp , relaxp , thetap ,                            &
-   vel    , vel    ,                                                       &
-   coefav , coefbv , cofafv , cofbfv ,                                     &
-   imasfl , bmasfl , viscf  , viscb  , secvif , secvib ,                   &
-   rvoid  , rvoid  , rvoid  ,                                              &
-   icvflb , icvfli ,                                                       &
-   smbr   )
+  ! From cs_c_bindings
+  vcopt_loc = vcopt_u
+
+  vcopt_loc%istat  = -1
+  vcopt_loc%idifft = -1
+  vcopt_loc%iswdyn = -1
+  vcopt_loc%nswrsm = -1
+  vcopt_loc%iwgrec = 0
+  vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+  vcopt_loc%epsilo = -1
+  vcopt_loc%epsrsm = -1
+  vcopt_loc%extrag = -1
+
+  p_k_value => vcopt_loc
+  c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+  call cs_balance_vector &
+ ( idtva0 , ivarfl(iu)      , imasac , inc    , ivisse ,                   &
+   c_k_value                , vel    , vel    , coefav , coefbv , cofafv , &
+   cofbfv , imasfl , bmasfl , viscf  , viscb  , secvif ,                   &
+   secvib , rvoid  , rvoid  , rvoid  ,                                     &
+   icvflb , icvfli , smbr   )
 
   call field_get_val_s(iestim(iestot), c_estim)
   do iel = 1, ncel
