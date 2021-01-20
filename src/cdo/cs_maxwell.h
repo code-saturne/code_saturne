@@ -247,7 +247,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
 /*!
  * \brief  Predefined extra-operations for the Maxwell module
  *
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/

@@ -62,11 +62,11 @@ typedef struct {
    * components are gathered in one block. In this case, the full matrix is a
    * 1x1 matrix
    *
-   * If n_row_blocks = 1 and div_op != NULL then all the velocity components are
-   * gathered in one block. In this case, the full matrix is a 2x2 matrix
+   * If n_row_blocks = 1 and div_op != NULL then all the velocity components
+   * are gathered in one block. In this case, the full matrix is a 2x2 matrix
 
-   * If n_row_blocks = 3 and div_op == NULL then there is one block dedicated to
-   * each velocity component. In this case, the full matrix is a 4x4 matrix
+   * If n_row_blocks = 3 and div_op == NULL then there is one block dedicated
+   * to each velocity component. In this case, the full matrix is a 4x4 matrix
    *
    * Please notice that div_op if not NULL is stored in a non-assembled way.
    */
@@ -76,15 +76,15 @@ typedef struct {
   /* Blocks related to the velocity momentum */
   cs_matrix_t  **block_matrices;
 
-  /* B^t.Diag(A)^-1.B which corresponds to a compatible discretization of the
-     discrete Laplacian on the pressure space */
+  /* B^t*.approx(A^-1).B which corresponds to a compatible discretization of
+     the discrete Laplacian on the pressure space */
   cs_matrix_t   *compatible_laplacian;
 
-  cs_real_t     *div_op;    /* Block related to the -divergence (block A_{10} */
+  cs_real_t     *div_op;    /* Block related to the -divergence (block
+                               A_{10}) */
 
   /* Arrays split according to the block shape. U is interlaced or not
-   * according to the SLES strategy
-   */
+   * according to the SLES strategy */
 
   cs_lnum_t      n_faces;       /* local number of DoFs for each component
                                  * of the velocity */
@@ -94,7 +94,8 @@ typedef struct {
   cs_real_t     *p_c;           /* pressure values at cells */
 
   cs_real_t     *b_f;           /* RHS for the momentum (size = 3*n_faces) */
-  cs_real_t     *b_c;           /* RHS for the mass equation (size = n_cells) */
+  cs_real_t     *b_c;           /* RHS for the mass equation (size =
+                                   n_cells) */
 
   cs_sles_t     *sles;          /* main SLES structure */
   cs_sles_t     *schur_sles;    /* auxiliary SLES for the Schur complement
