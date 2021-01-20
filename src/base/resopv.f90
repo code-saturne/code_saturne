@@ -2027,35 +2027,39 @@ if (idilat.eq.5) then
   imasac = 1
   idiffp = 0
   nswrsp = 1
-  imrgrp = vcopt_p%imrgra
-  imligp = vcopt_p%imligr
-  ircflp = vcopt_p%ircflu
-  ischcp = vcopt_p%ischcv
-  isstpp = vcopt_p%isstpc
   inc    = 1
   iccocg = 1
-  iwarnp = vcopt_p%iwarni
   imucpp = 0
-  idftnp = vcopt_p%idften
-  blencp = vcopt_p%blencv
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  relaxp = vcopt_p%relaxv
   thetap = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
 
-  call bilsca &
- ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
-   iwarnp , imucpp , idftnp , imasac ,                            &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   phi    , phi    ,                                              &
-   coefa_dp2       , coefb_p, coefaf_dp2      , coefbf_p,         &
-   velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
-   rhs   )
+  ! From cs_c_bindings
+  vcopt_loc = vcopt_p
+
+  vcopt_loc%iconv  = iconvp
+  vcopt_loc%istat  = -1
+  vcopt_loc%idiff  = idiffp
+  vcopt_loc%idifft = -1
+  vcopt_loc%iswdyn = -1
+  vcopt_loc%nswrgr = nswrgp
+  vcopt_loc%nswrsm = -1
+  vcopt_loc%iwgrec = 0
+  vcopt_loc%thetav = thetap
+  vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+  vcopt_loc%epsilo = -1
+  vcopt_loc%epsrsm = -1
+  vcopt_loc%extrag = extrap
+
+  p_k_value => vcopt_loc
+  c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+  call cs_balance_scalar &
+ ( idtvar , f_id0  , imucpp , imasac , inc    , iccocg ,                   &
+   c_k_value       , phi    , phi    , coefa_dp2       , coefb_p,          &
+   coefaf_dp2      , coefbf_p        , velflx , velflb , viscf  , viscb  , &
+   rvoid  , rvoid  , rvoid  , rvoid  , icvflb , ivoid  ,                   &
+   rhs    )
 
   ! --- Initialization of the variable to solve
   do iel = 1, ncel

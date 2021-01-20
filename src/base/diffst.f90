@@ -77,15 +77,13 @@ integer          nscal , iterns
 ! Local variables
 
 integer          ivar  , iel   , ifac  , iscal, f_id0
-integer          nswrgp, imligp, iwarnp
-integer          iccocg, inc, imrgrp
-integer          iconvp, idiffp, ircflp, imvisp
+integer          iccocg, inc
+integer          iconvp, idiffp, imvisp
 integer          ischcp, isstpp
 integer          iscacp, ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
 integer          key_buoyant_id, is_buoyant_fld
-double precision epsrgp, climgp, extrap
-double precision blencp, relaxp, thetex
+double precision blencp, thetex
 double precision turb_schmidt, visls_0
 
 integer          icvflb
@@ -102,6 +100,9 @@ double precision, dimension(:), pointer :: cvar_scal
 double precision, dimension(:), pointer :: cpro_tsscal
 
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target   :: vcopt_loc
+type(var_cal_opt), pointer  :: p_k_value
+type(c_ptr)                 :: c_k_value
 
 !===============================================================================
 
@@ -171,18 +172,9 @@ do iscal = 1, nscal
   blencp = 0.d0
   imasac = 0
   idiffp = 1
-  imrgrp = vcopt%imrgra
-  nswrgp = vcopt%nswrgr
-  imligp = vcopt%imligr
-  ircflp = vcopt%ircflu
   inc    = 1
   iccocg = 1
   idftnp = ISOTROPIC_DIFFUSION !FIXME when activating GGDH
-  iwarnp = vcopt%iwarni
-  epsrgp = vcopt%epsrgr
-  climgp = vcopt%climgr
-  extrap = vcopt%extrag
-  relaxp = vcopt%relaxv
   thetex = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
@@ -253,17 +245,32 @@ do iscal = 1, nscal
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  call bilsca &
-  ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
-    ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
-    iwarnp , imucpp , idftnp , imasac ,                            &
-    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-    cvar_scal       , cvar_scal       ,                            &
-    coefap , coefbp , cofafp , cofbfp ,                            &
-    imasfl , bmasfl ,                                              &
-    viscf  , viscb  , rvoid  , xcpp   ,                            &
-    rvoid  , rvoid  ,                                              &
-    icvflb , ivoid  ,                                              &
+  vcopt_loc = vcopt
+
+  vcopt_loc%iconv  = iconvp
+  vcopt_loc%istat  = -1
+  vcopt_loc%idiff  = idiffp
+  vcopt_loc%idifft = -1
+  vcopt_loc%idften = idftnp
+  vcopt_loc%iswdyn = -1
+  vcopt_loc%ischcv = ischcp
+  vcopt_loc%isstpc = isstpp
+  vcopt_loc%nswrsm = -1
+  vcopt_loc%iwgrec = 0
+  vcopt_loc%thetav = thetex
+  vcopt_loc%blencv = blencp
+  vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+  vcopt_loc%epsilo = -1
+  vcopt_loc%epsrsm = -1
+
+  p_k_value => vcopt_loc
+  c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+  call cs_balance_scalar &
+  ( idtvar , f_id0  , imucpp , imasac , inc    , iccocg ,                   &
+    c_k_value       , cvar_scal       , cvar_scal       , coefap , coefbp , &
+    cofafp , cofbfp , imasfl , bmasfl , viscf  , viscb  ,                   &
+    rvoid  , xcpp   , rvoid  , rvoid  , icvflb , ivoid  ,                   &
     cpro_tsscal     )
 
 enddo
