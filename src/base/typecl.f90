@@ -1525,10 +1525,11 @@ if (f_id.ge.0) then
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
       call field_get_key_int(f_id, keyvar, ivar)
-
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar) = 3
-      endif
+      do ifac = 1, nfabor
+        if(icodcl(ifac,ivar).eq.0) then
+          icodcl(ifac,ivar) = 3
+        endif
+      enddo
     endif
   endif
 endif
@@ -1544,7 +1545,6 @@ do f_id = 0, nfld - 1
     if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
       call field_get_dim (f_id, f_dim)
       call field_get_key_int(f_id, keycpl, icpl)
-
       if (f_dim.gt.1.and.icpl.eq.1) then
         call field_get_key_int(f_id, keyvar, ivar)
         do ifac = 1, nfabor
