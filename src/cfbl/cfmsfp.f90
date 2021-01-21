@@ -132,8 +132,12 @@ double precision, dimension(:,:), pointer :: coefau, cofafu
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 
 type(var_cal_opt) :: vcopt_u, vcopt_p
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 
 double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
@@ -339,18 +343,27 @@ if (itsqdm.ne.0) then
   ! has to impose 1 on mass accumulation.
   imasac = 1
 
-  call bilscv &
-  !==========
-( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-  ischcp , isstpp , inc    , imrgrp , ivisse ,                            &
-  iwarnp , idftnp , imasac ,                                              &
-  blencp , epsrgp , climgp , relaxp , thetap ,                            &
-  vela   , vela   ,                                                       &
-  coefau , coefbu , cofafu , cofbfu ,                                     &
-  flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
-  rvoid  , rvoid  , rvoid  ,                                              &
-  icvflb , icvfli ,                                                       &
-  tsexp  )
+  vcopt_loc = vcopt_u
+
+  vcopt_loc%istat  = -1
+  vcopt_loc%idifft = -1
+  vcopt_loc%iswdyn = -1
+  vcopt_loc%nswrsm = -1
+  vcopt_loc%iwgrec = 0
+  vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+  vcopt_loc%epsilo = -1
+  vcopt_loc%epsrsm = -1
+  vcopt_loc%extrag = -1
+
+  p_k_value => vcopt_loc
+  c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+  call cs_balance_vector                                      &
+    (idtvar, ivarfl(iu), imasac, inc, ivisse,                 &
+     c_k_value, vela, vela, coefau, coefbu, cofafu, cofbfu,   &
+     flumas, flumab, viscf, viscb, secvif, secvib,            &
+     rvoid, rvoid, rvoid,                                     &
+     icvflb, icvfli, tsexp)
 
 endif
 
