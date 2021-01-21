@@ -763,6 +763,11 @@ module optcal
   !>    - 1: 1/A_u
   integer(c_int), pointer, save :: rcfact
 
+  !> 1D staggered scheme option:
+  !>    - 0: colocated (default)
+  !>    - 1: staggered
+  integer(c_int), pointer, save :: staggered
+
   !> indicates the algorithm for velocity-pressure coupling:
   !> - 0: standard algorithm,
   !> - 1: reinforced coupling in case calculation with long time steps\n
@@ -1355,14 +1360,14 @@ module optcal
 
     subroutine cs_f_velocity_pressure_param_get_pointers  &
       (iphydr, icalhy, iprco, irevmc, iifren, irecmf,  &
-       igprij, igpust, ipucou, arak, rcfact, nterup, epsup,  &
+       igprij, igpust, ipucou, arak, rcfact, staggered, nterup, epsup,  &
        xnrmu, xnrmu0, c_epsdp)  &
       bind(C, name='cs_f_velocity_pressure_param_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: iphydr, icalhy, iprco, irevmc, iifren
       type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, arak
-      type(c_ptr), intent(out) :: rcfact, nterup, epsup
+      type(c_ptr), intent(out) :: rcfact, staggered, nterup, epsup
       type(c_ptr), intent(out) :: xnrmu, xnrmu0, c_epsdp
     end subroutine cs_f_velocity_pressure_param_get_pointers
 
@@ -1682,7 +1687,7 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact
+    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact, c_staggered
     type(c_ptr) :: c_ipucou, c_idilat, c_epsdp, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
@@ -1702,7 +1707,7 @@ contains
 
     call cs_f_velocity_pressure_param_get_pointers  &
       (c_iphydr, c_icalhy, c_iprco, c_irevmc, c_iifren, c_irecmf,  &
-       c_igprij, c_igpust, c_ipucou, c_arak, c_rcfact, c_nterup, c_epsup,  &
+       c_igprij, c_igpust, c_ipucou, c_arak, c_rcfact, c_staggered, c_nterup, c_epsup,  &
        c_xnrmu, c_xnrmu0, c_epsdp)
 
     call c_f_pointer(c_iphydr, iphydr)
@@ -1716,6 +1721,7 @@ contains
     call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_arak  , arak  )
     call c_f_pointer(c_rcfact, rcfact)
+    call c_f_pointer(c_staggered, staggered)
     call c_f_pointer(c_nterup, nterup)
     call c_f_pointer(c_epsup, epsup)
     call c_f_pointer(c_xnrmu, xnrmu)

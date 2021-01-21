@@ -133,6 +133,11 @@ typedef struct {
                                  - 1: dt (default)
                                  - 0: 1/A_u */
 
+  int         staggered;      /* indicates if one works with the 1D staggered
+                                 scheme
+                                 - 0: colocated (default)
+                                 - 1: staggered */
+
   int         nterup;         /* number of iterations on the pressure-velocity
                                  coupling on Navier-Stokes */
 

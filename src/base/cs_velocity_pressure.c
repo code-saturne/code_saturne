@@ -224,6 +224,12 @@ BEGIN_C_DECLS
         - 0: dt (by default),\n
         - 1: 1/A_u.\n
 
+  \var  cs_stokes_model_t::staggered
+        <a name="staggered"></a>
+        1D zone simulator option:\n
+         - 0: colocated.\n
+         - 1: staggered.\n
+
   \var  cs_velocity_pressure_param_t::nterup
         number of iterations on the pressure-velocity coupling on Navier-Stokes
 
@@ -265,7 +271,7 @@ static cs_velocity_pressure_model_t  _velocity_pressure_model = {
   .ivisse = 1,
   .idilat = 1,
   .fluid_solid = false,
-  .n_buoyant_scal = 0
+  .n_buoyant_scal = 0,
 };
 
 const cs_velocity_pressure_model_t  *cs_glob_velocity_pressure_model
@@ -286,6 +292,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .ipucou = 0,
   .arak   = 1.0,
   .rcfact = 0,
+  .staggered = 0,
   .nterup = 1,
   .epsup = 1e-4,
   .xnrmu = 0.,
@@ -318,6 +325,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **ipucou,
                                           double  **arak,
                                           int     **rcfact,
+                                          int     **staggered,
                                           int     **nterup,
                                           double  **epsup,
                                           double  **xnrmu,
@@ -366,6 +374,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **ipucou,
                                           double  **arak,
                                           int     **rcfact,
+                                          int     **staggered,
                                           int     **nterup,
                                           double  **epsup,
                                           double  **xnrmu,
@@ -383,6 +392,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
   *ipucou = &(_velocity_pressure_param.ipucou);
   *arak   = &(_velocity_pressure_param.arak);
   *rcfact = &(_velocity_pressure_param.rcfact);
+  *staggered = &(_velocity_pressure_param.staggered);
   *nterup = &(_velocity_pressure_param.nterup);
   *epsup  = &(_velocity_pressure_param.epsup);
   *xnrmu  = &(_velocity_pressure_param.xnrmu);
@@ -523,6 +533,7 @@ cs_velocity_pressure_model_log_setup(void)
       (CS_LOG_SETUP,
        _("\n"
          "  Fluid-solid mode (disable dynamics in the solid part)\n\n"));
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -663,6 +674,12 @@ cs_velocity_pressure_param_log_setup(void)
       (CS_LOG_SETUP,
        _("\n  Factor of Rhie and Chow %d\n"),
        vp_param->rcfact);
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    staggered %d (1D staggered scheme option) \n"),
+     vp_param->staggered);
+
 }
 
 /*----------------------------------------------------------------------------*/
