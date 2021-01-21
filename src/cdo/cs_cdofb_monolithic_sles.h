@@ -222,6 +222,27 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation with a CDO face-based approach. The system is
+ *        split into blocks to enable more efficient preconditioning
+ *        techniques. The main iterative solver is a Krylov solver such as GCR,
+ *        GMRES or MINRES
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ *
+ * \return the (cumulated) number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
+                                         const cs_equation_param_t     *eqp,
+                                         cs_cdofb_monolithic_sles_t    *msles);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from the discretization of the
  *         Navier-Stokes equation with a CDO face-based approach.
  *         The system is split into blocks to enable more efficient

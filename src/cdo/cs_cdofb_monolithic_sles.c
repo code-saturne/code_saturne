@@ -65,6 +65,7 @@
 #include "cs_matrix_default.h"
 #include "cs_navsto_coupling.h"
 #include "cs_parall.h"
+#include "cs_saddle_itsol.h"
 #include "cs_sles.h"
 #include "cs_timer.h"
 
@@ -2621,6 +2622,10 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     cs_equation_param_set_sles(mom_eqp);
     break;
 
+  case CS_NAVSTO_SLES_MINRES:
+    cs_equation_param_set_sles(mom_eqp);
+    break;
+
   case CS_NAVSTO_SLES_UZAWA_CG:
     {
       /* Set solver and preconditioner for solving A */
@@ -2915,10 +2920,11 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from the discretization of the
- *         Navier-Stokes equation with a CDO face-based approach.
- *         The system is split into blocks to enable more efficient
- *         preconditioning techniques
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation with a CDO face-based approach. The system is
+ *        split into blocks to enable more efficient preconditioning
+ *        techniques. The main iterative solver is a Krylov solver such as GCR,
+ *        GMRES or MINRES
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -2929,19 +2935,77 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
-                                    const cs_equation_param_t     *eqp,
-                                    cs_cdofb_monolithic_sles_t    *msles)
+cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
+                                         const cs_equation_param_t     *eqp,
+                                         cs_cdofb_monolithic_sles_t    *msles)
 {
-  const cs_matrix_t  *matrix = msles->block_matrices[0];
+  /*  Sanity checks */
+  if (msles == NULL)
+    return 0;
+  if (msles->n_row_blocks != 1) /* Only this case is handled up to now */
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Only one block for the velocity is possible up to now.",
+              __func__);
 
-  CS_UNUSED(matrix);
-  CS_UNUSED(eqp);
-  CS_UNUSED(nsp);
+  /* Set the structure to manage the iterative solver */
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  /* TODO: W.I.P. */
+  cs_iter_algo_info_t
+    *saddle_info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+                                       nslesp->n_max_il_algo_iter,
+                                       nslesp->il_algo_atol,
+                                       nslesp->il_algo_rtol,
+                                       nslesp->il_algo_dtol);
 
-  return 0;
+  /* Set the saddle-point system */
+  cs_saddle_system_t  *ssys = NULL;
+  BFT_MALLOC(ssys, 1, cs_saddle_system_t);
+
+  ssys->n_m11_matrices = 1;
+  ssys->m11_matrices = msles->block_matrices;
+  ssys->x1_size = 3*msles->n_faces;
+  ssys->max_x1_size =
+    CS_MAX(ssys->x1_size, cs_matrix_get_n_columns(msles->block_matrices[0]));
+  ssys->rhs1 = msles->b_f;
+
+  ssys->x2_size = msles->n_cells;
+  ssys->rhs2 = msles->b_c;
+
+  ssys->m21_stride = 3;
+  ssys->m21_unassembled = msles->div_op;
+  ssys->m21_adjacency = cs_shared_connect->c2f;
+
+  ssys->rset = cs_shared_range_set;
+
+  /* u_f is allocated to 3*n_faces (the size of the scatter view but during the
+     resolution process one need a vector at least of size n_cols of the matrix
+     m11. */
+  cs_real_t  *xu = NULL;
+  BFT_MALLOC(xu, ssys->max_x1_size, cs_real_t);
+  memcpy(xu, msles->u_f, ssys->x1_size*sizeof(cs_real_t));
+
+  switch (nsp->sles_param->strategy) {
+  case CS_NAVSTO_SLES_MINRES:
+    cs_saddle_minres(ssys, xu, msles->p_c, saddle_info);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy to solve the system.\n"
+              "Please used a Krylov-based iterative solver.", __func__);
+    break;
+  }
+
+  memcpy(msles->u_f, xu, ssys->x1_size*sizeof(cs_real_t));
+
+  /* Free the saddle-point system */
+  BFT_FREE(xu);
+  BFT_FREE(ssys);
+
+  int n_algo_iter = saddle_info->n_algo_iter;
+  BFT_FREE(saddle_info);
+
+  return n_algo_iter;
 }
 
 /*----------------------------------------------------------------------------*/

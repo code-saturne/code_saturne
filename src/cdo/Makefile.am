@@ -119,6 +119,7 @@ cs_param_sles.h \
 cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
+cs_saddle_itsol.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
 cs_solidification.h \
@@ -182,6 +183,7 @@ cs_navsto_system.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \
+cs_saddle_itsol.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
 cs_solidification.c \

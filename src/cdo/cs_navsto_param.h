@@ -204,14 +204,6 @@ typedef enum {
  * This option is only available with the support to the PETSc library up to now.
  *
  *
- * \var CS_NAVSTO_SLES_BY_BLOCKS
- * Associated keyword: "blocks"
- *
- * The Navier-Stokes system is split into a 3x3 block matrix for the velocity
- * unknows and in a non-assembly way for the divergence/pressure gradient
- * operators.
- *
- *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
  * Associated keyword: "block_amg_cg"
  *
@@ -287,6 +279,16 @@ typedef enum {
  * The residual is computed in the energy norm.
  *
  *
+ * \var CS_NAVSTO_SLES_MINRES
+ * Associated keyword: "minres"
+ *
+ * The Stokes or Navier-Stokes system with an explicit advection is solved
+ * using a MINRES algorithm. The system is stored using a hybrid
+ * assembled/unassembled blocks. The velocity block is assembled (with
+ * potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
+ *
+ *
  * \var CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
  * Associated keyword: "multiplicative_gmres"
  *
@@ -335,12 +337,13 @@ typedef enum {
 
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
-  CS_NAVSTO_SLES_BY_BLOCKS,
+  CS_NAVSTO_SLES_BY_BLOCKS,     /* deprecated */
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
   CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
+  CS_NAVSTO_SLES_MINRES,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,

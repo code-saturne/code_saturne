@@ -991,8 +991,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-    else if (strcmp(val, "by_blocks") == 0)
-      nsp->sles_param->strategy = CS_NAVSTO_SLES_BY_BLOCKS;
+    else if (strcmp(val, "minres") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;
     else if (strcmp(val, "block_amg_cg") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
     else if (strcmp(val, "gkb_saturne") == 0 ||
