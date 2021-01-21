@@ -799,7 +799,8 @@ call clpsca(iscal)
 !       et actions correctives eventuelles.
 call cs_cf_check_internal_energy(cvar_energ, ncel, vel)
 
-! Explicit balance (see codits : the increment is removed)
+! Explicit balance (see cs_equation_iterative_solve_scalar:
+! the increment is removed)
 
 if (vcopt_e%iwarni.ge.2) then
   do iel = 1, ncel

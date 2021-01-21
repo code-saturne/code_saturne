@@ -61,7 +61,8 @@
 !> The Darcy velocity q is then computed thanks to the relation :
 !>   q = -K(h) grad(h).
 !>
-!> This routine is essentially inspired from navstv, resopv and codits.
+!> This routine is essentially inspired from navstv, resopv and
+!> cs_equation_iterative_solve_scalar.
 !>
 !> Please refer to the <a href="../../theory.pdf#groundwater"><b>groundwater flows</b></a>
 !> section of the theory guide for more theoretical informations.
@@ -424,7 +425,9 @@ sinfo%rnsmbr = residu
 ! We compute the normalisation residue, which is used as a stop criterion
 ! in the loop of non-orthogonalities. We have to "normalize" the problem,
 ! taking into account the boundary conditions.
-! This part is inspired from codits (call to promav)
+! This part is inspired from cs_equation_iterative_solve_scalar
+! (call to promav).
+
 allocate(w1(ncelet))
 call promav(isym, ibsize, iesize, ivarfl(ipr), dam, xam, cvar_pr, w1)
 

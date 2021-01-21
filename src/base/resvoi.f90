@@ -269,7 +269,7 @@ if (i_mass_transfer.ne.0) then
 endif
 
 ! Source term linked with the non-conservative form of convection term
-! in codits (always implicited)
+! in cs_equation_iterative_solve_scalar (always implicited)
 ! FIXME set imasac per variable? Here it could be set to 0
 ! and divu not added
 init = 1
@@ -279,7 +279,7 @@ do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) - divu(iel)
 enddo
 
-! Source terms assembly for codits
+! Source terms assembly for cs_equation_iterative_solve_scalar
 
 ! If source terms are extrapolated over time
 if (isno2t.gt.0) then

@@ -1308,7 +1308,8 @@ endif
 ! Darcy:
 ! This step is necessary because the divergence of the
 ! hydraulic head (or pressure), which is taken into account as the
-! 'aggregation term' via codits -> bilsca -> bilsc2,
+! 'aggregation term' via
+! cs_equation_iterative_solve_scalar -> cs_balance_scalar,
 ! is not exactly equal to the loss of mass of water in the unsteady case
 ! (just as far as the precision of the Newton scheme is good),
 ! and does not take into account the sorption of the tracer

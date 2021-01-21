@@ -371,7 +371,8 @@ call cs_equation_iterative_solve_scalar                 &
 
 call cs_cf_check_pressure(cvar_pr, ncel)
 
-! --- Explicit balance (see codits : the increment is withdrawn)
+! Explicit balance (see cs_equation_iterative_solve_scalar:
+! the increment is removed)
 
 if (vcopt_p%iwarni.ge.2) then
   do iel = 1, ncel

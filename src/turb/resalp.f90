@@ -212,7 +212,7 @@ do iel = 1, ncel
 
 enddo
 
-! Calculation of viscf and viscb for codits
+! Calculation of viscf and viscb for cs_equation_iterative_solve_scalar.
 
 do iel = 1, ncel
   w1(iel) = 1.d0

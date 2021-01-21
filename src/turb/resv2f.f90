@@ -334,7 +334,7 @@ endif
 !     We calculate the term \f$ -VOLUME \div{\grad{\phi}} \f$ with itrgrp,
 !     and we store it in W2
 !     Warning, the viscf and viscb calculated here are of use for itrgr but
-!     for codits too
+!     for cs_equation_iterative_solve_scalar too
 
 do iel = 1, ncel
   w3(iel) = 1.d0

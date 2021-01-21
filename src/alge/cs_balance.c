@@ -113,7 +113,8 @@ BEGIN_C_DECLS
  * \f]
  *
  * Warning:
- * - \f$ Rhs \f$ has already been initialized before calling bilsca!
+ * - \f$ Rhs \f$ has already been initialized
+ *   before calling cs_balance_scalar!
  * - mind the minus sign
  *
  * Options for the convective scheme:
@@ -376,7 +377,8 @@ cs_balance_scalar(int                idtvar,
  * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
  *
  * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilscv!
+ * - \f$ \vect{Rhs} \f$ has already been initialized
+ *   before calling cs_balance_vector!
  * - mind the sign minus
  *
  * Options for the convective scheme:

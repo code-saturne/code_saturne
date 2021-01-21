@@ -824,7 +824,7 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> Transpose of velocity gradient in the diffusion term
 
-!     These terms are taken into account in bilscv.
+!     These terms are taken into account in cs_balance_vector.
 !     We only compute here the secondary viscosity.
 
 if (ivisse.eq.1) then
@@ -842,7 +842,7 @@ if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
   !   La prise en compte de velk a partir de la seconde iteration
-  !   est faite directement dans coditv.
+  !   est faite directement dans cs_equation_iterative_solve_vector.
   if (iterns.eq.1) then
 
     allocate(hl_exp(3, ncepdp))
@@ -1702,8 +1702,9 @@ if (iappel.eq.1) then
 
 
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
-  !  coditv is called, only one sweep is done, and tpucou is initialized
-  !  by 0. so that the advection/diffusion added by bilscv is 0.
+  ! cs_equation_iterative_solve_vector is called, only one sweep is done,
+  ! and tpucou is initialized by 0, so that the advection/diffusion added
+  ! by cs_balance_vector is 0.
   !  nswrsp = -1 indicated that only one sweep is required and inc=0
   !  for boundary contitions on the weight matrix.
   if (ipucou.eq.1) then
