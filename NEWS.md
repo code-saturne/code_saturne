@@ -6,6 +6,15 @@ Release 7.0.0 (unreleased)
 
 User changes:
 
+- GUI : Change available options for time-stepping.
+  * Previous steady option ("Steady (constant relaxation coefficient)")
+    , idtvar = -1,is now only available if it is activated in the
+    opened xml file. It is then named "Deprecated : Steady ..."
+    to indicate its new status
+  * Previous "pseduo steady" option, idtvar = 2, is renamed as
+    "Steady (local time step)" and is now the defacto steady
+    algorithme.
+
 - Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
   * Structures are renamed to "cs_velocity_coupling_model_t" and
     "cs_velocity_coupling_param_t", and members are distributed in a more
@@ -20,7 +29,7 @@ User changes:
   Usage example for the line:
   1: 0x55834c6102d7 <cs_function+0x17>             (cs_solver)
   Run:
-  code_saturne symbol2line -s cs_user_zones+0x17
+  code_saturne symbol2line -s cs_function+0x17
   Additional info is provided using 'code_saturne symbol2line --help'
 
 Numerics and physical modeling:
