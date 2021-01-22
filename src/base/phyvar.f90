@@ -152,6 +152,10 @@ endif
 
 mbrom = 0
 
+if (ivofmt.gt.0) then
+  mbrom = 1
+endif
+
 ! First computation of physical properties for specific physics
 ! BEFORE the user
 if (ippmod(iphpar).ge.1) then
