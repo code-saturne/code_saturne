@@ -79,13 +79,21 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.mdl = TimeStepModel(self.case)
         self.browser = tree
 
-       # Combo model
+        # Check if xml contains deprecated steady algorithme
+        has_deprecated_steady = False
+        if str(self.mdl.getTimePassing()) == '-1':
+            has_deprecated_steady = True
 
-        self.modelTimeOptions = ComboModel(self.comboBoxOptions,4,1)
+       # Combo model
+        if has_deprecated_steady:
+            self.modelTimeOptions = ComboModel(self.comboBoxOptions,4,1)
+        else:
+            self.modelTimeOptions = ComboModel(self.comboBoxOptions,3,1)
         self.modelTimeOptions.addItem(self.tr("Constant"), '0')
         self.modelTimeOptions.addItem(self.tr("Time varying (adaptive)"), '1')
-        self.modelTimeOptions.addItem(self.tr("Space & time varying (pseudo-steady)"), '2')
-        self.modelTimeOptions.addItem(self.tr("Steady (constant relaxation coefficient)"), '-1')
+        self.modelTimeOptions.addItem(self.tr("Steady (local time step)"), '2')
+        if has_deprecated_steady:
+            self.modelTimeOptions.addItem(self.tr("Deprecated : Steady (constant relaxation coefficient)"), '-1')
 
         self.modelNTERUP = ComboModel(self.comboBoxNTERUP,3,1)
         self.modelNTERUP.addItem(self.tr("SIMPLE"), 'simple')
