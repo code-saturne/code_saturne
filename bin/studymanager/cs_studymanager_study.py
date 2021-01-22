@@ -197,7 +197,6 @@ class Case(object):
         self.title = study + "/" + self.label
         if self.run_id:
             self.title += "/" + self.run_id
-        print('test title:',self.title)
 
         # Check for coupling
         # TODO: use run.cfg info, so as to allow another coupling parameters
