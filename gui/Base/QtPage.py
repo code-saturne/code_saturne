@@ -442,6 +442,16 @@ class ComboModel:
         for view, model in list_of_views_and_models:
             self.addItem(view, model, warn, groupName)
 
+    def hasItem(self, index=None, str_view="", str_model=""):
+        if index is not None:
+            return index < self.last
+
+        elif str_model:
+            return (str_model in self.items)
+
+        elif str_view:
+            return (str_view in self.dicoV2M.keys())
+
     def addItem(self, str_view, str_model="", warn=False, groupName=None):
         """
         Insert an item in the model.
@@ -454,7 +464,10 @@ class ComboModel:
 
         warn: If True, entry is marked with a color.
         """
-        item  = QStandardItem(str(str_view))
+        if self.hasItem(str_view=str_view):
+            return
+
+        item = QStandardItem(str(str_view))
         item.setData(True, GroupRole)
 
         if groupName in self.item_groups.keys():
@@ -608,21 +621,21 @@ class ComboModel:
                 index = self.items.index(str_model)
                 self.combo.setCurrentIndex(index)
             except Exception:
-                # import traceback
-                # exc_info = sys.exc_info()
-                # bt = traceback.format_exception(*exc_info)
-                # for l in bt:
-                #      print(l.rstrip())
-                # del exc_info
                 print(str_model, " is not in list: ", str(self.items))
                 print("Value reset to ", str(self.items[0]),
                       " but should be checked.")
                 index = 0
 
         elif str_view:
-            str_model = self.dicoV2M[str_view]
-            index = self.items.index(str_model)
-            self.combo.setCurrentIndex(index)
+            try:
+                str_model = self.dicoV2M[str_view]
+                index = self.items.index(str_model)
+                self.combo.setCurrentIndex(index)
+            except Exception:
+                print(str_model, " is not in list: ", str(self.items))
+                print("Value reset to ", str(self.items[0]),
+                      " but should be checked.")
+                index = 0
 
 
     def enableItem(self, index=None, str_model="", str_view=""):
