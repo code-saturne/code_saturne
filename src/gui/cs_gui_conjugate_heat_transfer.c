@@ -79,24 +79,8 @@ BEGIN_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-/*============================================================================
- * Public Function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define SYRTHES couplings based on the GUI-generated setup.
- *
- * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_name argument is ignored.
- *
- * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument.
- */
-/*----------------------------------------------------------------------------*/
-
 void
-cs_gui_syrthes_coupling(void)
+_cs_gui_syrthes_coupling_legacy(void)
 {
   const int *v_i = NULL;
   const cs_real_t *v_r = NULL;
@@ -151,6 +135,110 @@ cs_gui_syrthes_coupling(void)
                            verbosity,
                            visualization);
   }
+}
+
+void
+_cs_gui_syrthes_coupling_bc(void)
+{
+
+  /* First get the CHT parameters node */
+  const char path_c[] = "conjugate_heat_transfer/external_coupling";
+  cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
+
+  const cs_real_t *v_r =
+    cs_tree_node_get_child_values_real(tn_c, "tolerance");
+  double tolerance = (v_r != NULL) ? v_r[0] : 0.1;
+
+  const int *v_e =
+    cs_tree_node_get_child_values_int(tn_c, "verbosity");
+  int verbosity = (v_e != NULL) ? v_e[0] : 0;
+
+  const int *v_i =
+    cs_tree_node_get_child_values_int(tn_c, "visualization");
+  int visualization = (v_i != NULL) ? v_i[0] : 1;
+
+  char projection_axis = ' ';
+  const char *_projection_axis
+    = cs_tree_node_get_child_value_str(tn_c, "projection_axis");
+  if (_projection_axis != NULL) {
+    char c = _projection_axis[0];
+    if (   c == 'x' || c == 'X'
+        || c == 'y' || c == 'Y'
+        || c == 'z' || c == 'Z')
+      projection_axis = c;
+  }
+
+  bool allow_nonmatching = false;
+  const int *v_n =
+    cs_tree_node_get_child_values_int(tn_c, "allow_nonmatching");
+  if (v_n != NULL) {
+    if (v_n[0] > 0) allow_nonmatching = true;
+  }
+
+  /* Loop on the list of defined coupled syrthes instances */
+  cs_tree_node_t *tn_syr_inst = cs_tree_find_node(tn_c, "syrthes_instances");
+
+
+  for (cs_tree_node_t *tn_cpl = cs_tree_find_node(tn_syr_inst,"instance");
+      tn_cpl != NULL;
+      tn_cpl = cs_tree_node_get_next_of_name(tn_cpl)) {
+
+    const char *syrthes_name = cs_tree_node_get_tag(tn_cpl, "name");
+
+    cs_syr_coupling_define(syrthes_name,
+                           NULL, /* No bnd criteria */
+                           NULL, /* No vol criteria */
+                           projection_axis,
+                           allow_nonmatching,
+                           tolerance,
+                           verbosity,
+                           visualization);
+
+    /* Loop on coupled boundray zones */
+    for (cs_tree_node_t *tn_bnd = cs_tree_find_node(tn_cpl, "coupled_boundary");
+         tn_bnd != NULL;
+         tn_bnd = cs_tree_node_get_next_of_name(tn_bnd)) {
+      const char *zone_name = cs_tree_node_get_tag(tn_bnd, "label");
+      assert(zone_name != NULL);
+
+      const cs_zone_t *z = cs_boundary_zone_by_name(zone_name);
+      cs_syr_coupling_add_zone(syrthes_name, z);
+
+    } /* loop on coupled boundaries */
+  } /* loop on syrthes instances */
+
+}
+
+/*============================================================================
+ * Public Function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define SYRTHES couplings based on the GUI-generated setup.
+ *
+ * In the case of a single Code_Saturne and single SYRTHES instance, the
+ * syrthes_name argument is ignored.
+ *
+ * In case of multiple couplings, a coupling will be matched with available
+ * SYRTHES instances prioritarily based on the syrthes_name argument.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_syrthes_coupling(void)
+{
+  const char path_c[] = "boundary_conditions/wall/syrthes";
+  cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
+
+  /* Prioritize BC declaration of SYRTHES */
+  if (tn_c != NULL) {
+    _cs_gui_syrthes_coupling_bc();
+  }
+  else {
+    _cs_gui_syrthes_coupling_legacy();
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

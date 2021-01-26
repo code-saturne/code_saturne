@@ -46,7 +46,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.Base.QtPage  import DoubleValidator, ComboModel, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, IntValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
 from code_saturne.model.LocalizationModel             import LocalizationModel, Zone
@@ -56,23 +56,27 @@ from code_saturne.Pages.QMegEditorView                import QMegEditorView
 from code_saturne.model.Boundary                      import Boundary
 from code_saturne.model.CompressibleModel             import CompressibleModel
 from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
-from code_saturne.model.NotebookModel                 import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsScalarsView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
 # Main class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     """
     """
+
     def __init__(self, parent):
         """
         Constructor
@@ -91,7 +95,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__boundary = None
 
         self.case.undoStopGlobal()
+
         self.notebook = NotebookModel(self.case)
+        self.cht_model = ConjugateHeatTransferModel(self.case)
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
         self.lineEditValueSpecies.textChanged[str].connect(self.slotValueSpecies)
@@ -110,13 +116,16 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
         self.comboBoxTypeMeteo.activated[str].connect(self.slotMeteoTypeChoice)
 
+        # Syrthes coupling
+        self.lineEditSyrthesInstance.editingFinished.connect(self.slotChooseSyrthesInstance)
+
         ## Validators
         validatorValueThermal = DoubleValidator(self.lineEditValueThermal)
         validatorValueSpecies = DoubleValidator(self.lineEditValueSpecies)
-        validatorValueMeteo   = DoubleValidator(self.lineEditValueMeteo)
-        validatorExThermal    = DoubleValidator(self.lineEditExThermal)
-        validatorExSpecies    = DoubleValidator(self.lineEditExSpecies)
-        validatorExMeteo      = DoubleValidator(self.lineEditExMeteo)
+        validatorValueMeteo = DoubleValidator(self.lineEditValueMeteo)
+        validatorExThermal = DoubleValidator(self.lineEditExThermal)
+        validatorExSpecies = DoubleValidator(self.lineEditExSpecies)
+        validatorExMeteo = DoubleValidator(self.lineEditExMeteo)
 
         self.lineEditValueThermal.setValidator(validatorValueThermal)
         self.lineEditValueSpecies.setValidator(validatorValueSpecies)
@@ -134,41 +143,45 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         self.__boundary = boundary
 
-        self.nature  = boundary.getNature()
-        self.therm   = ThermalScalarModel(self.case)
-        self.sca_mo  = DefineUserScalarsModel(self.case)
-        self.comp    = CompressibleModel(self.case)
-        self.atm     = AtmosphericFlowsModel(self.case)
+        self.nature = boundary.getNature()
+        self.therm = ThermalScalarModel(self.case)
+        self.sca_mo = DefineUserScalarsModel(self.case)
+        self.comp = CompressibleModel(self.case)
+        self.atm = AtmosphericFlowsModel(self.case)
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
-        self.modelTypeMeteo   = ComboModel(self.comboBoxTypeMeteo, 1, 1)
+        self.modelTypeMeteo = ComboModel(self.comboBoxTypeMeteo, 1, 1)
 
         self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
-        self.modelTypeMeteo.addItem(  self.tr("Prescribed value"), 'dirichlet')
+        self.modelTypeMeteo.addItem(self.tr("Prescribed value"), 'dirichlet')
 
         self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
-        self.modelTypeMeteo.addItem(  self.tr("Prescribed value (user law)"), 'dirichlet_formula')
+        self.modelTypeMeteo.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
 
         if self.nature == 'outlet':
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
         elif self.nature == 'wall':
+            self.initSyrthesInstanceList()
+
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
-            self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
-            self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
+            self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
             self.modelTypeThermal.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
-            self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient"), 'exchange_coefficient')
+            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
             self.modelTypeThermal.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
-            self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
+            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
+            self.modelTypeThermal.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
+
         elif self.nature == 'groundwater':
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
 
@@ -194,6 +207,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.groupBoxThermal.show()
             self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
             self.thermal = self.therm.getThermalScalarName()
+            self.thermal_type = self.__boundary.getScalarChoice(self.thermal)
             self.modelThermal.addItem(self.tr(self.thermal),self.thermal)
             self.modelThermal.setItem(str_model = self.thermal)
         else:
@@ -229,13 +243,18 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     for m in self.meteo_list:
                         self.modelMeteo.addItem(self.tr(m), m)
                     self.meteo = self.meteo_list[0]
-                    self.modelMeteo.setItem(str_model = self.meteo)
+                    self.modelMeteo.setItem(str_model=self.meteo)
             else:
                 self.groupBoxMeteo.hide()
                 self.groupBoxThermal.hide()
 
         self.initializeVariables()
 
+    def initSyrthesInstanceList(self):
+        syrthes_instances = self.cht_model.getSyrthesInstancesList()
+        current_instance = self.__boundary.getConjugateHeatTransferCoupling()
+        if current_instance:
+            self.lineEditSyrthesInstance.setText(str(current_instance))
 
     def initializeVariables(self):
         """
@@ -254,10 +273,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.labelValueThermal.hide()
         self.pushButtonThermal.setEnabled(False)
         self.pushButtonThermal.setStyleSheet("background-color: None")
+#        self.groupBoxSyrthes.hide()
+        self.labelSyrthesInstance.hide()
+        self.lineEditSyrthesInstance.hide()
 
         if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
-            self.thermal_type = self.__boundary.getScalarChoice(self.thermal)
-            self.modelTypeThermal.setItem(str_model = self.thermal_type)
+            self.modelTypeThermal.setItem(str_model=self.thermal_type)
             self.labelValueThermal.setText('Value')
             self.groupBoxThermal.setTitle('Thermal')
 
@@ -290,6 +311,13 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 else:
                     self.pushButtonThermal.setStyleSheet("background-color: red")
 
+            elif self.thermal_type == "syrthes_coupling":
+                self.labelSyrthesInstance.show()
+                self.lineEditSyrthesInstance.show()
+                syrCompleter = QCompleter(self.cht_model.getSyrthesInstancesList())
+                self.lineEditSyrthesInstance.setCompleter(syrCompleter)
+
+
         # Initalize species
         self.labelValueSpecies.hide()
         self.lineEditValueSpecies.hide()
@@ -298,7 +326,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         if self.species_list != None and self.species_list != []:
             self.species_type = self.__boundary.getScalarChoice(self.species)
-            self.modelTypeSpecies.setItem(str_model = self.species_type)
+            self.modelTypeSpecies.setItem(str_model=self.species_type)
             self.labelValueSpecies.setText('Value')
             self.groupBoxSpecies.setTitle('Species')
 
@@ -424,7 +452,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.thermal_type = self.modelTypeThermal.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.thermal, self.thermal_type)
         self.initializeVariables()
-
+        return
 
     @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
@@ -584,7 +612,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                 required      = req,
                                 symbols       = sym,
                                 condition     = self.meteo_type,
-                                examples      = exa)
+                                examples=exa)
 
         if dialog.exec_():
             result = dialog.get_result()
@@ -647,7 +675,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
-
     @pyqtSlot(str)
     def slotExMeteo(self, var):
         """
@@ -656,6 +683,23 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.meteo, 'exchange_coefficient', value)
 
+    @pyqtSlot()
+    def slotChooseSyrthesInstance(self):
+
+        value = str(self.lineEditSyrthesInstance.text())
+        if value:
+            bnd_label = self.__boundary.getLabel()
+            value_p = self.__boundary.getConjugateHeatTransferCoupling()
+            if value != value_p:
+                self.cht_model.deleteSyrthesCoupling(value_p, bnd_label)
+
+            self.__boundary.setConjugateHeatTransferCoupling(value)
+
+            if value not in self.cht_model.getSyrthesInstancesList():
+                self.cht_model.addSyrthesCoupling(value)
+            self.cht_model.addBoundaryLabel(value, bnd_label)
+
+        return
 
 #-------------------------------------------------------------------------------
 # End

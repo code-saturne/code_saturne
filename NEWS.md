@@ -3,6 +3,14 @@ Release 7.0 (unreleased)
 
 User changes:
 
+- Major evolution concerning coupling with external codes
+  * Create a generic "Coupling parameters" page after boundary
+    conditions in the tree view. This page gathers the parameters for
+    Syrthes, code_aster and cathare couplings.
+  * The definition of a coupling with Syrthes is now done directly as a
+    thermal boundary condition (like flux or temperature).
+  * Display external coupling tab as deprecated.
+
 - GUI: Change available options for time-stepping.
   * Previous steady option ("Steady (constant relaxation coefficient)"),
     idtvar = -1, is now only available if it is activated in the

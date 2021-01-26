@@ -149,10 +149,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.ElectricalView as Page
         thisPage = Page.ElectricalView(root, case, stbar)
 
-    elif page_name == tr("Conjugate heat transfer"):
-        import code_saturne.Pages.ConjugateHeatTransferView as Page
-        thisPage = Page.ConjugateHeatTransferView(root, case)
-
     elif page_name == tr("Fluid properties"):
         import code_saturne.Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)
@@ -193,10 +189,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
         thisPage = Page.BoundaryConditionsView(root, case)
 
-    elif page_name == tr("Cathare Coupling"):
-        import code_saturne.Pages.CathareCouplingView as Page
-        thisPage = Page.CathareCouplingView(root, case)
-
     elif page_name == tr("Immersed Boundaries"):
         import code_saturne.Pages.ImmersedBoundariesViewNeptune as Page
         thisPage = Page.ImmersedBoundariesViewNeptune(root, case)
@@ -204,6 +196,10 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Boundary conditions"):
         import code_saturne.Pages.BoundaryNatureView as Page
         thisPage = Page.BoundaryNatureView(root, case, tree)
+
+    elif page_name == tr("Coupling parameters"):
+        import code_saturne.Pages.CouplingParametersView as Page
+        thisPage = Page.CouplingParametersView(root, case)
 
     elif page_name == tr("Time averages"):
         import code_saturne.Pages.TimeAveragesView as Page
@@ -268,10 +264,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Performance settings"):
         import code_saturne.Pages.PerformanceTuningView as Page
         thisPage = Page.PerformanceTuningView(root, case)
-
-    elif page_name == tr("Fluid structure interaction"):
-        import code_saturne.Pages.FluidStructureInteractionView as Page
-        thisPage = Page.FluidStructureInteractionView(root, case)
 
     elif page_name == tr("Atmospheric flows"):
         import code_saturne.Pages.AtmosphericFlowsView as Page

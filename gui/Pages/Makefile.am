@@ -57,6 +57,7 @@ BoundaryConditionsTurbulenceInletViewNeptune.py \
 BoundaryConditionsView.py \
 BoundaryConditionsViewNeptune.py \
 BoundaryConditionsWallView.py \
+CouplingParametersView.py \
 CathareCouplingView.py \
 CoalCombustionView.py \
 ConjugateHeatTransferView.py \
@@ -153,6 +154,7 @@ BoundaryConditionsSlidingWallForm.ui \
 BoundaryConditionsTurbulenceInletForm.ui \
 BoundaryConditionsVelocityInletForm.ui \
 BoundaryConditionsWallRadiativeTransferForm.ui \
+CouplingParametersForm.ui \
 CoalCombustionForm.ui \
 CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \

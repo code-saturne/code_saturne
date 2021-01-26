@@ -32,14 +32,15 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.Common      import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.XMLmodel     import ModelTest
 from code_saturne.model.XMLengine    import *
 
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalScalarModel     import ThermalScalarModel
-from code_saturne.model.TurbulenceModel        import TurbulenceModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -100,9 +101,9 @@ class Boundary(object) :
     def __init__(self, nature, label, case) :
         """
         """
+        self.case = case
         self._label = label
         self._nature = nature
-        self.case = case
         self._XMLBoundaryConditionsNode = self.case.xmlGetNode('boundary_conditions')
         self._thermalLabelsList = ('temperature',
                                    'enthalpy',
@@ -272,7 +273,6 @@ class Boundary(object) :
         """
         return self._label
 
-
     @Variables.noUndo
     def getNature(self):
         """
@@ -280,6 +280,9 @@ class Boundary(object) :
         """
         return self._nature
 
+    @Variables.noUndo
+    def getLocalization(self):
+        return None
 
     @Variables.noUndo
     def getDefinedScalarFormulaList(self):
@@ -2854,7 +2857,7 @@ class WallBoundary(Boundary) :
         self._fluxChoices=['temperature', 'flux']
         self._scalarChoices = ['dirichlet', 'neumann', 'exchange_coefficient',
                                'dirichlet_formula', 'neumann_formula',
-                               'exchange_coefficient_formula']
+                               'exchange_coefficient_formula', 'syrthes_coupling']
         self._scalarFormula = ['dirichlet_formula', 'neumann_formula',
                                'exchange_coefficient_formula']
 
@@ -2865,6 +2868,9 @@ class WallBoundary(Boundary) :
         # Scalars
         for name in self.sca_model.getScalarNameList():
             self.getScalarChoice(name)
+
+        # Syrthes conjugate heat transfer model
+        self._syrthesModel = ConjugateHeatTransferModel(self.case)
 
 
     def __deleteVelocities(self, node):
@@ -2907,6 +2913,13 @@ class WallBoundary(Boundary) :
                 if tt != tag:
                     scalarNode.xmlRemoveChild(tt)
 
+    def __deleteSyrthesNodes(self):
+        node_syr = self.boundNode.xmlGetChildNode("syrthes")
+
+        if node_syr:
+            syr_inst = node_syr['instance_name']
+            self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            self.boundNode.xmlRemoveChild("syrthes")
 
     def __defaultValues(self):
         """
@@ -2914,9 +2927,9 @@ class WallBoundary(Boundary) :
         """
         dico = {}
         dico['velocityChoice'] = "off"
-        dico['velocityValue']  = 0.
-        dico['scalarChoice']   = "neumann"
-        dico['scalarValue']   = 0.
+        dico['velocityValue'] = 0.
+        dico['scalarChoice'] = "neumann"
+        dico['scalarValue'] = 0.
         dico['roughness'] = 0.01
         dico['flux'] = 0
         return dico
@@ -3076,6 +3089,20 @@ class WallBoundary(Boundary) :
         else:
             node.xmlSetData('roughness', value)
 
+    @Variables.undoLocal
+    def setConjugateHeatTransferCoupling(self, value):
+        # TODO : use a dedicated model as an input instead of individual property
+        node = self.boundNode.xmlInitNode("syrthes")
+        node.xmlSetAttribute(instance_name=value)
+        return
+
+    @Variables.noUndo
+    def getConjugateHeatTransferCoupling(self):
+        # TODO output a dedicated cht model instead of individual properties
+        node = self.boundNode.xmlGetNode("syrthes")
+        if node == None:
+            return None
+        return node.xmlGetAttribute("instance_name")
 
     @Variables.noUndo
     def getScalarChoice(self, name):
@@ -3125,9 +3152,14 @@ class WallBoundary(Boundary) :
             self.getScalarValue(name, 'dirichlet')
             self.getScalarValue(name, 'exchange_coefficient')
             self.__deleteScalarNodes(name, choice)
+        elif choice == "syrthes_coupling":
+            self.__deleteScalarNodes(name, choice)
         else:
             value = self.getScalarValue(name, choice)
             self.__deleteScalarNodes(name, choice)
+
+        if choice != "syrthes_coupling":
+            self.__deleteSyrthesNodes()
 
 
     @Variables.noUndo

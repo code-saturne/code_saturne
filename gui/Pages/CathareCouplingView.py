@@ -192,7 +192,8 @@ class StandardItemModelCathare(QStandardItemModel):
 class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
     """
     """
-    def __init__(self, parent, case):
+
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -201,6 +202,8 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         Ui_CathareCouplingForm.__init__(self)
         self.setupUi(self)
 
+    def setup(self, case):
+
         self.case = case
 
         self.case.undoStopGlobal()
@@ -208,8 +211,8 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.__model = CathareCouplingModel(self.case)
 
         # Main combo box
-        self.activateCathareCpl = QtPage.ComboModel(self.comboBoxActiveCpl,2,1)
-        self.activateCathareCpl.addItem(self.tr("No coupling"),       "off")
+        self.activateCathareCpl = QtPage.ComboModel(self.comboBoxActiveCpl, 2, 1)
+        self.activateCathareCpl.addItem(self.tr("No coupling"), "off")
         self.activateCathareCpl.addItem(self.tr("Activate coupling"), "on")
 
 

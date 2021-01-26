@@ -1125,7 +1125,7 @@ class WallBoundary(Boundary) :
         """
         Set the enthalpy choice for field
         """
-        Model().isInList(value, ['temperature','flux'])
+        Model().isInList(value, ['temperature','flux', 'syrthes_coupling'])
 
         XMLEnergyNode = self.boundNode.xmlInitNode('variable', 'choice', name='enthalpy')
 
@@ -1139,14 +1139,16 @@ class WallBoundary(Boundary) :
         """
         XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
-        Model().isInList(XMLEnergyNode['choice'], ['temperature','flux'])
+        Model().isInList(XMLEnergyNode['choice'], ['temperature','flux','syrthes_coupling'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
         if Childnode == None :
             value = self.__defaultValues()['flux']
             self.setEnthalpy(fieldId, value)
 
-        value = XMLEnergyNode.xmlGetChildDouble('value')
+        value = XMLEnergyNode.xmlGetChildString('value')
+        if self.getEnthalpyChoice("none") != "syrthes_coupling":
+            value = float(value)
         return value
 
 
@@ -1155,7 +1157,8 @@ class WallBoundary(Boundary) :
         """
         Set energy value for field
         """
-        Model().isFloat(value)
+        if self.getEnthalpyChoice(fieldId) in ['temperature','flux']:
+            Model().isFloat(value)
 
         XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
         XMLEnergyNode.xmlSetData('value', str(value))
@@ -1193,6 +1196,11 @@ class WallBoundary(Boundary) :
         Model().isInList(mdl, self._wallModel)
         XMLNode = self.boundNode.xmlInitChildNode('wall_model', field_id = fieldId)
         XMLNode['model'] = mdl
+
+
+    @Variables.undoLocal
+    def setConjugateHeatTransferCoupling(self, syrthes_name):
+        print("toto")
 
 
 #-------------------------------------------------------------------------------
