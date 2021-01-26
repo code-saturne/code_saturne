@@ -51,6 +51,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -88,6 +89,8 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
 
         self.lineEditEnergy.setValidator(validatorEner)
 
+        self.lineEditSyrthes.editingFinished.connect(self.__slotEnergySyrthes)
+
 
     def setup(self, case, fieldId):
         """
@@ -96,6 +99,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         self.case = case
         self.__boundary = None
         self.__currentField = fieldId
+        self.cht_model = ConjugateHeatTransferModel(self.case)
 
 
     def showWidget(self, boundary):
@@ -115,6 +119,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         elif self.__boundary.getNature() == "wall" :
             self.__modelEnergy.addItem(self.tr("Flux"), 'flux')
             self.__modelEnergy.addItem(self.tr("Temperature"), 'temperature')
+            self.__modelEnergy.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
 
         if self.__boundary.getNature() == "inlet" or  self.__boundary.getNature() == "outlet":
             if MainFieldsModel(self.case).getEnergyResolution(self.__currentField) == 'on' :
@@ -148,12 +153,28 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                 energychoice = self.__boundary.getEnthalpyChoice("none")
                 self.__modelEnergy.setItem(str_model=energychoice)
                 val = self.__boundary.getEnthalpy("none")
-                self.lineEditEnergy.setText(str(val))
+
+                if energychoice == 'syrthes_coupling':
+                    self.lineEditEnergy.hide()
+                    self.lineEditSyrthes.show()
+                    syrCompleter = \
+                    QCompleter(self.cht_model.getSyrthesInstancesList())
+                    self.lineEditSyrthes.setCompleter(syrCompleter)
+
+                    self.lineEditSyrthes.setText(str(val))
+
+                else:
+                    self.lineEditSyrthes.hide()
+                    self.lineEditEnergy.show()
+                    self.lineEditEnergy.setText(str(val))
+
                 if energychoice == 'flux' :
                     self.labelEnergy.setText('W/m2')
-                else :
+                elif energychoice == 'temperature':
                     self.labelEnergy.setText('K')
-                self.lineEditEnergy.show()
+                else:
+                    self.labelEnergy.setText('')
+
                 self.labelEnergy.show()
                 self.show()
             else :
@@ -173,22 +194,45 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         INPUT choice of method of calculation of the energy
         """
         energy_choice = self.__modelEnergy.dicoV2M[str(text)]
+        old_choice = self.__boundary.getEnthalpyChoice(self.__currentField)
+        # If we switch from coupling to BC condition, delete all previous
+        # data
+        if old_choice != energy_choice and old_choice == "syrthes_coupling":
+            syrthes_name = self.__boundary.getEnthalpy(self.__currentField)
+            bnd_label = self.__boundary.getLabel()
+            self.cht_model.deleteSyrthesCoupling(syrthes_name, bnd_label)
+            self.__boundary.setEnthalpy(self.__currentField, 0.)
+
         self.__boundary.setEnthalpyChoice(self.__currentField, energy_choice)
+
 
         if energy_choice == "hsat_P" :
             self.lineEditEnergy.hide()
+            self.lineEditSyrthes.hide()
             self.labelEnergy.hide()
         else :
-            self.lineEditEnergy.show()
             self.labelEnergy.show()
             val = self.__boundary.getEnthalpy(self.__currentField)
-            self.lineEditEnergy.setText(str(val))
+            if energy_choice == "syrthes_coupling":
+                self.lineEditSyrthes.show()
+                self.lineEditEnergy.hide()
+                if val not in self.cht_model.getSyrthesInstancesList():
+                    val = ""
+                    self.__boundary.setEnthalpy(self.__currentField, val)
+                self.lineEditSyrthes.setText(str(val))
+            else:
+                self.lineEditSyrthes.hide()
+                self.lineEditEnergy.show()
+                self.lineEditEnergy.setText(str(val))
+
             if energy_choice == 'dirichlet':
                 self.labelEnergy.setText('J/kg')
             elif energy_choice == 'flux' :
                 self.labelEnergy.setText('W/m2')
-            else :
+            elif energy_choice == 'temperature' :
                 self.labelEnergy.setText('K')
+            else:
+                self.labelEnergy.setText('')
 
 
     @pyqtSlot(str)
@@ -200,6 +244,27 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             value = from_qvariant(text, float)
             self.__boundary.setEnthalpy(self.__currentField, value)
 
+
+    @pyqtSlot()
+    def __slotEnergySyrthes(self):
+        """
+        Input syrthes instance name
+        """
+
+        value = str(self.lineEditSyrthes.text())
+        if value:
+            value_p = val = self.__boundary.getEnthalpy("none")
+            bnd_label = self.__boundary.getLabel()
+            if value != value_p:
+                self.cht_model.deleteSyrthesCoupling(value_p, bnd_label)
+
+
+            if value not in self.cht_model.getSyrthesInstancesList():
+                self.cht_model.addSyrthesCoupling(value)
+
+            self.cht_model.addBoundaryLabel(value, bnd_label)
+
+            self.__boundary.setEnthalpy(self.__currentField, value)
 
 #-------------------------------------------------------------------------------
 # End

@@ -753,6 +753,21 @@ class MainView(object):
             self.loadingAborted(msg, fn)
             return
 
+        # Check if legacy conjugate heat transfer node is present. If so, display warning.
+        node_cht = self.case.xmlGetNode("conjugate_heat_transfer")
+        deprecated_couplings = []
+        if node_cht != None:
+            node_ext = node_cht.xmlGetChildNode("external_coupling")
+            if node_ext != None:
+                deprecated_couplings += node_ext.xmlGetChildNodeList("syrthes")
+        if deprecated_couplings != []:
+            title = "Warning"
+            msg = "Old XML format detected for external conjugate heat transfer coupling.\n\n"
+            msg += "This XML should still be valid to launch a Code_Saturne computation outside of the GUI," \
+                   "but is not maintained anymore.\n"
+            msg += "Please fill in the coupling information again."
+            QMessageBox.warning(self, title, msg)
+
         # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 

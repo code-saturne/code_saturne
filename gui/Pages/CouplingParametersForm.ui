@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CouplingParametersForm</class>
+ <widget class="QWidget" name="CouplingParametersForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <widget class="QTabWidget" name="couplingModelsTabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="ConjugateHeatTransferView" name="conjugateHeatTransferTab">
+      <attribute name="title">
+       <string>Conjugate heat transfer</string>
+      </attribute>
+     </widget>
+     <widget class="FluidStructureInteractionView" name="fluidStructureInteractionTab">
+      <attribute name="title">
+       <string>Fluid structure interaction</string>
+      </attribute>
+     </widget>
+     <widget class="CathareCouplingView" name="cathareCouplingTab">
+      <attribute name="title">
+       <string>Cathare coupling</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ConjugateHeatTransferView</class>
+   <extends>QWidget</extends>
+   <header location="global">ConjugateHeatTransferView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FluidStructureInteractionView</class>
+   <extends>QWidget</extends>
+   <header>FluidStructureInteractionView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CathareCouplingView</class>
+   <extends>QWidget</extends>
+   <header>CathareCouplingView.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

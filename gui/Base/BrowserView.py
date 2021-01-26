@@ -475,7 +475,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
               'Closure modeling', 'Fluid properties',
               'Particles and droplets tracking', 'Volume conditions',
-              'Boundary conditions', 'Additional BC models', 'Time settings',
+              'Boundary conditions', 'Coupling parameters', 'Time settings',
               'Numerical parameters',
               'Postprocessing', 'Performance settings']
 
@@ -491,7 +491,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return ['Main fields', 'Deformable mesh', 'Turbulence models',
                     'Gas combustion', 'Thermal model', 'Body forces',
                     'Pulverized fuel combustion', 'Electrical models',
-                    'Conjugate heat transfer', 'Atmospheric flows',
+                    'Atmospheric flows',
                     'Species transport', 'Turbomachinery', 'Groundwater flows',
                     'Fans', 'Non condensable gases', 'Thermodynamics']
         elif section == 'Closure modeling':
@@ -508,9 +508,8 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return []
         elif section == "Boundary conditions":
             return []
-        elif section == 'Additional BC models':
-            return ['Fluid structure interaction', 'Cathare Coupling',
-                    'Immersed Boundaries']
+        elif section == 'Coupling parameters':
+            return ['Immersed Boundaries']
         elif section == 'Time settings':
             return ['Start/Restart']
         elif section == 'Numerical parameters':
@@ -804,8 +803,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         """
         self.setRowClose(self.tr('Boundary_conditions'))
-        self.setRowClose(self.tr('Fluid structure interaction'))
-        self.setRowClose(self.tr('Cathare Coupling'))
         self.setRowClose(self.tr('Immersed Boundaries'))
         """
 
@@ -987,7 +984,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
         self.setRowShow(self.tr('Electrical models'), m_elec)
-        self.setRowShow(self.tr('Conjugate heat transfer'), m_cht)
         self.setRowShow(self.tr('Atmospheric flows'), m_atmo)
         self.setRowShow(self.tr('Species transport'))
         self.setRowShow(self.tr('Turbomachinery'), m_tbm)
@@ -1025,12 +1021,10 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Boundary zones
 
         self.setRowShow(self.tr('Boundary conditions'))
-        self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
-        self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
         # Immersed boundaries is deactivated for the moment. Will be
         # reactivated following v6.1 once Page is updated in NCFD
         self.setRowShow(self.tr('Immersed Boundaries'), False)
-        self.setRowShow(self.tr("Additional BC models"), m_ale or is_ncfd or False)
+        self.setRowShow(self.tr("Coupling parameters"), m_lagr or m_ale or is_ncfd or m_cht)
 
         # Time settings
 

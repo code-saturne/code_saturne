@@ -60,24 +60,8 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         self.__node_models = self.case.xmlGetNode('thermophysical_models')
         self.__node_cht    = self.__node_models.xmlInitNode('conjugate_heat_transfer')
-        self.__node_syr    = self.__node_cht.xmlInitNode('external_coupling')
-
-    def defaultValues(self):
-        """
-        Return in a dictionnary which contains default values.
-        """
-        default = {}
-        default['syrthes_name']       = "SYRTHES"
-        default['verbosity']  = 0
-        default['visualization']  = 1
-        default['projection_axis']    = "off"
-        default['selection_criteria'] = "all[]"
-        return default
-
-
-    def __getNumberOfSyrthesCoupling(self):
-        return len(self.__node_syr.xmlGetNodeList('syrthes'))
-
+        self.__node_syr = self.__node_cht.xmlInitNode('external_coupling')
+        self.__node_inst = self.__node_syr.xmlInitNode('syrthes_instances')
 
     @Variables.undoLocal
     def deleteConjugateHeatTransfer(self):
@@ -86,8 +70,26 @@ class ConjugateHeatTransferModel(Variables, Model):
         @type status: C{String}
         @param status: set to "on" or "off" the conjugate heat transfer
         """
-        self.__node_syr.xmlRemoveChild('syrthes')
+        self.__node_inst.xmlRemoveNode()
 
+    def getNumberOfSyrthesCoupling(self):
+        return len(self.__node_inst.xmlGetNodeList('instance'))
+
+    @Variables.noUndo
+    def getSyrthesInstancesList(self):
+        """
+        @return: list of syrthes instances
+        """
+
+        lst = []
+        node_list = self.__node_inst.xmlGetNodeList('instance')
+
+        for node in node_list:
+            syrthes_name = node.xmlGetAttribute("name")
+            if syrthes_name and syrthes_name not in lst:
+                lst.append(syrthes_name)
+
+        return lst
 
     @Variables.noUndo
     def getSyrthesCouplingList(self):
@@ -95,263 +97,91 @@ class ConjugateHeatTransferModel(Variables, Model):
         @return: list of Syrthes coupling description.
         @rtype: C{List}
         """
-        node_list = self.__node_syr.xmlGetNodeList('syrthes')
+        node_list = self.__node_inst.xmlGetNodeList('instance')
         lst = []
-        for index in range(len(node_list)):
-            num = index + 1
-            syrthes_name  = self.getSyrthesInstanceName(num)
-            verbosity     = self.getSyrthesVerbosity(num)
-            visualization = self.getSyrthesVisualization(num)
-            proj_axis     = self.getSyrthesProjectionAxis(num)
-            location      = self.getSelectionCriteria(num)
-            lst.append([syrthes_name, verbosity, visualization,
-                         proj_axis, location])
-
+        for node in node_list:
+            syrthes_name = node.xmlGetAttribute("name")
+            boundary_labels = self.getBoundaryLabelList(syrthes_name)
+            lst.append([syrthes_name, boundary_labels])
         return lst
 
-
     @Variables.undoGlobal
-    def addSyrthesCoupling(self, syrthes_name,
-                           verbosity, visualization, proj_axis, location):
+    def addSyrthesCoupling(self, syrthes_name):
         """
         Add a new definition of a Syrthes coupling.
 
         @type syrthes_name: C{String}
         @param syrthes_name: Syrthes instance name
-        @type verbosity: C{Int}
-        @param verbosity: Syrthes verbosity
-        @param visualization: Syrthes visualization output
-        @type proj_axis: C{String}
-        @param proj_axis: Syrthes projection axis
-        @type location: C{String}
-        @param location: selection criteria
-        @return: new number of Syrthes coupling
-        @rtype: C{Int}
         """
-        num = len(self.__node_syr.xmlGetNodeList('syrthes'))
-        node_new = self.__node_syr.xmlAddChild('syrthes')
+        node_new = self.__node_inst.xmlInitChildNode('instance', name=syrthes_name)
+        return
 
-        num = num + 1
-        self.setSyrthesInstanceName(num, syrthes_name)
-        self.setSyrthesVerbosity(num, verbosity)
-        self.setSyrthesVisualization(num, visualization)
-        self.setSyrthesProjectionAxis(num, proj_axis)
-        self.setSelectionCriteria(num, location)
 
-        return num
+    @Variables.undoGlobal
+    def deleteSyrthesCoupling(self, syrthes_name, boundary_label):
+        """
+        Delete a syrthes coupling. If the syrthes instance has no
+        other coupled boundaries, remove it from the instances list.
+        """
 
+        node = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        if node:
+            # First delete coupling
+            for node_b in node.xmlGetChildNodeList("coupled_boundary"):
+                if node_b.xmlGetAttribute("label") == boundary_label:
+                    node_b.xmlRemoveNode()
+                    break
+
+            # If instance has no other coupling, delete it
+            if not node.xmlGetChildNodeList("coupled_boundary"):
+                node.xmlRemoveNode()
+
+
+
+    def addBoundaryLabel(self, syrthes_name, boundary_label):
+
+        # If boundary allready added, exit
+        if boundary_label in self.getBoundaryLabelList(syrthes_name):
+            return
+
+        node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        if node_instance == None:
+            raise ValueError("SYRTHES instance not found : ", syrthes_name)
+        node_zone = node_instance.xmlInitChildNode('coupled_boundary', label=boundary_label)
+
+    def getBoundaryLabelList(self, syrthes_name):
+        node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        if node_instance == None:
+            raise ValueError("SYRTHES instance not found : ", syrthes_name)
+        return [n.xmlGetAttribute("label") for n in node_instance.xmlGetChildNodeList("coupled_boundary")]
+
+    def flushBoundaryLabels(self):
+        for node_instance in self.__node_inst.xmlGetChildNodeList('instance'):
+            node_instance.xmlRemoveChildren()
 
     @Variables.undoLocal
-    def deleteSyrthesCoupling(self, num):
-        """
-        Delete a definition of a Syrthes coupling.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        node_list = self.__node_syr.xmlGetNodeList('syrthes')
-        node = node_list[num-1]
-        node.xmlRemoveNode()
-
-    #------------------------------------------------------------------
-    # Helper function
-    #------------------------------------------------------------------
-    def __getStringData(self, index, name, setFunction):
-        """
-        Get string value from xml file.
-        """
-        self.isLowerOrEqual(index+1, self.__getNumberOfSyrthesCoupling())
-        node = self.__node_syr.xmlGetNodeList('syrthes')[index]
-        value = node.xmlGetString(name)
-        return self.__getDefaultDataIfNone(index, value, name, setFunction)
-
-
-    def __getIntData(self, index, name, setFunction):
-        """
-        Get int value from xml file.
-        """
-        self.isLowerOrEqual(index+1, self.__getNumberOfSyrthesCoupling())
-        node = self.__node_syr.xmlGetNodeList('syrthes')[index]
-        value = node.xmlGetInt(name)
-        return self.__getDefaultDataIfNone(index, value, name, setFunction)
-
-
-    def __getDefaultDataIfNone(self, index, value, name, setFunction):
-        """
-        Get default value if value is none.
-        """
-        if value == None or value == "":
-            value = self.defaultValues()[name]
-            setFunction(index+1, value)
-        return value
-
-    #------------------------------------------------------------------
-    # Syrthes instance name
-    #------------------------------------------------------------------
-    @Variables.undoLocal
-    def setSyrthesInstanceName(self, num, value):
-        """
-        Set value of Syrthes instance name.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @type value: C{String}
-        @param value: Syrthes instance name
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        self.isStr(value)
-        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('syrthes_name', value)
-
+    def setSyrthesVerbosity(self, value):
+        self.__node_syr.xmlSetData('verbosity', value)
 
     @Variables.noUndo
-    def getSyrthesInstanceName(self, num):
-        """
-        Get value of Syrthes instance name.
+    def getSyrthesVerbosity(self):
+        return self.__node_syr.xmlGetString('verbosity')
 
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @return: Syrthes verbosity
-        @rtype: C{String}
-        """
-        return self.__getStringData(num-1,
-                                    'syrthes_name',
-                                    self.setSyrthesInstanceName)
-
-    #------------------------------------------------------------------
-    # Syrthes verbosity
-    #------------------------------------------------------------------
     @Variables.undoLocal
-    def setSyrthesVerbosity(self, num, value):
-        """
-        Set value of Syrthes verbosity.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @type value: C{Int}
-        @param value: Syrthes verbosity
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
-        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('verbosity', value)
-
+    def setSyrthesVisualization(self, value):
+        self.__node_syr.xmlSetData('visualization', value)
 
     @Variables.noUndo
-    def getSyrthesVerbosity(self, num):
-        """
-        Get value of Syrthes verbosity.
+    def getSyrthesVisualization(self):
+        return self.__node_syr.xmlGetString('visualization')
 
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @return: Syrthes verbosity
-        @rtype: C{Int}
-        """
-        return self.__getIntData(num-1,
-                                 'verbosity',
-                                 self.setSyrthesVerbosity)
-
-    #------------------------------------------------------------------
-    # Syrthes visualization output
-    #------------------------------------------------------------------
     @Variables.undoLocal
-    def setSyrthesVisualization(self, num, value):
-        """
-        Set value of Syrthes visualization.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @type value: C{Int}
-        @param value: Syrthes visualization
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
-        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('visualization', value)
-
+    def setSyrthesProjectionAxis(self, value):
+        self.__node_syr.xmlSetData('projection_axis', value)
 
     @Variables.noUndo
-    def getSyrthesVisualization(self, num):
-        """
-        Get value of Syrthes visualization.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @return: Syrthes visualization
-        @rtype: C{Int}
-        """
-        return self.__getIntData(num-1,
-                                 'visualization',
-                                 self.setSyrthesVisualization)
-
-    #------------------------------------------------------------------
-    # Projection axis
-    #------------------------------------------------------------------
-    @Variables.undoLocal
-    def setSyrthesProjectionAxis(self, num, value):
-        """
-        Set value of Syrthes projection axis.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @type value: C{String}
-        @param value: Syrthes projection axis
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        self.isStr(value)
-        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('projection_axis', value)
-
-
-    @Variables.noUndo
-    def getSyrthesProjectionAxis(self, num):
-        """
-        Get value of Syrthes projection axis.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @return: Syrthes projection axis
-        @rtype: C{String}
-        """
-        return self.__getStringData(num-1,
-                                    'projection_axis',
-                                    self.setSyrthesVerbosity)
-
-    #------------------------------------------------------------------
-    # Selection criteria
-    #------------------------------------------------------------------
-    @Variables.undoLocal
-    def setSelectionCriteria(self, num, value):
-        """
-        Set value of selection criteria.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @type value: C{String}
-        @param value: selection criteria
-        """
-        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
-        self.isStr(value)
-        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('selection_criteria', value)
-
-
-    @Variables.noUndo
-    def getSelectionCriteria(self, num):
-        """
-        Get value of selection criteria.
-
-        @type num: C{Int}
-        @param num: Syrthes coupling number
-        @return: selection criteria
-        @rtype: C{String}
-        """
-        return self.__getStringData(num-1,
-                                    'selection_criteria',
-                                    self.setSelectionCriteria)
+    def getSyrthesProjectionAxis(self):
+        return self.__node_syr.xmlGetString('projection_axis')
 
 #-------------------------------------------------------------------------------
 # ConjugateHeatTransferModel test case

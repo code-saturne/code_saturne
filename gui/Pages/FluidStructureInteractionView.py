@@ -719,7 +719,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
     """
     Main class.
     """
-    def __init__(self, parent, case):
+
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -728,6 +729,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
         Ui_FluidStructureInteractionForm.__init__(self)
         self.setupUi(self)
+
+    def setup(self, case):
 
         self.case = case
         self.case.undoStopGlobal()
