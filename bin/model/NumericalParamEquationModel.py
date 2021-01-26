@@ -152,7 +152,7 @@ class NumericalParamEquationModel(Model):
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
                     elif mdl =='enthalpy':
-                        self.default['min_value'] = 0
+                        self.default['min_value'] = -1e+12
                         self.default['max_value'] = 1e+12
                     elif mdl =='potential_temperature':
                         self.default['min_value'] = 0

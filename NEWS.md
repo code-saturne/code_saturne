@@ -1,3 +1,10 @@
+Release 6.0.7 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- GUI: do not clip enthalpy lower bound to 0 by default.
+
 Release 6.0.6 (December 22 2020)
 --------------------------------
 
