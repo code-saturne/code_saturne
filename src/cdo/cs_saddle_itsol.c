@@ -53,7 +53,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_blas.h"
+#include "cs_equation_common.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -447,95 +449,125 @@ _matvec_product(cs_saddle_system_t   *ssys,
   BFT_FREE(m12v2);
 }
 
-#if 0 /* WIP */
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the block preconditioners
- *
- * \param[in, out] slesp_a      settings for the A block
- * \param[in, out] slesp_schur  settings for the Schur complement approx.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_set_preconditioners(cs_param_sles_t  *slesp_a,
-                     cs_param_sles_t  *slesp_schur)
-{
-  slesp_a->setup_done = true;
-  slesp_a->verbosity = 3;
-  slesp_a->field_id = -1;
-  slesp_a->solver_class = CS_PARAM_SLES_CLASS_CS;
-  slesp_a->precond = CS_PARAM_PRECOND_AMG;
-  slesp_a->solver = CS_PARAM_ITSOL_CG;
-  slesp_a->amg_type = CS_PARAM_AMG_HOUSE_K;
-  slesp_a->eps = 1e-1; /* Only a coarse approximation is needed */
-  slesp_a->n_max_iter = 50;
-
-  slesp_schur->setup_done = true;
-  slesp_schur->verbosity = 3;
-  slesp_schur->field_id = -1;
-  slesp_schur->solver_class = CS_PARAM_SLES_CLASS_CS;
-  slesp_schur->precond = CS_PARAM_PRECOND_AMG;
-  slesp_schur->solver = CS_PARAM_ITSOL_CG;
-  slesp_schur->amg_type = CS_PARAM_AMG_HOUSE_K;
-  slesp_schur->eps = 1e-3; /* Only a coarse approximation is needed */
-  slesp_schur->n_max_iter = 50;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Apply diagonal preconditioning: Compute z s.t. P_d z = r
  *
- * \param[in]      slesp_a      settings for the A block
- * \param[in]      slesp_schur  settings for the Schur complement approx.
- * \param[in]      ssys         pointer to a cs_saddle_system_t structure
- * \param[in, out] z            array to evaluate
- * \param[out]     r            rhs of the preconditioning system
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in]      r       rhs of the preconditioning system
+ * \param[in, out] z       array to compute
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_diag_pc_apply(const cs_param_sles_t  *slesp_a,
-               const cs_param_sles_t  *slesp_schur,
-               cs_saddle_system_t     *ssys,
-               cs_real_t              *z,
-               cs_real_t              *r,
-               double                  r_norm)
+_diag_pc_apply(cs_saddle_system_t          *ssys,
+               cs_saddle_block_precond_t   *sbp,
+               cs_real_t                   *r,
+               cs_real_t                   *z)
 {
+  if (z == NULL)
+    return;
 
-  /* Prepare solving (handle parallelism)
-   * stride = 1 for scalar-valued */
-  cs_equation_prepare_system(1, n_scatter_dofs, matrix, rset, rhs_redux,
-                             xsol, b);
+  /* Sanity checks */
+  assert(ssys != NULL && sbp != NULL);
+  assert(ssys->n_m11_matrices == 1);
+  assert(r != NULL);
 
-  /* Solve the linear solver */
-  cs_solving_info_t  a_info = {.n_it = 0,
-                               .res_norm = DBL_MAX,
-                               .rhs_norm = r_norm};
+  cs_range_set_t  *rset = ssys->rset;
+  cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
-  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
-                                                    matrix,
-                                                    CS_HALO_ROTATION_IGNORE,
-                                                    slesp_a->eps,
-                                                    a_info.rhs_norm,
-                                                    &(a_info.n_it),
-                                                    &(a_info.res_norm),
-                                                    b,
-                                                    xsol,
-                                                    0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
+  if (sbp->m11_slesp == NULL) {
 
-  cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                  slesp0,
-                                  a,
-                                  cs_shared_range_set,
-                                  1,     /* no normalization */
-                                  false, /* rhs_redux --> already done */
-                                  msles->sles,
-                                  invA_lumped,
-                                  uza->rhs));
+    memcpy(z, r, sizeof(cs_real_t)*ssys->x1_size);
+
+  }
+  else {
+
+    /* Prepare solving (handle parallelism) scatter --> gather transformation
+     * stride = 1 for scalar-valued */
+    cs_equation_prepare_system(1, ssys->x1_size, m11, rset,
+                               false, /* no reduction of the rhs */
+                               z,     /* unknown */
+                               r);    /* rhs */
+
+    /* Compute the norm of r standing for the rhs (gather view)
+     * n_elts[0] corresponds to the number of element in the gather view
+     */
+    double  r_norm = cs_dot_xx(rset->n_elts[0], r);
+    cs_parall_sum(1, CS_DOUBLE, &r_norm);
+    r_norm = sqrt(fabs(r_norm));
+
+    /* Solve the linear solver */
+    memset(z, 0, sizeof(cs_real_t)*ssys->x1_size);
+
+    cs_solving_info_t  m11_info = {.n_it = 0,
+                                   .res_norm = DBL_MAX,
+                                   .rhs_norm = r_norm};
+
+    assert(sbp->m11_slesp != NULL);
+    cs_param_sles_t  *m11_slesp = sbp->m11_slesp;
+    cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
+                                                      m11,
+                                                      CS_HALO_ROTATION_IGNORE,
+                                                      m11_slesp->eps,
+                                                      m11_info.rhs_norm,
+                                                      &(m11_info.n_it),
+                                                      &(m11_info.res_norm),
+                                                      r,
+                                                      z,
+                                                      0,      /* aux. size */
+                                                      NULL);  /* aux. buffers */
+
+    /* Output information about the convergence of the resolution */
+    if (m11_slesp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
+                    " residual % -8.4e | normalization % -8.4e\n",
+                    m11_slesp->name, code,
+                    m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
+
+    /* Move back: gather --> scatter view */
+    cs_range_set_scatter(ssys->rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         z, z);
+    cs_range_set_scatter(ssys->rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         r, r);
+
+  }
+
+  /* Block m22 (or the Schur approx.) */
+  if (sbp->schur_slesp == NULL) /* Precond = Identity */
+    memcpy(z + ssys->max_x1_size,
+           r + ssys->max_x1_size, sizeof(cs_real_t)*ssys->x2_size);
+
+  else {
+
+    /* Norm for the x2 DoFs (not shared so that there is no need to
+       synchronize) */
+    cs_real_t  *z2 = z + ssys->max_x1_size;
+    const cs_real_t  *r2 = r + ssys->max_x1_size;
+
+    double  r_norm = cs_dot_xx(ssys->x2_size, r2);
+    cs_parall_sum(1, CS_DOUBLE, &r_norm);
+    r_norm = sqrt(fabs(r_norm));
+
+    memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
+    int  n_s_iter = cs_equation_solve_scalar_cell_system(ssys->x2_size,
+                                                         sbp->schur_slesp,
+                                                         sbp->schur_matrix,
+                                                         r_norm,
+                                                         sbp->schur_sles,
+                                                         z2,
+                                                         r2);
+
+#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+      z2[i2] = sbp->schur_scaling*z2[i2] + sbp->massp[i2]*r2[i2];
+
+  }
+
 }
-#endif
 
 /*============================================================================
  * Public function prototypes
@@ -573,12 +605,11 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
    */
 
   /* scatter view to gather view for the input vector */
-  if (rset != NULL)
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE,  /* type */
-                        1,             /* stride */
-                        vec,           /* in:  size=n_sles_scatter_elts */
-                        vec);          /* out: size=n_sles_gather_elts */
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE,  /* type */
+                      1,             /* stride */
+                      vec,           /* in:  size=n_sles_scatter_elts */
+                      vec);          /* out: size=n_sles_gather_elts */
 
   cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, mat, vec, matvec);
 
@@ -677,23 +708,25 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
  *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
  *        vector.
  *
- * \param[in]      ssys      pointer to a cs_saddle_system_t structure
- * \param[in, out] x1        array for the first part
- * \param[in, out] x2        array for the second part
- * \param[in, out] info      pointer to a cs_iter_algo_info_t structure
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_minres(cs_saddle_system_t    *ssys,
-                 cs_real_t             *x1,
-                 cs_real_t             *x2,
-                 cs_iter_algo_info_t   *info)
+cs_saddle_minres(cs_saddle_system_t          *ssys,
+                 cs_saddle_block_precond_t   *sbp,
+                 cs_real_t                   *x1,
+                 cs_real_t                   *x2,
+                 cs_iter_algo_info_t         *info)
 {
   /* Workspace */
   const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->x2_size;
   const size_t  n_bytes = sizeof(cs_real_t)*ssys_size;
-  cs_lnum_t  wsp_size = 10*ssys_size;
+  cs_lnum_t  wsp_size = 7*ssys_size;
   cs_real_t  *wsp = NULL;
 
   BFT_MALLOC(wsp, wsp_size, cs_real_t);
@@ -702,100 +735,106 @@ cs_saddle_minres(cs_saddle_system_t    *ssys,
   /* Set pointers */
   cs_real_t  *v     = wsp;
   cs_real_t  *vold  = wsp + ssys_size;
-  cs_real_t  *mv    = wsp + 2*ssys_size;
-  cs_real_t  *w     = wsp + 3*ssys_size;
-  cs_real_t  *wold  = wsp + 4*ssys_size;
-  cs_real_t  *woold = wsp + 5*ssys_size;
-  cs_real_t  *r     = wsp + 6*ssys_size;
-  cs_real_t  *z     = wsp + 7*ssys_size;
-  cs_real_t  *u     = wsp + 8*ssys_size;
-  cs_real_t  *uold  = wsp + 9*ssys_size;
+  cs_real_t  *w     = wsp + 2*ssys_size;
+  cs_real_t  *wold  = wsp + 3*ssys_size;
+  cs_real_t  *z     = wsp + 4*ssys_size;
+  cs_real_t  *zold  = wsp + 5*ssys_size;
+  cs_real_t  *mz    = wsp + 6*ssys_size;
 
-#if 0
-  /* Create and set preconditioners */
-  cs_param_sles_t  *slesp_a = cs_param_sles_create(-1, "precond_A_block");
-  cs_param_sles_t  *slesp_schur =  cs_param_sles_create(-1, "precond_S_block");
+  /* Compute the first residual: v = b - M.x */
+  _compute_residual_3(ssys, x1, x2, v);
 
-  _set_preconditioners(slesp_a, slesp_schur);
-#endif
+  /* Apply preconditioning: M.z = v */
+  _diag_pc_apply(ssys, sbp, v, z);
 
-  /* Compute the first residual */
-  _compute_residual_3(ssys, x1, x2, r);
+  info->res0 = _norm(ssys, v); /* ||v|| */
+  info->res = info->res0;
 
-#if 0
-  /* Apply preconditioning */
-  _diag_pc_apply(slesp_a, slesp_schur, ssys, r, z);
-#endif
-
-  double  beta = _norm(ssys, r);
-  info->res0 = beta;
-  info->res = beta;
-  memcpy(v, r, n_bytes);
+  /* dp = eta = <r, z>; beta = sqrt(dp) */
+  double  dp = _dot_product(ssys, v, z);
+  double  beta = sqrt(fabs(dp));
+  double  eta = beta;
 
   /* Initialization */
-  double  coold, soold;
-  double  eta = beta;
+  double  coold, soold, betaold = 1;
   double  c=1.0, cold=1.0, s=0.0, sold=0.0;
 
   while (info->cvg == CS_SLES_ITERATING) {
 
+    /* z = z * ibeta; */
     assert(fabs(beta) > 0.);
-    _scalar_scaling(ssys, 1./beta, v);
+    const double  ibeta = 1./beta;
+    _scalar_scaling(ssys, ibeta, z);
 
-    /* Compute the matrix-vector product M.v */
-    _matvec_product(ssys, v, r);
+    /* Compute the matrix-vector product M.z = mz */
+    _matvec_product(ssys, z, mz);
 
-    double  alpha = _dot_product(ssys, r, v);
+    /* alpha = <z, mz> */
+    const double  alpha =  _dot_product(ssys, z, mz);
+    const double  alpha_ibeta = alpha * ibeta;
+    const double  beta_ibetaold = beta/betaold;
 
-    /* r(k+1) = r(k) - alpha*v(k) - beta v(k-1) */
+    /* v(k+1) = mz(k) - alpha*v(k) - beta v(k-1) */
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
-    for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
-      r[i1] = r[i1] - alpha*v[i1] - beta*vold[i1];
+    for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++) {
+      const cs_real_t  _v = v[i1], _vold = vold[i1];
+      v[i1] = mz[i1] - alpha_ibeta*_v - beta_ibetaold*_vold;
+      vold[i1] = _v;
+    }
 
-    cs_real_t  *r2 = r + ssys->max_x1_size;
-    const cs_real_t  *v2 = v + ssys->max_x1_size;
-    const cs_real_t  *v2old = vold + ssys->max_x1_size;
+    cs_real_t  *v2 = v + ssys->max_x1_size;
+    cs_real_t  *v2old = vold + ssys->max_x1_size;
+    const cs_real_t  *mz2 = mz + ssys->max_x1_size;
 
 #   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-      r2[i2] = r2[i2] - alpha*v2[i2] - beta*v2old[i2];
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++) {
+      const cs_real_t  _v = v2[i2], _vold = v2old[i2];
+      v2[i2] = mz2[i2] - alpha_ibeta*_v - beta_ibetaold*_vold;
+      v2old[i2] = _v;
+    }
 
-    /* New value for beta */
-    double  betaold = beta;
-    beta = _norm(ssys, r);
+    /* Apply preconditionning: M.z(k+1) = v(k+1) */
+    memcpy(zold, z, n_bytes);
+    _diag_pc_apply(ssys, sbp, v, z);
 
-    coold = cold; cold = c; soold = sold; sold = s;
+    /* New value for beta: beta = sqrt(<r, z>) */
+    betaold = beta;
+    beta = sqrt(fabs(_dot_product(ssys, v, z)));
 
     /* QR factorization */
-    double rho0 = cold*alpha - coold*sold*betaold;
+    double rho0 = c*alpha - cold*s*betaold;
     double rho1 = sqrt(rho0*rho0 + beta*beta);
-    double rho2 = sold*alpha + coold*cold*betaold;
-    double rho3 = soold*betaold;
+    double rho2 = s*alpha + cold*c*betaold;
+    double rho3 = sold*betaold;
 
-    /* Givens rotation */
+    /* Givens rotation (update c and s)*/
     assert(fabs(rho1) > DBL_MIN);
     const double  irho1 = 1./rho1;
+    cold = c, sold = s;
     c = rho0*irho1;
     s = beta*irho1;
 
-    /* w(k+1) = 1/a0 * ( v(k) - alp3*w(k-1) - alp2 w(k) )*/
-    memcpy(woold, wold, n_bytes);
-    memcpy(wold, w, n_bytes);
-
+    /* w(k+1) = irho1 * ( z(k) - rho2*w(k) - rho3 w(k-1) )*/
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
-    for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
-      w[i1] = irho1 * (v[i1] - rho2*wold[i1] - rho3*woold[i1]);
+    for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++) {
+      const cs_real_t  _w = w[i1], _wold = wold[i1];
+      w[i1] = irho1 * (zold[i1] - rho2*_w - rho3*_wold);
+      wold[i1] = _w;
+    }
 
     cs_real_t  *w2 = w + ssys->max_x1_size;
-    const cs_real_t  *w2old = wold + ssys->max_x1_size;
-    const cs_real_t  *w2oold = woold + ssys->max_x1_size;
+    cs_real_t  *w2old = wold + ssys->max_x1_size;
+    const cs_real_t  *z2old = zold + ssys->max_x1_size;
 
 #   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-      w2[i2] = irho1 * (v2[i2] - rho2*w2old[i2] - rho3*w2oold[i2]);
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++) {
+      const cs_real_t  _w = w2[i2], _wold = w2old[i2];
+      w2[i2] = irho1 * (z2old[i2] - rho2*_w - rho3*_wold);
+      w2old[i2] = _w;
+    }
 
     /* Update the solution vector */
-    /* x1(k+1) = x1(k) + c1*eta*w(k+1) */
+    /* x1(k+1) = x1(k) + c*eta*w(k+1) */
     const double  ceta = c*eta;
 
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
@@ -807,15 +846,11 @@ cs_saddle_minres(cs_saddle_system_t    *ssys,
       x2[i2] = x2[i2] + ceta*w2[i2];
 
     /* Compute the current residual */
-    // _compute_residual_3(ssys, x1, x2, res);
-    info->res *= s;
+    //_compute_residual_3(ssys, x1, x2, res);
+    info->res *= fabs(s);
 
     /* Last updates */
     eta = -s*eta;
-
-    /* v(k-1) <-- v(k); v(k) <-- v(k+1); */
-    memcpy(vold, v, n_bytes);
-    memcpy(v, r, n_bytes);
 
     /* Check the convergence criteria */
     _cvg_test(info);
@@ -823,10 +858,6 @@ cs_saddle_minres(cs_saddle_system_t    *ssys,
   } /* main loop */
 
   /* Free temporary workspace */
-#if 0
-  cs_param_sles_free(&slesp_a);
-  cs_param_sles_free(&slesp_schur);
-#endif
   BFT_FREE(wsp);
 }
 

@@ -679,6 +679,174 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   return K;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the matrix for an approximation of the Schur complement based
+ *        on the inverse of the sum of the absolute values of the velocity
+ *        block
+ *
+ * \param[in]      nsp     pointer to a cs_navsto_param_t structure
+ * \param[in]      ssys    pointer to a saddle-point system structure
+ * \param[in, out] sbp     pointer to a cs_saddle_block_precond_t structure
+ * \param[out]     diagK   double pointer to the diagonal coefficients
+ * \param[out]     xtraK   double pointer to the extra-diagonal coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
+                     const cs_saddle_system_t      *ssys,
+                     cs_saddle_block_precond_t     *sbp,
+                     cs_real_t                    **p_diagK,
+                     cs_real_t                    **p_xtraK)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t  *ts = cs_glob_time_step;
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_lnum_t  b11_size = ssys->x1_size;
+  const cs_lnum_t  schur_size = ssys->x2_size;
+
+  /* Compute scaling coefficients */
+  const cs_real_t  rho0 = nsp->mass_density->ref_value;
+  cs_real_t  *visc_val = NULL;
+  int  visc_stride = 0;
+  if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
+    BFT_MALLOC(visc_val, 1, cs_real_t);
+    visc_val[0] = nsp->lam_viscosity->ref_value;
+  }
+  else {
+    visc_stride = 1;
+    BFT_MALLOC(visc_val, n_cells, cs_real_t);
+    cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
+  }
+
+  cs_real_t  alpha = 1/ts->dt[0];
+  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+    alpha = 0.01*nsp->lam_viscosity->ref_value;
+  sbp->schur_scaling = rho0*alpha;
+
+  BFT_MALLOC(sbp->massp, schur_size, cs_real_t);
+# pragma omp parallel for if (schur_size > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < schur_size; ip++)
+    sbp->massp[ip] = visc_val[visc_stride*ip]/quant->cell_vol[ip];
+
+  BFT_FREE(visc_val);
+
+  /* Compute m11^-1 lumped */
+
+  /* Modify the tolerance in order to be less accurate on this step */
+  cs_param_sles_t  *slesp0 = cs_param_sles_create(-1, "schur:inv_lumped");
+
+  cs_param_sles_copy_from(sbp->m11_slesp, slesp0);
+  slesp0->eps = 1e-1; /* Only a coarse approximation is needed */
+  slesp0->n_max_iter = 50;
+
+  cs_real_t  *rhs = NULL;
+  BFT_MALLOC(rhs, b11_size, cs_real_t);
+  for (cs_lnum_t i = 0; i < b11_size; i++) rhs[i] = 1;
+
+  cs_real_t  *inv_lumped = NULL;
+  BFT_MALLOC(inv_lumped, b11_size, cs_real_t);
+  memset(inv_lumped, 0, sizeof(cs_real_t)*b11_size);
+
+  cs_equation_solve_scalar_system(b11_size,
+                                  slesp0,
+                                  ssys->m11_matrices[0],
+                                  ssys->rset,
+                                  1,     /* no normalization */
+                                  false, /* rhs_redux --> already done */
+                                  sbp->m11_sles,
+                                  inv_lumped,
+                                  rhs);
+  /* Partial memory free */
+  BFT_FREE(rhs);
+  cs_param_sles_free(&slesp0);
+
+  /* Native format for the Schur approximation matrix */
+  cs_real_t   *diagK = NULL;
+  cs_real_t   *xtraK = NULL;
+
+  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+
+  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+
+  /* Add diagonal and extra-diagonal contributions from interior faces */
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_real_t  *a_ff = inv_lumped + 3*f_id;
+    const cs_nvec3_t  nvf = cs_quant_set_face_nvec(f_id, quant);
+
+    double  contrib = 0;
+    for (int k = 0; k < 3; k++)
+      contrib += a_ff[k]*nvf.unitv[k]*nvf.unitv[k];
+    contrib *= -nvf.meas*nvf.meas;
+
+    /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
+       adjacency */
+    cs_real_t  *_xtraK = xtraK + 2*f_id;
+    _xtraK[0] = _xtraK[1] = contrib;
+
+    /* Diagonal contributions */
+    cs_lnum_t cell_i = i_face_cells[f_id][0];
+    cs_lnum_t cell_j = i_face_cells[f_id][1];
+
+    diagK[cell_i] -= contrib;
+    diagK[cell_j] -= contrib;
+
+  } /* Loop on interior faces */
+
+  /* Add diagonal contributions from border faces*/
+  cs_real_t  *diag_shift = inv_lumped + 3*n_i_faces;
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+    const cs_real_t  *a_ff = diag_shift + 3*f_id;
+
+    cs_nvec3_t  nvf;
+    cs_nvec3(quant->b_face_normal + 3*f_id, &nvf);
+
+    double  contrib = 0;
+    for (int k = 0; k < 3; k++)
+      contrib += a_ff[k]*nvf.unitv[k]*nvf.unitv[k];
+    contrib *= nvf.meas*nvf.meas;
+
+    /* Diagonal contributions */
+    diagK[b_face_cells[f_id]] += contrib;
+
+  } /* Loop on border faces */
+
+  /* Return the associated matrix */
+  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
+  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
+
+  /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
+     should be symmetric */
+  sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
+                                       db_size,
+                                       eb_size);
+
+  cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
+                             db_size, eb_size,
+                             n_i_faces, i_face_cells,
+                             diagK, xtraK);
+
+  /* Return arrays (to be freed when the algorithm is converged) */
+  *p_diagK = diagK;
+  *p_xtraK = xtraK;
+
+  BFT_FREE(inv_lumped);
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2623,7 +2791,20 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NAVSTO_SLES_MINRES:
-    cs_equation_param_set_sles(mom_eqp);
+    {
+      cs_equation_param_set_sles(mom_eqp);
+
+      /* Set the solver for the compatible Laplacian (the related SLES is
+         defined using the system name instead of the field id since this is an
+         auxiliary system) */
+      int ier = cs_param_sles_set(false, nslesp->schur_sles_param);
+
+      if (ier == -1)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: The requested class of solvers is not available"
+                  " for the system %s\n Please modify your settings.",
+                  __func__, nslesp->schur_sles_param->name);
+    }
     break;
 
   case CS_NAVSTO_SLES_UZAWA_CG:
@@ -2958,6 +3139,8 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                        nslesp->il_algo_dtol);
 
   /* Set the saddle-point system */
+  /* --------------------------- */
+
   cs_saddle_system_t  *ssys = NULL;
   BFT_MALLOC(ssys, 1, cs_saddle_system_t);
 
@@ -2977,6 +3160,38 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   ssys->rset = cs_shared_range_set;
 
+  /* Define block preconditionning (Up to now, only diagonal block
+     preconditionning) */
+
+  cs_saddle_block_precond_t   *sbp = NULL;
+  BFT_MALLOC(sbp, 1, cs_saddle_block_precond_t);
+
+  sbp->m11_slesp = eqp->sles_param;
+  sbp->m11_sles = msles->sles;
+
+  /* Schur preconditionning */
+  cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
+
+  sbp->schur_slesp = schur_slesp;
+  if (msles->schur_sles == NULL) /* has been defined by name */
+    sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+  sbp->massp = NULL;
+
+  cs_real_t  *diagS = NULL, *xtraS = NULL;
+
+  switch (nslesp->schur_approximation) {
+
+  case CS_NAVSTO_SCHUR_LUMPED_INVERSE:
+    _invlumped_schur_sbp(nsp, ssys, sbp, &diagS, &xtraS);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid Schur approximation.",
+              __func__);
+  }
+
+
   /* u_f is allocated to 3*n_faces (the size of the scatter view but during the
      resolution process one need a vector at least of size n_cols of the matrix
      m11. */
@@ -2986,7 +3201,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   switch (nsp->sles_param->strategy) {
   case CS_NAVSTO_SLES_MINRES:
-    cs_saddle_minres(ssys, xu, msles->p_c, saddle_info);
+    cs_saddle_minres(ssys, sbp, xu, msles->p_c, saddle_info);
     break;
 
   default:
@@ -3000,7 +3215,11 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   /* Free the saddle-point system */
   BFT_FREE(xu);
-  BFT_FREE(ssys);
+  BFT_FREE(sbp->massp);
+  BFT_FREE(diagS);
+  BFT_FREE(xtraS);
+  BFT_FREE(sbp);
+  BFT_FREE(ssys); /* only shared pointers inside */
 
   int n_algo_iter = saddle_info->n_algo_iter;
   BFT_FREE(saddle_info);

@@ -38,10 +38,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh_adjacencies.h"
 #include "cs_iter_algo.h"
 #include "cs_matrix.h"
+#include "cs_mesh_adjacencies.h"
+#include "cs_param_sles.h"
 #include "cs_range_set.h"
+#include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -89,6 +91,22 @@ typedef struct {
   cs_range_set_t  *rset;
 
 } cs_saddle_system_t;
+
+typedef struct {
+
+  /* Block 11 settings */
+  cs_param_sles_t   *m11_slesp;
+  cs_sles_t         *m11_sles;
+
+  /* Schur complement settings */
+  cs_matrix_t       *schur_matrix;
+  cs_param_sles_t   *schur_slesp;
+  cs_sles_t         *schur_sles;
+  double             schur_scaling;
+
+  cs_real_t         *massp;       /* diagonal matrix */
+
+} cs_saddle_block_precond_t;
 
 /*============================================================================
  * Public function prototypes
@@ -150,20 +168,22 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
  *        stored in a hybrid way). Please refer to cs_saddle_system_t structure
  *        definition.
  *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
- *        vector
+ *        vector.
  *
- * \param[in]      ssys      pointer to a cs_saddle_system_t structure
- * \param[in, out] x1        array for the first part
- * \param[in, out] x2        array for the second part
- * \param[in, out] info      pointer to a cs_iter_algo_info_t structure
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_minres(cs_saddle_system_t    *ssys,
-                 cs_real_t             *x1,
-                 cs_real_t             *x2,
-                 cs_iter_algo_info_t   *info);
+cs_saddle_minres(cs_saddle_system_t          *ssys,
+                 cs_saddle_block_precond_t   *sbp,
+                 cs_real_t                   *x1,
+                 cs_real_t                   *x2,
+                 cs_iter_algo_info_t         *info);
 
 /*----------------------------------------------------------------------------*/
 /*!
