@@ -47,9 +47,9 @@ from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Application modules import
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
@@ -59,16 +59,16 @@ from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferM
 from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.Boundary import Boundary
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # log config
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("ConjugateHeatTransferView")
 log.setLevel(GuiParam.DEBUG)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # StandarItemModel class
 #-------------------------------------------------------------------------------
 
@@ -142,9 +142,9 @@ class StandardItemModelSyrthes(QStandardItemModel):
         self.setRowCount(row - 1)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Main class
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
     """
@@ -236,6 +236,6 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.__model.setSyrthesVisualization(value)
         pass
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

@@ -719,7 +719,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
     """
     Main class.
     """
-
     def __init__(self, parent=None):
         """
         Constructor

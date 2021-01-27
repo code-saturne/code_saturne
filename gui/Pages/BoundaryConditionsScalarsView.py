@@ -67,16 +67,13 @@ logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsScalarsView")
 log.setLevel(GuiParam.DEBUG)
 
-
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Main class
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     """
     """
-
     def __init__(self, parent):
         """
         Constructor
@@ -95,7 +92,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__boundary = None
 
         self.case.undoStopGlobal()
-
         self.notebook = NotebookModel(self.case)
         self.cht_model = ConjugateHeatTransferModel(self.case)
 
@@ -317,7 +313,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 syrCompleter = QCompleter(self.cht_model.getSyrthesInstancesList())
                 self.lineEditSyrthesInstance.setCompleter(syrCompleter)
 
-
         # Initalize species
         self.labelValueSpecies.hide()
         self.lineEditValueSpecies.hide()
@@ -452,7 +447,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.thermal_type = self.modelTypeThermal.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.thermal, self.thermal_type)
         self.initializeVariables()
-        return
+
 
     @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
@@ -612,7 +607,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                 required      = req,
                                 symbols       = sym,
                                 condition     = self.meteo_type,
-                                examples=exa)
+                                examples      = exa)
 
         if dialog.exec_():
             result = dialog.get_result()
