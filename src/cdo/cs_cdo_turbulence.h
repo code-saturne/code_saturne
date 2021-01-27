@@ -232,7 +232,7 @@ typedef struct {
    * @}
    * @name Main structure and function pointers
    *
-   * \brief The context structure is a structure cast on-the-fly and functino
+   * \brief The context structure is a structure cast on-the-fly and function
    * pointers are a limited set of functions associated to the main operations
    * for this structure: initialization, destruction, computation and update.
    *
@@ -263,6 +263,13 @@ typedef struct {
    */
 
   cs_turb_compute_t            *compute;
+
+  /*! \var compute_steady
+   * Function pointer to compute in steady mode all variables related to a
+   * turbulence model
+   */
+
+  cs_turb_compute_t            *compute_steady;
 
   /*! \var update
    * Function pointer to perform the update step (properties or arrays

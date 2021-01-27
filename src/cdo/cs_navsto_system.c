@@ -1238,15 +1238,22 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                         const cs_cdo_quantities_t   *cdoq)
 {
   CS_UNUSED(mesh);
-  CS_UNUSED(time_step);
-  CS_UNUSED(connect);
-  CS_UNUSED(cdoq);
 
   cs_navsto_system_t  *ns = cs_navsto_system;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  /* Nothing to do up to now */
+  /* Update quantities relative to turbulence (e.g. turbulence
+   * viscosity...) */
+  cs_turbulence_t  *turb = ns->turbulence;
+  if (turb->update != NULL)
+    turb->update(mesh,
+                 time_step,
+                 connect,
+                 cdoq,
+                 turb->param,
+                 turb->context);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1275,6 +1282,11 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   if (!cs_navsto_param_is_steady(nsp))
     return;
 
+  cs_turbulence_t  *turb = ns->turbulence;
+
+  /* Update variable, properties according to the computed variables */
+  cs_navsto_system_update(mesh, time_step, connect, cdoq);
+
   /* First resolve the thermal system if needed */
   cs_equation_t  *th_eq = cs_thermal_system_get_equation();
 
@@ -1284,6 +1296,12 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 
     /* Build and solve the Navier-Stokes system */
     ns->compute_steady(mesh, nsp, ns->scheme_context);
+
+    /* Build and solve the turbulence variable system */
+    if (turb->compute_steady != NULL)
+      turb->compute_steady(mesh,
+                           turb->param,
+                           turb->context);
 
     /* Solve the thermal equation */
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)) == false)
@@ -1310,7 +1328,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 
     cs_real_t  inv_tref = cs_thermal_system_get_reference_temperature();
     if (fabs(inv_tref) > cs_math_zero_threshold)
-      inv_tref = 1/inv_tref;
+      inv_tref = 1./inv_tref;
     else
       inv_tref = 1.;
 
@@ -1324,6 +1342,12 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 
       /* Build and solve the Navier-Stokes system */
       ns->compute_steady(mesh, nsp, ns->scheme_context);
+
+      /* Build and solve the turbulence variable system */
+      if (turb->compute_steady != NULL)
+        turb->compute_steady(mesh,
+                             turb->param,
+                             turb->context);
 
       /* Check convergence */
       cs_real_t  delta = -1;
@@ -1359,10 +1383,16 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     /* Build and solve the Navier-Stokes system */
     ns->compute_steady(mesh, nsp, ns->scheme_context);
 
+    /* Build and solve the turbulence variable system
+     * TODO, we should loop over NS+turb and add a
+     * stopping criteria on the NS matrix for instance
+     * */
+    if (turb->compute_steady != NULL)
+      turb->compute_steady(mesh,
+                           turb->param,
+                           turb->context);
   }
 
-  /* Update variable, properties according to the new computed variables */
-  cs_navsto_system_update(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1388,6 +1418,8 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
   const cs_navsto_param_t  *nsp = ns->param;
 
+  cs_turbulence_t  *turb = ns->turbulence;
+
   if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     /* First resolve the thermal system if needed */
@@ -1396,8 +1428,16 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
     assert(th_eq != NULL);
 
     /* Build and solve the Navier-Stokes system */
-    if (cs_navsto_param_is_steady(nsp) == false)
+    if (cs_navsto_param_is_steady(nsp) == false) {
       ns->compute(mesh, nsp, ns->scheme_context);
+
+      /* Build and solve the turbulence variable system */
+      if (turb->compute != NULL)
+        turb->compute(mesh,
+                      turb->param,
+                      turb->context);
+
+    }
 
     /* Solve the thermal equation */
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)))
@@ -1424,6 +1464,13 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the Navier-Stokes system */
       ns->compute(mesh, nsp, ns->scheme_context);
 
+      /* Build and solve the turbulence variable system */
+      if (turb->compute != NULL)
+        turb->compute(mesh,
+                      turb->param,
+                      turb->context);
+
+
     }
     else { /* Thermal system is declared as steady. So, this is equivalent to a
               standard Navier-Stokes iteration */
@@ -1441,6 +1488,13 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
     /* Build and solve the Navier-Stokes system */
     ns->compute(mesh, nsp, ns->scheme_context);
+
+    /* Build and solve the turbulence variable system */
+    if (turb->compute != NULL)
+      turb->compute(mesh,
+                    turb->param,
+                    turb->context);
+
 
   }
 

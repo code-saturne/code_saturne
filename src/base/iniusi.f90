@@ -159,6 +159,9 @@ call usipph(1, iturb, itherm, iale)
 ! Flow and other models selection through user C function
 call cs_user_model
 
+! Set type and order of the turbulence model
+call cs_set_type_order_turbulence_model()
+
 ! Activate CDO for ALE
 if (iale.eq.2) then
   call cs_ale_activate

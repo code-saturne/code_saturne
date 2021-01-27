@@ -1096,12 +1096,14 @@ cs_atmo_declare_chem_from_spack(void)
     strcat(name, label);
 
     /* Field of dimension 1 */
+    /* Give the original name as label */
     _atmo_chem.species_to_field_id[i]
       = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
 
     /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
     _atmo_chem.species_to_scalar_id[i]
       = cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
+
   }
 }
 

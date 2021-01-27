@@ -131,7 +131,7 @@ _tke_source_term(cs_lnum_t            n_elts,
                  void                *input,
                  cs_real_t           *retval)
 {
-  /* TBD */
+  /* TODO */
   CS_UNUSED(n_elts);
   CS_UNUSED(elt_ids);
   CS_UNUSED(dense_output);
@@ -162,7 +162,7 @@ _tke_lin_source_term(cs_lnum_t            n_elts,
                      void                *input,
                      cs_real_t           *retval)
 {
-  /* TBD */
+  /* TODO */
   CS_UNUSED(n_elts);
   CS_UNUSED(elt_ids);
   CS_UNUSED(dense_output);
@@ -242,6 +242,7 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
   turb->init_context = NULL;
   turb->free_context = NULL;
   turb->compute = NULL;
+  turb->compute_steady = NULL;
   turb->update = NULL;
 
   return turb;
@@ -291,7 +292,7 @@ cs_turbulence_init_setup(cs_turbulence_t   *turb)
   const cs_turbulence_param_t  *tbp = turb->param;
   const cs_turb_model_t  *model = tbp->model;
 
-  if (model->iturb == CS_TURB_NONE)
+  if (model->type == CS_TURB_NONE)
     return; /* Nothing to do if there is a laminar flow */
 
   /* Set field metadata */
@@ -332,7 +333,7 @@ cs_turbulence_init_setup(cs_turbulence_t   *turb)
     turb->init_context = cs_turb_init_k_eps_context;
     turb->free_context = cs_turb_free_k_eps_context;
     turb->compute = cs_turb_compute_k_eps;
-    turb->update = NULL; /* TBD */
+    turb->update = cs_turb_update_k_eps;
 
     turb->context = turb->init_context(model);
     break;
@@ -380,7 +381,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
   const cs_turbulence_param_t  *tbp = tbs->param;
   const cs_turb_model_t  *model = tbp->model;
 
-  if (model->iturb == CS_TURB_NONE)
+  if (model->type == CS_TURB_NONE)
     return; /* Nothing to do */
 
   /* Define the property related to the total viscosity */
@@ -520,12 +521,12 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   BFT_MALLOC(kec, 1, cs_turb_context_k_eps_t);
 
-  /* Add new equations for the tubulent kinetic energy (tke) and the dissipation
+  /* Add new equations for the turbulent kinetic energy (tke) and the dissipation
      (epsilon) */
 
   kec->tke = cs_equation_add("k", /* equation name */
                              "k", /* variable name */
-                             CS_EQUATION_TYPE_NAVSTO,
+                             CS_EQUATION_TYPE_NAVSTO, /* related to NS */
                              1,
                              CS_PARAM_BC_HMG_NEUMANN);
 
@@ -557,10 +558,10 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
   /* Reaction (implicit source terms) coefficients */
 
   kec->tke_reaction = cs_property_add("k_reaction",
-                                                CS_PROPERTY_ISO);
+                                      CS_PROPERTY_ISO);
 
   kec->eps_reaction = cs_property_add("epsilon_reaction",
-                                                CS_PROPERTY_ISO);
+                                      CS_PROPERTY_ISO);
 
   /* Retrieve the mass density */
 
@@ -591,8 +592,8 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   cs_equation_add_time(eps_eqp, mass_density);
   cs_equation_add_diffusion(eps_eqp, kec->eps_diffusivity);
-  cs_equation_add_reaction(tke_eqp, kec->tke_reaction);
-  cs_equation_add_advection(tke_eqp, adv);
+  cs_equation_add_reaction(eps_eqp, kec->eps_reaction);
+  cs_equation_add_advection(eps_eqp, adv);
 
   return kec;
 }
@@ -622,6 +623,34 @@ cs_turb_free_k_eps_context(void     *tbc)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update for the current time step the new state for the turbulence
+ *         model. This is used to update the turbulent viscosity.
+ *
+ * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tbp       pointer to a \ref cs_turbulence_param_t structure
+ * \param[in]      tbp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_update_k_eps(const cs_mesh_t              *mesh,
+                     const cs_time_step_t         *time_step,
+                     const cs_cdo_connect_t       *connect,
+                     const cs_cdo_quantities_t    *cdoq,
+                     const cs_turbulence_param_t  *tpb,
+                     void                         *tbc)
+{
+  if (tbc == NULL)
+    return;
+
+  //TODO
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute for the current time step the new state for the turbulence
  *         model. This means that all related equations are built and then
  *         solved.
@@ -639,8 +668,9 @@ cs_turb_compute_k_eps(const cs_mesh_t              *mesh,
 {
   if (tbc == NULL)
     return;
-}
 
+  //TODO
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

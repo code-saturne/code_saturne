@@ -568,7 +568,7 @@ typedef struct {
    * @{
    */
   /*! \var phys_constants
-   * Main physical constants (gravity vector and coriolis source term). This
+   * Main physical constants (gravity vector and Coriolis source term). This
    * structure is shared with the legacy part.
    */
   cs_physical_constants_t       *phys_constants;
