@@ -582,7 +582,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs\time_step_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 

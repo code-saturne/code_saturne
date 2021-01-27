@@ -276,7 +276,7 @@ typedef struct {
    * associated to the variables of a turbulence model are updated)
    */
 
-  cs_turb_update_t            *update;
+  cs_turb_update_t             *update;
 
 } cs_turbulence_t;
 
