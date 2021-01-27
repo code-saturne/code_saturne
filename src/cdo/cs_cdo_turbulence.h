@@ -399,6 +399,28 @@ cs_turb_free_k_eps_context(void     *tbc);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update for the current time step the new state for the turbulence
+ *         model. This is used to update the turbulent viscosity.
+ *
+ * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tbp       pointer to a \ref cs_turbulence_param_t structure
+ * \param[in]      tbp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_update_k_eps(const cs_mesh_t              *mesh,
+                     const cs_time_step_t         *time_step,
+                     const cs_cdo_connect_t       *connect,
+                     const cs_cdo_quantities_t    *cdoq,
+                     const cs_turbulence_param_t  *tpb,
+                     void                         *tbc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute for the current time step the new state for the turbulence
  *         model. This means that all related equations are built and then
  *         solved.
