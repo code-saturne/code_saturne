@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2021 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -53,6 +53,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_order.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
 
@@ -431,8 +432,34 @@ _build_local_probe_set(cs_probe_set_t  *pset)
                       &s);
 
   pset->n_probes = n_elts;
-  pset->coords = coords;
-  pset->s_coords = s;
+
+  /* Order by curvilinear coordinates to avoid issues with some
+     plot formats/tools in single-rank mode (not needed in parallel,
+     as this is already handled through IO numbering in that case) */
+
+  if (cs_glob_n_ranks <= 1) {
+    cs_lnum_t *order = NULL;
+    BFT_MALLOC(order, n_elts, cs_lnum_t);
+    cs_order_real_allocated(NULL, s, order, n_elts);
+
+    BFT_MALLOC(pset->coords, n_elts, cs_real_3_t);
+    BFT_MALLOC(pset->s_coords, n_elts, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t j = order[i];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        pset->coords[i][k] = coords[j][k];
+      pset->s_coords[i] = s[j];
+    }
+
+    BFT_FREE(coords);
+    BFT_FREE(s);
+  }
+
+  else {
+    pset->coords = coords;
+    pset->s_coords = s;
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
