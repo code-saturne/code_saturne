@@ -153,8 +153,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
         self.modelTypeMeteo = ComboModel(self.comboBoxTypeMeteo, 1, 1)
 
-        self.initSyrthesInstanceList()
-
         self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeMeteo.addItem(self.tr("Prescribed value"), 'dirichlet')
@@ -168,6 +166,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
         elif self.nature == 'wall':
+            self.initSyrthesInstanceList()
+
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
