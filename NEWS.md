@@ -4,26 +4,25 @@ Master (not on release branches yet)
 User changes:
 
 - Major evolution concerning coupling with external codes
-  * Create a generic page "Coupling parameters" after boundary
+  * Create a generic "Coupling parameters" page after boundary
     conditions in the tree view. This page gathers the parameters for
-    syrthes, aster and cathare couplings.
-  * The definition of a coupling with syrthes is now done directly as a
+    Syrthes, code_aster and cathare couplings.
+  * The definition of a coupling with Syrthes is now done directly as a
     thermal boundary condition (like flux or temperature).
-  * Display external coupling tab as deprecated
+  * Display external coupling tab as deprecated.
 
 Release 7.0.0 (unreleased)
 --------------------------
 
 User changes:
 
-- GUI : Change available options for time-stepping.
-  * Previous steady option ("Steady (constant relaxation coefficient)")
-    , idtvar = -1,is now only available if it is activated in the
-    opened xml file. It is then named "Deprecated : Steady ..."
-    to indicate its new status
+- GUI: Change available options for time-stepping.
+  * Previous steady option ("Steady (constant relaxation coefficient)"),
+    idtvar = -1, is now only available if it is activated in the
+    opened xml file. It is then named "Deprecated: Steady ..."
+    to indicate its new status.
   * Previous "pseduo steady" option, idtvar = 2, is renamed as
-    "Steady (local time step)" and is now the defacto steady
-    algorithme.
+    "Steady (local time step)" and is now the de-facto steady algorithm.
 
 - Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
   * Structures are renamed to "cs_velocity_coupling_model_t" and
@@ -33,7 +32,7 @@ User changes:
 - When solving for enthalpy, multiplying a face's boundary condition
   code (icodcl) by -1 allows defining it by temperature instead.
 
-- Add a 'code_saturne symbol2line' command.
+- Add a `code_saturne symbol2line` command.
   This command can be used with debug symbols from a stack trace in order
   to find the origin of the call.
   Usage example for the line:
@@ -47,8 +46,7 @@ Numerics and physical modeling:
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
 
-- Activate improved hydrostatic pressure interpolation (iphydr)
-  by default.
+- Activate improved hydrostatic pressure interpolation (iphydr) by default.
 
 Release 6.3.0 (December 21 2020)
 --------------------------------
