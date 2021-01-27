@@ -46,6 +46,7 @@
 
 #include "cs_equation.h"
 #include "cs_post.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -629,9 +630,7 @@ cs_turb_free_k_eps_context(void     *tbc)
  * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]      tbp       pointer to a \ref cs_turbulence_param_t structure
- * \param[in]      tbp       pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ * \param[in]      turb      pointer to a \ref cs_turbulence_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -640,13 +639,56 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_time_step_t         *time_step,
                      const cs_cdo_connect_t       *connect,
                      const cs_cdo_quantities_t    *cdoq,
-                     const cs_turbulence_param_t  *tpb,
-                     void                         *tbc)
+                     //TODO const cs_navsto_param_t *nsp,
+                     const cs_turbulence_t        *turb)
 {
-  if (tbc == NULL)
+
+  if (turb == NULL)
     return;
 
-  //TODO
+  cs_lnum_t n_cells = mesh->n_cells;
+
+  cs_turb_context_k_eps_t  *kec =
+    (cs_turb_context_k_eps_t *)turb->context;
+
+  /* Update turbulent viscosity field */
+  cs_real_t *mu_t = turb->mu_t_field->val;
+  cs_real_t *k = cs_equation_get_cell_values(kec->tke, false);
+  cs_real_t *eps = cs_equation_get_cell_values(kec->eps, false);
+
+  /* Get rho */
+  const cs_property_t *cpro_rho = cs_property_by_name("mass_density");
+  cs_real_t *rho = NULL;
+  int rho_stride = 0;
+  // TODO in a more generic way
+  if (cs_property_is_uniform(cpro_rho)) {
+    BFT_MALLOC(rho, 1, cs_real_t);
+    rho[0] = cpro_rho->ref_value;
+  }
+  else {
+    rho_stride = 1;
+    BFT_MALLOC(rho, n_cells, cs_real_t);
+    cs_property_eval_at_cells(time_step->t_cur, cpro_rho, rho);
+  }
+  /* Get laminar viscosity */
+  cs_real_t *mu_l = NULL;
+  int mu_stride = 0;
+  if (cs_property_is_uniform(turb->mu_l)) {
+    BFT_MALLOC(mu_l, 1, cs_real_t);
+    mu_l[0] = turb->mu_l->ref_value;
+  }
+  else {
+    mu_stride = 1;
+    BFT_MALLOC(mu_l, n_cells, cs_real_t);
+    cs_property_eval_at_cells(time_step->t_cur, turb->mu_l, mu_l);
+  }
+
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+    mu_t[cell_id] = cs_turb_cmu * rho[cell_id*rho_stride] *
+      cs_math_pow2(k[cell_id]) / eps[cell_id];
+    turb->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id*mu_stride];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

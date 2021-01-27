@@ -93,6 +93,14 @@ typedef struct {
 
 } cs_turbulence_param_t;
 
+/*! \struct cs_turbulence_t
+ *  \brief Structure storing the parameters related to the resolution of the
+ *         tubulence modelling. Several members are structures defined in
+ *         cs_turbulence_model.h
+ */
+
+typedef struct _cs_turbulence_t cs_turbulence_t;
+
 /*============================================================================
  * Function pointer definition
  *============================================================================*/
@@ -149,8 +157,7 @@ typedef void
  * \param[in]      time_step  structure managing the time stepping
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      tbp        pointer to a \ref cs_turbulence_param_t structure
- * \param[in, out] tbc        pointer to a structure cast on-the-fly
+ * \param[in]      turb       pointer to a \ref cs_turbulence_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -159,8 +166,7 @@ typedef void
                    const cs_time_step_t           *time_step,
                    const cs_cdo_connect_t         *connect,
                    const cs_cdo_quantities_t      *cdoq,
-                   const cs_turbulence_param_t    *tbp,
-                   void                           *tbc);
+                   const cs_turbulence_t          *turb);
 
 /*! \struct cs_turbulence_t
  *  \brief Structure storing the parameters related to the resolution of the
@@ -168,7 +174,7 @@ typedef void
  *         cs_turbulence_model.h
  */
 
-typedef struct {
+struct _cs_turbulence_t {
 
   /*!
    * @name Turbulence modelling
@@ -278,7 +284,7 @@ typedef struct {
 
   cs_turb_update_t             *update;
 
-} cs_turbulence_t;
+};
 
 /*============================================================================
  * Public function prototypes
@@ -435,6 +441,25 @@ void
 cs_turb_compute_k_eps(const cs_mesh_t              *mesh,
                       const cs_turbulence_param_t  *tpb,
                       void                         *tbc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update for the current time step the new state for the turbulence
+ *         model. This is used to update the turbulent viscosity.
+ *
+ * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      turb      pointer to a \ref cs_turbulence_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_update_k_eps(const cs_mesh_t              *mesh,
+                     const cs_time_step_t         *time_step,
+                     const cs_cdo_connect_t       *connect,
+                     const cs_cdo_quantities_t    *cdoq,
+                     const cs_turbulence_t        *turb);
 
 /*----------------------------------------------------------------------------*/
 

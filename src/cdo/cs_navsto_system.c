@@ -1251,8 +1251,7 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                  time_step,
                  connect,
                  cdoq,
-                 turb->param,
-                 turb->context);
+                 turb);
 
 }
 
@@ -1284,15 +1283,15 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
 
   cs_turbulence_t  *turb = ns->turbulence;
 
-  /* Update variable, properties according to the computed variables */
-  cs_navsto_system_update(mesh, time_step, connect, cdoq);
-
   /* First resolve the thermal system if needed */
   cs_equation_t  *th_eq = cs_thermal_system_get_equation();
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     assert(th_eq != NULL);
+
+    /* Update variable, properties according to the computed variables */
+    cs_navsto_system_update(mesh, time_step, connect, cdoq);
 
     /* Build and solve the Navier-Stokes system */
     ns->compute_steady(mesh, nsp, ns->scheme_context);
@@ -1336,6 +1335,9 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     int  iter = 0;
 
     do {
+
+      /* Update variable, properties according to the computed variables */
+      cs_navsto_system_update(mesh, time_step, connect, cdoq);
 
       /* Build and solve the thermal system */
       cs_thermal_system_compute_steady_state(mesh, time_step, connect, cdoq);
@@ -1420,6 +1422,9 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
   cs_turbulence_t  *turb = ns->turbulence;
 
+  /* Update variable, properties according to the new computed variables */
+  cs_navsto_system_update(mesh, time_step, connect, cdoq);
+
   if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
 
     /* First resolve the thermal system if needed */
@@ -1498,8 +1503,6 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 
   }
 
-  /* Update variable, properties according to the new computed variables */
-  cs_navsto_system_update(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/
