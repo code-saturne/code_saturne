@@ -630,7 +630,7 @@ cs_probe_finalize(void)
 /*!
  * \brief Transfer info on associated fields to the caller.
  *
- * This function transfert the property of the associated arrays to the caller
+ * This function transfers the property of the associated arrays to the caller
  * and removes it from the probe set info.
  *
  * \param[in]   pset        pointer to a cs_probe_set_t structure
@@ -1076,7 +1076,7 @@ cs_probe_set_allow_overwrite(const char  *name)
  * \ref cs_probe_set_create_from_local.
  *
  * If provided, the array of curvilinear absicssa must match the size of the
- * probe set. If set to NULL, it is assumed a unifor spacing is provided
+ * probe set. If set to NULL, it is assumed a uniform spacing is provided
  * between points.
  *
  * \param[in]  pset  pointer to a cs_probe_set_t structure

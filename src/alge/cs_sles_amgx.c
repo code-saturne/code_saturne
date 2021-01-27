@@ -155,7 +155,7 @@ static int  _n_amgx_systems = 0;
 static MPI_Comm _amgx_comm = MPI_COMM_NULL;
 #endif
 
-/* TODO: for mult-device configurations, this will need to be adapted */
+/* TODO: for multi-device configurations, this will need to be adapted */
 
 static int _n_devices = 1;
 static int _devices[] = {0};
