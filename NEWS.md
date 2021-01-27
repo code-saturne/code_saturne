@@ -3,6 +3,8 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Ensure profiles are ordered by curvilinear coordinates in serial mode.
+
 - Scripts: fix MPMD (coupling) backup "script" launch mode.
 
 - GUI: Remove old placeholder for Lagrangian BC's, add missing Lagrangian
