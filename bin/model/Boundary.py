@@ -2914,9 +2914,12 @@ class WallBoundary(Boundary) :
                     scalarNode.xmlRemoveChild(tt)
 
     def __deleteSyrthesNodes(self):
-        syr_inst = self.boundNode.xmlGetChildNode("syrthes")['instance_name']
-        self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
-        self.boundNode.xmlRemoveChild("syrthes")
+        node_syr = self.boundNode.xmlGetChildNode("syrthes")
+
+        if node_syr:
+            syr_inst = node_syr['instance_name']
+            self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            self.boundNode.xmlRemoveChild("syrthes")
 
     def __defaultValues(self):
         """
