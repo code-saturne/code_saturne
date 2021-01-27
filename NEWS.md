@@ -3,14 +3,13 @@ Release 7.0 (unreleased)
 
 User changes:
 
-- GUI : Change available options for time-stepping.
-  * Previous steady option ("Steady (constant relaxation coefficient)")
-    , idtvar = -1,is now only available if it is activated in the
-    opened xml file. It is then named "Deprecated : Steady ..."
-    to indicate its new status
+- GUI: Change available options for time-stepping.
+  * Previous steady option ("Steady (constant relaxation coefficient)"),
+    idtvar = -1, is now only available if it is activated in the
+    opened xml file. It is then named "Deprecated: Steady ..."
+    to indicate its new status.
   * Previous "pseduo steady" option, idtvar = 2, is renamed as
-    "Steady (local time step)" and is now the defacto steady
-    algorithme.
+    "Steady (local time step)" and is now the de-facto steady algorithm.
 
 - Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
   * Structures are renamed to "cs_velocity_coupling_model_t" and
@@ -20,7 +19,7 @@ User changes:
 - When solving for enthalpy, multiplying a face's boundary condition
   code (icodcl) by -1 allows defining it by temperature instead.
 
-- Add a 'code_saturne symbol2line' command.
+- Add a `code_saturne symbol2line` command.
   This command can be used with debug symbols from a stack trace in order
   to find the origin of the call.
   Usage example for the line:
@@ -34,8 +33,7 @@ Numerics and physical modeling:
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
 
-- Activate improved hydrostatic pressure interpolation (iphydr)
-  by default.
+- Activate improved hydrostatic pressure interpolation (iphydr) by default.
 
 Release 6.3.0 (December 21 2020)
 --------------------------------
