@@ -424,7 +424,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
 
     @Variables.noUndo
-    def getFormula(self, fieldId, tag):
+    def getFormula(self, fieldId, tag, zone="1"):
         """
         Return a formula for properties
         """
@@ -433,14 +433,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
+            else:
+                node = node.xmlInitChildNode("zone", zone_id=zone)
+
         if node:
-            return node.xmlGetString('formula')
+            return node.xmlGetChildString('formula')
         else:
             return None
 
 
     @Variables.undoLocal
-    def setFormula(self, fieldId, tag, strg):
+    def setFormula(self, fieldId, tag, strg, zone="1"):
         """
         Gives a formula for properties
         """
@@ -449,6 +456,13 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
+
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
+            else:
+                node = node.xmlInitChildNode("zone", zone_id=zone)
+
         node.xmlSetData('formula', strg)
 
 
@@ -531,60 +545,60 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
 
     # MEG Generation related functions
-    def getFormulaComponents(self, fieldId, tag):
+    def getFormulaComponents(self, fieldId, tag, zone="1"):
         """
         Get the formula components for a given tag
         """
 
         if tag == 'density':
-            return self.getFormulaRhoComponents(fieldId)
+            return self.getFormulaRhoComponents(fieldId, zone)
 
         elif tag == 'molecular_viscosity':
-            return self.getFormulaMuComponents(fieldId)
+            return self.getFormulaMuComponents(fieldId, zone)
 
         elif tag == 'specific_heat':
-            return self.getFormulaCpComponents(fieldId)
+            return self.getFormulaCpComponents(fieldId, zone)
 
         elif tag == 'thermal_conductivity':
-            return self.getFormulaAlComponents(fieldId)
+            return self.getFormulaAlComponents(fieldId, zone)
 
         elif tag == 'd_rho_d_P':
-            return self.getFormuladrodpComponents(fieldId)
+            return self.getFormuladrodpComponents(fieldId, zone)
 
         elif tag == 'd_rho_d_h':
-            return self.getFormuladrodhComponents(fieldId)
+            return self.getFormuladrodhComponents(fieldId, zone)
 
         elif tag == 'temperature':
-            return self.getFormulaTemperatureComponents(fieldId)
+            return self.getFormulaTemperatureComponents(fieldId, zone)
 
         elif tag == 'surface_tension':
             return self.getFormulaStComponents()
 
         elif tag == 'd_Tsat_d_P':
-            return self.getFormuladTsatdpComponents()
+            return self.getFormuladTsatdpComponents(zone)
 
         elif tag == 'LatentHeat':
-            return self.getFormulaHlatComponents()
+            return self.getFormulaHlatComponents(zone)
 
         elif tag == 'SaturationTemperature':
-            return self.getFormulaTsatComponents()
+            return self.getFormulaTsatComponents(zone)
 
         elif 'd_Hsat_d_P_' in tag:
-            return self.getFormuladHsatdpComponents(tag)
+            return self.getFormuladHsatdpComponents(tag, zone)
 
         elif 'SaturationEnthalpy' in tag:
-            return self.getFormulaHsatComponents(tag)
+            return self.getFormulaHsatComponents(tag, zone)
 
         else:
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
 
 
-    def getFormulaRhoComponents(self, fieldId):
+    def getFormulaRhoComponents(self, fieldId, zone="1"):
         """
         User formula for density
         """
-        exp = self.getFormula(fieldId, 'density')
+        exp = self.getFormula(fieldId, 'density', zone)
         if not exp:
             exp = "rho = 1.8;"
         req = [('rho', 'Density')]
@@ -619,11 +633,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaMuComponents(self, fieldId):
+    def getFormulaMuComponents(self, fieldId, zone="1"):
         """
         User formula for molecular viscosity
         """
-        exp = self.getFormula(fieldId, 'molecular_viscosity')
+        exp = self.getFormula(fieldId, 'molecular_viscosity', zone)
         if not exp:
             exp = "mu = 4.56e-05;"
         req = [('mu', 'Molecular Viscosity')]
@@ -658,11 +672,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaCpComponents(self, fieldId):
+    def getFormulaCpComponents(self, fieldId, zone="1"):
         """
         User formula for specific heat
         """
-        exp = self.getFormula(fieldId, 'specific_heat')
+        exp = self.getFormula(fieldId, 'specific_heat', zone)
 
         if not exp:
             exp = "cp = 4000.;"
@@ -698,11 +712,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaAlComponents(self, fieldId):
+    def getFormulaAlComponents(self, fieldId, zone="1"):
         """
         User formula for thermal conductivity
         """
-        exp = self.getFormula(fieldId, 'thermal_conductivity')
+        exp = self.getFormula(fieldId, 'thermal_conductivity', zone)
         if not exp:
             exp = "lambda = 1.e-5;"
         req = [('lambda', 'Thermal conductivity')]
@@ -777,12 +791,12 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaTemperatureComponents(self, fieldId):
+    def getFormulaTemperatureComponents(self, fieldId, zone="1"):
         """
         User formula for temperature as a function of enthalpy
         """
         label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
-        exp = self.getFormula(fieldId, 'temperature')
+        exp = self.getFormula(fieldId, 'temperature', zone)
         if not exp:
             exp = label + " = 273.15;"
         req = [(label, 'temperature')]
@@ -812,11 +826,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormuladrodpComponents(self, fieldId):
+    def getFormuladrodpComponents(self, fieldId, zone="1"):
         """
         User formula for d(ro) / dp (compressible flow)
         """
-        exp = self.getFormula(fieldId, 'd_rho_d_P')
+        exp = self.getFormula(fieldId, 'd_rho_d_P', zone)
         if not exp:
             exp = "d_rho_d_P = 0.;"
         req = [('d_rho_d_P', 'Partial derivative of density with respect to pressure')]
@@ -848,11 +862,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return  exp, req, known_fields, symbols
 
 
-    def getFormuladrodhComponents(self, fieldId):
+    def getFormuladrodhComponents(self, fieldId, zone="1"):
         """
         User formula for d(ro) / dh (compressible flow)
         """
-        exp = self.getFormula(fieldId, 'd_rho_d_h')
+        exp = self.getFormula(fieldId, 'd_rho_d_h', zone)
         if not exp:
             exp = "d_rho_d_h = 0.;"
         req = [('d_rho_d_h', 'Partial derivative of density with respect to enthalpy')]
@@ -884,9 +898,9 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormuladTsatdpComponents(self):
+    def getFormuladTsatdpComponents(self, zone="1"):
 
-        exp = self.getFormula('none', 'd_Tsat_d_P')
+        exp = self.getFormula('none', 'd_Tsat_d_P', zone)
         label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
         req = [(label, 'Partial derivative of Saturation temperature with respect to pressure')]
 
@@ -909,9 +923,9 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaHlatComponents(self):
+    def getFormulaHlatComponents(self, zone="1"):
 
-        exp = self.getFormula('none', 'LatentHeat')
+        exp = self.getFormula('none', 'LatentHeat', zone)
         label = self.m_out.getVariableLabel('none', 'LatentHeat')
         req = [(label, 'latent heat')]
 
@@ -934,9 +948,9 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaTsatComponents(self):
+    def getFormulaTsatComponents(self, zone="1"):
 
-        exp = self.getFormula('none', 'SaturationTemperature')
+        exp = self.getFormula('none', 'SaturationTemperature', zone)
         label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
         req = [(label, 'SaturationTemperature')]
 
@@ -958,9 +972,9 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return exp, req, known_fields, symbols
 
-    def getFormuladHsatdpComponents(self, tag):
+    def getFormuladHsatdpComponents(self, tag, zone="1"):
 
-        exp = self.getFormula('none', tag)
+        exp = self.getFormula('none', tag, zone)
 
         label = self.m_out.getVariableLabel('none', tag)
         req  = [(label, 'Partial derivative of enthalpy of saturation with respect to pressure')]
@@ -984,10 +998,10 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaHsatComponents(self, tag):
+    def getFormulaHsatComponents(self, tag, zone="1"):
 
         label = self.m_out.getVariableLabel('none', tag)
-        exp = self.getFormula('none', tag)
+        exp = self.getFormula('none', tag, zone)
 
         req = [(label, 'enthalpy of saturation')]
 

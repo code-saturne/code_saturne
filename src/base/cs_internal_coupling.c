@@ -55,6 +55,7 @@
 #include "cs_sort.h"
 #include "cs_search.h"
 #include "cs_mesh_connect.h"
+#include "cs_mesh_location.h"
 #include "cs_coupling.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
@@ -973,6 +974,28 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
   _criteria_initialize(criteria_cells, NULL, cpl);
 
   _n_internal_couplings++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling volume using given cs_zone_t. Then, this volume will
+ * be separated from the rest of the domain with thin walls.
+ *
+ * \param[in, out] mesh  pointer to mesh structure to modify
+ * \param[in]      z     pointer to cs_volume_zone_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_zone(cs_mesh_t       *mesh,
+                              const cs_zone_t *z)
+{
+
+  const char *criteria =
+    cs_mesh_location_get_selection_string(z->location_id);
+
+  cs_internal_coupling_add_volume(mesh, criteria);
+
 }
 
 /*----------------------------------------------------------------------------*/

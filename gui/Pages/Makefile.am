@@ -79,6 +79,7 @@ InitializationView.py \
 InterfacialEnthalpyView.py \
 InterfacialForcesView.py \
 InterfacialAreaView.py \
+InternalCouplingView.py \
 LagrangianBoundaryView.py \
 LagrangianOutputView.py \
 LagrangianStatisticsView.py \

@@ -66,6 +66,7 @@
 #include "cs_gui_mobile_mesh.h"
 #include "cs_geom.h"
 #include "cs_gwf_physical_properties.h"
+#include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -230,16 +231,12 @@ _thermal_table_option(const char *name)
 }
 
 /*----------------------------------------------------------------------------
- * Return the value of the choice attribute from a property name.
- *
- * parameters:
- *   property_name        <--  name of the property
  *----------------------------------------------------------------------------*/
 
-static const char*
-_properties_choice(const char *property_name)
+static const cs_tree_node_t *
+_get_property_node(const char *property_name,
+                   const char *zone_name)
 {
-  const char *choice = NULL;
 
   cs_tree_node_t *tn = cs_tree_find_node(cs_glob_tree, "property");
   while (tn != NULL) {
@@ -250,9 +247,60 @@ _properties_choice(const char *property_name)
       tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
   }
 
-  choice = cs_tree_node_get_child_value_str(tn, "choice");
+  /* FIXME: Currently zone definitions (other than all_cells) are
+   * handled using sub-nodes. This will be changed for v7.1
+   */
+  if (zone_name != NULL) {
+    if (strcmp(zone_name, "all_cells")) {
+      tn = cs_tree_node_get_child(tn, "zone");
+      tn = cs_tree_node_get_sibling_with_tag(tn, "name", zone_name);
+    }
+  }
+
+  return tn;
+
+}
+
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute from a property name.
+ *
+ * parameters:
+ *   property_name        <--  name of the property
+ *   zone_name            <--  name of zone. If NULL we use
+ *                             default definition
+ *----------------------------------------------------------------------------*/
+
+static const char*
+_properties_choice(const char *property_name,
+                   const char *zone_name)
+{
+  const char *choice = NULL;
+
+  cs_tree_node_t *node = _get_property_node(property_name, zone_name);
+
+  choice = cs_tree_node_get_child_value_str(node, "choice");
 
   return choice;
+}
+
+/*----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------*/
+
+static const char*
+_property_formula(const char *property_name,
+                  const char *zone_name)
+{
+
+  const char *law = NULL;
+
+  cs_tree_node_t *node = _get_property_node(property_name, zone_name);
+
+  node = cs_tree_node_get_child(node, "formula");
+
+  law = cs_tree_node_get_value_str(node);
+
+  return law;
+
 }
 
 /*----------------------------------------------------------------------------
@@ -267,7 +315,7 @@ _thermal_table_needed(const char *name)
 {
   int choice = 0;
 
-  const char *prop_choice = _properties_choice(name);
+  const char *prop_choice = _properties_choice(name, NULL);
   if (cs_gui_strcmp(prop_choice, "thermal_law"))
     choice = 1;
 
@@ -283,25 +331,14 @@ _physical_property(cs_field_t          *c_prop,
                    const cs_zone_t     *z)
 {
   int user_law = 0;
-  const char *law = NULL;
-  const char *prop_choice = _properties_choice(c_prop->name);
+  const char *prop_choice = _properties_choice(c_prop->name, z->name);
 
   if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
 
   if (user_law) {
 
-    /* search the formula for the law */
-    cs_tree_node_t *tn = cs_tree_find_node(cs_glob_tree, "property");
-    while (tn != NULL) {
-      const char *name = cs_tree_node_get_child_value_str(tn, "name");
-      if (cs_gui_strcmp(name, c_prop->name))
-        break;
-      else
-        tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
-    }
-    tn = cs_tree_get_node(tn, "formula");
-    law = cs_tree_node_get_value_str(tn);
+    const char *law = _property_formula(c_prop->name, z->name);
 
     if (law != NULL) {
       cs_field_t *fmeg[1] = {c_prop};
@@ -658,7 +695,7 @@ _properties_choice_id(const char  *property_name,
   const char *buff = NULL;
   int   iok = 0;
 
-  buff = _properties_choice(property_name);
+  buff = _properties_choice(property_name, NULL);
   *choice = 0; /* default */
   if (buff)
   {
@@ -1539,7 +1576,8 @@ void CS_PROCF (csivis, CSIVIS) (void)
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
     int d_f_id = -1;
-    const char *prop_choice = _properties_choice("thermal_conductivity");
+    /*FIXME:CK*/
+    const char *prop_choice = _properties_choice("thermal_conductivity", NULL);
     if (cs_gui_strcmp(prop_choice, "user_law") ||
         cs_gui_strcmp(prop_choice, "predefined_law"))
       d_f_id = 0;
@@ -3031,29 +3069,43 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
   const char *law = NULL;
   double time0 = cs_timer_wtime();
 
-  cs_lnum_t i;
-
-  const cs_zone_t *z_all = cs_volume_zone_by_name_try("all_cells");
-
-  if (z_all == NULL)
-    z_all = cs_volume_zone_by_id(0);
-
+  int n_zones_pp =
+    cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
+  int n_zones = cs_volume_zone_n_zones();
   /* law for density (built-in for all current integrated physical models) */
   if (cs_glob_fluid_properties->irovar == 1) {
     cs_field_t *c_rho = CS_F_(rho);
-    _physical_property(c_rho, z_all);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_rho, z);
+      }
+    }
   }
 
   /* law for molecular viscosity */
   if (cs_glob_fluid_properties->ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
-    _physical_property(c_mu, z_all);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_mu, z);
+      }
+    }
   }
 
   /* law for specific heat */
   if (cs_glob_fluid_properties->icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
-    _physical_property(c_cp, z_all);
+    if (n_zones_pp > 0) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c_cp, z);
+      }
+    }
   }
 
   /* law for thermal conductivity */
@@ -3063,25 +3115,37 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 
     cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
           int k = cs_field_key_id("diffusivity_id");
           int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
-            _physical_property(cond_dif, z_all);
+            if (n_zones_pp > 0) {
+              for (int z_id = 0; z_id < n_zones; z_id++) {
+                const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+                if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+                  _physical_property(cond_dif, z);
+              }
+            }
           }
           break;
         }
       }
-    }
+  }
 
   /* law for volumic viscosity (compressible model) */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
     if (*iviscv > 0) {
       cs_field_t *c = cs_field_by_name_try("volume_viscosity");
-      _physical_property(c, z_all);
+      if (n_zones_pp > 0 && c != NULL) {
+        for (int z_id = 0; z_id < n_zones; z_id++) {
+          const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+          if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+            _physical_property(c, z);
+        }
+      }
     }
   }
 
@@ -3104,83 +3168,48 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
       if (   cs_field_get_key_int(f, kscavr) < 0
           && cs_field_get_key_int(f, kivisl) >= 0) {
 
-        char *tmp = NULL;
-        BFT_MALLOC(tmp, strlen(f->name) + 13, char);
-        strcpy(tmp, f->name);
-        strcat(tmp, "_diffusivity");
-
-        const char *prop_choice = _properties_choice(tmp);
-
-        if (cs_gui_strcmp(prop_choice, "user_law"))
-          user_law = 1;
-        BFT_FREE(tmp);
-      }
-
-      if (user_law) {
-
+        /* Get diffusivity pointer.
+         * diff_id is >= 0 since it is a part of the if test
+         * above!
+         */
         int diff_id = cs_field_get_key_int(f, kivisl);
-        cs_field_t *c_prop = NULL;
+        cs_field_t *c_prop = cs_field_by_id(diff_id);
 
-        if (diff_id > -1)
-          c_prop = cs_field_by_id(diff_id);
-
-        /* search the formula for the law */
-        cs_tree_node_t *tn
-          = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
-        for (int n = 1;
-             tn != NULL && n < user_id+1 ;
-             n++) {
-         tn = cs_tree_node_get_next_of_name(tn);
-        }
-        tn = cs_tree_get_node(tn, "property/formula");
-        law = cs_tree_node_get_value_str(tn);
-
-        if (law != NULL) {
-          _physical_property(c_prop, z_all);
-          if (cs_glob_fluid_properties->irovar == 1) {
-            cs_real_t *c_rho = CS_F_(rho)->val;
-            for (int c_id = 0; c_id < n_cells; c_id++)
-              c_prop->val[c_id] *= c_rho[c_id];
-
-          } else {
-            for (int c_id = 0; c_id < n_cells; c_id++)
-              c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
+        if (n_zones_pp > 0) {
+          for (int z_id = 0; z_id < n_zones; z_id++) {
+            const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+            if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+              const char *law = _property_formula(c_prop->name, z->name);
+              if (law != NULL) {
+                _physical_property(c_prop, z);
+                if (cs_glob_fluid_properties->irovar == 1) {
+                  cs_real_t *c_rho = CS_F_(rho)->val;
+                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+                    cs_lnum_t c_id = z->elt_ids[e_id];
+                    c_prop->val[c_id] *= c_rho[c_id];
+                  }
+                }
+                else {
+                  for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+                    cs_lnum_t c_id = z->elt_ids[e_id];
+                    c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
+                  }
+                }
+                cs_gui_add_mei_time(cs_timer_wtime() - time0);
+#if _XML_DEBUG
+                bft_printf("==> %s\n", __func__);
+                bft_printf("--law for the diffusivity coefficient "
+                           "of the scalar '%s' over zone '%s':\n  %s\n",
+                           f->name, z->name, law);
+#endif
+              }
+            }
           }
         }
-        cs_gui_add_mei_time(cs_timer_wtime() - time0);
       }
     }
   }
 
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  user_id = -1;
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    const cs_field_t  *f = cs_field_by_id(f_id);
-
-    if (   (f->type & CS_FIELD_VARIABLE)
-        && (f->type & CS_FIELD_USER)) {
-      user_id++;
-
-      if (   cs_field_get_key_int(f, kscavr) < 0
-          && cs_field_get_key_int(f, kivisl) >= 0) {
-
-        i = 1;
-        for (tn = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
-             tn != NULL && i < user_id+1 ;
-             i++) {
-         tn = cs_tree_node_get_next_of_name(tn);
-        }
-        tn = cs_tree_get_node(tn, "property/formula");
-        law = cs_tree_node_get_value_str(tn);
-
-        bft_printf("--law for the coefficient of diffusity of the scalar %s: %s\n",
-                   f->name, law);
-      }
-    }
-  }
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -4637,6 +4666,17 @@ cs_gui_zones(void)
     if (_zone_is_type(tn, "thermal_source_term"))
       type_flag = type_flag | CS_VOLUME_ZONE_SOURCE_TERM;
 
+    /* Check if zone is used to define variable physical properties */
+    if (_zone_is_type(tn, "physical_properties"))
+      type_flag = type_flag | CS_VOLUME_ZONE_PHYSICAL_PROPERTIES;
+    else {
+      /* FIXME: zone all_cells is used for physical properties no matter what.
+       * Will be changed in v7.1 for a cleaner definition
+       */
+      if (cs_gui_strcmp(name, "all_cells"))
+        type_flag = type_flag | CS_VOLUME_ZONE_PHYSICAL_PROPERTIES;
+    }
+
     /* Finally, define zone */
 
     cs_volume_zone_define(name, criteria, type_flag);
@@ -4864,6 +4904,61 @@ cs_gui_error_estimator(int *iescal,
     iescal[*iestot -1] = 2;
   else
     iescal[*iestot -1] = 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Define internal coupling through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_internal_coupling(void)
+{
+
+  cs_tree_node_t *node_int_cpl =
+    cs_tree_get_node(cs_glob_tree, "thermophysical_models/internal_coupling");
+
+  if (node_int_cpl != NULL) {
+    cs_tree_node_t *nz = cs_tree_node_get_child(node_int_cpl, "solid_zones");
+    int nzones = cs_tree_get_sub_node_count(nz, "zone");
+    if (nzones > 0) {
+
+      /* Activate the solid flag */
+      cs_velocity_pressure_model_t *vp_model
+        = cs_get_glob_velocity_pressure_model();
+      vp_model->fluid_solid = true;
+
+      /* Add the zones defined in the GUI */
+      for (cs_tree_node_t *tn = cs_tree_node_get_child(nz, "zone");
+           tn != NULL;
+           tn = cs_tree_node_get_next_of_name(tn)) {
+
+        const char *zname = cs_tree_node_get_tag(tn, "name");
+        const cs_zone_t *z = cs_volume_zone_by_name_try(zname);
+        if (z == NULL)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Zone %s does not exist!.\n"), zname);
+
+        cs_internal_coupling_add_zone(cs_glob_mesh, z);
+      }
+
+      cs_tree_node_t *ns
+        = cs_tree_node_get_child(node_int_cpl, "coupled_scalars");
+      /* Add the coupled scalars defined in the GUI */
+      for (cs_tree_node_t *tn = cs_tree_node_get_child(ns, "scalar");
+           tn != NULL;
+           tn = cs_tree_node_get_next_of_name(tn)) {
+
+        const char *scalar_name = cs_tree_node_get_tag(tn, "name");
+        int f_id = cs_field_id_by_name(scalar_name);
+        if (f_id < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Scalar %s does not exist!.\n"), scalar_name);
+
+        cs_internal_coupling_add_entity(f_id);
+      }
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

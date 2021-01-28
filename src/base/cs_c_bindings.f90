@@ -2462,6 +2462,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Binding to cs_gui_internal_coupling
+
+    subroutine cs_gui_internal_coupling()  &
+      bind(C, name='cs_gui_internal_coupling')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_internal_coupling
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Binding to cs_user_internal_coupling
 
     subroutine cs_user_internal_coupling()  &

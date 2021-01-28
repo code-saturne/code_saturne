@@ -144,6 +144,20 @@ cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define coupling volume using a cs_zone_t. Then, this volume will
+ * be separated from the rest of the domain with thin walls.
+ *
+ * \param[in, out] mesh  pointer to mesh structure to modify
+ * \param[in]      z     pointer to cs_volume_zone_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_zone(cs_mesh_t       *mesh,
+                              const cs_zone_t *z);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Impose wall BCs to internal coupled faces if not yet defined.
  *
  *   \param[in, out]     bc_type       face boundary condition type
