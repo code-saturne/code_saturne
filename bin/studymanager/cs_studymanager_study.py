@@ -271,7 +271,7 @@ class Case(object):
             retval, t = run_studymanager_command(cmd, self.__log)
         if retval == 0:
             log_lines += ['      * create case: ' + self.title]
-            
+
         else:
             log_lines += ['      * create case: %s --> FAILED' % self.title]
 
@@ -1477,7 +1477,7 @@ class Studies(object):
                     else:
                         self.reporting('    - run %s --> FAILED (%s)' \
                                        % (case.title, is_time))
- 
+
                     self.__log.flush()
 
         self.reporting('')
@@ -2088,4 +2088,4 @@ class dependency_graph(object):
             res += '\n' + str(node1.name) + ' depends on ' + str(node2.name)
         return res
 
-#------------------------------------------------------------------------------- 
+#-------------------------------------------------------------------------------
