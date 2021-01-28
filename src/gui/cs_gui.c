@@ -3431,7 +3431,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
         strcpy(tmp, f->name);
         strcat(tmp, "_diffusivity");
 
-        const char *prop_choice = _properties_choice(f->name);
+        const char *prop_choice = _properties_choice(tmp);
 
         if (cs_gui_strcmp(prop_choice, "user_law"))
           user_law = 1;
