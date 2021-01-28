@@ -639,7 +639,6 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_time_step_t         *time_step,
                      const cs_cdo_connect_t       *connect,
                      const cs_cdo_quantities_t    *cdoq,
-                     //TODO const cs_navsto_param_t *nsp,
                      const cs_turbulence_t        *turb)
 {
 
