@@ -243,10 +243,15 @@ static const char*
 _properties_choice(const char *property_name)
 {
   const char *choice = NULL;
-  cs_tree_node_t *tn
-    = cs_tree_get_node(cs_glob_tree,
-                       "physical_properties/fluid_properties/property");
-  tn = cs_tree_node_get_sibling_with_tag(tn, "name", property_name);
+
+  cs_tree_node_t *tn = cs_tree_find_node(cs_glob_tree, "property");
+  while (tn != NULL) {
+    const char *name = cs_tree_node_get_child_value_str(tn, "name");
+    if (cs_gui_strcmp(name, property_name))
+      break;
+    else
+      tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
+  }
 
   choice = cs_tree_node_get_child_value_str(tn, "choice");
 
@@ -3090,17 +3095,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv,
         strcpy(tmp, f->name);
         strcat(tmp, "_diffusivity");
 
-        /* Scalars are not defined as 'properties' inside the xml.
-         * Hence we need to search using another node...
-         */
-        cs_tree_node_t *tn =
-          cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
-        tn = cs_tree_node_get_sibling_with_tag(tn, "name", f->name);
-        tn = cs_tree_node_get_child(tn, "property");
-        tn = cs_tree_node_get_sibling_with_tag(tn, "name", tmp);
-
-        const char *prop_choice =
-          cs_tree_node_get_child_value_str(tn, "choice");
+        const char *prop_choice = _properties_choice(f->name);
 
         if (cs_gui_strcmp(prop_choice, "user_law"))
           user_law = 1;
