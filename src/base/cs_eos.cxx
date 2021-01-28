@@ -79,12 +79,10 @@ NEPTUNE::EOS *eos;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-#ifdef __cplusplus
-extern "C"
-#endif
-void
-_eos_error_code(const char *function_name,
-                NEPTUNE::EOS_Error return_code)
+
+static void
+_eos_error_code(const char          *function_name,
+                NEPTUNE::EOS_Error   return_code)
 {
     // Generic error code returned by EOS.
     // For a field, the generic error is the worst
@@ -172,6 +170,7 @@ cs_eos_destroy(void)
 #ifdef __cplusplus
 extern "C"
 #endif
+
 void
 cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                  cs_phys_prop_type_t                property,
@@ -206,8 +205,9 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
 
   switch (property) {
     case CS_PHYS_PROP_PRESSURE:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: you can't choose pressure as an output variable"));
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("bad choice: you can't choose pressure as an output variable"));
       break;
     case CS_PHYS_PROP_TEMPERATURE:
       /* temperature is in K */
@@ -265,7 +265,6 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
 
   _eos_error_code("cs_phys_prop_eos", eos_error);
   BFT_FREE(error);
-
 }
 
 /*----------------------------------------------------------------------------*/
