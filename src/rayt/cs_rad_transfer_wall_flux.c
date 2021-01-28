@@ -354,6 +354,10 @@ cs_rad_transfer_wall_flux(int         nvar,
   /* Logging
    * ======= */
 
+  int verbosity = cs_glob_rad_transfer_params->iimpar;
+  if (cs_log_default_is_active() == false)
+    verbosity -= 2;
+
   /* Check if there are any wall zones */
 
   if (cs_glob_rank_id >= 0)
@@ -371,7 +375,7 @@ cs_rad_transfer_wall_flux(int         nvar,
   if (indtpm > 0) {
 
     /* Level 1 verbosity */
-    if (cs_glob_rad_transfer_params->iimpar >= 1) {
+    if (verbosity >= 1) {
 
       /* Calcul de TZOMOY FLUNET RADIOS SURFT */
       for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
@@ -627,7 +631,7 @@ cs_rad_transfer_wall_flux(int         nvar,
 
     /* If we need additional verbosity */
 
-    if (cs_glob_rad_transfer_params->iimpar >= 2) {
+    if (verbosity >= 2) {
       const char fmt[]
         = N_("\n"
              " %s wall temperature (degrees Celsius) = %15.7f\n"

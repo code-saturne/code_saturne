@@ -96,6 +96,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -128,9 +129,9 @@ double precision fs3no(ncel),fs4no(ncel)
 double precision yfs4no(ncel,ngazg)
 
 ! Local variables
-integer           NBPRINT
-parameter        (NBPRINT=15)
-integer          INTTMP(NBPRINT)
+integer           nbprint
+parameter        (nbprint=15)
+integer          inttmp(nbprint)
 !
 integer          ii,iel
 integer          n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15
@@ -149,6 +150,8 @@ double precision zzs1(ngazem),zzs2(ngazem),zzs3(ngazem),zzs4(ngazem)
 
 double precision, dimension(:), pointer :: x1
 double precision, dimension(:), pointer :: cvar_yco2
+
+logical(kind=c_bool) :: log_active
 
 !===============================================================================
 ! 1. CALCULS PRELIMINAIRES
@@ -505,7 +508,6 @@ do iel = 1, ncel
     prod3(iel) = zz(iso2) * wmso2
     xiner(iel) = zz(in2 ) * wmn2
 
-
   endif
 
 enddo
@@ -513,6 +515,12 @@ enddo
 !===============================================================================
 ! 5.  IMPRESSION
 !===============================================================================
+
+log_active = cs_log_default_is_active()
+if (log_active .eqv. .false.) then
+  return
+endif
+
 n1  = ncel
 n2  = 0
 n3  = 0
@@ -532,7 +540,7 @@ n15 = 0
 ! --> Controle des parametres de la pdf
 
 do iel = 1, ncel
-  if ( indpdf(iel).ne.0 ) then
+  if (indpdf(iel).ne.0) then
     n2 = n2 +1
   endif
 enddo
@@ -552,34 +560,22 @@ do iel = 1, ncel
   sommin = min(sommin,somm)
   sommax = max(sommax,somm)
 
-  if ( abs(somm-1.d0).lt.epsicp )   then
+  if (abs(somm-1.d0).lt.epsicp)   then
     n3  = n3 +1
   endif
 
-  if ( fuel1(iel).lt.(-epzero) .or.                               &
-       fuel1(iel).gt.(1.d0+epzero) ) n4  = n4 +1
-  if ( fuel2(iel).lt.(-epzero) .or.                               &
-       fuel2(iel).gt.(1.d0+epzero) ) n5  = n5 +1
-  if ( fuel3(iel).lt.(-epzero) .or.                               &
-       fuel3(iel).gt.(1.d0+epzero) ) n6  = n6 +1
-  if ( fuel4(iel).lt.(-epzero) .or.                               &
-       fuel4(iel).gt.(1.d0+epzero) ) n7  = n7 +1
-  if ( fuel5(iel).lt.(-epzero) .or.                               &
-       fuel5(iel).gt.(1.d0+epzero) ) n8  = n8 +1
-  if ( fuel6(iel).lt.(-epzero) .or.                               &
-       fuel6(iel).gt.(1.d0+epzero) ) n9  = n9 +1
-  if ( fuel7(iel).lt.(-epzero) .or.                               &
-       fuel7(iel).gt.(1.d0+epzero) ) n10 = n10+1
-  if ( oxyd(iel).lt.(-epzero) .or.                                &
-       oxyd(iel).gt.(1.d0+epzero)  ) n11 = n11+1
-  if ( xiner(iel).lt.(-epzero) .or.                               &
-       xiner(iel).gt.(1.d0+epzero) ) n12 = n12+1
-  if ( prod1(iel).lt.(-epzero) .or.                               &
-       prod1(iel).gt.(1.d0+epzero) ) n13 = n13+1
-  if ( prod2(iel).lt.(-epzero) .or.                               &
-       prod2(iel).gt.(1.d0+epzero) ) n14 = n14+1
-  if ( prod3(iel).lt.(-epzero) .or.                               &
-       prod3(iel).gt.(1.d0+epzero) ) n15 = n15+1
+  if (fuel1(iel).lt.(-epzero) .or. fuel1(iel).gt.(1.d0+epzero)) n4  = n4 +1
+  if (fuel2(iel).lt.(-epzero) .or. fuel2(iel).gt.(1.d0+epzero)) n5  = n5 +1
+  if (fuel3(iel).lt.(-epzero) .or. fuel3(iel).gt.(1.d0+epzero)) n6  = n6 +1
+  if (fuel4(iel).lt.(-epzero) .or. fuel4(iel).gt.(1.d0+epzero)) n7  = n7 +1
+  if (fuel5(iel).lt.(-epzero) .or. fuel5(iel).gt.(1.d0+epzero)) n8  = n8 +1
+  if (fuel6(iel).lt.(-epzero) .or. fuel6(iel).gt.(1.d0+epzero)) n9  = n9 +1
+  if (fuel7(iel).lt.(-epzero) .or. fuel7(iel).gt.(1.d0+epzero)) n10 = n10+1
+  if (oxyd(iel).lt.(-epzero) .or.  oxyd(iel).gt.(1.d0+epzero)) n11 = n11+1
+  if (xiner(iel).lt.(-epzero) .or. xiner(iel).gt.(1.d0+epzero)) n12 = n12+1
+  if (prod1(iel).lt.(-epzero) .or. prod1(iel).gt.(1.d0+epzero)) n13 = n13+1
+  if (prod2(iel).lt.(-epzero) .or. prod2(iel).gt.(1.d0+epzero)) n14 = n14+1
+  if (prod3(iel).lt.(-epzero) .or. prod3(iel).gt.(1.d0+epzero)) n15 = n15+1
 
 enddo
 
@@ -600,48 +596,45 @@ inttmp(12) = n12
 inttmp(13) = n13
 inttmp(14) = n14
 inttmp(15) = n15
+
 if (irangp.ge.0) then
   call parism(nbprint,inttmp)
-  !==========
 endif
 
 write(nfecra,1000) inttmp(1),inttmp(2)
 write(nfecra,2200) (inttmp(ii),ii=3,15)
 
-if ( irangp .ge. 0 ) then
+if (irangp .ge. 0) then
   call parmin(sommin)
   call parmax(sommax)
 endif
 
-write(nfecra,*) ' Somme Min MAX = ', sommin, sommax
+write(nfecra,*) ' Sum Min Max = ', sommin, sommax
 
 !--------
 ! Formats
 !--------
 
- 1000 format (/,                                                  &
-'MODELISATION DE LA COMBUSTION AVEC LE MODELE DE DIFFUSION ',     &
-'TURBULENTE (CPCYM2)',/,                                    &
-'CHIMIE RAPIDE A 3 CORPS - EXTENSION A 3 COMBUSTIBLES ',          &
-'(Application au FUEL)',/,                                  &
-'==========================================================',     &
-'==================',/,                                     &
-' Nb de points de calculs                                     = ',&
-   i9,/,                                                    &
-' Nb de points turbulents (passage par les PDF)               = ',&
+ 1000 format (/, &
+'Combustion modeling with turbulent diffusion model (CPCYM2)',/, &
+'Fast 3-point chemistry - extension to 3 fuels',/, &
+'===========================================================',/, &
+' Nb. of computation points                                   = ', &
+   i9, /, &
+' Nb. of turbulent points (using PDFs)                        = ', &
    i9)
 
- 2200 format(/,                                                   &
-'CONTROLE DES VALEURS DES FRACTIONS MASSIQUES',/,           &
-' Nb de points de calculs qui respectent somme des Yi = 1    = ', &
-   i9,/,                                                    &
-' Nb de points YCHX1 , YCHX2   < 0 ou > 1 = ',I9,I9,/,      &
-' Nb de points YC0   , YH2S    < 0 ou > 1 = ',I9,I9,/,      &
-' Nb de points YH2   , YHCN    < 0 ou > 1 = ',I9,I9,/,      &
-' Nb de points YNH3            < 0 ou > 1 = ',I9,   /,      &
-' Nb de points YO2   , YN2     < 0 ou > 1 = ',I9,I9,/,      &
-' Nb de points YCO2  , YH2O    < 0 ou > 1 = ',I9,I9,/,      &
-' Nb de points YSO2            < 0 ou > 1 = ',I9  )
+ 2200 format(/, &
+'Control of mass fraction values', /, &
+' Nb. computation points verifying sum of Yi = 1              = ', &
+   i9,/, &
+' Nb. points YCHX1 , YCHX2   < 0 or > 1 = ', i9, i9,/, &
+' Nb. points YC0   , YH2S    < 0 or > 1 = ', i9, i9,/, &
+' Nb. points YH2   , YHCN    < 0 or > 1 = ', i9, i9,/, &
+' Nb. points YNH3            < 0 or > 1 = ', i9, /, &
+' Nb. points YO2   , YN2     < 0 or > 1 = ', i9, i9, /, &
+' Nb. points YCO2  , YH2O    < 0 or > 1 = ', i9, i9, /, &
+' Nb. points YSO2            < 0 or > 1 = ', i9)
 
 !----
 ! End
