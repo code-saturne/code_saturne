@@ -3,6 +3,8 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- GUI: Fix usage of formula for user scalar diffusivity
+
 - Ensure profiles are ordered by curvilinear coordinates in serial mode.
 
 - GUI: do not clip enthalpy lower bound to 0 by default.
