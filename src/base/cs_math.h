@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
-/* Symetric tensor component name */
+/* Symmetric tensor component name */
 
 typedef enum {
 
@@ -246,7 +246,7 @@ cs_math_pow4(cs_real_t  x)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the (euclidean) distance between two points xa and xb in
- *         a cartesian coordinate system of dimension 3.
+ *         a Cartesian coordinate system of dimension 3.
  *
  * \param[in]  xa   first coordinate
  * \param[in]  xb   second coordinate
@@ -291,7 +291,7 @@ cs_math_3_distance_dot_product(const cs_real_t  xa[3],
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the squared distance between two points xa and xb in
- *         a cartesian coordinate system of dimension 3.
+ *         a Cartesian coordinate system of dimension 3.
  *
  * \param[in]  xa   first coordinate
  * \param[in]  xb   second coordinate
@@ -445,7 +445,7 @@ cs_math_3_normalise(const cs_real_t  vin[3],
 /*!
  * \brief  Normalise a vector of 3 real values.
  *
- * To normalize in-place, vin and vout may point to the same array.
+ * To normalize in-place, \p vin and \p vout may point to the same array.
  *
  * \param[in]     vin           vector
  * \param[out]    vout          normalized vector
@@ -926,7 +926,7 @@ cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the product of two 3x3 real valued matrixes.
+ * \brief Compute the product of two 3x3 real valued matrices.
  *
  * \param[in]     m1     matrix of 3x3 real values
  * \param[in]     m2     matrix of 3x3 real values
@@ -1081,7 +1081,7 @@ cs_math_33_extract_sym_ant(const cs_real_t  m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add the product of two 3x3 real matrixes to a matrix.
+ * \brief Add the product of two 3x3 real matrices to a matrix.
  *
  * \param[in]     m1            matrix of 3x3 real values
  * \param[in]     m2            matrix of 3x3 real values
@@ -1301,8 +1301,8 @@ cs_math_get_machine_epsilon(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the length (euclidien norm) between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
+ * \brief  Compute the length (Euclidean norm) between two points xa and xb in
+ *         a Cartesian coordinate system of dimension 3
  *
  * \param[in]   xa       coordinate of the first extremity
  * \param[in]   xb       coordinate of the second extremity
@@ -1399,7 +1399,7 @@ cs_math_voltet(const cs_real_t   xv[3],
  *         of a real symmetric matrix m1[3,3]: m1*m2 = lambda*m2
  *
  * Use of Jacobi method for symmetric matrices
- * (adapted from the book Numerical Recipies in C, Chapter 11.1)
+ * (adapted from the book Numerical Recipes in C, Chapter 11.1)
  *
  * \param[in]     m_in         matrix of 3x3 real values (initial)
  * \param[in]     tol_err      absolute tolerance (sum of off-diagonal elements)

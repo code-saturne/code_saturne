@@ -275,7 +275,7 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
       n[3 + i] = ovp * m[3 + i];
     }
 
-    /* r should be between -1 and 1 but truncation error and bad conditionning
+    /* r should be between -1 and 1 but truncation error and bad conditioning
        can lead to slightly under/over-shoot */
     cs_real_t  r = 0.5 * cs_math_sym_33_determinant(n);
 
@@ -371,7 +371,7 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
       }
     }
 
-    /* r should be between -1 and 1 but truncation error and bad conditionning
+    /* r should be between -1 and 1 but truncation error and bad conditioning
        can lead to slightly under/over-shoot */
     cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
 
@@ -409,13 +409,13 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the length (euclidien norm) between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
+ * \brief  Compute the length (Euclidean norm) between two points xa and xb in
+ *         a Cartesian coordinate system of dimension 3
  *
  * \param[in]   xa       coordinate of the first extremity
  * \param[in]   xb       coordinate of the second extremity
  * \param[out]  len      pointer to the length of the vector va -> vb
- * \param[out]  unitv    unitary vector anlong va -> vb
+ * \param[out]  unitv    unitary vector along va -> vb
  */
 /*----------------------------------------------------------------------------*/
 
@@ -505,7 +505,7 @@ cs_math_voltet(const cs_real_t   xv[3],
  *         of a real symmetric matrix m1[3,3]: m1*m2 = lambda*m2
  *
  * Use of Jacobi method for symmetric matrices
- * (adapted from the book Numerical Recipies in C, Chapter 11.1)
+ * (adapted from the book Numerical Recipes in C, Chapter 11.1)
  *
  * \param[in]     m_in         matrix of 3x3 real values (initial)
  * \param[in]     tol_err      absolute tolerance (sum of off-diagonal elements)
