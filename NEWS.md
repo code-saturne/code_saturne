@@ -3,6 +3,8 @@ Release 6.2.2 (Unreleased)
 
 Bug fixes:
 
+- GUI: Fix usage of formula for user scalar diffusivity
+
 - Ensure profiles are ordered by curvilinear coordinates in serial mode.
 
 - GUI: Fix handling of "New case" when case already loaded (GitLAb issue #250).
