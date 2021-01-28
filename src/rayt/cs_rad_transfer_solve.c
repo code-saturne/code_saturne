@@ -394,6 +394,10 @@ _cs_rad_transfer_sol(int                        gg_id,
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
+  int verbosity = rt_params->verbosity;
+  if (cs_log_default_is_active() == false)
+    verbosity -= 2;
+
   /* Total incident radiative flux  */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
@@ -436,7 +440,6 @@ _cs_rad_transfer_sol(int                        gg_id,
     BFT_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
     ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
     ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
-
   }
 
   cs_real_t vect_s[3];
@@ -474,13 +477,12 @@ _cs_rad_transfer_sol(int                        gg_id,
       vect_s[1] = - sin(za) * cos(omega);
       vect_s[2] = - muzero; /* cos(za) */
 
-      if (rt_params->verbosity > 0)
+      if (verbosity > 0)
         bft_printf("     Solar direction [%f, %f, %f] \n",
                    vect_s[0], vect_s[1], vect_s[2]);
 
     }
   }
-
 
   /* Initialization */
 
@@ -1114,7 +1116,11 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Initializations
      --------------- */
 
-  if (rt_params->verbosity > 0)
+  int verbosity = rt_params->verbosity;
+  if (cs_log_default_is_active() == false)
+    verbosity -= 2;
+
+  if (verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** Information on the radiative source term\n"
                     "      ----------------------------------------\n"));
@@ -1394,7 +1400,7 @@ cs_rad_transfer_solve(int               bc_type[],
       cs_parall_max(1, CS_REAL_TYPE, &ckmax);
 
       if (ckmax <= cs_math_epzero) {
-        if (rt_params->verbosity > 0)
+        if (verbosity > 0)
           cs_log_printf(CS_LOG_DEFAULT,
                         _("      Radiative transfer with transparent medium."));
         idiver = -1;
@@ -1413,7 +1419,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
       cs_parall_max(1, CS_REAL_TYPE, &ckumax);
 
-      if (rt_params->verbosity > 0 && ckumax <= cs_math_epzero)
+      if (verbosity > 0 && ckumax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("      Atmospheric radiative transfer with transparent "
@@ -1427,7 +1433,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
       cs_parall_max(1, CS_REAL_TYPE, &ckdmax);
 
-      if (rt_params->verbosity > 0 && ckdmax <= cs_math_epzero)
+      if (verbosity > 0 && ckdmax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("      Atmospheric radiative transfer with transparent "
@@ -1873,7 +1879,7 @@ cs_rad_transfer_solve(int               bc_type[],
     cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
-  if (rt_params->verbosity > 0) {
+  if (verbosity > 0) {
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -1894,7 +1900,7 @@ cs_rad_transfer_solve(int               bc_type[],
   }
 
   /* -> Integrate net flux density at boundaries */
-  if (rt_params->verbosity > 0) {
+  if (verbosity > 0) {
     cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
     cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
@@ -1981,7 +1987,7 @@ cs_rad_transfer_solve(int               bc_type[],
                        halo_type,
                        1,      /* inc */
                        100,    /* n_r_sweeps, */
-                       rt_params->verbosity,  /* iwarnp */
+                       verbosity,  /* iwarnp */
                        -1,     /* imligp */
                        1e-8,   /* epsrgp */
                        1.5,    /* climgp */
@@ -2029,7 +2035,7 @@ cs_rad_transfer_solve(int               bc_type[],
   }
 
   /* Log information */
-  if (rt_params->verbosity > 0 && idiver >= 0) {
+  if (verbosity > 0 && idiver >= 0) {
 
     /* Volume integration of the explicit source term.
      * The result of this integration MUST be the same as that of the surface
@@ -2055,7 +2061,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   }
 
-  if (rt_params->verbosity > 0)
+  if (verbosity > 0)
     cs_log_separator(CS_LOG_DEFAULT);
 
   /* Free memory */
