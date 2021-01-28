@@ -487,6 +487,8 @@ cs_eos_la_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(EOS_CPPFLAGS) $(MPI_CPPFLAGS)
+cs_eos_la_LIBADD = \
+$(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH)
 pkginclude_HEADERS += cs_eos.hxx
 pkglib_LTLIBRARIES += cs_eos.la
 cs_eos_la_SOURCES = cs_eos.cxx
