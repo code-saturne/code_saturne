@@ -3104,7 +3104,18 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
         strcpy(tmp, f->name);
         strcat(tmp, "_diffusivity");
 
-        const char *prop_choice = _properties_choice(tmp);
+        /* Scalars are not defined as 'properties' inside the xml.
+         * Hence we need to search using another node...
+         */
+        cs_tree_node_t *tn =
+          cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
+        tn = cs_tree_node_get_sibling_with_tag(tn, "name", f->name);
+        tn = cs_tree_node_get_child(tn, "property");
+        tn = cs_tree_node_get_sibling_with_tag(tn, "name", tmp);
+
+        const char *prop_choice =
+          cs_tree_node_get_child_value_str(tn, "choice");
+
         if (cs_gui_strcmp(prop_choice, "user_law"))
           user_law = 1;
         BFT_FREE(tmp);
