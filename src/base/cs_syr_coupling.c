@@ -784,39 +784,15 @@ cs_syr_coupling_recv_boundary(int        nvar,
 
       }
 
-      /* Possible temperature -> enthalpy conversion */
+      /* Require temperature -> enthalpy conversion */
 
       if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
         if (f == cs_thermal_model_field()) {
-
-          cs_real_t *h_b;
-          BFT_MALLOC(h_b, n_cpl_faces, cs_real_t);
-
-          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
-            h_b[i] = 0;
-
           for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
             cs_lnum_t face_id = f_ids[i];
-            h_b[face_id] = t_solid[i];
+            _icodcl[face_id] *= -1;
           }
-
-          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
-            f_ids[i] += 1;
-
-          int _n_cpl_faces = n_cpl_faces;
-          CS_PROCF(b_t_to_h, B_T_TO_H)(&_n_cpl_faces, f_ids, h_b, h_b);
-
-          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
-            f_ids[i] -= 1;
-
-          for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
-            cs_lnum_t face_id = f_ids[i];
-            _rcodcl1[face_id] = h_b[face_id];
-          }
-
-          BFT_FREE(h_b);
-
         }
 
       } /* End case for enthalpy */

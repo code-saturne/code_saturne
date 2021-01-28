@@ -101,29 +101,10 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ii , ivar
 integer          ifac
 integer          icldef
-double precision, dimension(:), allocatable :: h_b
 double precision, dimension(:), pointer :: b_temp
 
 integer, dimension(:), pointer :: ifpt1d
 double precision, dimension(:), pointer :: tppt1d
-
-!===============================================================================
-
-interface
-
-  subroutine b_t_to_h(nlst, lstfac, t_b, h_b)
-
-    use mesh, only: nfabor
-    implicit none
-
-    integer :: nlst
-    integer, dimension(nlst) :: lstfac
-    double precision, dimension(nfabor), intent(in) :: t_b
-    double precision, dimension(nfabor), intent(out), target :: h_b
-
-  end subroutine b_t_to_h
-
- end interface
 
 !===============================================================================
 
@@ -179,25 +160,10 @@ enddo
 
 if (isvtb.eq.iscalt .and. itherm.eq.2) then
 
-  allocate(h_b(nfabor))
-
-  do ii = 1, nfabor
-    h_b(ii) = 0
-  enddo
-
   do ii = 1, nfpt1d
     ifac = ifpt1d(ii)
-    h_b(ifac) = tppt1d(ii)
+    icodcl(ifac,ivar) = - icodcl(ifac,ivar)
   enddo
-
-  call b_t_to_h(nfpt1d, ifpt1d, h_b, h_b)
-
-  do ii = 1, nfpt1d
-    ifac = ifpt1d(ii)
-    rcodcl(ifac,ivar,1) = h_b(ifac)
-  enddo
-
-  deallocate(h_b)
 
 endif
 
