@@ -269,7 +269,7 @@ class config:
             prerequisite("EOS",
                          have = "@cs_have_eos@",
                          prefix="@eos_prefix@",
-                         dynamic_load = True,
+                         dynamic_load = @cs_py_have_plugins@,
                          flags = {'cppflags': "@EOS_CPPFLAGS@",
                                   'ldflags': "@EOS_LDFLAGS@",
                                   'libs': "@EOS_LIBS@"})
