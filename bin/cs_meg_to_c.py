@@ -1189,7 +1189,7 @@ class meg_to_c_interpreter:
             if slist != []:
                 for s in slist:
                     diff_choice = fcm.m_sca.getScalarDiffusivityChoice(s)
-                    if diff_choice == 'variable':
+                    if diff_choice == 'user_law':
                         dname = fcm.m_sca.getScalarDiffusivityName(s)
                         exp, req, sca, sym, = \
                         fcm.getFormulaComponents('scalar_diffusivity', s)
