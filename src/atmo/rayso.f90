@@ -434,6 +434,7 @@ if (muzero.gt.epzero) then
       tauctot = tauctot + tauc(i)
     else
       tauc(i) = 0.d0
+      req = 0.d0
     endif
 
     ! Calculation of aerosol optical depth AOD
