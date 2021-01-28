@@ -189,7 +189,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal , iterns, isvhb
-integer          itrale , italim , itrfin , ineefl , itrfup, ncnv
+integer          itrale , italim , itrfin , ineefl , itrfup, nbt2h
 
 double precision, pointer, dimension(:) :: xprale
 double precision, pointer, dimension(:,:) :: cofale
@@ -198,8 +198,6 @@ integer, dimension(nfabor+1) :: isostd
 double precision, pointer, dimension(:) :: dt
 double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, pointer, dimension(:) :: visvdr, hbord, theipb
-
-integer, allocatable, dimension(:) :: lcnv
 
 ! Local variables
 
@@ -265,6 +263,9 @@ double precision, dimension(:), pointer :: bvar_s, btemp_s
 double precision, dimension(:,:), pointer :: bvar_v
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts, cpro_visma_v
+
+integer, allocatable, dimension(:) :: lbt2h
+double precision, allocatable, dimension(:) :: vbt2h
 
 ! darcy arrays
 double precision, dimension(:), pointer :: permeability
@@ -533,8 +534,9 @@ call cs_internal_coupling_bcs(itypfb)
 
 if (itherm.eq.2) then
 
-  ncnv = 0
-  allocate(lcnv(nfabor))
+  nbt2h = 0
+  allocate(lbt2h(nfabor))
+  allocate(vbt2h(nfabor))
 
   ivar = isca(iscalt)
 
@@ -542,15 +544,16 @@ if (itherm.eq.2) then
 
   do ii = 1, nfabor
     if (icodcl(ii,ivar).lt.0) then
-      ncnv = ncnv + 1
-      lcnv(ncnv) = ii
+      nbt2h = nbt2h + 1
+      lbt2h(nbt2h) = ii
       icodcl(ii,ivar) = -icodcl(ii,ivar)
+      vbt2h(ii) = rcodcl(ii,ivar,1)
+    else
+      vbt2h(ii) = 0.d0
     endif
   enddo
 
-  call b_t_to_h(ncnv, lcnv, rcodcl(:,ivar,1), rcodcl(:,ivar,1))
-
-  deallocate(lcnv)
+  call b_t_to_h(nbt2h, lbt2h, vbt2h, rcodcl(:,ivar,1))
 
 endif
 
@@ -3527,26 +3530,50 @@ if (associated(rijipb)) deallocate(rijipb)
 ! 16. Update of boundary temperature when saved and not a variable.
 !===============================================================================
 
-if (itherm.eq.2 .and. itempb.ge.0) then
+if (itherm.eq.2) then
 
-  call field_get_val_s(itempb, btemp_s)
+  if (itempb.ge.0) then
 
-  ! If we also have a boundary value field for the thermal
-  ! scalar, copy its values first.
+    call field_get_val_s(itempb, btemp_s)
 
-  ! If we do not have a boundary value field for the thermal scalar,
-  ! then boundary values for the thermal scalar were directly
-  ! saved to the boundary temperature field, so no copy is needed.
+    ! If we also have a boundary value field for the thermal
+    ! scalar, copy its values first.
 
-  f_id = ivarfl(isca(iscalt))
-  call field_get_key_int(f_id, kbfid, b_f_id)
+    ! If we do not have a boundary value field for the thermal scalar,
+    ! then boundary values for the thermal scalar were directly
+    ! saved to the boundary temperature field, so no copy is needed.
 
-  if (b_f_id .ge. 0) then
-    call field_get_val_s(b_f_id, bvar_s)
+    f_id = ivarfl(isca(iscalt))
+    call field_get_key_int(f_id, kbfid, b_f_id)
+
+    if (b_f_id .ge. 0) then
+      call field_get_val_s(b_f_id, bvar_s)
+    else
+      allocate(bvar_s(nfabor))
+      do ii = 1, nfabor
+        bvar_s(ii) = btemp_s(ii)
+      enddo
+    endif
+
     call b_h_to_t(bvar_s, btemp_s)
-  else
-    call b_h_to_t(btemp_s, btemp_s)
+
+    if (b_f_id .lt. 0) then
+      deallocate(bvar_s)
+    endif
+
+    ! In case of assigned temperature values, overwrite computed
+    ! wall temperature with prescribed one to avoid issues due to
+    ! enthalpy -> temperature conversion precision
+    ! (T -> H -> T at the boundary does not preserve T)
+    do ii = 1, nbt2h
+      ifac = lbt2h(ii)
+      btemp_s(ifac) = vbt2h(ifac)
+    enddo
+
   endif
+
+  deallocate(lbt2h)
+  deallocate(vbt2h)
 
 endif
 
