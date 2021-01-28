@@ -62,8 +62,7 @@
 !______________________________________________________________________________!
 
 subroutine cs_coal_scast &
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+ (iscal, smbrs, rovsdt)
 
 !===============================================================================
 ! Module files
@@ -196,9 +195,8 @@ double precision mckcl1, mckcl2
 double precision, dimension(:), pointer :: dt
 
 type(var_cal_opt) :: vcopt
+logical(kind=c_bool) :: log_active
 
-!===============================================================================
-!
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -241,6 +239,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
   call field_get_val_prev_s(ivarfl(isca(iynh3)), cvara_ynh3)
 endif
 
+log_active = cs_log_default_is_active()
+
 !===============================================================================
 ! Deallocation dynamic arrays
 !----
@@ -266,7 +266,7 @@ call field_get_val_s_by_name('dt', dt)
 
 ! --> Source term for the mass fraction of reactive coal
 
-if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
+if (ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp))) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -296,7 +296,7 @@ endif
 ! 2.1 Source term for the mass fraction of coke
 !===============================================================================
 
-if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
+if (ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp))) then
 
   if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
@@ -320,14 +320,13 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
     call field_get_val_s(ighh2o(numcla), cpro_ghh2o)
   endif
 
-!
   do iel = 1, ncel
     exp_st = 0.d0
     ! volatile formation minus coal consuming = char formation
     ! (Coke formation in French)
     ! NB: we take values at current and not previous time step
     !     to be conservative in mass
-    char_formation = crom(iel)*cvar_xchcl(iel)*cell_f_vol(iel)                     &
+    char_formation = crom(iel)*cvar_xchcl(iel)*cell_f_vol(iel)      &
                    *(cpro_cgd1(iel)+cpro_cgd2(iel)-cpro_cgch(iel))
 
     ! Compute the implict part of the Source term
@@ -342,7 +341,8 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
       ! Reaction C(s) + H2O ---> CO + H2
       if (ihth2o .eq. 1) exp_st = exp_st + cpro_ghh2o(iel)
 
-      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * cell_f_vol(iel) / cvara_xckcl(iel)**(1.d0/3.d0)
+      exp_st = -2.d0/3.d0 * crom(iel) * exp_st   &
+                          * cell_f_vol(iel) / cvara_xckcl(iel)**(1.d0/3.d0)
     endif
 
     ! Compute the explicit part of the Source term
@@ -360,7 +360,7 @@ endif
 ! 2.2 Source term for the mass fraction of water
 !===============================================================================
 
-if ( ippmod(iccoal) .eq. 1 ) then
+if (ippmod(iccoal) .eq. 1) then
 
   if (ivar.ge.isca(ixwt(1)) .and. ivar.le.isca(ixwt(nclacp))) then
 
@@ -382,7 +382,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
      if ( cvara_var(iel).gt. epsicp .and.                         &
           xwatch(numcha).gt. epsicp       ) then
-       xw1 = crom(iel)*cpro_csec(iel)*cell_f_vol(iel)                         &
+       xw1 = crom(iel)*cpro_csec(iel)*cell_f_vol(iel)             &
             *(1.d0/cpro_x2(iel))*(1.d0/xwatch(numcha))
 
        rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
@@ -480,7 +480,7 @@ if (i_comb_drift.eq.1) then
         ! For H2O gasification, one H2O comes in and one CO and one H2 get out
         smbrs1 = 0.d0
         if (cvara_coke(iel).gt.epsicp) then
-          smbrs1                 = smbrs1 + wmole(io2 )/wmolat(iatc)*cpro_cght(iel)
+          smbrs1                  = smbrs1 + wmole(io2 )/wmolat(iatc)*cpro_cght(iel)
           if (ihtco2.eq.1) smbrs1 = smbrs1 + wmole(ico2)/wmolat(iatc)*cpro_ghco2(iel)
           if (ihth2o.eq.1) smbrs1 = smbrs1 + wmole(ih2o)/wmolat(iatc)*cpro_ghh2o(iel)
           smbrs1                 = smbrs1 * cvara_coke(iel)**(2.d0/3.d0)
@@ -1284,7 +1284,7 @@ if ( ieqco2 .eq. 1 ) then
       call field_get_val_s(ix2(icla),cpro_x2c(icla)%p)
     enddo
 
-    ! ---- Contribution of interfacial source term to explicit and implicit balances
+    ! Contribution of interfacial source term to explicit and implicit balances
 
     ! Oxydation of CO
     ! ===============
@@ -1495,9 +1495,11 @@ if ( ieqco2 .eq. 1 ) then
      call parcmx(nbimax)
    endif
 
-   write(nfecra,*) ' Max Error = ',ERR1MX
-   write(nfecra,*) ' no Points   ',NBERIC,NBARRE,NBPASS
-   write(nfecra,*) ' Iter max number ',NBIMAX
+   if (log_active .eqv. .true.) then
+     write(nfecra,*) ' Max Error = ', err1mx
+     write(nfecra,*) ' no Points   ', nberic, nbarre, nbpass
+     write(nfecra,*) ' Iter max number ', nbimax
+   endif
 
    !     Source term: heterogeneous combustion by CO2
 
@@ -1629,7 +1631,9 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       call parmin(tfuelmin)
       call parmax(tfuelmax)
     endif
-    write(nfecra,*) ' Min max de Tfuel pour Hoxy ',tfuelmin,tfuelmax
+    if (log_active .eqv. .true.) then
+      write(nfecra,*) ' Min max of Tfuel for Hoxy ', tfuelmin, tfuelmax
+    endif
 
     ! Heterogeneous combustion: C + O2 ---> 0.5 CO
 
@@ -2747,22 +2751,12 @@ endif
 ! End
 !----
 
-
-! Deallocation dynamic arrays
-deallocate(w1,w3,w4,w5,stat=iok1)
+! Deallocate work arrays
+deallocate(w1, w3, w4, w5, tfuel, stat=iok1)
 
 if (iok1 > 0) then
-  write(nfecra,*) ' Memory deallocation error inside: '
-  write(nfecra,*) '      cs_coal_scast                '
+  write(nfecra,*) ' cs_coal_scast: memory deallocation error'
   call csexit(1)
 endif
-deallocate(tfuel, stat=iok1)
-if (iok1 > 0) then
-  write(nfecra,*) ' Memory deallocation error inside: '
-  write(nfecra,*) '      cs_coal_scast                '
-  call csexit(1)
-endif
-
-return
 
 end subroutine
