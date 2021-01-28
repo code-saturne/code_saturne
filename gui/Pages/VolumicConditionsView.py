@@ -91,6 +91,16 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
         else:
             self.neptuneInitializationWidget.hide()
             self.saturneInitializationWidget.setup(self.case, self.zone_name)
+
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            self.saturnePropertiesWidget.hide()
+            self.neptunePropertiesWidget.show()
+            self.neptunePropertiesWidget.setup(self.case, self.zone_name)
+        else:
+            self.saturnePropertiesWidget.show()
+            self.neptunePropertiesWidget.hide()
+            self.saturnePropertiesWidget.setup(self.case, self.zone_name)
+
         self.porosityPage.setup(self.case, self.zone_name)
         self.headLossesPage.setup(self.case, self.zone_name)
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
@@ -102,12 +112,14 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
         self.groundwaterLawPage.setup(self.case, self.zone_name)
 
         if not (self.zone.isNatureActivated("groundwater_law")):
-            self.tabWidget.removeTab(4)
+            self.tabWidget.removeTab(5)
         if not (self.zone.isNatureActivated("source_term")):
-            self.tabWidget.removeTab(3)
+            self.tabWidget.removeTab(4)
         if not (self.zone.isNatureActivated("head_losses")):
-            self.tabWidget.removeTab(2)
+            self.tabWidget.removeTab(3)
         if not (self.zone.isNatureActivated("porosity")):
+            self.tabWidget.removeTab(2)
+        if not (self.zone.isNatureActivated("physical_properties")):
             self.tabWidget.removeTab(1)
         if not (self.zone.isNatureActivated("initialization")):
             self.tabWidget.removeTab(0)

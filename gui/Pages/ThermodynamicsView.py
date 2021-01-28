@@ -417,7 +417,7 @@ Cp = 1000
 temperature = enthalpy / 1000;
 """
 
-    def __init__(self, parent, case):
+    def __init__(self, parent = None): #FIXME!!, case):
         """
         Constructor
         """
@@ -426,13 +426,21 @@ temperature = enthalpy / 1000;
         Ui_Thermodynamics.__init__(self)
         self.setupUi(self)
 
+        self.case = None
+        self.mdl  = None
+        self.notebook = None
+        self.zone = None
+
+    def setup(self,case, zone_name):
         self.case = case
+        self.zone = zone_name
         self.case.undoStopGlobal()
 
         self.mdl = ThermodynamicsModel(self.case)
         self.notebook = NotebookModel(self.case)
         self.ncond = NonCondensableModel(self.case)
 
+        is_main_zone = (zone_name == "all_cells")
         # Dico
         self.dicoM2V= {"user_material" : 'user material',
                        "user_properties" : 'user properties'}
@@ -540,19 +548,27 @@ temperature = enthalpy / 1000;
         self.pushButtonThermalConductivity.clicked.connect(self.slotFormulaAl)
         self.pushButtonSurfaceTension.clicked.connect(self.slotFormulaSt)
         self.checkBoxRadiativeTransfer.clicked.connect(self.slotRadTrans)
-        self.comboBoxDensity.activated[str].connect(self.slotStateRho)
-        self.comboBoxViscosity.activated[str].connect(self.slotStateMu)
-        self.comboBoxSpecificHeat.activated[str].connect(self.slotStateCp)
-        self.comboBoxThermalConductivity.activated[str].connect(self.slotStateAl)
-        self.comboBoxSurfaceTension.activated[str].connect(self.slotStateSt)
+
+        self.comboBoxes = {}
+        self.comboBoxes['Rho']     = self.comboBoxDensity
+        self.comboBoxes['Mu']      = self.comboBoxViscosity
+        self.comboBoxes['Cp']      = self.comboBoxSpecificHeat
+        self.comboBoxes['Al']      = self.comboBoxThermalConductivity
+        self.comboBoxes['St']      = self.comboBoxSurfaceTension
+        self.comboBoxes['Hsat']    = self.comboBoxHsat
+        self.comboBoxes['dHsatdp'] = self.comboBoxdHsatdp
+
+	# Connect combo-boxes and disable them if not main zone
+        for k in self.comboBoxes.keys():
+            self.comboBoxes[k].activated[str].connect(getattr(self,"slotState"+k))
+            self.comboBoxes[k].setEnabled(is_main_zone)
+
         self.tableModelProperties.dataChanged.connect(self.dataChanged)
         self.tableViewProperties.clicked.connect(self.slotChangeSelection)
         self.pushButtonEOS.clicked.connect(self.slotEOS)
         self.pushButtonTemperature.clicked.connect(self.slotFormulaTemperature)
         self.pushButtondRodp.clicked.connect(self.slotFormuladrodp)
         self.pushButtondRodh.clicked.connect(self.slotFormuladrodh)
-        self.comboBoxHsat.activated[str].connect(self.slotStateHsat)
-        self.comboBoxdHsatdp.activated[str].connect(self.slotStatedHsatdp)
         self.pushButtonHsat.clicked.connect(self.slotFormulaHsat)
         self.pushButtondHsatdp.clicked.connect(self.slotFormuladHsatdp)
         self.pushButtonTsat.clicked.connect(self.slotFormulaTsat)
@@ -570,6 +586,12 @@ temperature = enthalpy / 1000;
         elif QT_API == "PYQT5":
             self.tableViewProperties.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
 
+        self.initializeWidget()
+
+        self.case.undoStartGlobal()
+
+    def initializeWidget(self):
+
         # hide groupBoxConstantProperties
         self.groupBoxConstantProperties.hide()
         if EOS == 1 :
@@ -579,10 +601,12 @@ temperature = enthalpy / 1000;
 
         self.groupBoxEauvap.hide()
 
+        is_main_zone = False
+        if self.zone == "all_cells":
+            is_main_zone = True
+
         # hide or not surface tension
         self.__updateSurfTension()
-
-        self.case.undoStartGlobal()
 
 
     def __updateSurfTension(self):
@@ -598,8 +622,9 @@ temperature = enthalpy / 1000;
             if self.mdl.getMaterials(field) != "user_material":
                 need = 0
 
+        is_main_zone = (self.zone == "all_cells")
         if need:
-            self.groupBoxNoFieldProperties.show()
+            self.groupBoxNoFieldProperties.setVisible(is_main_zone)
             tag = 'surface_tension'
             currentFluid = 'none'
             sym = 'SurfaceTension'
@@ -659,7 +684,7 @@ temperature = enthalpy / 1000;
             __button.setEnabled(True)
             __line.setEnabled(True)
             __line.setText(str(self.mdl.getInitialValue(currentFluid, tag)))
-            exp = self.mdl.getFormula(currentFluid, tag)
+            exp = self.mdl.getFormula(currentFluid, tag, zone=self.zone)
             if exp:
                 __button.setStyleSheet("background-color: green")
                 __button.setToolTip(exp)
@@ -745,7 +770,7 @@ temperature = enthalpy / 1000;
         else:
             name = "SaturationEnthalpyGas"
         label = self.m_out.getVariableLabel('none', name)
-        exp = self.mdl.getFormula('none', name)
+        exp = self.mdl.getFormula('none', name, zone=self.zone)
         if exp:
             self.pushButtonHsat.setStyleSheet("background-color: green")
             self.pushButtonHsat.setToolTip(exp)
@@ -764,7 +789,7 @@ temperature = enthalpy / 1000;
         else:
             name = "d_Hsat_d_P_Gas"
         label = self.m_out.getVariableLabel('none', name)
-        exp = self.mdl.getFormula('none', name)
+        exp = self.mdl.getFormula('none', name, zone=self.zone)
         if exp:
             self.pushButtondHsatdp.setStyleSheet("background-color: green")
             self.pushButtondHsatdp.setToolTip(exp)
@@ -776,6 +801,8 @@ temperature = enthalpy / 1000;
         """
         show groupBoxConstantProperties if necessary
         """
+        is_main_zone = (self.zone == "all_cells")
+
         method = self.tableModelProperties.getMethod(row)
         fieldId = row + 1
         self.currentFluid = fieldId
@@ -794,13 +821,13 @@ temperature = enthalpy / 1000;
                 self.lineEditThermalConductivity.setReadOnly(True)
                 self.lineEditThermalConductivity.setEnabled(False)
             else:
-                self.comboBoxSpecificHeat.setEnabled(True)
+                self.comboBoxSpecificHeat.setEnabled(is_main_zone)
                 self.lineEditSpecificHeat.setReadOnly(False)
-                self.lineEditSpecificHeat.setEnabled(True)
+                self.lineEditSpecificHeat.setEnabled(is_main_zone)
 
-                self.comboBoxThermalConductivity.setEnabled(True)
+                self.comboBoxThermalConductivity.setEnabled(is_main_zone)
                 self.lineEditThermalConductivity.setReadOnly(False)
-                self.lineEditThermalConductivity.setEnabled(True)
+                self.lineEditThermalConductivity.setEnabled(is_main_zone)
 
             self.groupBoxCompressible.hide()
             if self.mdl.getFieldNature(fieldId) == "solid":
@@ -827,14 +854,14 @@ temperature = enthalpy / 1000;
 
                 if method2 == "constant" :
                     __button.setEnabled(False)
-                    __line.setEnabled(True)
+                    __line.setEnabled(is_main_zone)
                     __line.setText(str(self.mdl.getInitialValue(fieldId, tag)))
                     __button.setStyleSheet("background-color: None")
                 elif method2 == "user_law" :
                     __button.setEnabled(True)
                     __line.setEnabled(False)
                     __line.setText(str(self.mdl.getInitialValue(fieldId, tag)))
-                    exp = self.mdl.getFormula(fieldId, tag)
+                    exp = self.mdl.getFormula(fieldId, tag, zone=self.zone)
                     if exp:
                         __button.setStyleSheet("background-color: green")
                         __button.setToolTip(exp)
@@ -849,13 +876,13 @@ temperature = enthalpy / 1000;
             # Test for compressible flow
             if MainFieldsModel(self.case).getCompressibleStatus(fieldId) == "on":
                 self.groupBoxCompressible.show()
-                exp = self.mdl.getFormula(fieldId, 'd_rho_d_P')
+                exp = self.mdl.getFormula(fieldId, 'd_rho_d_P', zone=self.zone)
                 if exp:
                     self.pushButtondRodp.setStyleSheet("background-color: green")
                     self.pushButtondRodp.setToolTip(exp)
                 else:
                     self.pushButtondRodp.setStyleSheet("background-color: red")
-                exp = self.mdl.getFormula(fieldId, 'd_rho_d_h')
+                exp = self.mdl.getFormula(fieldId, 'd_rho_d_h', zone=self.zone)
                 if exp:
                     self.pushButtondRodh.setStyleSheet("background-color: green")
                     self.pushButtondRodh.setToolTip(exp)
@@ -871,7 +898,9 @@ temperature = enthalpy / 1000;
 
                 # Tsat
                 label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
-                exp = self.mdl.getFormula('none', 'SaturationTemperature')
+                exp = self.mdl.getFormula('none',
+                                          'SaturationTemperature',
+                                          zone=self.zone)
                 if exp:
                     self.pushButtonTsat.setStyleSheet("background-color: green")
                     self.pushButtonTsat.setToolTip(exp)
@@ -880,7 +909,7 @@ temperature = enthalpy / 1000;
 
                 # Tsatdp
                 label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
-                exp = self.mdl.getFormula('none', 'd_Tsat_d_P')
+                exp = self.mdl.getFormula('none', 'd_Tsat_d_P', zone=self.zone)
                 if exp:
                     self.pushButtondTsatdp.setStyleSheet("background-color: green")
                     self.pushButtondTsatdp.setToolTip(exp)
@@ -889,7 +918,7 @@ temperature = enthalpy / 1000;
 
                 # Hlat
                 label = self.m_out.getVariableLabel('none', 'LatentHeat')
-                exp = self.mdl.getFormula('none', 'LatentHeat')
+                exp = self.mdl.getFormula('none', 'LatentHeat', zone=self.zone)
                 if exp:
                     self.pushButtonHlat.setStyleSheet("background-color: green")
                     self.pushButtonHlat.setToolTip(exp)
@@ -903,7 +932,7 @@ temperature = enthalpy / 1000;
                 else:
                     name = "SaturationEnthalpyGas"
                 label = self.m_out.getVariableLabel('none', name)
-                exp = self.mdl.getFormula('none', name)
+                exp = self.mdl.getFormula('none', name, zone=self.zone)
                 if exp:
                     self.pushButtonHsat.setStyleSheet("background-color: green")
                     self.pushButtonHsat.setToolTip(exp)
@@ -917,7 +946,7 @@ temperature = enthalpy / 1000;
                 else:
                     name = "d_Hsat_d_P_Gas"
                 label = self.m_out.getVariableLabel('none', name)
-                exp = self.mdl.getFormula('none', name)
+                exp = self.mdl.getFormula('none', name, zone=self.zone)
                 if exp:
                     self.pushButtondHsatdp.setStyleSheet("background-color: green")
                     self.pushButtondHsatdp.setToolTip(exp)
@@ -933,7 +962,7 @@ temperature = enthalpy / 1000;
 
                 fieldId = self.currentFluid
                 label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
-                exp = self.mdl.getFormula(fieldId, 'temperature')
+                exp = self.mdl.getFormula(fieldId, 'temperature', zone=self.zone)
                 if exp:
                     self.pushButtonTemperature.setStyleSheet("background-color: green")
                     self.pushButtonTemperature.setToolTip(exp)
@@ -1029,14 +1058,14 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents(fieldId)
+        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents(fieldId, zone=self.zone)
 
         exa = ThermodynamicsView.density
 
         vname = "density_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1047,7 +1076,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'density', result)
+            self.mdl.setFormula(str(fieldId), 'density', result, zone=self.zone)
             self.pushButtonDensity.setStyleSheet("background-color: green")
             self.pushButtonDensity.setToolTip(exp)
 
@@ -1059,14 +1088,14 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents(fieldId)
+        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents(fieldId, zone=self.zone)
 
         exa = ThermodynamicsView.molecular_viscosity
 
         vname = "molecular_viscosity_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1077,7 +1106,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'molecular_viscosity', result)
+            self.mdl.setFormula(str(fieldId), 'molecular_viscosity', result, zone=self.zone)
             self.pushButtonViscosity.setStyleSheet("background-color: green")
             self.pushButtonViscosity.setToolTip(exp)
 
@@ -1089,14 +1118,14 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents(fieldId)
+        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents(fieldId, zone=self.zone)
 
         exa = ThermodynamicsView.specific_heat
 
         vname = "specific_heat_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1107,7 +1136,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaCp -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'specific_heat', result)
+            self.mdl.setFormula(str(fieldId), 'specific_heat', result, zone=self.zone)
             self.pushButtonSpecificHeat.setStyleSheet("background-color: green")
             self.pushButtonSpecificHeat.setToolTip(exp)
 
@@ -1119,14 +1148,14 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents(fieldId)
+        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents(fieldId, zone=self.zone)
 
         exa = ThermodynamicsView.thermal_conductivity
 
         vname = "thermal_conductivity_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1137,7 +1166,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result)
+            self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result, zone=self.zone)
             self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
             self.pushButtonThermalConductivity.setToolTip(exp)
 
@@ -1154,7 +1183,7 @@ temperature = enthalpy / 1000;
         vname = "SurfaceTension"
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1165,7 +1194,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
-            self.mdl.setFormula('none', 'surface_tension', result)
+            self.mdl.setFormula('none', 'surface_tension', result, zone=self.zone)
             self.pushButtonSurfaceTension.setStyleSheet("background-color: green")
             self.pushButtonSurfaceTension.setToolTip(exp)
 
@@ -1206,14 +1235,14 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols = self.mdl.getFormulaTemperatureComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormulaTemperatureComponents(fieldId, zone=self.zone)
 
         exa = ThermodynamicsView.temperature
 
         vname = "temperature_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1224,7 +1253,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTemperature -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'temperature', result)
+            self.mdl.setFormula(str(fieldId), 'temperature', result, zone=self.zone)
             self.pushButtonTemperature.setStyleSheet("background-color: green")
             self.pushButtonTemperature.setToolTip(result)
 
@@ -1235,14 +1264,14 @@ temperature = enthalpy / 1000;
         User formula for d(ro) / dp (compressible flow)
         """
         fieldId = self.currentFluid
-        exp, req, sca, symbols = self.mdl.getFormuladrodpComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormuladrodpComponents(fieldId, zone=self.zone)
 
         exa = "d_rho_d_P = 0.;"
 
         vname = "d_rho_d_P_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1253,7 +1282,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladrodp -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'd_rho_d_P', result)
+            self.mdl.setFormula(str(fieldId), 'd_rho_d_P', result, zone=self.zone)
             self.pushButtondRodp.setStyleSheet("background-color: green")
             self.pushButtondRodp.setToolTip(result)
 
@@ -1264,14 +1293,14 @@ temperature = enthalpy / 1000;
         User formula for d(ro) / dh (compressible flow)
         """
         fieldId = self.currentFluid
-        exp, req, sca, symbols = self.mdl.getFormuladrodhComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormuladrodhComponents(fieldId, zone=self.zone)
 
         exa = "d_rho_d_h = 0.;"
 
         vname = "d_rho_d_h_%s" % (str(fieldId))
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = vname,
                                 expression    = exp,
                                 required      = req,
@@ -1282,7 +1311,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladrodh -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'd_rho_d_h', result)
+            self.mdl.setFormula(str(fieldId), 'd_rho_d_h', result, zone=self.zone)
             self.pushButtondRodh.setStyleSheet("background-color: green")
             self.pushButtondRodh.setToolTip(result)
 
@@ -1300,7 +1329,7 @@ temperature = enthalpy / 1000;
 
         label = self.m_out.getVariableLabel('none', name)
 
-        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name)
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name, zone=self.zone)
 
         if not exp:
             exp = label + " = 0.;"
@@ -1308,7 +1337,7 @@ temperature = enthalpy / 1000;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = name,
                                 expression    = exp,
                                 required      = req,
@@ -1319,7 +1348,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaHsat -> %s" % str(result))
-            self.mdl.setFormula('none', name, result)
+            self.mdl.setFormula('none', name, result, zone=self.zone)
             self.pushButtonHsat.setStyleSheet("background-color: green")
             self.pushButtonHsat.setToolTip(result)
 
@@ -1335,7 +1364,7 @@ temperature = enthalpy / 1000;
         else:
             name = "d_Hsat_d_P_Gas"
 
-        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name)
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name, zone=self.zone)
 
         label = self.m_out.getVariableLabel('none', name)
         if not exp:
@@ -1344,7 +1373,7 @@ temperature = enthalpy / 1000;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = name,
                                 expression    = exp,
                                 required      = req,
@@ -1355,7 +1384,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladHsatdp -> %s" % str(result))
-            self.mdl.setFormula('none', name, result)
+            self.mdl.setFormula('none', name, result, zone=self.zone)
             self.pushButtondHsatdp.setStyleSheet("background-color: green")
             self.pushButtondHsatdp.setToolTip(result)
 
@@ -1366,7 +1395,8 @@ temperature = enthalpy / 1000;
         User formula for temperature of saturation (water-steam flow)
         """
         exp, req, sca, symbols = self.mdl.getFormulaComponents('none',
-                                                               'SaturationTemperature')
+                                                               'SaturationTemperature'
+                                                               , zone=self.zone)
 
         label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
         if not exp:
@@ -1376,7 +1406,7 @@ temperature = enthalpy / 1000;
         name = 'SaturationTemperature'
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = name,
                                 expression    = exp,
                                 required      = req,
@@ -1387,7 +1417,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTsat -> %s" % str(result))
-            self.mdl.setFormula('none', 'SaturationTemperature', result)
+            self.mdl.setFormula('none', 'SaturationTemperature', result, zone=self.zone)
             self.pushButtonTsat.setStyleSheet("background-color: green")
             self.pushButtonTsat.setToolTip(result)
 
@@ -1397,7 +1427,7 @@ temperature = enthalpy / 1000;
         """
         User formula for d(Tsat) / dp (water-steam flow)
         """
-        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', 'd_Tsat_d_P')
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', 'd_Tsat_d_P', zone=self.zone)
         label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
         if not exp:
             exp = label + " = 0.;"
@@ -1406,7 +1436,7 @@ temperature = enthalpy / 1000;
         name = 'd_Tsat_d_P'
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = name,
                                 expression    = exp,
                                 required      = req,
@@ -1417,7 +1447,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladTsatdp -> %s" % str(result))
-            self.mdl.setFormula('none', 'd_Tsat_d_P', result)
+            self.mdl.setFormula('none', 'd_Tsat_d_P', result, zone=self.zone)
             self.pushButtondTsatdp.setStyleSheet("background-color: green")
             self.pushButtondTsatdp.setToolTip(result)
 
@@ -1428,7 +1458,7 @@ temperature = enthalpy / 1000;
         User formula for latent heat (water-steam flow)
         """
         exp, req, sca, symbols = self.mdl.getFormulaComponents('none',
-                                                               'LatentHeat')
+                                                               'LatentHeat', zone=self.zone)
         label = self.m_out.getVariableLabel('none', 'LatentHeat')
         if not exp:
             exp = label + " = 0.;"
@@ -1437,7 +1467,7 @@ temperature = enthalpy / 1000;
         name = 'LatentHeat'
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = 'all_cells',
+                                zone_name     = self.zone,
                                 variable_name = name,
                                 expression    = exp,
                                 required      = req,
@@ -1448,7 +1478,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaHlat -> %s" % str(result))
-            self.mdl.setFormula('none', 'LatentHeat', result)
+            self.mdl.setFormula('none', 'LatentHeat', result, zone=self.zone)
             self.pushButtonHlat.setStyleSheet("background-color: green")
             self.pushButtonHlat.setToolTip(result)
 

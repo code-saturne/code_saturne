@@ -150,10 +150,20 @@ class VolumicZoneNatureModel(QAbstractTableModel):
 
     def flags(self, index):
         base_flags = Qt.ItemIsEnabled
-        if index.column() == 0:
+        col = index.column()
+        row = index.row()
+
+        if col == 0:
             return base_flags  # lock first column
         else:
-            return base_flags | Qt.ItemIsUserCheckable
+            h = self._headers[col]
+            zname = self._data[row][0]
+	    # FIXME: For v7.0 'all_cells' is always used for physical properties.
+	    # Will be changed for v7.1
+            if zname == "all_cells" and h == "Physical properties":
+                return Qt.NoItemFlags
+            else:
+                return base_flags | Qt.ItemIsUserCheckable
 
 
 # Helper functions
@@ -161,6 +171,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
 def sort_headers(header):
     ordered_headers = ["Zone label",
                        "Initialization",
+                       "Physical properties",
                        "Porosity",
                        "Head losses",
                        "Momentum source\n term",

@@ -19,9 +19,14 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <widget class="InternalCouplingView" name="internalCouplingTab">
+      <attribute name="title">
+       <string>Internal coupling</string>
+      </attribute>
+     </widget>
      <widget class="ConjugateHeatTransferView" name="conjugateHeatTransferTab">
       <attribute name="title">
-       <string>Conjugate heat transfer</string>
+       <string>Syrthes coupling</string>
       </attribute>
      </widget>
      <widget class="FluidStructureInteractionView" name="fluidStructureInteractionTab">
@@ -39,6 +44,12 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>InternalCouplingView</class>
+   <extends>QWidget</extends>
+   <header location="global">InternalCouplingView.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>ConjugateHeatTransferView</class>
    <extends>QWidget</extends>

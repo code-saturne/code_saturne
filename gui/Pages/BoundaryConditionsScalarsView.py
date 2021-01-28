@@ -685,6 +685,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if value:
             bnd_label = self.__boundary.getLabel()
             value_p = self.__boundary.getConjugateHeatTransferCoupling()
+            bnd_label = self.__boundary.getLabel()
             if value != value_p:
                 self.cht_model.deleteSyrthesCoupling(value_p, bnd_label)
 

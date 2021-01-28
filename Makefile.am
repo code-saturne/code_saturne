@@ -330,6 +330,7 @@ bin/model/HeadLossesModel.py \
 bin/model/IdentityAndPathesModel.py \
 bin/model/ImmersedBoundariesModel.py \
 bin/model/InitializationModel.py \
+bin/model/InternalCouplingModel.py \
 bin/model/__init__.py \
 bin/model/InterfacialAreaModel.py \
 bin/model/InterfacialEnthalpyModel.py \

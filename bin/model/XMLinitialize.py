@@ -234,7 +234,7 @@ class XMLinit(BaseXmlInit):
                 if zone.getLabel() == 'all_cells':
                     iok = 1
             if iok == 0:
-                zone = Zone("VolumicZone", case=self.case, label='all_cells', localization='all[]')
+                zone = Zone("VolumicZone", case=self.case, label='all_cells', localization='all[]', nature='physical_properties')
                 LocalizationModel("VolumicZone", self.case).addZone(zone)
                 zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
                 InitializationModel(self.case).getInitialTurbulenceChoice(zone)
@@ -1921,6 +1921,18 @@ class XMLinit(BaseXmlInit):
                 node = XMLLagrangianNode.xmlGetNode(attr)
                 if node:
                     node.xmlRemoveNode()
+
+
+        # Check that all zones have the 'physical_properties' flag
+        XMLVolumicNode = self.case.xmlGetNode('volumic_conditions')
+        for node in XMLVolumicNode.xmlGetChildNodeList('zone', 'label', 'id'):
+            if not node['physical_properties']:
+                # The 'all_cells' zone is always used for physical properties
+                # for the v7.0
+                if node['label'] == "all_cells":
+                    node['physical_properties'] = 'on'
+                else:
+                    node['physical_properties'] = 'off'
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

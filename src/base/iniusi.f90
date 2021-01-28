@@ -354,6 +354,7 @@ if (icdo.lt.2) then
   call varpos
 endif
 ! --- Internal coupling
+call cs_gui_internal_coupling
 call cs_user_internal_coupling
 
 call cs_internal_coupling_setup

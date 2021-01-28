@@ -35,6 +35,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Pages.CouplingParametersForm import Ui_CouplingParametersForm
 from code_saturne.model.MobileMeshModel import MobileMeshModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from code_saturne.model.InternalCouplingModel import InternalCouplingModel
 
 # -------------------------------------------------------------------------------
 # log config
@@ -56,9 +57,13 @@ class CouplingParametersView(QWidget, Ui_CouplingParametersForm):
         Ui_CouplingParametersForm.__init__(self)
         self.setupUi(self)
         self.case = case
-        self.list_of_tabs = ["cht", "fsi", "nepcat"]  # keep track of tab indices
+        self.list_of_tabs = ["internal", "cht", "fsi", "nepcat"]  # keep track of tab indices
 
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            if "internal" in self.list_of_tabs:
+                int_index = self.list_of_tabs.index("internal")
+                self.couplingModelsTabWidget.removeTab(int_index)
+                self.list_of_tabs.pop(int_index)
             if "fsi" in self.list_of_tabs:
                 fsi_index = self.list_of_tabs.index("fsi")
                 self.couplingModelsTabWidget.removeTab(fsi_index)
@@ -69,6 +74,12 @@ class CouplingParametersView(QWidget, Ui_CouplingParametersForm):
                 self.couplingModelsTabWidget.insertTab(nepcat_index, self.cathareCouplingTab, "Cathare coupling")
             self.cathareCouplingTab.setup(self.case)
         else:
+            if "internal" not in self.list_of_tabs:
+                int_index = 0
+                self.list_of_tabs.insert(int_index, "internal")
+                self.couplingModelsTabWidget.insertTab(int_index,
+                                                       self.internalCouplingTab,
+                                                       "Internal coupling")
             if "nepcat" in self.list_of_tabs:
                 nepcat_index = self.list_of_tabs.index("nepcat")
                 self.couplingModelsTabWidget.removeTab(nepcat_index)
@@ -78,6 +89,12 @@ class CouplingParametersView(QWidget, Ui_CouplingParametersForm):
                 self.list_of_tabs.insert(fsi_index, "fsi")
                 self.couplingModelsTabWidget.insertTab(fsi_index, self.fluidStructureInteractionTab,
                                                        "Fluid-structure interaction")
+
+        if InternalCouplingModel(self.case).getZonesList():
+            self.internalCouplingTab.setEnabled(True)
+            self.internalCouplingTab.setup(self.case)
+        else:
+            self.internalCouplingTab.setEnabled(False)
 
         if MobileMeshModel(self.case).getMethod() == "off":
             self.fluidStructureInteractionTab.setEnabled(False)

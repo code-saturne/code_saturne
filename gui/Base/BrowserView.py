@@ -210,9 +210,9 @@ class TreeModel(QAbstractItemModel):
                 elif page_name == self.tr('Calculation features'):
                     img_path = ":/icons/22x22/calculation_features.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == self.tr('Fluid properties'):
-                    img_path = ":/icons/22x22/physical_properties.png"
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+#                elif page_name == self.tr('Fluid properties'):
+#                    img_path = ":/icons/22x22/physical_properties.png"
+#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -472,8 +472,9 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
     def _getSectionList(self):
 
+#              'Closure modeling', 'Fluid properties',
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
-              'Closure modeling', 'Fluid properties',
+              'Closure modeling',
               'Particles and droplets tracking', 'Volume conditions',
               'Boundary conditions', 'Coupling parameters', 'Time settings',
               'Numerical parameters',
@@ -493,15 +494,15 @@ class BrowserView(QWidget, Ui_BrowserForm):
                     'Pulverized fuel combustion', 'Electrical models',
                     'Atmospheric flows',
                     'Species transport', 'Turbomachinery', 'Groundwater flows',
-                    'Fans', 'Non condensable gases', 'Thermodynamics']
+                    'Fans', 'Non condensable gases']
         elif section == 'Closure modeling':
             return ['Interfacial area',
                     'Interfacial enthalpy transfer',
                     'Nucleate boiling parameters',
                     'Droplet condensation-evaporation',
                     'Particles interactions']
-        elif section == 'Fluid properties':
-            return []
+#        elif section == 'Fluid properties':
+#            return []
         elif section == 'Particles and droplets tracking':
             return ['Statistics']
         elif section == 'Volume conditions':
@@ -770,7 +771,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Groundwater flows'))
         self.setRowClose(self.tr('Fans'))
         self.setRowClose(self.tr('Non condensable gases'))
-        self.setRowClose(self.tr('Thermodynamics'))
         """
 
         self.setRowClose(self.tr('Closure modeling'))
@@ -782,11 +782,11 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Particles interactions'))
         """
 
-        self.setRowClose(self.tr('Fluid properties'))
-        """
-        self.setRowClose(self.tr('Fluid properties'))
-        self.setRowClose(self.tr('Body forces'))
-        """
+#        self.setRowClose(self.tr('Fluid properties'))
+#        """
+#        self.setRowClose(self.tr('Fluid properties'))
+#        self.setRowClose(self.tr('Body forces'))
+#        """
 
         self.setRowClose(self.tr('Particles and droplets tracking'))
         """
@@ -991,7 +991,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Fans'), m_fans)
 
         self.setRowShow(self.tr('Non condensable gases'), m_ncfd['non_condens'])
-        self.setRowShow(self.tr('Thermodynamics'), is_ncfd)
 
         # Closure modeling
 
@@ -1004,7 +1003,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         # Fluid properties
 
-        self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
+#        self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
 
         # Particles and droplets tracking
 

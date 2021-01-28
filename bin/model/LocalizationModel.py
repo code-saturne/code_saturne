@@ -94,7 +94,7 @@ class Zone(object):
         else:
             self._localization = self.defaultValues()['localization']
         if nature:
-            if typeZone == 'VolumicZone' and type(nature) == bytes:
+            if typeZone == 'VolumicZone' and type(nature) == str:
                 self._nature = self.defaultValues()['nature'].copy()
                 self._nature[nature] = "on"
             else:
@@ -240,6 +240,9 @@ class VolumicZone(Zone):
         self._natureDict['initialization']       = self.tr("Initialization")
 
         if self.case.module_name() == 'code_saturne':
+            self._natureDict['physical_properties'] = self.tr("Physical properties")
+            self._natureList.append('physical_properties')
+
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
                 self._natureList.append('head_losses')
@@ -299,6 +302,7 @@ class VolumicZone(Zone):
         dico['nature']['thermal_source_term'] = "off"
         dico['nature']['scalar_source_term'] = "off"
         dico['nature']['groundwater_law'] = "off"
+        dico['nature']['physical_properties'] = "off"
         return dico
 
     def isNatureActivated(self, text):

@@ -1241,6 +1241,9 @@ class meg_to_c_interpreter:
 
         from code_saturne.model.LocalizationModel import LocalizationModel
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
+
+        vlm = LocalizationModel('VolumicZone', self.case)
+
         if self.module_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1251,6 +1254,14 @@ class meg_to_c_interpreter:
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_block('vol', 'all_cells', fk,
                                     exp, req, sym, sca)
+                    for zone in vlm.getZones():
+                        if zone.getLabel() != "all_cells" and \
+                                zone.isNatureActivated('physical_properties'):
+                            zname = zone.getLabel()
+                            exp, req, sca, sym = \
+                            fcm.getFormulaComponents(fk, zone=zname)
+                            self.init_block('vol', zname, fk,
+                                            exp, req, sym, sca)
 
             slist = fcm.m_sca.getUserScalarNameList()
             for s in fcm.m_sca.getScalarsVarianceList():
@@ -1261,9 +1272,18 @@ class meg_to_c_interpreter:
                     if diff_choice == 'user_law':
                         dname = fcm.m_sca.getScalarDiffusivityName(s)
                         exp, req, sca, sym, = \
-                        fcm.getFormulaComponents('scalar_diffusivity', s)
+                        fcm.getFormulaComponents('scalar_diffusivity',
+                                                 scalar=s)
                         self.init_block('vol', 'all_cells', dname,
                                         exp, req, sym, sca)
+                        for zone in vlm.getZones():
+                            zname = zone.getLabel()
+                            if zname != "all_cells" and \
+                            zone.isNatureActivated('physical_properties'):
+                                exp, req, sca, sym = \
+                                fcm.getFormulaComponents('scalar_diffusivity', scalar=s, zone=zname)
+                                self.init_block('vol', zname, dname,
+                                                exp, req, sym, sca)
 
             # ALE mesh viscosity
             from code_saturne.model.MobileMeshModel import MobileMeshModel
@@ -1274,7 +1294,6 @@ class meg_to_c_interpreter:
                                 exp, req, sym, sca)
 
             # GroundWater Flows Law
-            vlm = LocalizationModel('VolumicZone', self.case)
             glm = None
 
             for zone in vlm.getZones():
@@ -1329,33 +1348,47 @@ class meg_to_c_interpreter:
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
                                 name = fk + '_' + str(fieldId)
-                                exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
-                                self.init_block('vol', 'all_cells', name,
-                                                exp, req, sym, sca)
+                                for zone in vlm.getZones():
+                                    if zone.isNatureActivated('physical_properties'):
+                                        zname = zone.getLabel()
+                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=zname)
+                                        self.init_block('vol', zname, name,
+                                                        exp, req, sym, sca)
 
                         if mfm.getCompressibleStatus(fieldId) == 'on':
                             for fk in compressible_fields:
                                 name = fk + '_' + str(fieldId)
-                                exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
-                                self.init_block('vol', 'all_cells', name,
-                                                exp, req, sym, sca)
+                                for zone in vlm.getZones():
+                                    if zone.isNatureActivated('physical_properties'):
+                                        zname = zone.getLabel()
+                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=zname)
+                                        self.init_block('vol', zname, name,
+                                                        exp, req, sym, sca)
 
                         # Temperature as a function of enthalpy
                         if mfm.getEnergyResolution(fieldId) == 'on':
                             name = 'temperature_' + str(fieldId)
-                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,
-                                                                        'temperature')
-                            self.init_block('vol', 'all_cells', name,
-                                            exp, req, sym, sca)
+                            for zone in vlm.getZones():
+                                if zone.isNatureActivated('physical_properties'):
+                                    zname = zone.getLabel()
+                                    exp, req, sca, sym = \
+                                        tm.getFormulaComponents(fieldId,
+                                                                'temperature',
+                                                                zone=zname)
+                                    self.init_block('vol', zname, name,
+                                                    exp, req, sym, sca)
 
             # User properties for Water/Steam kind flows
             if mfm.getPredefinedFlow() != 'None' and \
                mfm.getPredefinedFlow() != "particles_flow":
                 if user_gas_liq_fields:
                     for fk in gas_liq_fields:
-                        exp, req, sca, sym = tm.getFormulaComponents('none', fk)
-                        self.init_block('vol', 'all_cells', fk,
-                                        exp, req, sym, sca)
+                        for zone in vlm.getZones():
+                            if zone.isNatureActivated('physical_properties'):
+                                zname = zone.getLabel()
+                                exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=zname)
+                                self.init_block('vol', zname, fk,
+                                                exp, req, sym, sca)
 
 
         # Porosity for both solvers

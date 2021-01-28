@@ -149,9 +149,9 @@ def displayStaticPage(case, page_name, root, stbar, tree):
         import code_saturne.Pages.ElectricalView as Page
         thisPage = Page.ElectricalView(root, case, stbar)
 
-    elif page_name == tr("Fluid properties"):
-        import code_saturne.Pages.FluidCharacteristicsView as Page
-        thisPage = Page.FluidCharacteristicsView(root, case)
+#    elif page_name == tr("Fluid properties"):
+#        import code_saturne.Pages.FluidCharacteristicsView as Page
+#        thisPage = Page.FluidCharacteristicsView(root, case)
 
     elif page_name == tr("Body forces"):
         import code_saturne.Pages.BodyForcesView as Page
@@ -276,10 +276,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Main fields"):
         import code_saturne.Pages.MainFieldsView as Page
         thisPage = Page.MainFieldsView(root, case, tree)
-
-    elif page_name == tr("Thermodynamics"):
-        import code_saturne.Pages.ThermodynamicsView as Page
-        thisPage = Page.ThermodynamicsView(root, case)
 
     elif page_name == tr("Closure modeling"):
         import code_saturne.Pages.InterfacialForcesView as Page
