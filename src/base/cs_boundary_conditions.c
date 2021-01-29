@@ -105,7 +105,7 @@ BEGIN_C_DECLS
 typedef struct {
 
   int             bc_location_id;      /* location id of boundary zone */
-  int             source_location_id;  /* location if of source elements */
+  int             source_location_id;  /* location id of source elements */
   cs_real_t       coord_shift[3];      /* coordinates shift relative to
                                           selected boundary faces */
   double          tolerance;           /* search tolerance */
@@ -1221,10 +1221,10 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int         nvar,
-                               int        *itypfb,
-                               int        *icodcl,
-                               double     *rcodcl)
+cs_boundary_conditions_compute(int     nvar,
+                               int     itypfb[],
+                               int     icodcl[],
+                               double  rcodcl[])
 {
   /* Initialization */
 
@@ -1319,6 +1319,76 @@ cs_boundary_conditions_compute(int         nvar,
       }
     }
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic adjustments for boundary condition codes.
+ *
+ * Currently handles mapped inlets, after the call to \ref stdtcl.
+ * As portions of stdtcl are migrated to C, they should be called here,
+ * before mapped inlets.
+ *
+ * \param[in]       nvar             number of variables requiring BC's
+ * \param[in]       itypfb           type of boundary for each face
+ * \param[in, out]  icodcl           boundary condition codes
+ * \param[in, out]  rcodcl           boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_complete(int     nvar,
+                                int     itypfb[],
+                                int     icodcl[],
+                                double  rcodcl[])
+{
+  CS_NO_WARN_IF_UNUSED(itypfb);
+
+  /* Initialization */
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  for (int map_id = 0; map_id < _n_bc_maps; map_id++)
+    _update_bc_map(map_id);
+
+  static int var_id_key = -1;
+  if (var_id_key < 0)
+    var_id_key = cs_field_key_id("variable_id");
+  assert(var_id_key >= 0);
+
+  const cs_real_t t_eval = ts->t_cur;
+
+  /* Loop on fields */
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+
+    if (! (f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    const cs_equation_param_t *eqp
+      = cs_field_get_equation_param_const(f);
+
+    /* Only handle legacy discretization here */
+    if (eqp != NULL) {
+      if (eqp->space_scheme != CS_SPACE_SCHEME_LEGACY)
+        continue;
+    }
+
+    /* Settings in eqp may not be well-defined at this stage. The following
+       test should be more appropriate to decide if one skips this field or
+       not */
+    if (f->type & CS_FIELD_CDO)
+      continue;
+
+    /* Get associated variable id  */
+
+    int var_id = cs_field_get_key_int(f, var_id_key) - 1;
+    assert(var_id >= 0);
+
     /* Treatment of mapped inlets */
 
     for (int map_id = 0; map_id < _n_bc_maps; map_id++) {
@@ -1356,6 +1426,18 @@ cs_boundary_conditions_compute(int         nvar,
                                           NULL,
                                           nvar,
                                           rcodcl);
+
+        if (f == CS_F_(h)) {
+          const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+          int  *_icodcl = rcodcl + var_id*n_b_faces;
+
+          for (cs_lnum_t i = 0; i < n_faces; i++) {
+            const cs_lnum_t j = (faces != NULL) ? faces[i] : i;
+            if (_icodcl[j] < 0)
+              _icodcl[j] *= -1;
+          }
+        }
+
       }
 
     }

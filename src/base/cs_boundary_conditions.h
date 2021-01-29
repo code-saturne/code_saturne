@@ -462,10 +462,31 @@ cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_compute(int         nvar,
-                               int        *itypfb,
-                               int        *icodcl,
-                               double     *rcodcl);
+cs_boundary_conditions_compute(int     nvar,
+                               int     itypfb[],
+                               int     icodcl[],
+                               double  rcodcl[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic adjustments for boundary condition codes.
+ *
+ * Currently handles mapped inlets, after the call to \ref stdtcl.
+ * As portions of stdtcl are migrated to C, they should be called here,
+ * before mapped inlets.
+ *
+ * \param[in]       nvar             number of variables requiring BC's
+ * \param[in]       itypfb           type of boundary for each face
+ * \param[in, out]  icodcl           boundary condition codes
+ * \param[in, out]  rcodcl           boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_complete(int     nvar,
+                                int     itypfb[],
+                                int     icodcl[],
+                                double  rcodcl[]);
 
 /*----------------------------------------------------------------------------*/
 
