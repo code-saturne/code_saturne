@@ -342,6 +342,17 @@ interface
 
   end subroutine clsyvt
 
+  subroutine cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl) &
+    bind(C, name='cs_boundary_conditions_complete')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nvar
+    integer(c_int), dimension(*), intent(inout) :: itypfb, icodcl
+    real(kind=c_double), dimension(*), intent(inout) :: rcodcl
+
+  end subroutine cs_boundary_conditions_complete
+
   subroutine cs_syr_coupling_recv_boundary(nvar, bc_type, icodcl, rcodcl) &
     bind(C, name = 'cs_syr_coupling_recv_boundary')
 
@@ -409,42 +420,31 @@ if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
 
 endif
 
-!     - Sous-programme utilisateur
-!       ==========================
+call cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl)
+
+! User-defined functions
+! ==========================
 
 call cs_f_user_boundary_conditions &
-  ( nvar   , nscal  ,                                              &
-  icodcl , itrifb , itypfb , izfppp ,                            &
-  dt     ,                                                       &
-  rcodcl )
+  (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl )
 
 call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 
-!     - Interface Code_Saturne
-!       ======================
+! Check consistency with GUI definitions
 
 call uiclve(nozppm, itypfb, izfppp)
 
-! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
-!       On s'occupe ici du couplage via les faces de bord, et de la
-!       transformation de l'information recue en condition limite.
+! BC'based coupling with other code_saturne instances.
 
 if (nbrcpl.gt.0) then
-
-  call cscfbr &
-    ( nscal  ,                                                       &
-    icodcl , itypfb ,                                              &
-    dt     ,                                                       &
-    rcodcl )
-
+  call cscfbr(nscal, icodcl, itypfb, dt, rcodcl)
 endif
 
-! -- Synthetic Eddy Method en L.E.S. :
-!    (Transfert des structures dans les tableaux rcodcl)
+! Synthetic Eddy Method for L.E.S.
 
 call synthe(ttcabs, dt, rcodcl)
 
-! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
+! ALE method (mesh velocity BC and vertices displacement)
 
 if (iale.ge.1) then
 
@@ -458,23 +458,17 @@ if (iale.ge.1) then
   ! - Interface Code_Saturne
   !   ======================
 
-  call uialcl &
-    ( ibfixe, igliss, ivimpo, ifresf,    &
-      ialtyb,                            &
-      impale,                            &
-      disale,                            &
-      iuma, ivma, iwma,                  &
-      rcodcl)
+  call uialcl(ibfixe, igliss, ivimpo, ifresf,   &
+             ialtyb, impale, disale,            &
+             iuma, ivma, iwma,                  &
+             rcodcl)
 
-  ! TODO in the future version: remove xyzno0, and disale because they are fields
+  ! TODO in the future version: remove dt, xyzno0, and disale
+  ! because they are avaliable as fields.
 
-  call usalcl &
-    ( itrale ,                                                       &
-    nvar   , nscal  ,                                              &
-    icodcl , itypfb , ialtyb ,                                     &
-    impale ,                                                       &
-    dt     ,                                                       &
-    rcodcl , xyzno0 , disale )
+  call usalcl(itrale, nvar, nscal,              &
+              icodcl, itypfb, ialtyb, impale,   &
+              dt, rcodcl, xyzno0, disale)
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
   !     remet le deplacement initial
