@@ -52,7 +52,7 @@
 !>                                 (input mass flux blocked to 0)
 !> \param[in]     itrifb        indirection for boundary faces ordering
 !> \param[in,out] itypfb        boundary face types
-!> \param[out]    izfppp        boundary face zone number
+!> \param[in,out] izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
