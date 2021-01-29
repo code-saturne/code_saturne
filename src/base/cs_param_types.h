@@ -539,6 +539,27 @@ typedef enum {
 } cs_param_amg_type_t;
 
 /*!
+ * \enum cs_param_pcd_block_type_t
+ * Type of preconditioning by block
+ *
+ * \var CS_PARAM_PCD_BLOCK_NONE
+ * No block preconditioner is requested (default)
+ *
+ * \var CS_PARAM_PCD_BLOCK_DIAG
+ * Only the diagonal block are considered in the preconditioner
+ *
+ */
+
+typedef enum {
+
+  CS_PARAM_PCD_BLOCK_NONE,
+  CS_PARAM_PCD_BLOCK_DIAG,
+
+  CS_PARAM_N_PCD_BLOCK_TYPES
+
+} cs_param_pcd_block_type_t;
+
+/*!
  * \enum cs_param_precond_type_t
  * Type of preconditioner to use with the iterative solver.
  * Some of the mentionned preconditioners are available only if the PETSc
@@ -557,10 +578,6 @@ typedef enum {
  * \var CS_PARAM_PRECOND_AMG
  * Algebraic multigrid preconditioner (additional options may be set using
  * \ref cs_param_amg_type_t)
- *
- * \var CS_PARAM_PRECOND_AMG_BLOCK
- * Algebraic multigrid preconditioner by block (useful in case of vector
- * valued variables)
  *
  * \var CS_PARAM_PRECOND_AS
  * Additive Schwarz preconditioner
@@ -608,7 +625,6 @@ typedef enum {
   CS_PARAM_PRECOND_BJACOB_ILU0,
   CS_PARAM_PRECOND_BJACOB_SGS,
   CS_PARAM_PRECOND_AMG,
-  CS_PARAM_PRECOND_AMG_BLOCK,
   CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */
   CS_PARAM_PRECOND_DIAG,
   CS_PARAM_PRECOND_GKB_CG,      /*!< Only with PETSc */
@@ -891,6 +907,19 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver);
 
 const char *
 cs_param_get_precond_name(cs_param_precond_type_t  precond);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of algebraic multigrid (AMG)
+ *
+ * \param[in] type     type of AMG
+ *
+ * \return the associated type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_pcd_block_type_name(cs_param_pcd_block_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!

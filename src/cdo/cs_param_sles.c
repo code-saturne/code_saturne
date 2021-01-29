@@ -372,8 +372,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
     break;
 
   case CS_PARAM_ITSOL_CG:        /* Preconditioned Conjugate Gradient */
-    if (slesp->precond == CS_PARAM_PRECOND_AMG ||
-        slesp->precond == CS_PARAM_PRECOND_AMG_BLOCK)
+    if (slesp->precond == CS_PARAM_PRECOND_AMG)
       KSPSetType(ksp, KSPFCG);
     else
       KSPSetType(ksp, KSPCG);
@@ -898,6 +897,7 @@ cs_param_sles_create(int          field_id,
   slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
   slesp->solver = CS_PARAM_ITSOL_GMRES;         /* iterative solver */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
+  slesp->pcd_block_type = CS_PARAM_PCD_BLOCK_NONE; /* no block by default */
   slesp->n_max_iter = 10000;                    /* max. number of iterations */
   slesp->eps = 1e-8;                            /* relative tolerance to stop
                                                    an iterative solver */
@@ -977,11 +977,15 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
   if (slesp->solver == CS_PARAM_ITSOL_AMG)
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
                   slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
+
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
                 slesp->name, cs_param_get_precond_name(slesp->precond));
   if (slesp->precond == CS_PARAM_PRECOND_AMG)
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
                   slesp->name, cs_param_get_amg_type_name(slesp->amg_type));
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:     %s\n",
+                slesp->name,
+                cs_param_get_pcd_block_type_name(slesp->pcd_block_type));
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Eps:        % -10.6e\n",
                 slesp->name, slesp->eps);
@@ -1032,6 +1036,7 @@ cs_param_sles_copy_from(cs_param_sles_t   *src,
   dst->precond = src->precond;
   dst->solver = src->solver;
   dst->amg_type = src->amg_type;
+  dst->pcd_block_type = src->pcd_block_type;
 
   dst->resnorm_type = src->resnorm_type;
   dst->n_max_iter = src->n_max_iter;
@@ -1390,7 +1395,8 @@ cs_equation_param_set_petsc_hypre_sles(bool                 use_field_id,
 #if defined(HAVE_PETSC)
   cs_sles_petsc_init();
 
-  if (slesp->precond == CS_PARAM_PRECOND_AMG_BLOCK) {
+  if (slesp->precond == CS_PARAM_PRECOND_AMG &&
+      slesp->pcd_block_type == CS_PARAM_PCD_BLOCK_DIAG) {
 
     if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG) {
       cs_sles_petsc_define(slesp->field_id,

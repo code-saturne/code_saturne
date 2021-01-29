@@ -68,10 +68,18 @@ typedef struct {
   char                    *name;         /*!< System name (equation name if
                                            this is automatic) */
 
-  cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */
-  cs_param_precond_type_t  precond;      /*!< type of preconditioner */
-  cs_param_itsol_type_t    solver;       /*!< type of solver */
-  cs_param_amg_type_t      amg_type;     /*!< type of AMG algorithm if needed */
+  cs_param_sles_class_t      solver_class; /*!< class of SLES to consider  */
+  cs_param_precond_type_t    precond;      /*!< type of preconditioner */
+  cs_param_itsol_type_t      solver;       /*!< type of solver */
+
+  /*! \var amg_type
+   *  type of AMG algorithm if needed */
+  cs_param_amg_type_t        amg_type;
+
+  /*! \var pcd_block_type
+   *  type of block preconditioner to use (only meaningful for vector-valued
+   *  systems or more complex systems */
+  cs_param_pcd_block_type_t  pcd_block_type;
 
   /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion

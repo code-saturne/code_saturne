@@ -41,6 +41,7 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 #include "cs_boundary_zone.h"
 #include "cs_cdo_bc.h"
@@ -554,37 +555,42 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "amg_block") == 0 ||
              strcmp(keyval, "block_amg") == 0) {
-      if (eqp->dim == 1) {  /* Switch to a classical AMG preconditioner */
 
-        eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
+      eqp->sles_param->pcd_block_type = CS_PARAM_PCD_BLOCK_DIAG;
 
-        /* Set the default choice */
-        if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
-          eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
-        if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-          eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
-          /* Default when using PETSc */
-          eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
-        }
+      /* Set the default choice */
+      switch (eqp->sles_param->solver_class) {
 
-      }
-      else {
-
-        eqp->sles_param->precond = CS_PARAM_PRECOND_AMG_BLOCK;
-
+      case CS_PARAM_SLES_CLASS_CS:
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
+        break;
+      case CS_PARAM_SLES_CLASS_PETSC:
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        /* Default when using PETSc */
+        eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        break;
+      case CS_PARAM_SLES_CLASS_HYPRE:
         /* Set the default choice */
 #if defined(PETSC_HAVE_HYPRE)
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(" Switch to PETSc multigrid since Hypre is not available.");
         eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
-
         /* Default when using PETSc */
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        break;
 
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice for block AMG\n", __func__);
+        break;
       }
+
     }
     else if (strcmp(keyval, "as") == 0)
       eqp->sles_param->precond = CS_PARAM_PRECOND_AS;
