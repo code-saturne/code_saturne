@@ -164,8 +164,10 @@ class NumericalParamGlobalModel(Model):
         """
         Return gradient reconstruction method
         """
-        node = self.node_np.xmlInitNode('gradient_reconstruction', 'choice')
-        choice = node['choice']
+        choice = None
+        node = self.node_np.xmlGetNode('gradient_reconstruction', 'choice')
+        if node:
+            choice = node['choice']
         if not choice:
             choice = self._defaultValues()['gradient_reconstruction']
         return choice
@@ -176,8 +178,10 @@ class NumericalParamGlobalModel(Model):
         """
         Return extended neighborhood type
         """
-        node = self.node_np.xmlInitNode('extended_neighborhood', 'choice')
-        choice = node['choice']
+        choice = None
+        node = self.node_np.xmlGetNode('extended_neighborhood', 'choice')
+        if node:
+            choice = node['choice']
         if not choice:
             choice = self._defaultValues()['extended_neighborhood']
         return choice
@@ -190,7 +194,10 @@ class NumericalParamGlobalModel(Model):
         """
         self.isOnOff(status)
         node = self.node_np.xmlInitNode('gradient_transposed', 'status')
-        node['status'] = status
+        if status == self._defaultValues()['gradient_transposed']:
+            node.xmlRemoveNode()
+        else:
+            node['status'] = status
 
 
     @Variables.undoLocal
@@ -224,7 +231,10 @@ class NumericalParamGlobalModel(Model):
         """
         self.isOnOff(var)
         node = self.node_np.xmlInitNode('hydrostatic_equilibrium', 'status')
-        node['status'] = var
+        if var == self._defaultValues()['hydrostatic_equilibrium']:
+            node.xmlRemoveNode()
+        else:
+            node['status'] = var
 
 
     @Variables.undoLocal
@@ -315,8 +325,10 @@ class NumericalParamGlobalModel(Model):
         """
         Return the algorithm for density variation in time
         """
-        node = self.node_np.xmlInitNode('algo_density_variation', 'choice')
-        choice = node['choice']
+        choice = None
+        node = self.node_np.xmlGetNode('algo_density_variation')
+        if node:
+            choice = node['choice']
         if not choice:
             choice = self._defaultValues()['algo_density_variation']
         return choice
