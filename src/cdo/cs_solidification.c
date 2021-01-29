@@ -302,7 +302,7 @@ _get_dgl_mushy(const cs_solidification_binary_alloy_t     *alloy,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create the structure dedicated to the management of the
- *         solidifcation module
+ *         solidification module
  *
  * \return a pointer to a new allocated cs_solidification_t structure
  */
@@ -575,11 +575,11 @@ _update_binary_alloy_final_state(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the darcy term (acting as a penalization) in the momentum
- *         equation and enforce solid cells by set a zero mass flux.
+ * \brief  Update the Darcy term (acting as a penalization) in the momentum
+ *         equation and enforce solid cells by setting a zero mass flux.
  *         The parallel reduction on the cell state is performed here (not
  *         before to avoid calling the enforcement if no solid cell is locally
- *         detected.
+ *         detected).
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -637,7 +637,7 @@ _update_velocity_forcing(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the concentration of solute in the liquid phase at the cell
- *         center. This value is used in the buoancy term in the momentum
+ *         center. This value is used in the buoyancy term in the momentum
  *         equation.
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
@@ -1086,7 +1086,7 @@ _update_gl_taylor(const cs_mesh_t             *mesh,
     cs_real_t  dgldC, dgldT, gliq, eta_new;
     cs_solidification_state_t  state, state_pre;
 
-    /* gliq, temp and conc iterates may be not related with the gliq(temp, conc)
+    /* gliq, temp and conc iterates may not be related with the gliq(temp, conc)
      * function until convergence is reached. So one needs to be careful. */
     state = _which_state(alloy, temp, conc);
     state_pre = _which_state(alloy, temp_pre, conc_pre);
@@ -1399,7 +1399,7 @@ _update_gl_path(const cs_mesh_t             *mesh,
     cs_real_t  c_star, t_star, dh, dgl;
     cs_solidification_state_t  state, state_pre;
 
-    /* gliq, temp and conc iterates may be not related with the gliq(temp, conc)
+    /* gliq, temp and conc iterates may not be related with the gliq(temp, conc)
      * function until convergence is reached. So one needs to be careful. */
     gliq = gliq_pre; /* default initialization to avoid a warning */
     state = _which_state(alloy, temp, conc);
@@ -1773,7 +1773,7 @@ _update_thm_path(const cs_mesh_t             *mesh,
         solid->thermal_source_term_array[c_id] = 0;
         break;
 
-      } /* End of swithon the state k */
+      } /* End of switch on the state k */
       break;
 
     case CS_SOLIDIFICATION_STATE_MUSHY:
@@ -2000,7 +2000,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the monitoring dedicated to the solidifcation module
+ * \brief  Perform the monitoring dedicated to the solidification module
  *
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  */
@@ -2420,7 +2420,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the value of the epsilon parameter used in the forcing term
- *         of the momemtum equation
+ *         of the momentum equation
  *
  * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
  *                            division by zero
@@ -2486,8 +2486,8 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which described a solidification
- *         process with a binary alloy (with component A and B)
+ * \brief  Set the main physical parameters which describe a solidification
+ *         process with a binary alloy (with components A and B)
  *         Add a transport equation for the solute concentration to simulate
  *         the conv/diffusion of the alloy ratio between the two components of
  *         the alloy
@@ -2635,7 +2635,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the main numerical parameters which described a solidification
- *         process with a binary alloy (with component A and B)
+ *         process with a binary alloy (with components A and B)
  *
  * \param[in]  strategy     strategy to perform the numerical segregation
  * \param[in]  n_iter_max   max.number of iterations for the C/T equations
@@ -2718,7 +2718,7 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
  *         and/or the way to perform the coupling between the thermal equation
  *         and the bulk concentration computation. All this setting defines
  *         the way to compute the solidification process of a binary alloy.
- *         If a function is set to NULL then the automatic settings is kept.
+ *         If a function is set to NULL then the automatic settings are kept.
  *
  *         --Advanced usage-- This enables to finely control the numerical or
  *         physical modelling aspects.
@@ -2849,7 +2849,7 @@ cs_solidification_destroy_all(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup equations/properties related to the Solidification module
+ * \brief  Setup equations/properties related to the solidification module
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2883,7 +2883,7 @@ cs_solidification_init_setup(void)
 
   cs_equation_add_reaction(mom_eqp, solid->forcing_mom);
 
-  /* Add default post-processing related to the solidifcation module */
+  /* Add default post-processing related to the solidification module */
   cs_post_add_time_mesh_dep_output(cs_solidification_extra_post, solid);
 
   /* Model-specific part */
@@ -2987,7 +2987,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   cs_property_def_by_field(solid->g_l, solid->g_l_field);
 
   /* Initially one assumes that all is liquid except for cells in a
-   * predefined sold zone for all the computation */
+   * predefined solid zone for all the computation */
   BFT_MALLOC(solid->cell_state, n_cells, cs_solidification_state_t);
 
   cs_field_set_values(solid->g_l_field, 1.);
@@ -3008,7 +3008,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
   } /* Loop on cells */
 
-  /* Add the boussinesq source term in the momentum equation */
+  /* Add the Boussinesq source term in the momentum equation */
   cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
   assert(mom_eq != NULL);
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);

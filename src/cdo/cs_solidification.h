@@ -43,8 +43,7 @@ BEGIN_C_DECLS
 /*!
   \file cs_solidification.h
 
-  \brief Structure and routines handling the solidification module dedicated to
-         the resolution of electro-magnetic equations
+  \brief Structure and routines handling the solidification module
 
 */
 
@@ -123,7 +122,7 @@ BEGIN_C_DECLS
  *
  * \def CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC
  * \brief Option related to the PATH strategy.
- *        Introduced a reaction term and a source term in order to remain on
+ *        Introduce a reaction term and a source term in order to remain on
  *        the eutectic plateau.
  */
 
@@ -178,7 +177,7 @@ typedef cs_flag_t  cs_solidification_model_t;
  *
  * \var CS_SOLIDIFICATION_MODEL_USE_ENTHALPY
  *      The dynamic system of equations is associated with an energy equation
- *      solved using the temperature as variable (not fully available).
+ *      solved using the enthalpy as variable (not fully available).
  *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
  *      Modelling introduced in Voller and Prakash entitled: "A fixed grid
@@ -359,7 +358,7 @@ typedef struct {
   cs_solidification_func_t     *update_thm_st;
 
   /* Function to compute the thermo-solutal coupling (previous function pointers
-     are called inside this function by default but a user can defined whatever
+     are called inside this function by default but a user can define whatever
      is needed inside */
   cs_solidification_func_t     *thermosolutal_coupling;
 
@@ -433,7 +432,7 @@ typedef struct {
   cs_property_t     *eta_coef_pty;
   cs_real_t         *eta_coef_array;
 
-  /* Optional postprocessing arrays */
+  /* Optional post-processing arrays */
   /* ------------------------------ */
 
   /* Liquidus temperature (values at cell centers) */
@@ -455,7 +454,7 @@ typedef struct  {
   cs_flag_t        options;     /* Flag dedicated to general options to handle
                                  * the solidification module*/
   cs_flag_t        post_flag;   /* Flag dedicated to the post-processing
-                                 * of the solidifcation module */
+                                 * of the solidification module */
   int              verbosity;   /* Level of verbosity */
 
   /* Mass density of the liquid/solid media */
@@ -592,7 +591,7 @@ cs_solidification_activate(cs_solidification_model_t      model,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the value of the epsilon parameter used in the forcing term
- *         of the momemtum equation
+ *         of the momentum equation
  *
  * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
  *                            division by zero
@@ -623,7 +622,7 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the main physical parameters which described a solidification
- *         process with a binary alloy (with component A and B)
+ *         process with a binary alloy (with components A and B)
  *         Add a transport equation for the solute concentration to simulate
  *         the conv/diffusion of the alloy ratio between the two components of
  *         the alloy
@@ -658,7 +657,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the main numerical parameters which described a solidification
- *         process with a binary alloy (with component A and B)
+ *         process with a binary alloy (with components A and B)
  *
  * \param[in]  strategy     strategy to perform the numerical segregation
  * \param[in]  n_iter_max   max.number of iterations for the C/T equations
@@ -685,7 +684,7 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
  *         and/or the way to perform the coupling between the thermal equation
  *         and the bulk concentration computation. All this setting defines
  *         the way to compute the solidification process of a binary alloy.
- *         If a function is set to NULL then the automatic settings is kept.
+ *         If a function is set to NULL then the automatic settings are kept.
  *
  *         --Advanced usage-- This enables to finely control the numerical or
  *         physical modelling aspects.
@@ -718,7 +717,7 @@ cs_solidification_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup equations/properties related to the Solidification module
+ * \brief  Setup equations/properties related to the solidification module
  */
 /*----------------------------------------------------------------------------*/
 
@@ -788,7 +787,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 /*!
  * \brief  Predefined extra-operations for the solidification module
  *
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts         pointer to a cs_time_step_t structure
  */
@@ -805,7 +804,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
  *         Prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
- * \param[in, out] input        pointer to a optional structure (here a
+ * \param[in, out] input        pointer to an optional structure (here a
  *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
