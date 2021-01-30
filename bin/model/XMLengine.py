@@ -642,7 +642,7 @@ class XMLElement:
         log.debug("xmlSetTextNode-> %s" % self.__xmlLog())
 
 
-    def xmlSetData(self, tag, textNode, *attrList, **kwargs):
+    def xmlSetData(self, tag, textNode, default=None, *attrList, **kwargs):
         """
         Set the textNode in an elementNode, which is a single node.
         If the searched 'tag' doesn't exist, it is created
@@ -656,21 +656,28 @@ class XMLElement:
         #
         if type(textNode) == float: textNode = str("%.12g" % (textNode))
 
+        if type(default) == float: default = str("%.12g" % (default))
+        if textNode == default:
+            textNode = None
+
         nodeList = self._childNodeList(tag, *attrList, **kwargs)
         elementList = []
 
         # Add a new ELEMENT_NODE and a new TEXT_NODE
         # or replace an existing TEXT_NODE
         #
-        if not nodeList:
+        if textNode and not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             child.xmlSetTextNode(textNode)
             elementList.append(child)
-        else:
+        elif nodeList:
             for node in nodeList:
                 child = self._inst(node)
-                child.xmlSetTextNode(textNode)
-                elementList.append(child)
+                if textNode:
+                    child.xmlSetTextNode(textNode)
+                    elementList.append(child)
+                else:
+                    child.xmlRemoveNode()
 
         return elementList
 

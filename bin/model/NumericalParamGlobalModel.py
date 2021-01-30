@@ -86,11 +86,12 @@ class NumericalParamGlobalModel(Model):
         """
         Return status of transposed gradient
         """
-        node = self.node_np.xmlInitNode('gradient_transposed', 'status')
-        status = node['status']
+        status = None
+        node = self.node_np.xmlGetNode('gradient_transposed')
+        if node:
+            status = node['status']
         if not status:
             status = self._defaultValues()['gradient_transposed']
-            self.setTransposedGradient(status)
         return status
 
 
@@ -99,11 +100,12 @@ class NumericalParamGlobalModel(Model):
         """
         Return status of IPUCOU value is activated or not
         """
-        node = self.node_np.xmlInitNode('velocity_pressure_coupling', 'status')
-        status = node['status']
+        status = None
+        node = self.node_np.xmlGetNode('velocity_pressure_coupling')
+        if node:
+            status = node['status']
         if not status:
             status = self._defaultValues()['velocity_pressure_coupling']
-            self.setVelocityPressureCoupling(status)
         return status
 
 
@@ -112,11 +114,10 @@ class NumericalParamGlobalModel(Model):
         """
         Return status of ICFGRP value (for hydrostatic equilibrium) is activated or not
         """
-        node = self.node_np.xmlInitNode('hydrostatic_equilibrium', 'status')
+        node = self.node_np.xmlGetNode('hydrostatic_equilibrium')
         status = node['status']
         if not status:
             status = self._defaultValues()['hydrostatic_equilibrium']
-            self.setHydrostaticEquilibrium(status)
         return status
 
 
@@ -143,7 +144,6 @@ class NumericalParamGlobalModel(Model):
         value = self.node_np.xmlGetDouble('pressure_relaxation')
         if value == None:
             value = self._defaultValues()['pressure_relaxation']
-            self.setPressureRelaxation(value)
         return value
 
 
@@ -165,7 +165,7 @@ class NumericalParamGlobalModel(Model):
         Return gradient reconstruction method
         """
         choice = None
-        node = self.node_np.xmlGetNode('gradient_reconstruction', 'choice')
+        node = self.node_np.xmlGetNode('gradient_reconstruction')
         if node:
             choice = node['choice']
         if not choice:
@@ -179,7 +179,7 @@ class NumericalParamGlobalModel(Model):
         Return extended neighborhood type
         """
         choice = None
-        node = self.node_np.xmlGetNode('extended_neighborhood', 'choice')
+        node = self.node_np.xmlGetNode('extended_neighborhood')
         if node:
             choice = node['choice']
         if not choice:
@@ -222,6 +222,7 @@ class NumericalParamGlobalModel(Model):
         else:
             for node in node_ipucou.xmlGetNodeList('property'):
                 node.xmlRemoveNode()
+            node_ipucou.xmlRemoveNode()
 
 
     @Variables.undoLocal
@@ -256,7 +257,8 @@ class NumericalParamGlobalModel(Model):
         Put value of pressure_relaxation
         """
         self.isPositiveFloat(value)
-        self.node_np.xmlSetData('pressure_relaxation', value)
+        self.node_np.xmlSetData('pressure_relaxation', value,
+                                default=self._defaultValues()['pressure_relaxation'])
 
 
     @Variables.undoLocal
@@ -266,7 +268,8 @@ class NumericalParamGlobalModel(Model):
         """
         self.isGreaterOrEqual(value, 0.0)
         self.isLower(value, 1.0)
-        self.node_np.xmlSetData('density_relaxation', value)
+        self.node_np.xmlSetData('density_relaxation', value,
+                                default=self._defaultValues()['density_relaxation'])
 
 
     @Variables.undoLocal

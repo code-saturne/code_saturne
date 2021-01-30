@@ -216,9 +216,11 @@ class TimeStepModel(Model):
         node['choice'] = value
         if value == 'simple' or value =='simplec':
             self.setVelocityPressureParamSweepNumber(1)
-        elif self.getVelocityPressureParamSweepNumber() < self.defaultValues()['piso_sweep_number']:
-            value = self.defaultValues()['piso_sweep_number']
-            self.setVelocityPressureParamSweepNumber(value)
+        else:
+            default = self.defaultValues()['piso_sweep_number']
+            if self.getVelocityPressureParamSweepNumber() < default:
+                value = default
+                self.setVelocityPressureParamSweepNumber(value)
 
 
     @Variables.noUndo
@@ -230,7 +232,6 @@ class TimeStepModel(Model):
         value = self.node_algo.xmlGetInt('piso_sweep_number')
         if not value:
             value = self.defaultValues()['piso_sweep_number']
-            self.setVelocityPressureParamSweepNumber(value)
         return value
 
 
@@ -241,7 +242,7 @@ class TimeStepModel(Model):
         """
         self.isInt(value)
         self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
-        self.node_algo.xmlSetData('piso_sweep_number',value)
+        self.node_algo.xmlSetData('piso_sweep_number', value, default=1)
 
 
     @Variables.noUndo
