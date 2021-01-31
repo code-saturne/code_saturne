@@ -971,29 +971,34 @@ typedef struct {
  * \var CS_EQKEY_ITSOL
  * Specify the iterative solver for solving the linear system related to an
  * equation. Avalaible choices are:
- * - "jacobi"           --> simpliest iterative solver
- * - "gauss_seidel"     --> Gauss-Seidel algorithm
- * - "sym_gauss_seidel" --> Symmetric version of Gauss-Seidel algorithm;
- *                          one backward and forward sweep
+
+ * - "amg"                         --> Algebraic MultiGrid iterative solver.
+ *                                     Good choice for a scalable solver
+ *                                     related to symmetric positive definite
+ *                                     system.
+ * - "jacobi","diag" or "diagonal" --> simpliest iterative solver
+ * - "gauss_seidel" or "gs"        --> Gauss-Seidel algorithm
  * - "cg"               --> conjuguate gradient algorithm
+ * - "cr3"              --> a 3-layer conjugate residual solver (when "cs" is
+ *                          chosen as the solver family)
  * - "fcg"              --> flexible version of the conjuguate gradient
  *                          algorithm used when the preconditioner can change
  *                          iteration by iteration
  * - "bicg"             --> Bi-CG algorithm (for non-symmetric linear systems)
  * - "bicgstab2"        --> BiCG-Stab2 algorithm (for non-symmetric linear
  *                          systems)
- * - "cr3"              --> a 3-layer conjugate residual solver (when "cs" is
- *                          chosen as the solver family)
  * - "gmres"            --> robust iterative solver. Not the best choice if the
  *                          system is easy to solve
- * - "amg"              --> algebraic multigrid iterative solver. Good choice
- *                          for a scalable solver related to symmetric positive
- *                          definite system.
+ * - "fgmres"           --> Flexible gmres (only with PETSc installation up to
+ *                          now). An evolutive preconditioner can be used with
+ *                          this solver. This is a very robust iterative solver.
+ *                          Not the best choice if the system is easy to solve
  * - "minres"           --> Solver of choice for symmetric indefinite systems
  * - "mumps"            --> Direct solver (very robust but memory consumming)
  *                          via PETSc only. LU factorization.
  * - "mumps_ldlt"       --> Direct solver (very robust but memory consumming)
  *                          via PETSc only. LDLT factorization.
+ * - "none"             --> No solver.
  *
  * \var CS_EQKEY_ITSOL_EPS
  * Tolerance factor for stopping the iterative processus for solving the
@@ -1015,7 +1020,7 @@ typedef struct {
  * "false" or "none" (default)
  * "rhs"
  * "weighted_rhs" or "weighted"
- * "filtered_rhs" or "fieltered_rhs"
+ * "filtered_rhs" or "filtered_rhs"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active
