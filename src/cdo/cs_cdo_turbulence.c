@@ -528,6 +528,19 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                false, /* definition is owner ? */
                                NULL); /* no index */
 
+      /* Initialize TKE */
+      cs_turb_ref_values_t *t_ref= cs_get_glob_turb_ref_values();
+      cs_real_t tke_ref = 1.5 * cs_math_pow2(0.02 * t_ref->uref);
+      cs_equation_add_ic_by_value(tke_eqp,
+                                  NULL,
+                                  &tke_ref);
+
+      /* Initialize epsilon */
+      cs_real_t eps_ref = powf(tke_ref, 1.5) * cs_turb_cmu / t_ref->almax;
+      cs_equation_add_ic_by_value(eps_eqp,
+                                  NULL,
+                                  &eps_ref);
+
     }
     break;
 
