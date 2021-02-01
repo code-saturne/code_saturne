@@ -873,6 +873,8 @@ class domain(base_domain):
                                      self.data_dir)
                     print(msg, file = sys.stderr)
                 try:
+                    if os.path.islink(setup_path):
+                        os.remove(setup_path)
                     os.symlink(self.param, setup_path)
                 except Exception:
                     shutil.copy2(src_path, setup_path)
