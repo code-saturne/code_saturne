@@ -193,6 +193,12 @@ struct _cs_turbulence_t {
    * @name Main properties related to the turbulence modelling
    */
 
+  /*! \var rho
+   *  mass density
+   */
+
+  cs_property_t              *rho;
+
   /*! \var mu_t
    *  total viscosity (dynamic turbulent + laminar)
    */

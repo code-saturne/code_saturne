@@ -226,6 +226,7 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
   turb->param = tbp;
 
   /* Properties */
+  turb->rho = NULL;             /* Mass density */
   turb->mu_tot = NULL;          /* Total viscosity */
   turb->mu_l = NULL;            /* Laminar viscosity */
   turb->mu_t = NULL;            /* Turbulent viscosity */
@@ -316,10 +317,11 @@ cs_turbulence_init_setup(cs_turbulence_t   *turb)
   cs_field_set_key_int(turb->mu_t_field, post_key, field_post_flag);
 
   /* Properties (shared) */
+  turb->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   turb->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
   turb->mu_l = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
 
-  assert(turb->mu_l != NULL && turb->mu_tot != NULL);
+  assert(turb->rho != NULL && turb->mu_l != NULL && turb->mu_tot != NULL);
 
   /* Add a mu_t property and define it with the associated field */
   turb->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
@@ -522,8 +524,8 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   BFT_MALLOC(kec, 1, cs_turb_context_k_eps_t);
 
-  /* Add new equations for the turbulent kinetic energy (tke) and the dissipation
-     (epsilon) */
+  /* Add new equations for the turbulent kinetic energy (tke) and the
+     dissipation (epsilon) */
 
   kec->tke = cs_equation_add("k", /* equation name */
                              "k", /* variable name */
@@ -537,32 +539,26 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
                              1,
                              CS_PARAM_BC_HMG_NEUMANN);
 
-  /* Add new related properties which will be associated to discretization terms
-     in tke and epsilon */
+  /* Add new related properties which will be associated to discretization
+     terms in tke and epsilon */
 
-  kec->tke_diffusivity = cs_property_add("k_diffusivity",
-                                         CS_PROPERTY_ISO);
+  kec->tke_diffusivity = cs_property_add("k_diffusivity", CS_PROPERTY_ISO);
 
   kec->eps_diffusivity = cs_property_add("epsilon_diffusivity",
                                          CS_PROPERTY_ISO);
 
   /* Turbulent Schmidt coefficients : creation and set the reference value */
 
-  kec->sigma_k = cs_property_add("k_turb_schmidt",
-                                 CS_PROPERTY_ISO);
+  kec->sigma_k = cs_property_add("k_turb_schmidt", CS_PROPERTY_ISO);
   cs_property_set_reference_value(kec->sigma_k, 1.0);
 
-  kec->sigma_eps = cs_property_add("epsilon_turb_schmidt",
-                                   CS_PROPERTY_ISO);
+  kec->sigma_eps = cs_property_add("epsilon_turb_schmidt", CS_PROPERTY_ISO);
   cs_property_set_reference_value(kec->sigma_eps, 1.3);
 
   /* Reaction (implicit source terms) coefficients */
 
-  kec->tke_reaction = cs_property_add("k_reaction",
-                                      CS_PROPERTY_ISO);
-
-  kec->eps_reaction = cs_property_add("epsilon_reaction",
-                                      CS_PROPERTY_ISO);
+  kec->tke_reaction = cs_property_add("k_reaction", CS_PROPERTY_ISO);
+  kec->eps_reaction = cs_property_add("epsilon_reaction", CS_PROPERTY_ISO);
 
   /* Retrieve the mass density */
 
@@ -655,39 +651,35 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
   cs_real_t *k = cs_equation_get_cell_values(kec->tke, false);
   cs_real_t *eps = cs_equation_get_cell_values(kec->eps, false);
 
-  /* Get rho */
-  const cs_property_t *cpro_rho = cs_property_by_name("mass_density");
-  cs_real_t *rho = NULL;
+  /* Get the evaluation of rho */
   int rho_stride = 0;
-  // TODO in a more generic way
-  if (cs_property_is_uniform(cpro_rho)) {
-    BFT_MALLOC(rho, 1, cs_real_t);
-    rho[0] = cpro_rho->ref_value;
-  }
-  else {
-    rho_stride = 1;
-    BFT_MALLOC(rho, n_cells, cs_real_t);
-    cs_property_eval_at_cells(time_step->t_cur, cpro_rho, rho);
-  }
-  /* Get laminar viscosity */
-  cs_real_t *mu_l = NULL;
-  int mu_stride = 0;
-  if (cs_property_is_uniform(turb->mu_l)) {
-    BFT_MALLOC(mu_l, 1, cs_real_t);
-    mu_l[0] = turb->mu_l->ref_value;
-  }
-  else {
-    mu_stride = 1;
-    BFT_MALLOC(mu_l, n_cells, cs_real_t);
-    cs_property_eval_at_cells(time_step->t_cur, turb->mu_l, mu_l);
-  }
+  cs_real_t *rho = NULL;
 
+  /* Get mass density values in each cell */
+  cs_property_iso_get_cell_values(time_step->t_cur, turb->rho,
+                                  &rho_stride, &rho);
+
+  /* Get laminar viscosity values in each cell */
+  int mu_stride = 0;
+  cs_real_t *mu_l = NULL;
+  cs_property_iso_get_cell_values(time_step->t_cur, turb->mu_l,
+                                  &mu_stride, &mu_l);
+
+
+  /* Compute mu_t in each cell and define mu_tot = mu_t + mu_l */
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+
     mu_t[cell_id] = cs_turb_cmu * rho[cell_id*rho_stride] *
       cs_math_pow2(k[cell_id]) / eps[cell_id];
+
     turb->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id*mu_stride];
+
   }
 
+  /* Free memory */
+  BFT_FREE(rho);
+  BFT_FREE(mu_l);
 }
 
 /*----------------------------------------------------------------------------*/
