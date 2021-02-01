@@ -2634,6 +2634,7 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+  assert(cs_equation_uses_new_mechanism(eq));
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2670,6 +2671,7 @@ cs_equation_solve(bool                        cur2prev,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+  assert(cs_equation_uses_new_mechanism(eq));
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);

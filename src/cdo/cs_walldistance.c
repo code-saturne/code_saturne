@@ -518,27 +518,12 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq)
 {
   CS_UNUSED(time_step);
+  cs_equation_t  *eq = cs_wd_poisson_eq;
 
   /* First step:
      Solve the equation related to the definition of the wall distance. */
 
-  cs_equation_t  *eq = cs_wd_poisson_eq;
-
-  if (cs_equation_uses_new_mechanism(eq))
-    cs_equation_solve_steady_state(mesh, eq);
-
-  else { /* Deprecated */
-
-    /* Sanity check */
-    assert(cs_equation_is_steady(eq));
-
-    /* Define the algebraic system */
-    cs_equation_build_system(mesh, eq);
-
-    /* Solve the algebraic system */
-    cs_equation_solve_deprecated(eq);
-
-  }
+  cs_equation_solve_steady_state(mesh, eq);
 
   /* Second step:
      Compute the wall distance. */

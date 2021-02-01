@@ -847,18 +847,8 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
 
-  if (cs_equation_uses_new_mechanism(eq))
-    cs_equation_solve_steady_state(m, eq);
-
-  else { /* Deprecated */
-
-    /* Define the algebraic system */
-    cs_equation_build_system(m, eq);
-
-    /* Solve the algebraic system */
-    cs_equation_solve_deprecated(eq);
-
-  }
+  /* Solve the algebraic system */
+  cs_equation_solve_steady_state(m, eq);
 
   /* Retrieving fields */
   cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");

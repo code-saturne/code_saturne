@@ -440,21 +440,7 @@ cs_mesh_deform_solve_displacement(cs_domain_t  *domain)
 
     cs_equation_t *eq = cs_equation_by_name(eq_name[i]);
 
-    if (cs_equation_uses_new_mechanism(eq))
-      cs_equation_solve_steady_state(domain->mesh, eq);
-
-    else { /* Deprecated */
-
-      /* Sanity check */
-      assert(cs_equation_is_steady(eq));
-
-      /* Define the algebraic system */
-      cs_equation_build_system(domain->mesh, eq);
-
-      /* Solve the algebraic system */
-      cs_equation_solve_deprecated(eq);
-
-    }
+    cs_equation_solve_steady_state(domain->mesh, eq);
 
   } /* Loop on Cartesian component */
 

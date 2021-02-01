@@ -1140,18 +1140,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     cs_equation_t  *eq = cs_equation_by_name(CS_NAVSTO_STREAM_EQNAME);
     assert(eq != NULL);
-    if (cs_equation_uses_new_mechanism(eq))
-      cs_equation_solve_steady_state(mesh, eq);
-
-    else { /* Deprecated */
-
-      /* Define the algebraic system */
-      cs_equation_build_system(mesh, eq);
-
-      /* Solve the algebraic system */
-      cs_equation_solve_deprecated(eq);
-
-    }
+    cs_equation_solve_steady_state(mesh, eq);
 
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
     if (eqp->n_bc_defs == 0) {
