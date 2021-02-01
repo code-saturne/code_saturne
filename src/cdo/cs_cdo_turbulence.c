@@ -96,12 +96,10 @@ typedef struct {
   cs_property_t   *tke_reaction;    /* eps/tke by default + ... if needed */
   cs_property_t   *eps_reaction;    /* by default + ... if needed */
 
-  //FIXME ? why no source terms ???
-
 } cs_turb_context_k_eps_t;
 
 /* --------------------------------------------------------------------------
- * Context stucture for the k-epsilon turbulence modelling
+ * Context structure for the k-epsilon turbulence modelling
  * -------------------------------------------------------------------------- */
 
 typedef struct {
@@ -226,14 +224,67 @@ _tke_lin_source_term(cs_lnum_t            n_elts,
                      void                *input,
                      cs_real_t           *retval)
 {
-  /* TODO */
-  CS_UNUSED(n_elts);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(dense_output);
-  CS_UNUSED(input);
-  CS_UNUSED(retval);
+  cs_turb_source_term_t *tsts = (cs_turb_source_term_t *) input;
+  assert(tsts != NULL);
+
+  const cs_cdo_connect_t     *connect = tsts->connect;
+  const cs_cdo_quantities_t  *quant = tsts->quant;
+  const cs_time_step_t       *time_step = tsts->time_step;
+
+  const cs_real_t *u_cell = tsts->u_cell;
+  const cs_real_t *u_face = tsts->u_face;
+
+  cs_turbulence_t  *tbs = tsts->tbs;
+  cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
+  const cs_real_t *tke_cell = cs_equation_get_cell_values(kec->tke, false);
+  const cs_real_t *eps_cell = cs_equation_get_cell_values(kec->eps, false);
+
+  const cs_real_t *mu_t = tbs->mu_t_field->val;
+
+  /* Get the evaluation of rho */
+  int rho_stride = 0;
+  cs_real_t *rho = NULL;
+
+  /* Get mass density values in each cell */
+  cs_property_iso_get_cell_values(time_step->t_cur, tbs->rho,
+                                  &rho_stride, &rho);
 
   /* Production term */
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t elt_id = 0; elt_id < n_elts; elt_id++) {
+    const cs_real_t d1s3 = 1./3.;
+    const cs_real_t d2s3 = 2./3.;
+
+    cs_lnum_t c_id = (elt_ids == NULL) ? elt_id : elt_ids[elt_id];
+    cs_lnum_t r_id = dense_output ? elt_id : c_id;
+
+    cs_real_t grd_uc[3][3];
+    /* Compute the velocity gradient */
+    cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                      u_cell, u_face, (cs_real_t *)grd_uc);
+
+    cs_real_t strain_sq = 2.
+      * (  cs_math_pow2(  d2s3*grd_uc[0][0]
+                        - d1s3*grd_uc[1][1]
+                        - d1s3*grd_uc[2][2])
+         + cs_math_pow2(- d1s3*grd_uc[0][0]
+                        + d2s3*grd_uc[1][1]
+                        - d1s3*grd_uc[2][2])
+         + cs_math_pow2(- d1s3*grd_uc[0][0]
+                        - d1s3*grd_uc[1][1]
+                        + d2s3*grd_uc[2][2]))
+      + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
+      + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
+      + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+
+    cs_real_t strain = sqrt(strain_sq);
+    const cs_real_t sqrcmu = sqrt(cs_turb_cmu);
+    cs_real_t cmueta =
+      fmin(cs_turb_cmu*tke_cell[c_id]/eps_cell[c_id] * strain, sqrcmu);
+
+    retval[r_id] = rho[c_id*rho_stride] * cmueta * strain * tke_cell[c_id];
+
+  }
 
 }
 
@@ -506,7 +557,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                               NULL, /* all cells */
                                               cs_flag_primal_cell,
                                               _tke_lin_source_term,
-                                              kec);
+                                              tst_input);
     }
     break;
 
