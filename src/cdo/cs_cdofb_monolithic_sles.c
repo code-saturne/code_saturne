@@ -765,10 +765,10 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
                 const cs_saddle_system_t      *ssys,
                 cs_saddle_block_precond_t     *sbp)
 {
+  CS_UNUSED(nsp);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const cs_lnum_t  n_b_faces = m->n_b_faces;
@@ -778,7 +778,6 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_lnum_t  b11_size = ssys->x1_size;
-  const cs_lnum_t  schur_size = ssys->x2_size;
 
   /* Synchronize the diagonal values for the block m11 */
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
@@ -840,7 +839,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   } /* Loop on interior faces */
 
   /* Add diagonal contributions from border faces*/
-  cs_real_t  *diag_shift = diag_m11 + 3*n_i_faces;
+  const cs_real_t  *diag_shift = diag_m11 + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     const cs_real_t  *a_ff = diag_shift + 3*f_id;
@@ -1046,10 +1045,10 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
                      const cs_saddle_system_t      *ssys,
                      cs_saddle_block_precond_t     *sbp)
 {
+  CS_UNUSED(nsp);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = m->n_i_faces;
   const cs_lnum_t  n_b_faces = m->n_b_faces;
@@ -1059,7 +1058,6 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_lnum_t  b11_size = ssys->x1_size;
-  const cs_lnum_t  schur_size = ssys->x2_size;
 
   /* Compute m11^-1 lumped */
 
