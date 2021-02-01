@@ -718,6 +718,7 @@ class meg_to_c_interpreter:
             % (f, knf_name)
 
             loop_tokens[f] = 'const %s = %s_vals[c_id];' % (f, f)
+
         # ------------------------
 
         for r in required:
@@ -1260,9 +1261,10 @@ class meg_to_c_interpreter:
             # ALE mesh viscosity
             from code_saturne.model.MobileMeshModel import MobileMeshModel
             ale_model = MobileMeshModel(self.case)
-            exp, req, sca, sym = ale_model.getFormulaViscComponents()
-            self.init_block('vol', 'all_cells', 'mesh_viscosity',
-                            exp, req, sym, sca)
+            if ale_model.getMethod() != 'off':
+                exp, req, sca, sym = ale_model.getFormulaViscComponents()
+                self.init_block('vol', 'all_cells', 'mesh_viscosity',
+                                exp, req, sym, sca)
 
             # GroundWater Flows Law
             vlm = LocalizationModel('VolumicZone', self.case)
@@ -2139,6 +2141,18 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def clean_lines(self, code_to_write):
+
+        lines = code_to_write.split('\n')
+        code_to_write = ""
+
+        for i, l in enumerate(lines):
+            lines[i] = l.rstrip()
+
+        return '\n'.join(lines)
+
+    #---------------------------------------------------------------------------
+
     def save_file(self, c_file_name, code_to_write, hard_path=None):
 
         if code_to_write != '':
@@ -2147,7 +2161,7 @@ class meg_to_c_interpreter:
             try:
                 fpath = self.__file_path__(c_file_name, hard_path=hard_path)
                 new_file = open(fpath, 'w')
-                new_file.write(code_to_write)
+                new_file.write(self.clean_lines(code_to_write))
                 new_file.close()
                 return 1
 
