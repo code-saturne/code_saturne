@@ -952,7 +952,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       xk    = cvara_k[c_id];
       ttke  = xk / xeps;
 
-      /* Implicit Buoyant terms when negativ */
+      /* Implicit Buoyant terms when negative */
       tinstk[c_id] += fmax(rho*cell_f_vol[c_id]*cs_turb_cmu*ttke*grad_dot_g[c_id], 0.);
 
       /* Explicit Buoyant terms */
@@ -1086,8 +1086,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     /* Take into account the Cazalbou rotation/curvature correction if necessary */
     if (cs_glob_turb_rans_model->irccor == 1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w10[c_id] = w10[c_id]*ce2rc[c_id]/cs_turb_ccaze2;
-        w11[c_id] = w11[c_id]*ce2rc[c_id]/cs_turb_ccaze2;
+        w10[c_id] *= ce2rc[c_id]/cs_turb_ccaze2;
+        w11[c_id] *= ce2rc[c_id]/cs_turb_ccaze2;
       }
     }
 
@@ -1245,11 +1245,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
         xk   = cvara_k[c_id];
         rho = crom[c_id];
         ttke = xk / xeps;
-        tinstk[c_id] = tinstk[c_id]
-                     + rho*cell_f_vol[c_id]/ttke
+        tinstk[c_id] += rho*cell_f_vol[c_id]/ttke
                      + fmax(d2s3*rho*cell_f_vol[c_id]*divu[c_id], 0.);
-        tinste[c_id] = tinste[c_id]
-                     + ce2rc[c_id]*rho*cell_f_vol[c_id]/ttke
+        tinste[c_id] += ce2rc[c_id]*rho*cell_f_vol[c_id]/ttke
                      + fmax(d2s3*ce1rc[c_id]*rho*cell_f_vol[c_id]*divu[c_id], 0.);
       }
     }

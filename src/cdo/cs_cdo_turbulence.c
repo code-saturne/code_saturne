@@ -93,8 +93,11 @@ typedef struct {
   cs_property_t   *sigma_k;         /* TKE Schmidt  */
   cs_property_t   *sigma_eps;       /* epsilon Schmidt  */
 
-  cs_property_t   *tke_reaction;    /* eps/tke by default + ... if needed */
-  cs_property_t   *eps_reaction;    /* by default + ... if needed */
+  cs_xdef_t       *tke_reaction;    /* eps/tke by default + ... if needed */
+  cs_xdef_t       *eps_reaction;    /* by default + ... if needed */
+
+  cs_xdef_t       *tke_source_term; /* Production + buoyancy if needed for k */
+  cs_xdef_t       *eps_source_term; /* Same for epsilon */
 
 } cs_turb_context_k_eps_t;
 
@@ -126,8 +129,6 @@ typedef struct {
  * Private variables
  *============================================================================*/
 
-static cs_turb_source_term_t *_cs_turb_st_input = NULL;
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -140,149 +141,115 @@ static cs_turb_source_term_t *_cs_turb_st_input = NULL;
  *         to fill retval with an indirection if dense_output is set to false
  *         Case of k-epsilon model
  *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function (intensive).
- *                               Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tke_source_term(cs_lnum_t            n_elts,
-                 const cs_lnum_t     *elt_ids,
-                 bool                 dense_output,
-                 void                *input,
-                 cs_real_t           *retval)
+_prepare_ke(const cs_mesh_t            *mesh,
+            const cs_cdo_connect_t     *connect,
+            const cs_cdo_quantities_t  *quant,
+            const cs_time_step_t       *time_step,
+            const cs_turbulence_t      *tbs,
+            cs_real_t                  *tke_reaction,
+            cs_real_t                  *eps_reaction,
+            cs_real_t                  *tke_source_term,
+            cs_real_t                  *eps_source_term)
 {
-  cs_turb_source_term_t *tsts = (cs_turb_source_term_t *) input;
-  assert(tsts != NULL);
-
-  const cs_cdo_connect_t     *connect = tsts->connect;
-  const cs_cdo_quantities_t  *quant = tsts->quant;
-
-  const cs_real_t *u_cell = tsts->u_cell;
-  const cs_real_t *u_face = tsts->u_face;
-
-  cs_turbulence_t  *tbs = tsts->tbs;
-  cs_real_t *mu_t = tbs->mu_t_field->val;
-
-  /* Production term */
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t elt_id = 0; elt_id < n_elts; elt_id++) {
-    const cs_real_t d1s3 = 1./3.;
-    const cs_real_t d2s3 = 2./3.;
-
-    cs_lnum_t c_id = (elt_ids == NULL) ? elt_id : elt_ids[elt_id];
-    cs_lnum_t r_id = dense_output ? elt_id : c_id;
-
-    cs_real_t grd_uc[3][3];
-    /* Compute the velocity gradient */
-    cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
-                                      u_cell, u_face, (cs_real_t *)grd_uc);
-
-    cs_real_t strain_sq = 2.
-      * (  cs_math_pow2(  d2s3*grd_uc[0][0]
-                        - d1s3*grd_uc[1][1]
-                        - d1s3*grd_uc[2][2])
-         + cs_math_pow2(- d1s3*grd_uc[0][0]
-                        + d2s3*grd_uc[1][1]
-                        - d1s3*grd_uc[2][2])
-         + cs_math_pow2(- d1s3*grd_uc[0][0]
-                        - d1s3*grd_uc[1][1]
-                        + d2s3*grd_uc[2][2]))
-      + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
-      + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
-      + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
-
-    retval[r_id] = mu_t[c_id] * strain_sq;
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Generic function pointer for defining a quantity at known locations
- *         Here at cells with a function.  elt_ids is optional. If not NULL,
- *         the function works on a sub-list of elements. Moreover, it enables
- *         to fill retval with an indirection if dense_output is set to false
- *         Case of k-epsilon model with linear production
- *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_tke_lin_source_term(cs_lnum_t            n_elts,
-                     const cs_lnum_t     *elt_ids,
-                     bool                 dense_output,
-                     void                *input,
-                     cs_real_t           *retval)
-{
-  cs_turb_source_term_t *tsts = (cs_turb_source_term_t *) input;
-  assert(tsts != NULL);
-
-  const cs_cdo_connect_t     *connect = tsts->connect;
-  const cs_cdo_quantities_t  *quant = tsts->quant;
-  const cs_time_step_t       *time_step = tsts->time_step;
-
-  const cs_real_t *u_cell = tsts->u_cell;
-  const cs_real_t *u_face = tsts->u_face;
-
-  cs_turbulence_t  *tbs = tsts->tbs;
+  const cs_turbulence_param_t  *tbp = tbs->param;
   cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
-  const cs_real_t *tke_cell = cs_equation_get_cell_values(kec->tke, false);
-  const cs_real_t *eps_cell = cs_equation_get_cell_values(kec->eps, false);
 
-  const cs_real_t *mu_t = tbs->mu_t_field->val;
+  const cs_real_t *u_cell = cs_equation_get_cell_values(tbs->mom_eq, false);
+  const cs_real_t *u_face = cs_equation_get_face_values(tbs->mom_eq, false);
+
+  cs_real_t *mu_t = tbs->mu_t_field->val;
 
   /* Get the evaluation of rho */
   int rho_stride = 0;
   cs_real_t *rho = NULL;
 
+  const cs_real_t *tke_cell = cs_equation_get_cell_values(kec->tke, false);
+  const cs_real_t *eps_cell = cs_equation_get_cell_values(kec->eps, false);
+
   /* Get mass density values in each cell */
   cs_property_iso_get_cell_values(time_step->t_cur, tbs->rho,
                                   &rho_stride, &rho);
 
+  const cs_real_t d1s3 = 1./3.;
+  const cs_real_t d2s3 = 2./3.;
+
   /* Production term */
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t elt_id = 0; elt_id < n_elts; elt_id++) {
-    const cs_real_t d1s3 = 1./3.;
-    const cs_real_t d2s3 = 2./3.;
+  if (tbp->model->iturb == CS_TURB_K_EPSILON) {
+#   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
-    cs_lnum_t c_id = (elt_ids == NULL) ? elt_id : elt_ids[elt_id];
-    cs_lnum_t r_id = dense_output ? elt_id : c_id;
+      cs_real_t grd_uc[3][3];
+      /* Compute the velocity gradient */
+      cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                        u_cell, u_face, (cs_real_t *)grd_uc);
 
-    cs_real_t grd_uc[3][3];
-    /* Compute the velocity gradient */
-    cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
-                                      u_cell, u_face, (cs_real_t *)grd_uc);
+      cs_real_t strain_sq = 2.
+        * (  cs_math_pow2(  d2s3*grd_uc[0][0]
+                          - d1s3*grd_uc[1][1]
+                          - d1s3*grd_uc[2][2])
+           + cs_math_pow2(- d1s3*grd_uc[0][0]
+                          + d2s3*grd_uc[1][1]
+                          - d1s3*grd_uc[2][2])
+           + cs_math_pow2(- d1s3*grd_uc[0][0]
+                          - d1s3*grd_uc[1][1]
+                          + d2s3*grd_uc[2][2]))
+        + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
+        + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
+        + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
 
-    cs_real_t strain_sq = 2.
-      * (  cs_math_pow2(  d2s3*grd_uc[0][0]
-                        - d1s3*grd_uc[1][1]
-                        - d1s3*grd_uc[2][2])
-         + cs_math_pow2(- d1s3*grd_uc[0][0]
-                        + d2s3*grd_uc[1][1]
-                        - d1s3*grd_uc[2][2])
-         + cs_math_pow2(- d1s3*grd_uc[0][0]
-                        - d1s3*grd_uc[1][1]
-                        + d2s3*grd_uc[2][2]))
-      + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
-      + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
-      + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+      tke_source_term[c_id] = mu_t[c_id] * strain_sq;
+    }
+  }
+  else if (tbp->model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
+#   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
-    cs_real_t strain = sqrt(strain_sq);
-    const cs_real_t sqrcmu = sqrt(cs_turb_cmu);
-    cs_real_t cmueta =
-      fmin(cs_turb_cmu*tke_cell[c_id]/eps_cell[c_id] * strain, sqrcmu);
+      cs_real_t grd_uc[3][3];
+      /* Compute the velocity gradient */
+      cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                        u_cell, u_face, (cs_real_t *)grd_uc);
 
-    retval[r_id] = rho[c_id*rho_stride] * cmueta * strain * tke_cell[c_id];
+      cs_real_t strain_sq = 2.
+        * (  cs_math_pow2(  d2s3*grd_uc[0][0]
+                          - d1s3*grd_uc[1][1]
+                          - d1s3*grd_uc[2][2])
+           + cs_math_pow2(- d1s3*grd_uc[0][0]
+                          + d2s3*grd_uc[1][1]
+                          - d1s3*grd_uc[2][2])
+           + cs_math_pow2(- d1s3*grd_uc[0][0]
+                          - d1s3*grd_uc[1][1]
+                          + d2s3*grd_uc[2][2]))
+        + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
+        + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
+        + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+
+      cs_real_t strain = sqrt(strain_sq);
+      const cs_real_t sqrcmu = sqrt(cs_turb_cmu);
+      cs_real_t cmueta =
+        fmin(cs_turb_cmu*tke_cell[c_id]/eps_cell[c_id] * strain, sqrcmu);
+
+      tke_source_term[c_id] = rho[c_id*rho_stride] * cmueta * strain * tke_cell[c_id];
+
+    }
+  }
+
+  /* Implicit dissipation term and epsilon source term */
+# pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+    /* Inverse integral time scale */
+    cs_real_t d_ttke = eps_cell[c_id] / tke_cell[c_id];
+
+    /* Ce1 * eps/k * P */
+    eps_source_term[c_id] = cs_turb_ce1 * d_ttke * tke_source_term[c_id];
+
+    tke_reaction[c_id] = rho[c_id*rho_stride] * d_ttke;
+
+    /* TODO Get Ce2 from curvature correction, to be merged with legacy */
+    eps_reaction[c_id] = cs_turb_ce2 * rho[c_id*rho_stride] * d_ttke;
 
   }
 
@@ -379,9 +346,6 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
 void
 cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 {
-  /* Free source term input structure */
-  BFT_FREE(_cs_turb_st_input);
-
   cs_turbulence_t  *tbs = *p_turb_struct;
 
   /* Set of parameters (members are shared and freed elsewhere).
@@ -518,46 +482,52 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            NULL); /* no index */
 
   /* Last setup for each turbulence model */
-  cs_turb_source_term_t *tst_input = _cs_turb_st_input;
-  assert(tst_input == NULL);
-  BFT_MALLOC(tst_input, 1, cs_turb_source_term_t);
-  tst_input->mesh = mesh;
-  tst_input->connect = connect;
-  tst_input->quant = quant;
-  tst_input->time_step = time_step;
-  tst_input->tbs = tbs;
-  tst_input->u_cell = cs_equation_get_cell_values(tbs->mom_eq, false);
-  tst_input->u_face = cs_equation_get_face_values(tbs->mom_eq, false);
-
   switch (model->iturb) {
 
   case CS_TURB_K_EPSILON:
-    {
-      /* Add a source term after having retrieved the equation param related to
-         the turbulent kinetic energy equation */
-      cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
-      cs_equation_param_t  *tke_eqp = cs_equation_get_param(kec->tke);
-
-      cs_equation_add_source_term_by_dof_func(tke_eqp,
-                                              NULL, /* all cells */
-                                              cs_flag_primal_cell,
-                                              _tke_source_term,
-                                              tst_input);
-    }
-    break;
-
   case CS_TURB_K_EPSILON_LIN_PROD:
     {
       /* Add a source term after having retrieved the equation param related to
          the turbulent kinetic energy equation */
       cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
       cs_equation_param_t  *tke_eqp = cs_equation_get_param(kec->tke);
+      kec->tke_source_term =
+        cs_equation_add_source_term_by_array(tke_eqp,
+                                             NULL, /* all cells */
+                                             cs_flag_primal_cell,
+                                             NULL,
+                                             false, /*is owner */
+                                             NULL); /* index */
 
-      cs_equation_add_source_term_by_dof_func(tke_eqp,
-                                              NULL, /* all cells */
-                                              cs_flag_primal_cell,
-                                              _tke_lin_source_term,
-                                              tst_input);
+      kec->tke_reaction =
+        cs_property_def_by_array(cs_property_by_name("k_reaction"),
+                                 cs_flag_primal_cell,
+                                 NULL,
+                                 false, /* definition is owner ? */
+                                 NULL); /* no index */
+
+      cs_equation_param_t  *eps_eqp = cs_equation_get_param(kec->eps);
+      kec->eps_source_term =
+        cs_equation_add_source_term_by_array(eps_eqp,
+                                             NULL, /* all cells */
+                                             cs_flag_primal_cell,
+                                             NULL,
+                                             false, /*is owner */
+                                             NULL); /* index */
+
+      kec->eps_reaction =
+        cs_property_def_by_array(cs_property_by_name("eps_reaction"),
+                                 cs_flag_primal_cell,
+                                 NULL,
+                                 false, /* definition is owner ? */
+                                 NULL); /* no index */
+
+      cs_property_def_by_array(tbs->mu_tot,
+                               cs_flag_primal_cell,
+                               tbs->mu_tot_array,
+                               false, /* definition is owner ? */
+                               NULL); /* no index */
+
     }
     break;
 
@@ -665,8 +635,10 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   /* Reaction (implicit source terms) coefficients */
 
-  kec->tke_reaction = cs_property_add("k_reaction", CS_PROPERTY_ISO);
-  kec->eps_reaction = cs_property_add("epsilon_reaction", CS_PROPERTY_ISO);
+  cs_property_t *k_reaction
+    = cs_property_add("k_reaction", CS_PROPERTY_ISO);
+  cs_property_t *eps_reaction
+    = cs_property_add("epsilon_reaction", CS_PROPERTY_ISO);
 
   /* Retrieve the mass density */
 
@@ -685,7 +657,7 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   cs_equation_add_time(tke_eqp, mass_density);
   cs_equation_add_diffusion(tke_eqp, kec->tke_diffusivity);
-  cs_equation_add_reaction(tke_eqp, kec->tke_reaction);
+  cs_equation_add_reaction(tke_eqp, k_reaction);
   cs_equation_add_advection(tke_eqp, adv);
 
   /* Source term is defined elsewhere since it depends on the choice of the
@@ -697,7 +669,7 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
 
   cs_equation_add_time(eps_eqp, mass_density);
   cs_equation_add_diffusion(eps_eqp, kec->eps_diffusivity);
-  cs_equation_add_reaction(eps_eqp, kec->eps_reaction);
+  cs_equation_add_reaction(eps_eqp, eps_reaction);
   cs_equation_add_advection(eps_eqp, adv);
 
   return kec;
@@ -796,22 +768,84 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
  *         model. This means that all related equations are built and then
  *         solved.
  *
- * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
- * \param[in]      tbp       pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in, out] tbs        pointer to turbulence structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_k_eps(const cs_mesh_t              *mesh,
-                      const cs_turbulence_param_t  *tpb,
-                      void                         *tbc)
+cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
+                      const cs_cdo_connect_t     *connect,
+                      const cs_cdo_quantities_t  *quant,
+                      const cs_time_step_t       *time_step,
+                      cs_turbulence_t            *tbs)
 {
-  if (tbc == NULL)
+  if (tbs == NULL)
     return;
 
-  //TODO
+  /* Get k epsilon context */
+  cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
+  cs_equation_t *tke_eq = kec->tke;
+  cs_equation_t *eps_eq = kec->eps;
+  assert(kec != NULL);
+  const cs_turbulence_param_t  *tpb = tbs->param;
+
+  /* Prepare source term and reaction term */
+  cs_real_t *tke_source_term = NULL, *eps_source_term = NULL;
+  cs_real_t *tke_reaction = NULL, *eps_reaction = NULL;
+  BFT_MALLOC(tke_source_term, mesh->n_cells, cs_real_t);
+  BFT_MALLOC(eps_source_term, mesh->n_cells, cs_real_t);
+  BFT_MALLOC(tke_reaction, mesh->n_cells, cs_real_t);
+  BFT_MALLOC(eps_reaction, mesh->n_cells, cs_real_t);
+
+  /* Set xdefs */
+  cs_xdef_set_array(kec->tke_reaction,
+                    false, /* is_owner */
+                    tke_reaction);
+
+  cs_xdef_set_array(kec->eps_reaction,
+                    false, /* is_owner */
+                    eps_reaction);
+
+  cs_xdef_set_array(kec->tke_source_term,
+                    false, /* is_owner */
+                    tke_source_term);
+
+  cs_xdef_set_array(kec->eps_source_term,
+                    false, /* is_owner */
+                    eps_source_term);
+
+  _prepare_ke(mesh,
+              connect,
+              quant,
+              time_step,
+              tbs,
+              tke_reaction,
+              eps_reaction,
+              tke_source_term,
+              eps_source_term);
+
+  /* Solve k */
+  cs_equation_solve(true, /* cur2prev */
+                    mesh,
+                    tke_eq);
+
+  /* Solve epsilon */
+  cs_equation_solve(true, /* cur2prev */
+                    mesh,
+                    eps_eq);
+
+  /* Free memory */
+  BFT_FREE(tke_source_term);
+  BFT_FREE(eps_source_term);
+  BFT_FREE(tke_reaction);
+  BFT_FREE(eps_reaction);
+
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

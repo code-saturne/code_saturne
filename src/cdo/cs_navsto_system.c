@@ -1300,8 +1300,10 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     /* Build and solve the turbulence variable system */
     if (tbs->compute_steady != NULL)
       tbs->compute_steady(mesh,
-                          tbs->param,
-                          tbs->context);
+                          connect,
+                          quant,
+                          time_step,
+                          tbs);
 
     /* Solve the thermal equation */
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)) == false)
@@ -1349,8 +1351,10 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
       if (tbs->compute_steady != NULL)
         tbs->compute_steady(mesh,
-                            tbs->param,
-                            tbs->context);
+                            connect,
+                            quant,
+                            time_step,
+                            tbs);
 
       /* Check convergence */
       cs_real_t  delta = -1;
@@ -1392,8 +1396,10 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
      * */
     if (tbs->compute_steady != NULL)
       tbs->compute_steady(mesh,
-                          tbs->param,
-                          tbs->context);
+                          connect,
+                          quant,
+                          time_step,
+                          tbs);
   }
 
 }
@@ -1440,8 +1446,10 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
       if (tbs->compute != NULL)
         tbs->compute(mesh,
-                     tbs->param,
-                     tbs->context);
+                     connect,
+                     quant,
+                     time_step,
+                     tbs);
 
     }
 
@@ -1473,8 +1481,10 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       /* Build and solve the turbulence variable system */
       if (tbs->compute != NULL)
         tbs->compute(mesh,
-                     tbs->param,
-                     tbs->context);
+                     connect,
+                     quant,
+                     time_step,
+                     tbs);
 
 
     }
@@ -1498,8 +1508,10 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
     /* Build and solve the turbulence variable system */
     if (tbs->compute != NULL)
       tbs->compute(mesh,
-                   tbs->param,
-                   tbs->context);
+                   connect,
+                   quant,
+                   time_step,
+                   tbs);
 
   }
 

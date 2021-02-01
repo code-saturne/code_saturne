@@ -139,16 +139,20 @@ typedef void *
  *         model. This means that all related equations are built and then
  *         solved.
  *
- * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
- * \param[in]      tbp       pointer to a \ref cs_turbulence_param_t structure
- * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in, out] tbs        pointer to turbulence structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_turb_compute_t)(const cs_mesh_t                *mesh,
-                    const cs_turbulence_param_t    *tbp,
-                    void                           *tbc);
+(cs_turb_compute_t)(const cs_mesh_t            *mesh,
+                    const cs_cdo_connect_t     *connect,
+                    const cs_cdo_quantities_t  *quant,
+                    const cs_time_step_t       *time_step,
+                    cs_turbulence_t            *tbs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -423,16 +427,21 @@ cs_turb_free_k_eps_context(void     *tbc);
  *         model. This means that all related equations are built and then
  *         solved.
  *
- * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
- * \param[in]      tbp       pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] tbc       pointer to a structure cast on-the-fly
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in, out] tbs        pointer to turbulence structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_k_eps(const cs_mesh_t              *mesh,
-                      const cs_turbulence_param_t  *tpb,
-                      void                         *tbc);
+cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
+                      const cs_cdo_connect_t     *connect,
+                      const cs_cdo_quantities_t  *quant,
+                      const cs_time_step_t       *time_step,
+                      cs_turbulence_t            *tbs);
+
 
 /*----------------------------------------------------------------------------*/
 /*!
