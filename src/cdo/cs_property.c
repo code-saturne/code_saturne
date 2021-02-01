@@ -1705,6 +1705,56 @@ cs_property_def_by_field(cs_property_t    *pty,
  * \brief  Evaluate the value of the property at each cell. Store the
  *         evaluation in the given array.
  *
+ * \param[in]       t_eval      physical time at which one evaluates the term
+ * \param[in]       pty         pointer to a cs_property_t structure
+ * \param[out]      pty_stride  = 0 if uniform, =1 otherwise
+ * \param[in, out]  pty_vals    pointer to an array of values. Allocated if not
+ *                              The size of the allocation depends on the value
+ *                              of the pty_stride
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_iso_get_cell_values(cs_real_t               t_eval,
+                                const cs_property_t    *pty,
+                                int                    *pty_stride,
+                                cs_real_t             **p_pty_vals)
+{
+  if (pty == NULL)
+    return;
+  assert(pty->type & CS_PROPERTY_ISO);
+
+  bool  allocate = (*p_pty_vals == NULL) ? true : false;
+  cs_real_t  *values = *p_pty_vals;
+
+  if (cs_property_is_uniform(pty)) {
+
+    *pty_stride = 0;
+    if (allocate)
+      BFT_MALLOC(values, 1, cs_real_t);
+    /* Evaluation at c_id = 0. One assumes that there is at least one cell per
+       MPI rank */
+    values[0] = cs_property_get_cell_value(0, t_eval, pty);
+
+  }
+  else {
+
+    *pty_stride = 1;
+    if (allocate)
+      BFT_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
+    cs_property_eval_at_cells(t_eval, pty, values);
+
+  }
+
+  /* Return the pointer to values */
+  p_pty_vals = values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the value of the property at each cell. Store the
+ *         evaluation in the given array.
+ *
  * \param[in]       t_eval   physical time at which one evaluates the term
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in, out]  array    pointer to an array of values (must be allocated)

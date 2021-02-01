@@ -685,6 +685,26 @@ cs_property_def_by_field(cs_property_t    *pty,
  * \brief  Evaluate the value of the property at each cell. Store the
  *         evaluation in the given array.
  *
+ * \param[in]       t_eval      physical time at which one evaluates the term
+ * \param[in]       pty         pointer to a cs_property_t structure
+ * \param[out]      pty_stride  = 0 if uniform, =1 otherwise
+ * \param[in, out]  pty_vals    pointer to an array of values. Allocated if not
+ *                              The size of the allocation depends on the value
+ *                              of the pty_stride
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_iso_get_cell_values(cs_real_t               t_eval,
+                                const cs_property_t    *pty,
+                                int                    *pty_stride,
+                                cs_real_t             **p_pty_vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the value of the property at each cell. Store the
+ *         evaluation in the given array.
+ *
  * \param[in]       t_eval   physical time at which one evaluates the term
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in, out]  array    pointer to an array of values (must be allocated)
