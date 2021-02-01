@@ -353,7 +353,10 @@ if __name__ == '__main__':
 
     from cs_package import package
 
-    pkg = package()
+    # Note: some subtle Python issue requires reloading the package here
+    # (incomplete config loaded otherwise on 2021 Debian sid with PETSc)
+
+    pkg = package(reload_config=True)
 
     # Check mode and options
     options, src_files = process_cmd_line(sys.argv[1:], pkg)
