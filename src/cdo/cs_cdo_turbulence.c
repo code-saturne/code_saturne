@@ -44,9 +44,9 @@
 
 #include <bft_mem.h>
 
-#include "cs_equation.h"
 #include "cs_post.h"
 #include "cs_turbulence_model.h"
+#include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -96,7 +96,30 @@ typedef struct {
   cs_property_t   *tke_reaction;    /* eps/tke by default + ... if needed */
   cs_property_t   *eps_reaction;    /* by default + ... if needed */
 
+  //FIXME ? why no source terms ???
+
 } cs_turb_context_k_eps_t;
+
+/* --------------------------------------------------------------------------
+ * Context stucture for the k-epsilon turbulence modelling
+ * -------------------------------------------------------------------------- */
+
+typedef struct {
+
+  /* High level structures */
+  const cs_mesh_t            *mesh;
+  const cs_cdo_connect_t     *connect;
+  const cs_cdo_quantities_t  *quant;
+  const cs_time_step_t       *time_step;
+
+  /* Turbulence structure */
+  cs_turbulence_t  *tbs;
+
+  /* Velocities arrays */
+  cs_real_t   *u_cell;
+  cs_real_t   *u_face;
+
+} cs_turb_source_term_t;
 
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -104,6 +127,8 @@ typedef struct {
 /*============================================================================
  * Private variables
  *============================================================================*/
+
+static cs_turb_source_term_t *_cs_turb_st_input = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -121,7 +146,8 @@ typedef struct {
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
  * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
+ * \param[in, out] retval        result of the function (intensive).
+ *                               Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -132,12 +158,49 @@ _tke_source_term(cs_lnum_t            n_elts,
                  void                *input,
                  cs_real_t           *retval)
 {
-  /* TODO */
-  CS_UNUSED(n_elts);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(dense_output);
-  CS_UNUSED(input);
-  CS_UNUSED(retval);
+  cs_turb_source_term_t *tsts = (cs_turb_source_term_t *) input;
+  assert(tsts != NULL);
+
+  const cs_cdo_connect_t     *connect = tsts->connect;
+  const cs_cdo_quantities_t  *quant = tsts->quant;
+
+  const cs_real_t *u_cell = tsts->u_cell;
+  const cs_real_t *u_face = tsts->u_face;
+
+  cs_turbulence_t  *tbs = tsts->tbs;
+  cs_real_t *mu_t = tbs->mu_t_field->val;
+
+  /* Production term */
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t elt_id = 0; elt_id < n_elts; elt_id++) {
+    const cs_real_t d1s3 = 1./3.;
+    const cs_real_t d2s3 = 2./3.;
+
+    cs_lnum_t c_id = (elt_ids == NULL) ? elt_id : elt_ids[elt_id];
+    cs_lnum_t r_id = dense_output ? elt_id : c_id;
+
+    cs_real_t grd_uc[3][3];
+    /* Compute the velocity gradient */
+    cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                      u_cell, u_face, (cs_real_t *)grd_uc);
+
+    cs_real_t strain_sq = 2.
+      * (  cs_math_pow2(  d2s3*grd_uc[0][0]
+                        - d1s3*grd_uc[1][1]
+                        - d1s3*grd_uc[2][2])
+         + cs_math_pow2(- d1s3*grd_uc[0][0]
+                        + d2s3*grd_uc[1][1]
+                        - d1s3*grd_uc[2][2])
+         + cs_math_pow2(- d1s3*grd_uc[0][0]
+                        - d1s3*grd_uc[1][1]
+                        + d2s3*grd_uc[2][2]))
+      + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
+      + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
+      + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+
+    retval[r_id] = mu_t[c_id] * strain_sq;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -169,6 +232,9 @@ _tke_lin_source_term(cs_lnum_t            n_elts,
   CS_UNUSED(dense_output);
   CS_UNUSED(input);
   CS_UNUSED(retval);
+
+  /* Production term */
+
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -224,6 +290,7 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
    * part. This structure is owned by cs_navsto_param_t
    */
   tbs->param = tbp;
+  tbs->mom_eq = NULL;
 
   /* Properties */
   tbs->rho = NULL;             /* Mass density */
@@ -261,6 +328,9 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
 void
 cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 {
+  /* Free source term input structure */
+  BFT_FREE(_cs_turb_st_input);
+
   cs_turbulence_t  *tbs = *p_turb_struct;
 
   /* Set of parameters (members are shared and freed elsewhere).
@@ -281,12 +351,14 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 /*!
  * \brief  Initialize the structure managing the turbulence modelling
  *
- * \param[in, out]  tbs   pointer to the structure to initialize
+ * \param[in, out]  tbs     pointer to the structure to initialize
+ * \param[in]       mom_eq  pointer to the structure mom_eq
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_init_setup(cs_turbulence_t   *tbs)
+cs_turbulence_init_setup(cs_turbulence_t     *tbs,
+                         const cs_equation_t *mom_eq)
 {
   if (tbs == NULL)
     return;
@@ -296,6 +368,8 @@ cs_turbulence_init_setup(cs_turbulence_t   *tbs)
 
   if (model->type == CS_TURB_NONE)
     return; /* Nothing to do if there is a laminar flow */
+
+  tbs->mom_eq = mom_eq;
 
   /* Set field metadata */
   const int  log_key = cs_field_key_id("log");
@@ -307,10 +381,10 @@ cs_turbulence_init_setup(cs_turbulence_t   *tbs)
   int  location_id = cs_mesh_location_get_id_by_name("cells");
 
   tbs->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
-                                             field_mask,
-                                             location_id,
-                                             1, /* dimension */
-                                             has_previous);
+                                            field_mask,
+                                            location_id,
+                                            1, /* dimension */
+                                            has_previous);
 
   /* Set default value for keys related to log and post-processing */
   cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
@@ -373,11 +447,6 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                              const cs_time_step_t       *time_step,
                              cs_turbulence_t            *tbs)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  CS_UNUSED(time_step);
-
   if (tbs == NULL)
     return;
 
@@ -398,6 +467,17 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            NULL); /* no index */
 
   /* Last setup for each turbulence model */
+  cs_turb_source_term_t *tst_input = _cs_turb_st_input;
+  assert(tst_input == NULL);
+  BFT_MALLOC(tst_input, 1, cs_turb_source_term_t);
+  tst_input->mesh = mesh;
+  tst_input->connect = connect;
+  tst_input->quant = quant;
+  tst_input->time_step = time_step;
+  tst_input->tbs = tbs;
+  tst_input->u_cell = cs_equation_get_cell_values(tbs->mom_eq, false);
+  tst_input->u_face = cs_equation_get_face_values(tbs->mom_eq, false);
+
   switch (model->iturb) {
 
   case CS_TURB_K_EPSILON:
@@ -411,7 +491,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                               NULL, /* all cells */
                                               cs_flag_primal_cell,
                                               _tke_source_term,
-                                              kec);
+                                              tst_input);
     }
     break;
 

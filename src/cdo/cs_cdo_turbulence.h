@@ -31,6 +31,7 @@
 
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_property.h"
@@ -188,6 +189,11 @@ struct _cs_turbulence_t {
 
   cs_turbulence_param_t     *param;
 
+  /*! \var mom_eq
+   * Pointer to the momentum equation structure.
+   */
+  cs_equation_t             *mom_eq;
+
   /*!
    * @}
    * @name Main properties related to the turbulence modelling
@@ -336,12 +342,14 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct);
 /*!
  * \brief  Initialize the structure managing the turbulence modelling
  *
- * \param[in, out]  turb_struct   pointer to the structure to initialize
+ * \param[in, out]  tbs     pointer to the structure to initialize
+ * \param[in]       mom_eq  pointer to the structure mom_eq
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_init_setup(cs_turbulence_t   *tbs);
+cs_turbulence_init_setup(cs_turbulence_t     *tbs,
+                         const cs_equation_t *mom_eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
