@@ -277,7 +277,7 @@ _physical_property_create(const char      *name,
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Error: for property '%s', dimension %d not supported.\n"),
-              name);
+              name, dim);
 
   cs_property_set_reference_value(pty, refval);
 
