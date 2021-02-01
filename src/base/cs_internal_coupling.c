@@ -2936,7 +2936,7 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
   if (cpl->n_volume_zones > 0) {
     bft_printf("   Volume zones:\n");
     for (int i = 0; i < cpl->n_volume_zones; i++) {
-      cs_zone_t *z = cs_volume_zone_by_id(cpl->volume_zone_ids[i]);
+      const cs_zone_t *z = cs_volume_zone_by_id(cpl->volume_zone_ids[i]);
       bft_printf("      %s\n", z->name);
     }
   }

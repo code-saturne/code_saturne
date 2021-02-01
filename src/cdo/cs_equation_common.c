@@ -455,12 +455,13 @@ cs_equation_prepare_system(int                     stride,
                            cs_real_t              *b)
 {
   const cs_lnum_t  n_scatter_elts = x_size; /* size of x and rhs */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 0
   const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
 
   /* Sanity checks */
   assert(n_gather_elts <= n_scatter_elts);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
                 " n_gather_elts:    %d\n"
                 " n_scatter_elts:   %d\n"

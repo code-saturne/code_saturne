@@ -249,7 +249,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
                      int                        id_type)
 {
   cs_lnum_t n_elts = 0;
-  cs_real_t *xyz_cen;
+  cs_real_t *xyz_cen = NULL;
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
 
@@ -261,6 +261,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
     n_elts = mesh->n_b_faces;
     xyz_cen = mesh_quantities->b_face_cog;
   }
+  assert(xyz_cen != NULL);
 
 # pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {

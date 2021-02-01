@@ -182,7 +182,7 @@ cs_physical_property_get_zone_values(const char  *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create physical property
+ * \brief Create a physical property
  *
  * \param[in] name    property name
  * \param[in] dim     property dimension
