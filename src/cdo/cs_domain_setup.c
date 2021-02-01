@@ -718,16 +718,12 @@ cs_domain_finalize_module_setup(cs_domain_t         *domain)
     bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
 
   /* Last stage for the settings for each predefined set of equations:
-     - wall distance computation
      - thermal module
      - groundwater flow module
      - Maxwell equations
      - Navier-Stokes system
      - ALE equation
    */
-
-  if (cs_walldistance_is_activated())
-    cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_thermal_system_is_activated())
     cs_thermal_system_finalize_setup(domain->connect,
