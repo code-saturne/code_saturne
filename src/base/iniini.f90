@@ -727,7 +727,6 @@ xct     = 6.d0
 !   pour le v2f phi-model
 cv2fa1 = 0.05d0
 cv2fe2 = 1.85d0
-cv2fmu = 0.22d0
 cv2fc1 = 1.4d0
 cv2fc2 = 0.3d0
 cv2fct = 6.d0
@@ -739,7 +738,6 @@ cpale1 = 1.44d0
 cpale2 = 1.83d0
 cpale3 = 2.3d0
 cpale4 = 0.4d0
-cpalmu = 0.22d0
 cpalct = 4.d0
 cpalcl = 0.164d0
 cpalet = 75.d0

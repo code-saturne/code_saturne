@@ -146,10 +146,10 @@ do iel = 1, ncel
 
   ttke = xk / xe
   ttmin = cpalct*sqrt(xnu/xe)
-  ttlim = 0.6d0/cvar_phi(iel)/sqrt(3.d0)/cpalmu/s2(iel)
+  ttlim = 0.6d0/cvar_phi(iel)/sqrt(3.d0)/cmu/s2(iel)
   tt = min(ttlim,sqrt(ttke**2 + ttmin**2))
 
-  visct(iel) = cpalmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+  visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
 
 enddo
 

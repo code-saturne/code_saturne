@@ -87,7 +87,7 @@ integer          f_id, kdflim
 
 logical          have_previous
 
-double precision xxk, xcmu, trii, clvfmn, visls_0
+double precision xxk, trii, clvfmn, visls_0
 
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom
@@ -359,14 +359,10 @@ if(itytur.eq.2 .or. itytur.eq.5) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  xcmu = cmu
-  if (iturb.eq.50) xcmu = cv2fmu
-  if (iturb.eq.51) xcmu = cpalmu
-
   if (uref.ge.0.d0) then
     do iel = 1, ncel
       cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
-      cvar_ep(iel) = cvar_k(iel)**1.5d0*xcmu/almax
+      cvar_ep(iel) = cvar_k(iel)**1.5d0*cmu/almax
     enddo
 
     call clipke(ncel, 1)

@@ -439,8 +439,7 @@ double cs_turb_dpow = -1.;
 
 /*!
  * Constant \f$C_\mu\f$ for all the RANS turbulence models except for the
- * v2f model (see \ref cs_turb_cv2fmu for the value of \f$C_\mu\f$ in case of v2f
- * modelling). Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
+ * Warning: different value for v2f models. Useful if and only if \ref iturb = 20, 21, 30, 31, 50, 51 or 60
  * (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$).
  */
 double cs_turb_cmu = 0.09;
@@ -603,9 +602,6 @@ const double cs_turb_cpale3 = 2.3;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
 const double cs_turb_cpale4 = 0.4;
-
-/*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalmu = 0.22;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
 const double cs_turb_cpalc1 = 1.7;
@@ -884,12 +880,6 @@ const double cs_turb_cv2fa1 = 0.05;
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
 const double cs_turb_cv2fe2 = 1.85;
-
-/*!
- * Constant \f$C_\mu\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
- */
-const double cs_turb_cv2fmu = 0.22;
 
 /*!
  * Constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
@@ -1950,14 +1940,14 @@ cs_turb_constants_log_setup(void)
       (CS_LOG_SETUP,
        _("    cv2fa1:      %14.5e (a1 to calculate Cepsilon1)\n"
          "    cv2fe2:      %14.5e (Cepsilon 2: dissip. coeff.)\n"
-         "    cv2fmu:      %14.5e (Cmu constant)\n"
+         "    cmu   :      %14.5e (Cmu constant)\n"
          "    cv2fct:      %14.5e (CT constant)\n"
          "    cv2fcl:      %14.5e (CL constant)\n"
          "    cv2fet:      %14.5e (C_eta constant)\n"
          "    cv2fc1:      %14.5e (C1 constant)\n"
          "    cv2fc2:      %14.5e (C2 constant)\n"),
          cs_turb_cv2fa1, cs_turb_cv2fe2,
-         cs_turb_cv2fmu, cs_turb_cv2fct,
+         cs_turb_cmu, cs_turb_cv2fct,
          cs_turb_cv2fcl, cs_turb_cv2fet, cs_turb_cv2fc1,
          cs_turb_cv2fc2);
 
@@ -1968,7 +1958,7 @@ cs_turb_constants_log_setup(void)
          "    cpale2:      %14.5e (Cepsilon 2 : Diss. coeff.)\n"
          "    cpale3:      %14.5e (Cepsilon 3 : E term coeff.)\n"
          "    cpale4:      %14.5e (Cepsilon 4 : Mod Diss. coef.)\n"
-         "    cpalmu:      %14.5e (Cmu constant)\n"
+         "    cmu   :      %14.5e (Cmu constant)\n"
          "    cpalct:      %14.5e (CT constant)\n"
          "    cpalcl:      %14.5e (CL constant)\n"
          "    cpalet:      %14.5e (C_eta constant)\n"
@@ -1976,7 +1966,7 @@ cs_turb_constants_log_setup(void)
          "    cpalc2:      %14.5e (C2 constant)\n"),
          cs_turb_cpale1, cs_turb_cpale2, cs_turb_cpale3,
          cs_turb_cpale4,
-         cs_turb_cpalmu, cs_turb_cpalct, cs_turb_cpalcl,
+         cs_turb_cmu, cs_turb_cpalct, cs_turb_cpalcl,
          cs_turb_cpalet, cs_turb_cpalc1, cs_turb_cpalc2);
 
   else if (turb_model->iturb == CS_TURB_K_OMEGA)

@@ -315,9 +315,8 @@ module cstphy
   double precision, save :: dpow
 
   !> constant \f$C_\mu\f$ for all the RANS turbulence models
-  !> except for the v2f model
-  !> (see \ref cv2fmu for the value of \f$C_\mu\f$ in case of v2f modelling).
-  !> Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
+  !> Warning, different values for the v2f model
+  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50, 51 or 60
   !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$)
   real(c_double), pointer, save :: cmu
 
@@ -478,9 +477,6 @@ module cstphy
 
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpale4
-
-  !> specific constant of v2f "BL-v2k" (or phi-alpha)
-  double precision, save :: cpalmu
 
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalc1
@@ -694,11 +690,6 @@ module cstphy
   !> Useful if and only if \ref iturb=50
   !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fe2
-
-  !> constant \f$C_\mu\f$ for the v2f \f$\varphi\f$-model.
-  !> Useful if and only if \ref iturb=50
-  !> (v2f \f$\varphi\f$-model)
-  double precision, save :: cv2fmu
 
   !> constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
   !> Useful if and only if \ref iturb=50

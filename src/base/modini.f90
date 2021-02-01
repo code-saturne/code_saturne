@@ -808,6 +808,10 @@ endif
 
 cpow    = apow**(2.d0/(1.d0-bpow))
 dpow    = 1.d0/(1.d0+bpow)
+
+! Modified value of Cmu for V2f and Bl-v2k
+if (iturb.eq.50.or.iturb.eq.51) cmu = 0.22d0
+
 cmu025 = cmu**0.25d0
 
 if (idirsm.eq.0) then

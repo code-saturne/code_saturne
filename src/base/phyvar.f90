@@ -488,7 +488,7 @@ elseif (itytur.eq.5) then
       ttke = xk / xe
       ttmin = cv2fct*sqrt(xnu/xe)
       tt = max(ttke,ttmin)
-      visct(iel) = cv2fmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+      visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
     enddo
 
   else if (iturb.eq.51) then
