@@ -2358,7 +2358,7 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
 
   return cs_equation_add_source_term_by_array(eqp, z_name, loc,
-                                              array, is_owner,index);
+                                              array, is_owner, index);
 }
 
 /*----------------------------------------------------------------------------*/

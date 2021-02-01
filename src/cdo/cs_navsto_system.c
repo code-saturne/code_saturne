@@ -170,6 +170,9 @@ _allocate_navsto_system(void)
   navsto->mass_flux_array = NULL;
   navsto->mass_flux_array_pre = NULL;
 
+  /* Related modules */
+  navsto->turbulence = NULL;
+
   /* Post-processing fields */
   navsto->velocity_divergence = NULL;
   navsto->kinetic_energy = NULL;
@@ -1114,10 +1117,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
  *         system. This is done after the setup step.
  *         Set an initial value for the velocity and pressure field if needed
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1125,7 +1128,7 @@ void
 cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                             const cs_cdo_connect_t      *connect,
                             const cs_cdo_quantities_t   *quant,
-                            const cs_time_step_t        *ts)
+                            const cs_time_step_t        *time_step)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1151,11 +1154,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   /* Initial conditions for the velocity */
   if (ns->init_velocity != NULL)
-    ns->init_velocity(nsp, quant, ts, ns->scheme_context);
+    ns->init_velocity(nsp, quant, time_step, ns->scheme_context);
 
   /* Initial conditions for the pressure */
   if (ns->init_pressure != NULL)
-    ns->init_pressure(nsp, quant, ts, ns->pressure);
+    ns->init_pressure(nsp, quant, time_step, ns->pressure);
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
@@ -1165,7 +1168,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
          before */
       cs_real_t  *pr_f = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
 
-      cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
+      cs_cdofb_navsto_init_face_pressure(nsp, connect, time_step, pr_f);
     }
 
     /* Initialize the mass flux */
@@ -1175,7 +1178,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   } /* Face-based schemes */
 
-  cs_turbulence_initialize(mesh, connect, quant, ts, ns->turbulence);
+  cs_turbulence_initialize(mesh, connect, quant, time_step, ns->turbulence);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1521,10 +1524,10 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 /*!
  * \brief  Predefined extra-operations for the Navier-Stokes system
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs\time_step_t structure
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1532,7 +1535,7 @@ void
 cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
-                          const cs_time_step_t        *ts)
+                          const cs_time_step_t        *time_step)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
 
@@ -1556,7 +1559,7 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
       const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
       const cs_real_t  *u_cell = navsto->velocity->val;
 
-      cs_cdofb_navsto_extra_op(nsp, mesh, quant, connect, ts,
+      cs_cdofb_navsto_extra_op(nsp, mesh, quant, connect, time_step,
                                adv, mass_flux,
                                u_cell, u_face);
     }

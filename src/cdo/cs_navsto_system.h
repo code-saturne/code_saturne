@@ -214,20 +214,6 @@ typedef struct {
 
   cs_turbulence_t            *turbulence;
 
-  /*! \var thm
-   *  Structure storing all settings, fields or properties related to the
-   *  thermal system of equation(s)
-   */
-
-  cs_thermal_system_t        *thm;
-
-  /*! \var mxl
-   *  Structure storing all settings, fields or properties related to the
-   *  Maxwell system of equation(s)
-   */
-
-  cs_maxwell_t               *mxl;
-
   /*!
    * @}
    * @name Post-processing fields
@@ -496,10 +482,10 @@ cs_navsto_system_set_sles(void);
  *         system. This is done after the setup step.
  *         Set an initial value for the velocity and pressure field if needed
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -507,7 +493,7 @@ void
 cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                             const cs_cdo_connect_t      *connect,
                             const cs_cdo_quantities_t   *quant,
-                            const cs_time_step_t        *ts);
+                            const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -579,10 +565,10 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 /*!
  * \brief  Predefined extra-operations for the Navier-Stokes system
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -590,7 +576,7 @@ void
 cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *quant,
-                          const cs_time_step_t        *ts);
+                          const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
