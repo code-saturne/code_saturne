@@ -2341,7 +2341,7 @@ class mei_to_c_interpreter:
             spm = SpeciesModel(self.case)
 
             for zone in vlm.getZones():
-                if zone.getNature()['initialization'] is 'on':
+                if zone.getNature()['initialization'] == 'on':
                     z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
 
