@@ -61,7 +61,7 @@ BEGIN_C_DECLS
 /*!
  *  \file cs_cdo_turbulence.c
  *
- *  \brief  Routines to handle the resoltion of the turbulence modelling
+ *  \brief  Routines to handle the resolution of the turbulence modelling
  *          within the CDO framework
  */
 
@@ -402,8 +402,8 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
   case CS_TURB_K_EPSILON:
     {
-      /* Add a source term after having retrieve the equation param related to
-         the tubulent kinetic energy equation */
+      /* Add a source term after having retrieved the equation param related to
+         the turbulent kinetic energy equation */
       cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
       cs_equation_param_t  *tke_eqp = cs_equation_get_param(kec->tke);
 
@@ -417,8 +417,8 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
   case CS_TURB_K_EPSILON_LIN_PROD:
     {
-      /* Add a source term after having retrieve the equation param related to
-         the tubulent kinetic energy equation */
+      /* Add a source term after having retrieved the equation param related to
+         the turbulent kinetic energy equation */
       cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
       cs_equation_param_t  *tke_eqp = cs_equation_get_param(kec->tke);
 

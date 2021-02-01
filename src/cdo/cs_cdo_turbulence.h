@@ -55,8 +55,8 @@ BEGIN_C_DECLS
 
 /*! \struct cs_turbulence_param_t
  *  \brief Structure storing the parameters related to the resolution of the
- *         tubulence modelling. Several members are structures defined in
- *         cs_turbulence_model.h as a global variable. The prupose of this
+ *         turbulence modelling. Several members are structures defined in
+ *         cs_turbulence_model.h as a global variable. The purpose of this
  *         structure is to store all parameters in one place.
  */
 
@@ -95,7 +95,7 @@ typedef struct {
 
 /*! \struct cs_turbulence_t
  *  \brief Structure storing the parameters related to the resolution of the
- *         tubulence modelling. Several members are structures defined in
+ *         turbulence modelling. Several members are structures defined in
  *         cs_turbulence_model.h
  */
 
@@ -170,7 +170,7 @@ typedef void
 
 /*! \struct cs_turbulence_t
  *  \brief Structure storing the parameters related to the resolution of the
- *         tubulence modelling. Several members are structures defined in
+ *         turbulence modelling. Several members are structures defined in
  *         cs_turbulence_model.h
  */
 
