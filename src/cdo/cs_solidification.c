@@ -1934,7 +1934,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
     /* Solve the thermal system */
     cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
                                         iterative process */
-                              mesh, time_step, connect, quant);
+                              mesh, connect, quant, time_step);
 
     /* Update fields and properties which are related to solved variables
      * g_l, state */
@@ -3481,7 +3481,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
     /* Add equations to be solved at each time step */
     cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
-                              mesh, time_step, connect, quant);
+                              mesh, connect, quant, time_step);
 
     /* Update fields and properties which are related to solved variables */
     cs_field_current_to_previous(solid->g_l_field);
@@ -3491,7 +3491,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   }
 
   /* Solve the Navier-Stokes system */
-  cs_navsto_system_compute(mesh, time_step, connect, quant);
+  cs_navsto_system_compute(mesh, connect, quant, time_step);
 
   /* Perform the monitoring */
   if (solid->verbosity > 0)

@@ -154,19 +154,19 @@ typedef void
  * \brief  Update properties, arrays related to the turbulent variables
  *
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in]      time_step  structure managing the time stepping
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      turb       pointer to a \ref cs_turbulence_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in]      tbs        pointer to a \ref cs_turbulence_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_turb_update_t)(const cs_mesh_t                *mesh,
-                   const cs_time_step_t           *time_step,
                    const cs_cdo_connect_t         *connect,
-                   const cs_cdo_quantities_t      *cdoq,
-                   const cs_turbulence_t          *turb);
+                   const cs_cdo_quantities_t      *quant,
+                   const cs_time_step_t           *time_step,
+                   const cs_turbulence_t          *tbs);
 
 /*! \struct cs_turbulence_t
  *  \brief Structure storing the parameters related to the resolution of the
@@ -341,7 +341,7 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_init_setup(cs_turbulence_t   *turb);
+cs_turbulence_init_setup(cs_turbulence_t   *tbs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -431,19 +431,20 @@ cs_turb_compute_k_eps(const cs_mesh_t              *mesh,
  * \brief  Update for the current time step the new state for the turbulence
  *         model. This is used to update the turbulent viscosity.
  *
- * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]      turb      pointer to a \ref cs_turbulence_t structure
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in]      tbs        pointer to a \ref cs_turbulence_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turb_update_k_eps(const cs_mesh_t              *mesh,
-                     const cs_time_step_t         *time_step,
                      const cs_cdo_connect_t       *connect,
-                     const cs_cdo_quantities_t    *cdoq,
-                     const cs_turbulence_t        *turb);
+                     const cs_cdo_quantities_t    *quant,
+                     const cs_time_step_t         *time_step,
+                     const cs_turbulence_t        *tbs);
 
 /*----------------------------------------------------------------------------*/
 

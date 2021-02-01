@@ -528,17 +528,17 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
  *         Navier-Stokes system has been computed
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
- * \param[in] time_step  structure managing the time stepping
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_update(const cs_mesh_t             *mesh,
-                        const cs_time_step_t        *time_step,
                         const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *cdoq);
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -546,34 +546,34 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
  *         steady-state approach
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
- * \param[in] time_step  structure managing the time stepping
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
-                                      const cs_time_step_t        *time_step,
                                       const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *cdoq);
+                                      const cs_cdo_quantities_t   *quant,
+                                      const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build, solve and update the Navier-Stokes system
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
- * \param[in] time_step  structure managing the time stepping
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_compute(const cs_mesh_t             *mesh,
-                         const cs_time_step_t        *time_step,
                          const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *cdoq);
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -581,7 +581,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -589,7 +589,7 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
 void
 cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *cdoq,
+                          const cs_cdo_quantities_t   *quant,
                           const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/

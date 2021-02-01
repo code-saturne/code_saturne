@@ -216,38 +216,38 @@ cs_turbulence_param_create(void)
 cs_turbulence_t *
 cs_turbulence_create(cs_turbulence_param_t    *tbp)
 {
-  cs_turbulence_t  *turb = NULL;
+  cs_turbulence_t  *tbs = NULL;
 
-  BFT_MALLOC(turb, 1, cs_turbulence_t);
+  BFT_MALLOC(tbs, 1, cs_turbulence_t);
 
   /* All the members of the following structures are shared with the Legacy
    * part. This structure is owned by cs_navsto_param_t
    */
-  turb->param = tbp;
+  tbs->param = tbp;
 
   /* Properties */
-  turb->rho = NULL;             /* Mass density */
-  turb->mu_tot = NULL;          /* Total viscosity */
-  turb->mu_l = NULL;            /* Laminar viscosity */
-  turb->mu_t = NULL;            /* Turbulent viscosity */
+  tbs->rho = NULL;             /* Mass density */
+  tbs->mu_tot = NULL;          /* Total viscosity */
+  tbs->mu_l = NULL;            /* Laminar viscosity */
+  tbs->mu_t = NULL;            /* Turbulent viscosity */
 
-  turb->mu_tot_array = NULL;
+  tbs->mu_tot_array = NULL;
 
   /* Fields */
-  turb->mu_t_field = NULL;      /* Turbulent viscosity */
-  turb->rij = NULL;             /* Reynolds stress tensor */
+  tbs->mu_t_field = NULL;      /* Turbulent viscosity */
+  tbs->rij = NULL;             /* Reynolds stress tensor */
 
   /* Main structure (cast on-the-fly according to the turbulence model) */
-  turb->context = NULL;
+  tbs->context = NULL;
 
   /* Function pointers */
-  turb->init_context = NULL;
-  turb->free_context = NULL;
-  turb->compute = NULL;
-  turb->compute_steady = NULL;
-  turb->update = NULL;
+  tbs->init_context = NULL;
+  tbs->free_context = NULL;
+  tbs->compute = NULL;
+  tbs->compute_steady = NULL;
+  tbs->update = NULL;
 
-  return turb;
+  return tbs;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -261,19 +261,19 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
 void
 cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 {
-  cs_turbulence_t  *turb = *p_turb_struct;
+  cs_turbulence_t  *tbs = *p_turb_struct;
 
   /* Set of parameters (members are shared and freed elsewhere).
    * Properties, equations and fields are freed in an other part of the code
    */
 
-  BFT_FREE(turb->mu_tot_array);
+  BFT_FREE(tbs->mu_tot_array);
 
-  if (turb->free_context != NULL)
-    turb->context = turb->free_context(turb->context);
+  if (tbs->free_context != NULL)
+    tbs->context = tbs->free_context(tbs->context);
 
-  assert(turb->context == NULL);
-  BFT_FREE(turb);
+  assert(tbs->context == NULL);
+  BFT_FREE(tbs);
   *p_turb_struct = NULL;
 }
 
@@ -281,17 +281,17 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 /*!
  * \brief  Initialize the structure managing the turbulence modelling
  *
- * \param[in, out]  turb   pointer to the structure to initialize
+ * \param[in, out]  tbs   pointer to the structure to initialize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_init_setup(cs_turbulence_t   *turb)
+cs_turbulence_init_setup(cs_turbulence_t   *tbs)
 {
-  if (turb == NULL)
+  if (tbs == NULL)
     return;
 
-  const cs_turbulence_param_t  *tbp = turb->param;
+  const cs_turbulence_param_t  *tbp = tbs->param;
   const cs_turb_model_t  *model = tbp->model;
 
   if (model->type == CS_TURB_NONE)
@@ -306,39 +306,39 @@ cs_turbulence_init_setup(cs_turbulence_t   *turb)
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
   int  location_id = cs_mesh_location_get_id_by_name("cells");
 
-  turb->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
+  tbs->mu_t_field = cs_field_find_or_create(CS_NAVSTO_TURB_VISCOSITY,
                                              field_mask,
                                              location_id,
                                              1, /* dimension */
                                              has_previous);
 
   /* Set default value for keys related to log and post-processing */
-  cs_field_set_key_int(turb->mu_t_field, log_key, 1);
-  cs_field_set_key_int(turb->mu_t_field, post_key, field_post_flag);
+  cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
+  cs_field_set_key_int(tbs->mu_t_field, post_key, field_post_flag);
 
   /* Properties (shared) */
-  turb->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-  turb->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
-  turb->mu_l = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
+  tbs->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  tbs->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
+  tbs->mu_l = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
 
-  assert(turb->rho != NULL && turb->mu_l != NULL && turb->mu_tot != NULL);
+  assert(tbs->rho != NULL && tbs->mu_l != NULL && tbs->mu_tot != NULL);
 
   /* Add a mu_t property and define it with the associated field */
-  turb->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
+  tbs->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
 
-  cs_property_def_by_field(turb->mu_t, turb->mu_t_field);
+  cs_property_def_by_field(tbs->mu_t, tbs->mu_t_field);
 
   /* Set function pointers and initialize the context structure */
   switch (model->iturb) {
 
   case CS_TURB_K_EPSILON:
   case CS_TURB_K_EPSILON_LIN_PROD:
-    turb->init_context = cs_turb_init_k_eps_context;
-    turb->free_context = cs_turb_free_k_eps_context;
-    turb->compute = cs_turb_compute_k_eps;
-    turb->update = cs_turb_update_k_eps;
+    tbs->init_context = cs_turb_init_k_eps_context;
+    tbs->free_context = cs_turb_free_k_eps_context;
+    tbs->compute = cs_turb_compute_k_eps;
+    tbs->update = cs_turb_update_k_eps;
 
-    turb->context = turb->init_context(model);
+    tbs->context = tbs->init_context(model);
     break;
 
   case CS_TURB_NONE:
@@ -470,30 +470,7 @@ cs_turbulence_initialize(const cs_mesh_t            *mesh,
   if (model->iturb == CS_TURB_NONE)
     return; /* Nothing to do */
 
-  /* Initialize the total viscosity */
-  const cs_real_t  *mut = tbs->mu_t_field->val;
-
-  if (cs_property_is_uniform(tbs->mu_l)) {
-
-    const cs_real_t  mul0 = cs_property_get_cell_value(0, time_step->t_cur,
-                                                       tbs->mu_l);
-
-    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
-      tbs->mu_tot_array[i] = mul0 + mut[i];
-
-  }
-  else {
-
-    for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
-
-      const cs_real_t  mul = cs_property_get_cell_value(i, time_step->t_cur,
-                                                        tbs->mu_l);
-
-      tbs->mu_tot_array[i] = mul + mut[i];
-
-    } /* Loop on cells */
-
-  } /* laminar viscosity is uniform ? */
+  tbs->update(mesh, connect, quant, time_step, tbs);
 
 }
 
@@ -623,31 +600,31 @@ cs_turb_free_k_eps_context(void     *tbc)
  * \brief  Update for the current time step the new state for the turbulence
  *         model. This is used to update the turbulent viscosity.
  *
- * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]      turb      pointer to a \ref cs_turbulence_t structure
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  structure managing the time stepping
+ * \param[in]      tbs        pointer to a \ref cs_turbulence_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_turb_update_k_eps(const cs_mesh_t              *mesh,
-                     const cs_time_step_t         *time_step,
                      const cs_cdo_connect_t       *connect,
-                     const cs_cdo_quantities_t    *cdoq,
-                     const cs_turbulence_t        *turb)
+                     const cs_cdo_quantities_t    *quant,
+                     const cs_time_step_t         *time_step,
+                     const cs_turbulence_t        *tbs)
 {
-
-  if (turb == NULL)
+  if (tbs == NULL)
     return;
 
   cs_lnum_t n_cells = mesh->n_cells;
 
   cs_turb_context_k_eps_t  *kec =
-    (cs_turb_context_k_eps_t *)turb->context;
+    (cs_turb_context_k_eps_t *)tbs->context;
 
   /* Update turbulent viscosity field */
-  cs_real_t *mu_t = turb->mu_t_field->val;
+  cs_real_t *mu_t = tbs->mu_t_field->val;
   cs_real_t *k = cs_equation_get_cell_values(kec->tke, false);
   cs_real_t *eps = cs_equation_get_cell_values(kec->eps, false);
 
@@ -656,13 +633,13 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
   cs_real_t *rho = NULL;
 
   /* Get mass density values in each cell */
-  cs_property_iso_get_cell_values(time_step->t_cur, turb->rho,
+  cs_property_iso_get_cell_values(time_step->t_cur, tbs->rho,
                                   &rho_stride, &rho);
 
   /* Get laminar viscosity values in each cell */
   int mu_stride = 0;
   cs_real_t *mu_l = NULL;
-  cs_property_iso_get_cell_values(time_step->t_cur, turb->mu_l,
+  cs_property_iso_get_cell_values(time_step->t_cur, tbs->mu_l,
                                   &mu_stride, &mu_l);
 
 
@@ -673,7 +650,7 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
     mu_t[cell_id] = cs_turb_cmu * rho[cell_id*rho_stride] *
       cs_math_pow2(k[cell_id]) / eps[cell_id];
 
-    turb->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id*mu_stride];
+    tbs->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id*mu_stride];
 
   }
 
