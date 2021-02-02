@@ -109,6 +109,33 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return the equivalent heat transfer coefficient. If both terms are
+ * below a given tolerance, 0. is returned.
+ *
+ * parameters:
+ *   h1     <-- first exchange coefficient
+ *   h2     <-- second exchange coefficient
+ *
+ * return:
+ *   value of equivalent exchange coefficient
+ *----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_calc_heq(cs_real_t h1,
+          cs_real_t h2)
+{
+
+  const cs_real_t h_eps = 1.e-6;
+
+  cs_real_t heq = 0.;
+  if (h1 > h_eps && h2 > h_eps)
+    heq = h1 * h2 / (h1 + h2);
+
+  return heq;
+
+}
+
+/*----------------------------------------------------------------------------
  * Return the denominator to build the beta blending coefficient of the
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *
@@ -1701,7 +1728,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
@@ -2688,9 +2714,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           pjpr = pvar_local[ii];
 
-          hint = hintp[face_id];
-          hext = hextp[face_id];
-          heq = hint * hext / (hint + hext);
+          cs_real_t hint = hintp[face_id];
+          cs_real_t hext = hextp[face_id];
+          cs_real_t heq = _calc_heq(hint, hext);
 
           cs_b_diff_flux_coupling(idiffp,
                                   pipr,
@@ -2826,9 +2852,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           pjp = pvar_local[ii];
 
-          hint = hintp[face_id];
-          hext = hextp[face_id];
-          heq = hint * hext / (hint + hext);
+          cs_real_t hint = hintp[face_id];
+          cs_real_t hext = hextp[face_id];
+          cs_real_t heq = _calc_heq(hint, hext);
 
           cs_b_diff_flux_coupling(idiffp,
                                   pip,
@@ -4274,7 +4300,6 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_3_t *pvar_local = NULL;
   cs_real_3_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
@@ -5299,9 +5324,9 @@ cs_convection_diffusion_vector(int                         idtvar,
           for (cs_lnum_t k = 0; k < 3; k++)
             pjpr[k] = pvar_local[ii][k];
 
-          hint = hintp[face_id];
-          hext = hextp[face_id];
-          heq = hint * hext / (hint + hext);
+          cs_real_t hint = hintp[face_id];
+          cs_real_t hext = hextp[face_id];
+          cs_real_t heq = _calc_heq(hint, hext);
 
           cs_b_diff_flux_coupling_vector(idiffp,
                                          pipr,
@@ -5487,9 +5512,9 @@ cs_convection_diffusion_vector(int                         idtvar,
           for (int k = 0; k < 3; k++)
             pjp[k] = pvar_local[ii][k];
 
-          hint = hintp[face_id];
-          hext = hextp[face_id];
-          heq = hint * hext / (hint + hext);
+          cs_real_t hint = hintp[face_id];
+          cs_real_t hext = hextp[face_id];
+          cs_real_t heq = _calc_heq(hint, hext);
 
           cs_b_diff_flux_coupling_vector(idiffp,
                                          pip,
@@ -6906,7 +6931,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t *df_limiter_local = NULL;
-  cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local;
   cs_lnum_t n_distant;
@@ -7922,9 +7946,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
         pjpr = pvar_local[ii];
 
-        hint = hintp[face_id];
-        hext = hextp[face_id];
-        heq = hint * hext / (hint + hext);
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t heq = _calc_heq(hint, hext);
 
         cs_b_diff_flux_coupling(idiffp,
                                 pipr,
@@ -8061,9 +8085,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
         pjp = pvar_local[ii];
 
-        hint = hintp[face_id];
-        hext = hextp[face_id];
-        heq = hint * hext / (hint + hext);
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t heq = _calc_heq(hint, hext);
 
         cs_b_diff_flux_coupling(idiffp,
                                 pip,
