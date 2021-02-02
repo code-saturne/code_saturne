@@ -3449,17 +3449,17 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
  * \brief  Solve equations related to the solidification module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_compute(const cs_mesh_t              *mesh,
-                          const cs_time_step_t         *time_step,
                           const cs_cdo_connect_t       *connect,
-                          const cs_cdo_quantities_t    *quant)
+                          const cs_cdo_quantities_t    *quant,
+                          const cs_time_step_t         *time_step)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
