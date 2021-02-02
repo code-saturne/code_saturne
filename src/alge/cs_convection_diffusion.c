@@ -1755,7 +1755,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (pvar != NULL)
     cs_sync_scalar_halo(m, tr_dim, pvar);
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
@@ -3182,7 +3182,7 @@ cs_face_convection_scalar(int                       idtvar,
 
   if (pvar != NULL)
     cs_sync_scalar_halo(m, tr_dim, pvar);
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
@@ -4333,7 +4333,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_3_t *restrict)pvar;
 
   const cs_real_3_t  *restrict _pvar
@@ -5975,7 +5975,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
   }
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_6_t *restrict)pvar;
 
   const cs_real_6_t  *restrict _pvar
@@ -6959,7 +6959,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   if (pvar != NULL)
     cs_sync_scalar_halo(m, tr_dim, pvar);
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
@@ -8275,7 +8275,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   if (pvar != NULL)
     cs_sync_scalar_halo(m, tr_dim, pvar);
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
@@ -9023,7 +9023,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_3_t *restrict)pvar;
 
   const cs_real_3_t  *restrict _pvar
@@ -9574,7 +9574,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_3_t *restrict)pvar;
 
   const cs_real_3_t  *restrict _pvar
@@ -10274,7 +10274,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
   }
-  else if (pvara == NULL)
+  if (pvara == NULL)
     pvara = (const cs_real_6_t *restrict)pvar;
 
   const cs_real_6_t  *restrict _pvar
