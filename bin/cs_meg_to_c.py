@@ -437,8 +437,9 @@ class meg_to_c_interpreter:
             name_ref = name + '_ref'
             for s in symbols:
                 if s[0] == name_ref:
+                    base_name = name[:-12]
                     glob_tokens[name_ref] = 'const cs_real_t %s\n' % (name_ref)
-                    glob_tokens[name_ref] += '      = cs_field_get_key_double(cs_field_by_name("%s"), cs_field_key_id("diffusivity_ref"));' % (name)
+                    glob_tokens[name_ref] += '      = cs_field_get_key_double(cs_field_by_name("%s"), cs_field_key_id("diffusivity_ref"));' % (base_name)
 
         # Fields
         label_not_name = ['Additional scalar', 'Thermal scalar', 'Pressure']
