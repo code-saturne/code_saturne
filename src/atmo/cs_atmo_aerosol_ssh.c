@@ -371,6 +371,7 @@ cs_atmo_aerosol_ssh_initialize(void)
     _exchange_char_array(_aerosol_so,
                          "api_sshaerosol_initialize_",
                          namelist_ssh);
+    _call(_aerosol_so, "api_sshaerosol_init_distributions_");
     if (_verbose) bft_printf(" Shared library sshaerosol initialized.\n");
   }
 
