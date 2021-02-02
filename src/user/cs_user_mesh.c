@@ -228,6 +228,7 @@ cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_cartesian_define
 void
 cs_user_mesh_cartesian_define(void)
 {
