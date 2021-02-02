@@ -77,6 +77,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_paramedmem_define_couplings
 void
 cs_user_paramedmem_define_couplings(void)
 {
@@ -89,6 +90,7 @@ cs_user_paramedmem_define_couplings(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_paramedmem_define_meshes
 void
 cs_user_paramedmem_define_meshes(void)
 {
@@ -101,6 +103,7 @@ cs_user_paramedmem_define_meshes(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_paramedmem_define_fields
 void
 cs_user_paramedmem_define_fields(void)
 {
