@@ -1128,7 +1128,7 @@ cs_saddle_block_precond_create(cs_param_precond_block_t    block_type,
 
   /* Other approximations */
   sbp->mass22_diag = NULL;
-  sbp->m11_diag = NULL;
+  sbp->m11_inv_diag = NULL;
 
   return sbp;
 }
@@ -1153,7 +1153,7 @@ cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp)
   BFT_FREE(sbp->schur_xtra);
 
   BFT_FREE(sbp->mass22_diag);
-  BFT_FREE(sbp->m11_diag);
+  BFT_FREE(sbp->m11_inv_diag);
 
   /* Free the main pointer */
   BFT_FREE(sbp);

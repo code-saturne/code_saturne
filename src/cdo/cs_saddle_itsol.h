@@ -115,7 +115,7 @@ typedef struct {
   cs_real_t         *schur_xtra;
 
   /* Diagonal approximations of block matrices (optional) */
-  cs_real_t         *m11_diag;
+  cs_real_t         *m11_inv_diag;
   cs_real_t         *mass22_diag;
 
 } cs_saddle_block_precond_t;

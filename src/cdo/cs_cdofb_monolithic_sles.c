@@ -1162,7 +1162,7 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   sbp->schur_diag = diagK;
   sbp->schur_xtra = xtraK;
 
-  sbp->m11_diag = inv_lumped;
+  sbp->m11_inv_diag = inv_lumped;
 }
 
 #if defined(HAVE_PETSC)
