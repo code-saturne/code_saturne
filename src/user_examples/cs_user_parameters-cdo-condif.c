@@ -582,7 +582,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
      * equation (in this case, do not copy the associated field id since these
      * are two different equations with their own variable field) */
     bool  copy_field_id = false;
-    cs_equation_param_copy_from(eqp_ref, eqp, copy_field_id);
+    cs_equation_copy_param_from(eqp_ref, eqp, copy_field_id);
 
     /* Keep all the settings from "AdvDiff.Upw and then only change the
        advection scheme for the second equation */

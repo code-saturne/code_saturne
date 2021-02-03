@@ -1398,7 +1398,7 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_copy_from(const cs_equation_param_t   *ref,
+cs_equation_copy_param_from(const cs_equation_param_t   *ref,
                             cs_equation_param_t         *dst,
                             bool                         copy_fid);
 
@@ -1417,7 +1417,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_clear(cs_equation_param_t   *eqp);
+cs_equation_clear_param(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1475,14 +1475,14 @@ cs_equation_param_last_stage(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a \ref cs_equation_param_t structure
+ * \brief  Print the detail of a \ref cs_equation_param_t structure
  *
  * \param[in]  eqp      pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_summary_param(const cs_equation_param_t  *eqp);
+cs_equation_param_log(const cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
