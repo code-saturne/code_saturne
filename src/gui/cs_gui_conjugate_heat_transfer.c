@@ -77,7 +77,13 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define SYRTHES couplings based on the GUI-generated setup.
+ *
+ * This variant applies to code_saturne v7.0 and later setup files.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 _cs_gui_syrthes_coupling_legacy(void)
@@ -137,10 +143,17 @@ _cs_gui_syrthes_coupling_legacy(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define SYRTHES couplings based on the GUI-generated setup.
+ *
+ * This variant applies to code_saturne v7.0 and later setup files.
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 _cs_gui_syrthes_coupling_bc(void)
 {
-
   /* First get the CHT parameters node */
   const char path_c[] = "conjugate_heat_transfer/external_coupling";
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
@@ -175,11 +188,10 @@ _cs_gui_syrthes_coupling_bc(void)
     if (v_n[0] > 0) allow_nonmatching = true;
   }
 
-  /* Loop on the list of defined coupled syrthes instances */
+  /* Loop on the list of defined coupled Syrthes instances */
   cs_tree_node_t *tn_syr_inst = cs_tree_find_node(tn_c, "syrthes_instances");
 
-
-  for (cs_tree_node_t *tn_cpl = cs_tree_find_node(tn_syr_inst,"instance");
+  for (cs_tree_node_t *tn_cpl = cs_tree_find_node(tn_syr_inst, "instance");
       tn_cpl != NULL;
       tn_cpl = cs_tree_node_get_next_of_name(tn_cpl)) {
 
@@ -205,9 +217,10 @@ _cs_gui_syrthes_coupling_bc(void)
       cs_syr_coupling_add_zone(syrthes_name, z);
 
     } /* loop on coupled boundaries */
-  } /* loop on syrthes instances */
-
+  } /* loop on SYRTHES instances */
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public Function definitions
@@ -238,7 +251,6 @@ cs_gui_syrthes_coupling(void)
   else {
     _cs_gui_syrthes_coupling_legacy();
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

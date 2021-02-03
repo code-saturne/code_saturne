@@ -9,13 +9,12 @@ User changes:
   * Physical properties are now defined as a volumic condition, with
     the zone "all_cells" as the default one.
   * User-laws for physical properties can now be defined over multiple
-    zones using MEG mechanism. But require definition of a
+    zones using the MEG mechanism. This requires the definition of a
     variable property over the main zone ("all_cells")
   * A zone can now be defined as solid, which then allows activating the
     internal coupling functions for a given set of scalars (see the
     "Coupling parameters" page).
-  * The internal coupling function is now available in the GUI
-
+  * The internal coupling function is now available in the GUI.
 
 Release 7.0.0 (unreleased)
 --------------------------
