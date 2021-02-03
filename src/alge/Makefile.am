@@ -74,15 +74,16 @@ $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
 pkginclude_HEADERS = \
 cs_alge_headers.h \
+cs_bad_cells_regularisation.h \
 cs_balance.h \
+cs_balance_by_zone.h \
 cs_benchmark.h \
 cs_benchmark_matrix.h \
 cs_blas.h \
-cs_balance_by_zone.h \
 cs_cell_to_vertex.h \
 cs_convection_diffusion.h \
-cs_face_viscosity.h \
 cs_divergence.h \
+cs_face_viscosity.h \
 cs_gradient.h \
 cs_gradient_perio.h \
 cs_grid.h \
@@ -96,7 +97,6 @@ cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
 cs_multigrid_smoother.h \
-cs_bad_cells_regularisation.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
@@ -124,16 +124,17 @@ libcsalge_la_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
+cs_bad_cells_regularisation.c \
 cs_balance.c \
+cs_balance_by_zone.c \
 cs_benchmark.c \
 cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
-cs_balance_by_zone.c \
 cs_cell_to_vertex.c \
 cs_convection_diffusion.c \
-cs_face_viscosity.c \
 cs_divergence.c \
+cs_face_viscosity.c \
 cs_gradient.c \
 cs_gradient_perio.c \
 cs_grid.c \
@@ -145,7 +146,6 @@ cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_multigrid_smoother.c \
-cs_bad_cells_regularisation.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \

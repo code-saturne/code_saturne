@@ -315,7 +315,8 @@ typedef struct {
    *
    * \var isstpc
    * Indicate whether a slope test should be used to switch from a second-order
-   * to an upwind convective scheme under certain conditions, to ensure stability.
+   * to an upwind convective scheme under certain conditions, to ensure
+   * stability.
    * - 0: slope test activated
    * - 1: slope test deactivated
    * - 2: continuous limiter ensuring boundedness (beta limiter)
@@ -329,9 +330,9 @@ typedef struct {
    * \var nswrsm
    * Iteration limit for the reconstruction of the right-hand sides of the
    * equations with a first-order scheme in time (standard case), the default
-   * values are 2 for pressure and 1 for the other variables. With a second-order
-   * scheme in time (\ref optcal::ischtp "ischtp" = 2) or LES, the default values
-   * are 5 for pressure and 10 for the other variables.
+   * values are 2 for pressure and 1 for the other variables. With a
+   * second-order scheme in time (\ref optcal::ischtp "ischtp" = 2) or LES, the
+   * default values are 5 for pressure and 10 for the other variables.
    *
    * \var imvisf
    * Face viscosity field interpolation

@@ -67,14 +67,14 @@ cs_cdo_advection.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
 cs_cdo_diffusion.h \
-cs_cdoeb_priv.h \
 cs_cdo_field_interpolation.h \
 cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_turbulence.h \
-cs_cdofb_ac.h \
+cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
+cs_cdofb_ac.h \
 cs_cdofb_monolithic.h \
 cs_cdofb_monolithic_priv.h \
 cs_cdofb_monolithic_sles.h \
