@@ -444,9 +444,9 @@ _solve_domain(cs_domain_t  *domain)
   if (cs_solidification_is_activated()) {
 
     cs_solidification_compute(domain->mesh,
-                              domain->time_step,
                               domain->connect,
-                              domain->cdo_quantities);
+                              domain->cdo_quantities,
+                              domain->time_step);
 
   }
   else {
