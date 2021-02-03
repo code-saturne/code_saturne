@@ -239,9 +239,9 @@ class VolumicZone(Zone):
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
 
+        self._natureDict['physical_properties'] = self.tr("Physical properties")
+        self._natureList.append('physical_properties')
         if self.case.module_name() == 'code_saturne':
-            self._natureDict['physical_properties'] = self.tr("Physical properties")
-            self._natureList.append('physical_properties')
 
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
