@@ -115,7 +115,6 @@ cs_navsto_param.h \
 cs_navsto_sles.h \
 cs_navsto_system.h \
 cs_param_cdo.h \
-cs_param_sles.h \
 cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
@@ -205,7 +204,6 @@ libcscdo_extension_la_SOURCES = \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
-cs_param_sles.c \
 cs_navsto_param.c \
 cs_navsto_sles.c
 

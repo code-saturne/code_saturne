@@ -70,6 +70,13 @@ libcsalge_amgx_la_CPPFLAGS =\
 -I$(top_srcdir)/src/mesh \
 $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
+libcsalge_extension_la_CPPFLAGS =\
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+$(PETSC_CPPFLAGS)  $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -97,6 +104,7 @@ cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
 cs_multigrid_smoother.h \
+cs_param_sles.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
@@ -155,16 +163,23 @@ libcsalge_la_LDFLAGS = -no-undefined
 
 libcsalge_la_LIBADD =
 
+noinst_LTLIBRARIES += libcsalge_extension.la
+libcsalge_la_LIBADD += libcsalge_extension.la
+libcsalge_extension_la_SOURCES = \
+cs_param_sles.c
+
 if HAVE_PETSC
 noinst_LTLIBRARIES += libcsalge_petsc.la
 libcsalge_la_LIBADD += libcsalge_petsc.la
-libcsalge_petsc_la_SOURCES = cs_sles_petsc.c
+libcsalge_petsc_la_SOURCES = \
+cs_sles_petsc.c
 endif
 
 if HAVE_MUMPS
 noinst_LTLIBRARIES += libcsalge_mumps.la
 libcsalge_la_LIBADD += libcsalge_mumps.la
-libcsalge_mumps_la_SOURCES = cs_sles_mumps.c
+libcsalge_mumps_la_SOURCES = \
+cs_sles_mumps.c
 libcsalge_mumps_la_LIBADD = \
 $(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
 libcsalge_mumps_la_LDFLAGS = -no-undefined
