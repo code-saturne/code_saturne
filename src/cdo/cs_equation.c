@@ -1439,7 +1439,7 @@ cs_equation_log_setup(void)
                   eq->param->name, eq->varname);
     cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
 
-    cs_equation_summary_param(eq->param);
+    cs_equation_param_log(eq->param);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
