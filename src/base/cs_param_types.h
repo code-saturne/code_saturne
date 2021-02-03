@@ -764,6 +764,16 @@ typedef enum {
  * \var CS_PARAM_ITSOL_MUMPS
  * MUMPS direct solver (LU factorization)
  *
+ * \var CS_PARAM_ITSOL_MUMPS_FLOAT
+ * MUMPS direct solver (LU factorization with float instead of double). This
+ * enables a saving of the memory consumption which is acceptable if one
+ * considers a preconditioner
+ *
+ * \var CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT
+ * MUMPS direct solver (LDLT factorization also known as Cholesky
+ * factorization). This enables a saving of the memory consumption which is
+ * acceptable if one considers a preconditioner
+ *
  * \var CS_PARAM_ITSOL_MUMPS_LDLT
  * MUMPS direct solver (LDLT factorization also known as Cholesky factorization)
  *
@@ -790,6 +800,8 @@ typedef enum {
   CS_PARAM_ITSOL_JACOBI,
   CS_PARAM_ITSOL_MINRES,           /*!< Only with PETsc */
   CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc/MUMPS */
+  CS_PARAM_ITSOL_MUMPS_FLOAT,      /*!< Only with MUMPS */
+  CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT, /*!< Only with MUMPS */
   CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc/MUMPS */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
 

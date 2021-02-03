@@ -979,27 +979,37 @@ typedef struct {
  *                                     system.
  * - "jacobi","diag" or "diagonal" --> simpliest iterative solver
  * - "gauss_seidel" or "gs"        --> Gauss-Seidel algorithm
- * - "cg"               --> conjuguate gradient algorithm
- * - "cr3"              --> a 3-layer conjugate residual solver (when "cs" is
- *                          chosen as the solver family)
- * - "fcg"              --> flexible version of the conjuguate gradient
- *                          algorithm used when the preconditioner can change
- *                          iteration by iteration
- * - "bicg"             --> Bi-CG algorithm (for non-symmetric linear systems)
- * - "bicgstab2"        --> BiCG-Stab2 algorithm (for non-symmetric linear
- *                          systems)
- * - "gmres"            --> robust iterative solver. Not the best choice if the
- *                          system is easy to solve
- * - "fgmres"           --> Flexible gmres (only with PETSc installation up to
- *                          now). An evolutive preconditioner can be used with
- *                          this solver. This is a very robust iterative solver.
- *                          Not the best choice if the system is easy to solve
- * - "minres"           --> Solver of choice for symmetric indefinite systems
- * - "mumps"            --> Direct solver (very robust but memory consumming)
- *                          via PETSc only. LU factorization.
- * - "mumps_ldlt"       --> Direct solver (very robust but memory consumming)
- *                          via PETSc only. LDLT factorization.
- * - "none"             --> No solver.
+ * - "cg"            --> conjuguate gradient algorithm
+ * - "cr3"           --> a 3-layer conjugate residual solver (when "cs" is
+ *                       chosen as the solver family)
+ * - "fcg"           --> flexible version of the conjuguate gradient
+ *                       algorithm used when the preconditioner can change
+ *                       iteration by iteration
+ * - "bicg"          --> Bi-CG algorithm (for non-symmetric linear systems)
+ * - "bicgstab2"     --> BiCG-Stab2 algorithm (for non-symmetric linear
+ *                       systems)
+ * - "gmres"         --> robust iterative solver. Not the best choice if the
+ *                       system is easy to solve
+ * - "fgmres"        --> Flexible gmres (only with PETSc installation up to
+ *                       now). An evolutive preconditioner can be used with
+ *                       this solver. This is a very robust iterative solver.
+ *                       Not the best choice if the system is easy to solve
+ * - "minres"        --> Solver of choice for symmetric indefinite systems
+ * - "mumps"         --> Direct solver (very robust but memory consumming)
+ *                       LU factorization (through PETSc or MUMPS)
+ * - "mumps_float"   --> Direct solver (very robust but memory consumming)
+ *                       LU factorization (through PETSc or MUMPS).
+ *                       Reduction of the memory consumption thanks to the usage
+ *                       of float instead of double. This is a recommended
+ *                       choice when used inside a preconditioner
+ * - "mumps_float_ldlt" --> Direct solver (very robust but memory consumming)
+ *                          LDLT factorization (through PETSc or MUMPS).
+ *                          Reduction of the memory consumption thanks to the
+ *                          usage of float instead of double. This is a
+ *                          recommended choice when used inside a preconditioner
+ * - "mumps_ldlt"    --> Direct solver (very robust but memory consumming)
+ *                       LDLT factorization (through PETSc or MUMPS).
+ * - "none"          --> No solver.
  *
  * \var CS_EQKEY_ITSOL_EPS
  * Tolerance factor for stopping the iterative processus for solving the

@@ -1176,17 +1176,12 @@ _set_mumps_sles(bool                 use_field_id,
   const  char  *sles_name = use_field_id ? NULL : slesp->name;
   assert(slesp->field_id > -1 || sles_name != NULL);
 
-  int  sym = 0; /* One assumes a non-symmetric as default */
-  if (slesp->solver == CS_PARAM_ITSOL_MUMPS_LDLT)
-    sym = 1;
-
 #if defined(HAVE_MUMPS)
   cs_sles_mumps_define(slesp->field_id,
                        sles_name,
-                       sym,
-                       slesp->verbosity,
+                       slesp,
                        cs_user_sles_mumps_hook,
-                       (void *)slesp);
+                       NULL);
 #else
   bft_error(__FILE__, __LINE__, 0,
             "%s: System: %s\n"

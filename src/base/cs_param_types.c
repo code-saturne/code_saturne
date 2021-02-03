@@ -473,6 +473,12 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_MUMPS:
     return "MUMPS (LU factorization)";
     break;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+    return "MUMPS (LU factorization) with float";
+    break;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+    return "MUMPS (LDLT factorization) with float";
+    break;
   case CS_PARAM_ITSOL_MUMPS_LDLT:
     return "MUMPS (LDLT factorization)";
     break;

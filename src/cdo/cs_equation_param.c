@@ -396,8 +396,11 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
 
-    else if (strcmp(keyval, "mumps") == 0) {
-      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
+    else if (strcmp(keyval, "mumps") == 0 ||
+             strcmp(keyval, "mumps_float") == 0 ||
+             strcmp(keyval, "mumps_float_ldlt") == 0 ||
+             strcmp(keyval, "mumps_ldlt") == 0) {
+
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
 
       /* Modify the default and check availability of MUMPS solvers */
@@ -409,49 +412,41 @@ _set_key(cs_equation_param_t   *eqp,
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#else
+#else  /* MUMPS: no, PETSc: yes: PETSc with MUMPS: no */
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Error detected while setting \"%s\" key for eq. %s\n"
                   " MUMPS is not available with your installation.\n"
                   " Please check your installation settings.\n",
                   __func__, "CS_EQKEY_ITSOL", eqname);
 #endif  /* PETSC_HAVE_MUMPS */
-#endif  /* HAVE_PETSC */
-#endif  /* HAVE_MUMPS */
-      }
-      assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
-             eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
-
-    }
-    else if (strcmp(keyval, "mumps_ldlt") == 0) {
-      eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
-      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
-
-      /* Modify the default */
-      if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS) {
-#if defined(HAVE_MUMPS)
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
-#else
-#if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_MUMPS)
-        eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#else
+#else   /* MUMPS: no, PETSc: no */
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Error detected while setting \"%s\" key for eq. %s\n"
                   " MUMPS is not available with your installation.\n"
                   " Please check your installation settings.\n",
                   __func__, "CS_EQKEY_ITSOL", eqname);
-#endif  /* PETSC_HAVE_MUMPS */
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
       }
+
+      /* Sanity check */
       assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+
+      if (strcmp(keyval, "mumps") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
+      else if (strcmp(keyval, "mumps_float") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT;
+      else if (strcmp(keyval, "mumps_float_ldlt") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT;
+      else if (strcmp(keyval, "mumps_ldlt") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
 
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
-    else {
+
+    else { /* keyval not found among the available keyvals */
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL");

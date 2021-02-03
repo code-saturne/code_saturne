@@ -3189,12 +3189,17 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_MUMPS:
 #if defined(HAVE_MUMPS)
+    if (mom_slesp->solver != CS_PARAM_ITSOL_MUMPS &&
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+      mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
+
     cs_sles_mumps_define(field_id,
                          NULL,
-                         0, /* sym = 0 (default) */
-                         mom_slesp->verbosity,
+                         mom_slesp,
                          cs_user_sles_mumps_hook,
-                         (void *)mom_eqp);
+                         NULL);
 #else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_MUMPS)
