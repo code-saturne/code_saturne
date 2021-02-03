@@ -153,51 +153,6 @@ cs_param_sles_copy_from(cs_param_sles_t   *src,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Case of saturne's own solvers.
- *
- * \param[in]       use_field_id  if false use system name
- * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_param_set_saturne_sles(bool                 use_field_id,
-                                   cs_param_sles_t     *slesp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Case of MUMPS's own solvers.
- *
- * \param[in]       use_field_id  if false use system name
- * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_param_set_mumps_sles(bool                 use_field_id,
-                                 cs_param_sles_t     *slesp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set parameters for initializing SLES structures used for the
- *        resolution of the linear system.
- *        Case of PETSc and Hypre families of solvers.
- *
- * \param[in]       use_field_id  if false use system name
- * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_param_set_petsc_hypre_sles(bool                 use_field_id,
-                                       cs_param_sles_t     *slesp);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define cs_sles_t structure in accordance with the settings of a
  *        cs_param_sles_t structure (SLES = Sparse Linear Equation Solver)
  *
