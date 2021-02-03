@@ -59,7 +59,6 @@ from code_saturne.model.LagrangianModel import LagrangianModel
 # log config
 #-------------------------------------------------------------------------------
 
-
 logging.basicConfig()
 log = logging.getLogger("LagrangianStatisticsView")
 log.setLevel(GuiParam.DEBUG)
@@ -68,7 +67,6 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 # StandarItemModel for volumic variables names
 #-------------------------------------------------------------------------------
-
 
 class StandardItemModelVolumicNames(QStandardItemModel):
     def __init__(self, model):
@@ -182,7 +180,6 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 # StandarItemModel for boundaries variables names
 #-------------------------------------------------------------------------------
 
-
 class StandardItemModelBoundariesNames(QStandardItemModel):
     def __init__(self, model):
         """
@@ -262,7 +259,17 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
     def setData(self, index, value, role):
 
-        if index.column() == 1:
+        if index.column() == 0:
+            self.dataBoundariesNames[index.row()][index.column()] = \
+                        str(from_qvariant(value, to_text_string))
+            vname = self.dataBoundariesNames[index.row()][0]
+
+        elif index.column() == 1:
+            labelv = str(from_qvariant(value, to_text_string))
+            self.dataBoundariesNames[index.row()][index.column()] = labelv
+            name = self.dataBoundariesNames[index.row()][0]
+
+        elif index.column() == 2:
             v = from_qvariant(value, int)
             if v == Qt.Unchecked:
                 status = "off"
@@ -275,8 +282,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             self.model.setComputeBoundaryStatusFromName(vname, status)
             vname = self.dataBoundariesNames[index.row()][1]
             if vname:
-                self.model.setComputeVolStatusFromName(vname, status)
-
+                self.model.setComputeBoundaryStatusFromName(vname, status)
 
         self.dataChanged.emit(index, index)
         return True
@@ -285,7 +291,6 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
-
 
 class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
     """
@@ -328,13 +333,6 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.lineEditSEUIL.setValidator(validatorSEUIL)
 
         # initialize Widgets
-        # FIXME
-        # test if restart lagrangian is on
-##         mdl.lagr = LagrangianModel()
-##         is_restart = mdl_lagr.getRestart()
-##         if is_restart == "off":
-##             self.lineEditISUIST.setEnabled(False)
-##             self.checkBoxISUIST.setEnabled(False)
         status = self.model.getRestartStatisticsStatus()
         if status == "on":
             self.checkBoxISUIST.setChecked(True)

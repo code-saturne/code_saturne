@@ -3,7 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
-- GUI: Fix usage of formula for user scalar diffusivity
+- GUI: fix activation/deactivation of individual boundary statistics.
+
+- GUI: fix usage of formula for user scalar diffusivity.
 
 - Ensure profiles are ordered by curvilinear coordinates in serial mode.
 
