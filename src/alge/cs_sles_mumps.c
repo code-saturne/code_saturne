@@ -304,6 +304,82 @@ _build_msr_dmumps(const cs_matrix_t    *a,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the linear system.
+ *        Case of double-precision structure; Native matrix as input;
+ *        no symmetry
+ *
+ * \param[in]       a           associated matrix
+ * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_native_dmumps(const cs_matrix_t    *a,
+                     DMUMPS_STRUC_C       *dmumps)
+{
+  assert(dmumps->sym == 0);
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  bool  symmetric = false;
+  cs_lnum_t  n_faces = 0;
+  const cs_lnum_2_t  *face_cells;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_native_arrays(a,
+                              &symmetric,
+                              &n_faces, &face_cells, &d_val, &x_val);
+
+  assert(symmetric == false);
+  dmumps->n = (MUMPS_INT)n_rows;
+  dmumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
+
+  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+
+  /* Add diagonal entries */
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+
+    dmumps->irn[i] = (MUMPS_INT)(i + 1);
+    dmumps->jcn[i] = (MUMPS_INT)(i + 1);
+    dmumps->a[i] = (DMUMPS_REAL)d_val[i];
+
+  }
+
+  /* Extra-diagonal entries */
+
+  MUMPS_INT  *_irn = dmumps->irn + n_rows;
+  MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
+  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+
+  cs_lnum_t  count = 0;
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+    MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+    MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+    if (c0_id < n_rows) {
+      _irn[count] = c0_id + 1;
+      _jcn[count] = (MUMPS_INT)(c1_id + 1);
+      _a[count] = (DMUMPS_REAL)x_val[2*i];
+      count++;
+    }
+
+    if (c1_id < n_rows) {
+      _irn[count] = c1_id + 1;
+      _jcn[count] = (MUMPS_INT)(c0_id + 1);
+      _a[count] = (DMUMPS_REAL)x_val[2*i+1];
+      count++;
+    }
+
+  } /* Loop on rows */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the linear system.
  *        Case of double-precision structure; MSR matrix as input; symmetry
  *
  * \param[in]       a           associated matrix
@@ -363,6 +439,110 @@ _build_msr_sym_dmumps(const cs_matrix_t    *a,
 
     }
   } /* Loop on rows */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the linear system.
+ *        Case of double-precision structure; Native matrix as input;
+ *        no symmetry
+ *
+ * \param[in]       a           associated matrix
+ * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_native_sym_dmumps(const cs_matrix_t    *a,
+                         DMUMPS_STRUC_C       *dmumps)
+{
+  assert(dmumps->sym > 0);
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  bool  symmetric = false;
+  cs_lnum_t  n_faces = 0;
+  const cs_lnum_2_t  *face_cells;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_native_arrays(a,
+                              &symmetric,
+                              &n_faces, &face_cells, &d_val, &x_val);
+
+  dmumps->n = (MUMPS_INT)n_rows;
+  dmumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
+
+  BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
+  BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+
+  /* Add diagonal entries */
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+
+    dmumps->irn[i] = (MUMPS_INT)(i + 1);
+    dmumps->jcn[i] = (MUMPS_INT)(i + 1);
+    dmumps->a[i] = (DMUMPS_REAL)d_val[i];
+
+  }
+
+  /* Extra-diagonal entries */
+
+  MUMPS_INT  *_irn = dmumps->irn + n_rows;
+  MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
+  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+
+  if (symmetric) {
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+      MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+      if (c0_id < c1_id) {
+        _irn[count] = c0_id + 1;
+        _jcn[count] = (MUMPS_INT)(c1_id + 1);
+        _a[count] = (DMUMPS_REAL)x_val[i];
+        count++;
+      }
+      else {
+        assert(c0_id > c1_id);
+        _irn[count] = c1_id + 1;
+        _jcn[count] = (MUMPS_INT)(c0_id + 1);
+        _a[count] = (DMUMPS_REAL)x_val[i];
+        count++;
+      }
+
+    } /* Loop on rows */
+
+  }
+  else { /* Native is stored in a non-symmetric way */
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+      MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+      if (c0_id < c1_id) {
+        _irn[count] = c0_id + 1;
+        _jcn[count] = (MUMPS_INT)(c1_id + 1);
+        _a[count] = (DMUMPS_REAL)x_val[2*i];
+        count++;
+      }
+      else {
+        assert(c1_id < c0_id);
+        _irn[count] = c1_id + 1;
+        _jcn[count] = (MUMPS_INT)(c0_id + 1);
+        _a[count] = (DMUMPS_REAL)x_val[2*i+1];
+        count++;
+      }
+
+    } /* Loop on rows */
+
+  }
 
 }
 
@@ -494,6 +674,82 @@ _build_msr_smumps(const cs_matrix_t    *a,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the linear system.
+ *        Case of single-precision structure; Native matrix as input;
+ *        no symmetry
+ *
+ * \param[in]       a           associated matrix
+ * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_native_smumps(const cs_matrix_t    *a,
+                     SMUMPS_STRUC_C       *smumps)
+{
+  assert(smumps->sym == 0);
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  bool  symmetric = false;
+  cs_lnum_t  n_faces = 0;
+  const cs_lnum_2_t  *face_cells;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_native_arrays(a,
+                              &symmetric,
+                              &n_faces, &face_cells, &d_val, &x_val);
+
+  assert(symmetric == false);
+  smumps->n = (MUMPS_INT)n_rows;
+  smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
+
+  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+
+  /* Add diagonal entries */
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+
+    smumps->irn[i] = (MUMPS_INT)(i + 1);
+    smumps->jcn[i] = (MUMPS_INT)(i + 1);
+    smumps->a[i] = (SMUMPS_REAL)d_val[i];
+
+  }
+
+  /* Extra-diagonal entries */
+
+  MUMPS_INT  *_irn = smumps->irn + n_rows;
+  MUMPS_INT  *_jcn = smumps->jcn + n_rows;
+  SMUMPS_REAL  *_a = smumps->a + n_rows;
+
+  cs_lnum_t  count = 0;
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+    MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+    MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+    if (c0_id < n_rows) {
+      _irn[count] = c0_id + 1;
+      _jcn[count] = (MUMPS_INT)(c1_id + 1);
+      _a[count] = (SMUMPS_REAL)x_val[2*i];
+      count++;
+    }
+
+    if (c1_id < n_rows) {
+      _irn[count] = c1_id + 1;
+      _jcn[count] = (MUMPS_INT)(c0_id + 1);
+      _a[count] = (SMUMPS_REAL)x_val[2*i+1];
+      count++;
+    }
+
+  } /* Loop on rows */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the linear system.
  *        Case of single-precision structure; MSR matrix as input; symmetry
  *
  * \param[in]       a           associated matrix
@@ -554,6 +810,113 @@ _build_msr_sym_smumps(const cs_matrix_t    *a,
     }
   } /* Loop on rows */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the linear system.
+ *        Case of single-precision structure; Native matrix as input; symmetry
+ *
+ * \param[in]       a           associated matrix
+ * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_native_sym_smumps(const cs_matrix_t    *a,
+                         SMUMPS_STRUC_C       *smumps)
+{
+  assert(smumps->sym > 0);
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  bool  symmetric = false;
+  cs_lnum_t  n_faces = 0;
+  const cs_lnum_2_t  *face_cells;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_native_arrays(a,
+                              &symmetric,
+                              &n_faces, &face_cells, &d_val, &x_val);
+
+  smumps->n = (MUMPS_INT)n_rows;
+  smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
+
+  BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
+  BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
+  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+
+  /* Add diagonal entries */
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+
+    smumps->irn[i] = (MUMPS_INT)(i + 1);
+    smumps->jcn[i] = (MUMPS_INT)(i + 1);
+    smumps->a[i] = (SMUMPS_REAL)d_val[i];
+
+  }
+
+  /* Extra-diagonal entries */
+
+  MUMPS_INT  *_irn = smumps->irn + n_rows;
+  MUMPS_INT  *_jcn = smumps->jcn + n_rows;
+  SMUMPS_REAL  *_a = smumps->a + n_rows;
+
+  if (symmetric) {
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+      MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+      if (c0_id < c1_id) {
+        _irn[count] = c0_id + 1;
+        _jcn[count] = (MUMPS_INT)(c1_id + 1);
+        _a[count] = (SMUMPS_REAL)x_val[i];
+        count++;
+      }
+      else {
+        assert(c0_id > c1_id);
+        _irn[count] = c1_id + 1;
+        _jcn[count] = (MUMPS_INT)(c0_id + 1);
+        _a[count] = (SMUMPS_REAL)x_val[i];
+        count++;
+      }
+
+    } /* Loop on rows */
+
+    assert(count == n_faces);
+  }
+  else { /* Native is stored in a non-symmetric way */
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      MUMPS_INT  c0_id = (MUMPS_INT)(face_cells[i][0]);
+      MUMPS_INT  c1_id = (MUMPS_INT)(face_cells[i][1]);
+
+      if (c0_id < c1_id) {
+        _irn[count] = c0_id + 1;
+        _jcn[count] = (MUMPS_INT)(c1_id + 1);
+        _a[count] = (SMUMPS_REAL)x_val[2*i];
+        count++;
+      }
+      else {
+        assert(c1_id < c0_id);
+        _irn[count] = c1_id + 1;
+        _jcn[count] = (MUMPS_INT)(c0_id + 1);
+        _a[count] = (SMUMPS_REAL)x_val[2*i+1];
+        count++;
+      }
+
+    } /* Loop on rows */
+
+    assert(count == n_faces);
+  }
+
+  /* Update the nnz */
+  smumps->nnz = (MUMPS_INT8)(n_rows + n_faces);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -914,6 +1277,8 @@ cs_sles_mumps_setup(void               *context,
       /* Set the linear system */
       if (cs_mat_type == CS_MATRIX_MSR)
         _build_msr_dmumps(a, sd->dmumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _build_native_dmumps(a, sd->dmumps);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -935,6 +1300,8 @@ cs_sles_mumps_setup(void               *context,
       /* Set the linear system */
       if (cs_mat_type == CS_MATRIX_MSR)
         _build_msr_smumps(a, sd->smumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _build_native_smumps(a, sd->smumps);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -955,6 +1322,8 @@ cs_sles_mumps_setup(void               *context,
       /* Set the linear system */
       if (cs_mat_type == CS_MATRIX_MSR)
         _build_msr_sym_dmumps(a, sd->dmumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _build_native_sym_dmumps(a, sd->dmumps);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -976,6 +1345,8 @@ cs_sles_mumps_setup(void               *context,
       /* Set the linear system */
       if (cs_mat_type == CS_MATRIX_MSR)
         _build_msr_sym_smumps(a, sd->smumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _build_native_sym_smumps(a, sd->smumps);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
