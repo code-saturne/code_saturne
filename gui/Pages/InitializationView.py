@@ -231,7 +231,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for scalar in scalar_combustion_list:
                 self.modelCombustion.addItem(self.tr(scalar), scalar)
             self.modelCombustion.setItem(str_model = self.scalar_combustion)
-            exp = self.init.getCombustionFormula(self.zone_id, self.scalar_combustion)
+            exp = self.init.getCombustionFormula(zone_id, self.scalar_combustion)
             if exp:
                 self.pushButtonCombustion.setStyleSheet("background-color: green")
                 self.pushButtonCombustion.setToolTip(exp)
