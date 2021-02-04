@@ -424,7 +424,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
 
     @Variables.noUndo
-    def getFormula(self, fieldId, tag, zone="all_cells"):
+    def getFormula(self, fieldId, tag, zone="1"):
         """
         Return a formula for properties
         """
@@ -434,12 +434,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
 
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
 
         if node:
             return node.xmlGetChildString('formula')
@@ -448,7 +447,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
 
     @Variables.undoLocal
-    def setFormula(self, fieldId, tag, strg, zone="all_cells"):
+    def setFormula(self, fieldId, tag, strg, zone="1"):
         """
         Gives a formula for properties
         """
@@ -458,12 +457,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
 
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
 
         node.xmlSetData('formula', strg)
 
@@ -547,7 +545,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
 
     # MEG Generation related functions
-    def getFormulaComponents(self, fieldId, tag, zone="all_cells"):
+    def getFormulaComponents(self, fieldId, tag, zone="1"):
         """
         Get the formula components for a given tag
         """
@@ -596,7 +594,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             raise Exception(msg)
 
 
-    def getFormulaRhoComponents(self, fieldId, zone="all_cells"):
+    def getFormulaRhoComponents(self, fieldId, zone="1"):
         """
         User formula for density
         """
@@ -635,7 +633,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaMuComponents(self, fieldId, zone="all_cells"):
+    def getFormulaMuComponents(self, fieldId, zone="1"):
         """
         User formula for molecular viscosity
         """
@@ -674,7 +672,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaCpComponents(self, fieldId, zone="all_cells"):
+    def getFormulaCpComponents(self, fieldId, zone="1"):
         """
         User formula for specific heat
         """
@@ -714,7 +712,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaAlComponents(self, fieldId, zone="all_cells"):
+    def getFormulaAlComponents(self, fieldId, zone="1"):
         """
         User formula for thermal conductivity
         """
@@ -793,7 +791,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaTemperatureComponents(self, fieldId, zone="all_cells"):
+    def getFormulaTemperatureComponents(self, fieldId, zone="1"):
         """
         User formula for temperature as a function of enthalpy
         """
@@ -828,7 +826,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormuladrodpComponents(self, fieldId, zone="all_cells"):
+    def getFormuladrodpComponents(self, fieldId, zone="1"):
         """
         User formula for d(ro) / dp (compressible flow)
         """
@@ -864,7 +862,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return  exp, req, known_fields, symbols
 
 
-    def getFormuladrodhComponents(self, fieldId, zone="all_cells"):
+    def getFormuladrodhComponents(self, fieldId, zone="1"):
         """
         User formula for d(ro) / dh (compressible flow)
         """
@@ -900,7 +898,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormuladTsatdpComponents(self, zone="all_cells"):
+    def getFormuladTsatdpComponents(self, zone="1"):
 
         exp = self.getFormula('none', 'd_Tsat_d_P', zone)
         label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
@@ -925,7 +923,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaHlatComponents(self, zone="all_cells"):
+    def getFormulaHlatComponents(self, zone="1"):
 
         exp = self.getFormula('none', 'LatentHeat', zone)
         label = self.m_out.getVariableLabel('none', 'LatentHeat')
@@ -950,7 +948,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaTsatComponents(self, zone="all_cells"):
+    def getFormulaTsatComponents(self, zone="1"):
 
         exp = self.getFormula('none', 'SaturationTemperature', zone)
         label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
@@ -974,7 +972,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return exp, req, known_fields, symbols
 
-    def getFormuladHsatdpComponents(self, tag, zone="all_cells"):
+    def getFormuladHsatdpComponents(self, tag, zone="1"):
 
         exp = self.getFormula('none', tag, zone)
 
@@ -1000,7 +998,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return exp, req, known_fields, symbols
 
 
-    def getFormulaHsatComponents(self, tag, zone="all_cells"):
+    def getFormulaHsatComponents(self, tag, zone="1"):
 
         label = self.m_out.getVariableLabel('none', tag)
         exp = self.getFormula('none', tag, zone)

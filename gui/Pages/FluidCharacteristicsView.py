@@ -58,6 +58,7 @@ from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.InternalCouplingModel import InternalCouplingModel
+from code_saturne.model.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -189,13 +190,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl      = None
         self.notebook = None
         self.zone     = None
+        self.zone_name = None
+        self.zone_id   = None
 
 
     def setup(self, case, zone_name):
 
         self.case = case
 
-        self.zone = zone_name
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+                self.zone_name = zone.getLabel()
+                self.zone_id   = str(zone.getCodeNumber())
 
         self.case.undoStopGlobal()
 
@@ -391,9 +398,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         mdls = self.mdl.getThermoPhysicalModel()
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn = mdls
 
-        is_main_zone = True
-        if self.zone != "all_cells":
-            is_main_zone = False
+
+
+        is_main_zone = (self.zone_name == "all_cells")
 
         self.groupBoxPressure.setVisible(is_main_zone)
         self.groupBoxTemperature.setVisible(is_main_zone)
@@ -402,7 +409,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.groupBoxMassMolar.hide()
 
         if not is_main_zone:
-            if self.internal_cpl.isZoneCoupled(self.zone):
+            if self.internal_cpl.isZoneCoupled(self.zone_id):
                 self.checkBoxSolid.setChecked(True)
             else:
                 self.checkBoxSolid.setChecked(False)
@@ -940,15 +947,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             __button.show()
             exp = None
             if sym == "Rho":
-                exp = self.mdl.getFormula('density', self.zone)
+                exp = self.mdl.getFormula('density', self.zone_id)
             elif sym == "Mu":
-                exp = self.mdl.getFormula('molecular_viscosity', self.zone)
+                exp = self.mdl.getFormula('molecular_viscosity', self.zone_id)
             elif sym == "Cp":
-                exp = self.mdl.getFormula('specific_heat', self.zone)
+                exp = self.mdl.getFormula('specific_heat', self.zone_id)
             elif sym == "Viscv0":
-                exp = self.mdl.getFormula('volume_viscosity', self.zone)
+                exp = self.mdl.getFormula('volume_viscosity', self.zone_id)
             elif sym == "Al":
-                exp = self.mdl.getFormula('thermal_conductivity', self.zone)
+                exp = self.mdl.getFormula('thermal_conductivity', self.zone_id)
             elif sym == "Diff":
                 name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
                 exp = self.mdl.m_sca.getDiffFormula(self.scalar)
@@ -1084,7 +1091,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for density
         """
-        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents(self.zone);
+        exp, req, sca, symbols_rho = \
+                self.mdl.getFormulaRhoComponents(self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
@@ -1101,7 +1109,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = 'density',
                                 expression    = exp,
                                 required      = req,
@@ -1112,7 +1120,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula('density', str(result), self.zone)
+            self.mdl.setFormula('density', str(result), self.zone_id)
             self.pushButtonRho.setToolTip(result)
             self.pushButtonRho.setStyleSheet("background-color: green")
 
@@ -1123,7 +1131,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for molecular viscosity
         """
 
-        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents(self.zone)
+        exp, req, sca, symbols_mu = \
+                self.mdl.getFormulaMuComponents(self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
@@ -1140,7 +1149,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = 'molecular_viscosity',
                                 expression    = exp,
                                 required      = req,
@@ -1151,7 +1160,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
-            self.mdl.setFormula('molecular_viscosity', str(result), self.zone)
+            self.mdl.setFormula('molecular_viscosity', str(result), self.zone_id)
             self.pushButtonMu.setToolTip(result)
             self.pushButtonMu.setStyleSheet("background-color: green")
 
@@ -1161,13 +1170,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for specific heat
         """
-        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents(self.zone)
+        exp, req, sca, symbols_cp = \
+                self.mdl.getFormulaCpComponents(self.zone_id)
 
         exa = FluidCharacteristicsView.specific_heat
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = 'specific_heat',
                                 expression    = exp,
                                 required      = req,
@@ -1178,7 +1188,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula('specific_heat', str(result), self.zone)
+            self.mdl.setFormula('specific_heat', str(result), self.zone_id)
             self.pushButtonCp.setToolTip(result)
             self.pushButtonCp.setStyleSheet("background-color: green")
 
@@ -1188,13 +1198,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for volumic viscosity
         """
-        exp, req, sca, symbols_viscv0 = self.mdl.getFormulaViscv0Components(self.zone)
+        exp, req, sca, symbols_viscv0 = \
+                self.mdl.getFormulaViscv0Components(self.zone_id)
 
         exa = FluidCharacteristicsView.volume_viscosity
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = 'volume_viscosity',
                                 expression    = exp,
                                 required      = req,
@@ -1205,7 +1216,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
-            self.mdl.setFormula('volume_viscosity', str(result), self.zone)
+            self.mdl.setFormula('volume_viscosity', str(result), self.zone_id)
             self.pushButtonViscv0.setToolTip(result)
             self.pushButtonViscv0.setStyleSheet("background-color: green")
 
@@ -1215,7 +1226,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for thermal conductivity
         """
-        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents(self.zone)
+        exp, req, sca, symbols_al = \
+                self.mdl.getFormulaAlComponents(self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
@@ -1230,7 +1242,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = 'thermal_conductivity',
                                 expression    = exp,
                                 required      = req,
@@ -1241,7 +1253,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
-            self.mdl.setFormula('thermal_conductivity', str(result), self.zone)
+            self.mdl.setFormula('thermal_conductivity', str(result), self.zone_id)
             self.pushButtonAl.setToolTip(result)
             self.pushButtonAl.setStyleSheet("background-color: green")
 
@@ -1251,7 +1263,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for the diffusion coefficient
         """
-        exp, req, sca, sym = self.mdl.getFormulaDiffComponents(self.scalar, self.zone)
+        exp, req, sca, sym = \
+                self.mdl.getFormulaDiffComponents(self.scalar, self.zone_id)
 
         exa = ''
 
@@ -1259,7 +1272,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'vol',
-                                zone_name     = self.zone,
+                                zone_name     = self.zone_name,
                                 variable_name = dname,
                                 expression    = exp,
                                 required      = req,
@@ -1270,7 +1283,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
-            self.mdl.m_sca.setDiffFormula(self.scalar, str(result), self.zone)
+            self.mdl.m_sca.setDiffFormula(self.scalar, str(result), self.zone_id)
             self.pushButtonDiff.setToolTip(result)
             self.pushButtonDiff.setStyleSheet("background-color: green")
 
@@ -1279,9 +1292,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
     def slotSolidZone(self, val):
 
         if val == 0:
-            self.internal_cpl.removeZone(self.zone)
+            self.internal_cpl.removeZone(self.zone_id)
         else:
-            self.internal_cpl.addZone(self.zone)
+            self.internal_cpl.addZone(self.zone_id)
 
 
 #-------------------------------------------------------------------------------

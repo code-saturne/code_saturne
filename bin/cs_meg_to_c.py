@@ -1255,11 +1255,12 @@ class meg_to_c_interpreter:
                     self.init_block('vol', 'all_cells', fk,
                                     exp, req, sym, sca)
                     for zone in vlm.getZones():
-                        if zone.getLabel() != "all_cells" and \
+                        zname = zone.getLabel()
+                        z_id  = str(zone.getCodeNumber())
+                        if zname != "all_cells" and \
                                 zone.isNatureActivated('physical_properties'):
-                            zname = zone.getLabel()
                             exp, req, sca, sym = \
-                            fcm.getFormulaComponents(fk, zone=zname)
+                            fcm.getFormulaComponents(fk, zone=z_id)
                             self.init_block('vol', zname, fk,
                                             exp, req, sym, sca)
 
@@ -1278,10 +1279,11 @@ class meg_to_c_interpreter:
                                         exp, req, sym, sca)
                         for zone in vlm.getZones():
                             zname = zone.getLabel()
+                            z_id = str(zone.getCodeNumber())
                             if zname != "all_cells" and \
                             zone.isNatureActivated('physical_properties'):
                                 exp, req, sca, sym = \
-                                fcm.getFormulaComponents('scalar_diffusivity', scalar=s, zone=zname)
+                                fcm.getFormulaComponents('scalar_diffusivity', scalar=s, zone=z_id)
                                 self.init_block('vol', zname, dname,
                                                 exp, req, sym, sca)
 
@@ -1349,9 +1351,10 @@ class meg_to_c_interpreter:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
                                 name = fk + '_' + str(fieldId)
                                 for zone in vlm.getZones():
+                                    zname = zone.getLabel()
+                                    z_id = str(zone.getCodeNumber())
                                     if zone.isNatureActivated('physical_properties'):
-                                        zname = zone.getLabel()
-                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=zname)
+                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=z_id)
                                         self.init_block('vol', zname, name,
                                                         exp, req, sym, sca)
 
@@ -1359,9 +1362,10 @@ class meg_to_c_interpreter:
                             for fk in compressible_fields:
                                 name = fk + '_' + str(fieldId)
                                 for zone in vlm.getZones():
+                                    zname = zone.getLabel()
+                                    z_id = str(zone.getCodeNumber())
                                     if zone.isNatureActivated('physical_properties'):
-                                        zname = zone.getLabel()
-                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=zname)
+                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=z_id)
                                         self.init_block('vol', zname, name,
                                                         exp, req, sym, sca)
 
@@ -1369,12 +1373,13 @@ class meg_to_c_interpreter:
                         if mfm.getEnergyResolution(fieldId) == 'on':
                             name = 'temperature_' + str(fieldId)
                             for zone in vlm.getZones():
+                                zname = zone.getLabel()
+                                z_id = str(zone.getCodeNumber())
                                 if zone.isNatureActivated('physical_properties'):
-                                    zname = zone.getLabel()
                                     exp, req, sca, sym = \
                                         tm.getFormulaComponents(fieldId,
                                                                 'temperature',
-                                                                zone=zname)
+                                                                zone=z_id)
                                     self.init_block('vol', zname, name,
                                                     exp, req, sym, sca)
 
@@ -1384,9 +1389,10 @@ class meg_to_c_interpreter:
                 if user_gas_liq_fields:
                     for fk in gas_liq_fields:
                         for zone in vlm.getZones():
+                            zname = zone.getLabel()
+                            z_id = str(zone.getCodeNumber())
                             if zone.isNatureActivated('physical_properties'):
-                                zname = zone.getLabel()
-                                exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=zname)
+                                exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=z_id)
                                 self.init_block('vol', zname, fk,
                                                 exp, req, sym, sca)
 

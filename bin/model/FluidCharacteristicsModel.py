@@ -823,7 +823,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getFormula(self, tag, zone="all_cells"):
+    def getFormula(self, tag, zone="1"):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
         'specific_heat' or 'thermal_conductivity'
@@ -832,12 +832,11 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
         formula = node.xmlGetChildString('formula')
         if not formula:
             formula = self.getDefaultFormula(tag)
@@ -866,7 +865,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setFormula(self, tag, formula, zone="all_cells"):
+    def setFormula(self, tag, formula, zone="1"):
         """
         Gives a formula for 'density', 'molecular_viscosity',
         'specific_heat'or 'thermal_conductivity'
@@ -875,12 +874,11 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+        if zone != "1":
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
         node.xmlSetData('formula', formula)
 
 
@@ -921,7 +919,7 @@ class FluidCharacteristicsModel(Variables, Model):
                 node.xmlRemoveChild('postprocessing_recording')
 
     # MEG Generation related functions
-    def getFormulaComponents(self, tag, scalar=None, zone="all_cells"):
+    def getFormulaComponents(self, tag, scalar=None, zone="1"):
         """
         Get the formula components for a given tag
         """
@@ -949,7 +947,7 @@ class FluidCharacteristicsModel(Variables, Model):
             raise Exception(msg)
 
 
-    def getFormulaRhoComponents(self, zone="all_cells"):
+    def getFormulaRhoComponents(self, zone="1"):
         """
         User formula for density
         """
@@ -975,7 +973,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return exp, req, self.list_scalars, symbols;
 
 
-    def getFormulaMuComponents(self, zone="all_cells"):
+    def getFormulaMuComponents(self, zone="1"):
         """
         User formula for molecular viscosity
         """
@@ -1012,7 +1010,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return exp, req, self.list_scalars, symbols;
 
 
-    def getFormulaCpComponents(self, zone="all_cells"):
+    def getFormulaCpComponents(self, zone="1"):
         """
         User formula for specific heat
         """
@@ -1037,7 +1035,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return exp, req, self.list_scalars, symbols;
 
 
-    def getFormulaViscv0Components(self, zone="all_cells"):
+    def getFormulaViscv0Components(self, zone="1"):
         """
         User formula for volumic viscosity
         """
@@ -1064,7 +1062,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return exp, req, self.list_scalars, symbols;
 
 
-    def getFormulaAlComponents(self, zone="all_cells"):
+    def getFormulaAlComponents(self, zone="1"):
         """
         User formula for thermal conductivity
         """
@@ -1088,7 +1086,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return exp, req, self.list_scalars, symbols;
 
 
-    def getFormulaDiffComponents(self, scalar, zone="all_cells"):
+    def getFormulaDiffComponents(self, scalar, zone="1"):
         """
         User formula for the diffusion coefficient
         """
