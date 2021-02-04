@@ -553,8 +553,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __button.setEnabled(False)
                     __button.hide()
                 else:
-                    __model.setItem(str_model='constant')
-                    self.mdl.setPropertyMode(tag, 'constant')
+                    choice_p = self.mdl.getPropertyMode(tag)
+                    __model.setItem(str_model=choice_p)
 
             # Joule
             if mdl_joule == 'arc':
