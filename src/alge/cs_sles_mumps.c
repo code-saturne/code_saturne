@@ -153,7 +153,7 @@ struct _cs_sles_mumps_t {
   cs_timer_counter_t   t_setup;       /* Total setup (factorization) */
   cs_timer_counter_t   t_solve;       /* Total time used */
 
-  /*Additional setup options */
+  /* Additional setup options */
 
   const cs_param_sles_t       *sles_param;    /* set of parameter for SLES */
 
@@ -1292,7 +1292,7 @@ cs_sles_mumps_log(const void  *context,
 
     cs_log_printf(log_type,
                   "  Solver type:                       MUMPS\n"
-                  "    Storage:                           %s\n",
+                  "    Storage:                           %s\n"
                   "    Symm type:                         %s\n",
                   storage_type_name, sym_type_name);
 
