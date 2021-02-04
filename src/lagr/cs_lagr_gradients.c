@@ -106,10 +106,8 @@ cs_lagr_gradients(int            time_id,
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
-  cs_real_t   ro0 = cs_glob_fluid_properties->ro0;
-  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
+  cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+  const cs_real_t *grav  = cs_glob_physical_constants->gravity;
 
   bool turb_disp_model = false;
   if (   cs_glob_lagr_model->modcpl > 0
@@ -262,7 +260,7 @@ cs_lagr_gradients(int            time_id,
   /* Compute velocity gradient
      ========================= */
 
-  if (turb_disp_model || cs_glob_lagr_model->shape > 0 ) {
+  if (turb_disp_model || cs_glob_lagr_model->shape > 0) {
     cs_field_gradient_vector(extra->vel,
                              time_id,
                              inc,

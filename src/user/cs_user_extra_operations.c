@@ -116,7 +116,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
-
+ *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
