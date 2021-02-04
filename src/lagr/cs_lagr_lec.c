@@ -484,7 +484,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
       }
 
-      /* From here on we assume the restart contains volum statistics */
+      /* From here on we assume the restart contains volume statistics */
       else {
 
         {
@@ -704,6 +704,9 @@ cs_lagr_restart_read_p(void)
   int  mvls, jphyla, jtpvar, jdpvar, jmpvar;
 
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
+
+  if (cs_restart_present() < 1)
+    cs_glob_lagr_time_scheme->isuila == 0;
 
   if (cs_glob_lagr_time_scheme->isuila == 0)
     return;

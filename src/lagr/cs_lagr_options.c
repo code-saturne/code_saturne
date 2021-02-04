@@ -502,23 +502,28 @@ cs_lagr_options_definition(int         isuite,
                                 lagr_time_scheme->isuila,
                                 0, 2);
 
-  if (   cs_glob_time_step->nt_prev > 0
-      && cs_glob_lagr_stat_options->isuist > 0) {
-    if (!cs_file_isreg("restart/lagrangian_stats")) {
-      cs_parameter_error_behavior_t err_type = CS_WARNING;
-      if (cs_glob_lagr_stat_options->isuist > 1)
-        err_type = CS_ABORT_DELAYED;
-      cs_parameters_error
-        (err_type,
-         _("in Lagrangian module"),
-         _("Restart of lagrangian statistics and source terms is requested\n"
-           "(cs_glob_lagr_stat_options->isuist = %d), but the matching file\n"
-           "is not present in the checkpoint.\n"),
-         cs_glob_lagr_stat_options->isuist);
-        cs_glob_lagr_stat_options->isuist = 0;
-        bft_printf(_("\nReset statitics and source terms.\n"));
+  if (cs_glob_lagr_stat_options->isuist > 0) {
+    if (cs_glob_time_step->nt_prev > 0) {
+      if (!cs_file_isreg("restart/lagrangian_stats")) {
+        cs_parameter_error_behavior_t err_type = CS_WARNING;
+        if (cs_glob_lagr_stat_options->isuist > 1) {
+          err_type = CS_ABORT_DELAYED;
+          cs_parameters_error
+            (err_type,
+             _("in Lagrangian module"),
+             _("Restart of lagrangian statistics and source terms is requested\n"
+               "(cs_glob_lagr_stat_options->isuist = %d), but matching file\n"
+               "is not present in the checkpoint.\n"),
+           cs_glob_lagr_stat_options->isuist);
+        }
+        else { /* isuist = 1 allows reset */
+          cs_glob_lagr_stat_options->isuist = 0;
+          bft_printf(_("\nReset statitics and source terms.\n"));
+        }
+      }
     }
-    cs_glob_lagr_stat_options->isuist = 0;
+  }
+  if (cs_glob_lagr_stat_options->isuist == 0) {
     if (cs_glob_time_step->nt_prev >= cs_glob_lagr_stat_options->idstnt)
       cs_glob_lagr_stat_options->idstnt = cs_glob_time_step->nt_prev + 1;
     if (cs_glob_time_step->nt_prev >= cs_glob_lagr_stat_options->nstist)

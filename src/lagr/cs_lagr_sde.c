@@ -1587,7 +1587,8 @@ _lagesd(cs_real_t             dtp,
                    * 0.25 / mq->b_f_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
-                -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                -=   cs_math_pow2(cs_math_pi * p_height
+                   * cs_math_pow2(p_diam) * p_stat_w
                    * 0.25 / mq->b_f_face_surf[n_f_id]);
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
@@ -2501,7 +2502,8 @@ _lagdep(cs_real_t           dtp,
           omega2 =  aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
                    + 0.5 * tlag[ip][id] * tlag[ip][id] * aux5 * (1.0 + aux2)
                    + 0.5 * taup[ip] * taup[ip] * aa * (1.0 + aux1)
-                   - 2.0 * aux4 * tlag[ip][id] * taup[ip] * taup[ip] * (1.0 - aux1 * aux2);
+                   - 2.0 * aux4 * tlag[ip][id] * taup[ip] * taup[ip]
+                         * (1.0 - aux1 * aux2);
           omega2 = aux8 * omega2;
 
           if (CS_ABS(gama2) > cs_math_epzero) {
