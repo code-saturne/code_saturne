@@ -86,8 +86,6 @@ BEGIN_C_DECLS
  * \brief Activate the computation and output in the file solidification.dat
  *        for each time step of the integral over the computational domain
  *        of the solid fraction divided by the volume of the domain.
- *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- *        is activated
  *
  * \def CS_SOLIDIFICATION_ADVANCED_ANALYSIS
  * \brief Activate a set of post-processing (Advanced usage. Only for the
