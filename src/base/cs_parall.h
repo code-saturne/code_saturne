@@ -264,6 +264,116 @@ cs_parall_allgather_r(int        n_elts,
                       cs_real_t  array[],
                       cs_real_t  g_array[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a global array on the given root rank from all local arrays.
+ *
+ * Local arrays are appended in order of owning MPI rank.
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   array      local array (size: n_elts)
+ * \param[out]  g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_r(int               root_rank,
+                   int               n_elts,
+                   int               n_g_elts,
+                   const cs_real_t   array[],
+                   cs_real_t         g_array[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute a global array from a given root rank over all ranks.
+ *        Each rank receive the part related to its local elements.
+ *
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to specific usage, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ * \param[out]  array      local array (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_scatter_r(int               root_rank,
+                    int               n_elts,
+                    int               n_g_elts,
+                    const cs_real_t   g_array[],
+                    cs_real_t         array[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a global array on the given root rank from all local arrays.
+ *        Function dealing with single-precision arrays.
+ *
+ * Local arrays are appended in order of owning MPI rank.
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   array      local array (size: n_elts)
+ * \param[out]  g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_f(int             root_rank,
+                   int             n_elts,
+                   int             n_g_elts,
+                   const float     array[],
+                   float           g_array[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute a global array from a given root rank over all ranks.
+ *        Each rank receive the part related to its local elements.
+ *        Function dealing with single-precision arrays.
+ *
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to specific usage, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ * \param[out]  array      local array (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_scatter_f(int           root_rank,
+                    int           n_elts,
+                    int           n_g_elts,
+                    const float   g_array[],
+                    float         array[]);
+
 /*----------------------------------------------------------------------------
  * Maximum value of a real and the value of related array on all
  * default communicator processes.

@@ -225,6 +225,59 @@ cs_f_parall_barrier(void);
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the array distribution over all ranks on a given root rank.
+ *        The size of each local array may be different.
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[out]  count      number of elements in each rank
+ * \param[out]  shift      shift to access each local array related to a rank
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+static void
+_get_array_distribution(int     root_rank,
+                        int     n_elts,
+                        int     n_g_elts,
+                        int    *p_count[],
+                        int    *p_shift[])
+{
+  int  *count = NULL;
+  int  *shift = NULL;
+
+  const int  n_ranks = cs_glob_n_ranks;
+
+  assert(sizeof(double) == sizeof(cs_real_t));
+
+  BFT_MALLOC(count, n_ranks, int);
+  BFT_MALLOC(shift, n_ranks, int);
+
+  MPI_Gather(&n_elts, 1, MPI_INT,
+             count, 1, MPI_INT, root_rank, cs_glob_mpi_comm);
+
+  shift[0] = 0;
+  for (cs_lnum_t i = 1; i < n_ranks; i++)
+    shift[i] = shift[i-1] + count[i-1];
+
+  if (cs_glob_rank_id == root_rank)
+    if (n_g_elts != (shift[n_ranks - 1] + count[n_ranks - 1]))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Incorrect arguments to %s:\n"
+                  "  sum of arg. 1 (n_elts) on ranks "
+                  "is not equal to arg. 2 (n_g_elts)."), __func__);
+
+  /* Return pointers */
+  *p_count = count;
+  *p_shift = shift;
+}
+
+#endif  /* HAVE_MPI */
+
 /*----------------------------------------------------------------------------
  * Call MPI_Allreduce for a given Code_Saturne datatype and MPI
  * operation on all default communicator processes.
@@ -880,6 +933,265 @@ cs_parall_allgather_r(int        n_elts,
 
     for (int i = 0; i < n_elts; i++)
       g_array[i] = array[i];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a global array on the given root rank from all local arrays.
+ *
+ * Local arrays are appended in order of owning MPI rank.
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   array      local array (size: n_elts)
+ * \param[out]  g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_r(int               root_rank,
+                   int               n_elts,
+                   int               n_g_elts,
+                   const cs_real_t   array[],
+                   cs_real_t         g_array[])
+{
+  assert(array != NULL && n_elts > 0);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    /* Sanity check */
+
+    if (cs_glob_rank_id == root_rank && g_array == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Global array is not allocated on the root_rank %d\n"),
+                __func__, root_rank);
+
+    int  *count = NULL, *shift = NULL;
+
+    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+
+    MPI_Gatherv(array, n_elts, CS_MPI_REAL,
+                g_array, count, shift, CS_MPI_REAL,
+                root_rank, cs_glob_mpi_comm);
+
+    BFT_FREE(count);
+    BFT_FREE(shift);
+
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    assert(n_elts == n_g_elts);
+    assert(g_array != NULL && n_g_elts > 0);
+    for (int i = 0; i < n_elts; i++)
+      g_array[i] = array[i];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute a global array from a given root rank over all ranks.
+ *        Each rank receive the part related to its local elements.
+ *
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to specific usage, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ * \param[out]  array      local array (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_scatter_r(int               root_rank,
+                    int               n_elts,
+                    int               n_g_elts,
+                    const cs_real_t   g_array[],
+                    cs_real_t         array[])
+{
+  assert(array != NULL && n_elts > 0);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    /* Sanity check */
+
+    if (cs_glob_rank_id == root_rank && g_array == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Global array is not allocated on the root_rank %d\n"),
+                __func__, root_rank);
+
+    int  *count = NULL, *shift = NULL;
+
+    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+
+    MPI_Scatterv(g_array, count, shift, CS_MPI_REAL,
+                 array, n_elts, CS_MPI_REAL, root_rank, cs_glob_mpi_comm);
+
+    BFT_FREE(count);
+    BFT_FREE(shift);
+
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    assert(n_elts == n_g_elts);
+    assert(g_array != NULL && n_g_elts > 0);
+    for (int i = 0; i < n_elts; i++)
+      array[i] = g_array[i];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a global array on the given root rank from all local arrays.
+ *        Function dealing with single-precision arrays.
+ *
+ * Local arrays are appended in order of owning MPI rank.
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   array      local array (size: n_elts)
+ * \param[out]  g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_f(int             root_rank,
+                   int             n_elts,
+                   int             n_g_elts,
+                   const float     array[],
+                   float           g_array[])
+{
+  assert(array != NULL && n_elts > 0);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    /* Sanity check */
+
+    if (cs_glob_rank_id == root_rank && g_array == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Global array is not allocated on the root_rank %d\n"),
+                __func__, root_rank);
+
+    int  *count = NULL, *shift = NULL;
+
+    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+
+    MPI_Gatherv(array, n_elts, MPI_FLOAT,
+                g_array, count, shift, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
+
+    BFT_FREE(count);
+    BFT_FREE(shift);
+
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    assert(n_elts == n_g_elts);
+    assert(g_array != NULL && n_g_elts > 0);
+    for (int i = 0; i < n_elts; i++)
+      g_array[i] = array[i];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute a global array from a given root rank over all ranks.
+ *        Each rank receive the part related to its local elements.
+ *        Function dealing with single-precision arrays.
+ *
+ * The size of each local array may be different.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to specific usage, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     size of the local array
+ * \param[in]   n_g_elts   size of the global array
+ * \param[in]   g_array    global array  (size: n_g_elts) only usable by the
+ *                         root rank
+ * \param[out]  array      local array (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_scatter_f(int           root_rank,
+                    int           n_elts,
+                    int           n_g_elts,
+                    const float   g_array[],
+                    float         array[])
+{
+  assert(array != NULL && n_elts > 0);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    /* Sanity check */
+
+    if (cs_glob_rank_id == root_rank && g_array == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Global array is not allocated on the root_rank %d\n"),
+                __func__, root_rank);
+
+    int  *count = NULL, *shift = NULL;
+
+    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+
+    MPI_Scatterv(g_array, count, shift, MPI_FLOAT,
+                 array, n_elts, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
+
+    BFT_FREE(count);
+    BFT_FREE(shift);
+
+  }
+
+#endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    assert(n_elts == n_g_elts);
+    assert(g_array != NULL && n_g_elts > 0);
+    for (int i = 0; i < n_elts; i++)
+      array[i] = g_array[i];
 
   }
 }
