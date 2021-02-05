@@ -546,6 +546,33 @@ cs_base_backtrace_dump(FILE  *f,
                        int    lv_start);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query run-time directory info, using working directory names.
+ *
+ * Returned names are allocated if non-NULL, so should be deallocated by
+ * the caller when no longer needed.
+ *
+ * Names are extracted from the working directory structure, which is expected
+ * to be of the form:
+ * <prefix>/study_name/case_name/RESU/run_id
+ *
+ * or, in the case o a coupled run:
+ * <prefix>/study_name/RESU_COUPLING/run_id/case_name
+ *
+ * If some names cannot be queried, NULL is returned.
+ *
+ * \param[out]  run_id      run_id, or NULL
+ * \param[out]  case_name   case name, or NULL
+ * \param[out]  study_name  study name, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_get_run_identity(char  **run_id,
+                         char  **case_name,
+                         char  **study_name);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

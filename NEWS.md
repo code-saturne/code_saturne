@@ -3,6 +3,10 @@ Release 7.0 (unreleased)
 
 User changes:
 
+- Add a `cs_base_get_run_identity` utility function, allowing the
+  user to query the run_id, case and study name from a running
+  computation's user-defined functions.
+
 - Major evolution concerning coupling with external codes
   * Create a generic "Coupling parameters" page after boundary
     conditions in the tree view. This page gathers the parameters for

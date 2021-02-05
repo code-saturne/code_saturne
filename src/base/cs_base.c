@@ -2636,5 +2636,110 @@ cs_base_backtrace_dump(FILE  *f,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query run-time directory info, using working directory names.
+ *
+ * Returned names are allocated if non-NULL, so should be deallocated by
+ * the caller when no longer needed.
+ *
+ * Names are extracted from the working directory structure, which is expected
+ * to be of the form:
+ * <prefix>/study_name/case_name/RESU/run_id
+ *
+ * or, in the case o a coupled run:
+ * <prefix>/study_name/RESU_COUPLING/run_id/case_name
+ *
+ * If some names cannot be queried, NULL is returned.
+ *
+ * \param[out]  run_id      run_id, or NULL
+ * \param[out]  case_name   case name, or NULL
+ * \param[out]  study_name  study name, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_get_run_identity(char  **run_id,
+                         char  **case_name,
+                         char  **study_name)
+{
+  /* Use execution directory if name is unavailable */
+
+  const char *c[4] = {NULL, NULL, NULL, NULL};
+
+  if (run_id != NULL)
+    *run_id = NULL;
+  if (case_name != NULL)
+    *case_name = NULL;
+  if (study_name != NULL)
+    *study_name = NULL;
+
+#if defined(HAVE_GETCWD)
+
+  int buf_size = 128;
+  char *wd = NULL, *buf = NULL;
+
+  while (wd == NULL) {
+    buf_size *= 2;
+    BFT_REALLOC(buf, buf_size, char);
+    wd = getcwd(buf, buf_size);
+    if (wd == NULL && errno != ERANGE)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error querying working directory.\n"));
+  }
+
+  int i = strlen(buf) - 1;
+
+  for (int comp_id = 0; comp_id < 4; comp_id++) {
+    while (i > 0 && buf[i-1] != '/')
+      i--;
+    if (i >= 0) {
+      c[comp_id] = buf+i;
+      if (i > 0) {
+        i--;
+        buf[i] = '\0';
+      }
+    }
+    else
+      break;
+  }
+
+  const char *_run_id = c[0];
+  const char *_case_name = NULL;
+  const char *_study_name = NULL;
+
+  if (c[1] != NULL) {
+    if (strcmp(c[1], "RESU") == 0) {
+      _case_name = c[2];
+      _study_name = c[3];
+    }
+    else if (c[2] != NULL) {
+      if (strcmp(c[2], "RESU_COUPLING") == 0) {
+        _run_id = c[1];
+        _case_name = c[0];
+        _study_name = c[3];
+      }
+    }
+  }
+
+  if (run_id != NULL && _run_id != NULL) {
+    BFT_MALLOC(*run_id, strlen(_run_id) + 1, char);
+    strcpy(*run_id, _run_id);
+  }
+  if (case_name != NULL && _case_name != NULL) {
+    BFT_MALLOC(*case_name, strlen(_case_name) + 1, char);
+    strcpy(*case_name, _case_name);
+  }
+  if (study_name != NULL && _study_name != NULL) {
+    BFT_MALLOC(*study_name, strlen(_study_name) + 1, char);
+    strcpy(*study_name, _study_name);
+  }
+
+  BFT_FREE(buf);
+
+#endif /* defined(HAVE_GETCWD) */
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
