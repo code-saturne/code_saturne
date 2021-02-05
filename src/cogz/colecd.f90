@@ -72,7 +72,7 @@ integer          ichai, ichcoe
 integer          atgaze(ngazem, natom)
 integer          iereac(ngazem)
 integer          ncoel
-integer          mode, icalck
+integer          mode
 
 double precision tmin, tmax
 double precision kabse(ngazem)
@@ -495,46 +495,58 @@ if (indjon.eq.1) then
 
   call pptbht(ncoel, nomcoe, ehgaze, cpgaze, wmolce)
 
-  ! Calcul des masses molaires des especes globales
-  ! de la tabulation temperature - enthalpie massique
-  ! et des coefficients d'absorption des especes globales
-  ! si RAYONNEMENT
+  ! --- Masses of global species (becoming molar masses below)
 
-  icalck = 0
+  do igg = 1, ngazg
+    wmolg(igg) = 0.d0
+    do ige = 1, ngaze
+      wmolg(igg) = wmolg(igg)+compog(ige,igg)*wmole(ige)
+    enddo
+  enddo
+
+  ! --- Absorption coefficients of global species in case of radiation calculation
+
   if ((ippmod(icod3p).eq.1.or.                           &
        ippmod(icoebu).eq.1.or.ippmod(icoebu).eq.3.or.    &
        ippmod(icolwc).eq.1.or.ippmod(icolwc).eq.3.or.    &
        ippmod(icolwc).eq.5 ).and.iirayo.ge.1) then
-    icalck = 1
+    do igg = 1, ngazg
+      ckabsg(igg) = 0.d0
+      do ige = 1, ngaze
+        ckabsg(igg) = ckabsg(igg) + compog(ige,igg)*kabse(ige)*wmole(ige)
+      enddo
+      ckabsg(igg) = ckabsg(igg)/wmolg(igg)
+    enddo
   endif
 
-  do igg = 1 , ngazg
-    wmolg(igg) = 0.d0
-    nmolg      = 0.d0
-    do ige = 1 , ngaze
-      wmolg(igg) = wmolg(igg)+compog(ige,igg)*wmole(ige)
-      nmolg      = nmolg     +compog(ige,igg)
-    enddo
-    if (nmolg.eq.0.d0) then
-      write(nfecra,9988) igg, nmolg
-      call csexit(1)
-    endif
-    do it = 1,npo
+  ! --- Enthalpies and mass heat capacity of global species
+
+  do igg = 1, ngazg
+    do it = 1, npo
       ehgazg(igg,it) = 0.d0
       cpgazg(igg,it) = 0.d0
-      if (icalck.eq.1) ckabsg(igg) = 0.d0
-      do ige = 1 , ngaze
+      do ige = 1, ngaze
         ehgazg(igg,it) = ehgazg(igg,it)                           &
              + compog(ige,igg)*wmole(ige)*ehgaze(ige,it)
         cpgazg(igg,it) = cpgazg(igg,it)                           &
              + compog(ige,igg)*wmole(ige)*cpgaze(ige,it)
-        if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)                &
-                         + compog(ige,igg)*kabse(ige)*wmole(ige)
       enddo
       ehgazg(igg,it) = ehgazg(igg,it)/wmolg(igg)
       cpgazg(igg,it) = cpgazg(igg,it)/wmolg(igg)
-      if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)/wmolg(igg)
     enddo
+  enddo
+
+  ! --- Molar masses of global species
+
+  do igg = 1, ngazg
+    nmolg = 0.d0
+    do ige = 1, ngaze
+      nmolg = nmolg + compog(ige,igg)
+    enddo
+    if (nmolg.eq.0.d0) then
+      write(nfecra, 9988) igg, nmolg
+      call csexit(1)
+    endif
     wmolg(igg) = wmolg(igg) / nmolg
     do ige = 1 , ngaze
       compog(ige,igg) = compog(ige,igg) / nmolg
