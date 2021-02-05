@@ -20,27 +20,20 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine colecd
-!================
-
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Function:
+! ---------
 
-! LECTURE DU FICHIER DE DONNEES PHYSIQUE PARTICULIERE
-!            RELATIF A LA COMBUSTION GAZ
+!> \file colecd.f90
+!>
+!> \brief Specific physic subroutine: gas combustion
+!>
+!> Read data file dp_C3P* for gas combustion
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+subroutine colecd
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -71,15 +64,15 @@ implicit none
 character(len=150) :: chain1,chain2,chain3
 character(len=12) :: nomgaz
 
-integer          it, igg, ir, ige, iat, ios, igf, igo, igp
+integer          it, igg, ir, ige, iat, ios, igf, igo, igp, iehc
 integer          ncgm, nrgm
 integer          inicoe, inicha
 integer          idebch, ifinch, lonch
 integer          ichai, ichcoe
 integer          atgaze(ngazem, natom)
 integer          iereac(ngazem)
-integer          ncoel
-integer          mode, icalck
+integer          ncoel, icoel
+integer          mode
 
 double precision tmin, tmax
 double precision kabse(ngazem)
@@ -340,6 +333,15 @@ if (indjon.eq.1) then
 
   endif
 
+  ! --- Effective Heat of Combustion (J/kg)
+
+  pcigas = 0.d0
+  read(impfpp, '(a)', iostat=ios) chain1
+  if (ios.eq.0) then
+    iehc = index(chain1,"EHC")
+    if (iehc.gt.0) read(chain1(iehc+3:), *) pcigas
+  endif
+
   ! --> Fermeture du fichier
 
   close(impfpp)
@@ -440,13 +442,13 @@ if (indjon.eq.1) then
   else
 
     ! global stoechiometric coefficient, to write the reaction
-    do igg = 1 , ngazg
-      nmolg      = 0.d0
-      do ige = 1 , ngaze
-        nmolg      = nmolg + compog(ige,igg)
+    do igg = 1, ngazg
+      nmolg = 0.d0
+      do ige = 1, ngaze
+        nmolg = nmolg + compog(ige,igg)
       enddo
       if (nmolg.eq.0.d0) then
-        write(nfecra,9988) igg, nmolg
+        write(nfecra, 9988) igg, nmolg
         call csexit(1)
       endif
       nreact(igg) = stoeg(igg,1)/nmolg
@@ -493,64 +495,107 @@ if (indjon.eq.1) then
     th(it) = dble(it-1)*(tmax-tmin)/dble(npo-1)+tmin
   enddo
 
-  ! ---Calcul des enthalpies par appel a la subroutine PPTBHT
+  ! --- Enthalpy calculation of elementary species
 
-  ncoel  = ngaze
-  do ige = 1, ngaze
-    wmolce(ige) = wmole (ige)
+  ! if user specifies a EHC, fuel enthalpy is not computed from PPTBHT
+  ! but set to zero waiting its calculation from EHC
+  if (pcigas.gt.0.d0) then
+    ncoel = ngaze-1
+    icoel = 2
+    do it = 1, npo
+      ehgaze(1,it) = 0.d0
+    enddo
+    ! fuel must be placed in first position in the elementary species
+    if (compog(1, igfuel(1)).ne.1.d0) then
+      write(nfecra, 9986) trim(nomcoe(1))
+      call csexit(1)
+    endif
+  ! else, it is computed
+  else
+    ncoel = ngaze
+    icoel = 1
+  endif
+
+  do ige = icoel, ngaze
+    wmolce(ige) = wmole(ige)
   enddo
 
-  call pptbht(ncoel, nomcoe, ehgaze, cpgaze, wmolce)
+  call pptbht(ncoel, nomcoe(icoel), ehgaze(icoel,1), cpgaze(icoel,1), wmolce(icoel))
 
-  ! Calcul des masses molaires des especes globales
-  ! de la tabulation temperature - enthalpie massique
-  ! et des coefficients d'absorption des especes globales
-  ! si RAYONNEMENT
+  ! --- Masses of global species (becoming molar masses below)
 
-  icalck = 0
+  do igg = 1, ngazg
+    wmolg(igg) = 0.d0
+    do ige = 1, ngaze
+      wmolg(igg) = wmolg(igg)+compog(ige,igg)*wmole(ige)
+    enddo
+  enddo
+
+  ! --- Absorption coefficients of global species in case of radiation calculation
+
   if ((ippmod(icod3p).eq.1.or.                           &
        ippmod(icoebu).eq.1.or.ippmod(icoebu).eq.3.or.    &
        ippmod(icolwc).eq.1.or.ippmod(icolwc).eq.3.or.    &
        ippmod(icolwc).eq.5 ).and.iirayo.ge.1) then
-    icalck = 1
+    do igg = 1, ngazg
+      ckabsg(igg) = 0.d0
+      do ige = 1, ngaze
+        ckabsg(igg) = ckabsg(igg) + compog(ige,igg)*kabse(ige)*wmole(ige)
+      enddo
+      ckabsg(igg) = ckabsg(igg)/wmolg(igg)
+    enddo
   endif
 
-  do igg = 1 , ngazg
-    wmolg(igg) = 0.d0
-    nmolg      = 0.d0
-    do ige = 1 , ngaze
-      wmolg(igg) = wmolg(igg)+compog(ige,igg)*wmole(ige)
-      nmolg      = nmolg     +compog(ige,igg)
-    enddo
-    if (nmolg.eq.0.d0) then
-      write(nfecra,9988) igg, nmolg
-      call csexit(1)
-    endif
-    do it = 1,npo
+  ! --- Enthalpies and mass heat capacity of global species
+
+  do igg = icoel , ngazg
+    do it = 1, npo
       ehgazg(igg,it) = 0.d0
       cpgazg(igg,it) = 0.d0
-      if (icalck.eq.1) ckabsg(igg) = 0.d0
-      do ige = 1 , ngaze
+      do ige = 1, ngaze
         ehgazg(igg,it) = ehgazg(igg,it)                           &
              + compog(ige,igg)*wmole(ige)*ehgaze(ige,it)
         cpgazg(igg,it) = cpgazg(igg,it)                           &
              + compog(ige,igg)*wmole(ige)*cpgaze(ige,it)
-        if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)                &
-                         + compog(ige,igg)*kabse(ige)*wmole(ige)
       enddo
       ehgazg(igg,it) = ehgazg(igg,it)/wmolg(igg)
       cpgazg(igg,it) = cpgazg(igg,it)/wmolg(igg)
-      if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)/wmolg(igg)
     enddo
+  enddo
+
+  ! --- Molar masses of global species
+
+  do igg = 1, ngazg
+    nmolg = 0.d0
+    do ige = 1, ngaze
+      nmolg = nmolg + compog(ige,igg)
+    enddo
+    if (nmolg.eq.0.d0) then
+      write(nfecra, 9988) igg, nmolg
+      call csexit(1)
+    endif
     wmolg(igg) = wmolg(igg) / nmolg
-    do ige = 1 , ngaze
+    do ige = 1, ngaze
       compog(ige,igg) = compog(ige,igg) / nmolg
     enddo
   enddo
 
-  ! Calcul des coefficients molaires XCO2, XH2O
+  ! --- Estimation of fuel enthalpy in case of user EHC
 
-  do ige = 1 , ngaze
+  if (pcigas.gt.0.d0) then
+    do it = 1, npo
+      ehgazg(1,it) = 0.d0
+      do igg = icoel, ngazg
+        ehgazg(1,it) = ehgazg(1,it)                           &
+             + stoeg(igg,1)*wmolg(igg)*ehgazg(igg,it)
+      enddo
+      ehgazg(1,it) = pcigas - ehgazg(1,it)/(wmolg(1)*stoeg(1,1))
+    enddo
+  endif
+
+  ! --- Molar coefficients XCO2 , XH2O
+
+  do ige = 1, ngaze
     nomgaz = nomcoe(ige)
     if (trim(nomgaz).EQ.'C(S)') IIC=IGE
     if (trim(nomgaz).EQ.'CO'  ) IICO=IGE
@@ -559,11 +604,10 @@ if (indjon.eq.1) then
     if (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
   enddo
 
-  xco2 =  compog(iico2,3)
-  xh2o =  compog(iih2o,3)
+  xco2 = compog(iico2,3)
+  xh2o = compog(iih2o,3)
 
-  ! Calcul bilan pour verification
-  ! et taux de melange a la stochio pour chaque reaction
+  ! Balance verification and stoechiometric ratio for each reaction
 
   do ir = 1, nrgaz
     do iat = 1, nato
@@ -574,7 +618,7 @@ if (indjon.eq.1) then
         enddo
       enddo
       if (abs(bilan) .gt. epsi) then
-        write(nfecra,9991) ir, iat
+        write(nfecra,9991) ir, iat, bilan
         call csexit(1)
       endif
     enddo
@@ -871,6 +915,20 @@ call csexit(1)
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 9986 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  Fuel must be placed at first place in the list of'          /,&
+'@  elementary species. First elementary specie is now ', a6,   /,&
+'@  in the parameters file',                                    /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
  9987 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -936,7 +994,9 @@ call csexit(1)
 '@             GAS COMBUSTION',                                 /,&
 '@',                                                            /,&
 '@  Conservation problem encountered in reaction ', i10,        /,&
-'@   for element ', i10,                                        /,&
+'@  for element ', i10,                                         /,&
+'@  The molar balance gives ', f10.4, ' mol, whereas it should,',/&
+'@  be zero.',                                                  /,&
 '@',                                                            /,&
 '@  Check the parameters file.',                                /,&
 '@',                                                            /,&
