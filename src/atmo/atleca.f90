@@ -131,7 +131,7 @@ write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol concentrations'
 
 do jb = 1, n_aer
-  write(nfecra,*) "Aerosol number ",jb
+  write(nfecra,*) "Size bin number ",jb
   do jsp = 1, nlayer_aer
     isc = isca_chem(nespg + jb + (jsp-1)*n_aer)
     f_id = ivarfl(isca(isc))

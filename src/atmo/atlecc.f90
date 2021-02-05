@@ -240,6 +240,8 @@ if (init_gas_with_lib) then
 
   else
 
+    zproc(1) = 0.
+
     call sshaerosol_get_gas(espnum)
 
     ! Conversion from microg / m^3 to ppm
