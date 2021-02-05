@@ -16,6 +16,25 @@ User changes:
     "Coupling parameters" page).
   * The internal coupling function is now available in the GUI.
 
+Numerics:
+
+- Several improvements for the MUMPS interface
+  * Add a MUMPS interface for native matrices (with or without symmetric
+    storage).
+  * Add a MUMPS interface to handle single-precision arithmetic. This
+  functionnality allows one to get a better efficiency without degrading
+  the accuracy when considering MUMPS as a preconditioner while reducing
+  the memory consumption.
+
+- CDO: Add block preconditioning for symmetric saddle-point problem and a
+  MINRES algorithm (relying on a tuned storage of the saddle-point system).
+  Several approximations of the Schur complement are available.
+
+- CDO: Add an Uzawa algorithm accelerated with a CG (conjuguate gradient)
+  strategy and preconditioned with a Cahouet-Chabard technique. This is
+  another solver to solve saddle-point problem arising from the monolithic
+  coupling of CDO face-based schemes for the (Navier-)Stokes equations.
+
 Release 7.0.0 (unreleased)
 --------------------------
 
@@ -64,6 +83,8 @@ Numerics and physical modeling:
   from 1e-8 to 1e-5 except for the pressure field.
 
 - Activate improved hydrostatic pressure interpolation (iphydr) by default.
+
+- Add an explicit treatment of the advection term in CDO face-based equations
 
 Release 6.3.0 (December 21 2020)
 --------------------------------
