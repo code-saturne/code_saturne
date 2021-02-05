@@ -10,7 +10,7 @@ User changes:
     the zone "all_cells" as the default one.
   * User-laws for physical properties can now be defined over multiple
     zones using the MEG mechanism. This requires the definition of a
-    variable property over the main zone ("all_cells")
+    variable property over the main zone ("all_cells").
   * A zone can now be defined as solid, which then allows activating the
     internal coupling functions for a given set of scalars (see the
     "Coupling parameters" page).
@@ -20,6 +20,10 @@ Release 7.0.0 (unreleased)
 --------------------------
 
 User changes:
+
+- Add a `cs_base_get_run_identity` utility function, allowing the
+  user to query the run_id, case and study name from a running
+  computation's user-defined functions.
 
 - Major evolution concerning coupling with external codes
   * Create a generic "Coupling parameters" page after boundary
