@@ -197,7 +197,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxSinglePhase.activated[str].connect(self.slotSinglePhase)
         self.comboBoxGroundwater.activated[str].connect(self.slotGroundwater)
         self.comboBoxHgn.activated[str].connect(self.slotHgn)
-        self.comboBoxNeptuneCFD.activated[str].connect(self.slotNeptuneCFD)
+        self.comboBoxNeptuneCFD.currentTextChanged[str].connect(self.slotNeptuneCFD)
         self.checkBoxNeptuneHeatMass.stateChanged.connect(self.slotNeptuneHeatMass)
         self.checkBoxALE.stateChanged.connect(self.slotALE)
         self.checkBoxFans.stateChanged.connect(self.slotFans)
@@ -739,22 +739,26 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[heat_mass_transfer]
             self.checkBoxNeptuneHeatMass.setCheckState(check_state)
         else:
+            self.checkBoxNeptuneHeatMass.setCheckState(Qt.Checked)
             self.checkBoxNeptuneHeatMass.hide()
 
         self.browser.configureTree(self.case)
 
     @pyqtSlot(int)
     def slotNeptuneHeatMass(self, val):
+        predefined_flow = self.nept.getPredefinedFlow()
         if val == 0:
             self.nept.setHeatMassTransferStatus("off")
-            for field_id in self.nept.getFieldIdList():
-                self.nept.setEnergyModel(field_id, "off")
-            NeptuneWallTransferModel(self.case).clear()
-            InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
+            if predefined_flow != "None":
+                for field_id in self.nept.getFieldIdList():
+                    self.nept.setEnergyModel(field_id, "off")
+                NeptuneWallTransferModel(self.case).clear()
+                InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
         else:
             self.nept.setHeatMassTransferStatus("on")
-            for field_id in self.nept.getFieldIdList():
-                self.nept.setEnergyModel(field_id, "total_enthalpy")
+            if predefined_flow != "None":
+                for field_id in self.nept.getFieldIdList():
+                    self.nept.setEnergyModel(field_id, "total_enthalpy")
         self.browser.configureTree(self.case)
 
     @pyqtSlot(str)
