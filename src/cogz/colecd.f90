@@ -71,7 +71,7 @@ integer          idebch, ifinch, lonch
 integer          ichai, ichcoe
 integer          atgaze(ngazem, natom)
 integer          iereac(ngazem)
-integer          ncoel
+integer          ncoel, icoel
 integer          mode
 
 double precision tmin, tmax
@@ -230,6 +230,10 @@ if (indjon.eq.1) then
     read(impfpp,*,err=999,end=999 ) wmolat(iat),                 &
          (atgaze(ige, iat), ige = 1, ngaze)
   enddo
+
+  ! --- Effective Heat of Combustion (J/kg)
+
+  read(impfpp,*, err=999, end=999) pcigas
 
   ! ---- Nb especes globales
 
@@ -486,14 +490,32 @@ if (indjon.eq.1) then
     th(it) = dble(it-1)*(tmax-tmin)/dble(npo-1)+tmin
   enddo
 
-  ! ---Calcul des enthalpies par appel a la subroutine PPTBHT
+  ! --- Enthalpy calculation of elementary species
 
-  ncoel  = ngaze
-  do ige = 1, ngaze
-    wmolce(ige) = wmole (ige)
+  ! if user specifies a EHC, fuel enthalpy is not computed from PPTBHT
+  ! but set to zero waiting its calculation from EHC
+  if (pcigas.gt.0.d0) then
+    ncoel = ngaze-1
+    icoel = 2
+    do it = 1, npo
+      ehgaze(1,it) = 0.d0
+    enddo
+    ! fuel must be placed in first position in the elementary species
+    if (compog(1, igfuel(1)).ne.1.d0) then
+      write(nfecra, 9986) trim(nomcoe(1))
+      call csexit(1)
+    endif
+  ! else, it is computed
+  else
+    ncoel = ngaze
+    icoel = 1
+  endif
+
+  do ige = icoel, ngaze
+    wmolce(ige) = wmole(ige)
   enddo
 
-  call pptbht(ncoel, nomcoe, ehgaze, cpgaze, wmolce)
+  call pptbht(ncoel, nomcoe(icoel), ehgaze(icoel,1), cpgaze(icoel,1), wmolce(icoel))
 
   ! --- Masses of global species (becoming molar masses below)
 
@@ -548,13 +570,25 @@ if (indjon.eq.1) then
       call csexit(1)
     endif
     wmolg(igg) = wmolg(igg) / nmolg
-    do ige = 1 , ngaze
+    do ige = 1, ngaze
       compog(ige,igg) = compog(ige,igg) / nmolg
     enddo
   enddo
 
-  ! Calcul des coefficients molaires XCO2, XH2O
+  ! --- Estimation of fuel enthalpy in case of user EHC
 
+  if (pcigas.gt.0.d0) then
+    do it = 1, npo
+      ehgazg(1,it) = 0.d0
+      do igg = icoel, ngazg
+        ehgazg(1,it) = ehgazg(1,it)                           &
+             + stoeg(igg,1)*wmolg(igg)*ehgazg(igg,it)
+      enddo
+      ehgazg(1,it) = pcigas - ehgazg(1,it)/(wmolg(1)*stoeg(1,1))
+    enddo
+  endif
+
+  ! Calcul des coefficients molaires XCO2, XH2O
   do ige = 1 , ngaze
     nomgaz = nomcoe(ige)
     if (trim(nomgaz).EQ.'C(S)') IIC=IGE
@@ -873,6 +907,20 @@ call csexit(1)
 '@  (automatic reaction balance) or ', i10,                     /,&
 '@  (composition of known products).',                          /,&
 '@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9986 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  Fuel must be placed at first place in the list of'          /,&
+'@  elementary species. First elementary specie is now ', a6,   /,&
+'@  in the parameters file',                                    /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
