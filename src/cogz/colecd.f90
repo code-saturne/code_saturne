@@ -437,13 +437,13 @@ if (indjon.eq.1) then
   else
 
     ! global stoechiometric coefficient, to write the reaction
-    do igg = 1 , ngazg
-      nmolg      = 0.d0
-      do ige = 1 , ngaze
-        nmolg      = nmolg + compog(ige,igg)
+    do igg = 1, ngazg
+      nmolg = 0.d0
+      do ige = 1, ngaze
+        nmolg = nmolg + compog(ige,igg)
       enddo
       if (nmolg.eq.0.d0) then
-        write(nfecra,9988) igg, nmolg
+        write(nfecra, 9988) igg, nmolg
         call csexit(1)
       endif
       nreact(igg) = stoeg(igg,1)/nmolg
@@ -543,7 +543,7 @@ if (indjon.eq.1) then
 
   ! --- Enthalpies and mass heat capacity of global species
 
-  do igg = 1, ngazg
+  do igg = icoel , ngazg
     do it = 1, npo
       ehgazg(igg,it) = 0.d0
       cpgazg(igg,it) = 0.d0
@@ -588,8 +588,9 @@ if (indjon.eq.1) then
     enddo
   endif
 
-  ! Calcul des coefficients molaires XCO2, XH2O
-  do ige = 1 , ngaze
+  ! --- Molar coefficients XCO2 , XH2O
+
+  do ige = 1, ngaze
     nomgaz = nomcoe(ige)
     if (trim(nomgaz).EQ.'C(S)') IIC=IGE
     if (trim(nomgaz).EQ.'CO'  ) IICO=IGE
@@ -598,11 +599,10 @@ if (indjon.eq.1) then
     if (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
   enddo
 
-  xco2 =  compog(iico2,3)
-  xh2o =  compog(iih2o,3)
+  xco2 = compog(iico2,3)
+  xh2o = compog(iih2o,3)
 
-  ! Calcul bilan pour verification
-  ! et taux de melange a la stochio pour chaque reaction
+  ! Balance verification and stoechiometric ratio for each reaction
 
   do ir = 1, nrgaz
     do iat = 1, nato
@@ -613,7 +613,7 @@ if (indjon.eq.1) then
         enddo
       enddo
       if (abs(bilan) .gt. epsi) then
-        write(nfecra,9991) ir, iat
+        write(nfecra,9991) ir, iat, bilan
         call csexit(1)
       endif
     enddo
@@ -989,7 +989,9 @@ call csexit(1)
 '@             GAS COMBUSTION',                                 /,&
 '@',                                                            /,&
 '@  Conservation problem encountered in reaction ', i10,        /,&
-'@   for element ', i10,                                        /,&
+'@  for element ', i10,                                         /,&
+'@  The molar balance gives ', f10.4, ' mol, whereas it should,',/&
+'@  be zero.',                                                  /,&
 '@',                                                            /,&
 '@  Check the parameters file.',                                /,&
 '@',                                                            /,&
