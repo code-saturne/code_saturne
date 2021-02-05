@@ -2941,16 +2941,17 @@ cs_solidification_init_setup(void)
       labels[n_output_values++] = "SolidRate";
 
     /* Use the physical time rather than the number of iterations */
-    solid->plot_state = cs_time_plot_init_probe("solidification",
-                                                "",
-                                                CS_TIME_PLOT_DAT,
-                                                false,
-                                                180,   /* flush time */
-                                                -1,
-                                                n_output_values,
-                                                NULL,
-                                                NULL,
-                                                labels);
+    if (n_output_values > 0)
+      solid->plot_state = cs_time_plot_init_probe("solidification",
+                                                  "",
+                                                  CS_TIME_PLOT_DAT,
+                                                  false,
+                                                  180,   /* flush time */
+                                                  -1,
+                                                  n_output_values,
+                                                  NULL,
+                                                  NULL,
+                                                  labels);
 
     BFT_FREE(labels);
 
