@@ -287,7 +287,6 @@ cs_user_lagr_model(void)
 
   /*! [coal_fouling_example] */
 
-
   /*! [dispersed_phases] */
 
   /* Calculation features for the dispersed phases
@@ -329,32 +328,33 @@ cs_user_lagr_model(void)
        * useful only if ISTTIO = 1.
        * the min value for NSTITS is 1 */
 
-    cs_glob_lagr_source_terms->nstits   = 1;
+    cs_glob_lagr_source_terms->nstits = 1;
 
-    /* two-way coupling for dynamic (velocities and turbulent scalars)   */
-    /* (default off: 0 ; on: 1)  */
+    /* two-way coupling for dynamic (velocities and turbulent scalars) */
+    /* (default off: 0; on: 1)  */
     /* (useful if ICCVFG = 0)    */
 
-    cs_glob_lagr_source_terms->ltsdyn   = 0;
+    cs_glob_lagr_source_terms->ltsdyn = 0;
 
-    /* two-way coupling for mass (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1)     */
-    /* (default off: 0 ; on: 1)  */
+    /* two-way coupling for mass,
+       (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1)
+       (default off: 0; on: 1) */
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && (   cs_glob_lagr_specific_physics->impvar == 1
             || cs_glob_lagr_specific_physics->idpvar == 1))
-      cs_glob_lagr_source_terms->ltsmas     = 0;
+      cs_glob_lagr_source_terms->ltsmas = 0;
 
-    /* two-way coupling for thermal scalar */
-    /* (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1,
-     *  or physical_model = CS_LAGR_PHYS_COAL) */
-    /* or for coal variables (if physical_model = CS_LAGR_PHYS_COAL)    */
-    /* (default off: 0 ; on: 1)  */
+    /* two-way coupling for thermal scalar
+       (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1,
+       or physical_model = CS_LAGR_PHYS_COAL)
+       or for coal variables (if physical_model = CS_LAGR_PHYS_COAL)
+       (default off: 0; on: 1) */
 
     if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-      cs_glob_lagr_source_terms->ltsthe     = 0;
+      cs_glob_lagr_source_terms->ltsthe = 0;
 
   }
 
