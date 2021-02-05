@@ -617,6 +617,9 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t ri_max = cs_math_big_r;
   cs_real_t *dlmo_var = NULL;
   cs_real_t z_min = cs_math_big_r;
+  cs_real_t u_met_min;
+  cs_real_t theta_met_min;
+
   if (aopt->compute_z_ground == true){
     cs_atmo_z_ground_compute();
   }
@@ -670,10 +673,12 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* Very stable cases */
     if (ri_f > ri_max) {
-      if (z <= z_min) {
+      if (z < z_min) {
         //Ri_f is an increasing monotonic function, so the lowest value of
         //z for which Ri_f>Ri_max is needed
         z_min = z;
+        u_met_min=u_norm;
+        theta_met_min=cpro_met_potemp[cell_id];
       }
     }
   }
@@ -681,6 +686,7 @@ cs_atmo_compute_meteo_profiles(void)
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
   if (z_min < cs_math_big_r) { // Clipping only if there are cells to be clipped
     bft_printf("Switching to very stable clipping for meteo profile.\n");
+    bft_printf("All altitudes above %f have been modified by clipping.\n",z_min);
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
       if (z >= z_min) {
@@ -688,16 +694,15 @@ cs_atmo_compute_meteo_profiles(void)
         dlmo_var[cell_id] = dlmo * (z_min + z0) / (z + z0);
 
         /* Velocity profile */
-        cs_real_t u_norm = ustar0 / kappa * cs_mo_phim(z_min, dlmo) * log(z / z0);
+        cs_real_t u_norm = u_met_min + ustar0 / kappa * cs_mo_phim(z_min + z0, dlmo) * log((z+z0) / (z_min+z0));
 
         cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
         cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
 
        /* Potential temperature profile
         * Note: same roughness as dynamics */
-        cpro_met_potemp[cell_id] = theta0
-          + tstar * z_min / kappa * cs_mo_phih(z_min, dlmo) * (-1./z + 1./z0) ;
-
+        cpro_met_potemp[cell_id] = theta_met_min
+          + tstar * (z_min+z0) / kappa * cs_mo_phih(z_min+z0, dlmo) * (-1./(z+z0) + 1./(z_min+z0)) ;
        /* TKE profile
           ri_max is necessarily lower than 1, but CS_MIN might be useful if
           that changes in the future */
