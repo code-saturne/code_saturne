@@ -298,6 +298,25 @@ _exchange_char_array(void               *handle,
 }
 
 /*----------------------------------------------------------------------------
+ * Read the name of given aerosol from SSH-aerosol
+ *
+ * parameters:
+ *   id               <-- id of the aerosol
+ *   name             --> name of the aerosol
+ *----------------------------------------------------------------------------*/
+
+static void
+_sshaerosol_get_aero_name(const int *id, char *name)
+{
+  typedef void* (*_tmp_sshaerosol_t)(const int*, char *);
+  _tmp_sshaerosol_t fct
+    = (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(_aerosol_so,
+                                                          "api_sshaerosol_get_aero_name_",
+                                                          true);
+  fct(id, name);
+}
+
+/*----------------------------------------------------------------------------
  * Exchange a double array with SSH-aerosol
  *
  * parameters:
@@ -362,7 +381,9 @@ cs_atmo_aerosol_ssh_initialize(void)
 
   /* Initialize SSH-aerosol (default file name is namelist.ssh) */
   {
-    char namelist_ssh[41];
+    const int _namelist_len = 401;
+    char namelist_ssh[_namelist_len];
+    for (int i = 0; i < _namelist_len; i++) namelist_ssh[i] = '\0';
     if (at_chem->aero_file_name == NULL) {
       strcpy(namelist_ssh, "namelist.ssh");
     } else {
@@ -370,7 +391,7 @@ cs_atmo_aerosol_ssh_initialize(void)
     }
     _exchange_char_array(_aerosol_so,
                          "api_sshaerosol_initialize_",
-                         namelist_ssh);
+                         &namelist_ssh[0]);
     _call(_aerosol_so, "api_sshaerosol_init_distributions_");
     if (_verbose) bft_printf(" Shared library sshaerosol initialized.\n");
   }
@@ -447,7 +468,7 @@ cs_atmo_aerosol_ssh_initialize(void)
   const int nsz = at_chem->n_size;
 
   /* Reallocate arrays */
-  BFT_REALLOC(at_chem->species_to_field_id, nsp + nsz* (nlr + 1), int);
+  BFT_REALLOC(at_chem->species_to_field_id, nsp + nsz * (nlr + 1), int);
   BFT_REALLOC(at_chem->species_to_scalar_id, nsp + nsz * (nlr + 1), int);
 
   /* For all aerosols */
@@ -464,13 +485,22 @@ cs_atmo_aerosol_ssh_initialize(void)
 
     /* Get the prefix */
     if (ilr <= at_chem->n_layer) {
-      if (ilr < 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Atmospheric aerosols: Number of layers negative."));
-      if (ilr > 9999)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Atmospheric aerosols: Number of layers above limit."));
-      sprintf(name, "aerosol_layer_%04d", ilr);
+      /* If possible, import the name from SSH */
+      if (1 == _recv_int(_aerosol_so,
+                         "api_sshaerosol_get_nlayer_")) {
+        char ssh_name[81];
+        _sshaerosol_get_aero_name(&ilr, &ssh_name[0]);
+        snprintf(name, 81, "%s", ssh_name);
+      }
+      else {
+        if (ilr < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Atmospheric aerosols: Number of layers negative."));
+        if (ilr > 9999)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Atmospheric aerosols: Number of layers above limit."));
+        sprintf(name, "aerosol_layer_%04d", ilr);
+      }
     }
     else {
       strcpy(name, "aerosol_num");
