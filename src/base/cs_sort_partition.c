@@ -458,6 +458,9 @@ _bucket_sampling(int                            n_ranks,
 
   MPI_Allreduce(&lsum_weight, &gsum_weight, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
+  if (gsum_weight == 0)  /* Avoid divisions by zero for empty set */
+    return 0;
+
   double optim = (double)gsum_weight / (double)n_ranks;
 
   /* Define a naive sampling (uniform distribution) */

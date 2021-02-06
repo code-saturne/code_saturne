@@ -40,6 +40,10 @@ User changes:
   code_saturne symbol2line -s cs_function+0x17
   Additional info is provided using 'code_saturne symbol2line --help'
 
+Bug fixes:
+
+- Avoid division by zero in parallel when trying to output empty profiles.
+
 Numerics and physical modeling:
 
 - Change default precision for linear solvers
