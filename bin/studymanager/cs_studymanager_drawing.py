@@ -26,7 +26,7 @@
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, sys, string, logging
+import os, sys, string, logging, traceback
 from string import *
 
 #-------------------------------------------------------------------------------
@@ -707,6 +707,7 @@ class Plotter(object):
                 exec(cmd)
             except:
                 print("Error with the matplotlib command: %s" % cmd)
+                traceback.print_exc()
 
     #---------------------------------------------------------------------------
 
@@ -824,6 +825,7 @@ class Plotter(object):
                     exec(cmd)
                 except:
                     print("Error with the matplotlib command: %s" % cmd)
+                    traceback.print_exc()
 
     #---------------------------------------------------------------------------
 
