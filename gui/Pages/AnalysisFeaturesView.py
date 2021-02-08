@@ -474,7 +474,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelNeptuneCFD.setItem(str_model=predefined_flow)
         # Force refresh
         text = self.modelNeptuneCFD.dicoM2V[predefined_flow]
-        self.comboBoxNeptuneCFD.activated[str].emit(text)
+        self.comboBoxNeptuneCFD.currentTextChanged[str].emit(text)
 
         self.radioButtonNeptuneCFD.setChecked(True)
 
@@ -728,8 +728,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
         Called when the comboBoxNeptuneCFD changed
         """
+        model_p = self.nept.getPredefinedFlow()
         model = self.__stringModelFromCombo('NeptuneCFD')
-        self.nept.setPredefinedFlow(model)
+        print("Model: ", model)
+        if model != model_p:
+            self.nept.setPredefinedFlow(model)
 
         self.checkBoxALE.hide()
         self.checkBoxFans.hide()
