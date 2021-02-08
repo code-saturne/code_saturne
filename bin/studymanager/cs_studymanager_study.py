@@ -173,7 +173,6 @@ class Case(object):
         self.compute     = data['compute']
         self.plot        = data['post']
         self.run_id      = data['run_id']
-        self.tags        = data['tags']
         self.compare     = data['compare']
         self.n_procs     = data['n_procs']
         self.depends     = data['depends']
@@ -711,7 +710,8 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None,
+                 with_tags=None, without_tags=None):
         """
         Constructor.
           1. initialize attributes,
@@ -727,6 +727,10 @@ class Study(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         @n_procs: C{int}
         @param n_procs: number of requested processors
+        @type with_tags: C{List}
+        @param with_tags: list of tags given at the command line
+        @type without_tags: C{List}
+        @param without_tags: list of tags given at the command line
         """
         # Initialize attributes
         self.__package  = pkg
@@ -764,16 +768,34 @@ class Study(object):
                 if n_procs:
                     data['n_procs'] = str(n_procs)
 
-                c = Case(pkg,
-                         self.__log,
-                         self.__diff,
-                         self.__parser,
-                         self.label,
-                         data,
-                         self.__repo,
-                         self.__dest)
-                self.cases.append(c)
-                self.case_labels.append(c.label)
+                # TODO: move tag's filtering to the graph level
+                # not done for now as the POST step needs tags also
+                # check if every tag passed by option --with-tags belongs to
+                # list of tags of the current case
+                tagged = False
+                if with_tags and data['tags']:
+                    tagged = all(tag in data['tags'] for tag in with_tags)
+                elif not with_tags:
+                    tagged = True
+
+                # check if none of tags passed by option --without-tags
+                # belong to list of tags of the current case
+                exclude = False
+                if without_tags and data['tags']:
+                    exclude = any(tag in data['tags'] for tag in without_tags)
+
+                # do not append case if tags do not match
+                if tagged and not exclude:
+                    c = Case(pkg,
+                             self.__log,
+                             self.__diff,
+                             self.__parser,
+                             self.label,
+                             data,
+                             self.__repo,
+                             self.__dest)
+                    self.cases.append(c)
+                    self.case_labels.append(c.label)
 
     #---------------------------------------------------------------------------
 
@@ -1001,7 +1023,9 @@ class Studies(object):
         for l in self.labels:
             self.studies.append( [l, Study(self.__pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
-                                           options.n_procs)] )
+                                           options.n_procs, \
+                                           self.__with_tags, \
+                                           self.__without_tags,)] )
             if options.debug:
                 print(" >> Append study ", l)
 
@@ -1141,7 +1165,6 @@ class Studies(object):
 
         self.reporting('')
 
-
     #---------------------------------------------------------------------------
 
     def create_study(self, study):
@@ -1252,14 +1275,10 @@ class Studies(object):
 
         filter_level   = self.__filter_level
         filter_n_procs = self.__filter_n_procs
-        with_tags      = self.__with_tags
-        without_tags   = self.__without_tags
 
         self.reporting('  o Dump dependency graph with option : ')
         self.reporting('     - level=' + str(filter_level))
         self.reporting('     - n_procs=' + str(filter_n_procs))
-        self.reporting('     - with tags=' + str(with_tags))
-        self.reporting('     - without_tags=' + str(without_tags))
 
         # create the global graph with all cases of all studies without filtering
         global_graph = dependency_graph()
@@ -1268,8 +1287,7 @@ class Studies(object):
                 global_graph.add_node(case)
 
         # extract the sub graph based on filters and tags
-        if filter_level is not None or filter_n_procs is not None or \
-           with_tags is not None or without_tags is not None:
+        if filter_level is not None or filter_n_procs is not None:
 
             sub_graph = dependency_graph()
             for node in global_graph.graph_dict:
@@ -1286,21 +1304,7 @@ class Studies(object):
                 if filter_n_procs is not None:
                     target_n_procs = node.n_procs is int(filter_n_procs)
 
-                # check if every tag passed by option --with-tags belongs to
-                # list of tags of the current case
-                tagged = False
-                if with_tags and node.tags:
-                    tagged = all(tag in node.tags for tag in with_tags)
-                elif not with_tags:
-                    tagged = True
-
-                # check if none of tags passed by option --without-tags
-                # belong to list of tags of the current case
-                exclude = False
-                if without_tags and node.tags:
-                    exclude = any(tag in node.tags for tag in without_tags)
-
-                if tagged and not exclude and target_level and target_n_procs:
+                if target_level and target_n_procs:
                     sub_graph.add_node(node)
 
             self.graph = sub_graph
@@ -1609,18 +1613,29 @@ class Studies(object):
         Stop if you try to run a script with a file which does not exist.
         """
         scripts_checked = False
-        cases_to_disable = []
+        for l, s in self.studies:
+            # search for scripts to check before
+            check_scripts = False
+            for case in s.cases:
+                script, label, nodes, args, repo, dest = \
+                    self.__parser.getScript(case.node)
+                if nodes:
+                    check_scripts = True
+                    break
 
-        for case in self.graph.graph_dict:
-            script, label, nodes, args, repo, dest = \
-                self.__parser.getScript(case.node)
+            if not check_scripts:
+                continue
 
-            if nodes:
-                check_msg = "  o Check scripts of case: " + case.title
-                self.report_action_location(check_msg, destination)
+            # if scripts have to be checked
+            check_msg = "  o Check scripts of study: " + l
+            self.report_action_location(check_msg, destination)
 
-                scripts_checked = True
+            scripts_checked = True
 
+            cases_to_disable = []
+            for case in s.cases:
+                script, label, nodes, args, repo, dest = \
+                    self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
                     if script[i] and case.is_run != "KO":
                         if destination == False:
@@ -1630,9 +1645,9 @@ class Studies(object):
                             self.reporting(msg)
                             cases_to_disable.append(case)
 
-        for case in cases_to_disable:
-            msg = case.disable()
-            self.reporting(msg)
+            for case in cases_to_disable:
+                msg = case.disable()
+                self.reporting(msg)
 
         if scripts_checked:
             self.reporting('')
@@ -1645,34 +1660,35 @@ class Studies(object):
         """
         Launch external additional scripts with arguments.
         """
-        for case in self.graph.graph_dict:
-            self.reporting("  o Run scripts of case: " + case.title)
-            script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
-            for i in range(len(label)):
-                if script[i] and case.is_run != "KO":
-                    cmd = os.path.join(self.__dest, case.study, "POST", label[i])
-                    if os.path.isfile(cmd):
-                        sc_name = os.path.basename(cmd)
-                        # ensure script is executable
-                        set_executable(cmd)
+        for l, s in self.studies:
+            self.reporting("  o Run scripts of study: " + l)
+            for case in s.cases:
+                script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
+                for i in range(len(label)):
+                    if script[i] and case.is_run != "KO":
+                        cmd = os.path.join(self.__dest, l, "POST", label[i])
+                        if os.path.isfile(cmd):
+                            sc_name = os.path.basename(cmd)
+                            # ensure script is executable
+                            set_executable(cmd)
 
-                        cmd += " " + args[i]
-                        if repo[i]:
-                            r = os.path.join(self.__repo,  case.study, case.label, "RESU", repo[i])
-                            cmd += " -r " + r
-                        if dest[i]:
-                            d = os.path.join(self.__dest, case.study, case.label, "RESU", dest[i])
-                            cmd += " -d " + d
-                        retcode, t = run_studymanager_command(cmd, self.__log)
-                        stat = "FAILED" if retcode != 0 else "OK"
+                            cmd += " " + args[i]
+                            if repo[i]:
+                                r = os.path.join(self.__repo,  l, case.label, "RESU", repo[i])
+                                cmd += " -r " + r
+                            if dest[i]:
+                                d = os.path.join(self.__dest, l, case.label, "RESU", dest[i])
+                                cmd += " -d " + d
+                            retcode, t = run_studymanager_command(cmd, self.__log)
+                            stat = "FAILED" if retcode != 0 else "OK"
 
-                        self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
-                                       stdout=True, report=False)
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                                           stdout=True, report=False)
 
-                        self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
-                                       stdout=True, report=False)
-                    else:
-                        self.reporting('    - script %s not found' % cmd)
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
+                                           stdout=True, report=False)
+                        else:
+                            self.reporting('    - script %s not found' % cmd)
 
         self.reporting('')
 
@@ -1794,28 +1810,29 @@ class Studies(object):
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a plot of a file which does not exist.
         """
-        check_msg = "  o Check plots and input of all cases"
-        self.report_action_location(check_msg, destination)
+        for l, s in self.studies:
+            check_msg = "  o Check plots and input of study: " + l
+            self.report_action_location(check_msg, destination)
 
-        cases_to_disable = []
-        for case in self.graph.graph_dict:
-            if case.plot == "on" and case.is_run != "KO":
+            cases_to_disable = []
+            for case in s.cases:
+                if case.plot == "on" and case.is_run != "KO":
 
-                if not self.check_data(case, destination):
-                    cases_to_disable.append(case)
-                    continue
+                    if not self.check_data(case, destination):
+                        cases_to_disable.append(case)
+                        continue
 
-                if not self.check_probes(case, destination):
-                    cases_to_disable.append(case)
-                    continue
+                    if not self.check_probes(case, destination):
+                        cases_to_disable.append(case)
+                        continue
 
-                if not self.check_input(case, destination):
-                    cases_to_disable.append(case)
-                    continue
+                    if not self.check_input(case, destination):
+                        cases_to_disable.append(case)
+                        continue
 
-        for case in cases_to_disable:
-            msg = case.disable()
-            self.reporting(msg)
+            for case in cases_to_disable:
+                msg = case.disable()
+                self.reporting(msg)
 
         self.reporting('')
 
@@ -1827,10 +1844,11 @@ class Studies(object):
         """
         if self.__plotter:
             for l, s in self.studies:
-                self.reporting('  o Plot study: ' + l)
-                self.__plotter.plot_study(l, s,
-                                          self.__dis_tex,
-                                          self.__default_fmt)
+                if s.cases:
+                    self.reporting('  o Plot study: ' + l)
+                    self.__plotter.plot_study(l, s,
+                                              self.__dis_tex,
+                                              self.__default_fmt)
 
         self.reporting('')
 
@@ -1889,6 +1907,7 @@ class Studies(object):
                        self.__parser.write(),
                        self.__pdflatex)
 
+        # TODO: verify that the use of the graph is relevant here
         for case in self.graph.graph_dict:
             if case.diff_value or not case.m_size_eq:
                 is_nodiff = "KO"
