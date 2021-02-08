@@ -62,6 +62,7 @@ use coincl
 use cpincl
 use ppincl
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -69,8 +70,10 @@ implicit none
 
 ! Local variables
 
-integer        f_id
+integer        f_id, isc, ii, jj
 integer        kscmin, kscmax, kscavr
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -240,6 +243,36 @@ if (ippmod(icod3p).eq.1 .or.   &
   icp = -1
 
 endif
+
+!===============================================================================
+! Default numerical options
+!===============================================================================
+
+do isc = 1, nscapp
+
+  jj = iscapp(isc)
+
+  ii = isca(iscapp(isc))
+
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+
+  ! Second order convective scheme
+  vcopt%blencv = 1.d0
+
+  ! Centered convective scheme
+  vcopt%ischcv = 1
+
+  ! Automatic slope test
+  vcopt%isstpc = 0
+
+  ! Reconstruct convection and diffusion fluxes at faces
+  vcopt%ircflu = 1
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+
+enddo
+
+!===============================================================================
 
 return
 end subroutine
