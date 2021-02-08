@@ -233,9 +233,11 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.mdl.setEnthalpyCoupleFieldId(fieldaId, fieldbId)
         self.updateLiquidVaporModel()
         self.groupBoxLiquidVaporModel.show()
+        ifm = InterfacialForcesModel(self.case)
+
         if len(NonCondensableModel(self.case).getNonCondensableLabelList()) > 0 \
-                and InterfacialForcesModel(self.case).getContinuousCouplingModel(fieldaId, fieldbId) \
-                == 'Large_Interface_Model':
+                and ifm.getContinuousCouplingModel(fieldaId, fieldbId) in \
+                ifm.getAvailableContinuousDragModelList():
             self.checkBoxActivatePool.show()
         else:
             self.checkBoxActivatePool.hide()
