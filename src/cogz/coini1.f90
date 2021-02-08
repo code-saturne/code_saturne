@@ -76,8 +76,6 @@ integer          ii , jj, iok
 integer          isc
 double precision wmolme, turb_schmidt
 
-type(var_cal_opt) :: vcopt
-
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
@@ -87,7 +85,7 @@ type(var_cal_opt) :: vcopt
 
 ! --> Flamme de diffusion : chimie 3 points
 
-if ( ippmod(icod3p).ge.0 ) then
+if (ippmod(icod3p).ge.0) then
 
   ! ---- Variance du taux de melange
   !        Type de clipping superieur pour la variance
@@ -101,7 +99,7 @@ endif
 
 ! --> Flamme de premelange : modele LWC
 
-if ( ippmod(icolwc).ge.0 ) then
+if (ippmod(icolwc).ge.0) then
   iclvfl(ifp2m) = 0
   iclvfl(iyfp2m) = 0
 endif
@@ -122,44 +120,14 @@ do isc = 1, nscapp
 
   endif
 
-! ---- Schmidt ou Prandtl turbulent
+  ! Schmidt ou Prandtl turbulent
 
   turb_schmidt = 0.7d0
   call field_set_key_double(ivarfl(isca(jj)), ksigmas, turb_schmidt)
 
-! ---- Coeff dissipation des fluctuations
+  ! Coeff dissipation des fluctuations
 
   rvarfl(jj) = 0.8d0
-
-  ii = isca(iscapp(isc))
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
-
-! ---- Informations relatives a la resolution des scalaires
-
-!       - Facteur multiplicatif du pas de temps
-  cdtvar(ii) = 1.d0
-
-!         - Schema convectif % schema 2ieme ordre
-!           = 0 : upwind
-!           = 1 : second ordre
-  vcopt%blencv = 1.d0
-
-!         - Type de schema convetif second ordre (utile si BLENCV > 0)
-!           = 0 : Second Order Linear Upwind
-!           = 1 : Centre
-  vcopt%ischcv = 1
-
-!         - Test de pente pour basculer d'un schema centre vers l'upwind
-!           = 0 : utilisation automatique du test de pente
-!           = 1 : calcul sans test de pente
-  vcopt%isstpc = 0
-
-!         - Reconstruction des flux de convetion et de diffusion aux faces
-!           = 0 : pas de reconstruction
-  vcopt%ircflu = 1
-
-  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
 enddo
 
@@ -169,9 +137,9 @@ enddo
 
 ! --> Calcul de RO0 a partir de T0 et P0
 
- if ( ippmod(icod3p).ne.-1 .or.                                   &
-      ippmod(icoebu).ne.-1 .or.                                   &
-      ippmod(icolwc).ne.-1     ) then
+ if (ippmod(icod3p).ne.-1 .or.                                   &
+     ippmod(icoebu).ne.-1 .or.                                   &
+     ippmod(icolwc).ne.-1) then
    wmolme = wmolg(2)
    ro0 = pther*wmolme / (cs_physical_constants_r*t0)
    roref = ro0
@@ -216,11 +184,11 @@ ivivar = 0
 
 ! GUI
 if (ippmod(icoebu).ge.0) then
-  call uicpi1 (srrom, diftl0)
+  call uicpi1(srrom, diftl0)
   cebu   = 2.5d0
 else if (ippmod(icod3p).ge.0) then
-  call uicpi1 (srrom, diftl0)
-  call uicpi2 (tinoxy, tinfue)
+  call uicpi1(srrom, diftl0)
+  call uicpi2(tinoxy, tinfue)
 ! else if (ippmod(icolwc).ge.0) then
   !TODO no GUI yet
 endif
@@ -233,34 +201,30 @@ call cs_user_combustion
 !===============================================================================
 
 iok = 0
-if ( ippmod(icoebu).ge.0 ) then
+if (ippmod(icoebu).ge.0) then
 
-  call ebuver (iok)
-  !==========
-  if(iok.gt.0) then
+  call ebuver(iok)
+  if (iok.gt.0) then
     write(nfecra,9999)iok
-    call csexit (1)
-    !==========
+    call csexit(1)
   else
     write(nfecra,9998)
   endif
 
-else if( ippmod(icod3p).ge.0 ) then
-  call d3pver (iok)
-  !==========
-  if(iok.gt.0) then
+else if (ippmod(icod3p).ge.0) then
+  call d3pver(iok)
+  if (iok.gt.0) then
     write(nfecra,9991)iok
-    call csexit (1)
+    call csexit(1)
   else
     write(nfecra,9990)
   endif
 
-else if( ippmod(icolwc).ge.0 ) then
-  call lwcver (iok)
-  !==========
-  if(iok.gt.0) then
+else if (ippmod(icolwc).ge.0) then
+  call lwcver(iok)
+  if (iok.gt.0) then
     write(nfecra,9993)iok
-    call csexit (1)
+    call csexit(1)
   else
     write(nfecra,9992)
   endif

@@ -42,6 +42,9 @@ User changes:
 
 Bug fixes:
 
+- Gas combustion: do not ignore handle GU-defined settings of model scalar
+  numerical parameters.
+
 - Avoid division by zero in parallel when trying to output empty profiles.
 
 Numerics and physical modeling:
