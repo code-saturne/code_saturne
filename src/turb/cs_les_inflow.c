@@ -668,10 +668,9 @@ void CS_PROCF(synthe, SYNTHE)
       }
     }
 
-    else if (inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN){
-      cs_les_rescale_fluctuations(n_elts,
-                                  rij_l,
-                                  fluctuations);
+    else if (   inlet->type == CS_INFLOW_RANDOM
+             || inlet->type == CS_INFLOW_BATTEN) {
+      cs_les_rescale_fluctuations(n_elts, rij_l, fluctuations);
     }
 
     BFT_FREE(rij_l);
