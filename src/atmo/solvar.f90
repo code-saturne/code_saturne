@@ -25,7 +25,7 @@
 !> \brief   Soil / atmosphere interface routine
 !>   Compute the following surface variables :
 !>-     temperature with a prognostic equation of the "force-restore" type
-!>                       (deardorff 1978)
+!>                       (Deardorff 1978)
 !>-     humidity with a two reservoirs method
 !
 !-------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ double precision rom(ncelet),dt(ncelet)
 integer ifac,iel,isol
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision rnx, rny, rnz
-double precision tx, ty, tz, txn
+double precision tx, ty, tz
 double precision vtmod, upx, upy, upz, usn
 integer ichal
 integer iseuil
@@ -193,8 +193,7 @@ do isol = 1, nfmodsol
   tx  = tx - rcodcl(ifac,iu,1)
   ty  = ty - rcodcl(ifac,iv,1)
   tz  = tz - rcodcl(ifac,iw,1)
-  txn = sqrt(tx**2 + ty**2 + tz**2)
-  vtmod = txn
+  vtmod = sqrt(tx**2 + ty**2 + tz**2)
 
   iel = ifabor(ifac)
   zreel = xyzcen(3,iel)
@@ -226,7 +225,7 @@ do isol = 1, nfmodsol
   else
 
     !     ============================================
-    !     4) calcul du richardson et de la fonction fh
+    !     4) compute Richardson number and function fh
     !     ============================================
 
     act = xkappa/log((distb(ifac) + z0t)/z0t)

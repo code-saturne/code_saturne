@@ -952,7 +952,7 @@ enddo
 
 ! Compute Boundary conditions for the 3D (Director diFfuse) Solar radiance
 ! at the top of the CFD domain
-! and the absortpion coefficients
+! and the absorption coefficients
 call field_get_id_try("spectral_rad_incident_flux", f_id)
 
 if (f_id.ge.0) then
