@@ -250,8 +250,12 @@ do isol = 1, nfmodsol
     tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0)*qvsol)
     tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0)*qv(iel))
 
-    rib = 2.d0*abs(gz)*distb(ifac)*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)      &
-         /vtmod/vtmod
+    if (abs(vtmod).le.epzero) then
+      rib = 2.d0*abs(gz)*distb(ifac)*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)      &
+        /vtmod/vtmod
+    else
+      rib = 0.d0
+    endif
     if(rib.ge.0.d0) then
       fh = 1.d0/(1.d0 + 3.d0*b*rib*sqrt(1.d0 + d*rib))
     else
