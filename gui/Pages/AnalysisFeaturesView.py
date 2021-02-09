@@ -730,7 +730,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
         model_p = self.nept.getPredefinedFlow()
         model = self.__stringModelFromCombo('NeptuneCFD')
-        print("Model: ", model)
         if model != model_p:
             self.nept.setPredefinedFlow(model)
 
