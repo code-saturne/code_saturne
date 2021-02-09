@@ -17,8 +17,21 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="propertiesPage">
+      <attribute name="title">
+       <string>Physical properties</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="FluidCharacteristicsView" name="saturnePropertiesWidget" native="true"/>
+       </item>
+       <item>
+        <widget class="NeptuneThermodynamicsView" name="neptunePropertiesWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="initializationPage">
       <attribute name="title">
        <string>Initialization</string>
@@ -29,19 +42,6 @@
        </item>
        <item>
         <widget class="MainFieldsInitializationView" name="neptuneInitializationWidget" native="true"/>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="propertiesPage">
-      <attribute name="title">
-       <string>Physical properties</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="FluidCharacteristicsView" name="saturnePropertiesWidget" native="true"/>
-       </item>
-       <item>
-           <widget class="NeptuneThermodynamicsView" name="neptunePropertiesWidget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -140,9 +140,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-      <class>NeptuneThermodynamicsView</class>
+   <class>NeptuneThermodynamicsView</class>
    <extends>QWidget</extends>
-      <header>NeptuneThermodynamicsView</header>
+   <header>NeptuneThermodynamicsView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

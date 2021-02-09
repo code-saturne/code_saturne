@@ -294,7 +294,8 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
         if not node:
-            msg = "There is an error: this node " + str(node) + " should be present"
+            node_string = '<variable field_id={0} name="enthalpy">'.format(fieldId)
+            msg = "There is an error: the node " + node_string + " should be present"
             raise ValueError(msg)
 
         nodem = node.xmlGetChildNode('initial_type', zone_id=zone)
