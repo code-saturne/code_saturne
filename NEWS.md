@@ -3,6 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Fix off-by-one return values in cs_selector_get_family_list
+  (advanced user selection).
+
 - GUI: fix activation/deactivation of individual boundary statistics.
 
 - GUI: fix usage of formula for user scalar diffusivity.
