@@ -79,6 +79,12 @@ User changes:
 
 Bug fixes:
 
+- Fix off-by-one return values in cs_selector_get_family_list
+  (advanced user selection).
+
+- Gas combustion: do not ignore handle GU-defined settings of model scalar
+  numerical parameters.
+
 - Avoid division by zero in parallel when trying to output empty profiles.
 
 Numerics and physical modeling:
