@@ -300,6 +300,8 @@ _norm(cs_saddle_system_t   *ssys,
                          x1,
                          x1);
   }
+  else
+    _nx1_square = cs_dot_xx(ssys->x1_size, x1);
 
   /* Norm for the x2 DoFs (not shared so that there is no need to
      synchronize) */
@@ -418,6 +420,7 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
   const cs_range_set_t  *rset = ssys->rset;
 
   cs_real_t  *res1 = res, *res2 = res + ssys->max_x1_size;
+  memset(res1, 0, sizeof(cs_real_t)*ssys->max_x1_size);
 
   /* Two parts:
    * a) rhs1 - M11.x1 -M12.x2
@@ -435,11 +438,11 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
 
     const cs_real_t  _x2 = x2[i2];
     cs_real_t  _m21x1 = 0.;
-    for (cs_lnum_t j = adj->idx[i2]; j < adj->idx[i2+1]; j++) {
+    for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2+1]; j2++) {
 
-      const cs_lnum_t  shift = 3*adj->ids[j];
+      const cs_lnum_t  shift = 3*adj->ids[j2];
       assert(shift < ssys->x1_size);
-      const cs_real_t  *m21_vals = ssys->m21_unassembled + 3*j;
+      const cs_real_t  *m21_vals = ssys->m21_unassembled + 3*j2;
       cs_real_t  *_m12x2 = m12x2 + shift;
 
       _m21x1 += cs_math_3_dot_product(m21_vals, x1 + shift);
@@ -456,6 +459,18 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
     res2[i2] = ssys->rhs2[i2] - _m21x1;
 
   } /* Loop on x2 elements */
+
+  if (rset->ifs != NULL) {
+    cs_interface_set_sum(rset->ifs,
+                         ssys->x1_size,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         m12x2);
+    /* The RHS is not reduced by default */
+    cs_interface_set_sum(rset->ifs,
+                         ssys->x1_size,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         ssys->rhs1);
+  }
 
   const cs_matrix_t  *m11 = ssys->m11_matrices[0];
   cs_matrix_vector_multiply_gs_allocated(rset, m11, x1, res1);
@@ -501,8 +516,6 @@ _matvec_product(cs_saddle_system_t   *ssys,
    * a) mv1 = M11.v1 + M12.v2
    * b) mv2 = M21.v1
    */
-  const cs_matrix_t  *m11 = ssys->m11_matrices[0];
-  cs_matrix_vector_multiply_gs_allocated(rset, m11, v1, mv1);
 
   /* 1) M12.v2 and M21.v1 */
   const cs_adjacency_t  *adj = ssys->m21_adjacency;
@@ -517,10 +530,10 @@ _matvec_product(cs_saddle_system_t   *ssys,
 
     const cs_real_t  _v2 = v2[i2];
     cs_real_t  _m21v1 = 0.;
-    for (cs_lnum_t j = adj->idx[i2]; j < adj->idx[i2+1]; j++) {
+    for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2+1]; j2++) {
 
-      const cs_lnum_t  shift = 3*adj->ids[j];
-      const cs_real_t  *m21_vals = ssys->m21_unassembled + 3*j;
+      const cs_lnum_t  shift = 3*adj->ids[j2];
+      const cs_real_t  *m21_vals = ssys->m21_unassembled + 3*j2;
       cs_real_t  *_m12v2 = m12v2 + shift;
 
       _m21v1 += cs_math_3_dot_product(m21_vals, v1 + shift);
@@ -542,7 +555,10 @@ _matvec_product(cs_saddle_system_t   *ssys,
     cs_interface_set_sum(rset->ifs,
                          ssys->x1_size,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
-                         mv1);
+                         m12v2);
+
+  const cs_matrix_t  *m11 = ssys->m11_matrices[0];
+  cs_matrix_vector_multiply_gs_allocated(rset, m11, v1, mv1);
 
 # pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
@@ -949,12 +965,15 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* Compute the norm of r standing for the rhs (gather view)
    * n_elts[0] corresponds to the number of element in the gather view
    */
-  double  r_norm = cs_dot_xx(rset->n_elts[0], r);
+  cs_lnum_t  n_x1_elts = ssys->x1_size;
+  if (rset != NULL)
+    n_x1_elts = rset->n_elts[0];
+  double  r_norm = cs_dot_xx(n_x1_elts, r);
   cs_parall_sum(1, CS_DOUBLE, &r_norm);
   r_norm = sqrt(fabs(r_norm));
 
   /* Solve the linear solver */
-  memset(z, 0, sizeof(cs_real_t)*ssys->x1_size);
+  memset(z, 0, sizeof(cs_real_t)*ssys->max_x1_size);
 
   cs_solving_info_t  m11_info =
     {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
@@ -1070,13 +1089,7 @@ _no_pc_apply(cs_saddle_system_t          *ssys,
     return 0;
 
   assert(r != NULL);
-
-  /* First part */
-  memcpy(z, r, sizeof(cs_real_t)*ssys->x1_size);
-
-  /* Second part */
-  memcpy(z + ssys->max_x1_size,
-         r + ssys->max_x1_size, sizeof(cs_real_t)*ssys->x2_size);
+  memcpy(z, r, sizeof(cs_real_t)*(ssys->max_x1_size + ssys->max_x2_size));
 
   return 0;
 }
@@ -1257,7 +1270,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   info->res0 = _norm(ssys, v); /* ||v|| */
   info->res = info->res0;
 
-  /* dp = eta = <r, z>; beta = sqrt(dp) */
+  /* dp = eta = <v, z>; beta = sqrt(dp) */
   double  dp = _dot_product(ssys, v, z);
   double  beta = sqrt(fabs(dp));
   double  eta = beta;
@@ -1265,6 +1278,8 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   /* Initialization */
   double  betaold = 1;
   double  c=1.0, cold=1.0, s=0.0, sold=0.0;
+
+  /* --- MAIN LOOP --- */
 
   while (info->cvg == CS_SLES_ITERATING) {
 
@@ -1274,6 +1289,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     _scalar_scaling(ssys, ibeta, z);
 
     /* Compute the matrix-vector product M.z = mz */
+
     _matvec_product(ssys, z, mz);
 
     /* alpha = <z, mz> */
@@ -1304,7 +1320,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     memcpy(zold, z, n_bytes);
     info->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
-    /* New value for beta: beta = sqrt(<r, z>) */
+    /* New value for beta: beta = sqrt(<v, z>) */
     betaold = beta;
     beta = sqrt(fabs(_dot_product(ssys, v, z)));
 
@@ -1365,7 +1381,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
   /* --- ALGO END --- */
 
-#if 1
+#if 0
   /* Compute the real residual norm at exit */
   _compute_residual_3(ssys, x1, x2, v);
   beta = _norm(ssys, v); /* ||v|| */
@@ -1411,22 +1427,23 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
 
   /* scatter view to gather view for the input vector */
   cs_range_set_gather(rset,
-                      CS_REAL_TYPE,  /* type */
-                      1,             /* stride */
-                      vec,           /* in:  size=n_sles_scatter_elts */
-                      vec);          /* out: size=n_sles_gather_elts */
+                      CS_REAL_TYPE, 1, /* type and stride */
+                      vec,             /* in:  size=n_sles_scatter_elts */
+                      vec);            /* out: size=n_sles_gather_elts */
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE, 1, /* type and stride */
+                      matvec,          /* in:  size=n_sles_scatter_elts */
+                      matvec);         /* out: size=n_sles_gather_elts */
 
   cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, mat, vec, matvec);
 
   /* gather view to scatter view (i.e. algebraic to mesh view) */
-  if (rset != NULL) {
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         vec, vec);
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         matvec, matvec);
-  }
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       vec, vec);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       matvec, matvec);
 }
 
 /*----------------------------------------------------------------------------*/
