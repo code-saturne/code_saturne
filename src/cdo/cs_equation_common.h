@@ -385,6 +385,7 @@ cs_equation_prepare_system(int                     stride,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
+ *         No rotation is taken into account when synchronizing halo.
  *
  * \param[in]  n_dofs         local number of DoFs
  * \param[in]  slesp          pointer to a cs_param_sles_t structure

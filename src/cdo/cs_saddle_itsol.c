@@ -1197,7 +1197,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
                  cs_iter_algo_info_t         *info)
 {
   /* Workspace */
-  const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->x2_size;
+  const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->max_x2_size;
   const size_t  n_bytes = sizeof(cs_real_t)*ssys_size;
   cs_lnum_t  wsp_size = 7*ssys_size;
   cs_real_t  *wsp = NULL;
@@ -1385,7 +1385,8 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   /* Compute the real residual norm at exit */
   _compute_residual_3(ssys, x1, x2, v);
   beta = _norm(ssys, v); /* ||v|| */
-  printf(" >> Residual norm at exit= %6.4e\n", beta);
+  if (cs_glob_rank_id < 1)
+    printf(" >> Residual norm at exit= %6.4e\n", beta);
   cs_log_printf(CS_LOG_DEFAULT, " >> Residual norm at exit= %6.4e\n", beta);
 #endif
 

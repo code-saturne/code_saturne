@@ -514,7 +514,8 @@ cs_equation_prepare_system(int                     stride,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising with scalar-valued cell-based DoFs
+ * \brief  Solve a linear system arising with scalar-valued cell-based DoFs*
+ *         No rotation is taken into account when synchronizing halo.
  *
  * \param[in]  n_dofs         local number of DoFs
  * \param[in]  slesp          pointer to a cs_param_sles_t structure
@@ -537,8 +538,6 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
                                      cs_real_t               *x,
                                      cs_real_t               *b)
 {
-  assert(n_dofs == cs_matrix_get_n_rows(matrix));
-
   /* Retrieve the solving info structure stored in the cs_field_t structure */
   cs_solving_info_t  sinfo;
   cs_field_t  *fld = NULL;
@@ -551,6 +550,26 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   sinfo.res_norm = DBL_MAX;
   sinfo.rhs_norm = normalization;
 
+  const cs_halo_t  *halo = cs_matrix_get_halo(matrix);
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
+  const cs_lnum_t  n_cols_ext = cs_matrix_get_n_columns(matrix);
+
+  assert(n_dofs == n_rows);
+
+  /* Handle parallelism */
+  cs_real_t  *_x = x, *_b = b;
+  if (n_cols_ext > n_rows) {
+
+    BFT_MALLOC(_b, n_cols_ext, cs_real_t);
+    BFT_MALLOC(_x, n_cols_ext, cs_real_t);
+
+    memcpy(_x, x, n_dofs*sizeof(cs_real_t));
+    memcpy(_b, b, n_dofs*sizeof(cs_real_t));
+
+    cs_matrix_pre_vector_multiply_sync(CS_HALO_ROTATION_IGNORE, matrix, _b);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, _x);
+  }
+
   /* Solve the linear solver */
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
@@ -559,10 +578,16 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),
                                                     &(sinfo.res_norm),
-                                                    b,
-                                                    x,
+                                                    _b,
+                                                    _x,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
+
+  if (n_cols_ext > n_rows) {
+    BFT_FREE(_b);
+    memcpy(x, _x, n_dofs*sizeof(cs_real_t));
+    BFT_FREE(_x);
+  }
 
   /* Output information about the convergence of the resolution */
   if (slesp->verbosity > 0)

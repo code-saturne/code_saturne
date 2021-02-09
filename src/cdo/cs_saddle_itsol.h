@@ -77,6 +77,7 @@ typedef struct {
   cs_real_t       *rhs1;
 
   cs_lnum_t        x2_size;        /* scatter view */
+  cs_lnum_t        max_x2_size;    /* max(x2_size, n_m22_cols) */
   cs_real_t       *rhs2;
 
   cs_real_t       *m21_unassembled;

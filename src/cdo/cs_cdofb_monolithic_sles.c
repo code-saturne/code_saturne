@@ -3473,6 +3473,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
   ssys->rhs1 = msles->b_f;
 
   ssys->x2_size = msles->n_cells;
+  ssys->max_x2_size = cs_glob_mesh->n_cells_with_ghosts;
   ssys->rhs2 = msles->b_c;
 
   ssys->m21_stride = 3;
