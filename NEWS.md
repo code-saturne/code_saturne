@@ -54,15 +54,15 @@ User changes:
 
 - GUI: Change available options for time-stepping.
   * Previous steady option ("Steady (constant relaxation coefficient)"),
-    idtvar = -1, is now only available if it is activated in the
+    `idtvar` = -1, is now only available if it is activated in the
     opened xml file. It is then named "Deprecated: Steady ..."
     to indicate its new status.
-  * Previous "pseduo steady" option, idtvar = 2, is renamed as
+  * Previous "pseduo steady" option, `idtvar` = 2, is renamed as
     "Steady (local time step)" and is now the de-facto steady algorithm.
 
-- Rename and reorganize "cs_stokes_model_t" and "cs_piso_t" structures.
-  * Structures are renamed to "cs_velocity_coupling_model_t" and
-    "cs_velocity_coupling_param_t", and members are distributed in a more
+- Rename and reorganize `cs_stokes_model_t` and `cs_piso_t` structures.
+  * Structures are renamed to `cs_velocity_coupling_model_t` and
+    `cs_velocity_coupling_param_t`, and members are distributed in a more
     logical and consistent manner.
 
 - When solving for enthalpy, multiplying a face's boundary condition
@@ -82,7 +82,7 @@ Bug fixes:
 - Fix off-by-one return values in cs_selector_get_family_list
   (advanced user selection).
 
-- Gas combustion: do not ignore handle GU-defined settings of model scalar
+- Gas combustion: do not ignore handle GUI-defined settings of model scalar
   numerical parameters.
 
 - Avoid division by zero in parallel when trying to output empty profiles.
