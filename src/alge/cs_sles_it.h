@@ -64,6 +64,7 @@ typedef enum {
   CS_SLES_BICGSTAB,            /*!< Preconditioned BiCGstab
                                     (biconjugate gradient stabilized) */
   CS_SLES_BICGSTAB2,           /*!< Preconditioned BiCGstab2 */
+  CS_SLES_GCR,                 /*! Generalized conjugate residual  */
   CS_SLES_GMRES,               /*!< Preconditioned GMRES
                                     (generalized minimal residual) */
   CS_SLES_P_GAUSS_SEIDEL,      /*!< Process-local Gauss-Seidel */

@@ -1057,6 +1057,14 @@ _set_saturne_sles(bool                 use_field_id,
                            slesp->n_max_iter);
     break;
 
+  case CS_PARAM_ITSOL_GCR:
+    it = cs_sles_it_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_GCR,
+                           poly_degree,
+                           slesp->n_max_iter);
+    break;
+
   case CS_PARAM_ITSOL_GKB_CG:
     it = cs_sles_it_define(slesp->field_id,
                            sles_name,

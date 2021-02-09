@@ -127,6 +127,7 @@ const char *cs_sles_it_type_name[]
      N_("Jacobi"),
      N_("BiCGstab"),
      N_("BiCGstab2"),
+     N_("GCR"),
      N_("GMRES"),
      N_("Gauss-Seidel"),
      N_("Symmetric Gauss-Seidel"),
@@ -2601,6 +2602,62 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
+_gcr(cs_sles_it_t              *c,
+     const cs_matrix_t         *a,
+     cs_lnum_t                  diag_block_size,
+     cs_halo_rotation_t         rotation_mode,
+     cs_sles_it_convergence_t  *convergence,
+     const cs_real_t           *rhs,
+     cs_real_t                 *restrict vx,
+     size_t                     aux_size,
+     void                      *aux_vectors)
+{
+  CS_UNUSED(diag_block_size);
+
+  /* Manage the workspace memory */
+
+  size_t _aux_r_size = 0; /* TO BE SET (cf. _gmres for instance) */
+  cs_real_t  *_aux_vectors = NULL;
+
+  if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < _aux_r_size)
+    BFT_MALLOC(_aux_vectors, _aux_r_size, cs_real_t);
+  else
+    _aux_vectors = aux_vectors;
+
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  /* TODO */
+  bft_error(__FILE__, __LINE__, 0, " %s: Not implemented.", __func__);
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  cvg = CS_SLES_CONVERGED;      /* check convergence ? */
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using preconditioned GMRES.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- diagonal block size (unused here)
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
 _gmres(cs_sles_it_t              *c,
        const cs_matrix_t         *a,
        cs_lnum_t                  diag_block_size,
@@ -4054,8 +4111,13 @@ cs_sles_it_setup(void               *context,
   case CS_SLES_BICGSTAB:
     c->solve = _bi_cgstab;
     break;
+
   case CS_SLES_BICGSTAB2:
     c->solve = _bicgstab2;
+    break;
+
+  case CS_SLES_GCR:
+    c->solve = _gcr;
     break;
 
   case CS_SLES_GMRES:

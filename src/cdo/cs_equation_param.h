@@ -988,6 +988,8 @@ typedef struct {
  * - "bicg"          --> Bi-CG algorithm (for non-symmetric linear systems)
  * - "bicgstab2"     --> BiCG-Stab2 algorithm (for non-symmetric linear
  *                       systems)
+ * - "gcr"           --> robust and flexible iterative solver. Not the best
+ *                       choice if the system is easy to solve
  * - "gmres"         --> robust iterative solver. Not the best choice if the
  *                       system is easy to solve
  * - "fgmres"        --> Flexible gmres (only with PETSc installation up to
