@@ -10,7 +10,6 @@
  .001        8          0          0          2          0        
  .016        0          2          2          1          0        
  .014        0          0          0          0          2      
-46360. (J/kg) EHC: if < 0 EHC is computed from JANAF table
 3                                                                  Nb d'especes globales connues (ici : / Fuel / Oxydant / Produits)
              1.         0.         0.         0.         0.        Composition Fuel     en especes elementaires
              0.         1.         0.         0.         3.76      Composition Oxydant  en especes elementaires

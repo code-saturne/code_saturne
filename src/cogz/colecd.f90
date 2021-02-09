@@ -64,7 +64,7 @@ implicit none
 character(len=150) :: chain1,chain2,chain3
 character(len=12) :: nomgaz
 
-integer          it, igg, ir, ige, iat, ios, igf, igo, igp
+integer          it, igg, ir, ige, iat, ios, igf, igo, igp, iehc
 integer          ncgm, nrgm
 integer          inicoe, inicha
 integer          idebch, ifinch, lonch
@@ -231,10 +231,6 @@ if (indjon.eq.1) then
          (atgaze(ige, iat), ige = 1, ngaze)
   enddo
 
-  ! --- Effective Heat of Combustion (J/kg)
-
-  read(impfpp,*, err=999, end=999) pcigas
-
   ! ---- Nb especes globales
 
   ! lecture du nombre d'especes globales dont la composition est connue
@@ -335,6 +331,15 @@ if (indjon.eq.1) then
     ! Nb de reactions globales : ON NE PEUT EQUILIBRER QU'UNE SEULE REACTION
     nrgaz = 1
 
+  endif
+
+  ! --- Effective Heat of Combustion (J/kg)
+
+  pcigas = 0.d0
+  read(impfpp, '(a)', iostat=ios) chain1
+  if (ios.eq.0) then
+    iehc = index(chain1,"EHC")
+    if (iehc.gt.0) read(chain1(iehc+3:), *) pcigas
   endif
 
   ! --> Fermeture du fichier
