@@ -131,6 +131,7 @@ const char *cs_sles_it_type_name[]
      N_("Gauss-Seidel"),
      N_("Symmetric Gauss-Seidel"),
      N_("3-layer conjugate residual"),
+     N_("User-defined iterative solver"),
      N_("None"), /* Smoothers beyond this */
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
@@ -3549,6 +3550,52 @@ _fallback(cs_sles_it_t                    *c,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+/*=============================================================================
+ * User function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using a user-defined iterative solver
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- diagonal block size (unused here)
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_user_sles_it_solver(cs_sles_it_t              *c,
+                       const cs_matrix_t         *a,
+                       cs_lnum_t                  diag_block_size,
+                       cs_halo_rotation_t         rotation_mode,
+                       cs_sles_it_convergence_t  *convergence,
+                       const cs_real_t           *rhs,
+                       cs_real_t                 *restrict vx,
+                       size_t                     aux_size,
+                       void                      *aux_vectors)
+{
+  CS_UNUSED(c);
+  CS_UNUSED(a);
+  CS_UNUSED(diag_block_size);
+  CS_UNUSED(rotation_mode);
+  CS_UNUSED(convergence);
+  CS_UNUSED(rhs);
+  CS_UNUSED(vx);
+  CS_UNUSED(aux_size);
+  CS_UNUSED(aux_vectors);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -4020,6 +4067,10 @@ cs_sles_it_setup(void               *context,
     break;
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
     c->solve = _p_sym_gauss_seidel_msr;
+    break;
+
+  case CS_SLES_USER_DEFINED:
+    c->solve = cs_user_sles_it_solver;
     break;
 
   default:

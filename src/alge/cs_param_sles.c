@@ -1097,6 +1097,14 @@ _set_saturne_sles(bool                 use_field_id,
                            slesp->n_max_iter);
     break;
 
+  case CS_PARAM_ITSOL_USER_DEFINED:
+    it = cs_sles_it_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_USER_DEFINED,
+                           poly_degree,
+                           slesp->n_max_iter);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid iterative solver for solving equation %s.\n"

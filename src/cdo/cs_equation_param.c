@@ -443,6 +443,10 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
 
     }
+    else if (strcmp(keyval, "user") == 0) {
+      eqp->sles_param->solver = CS_PARAM_ITSOL_USER_DEFINED;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+    }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
 

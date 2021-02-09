@@ -485,6 +485,9 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
     return "Symmetric.Gauss.Seidel";
     break;
+  case CS_PARAM_ITSOL_USER_DEFINED:
+    return "User-defined iterative solver";
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,

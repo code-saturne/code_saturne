@@ -780,6 +780,10 @@ typedef enum {
  * \var CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL
  * Symmetric Gauss-Seidel
  *
+ * \var CS_PARAM_ITSOL_USER_DEFINED
+ * User-defined iterative solver. It relies on the implementation of the
+ * the function cs_user_sles_it_solver()
+ *
  */
 
 typedef enum {
@@ -804,6 +808,7 @@ typedef enum {
   CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT, /*!< Only with MUMPS */
   CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc/MUMPS */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
+  CS_PARAM_ITSOL_USER_DEFINED,
 
   CS_PARAM_N_ITSOL_TYPES
 
