@@ -275,8 +275,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxNeptuneCFD.hide()
 
         self.checkBoxPther.hide()
-        self.checkBoxNeptuneHeatMass.hide()
-
 
     def __stringModelFromCombo(self, name):
         """
@@ -746,14 +744,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.checkBoxALE.hide()
         self.checkBoxFans.hide()
-        if model != "None":
-            self.checkBoxNeptuneHeatMass.show()
-            heat_mass_transfer = self.nept.getHeatMassTransferStatus()
-            check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[heat_mass_transfer]
-            self.checkBoxNeptuneHeatMass.setCheckState(check_state)
-        else:
-            self.checkBoxNeptuneHeatMass.setCheckState(Qt.Checked)
-            self.checkBoxNeptuneHeatMass.hide()
+
+        heat_mass_transfer = self.nept.getHeatMassTransferStatus()
+        check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[heat_mass_transfer]
+        self.checkBoxNeptuneHeatMass.setCheckState(check_state)
 
         self.browser.configureTree(self.case)
 
@@ -762,16 +756,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         predefined_flow = self.nept.getPredefinedFlow()
         if val == 0:
             self.nept.setHeatMassTransferStatus("off")
-            if predefined_flow != "None":
-                for field_id in self.nept.getFieldIdList():
-                    self.nept.setEnergyModel(field_id, "off")
-                NeptuneWallTransferModel(self.case).clear()
-                InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
+            for field_id in self.nept.getFieldIdList():
+                self.nept.setEnergyModel(field_id, "off")
+            NeptuneWallTransferModel(self.case).clear()
+            InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
         else:
             self.nept.setHeatMassTransferStatus("on")
-            if predefined_flow != "None":
-                for field_id in self.nept.getFieldIdList():
-                    self.nept.setEnergyModel(field_id, "total_enthalpy")
+            for field_id in self.nept.getFieldIdList():
+                self.nept.setEnergyModel(field_id, "total_enthalpy")
         self.browser.configureTree(self.case)
 
     @pyqtSlot(str)
