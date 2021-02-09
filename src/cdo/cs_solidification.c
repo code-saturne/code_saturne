@@ -2919,13 +2919,13 @@ cs_solidification_init_setup(void)
       n_output_states += 1;
 
     int  n_output_values = n_output_states;
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE)
+      n_output_values += 1;
+
     if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
       if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
         n_output_values += 1;
     }
-
-    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE)
-      n_output_values += 1;
 
     const char  **labels;
     BFT_MALLOC(labels, n_output_values, const char *);
@@ -3519,15 +3519,6 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
   if (solid == NULL)
     return;
 
-  if ((solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) == 0)
-    return;
-
-  cs_solidification_binary_alloy_t  *alloy
-    = (cs_solidification_binary_alloy_t *)solid->model_context;
-  assert(alloy != NULL);
-
-  const cs_real_t  *c_bulk = alloy->c_bulk->val;
-
   /* Estimate the number of values to output */
   int  n_output_values = CS_SOLIDIFICATION_N_STATES - 1;
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
@@ -3552,27 +3543,6 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     output_values[i] = solid->state_ratio[i];
 
   n_output_values = n_output_states;
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
-    if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX) {
-
-      const cs_real_t  inv_cref = 1./alloy->ref_concentration;
-
-      cs_real_t  si = 0;
-      for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
-        if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
-          continue;
-        double  c = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
-        si += c*c*quant->cell_vol[i];
-      }
-
-      /* Parallel reduction */
-      cs_parall_sum(1, CS_REAL_TYPE, &si);
-
-      output_values[n_output_values] = sqrt(si/quant->vol_tot);
-      n_output_values++;
-
-    }
-  } /* Binary alloy modelling */
 
   if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE) {
 
@@ -3593,6 +3563,74 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
   }
 
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *alloy
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+    assert(alloy != NULL);
+
+    const cs_real_t  *c_bulk = alloy->c_bulk->val;
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX) {
+
+      const cs_real_t  inv_cref = 1./alloy->ref_concentration;
+
+      cs_real_t  si = 0;
+      for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+        if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
+          continue;
+        double  c = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
+        si += c*c*quant->cell_vol[i];
+      }
+
+      /* Parallel reduction */
+      cs_parall_sum(1, CS_REAL_TYPE, &si);
+
+      output_values[n_output_values] = sqrt(si/quant->vol_tot);
+      n_output_values++;
+
+    }
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE) {
+      assert(alloy->t_liquidus != NULL);
+
+      /* Compute the value to be sure that it corresponds to the current state */
+      for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+        if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
+          alloy->t_liquidus[i] = -999.99; /* no physical meaning */
+        else
+          alloy->t_liquidus[i] = _get_t_liquidus(alloy, alloy->c_bulk->val[i]);
+      }
+
+    }
+
+    if ((solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) > 0) {
+
+      assert(alloy->t_liquidus != NULL &&
+             alloy->cliq_minus_cbulk != NULL &&
+             alloy->tbulk_minus_tliq != NULL);
+
+      const cs_real_t  *c_l = alloy->c_l_cells;
+      const cs_real_t  *t_bulk = solid->temperature->val;
+
+      /* Compute Cbulk - Cliq */
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL)
+          continue; /* = 0 by default */
+
+        const cs_real_t  conc = c_bulk[c_id];
+        const cs_real_t  temp = t_bulk[c_id];
+
+        alloy->cliq_minus_cbulk[c_id] = c_l[c_id] - conc;
+        alloy->tbulk_minus_tliq[c_id] = temp - alloy->t_liquidus[c_id];
+
+      } /* Loop on cells */
+
+    } /* Advanced analysis */
+
+  } /* Binary alloy modelling */
+
   if (cs_glob_rank_id < 1 && solid->plot_state != NULL)
     cs_time_plot_vals_write(solid->plot_state,
                             ts->nt_cur,
@@ -3601,43 +3639,6 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
                             output_values);
 
   BFT_FREE(output_values);
-
-  if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE) {
-    assert(alloy->t_liquidus != NULL);
-
-    /* Compute the value to be sure that it corresponds to the current state */
-    for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
-      if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
-        alloy->t_liquidus[i] = -999.99; /* no physical meaning */
-      else
-        alloy->t_liquidus[i] = _get_t_liquidus(alloy, alloy->c_bulk->val[i]);
-    }
-
-  }
-
-  if ((solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) == 0)
-    return;
-
-  assert(alloy->t_liquidus != NULL &&
-         alloy->cliq_minus_cbulk != NULL &&
-         alloy->tbulk_minus_tliq != NULL);
-
-  const cs_real_t  *c_l = alloy->c_l_cells;
-  const cs_real_t  *t_bulk = solid->temperature->val;
-
-  /* Compute Cbulk - Cliq */
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL)
-      continue; /* = 0 by default */
-
-    const cs_real_t  conc = c_bulk[c_id];
-    const cs_real_t  temp = t_bulk[c_id];
-
-    alloy->cliq_minus_cbulk[c_id] = c_l[c_id] - conc;
-    alloy->tbulk_minus_tliq[c_id] = temp - alloy->t_liquidus[c_id];
-
-  } /* Loop on cells */
 
 }
 
