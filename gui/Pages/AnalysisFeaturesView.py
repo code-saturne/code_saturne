@@ -729,8 +729,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model_p = self.nept.getPredefinedFlow()
         model = self.__stringModelFromCombo('NeptuneCFD')
         if model != model_p:
-	    # If new choice is different from current choice,
-	    # we ask for confirmation, then reset default modeling
+            # If new choice is different from current choice,
+            # we ask for confirmation, then reset default modeling
             # choices of NCFD.
             name   = self.modelNeptuneCFD.dicoM2V[model]
             name_p = self.modelNeptuneCFD.dicoM2V[model_p]
@@ -741,6 +741,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                                           QMessageBox.Yes | QMessageBox.No)
             if choice == QMessageBox.Yes:
                 self.nept.setPredefinedFlow(model)
+            else:
+                return
 
         self.checkBoxALE.hide()
         self.checkBoxFans.hide()
