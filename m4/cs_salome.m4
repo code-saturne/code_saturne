@@ -104,11 +104,11 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
-  if test -z "$MED3HOME" ; then
+  if test -z "$MEDHOME" ; then
     if test "x$SALOMEENVCMD" != "x" ; then
-      MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
+      MEDHOME=$(eval $SALOMEENVCMD ; echo $MEDHOME)
     else
-      MED3HOME=$(echo $MED3HOME)
+      MEDHOME=$(echo $MEDHOME)
     fi
   fi
 
