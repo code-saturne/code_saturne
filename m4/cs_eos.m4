@@ -72,6 +72,10 @@ if test "x$with_eos" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  # Common library dependencies for EOS
+  cs_eos_l0=""
+  cs_eos_l1=" -ltirpc"
+
   # Now check library
 
   EOS_LIBS="-leos"
@@ -102,17 +106,27 @@ if test "x$with_eos" != "xno" ; then
 
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
-  LIBS="${EOS_LIBS} ${LIBS}"
 
   # Check that EOS files exist
   AC_LANG_PUSH([C++])
 
   AC_MSG_CHECKING([for EOS library)])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "EOS/API/EOS.hxx"]],
-                                  [[NEPTUNE::EOS *eos]])],
-                                  [ AC_DEFINE([HAVE_EOS], 1, [EOS support])
-                                    cs_have_eos=yes],
-                                   [cs_have_eos=no])
+
+  cs_eos_lbase="${EOS_LIBS}"
+  
+  for cs_eos_ladd in "$cs_eos_l0" "$cs_eos_l1"
+  do
+    if test "x$cs_have_eos" = "xno" ; then
+      EOS_LIBS="${cs_eos_lbase}${cs_eos_ladd}"
+      LIBS="${EOS_LIBS} ${LIBS}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "EOS/API/EOS.hxx"]],
+                                      [[NEPTUNE::EOS *eos]])],
+                                      [ AC_DEFINE([HAVE_EOS], 1, [EOS support])
+                                       cs_have_eos=yes],
+                                      [cs_have_eos=no])
+    fi
+  done
+
   AC_MSG_RESULT($cs_have_eos)
 
   if test "x$cs_have_eos" = "xno" ; then
