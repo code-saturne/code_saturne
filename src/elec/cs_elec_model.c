@@ -1358,9 +1358,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  /* if log printing is needed */
-  int modntl = 0;
-  //TODO : control log output
+  bool log_active = cs_log_default_is_active();
 
   /* Reconstructed value */
   cs_real_3_t *grad;
@@ -1413,52 +1411,55 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
 
     /* compute min max for E and J */
-    if (modntl == 0) {
+    if (log_active) {
       bft_printf("-----------------------------------------\n"
                  "   Variable         Minimum       Maximum\n"
                  "-----------------------------------------\n");
 
       /* Grad PotR = -E */
-      double vrmin, vrmax;
+      double vrmin[3], vrmax[3];
 
       for (int i = 0; i < 3; i++) {
-        vrmin = grad[0][i];
-        vrmax = grad[0][i];
+        vrmin[i] = HUGE_VAL;
+        vrmax[i] = -HUGE_VAL;
+      }
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, grad[iel][i]);
-          vrmax = CS_MAX(vrmax, grad[iel][i]);
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        for (int i = 0; i < 3; i++) {
+          vrmin[i] = CS_MIN(vrmin[i], grad[iel][i]);
+          vrmax[i] = CS_MAX(vrmax[i], grad[iel][i]);
         }
+      }
 
-        cs_parall_min(1, CS_DOUBLE, &vrmin);
-        cs_parall_max(1, CS_DOUBLE, &vrmax);
-        if (i == 0)
-          bft_printf("v  Gr_PotRX    %12.5E  %12.5E\n", vrmin, vrmax);
-        else if (i == 1)
-          bft_printf("v  Gr_PotRY    %12.5E  %12.5E\n", vrmin, vrmax);
-        else if (i == 2)
-          bft_printf("v  Gr_PotRZ    %12.5E  %12.5E\n", vrmin, vrmax);
+      cs_parall_min(3, CS_DOUBLE, vrmin);
+      cs_parall_max(3, CS_DOUBLE, vrmax);
+
+      for (int i = 0; i < 3; i++) {
+        bft_printf("v  Gr_PotR%s    %12.5e  %12.5e\n",
+                   cs_glob_field_comp_name_3[i],
+                   vrmin[i], vrmax[i]);
       }
 
       /* current real */
       for (int i = 0; i < 3; i++) {
-        vrmin = -c_prop->val[0] * grad[0][i];
-        vrmax = -c_prop->val[0] * grad[0][i];
+        vrmin[i] = HUGE_VAL;
+        vrmax[i] = -HUGE_VAL;
+      }
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, -c_prop->val[iel] * grad[iel][i]);
-          vrmax = CS_MAX(vrmax, -c_prop->val[iel] * grad[iel][i]);
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        for (int i = 0; i < 3; i++) {
+          vrmin[i] = CS_MIN(vrmin[i], -c_prop->val[iel] * grad[iel][i]);
+          vrmax[i] = CS_MAX(vrmax[i], -c_prop->val[iel] * grad[iel][i]);
         }
+      }
 
-        cs_parall_min(1, CS_DOUBLE, &vrmin);
-        cs_parall_max(1, CS_DOUBLE, &vrmax);
+      cs_parall_min(3, CS_DOUBLE, vrmin);
+      cs_parall_max(3, CS_DOUBLE, vrmax);
 
-        if (i == 0)
-          bft_printf("v  Cour_ReX    %12.5E  %12.5E\n", vrmin, vrmax);
-        else if (i == 1)
-          bft_printf("v  Cour_ReY    %12.5E  %12.5E\n", vrmin, vrmax);
-        else if (i == 2)
-          bft_printf("v  Cour_ReZ    %12.5E  %12.5E\n", vrmin, vrmax);
+      for (int i = 0; i < 3; i++) {
+        bft_printf("v  Cour_Re%s    %12.5E  %12.5E\n",
+                   cs_glob_field_comp_name_3[i],
+                   vrmin[i], vrmax[i]);
       }
       bft_printf("-----------------------------------------\n");
     }
@@ -1491,57 +1492,59 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       /* compute joule effect : j . E */
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        CS_F_(joulp)->val[iel] +=  c_propi->val[iel] *
-                                  (grad[iel][0] * grad[iel][0] +
-                                   grad[iel][1] * grad[iel][1] +
-                                   grad[iel][2] * grad[iel][2]);
+        CS_F_(joulp)->val[iel] +=   c_propi->val[iel]
+                                  * cs_math_3_square_norm(grad[iel]);
       }
 
       /* compute min max for E and J */
-      if (modntl == 0) {
+      if (log_active) {
+
+        double vrmin[3], vrmax[3];
+
         /* Grad PotR = -Ei */
-        double vrmin, vrmax;
 
         for (int i = 0; i < 3; i++) {
-          vrmin = grad[0][i];
-          vrmax = grad[0][i];
-
-          for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-            vrmin = CS_MIN(vrmin, grad[iel][0]);
-            vrmax = CS_MAX(vrmax, grad[iel][0]);
-          }
-
-          cs_parall_min(1, CS_DOUBLE, &vrmin);
-          cs_parall_max(1, CS_DOUBLE, &vrmax);
-
-          if (i == 0)
-            bft_printf("v  Gr_PotIX    %12.5E  %12.5E\n", vrmin, vrmax);
-          else if (i == 1)
-            bft_printf("v  Gr_PotIY    %12.5E  %12.5E\n", vrmin, vrmax);
-          else if (i == 2)
-            bft_printf("v  Gr_PotIZ    %12.5E  %12.5E\n", vrmin, vrmax);
+          vrmin[i] = HUGE_VAL;
+          vrmax[i] = -HUGE_VAL;
         }
 
-        /* current imaginary */
-        for (int i = 0; i < 3; i++) {
-          vrmin = -c_propi->val[0] * grad[0][i];
-          vrmax = -c_propi->val[0] * grad[0][i];
-
-          for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-            vrmin = CS_MIN(vrmin, -c_propi->val[iel] * grad[iel][i]);
-            vrmax = CS_MAX(vrmax, -c_propi->val[iel] * grad[iel][i]);
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+          for (int i = 0; i < 3; i++) {
+            vrmin[i] = CS_MIN(vrmin[i], grad[iel][0]);
+            vrmax[i] = CS_MAX(vrmax[i], grad[iel][0]);
           }
+        }
 
-          cs_parall_min(1, CS_DOUBLE, &vrmin);
-          cs_parall_max(1, CS_DOUBLE, &vrmax);
+        cs_parall_min(3, CS_DOUBLE, vrmin);
+        cs_parall_max(3, CS_DOUBLE, vrmax);
 
-          if (i == 0)
-            bft_printf("v  Cour_ImX    %12.5E  %12.5E\n", vrmin, vrmax);
-          else if (i == 1)
-            bft_printf("v  Cour_ImY    %12.5E  %12.5E\n", vrmin, vrmax);
-          else if (i == 2)
-            bft_printf("v  Cour_ImZ    %12.5E  %12.5E\n", vrmin, vrmax);
+        for (int i = 0; i < 3; i++) {
+          bft_printf("v  Gr_PotI%s    %12.5E  %12.5E\n",
+                     cs_glob_field_comp_name_3[i],
+                     vrmin[i], vrmax[i]);
+        }
 
+        /* Imaginary current */
+
+        for (int i = 0; i < 3; i++) {
+          vrmin[i] = HUGE_VAL;
+          vrmax[i] = -HUGE_VAL;
+        }
+
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+          for (int i = 0; i < 3; i++) {
+            vrmin[i] = CS_MIN(vrmin[i], -c_propi->val[iel] * grad[iel][i]);
+            vrmax[i] = CS_MAX(vrmax[i], -c_propi->val[iel] * grad[iel][i]);
+          }
+        }
+
+        cs_parall_min(3, CS_DOUBLE, vrmin);
+        cs_parall_max(3, CS_DOUBLE, vrmax);
+
+        for (int i = 0; i < 3; i++) {
+          bft_printf("v  Cour_Im%s    %12.5E  %12.5E\n",
+                     cs_glob_field_comp_name_3[i],
+                     vrmin[i], vrmax[i]);
         }
       }
     }
@@ -1592,48 +1595,28 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
 
     /* compute min max for B */
-    if (ielarc > 1) {
-      if (modntl == 0) {
-        /* Grad PotR = -E */
-        double vrmin, vrmax;
-        vrmin = cpro_magfl[0][0];
-        vrmax = cpro_magfl[0][0];
+    if (ielarc > 1 && log_active) {
+      /* Grad PotR = -E */
+      double vrmin[3], vrmax[3];
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, cpro_magfl[iel][0]);
-          vrmax = CS_MAX(vrmax, cpro_magfl[iel][0]);
+      for (int i = 0; i < 3; i++) {
+        vrmin[i] = HUGE_VAL;
+        vrmax[i] = -HUGE_VAL;
+      }
+
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        for (int i = 0; i < 3; i++) {
+          vrmin[i] = CS_MIN(vrmin[i], cpro_magfl[iel][i]);
+          vrmax[i] = CS_MAX(vrmax[i], cpro_magfl[iel][i]);
         }
+      }
 
-        cs_parall_min(1, CS_DOUBLE, &vrmin);
-        cs_parall_max(1, CS_DOUBLE, &vrmax);
+      cs_parall_min(3, CS_DOUBLE, vrmin);
+      cs_parall_max(3, CS_DOUBLE, vrmax);
 
-        bft_printf("v  Magnetic_fieldX    %12.5E  %12.5E\n", vrmin, vrmax);
-
-        vrmin = cpro_magfl[0][1];
-        vrmax = cpro_magfl[0][1];
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, cpro_magfl[iel][1]);
-          vrmax = CS_MAX(vrmax, cpro_magfl[iel][1]);
-        }
-
-        cs_parall_min(1, CS_DOUBLE, &vrmin);
-        cs_parall_max(1, CS_DOUBLE, &vrmax);
-
-        bft_printf("v  Magnetic_fieldY    %12.5E  %12.5E\n", vrmin, vrmax);
-
-        vrmin = cpro_magfl[0][2];
-        vrmax = cpro_magfl[0][2];
-
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          vrmin = CS_MIN(vrmin, cpro_magfl[iel][2]);
-          vrmax = CS_MAX(vrmax, cpro_magfl[iel][2]);
-        }
-
-        cs_parall_min(1, CS_DOUBLE, &vrmin);
-        cs_parall_max(1, CS_DOUBLE, &vrmax);
-
-        bft_printf("v  Magnetic_fieldZ    %12.5E  %12.5E\n", vrmin, vrmax);
+      for (int i = 0; i < 3; i++) {
+        bft_printf("v  Magnetic_field%s    %12.5E  %12.5E\n",
+                   cs_glob_field_comp_name_3[i], vrmin[i], vrmax[i]);
       }
     }
   }
