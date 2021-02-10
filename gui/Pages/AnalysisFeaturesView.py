@@ -731,7 +731,18 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model_p = self.nept.getPredefinedFlow()
         model = self.__stringModelFromCombo('NeptuneCFD')
         if model != model_p:
-            self.nept.setPredefinedFlow(model)
+	    # If new choice is different from current choice,
+	    # we ask for confirmation, then reset default modeling
+            # choices of NCFD.
+            name   = self.modelNeptuneCFD.dicoM2V[model]
+            name_p = self.modelNeptuneCFD.dicoM2V[model_p]
+            msg = 'You are switching from "%s" to "%s".\n' % (name_p, name)
+            msg+= "This will reset your multiphase modeling choices.\n"
+            msg+= "Do you wish to continue ?"
+            choice = QMessageBox.question(self, 'Warning', msg,
+                                          QMessageBox.Yes | QMessageBox.No)
+            if choice == QMessageBox.Yes:
+                self.nept.setPredefinedFlow(model)
 
         self.checkBoxALE.hide()
         self.checkBoxFans.hide()
