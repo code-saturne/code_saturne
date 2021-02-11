@@ -828,9 +828,7 @@ temperature = enthalpy / 1000;
                     self.pushButtondRodh.setStyleSheet("background-color: red")
 
             # Test for water / steam
-            if (MainFieldsModel(self.case).getPredefinedFlow() != "None" and \
-                MainFieldsModel(self.case).getPredefinedFlow() != "particles_flow" and \
-                row < 2):
+            if (MainFieldsModel(self.case).getHeatMassTransferStatus() == "on"):
 
                 self.groupBoxEauvap.show()
 
