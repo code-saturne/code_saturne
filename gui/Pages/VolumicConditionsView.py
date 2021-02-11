@@ -111,19 +111,36 @@ class VolumicConditionsView(QWidget, Ui_VolumicConditionsForm):
             self.saturneSourceTermsWidget.setup(self.case, self.zone_name)
         self.groundwaterLawPage.setup(self.case, self.zone_name)
 
-        tab_names = [self.tabWidget.tabText(i) for i in range(self.tabWidget.count())]
         if not (self.zone.isNatureActivated("groundwater_law")):
-            self.tabWidget.removeTab(tab_names.index("Groundwater laws"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Groundwater laws":
+                    self.tabWidget.removeTab(i)
+                    break
         if not (self.zone.isNatureActivated("source_term")):
-            self.tabWidget.removeTab(tab_names.index("Source terms"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Source terms":
+                    self.tabWidget.removeTab(i)
+                    break
         if not (self.zone.isNatureActivated("head_losses")):
-            self.tabWidget.removeTab(tab_names.index("Head losses"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Head losses":
+                    self.tabWidget.removeTab(i)
+                    break
         if not (self.zone.isNatureActivated("porosity")):
-            self.tabWidget.removeTab(tab_names.index("Porosity"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Porosity":
+                    self.tabWidget.removeTab(i)
+                    break
         if not (self.zone.isNatureActivated("physical_properties")):
-            self.tabWidget.removeTab(tab_names.index("Physical properties"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Physical properties":
+                    self.tabWidget.removeTab(i)
+                    break
         if not (self.zone.isNatureActivated("initialization")):
-            self.tabWidget.removeTab(tab_names.index("Initialization"))
+            for i in range(self.tabWidget.count()):
+                if self.tabWidget.tabText(i) == "Initialization":
+                    self.tabWidget.removeTab(i)
+                    break
 
 #-------------------------------------------------------------------------------
 # End
