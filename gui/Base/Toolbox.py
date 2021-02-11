@@ -115,7 +115,7 @@ def displayStaticPage(case, page_name, root, stbar, tree):
 
     elif page_name == tr("Volume conditions"):
         import code_saturne.Pages.VolumicNatureView as Page
-        thisPage = Page.VolumicNatureView(root, case)
+        thisPage = Page.VolumicNatureView(root, case, tree)
 
     elif page_name == tr("Calculation features"):
         import code_saturne.Pages.AnalysisFeaturesView as Page

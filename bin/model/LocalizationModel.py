@@ -244,6 +244,9 @@ class VolumicZone(Zone):
         if self.case.module_name() == 'code_saturne':
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
+                self._natureList.append('solid')
+                self._natureDict['solid'] = self.tr("Solid")
+
                 self._natureList.append('head_losses')
                 self._natureList.append('porosity')
                 self._natureList.append('momentum_source_term')
@@ -303,6 +306,7 @@ class VolumicZone(Zone):
         dico['nature']['scalar_source_term'] = "off"
         dico['nature']['groundwater_law'] = "off"
         dico['nature']['physical_properties'] = "off"
+        dico['nature']['solid'] = "off"
         return dico
 
     def isNatureActivated(self, text):

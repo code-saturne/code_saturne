@@ -351,8 +351,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         # Connections
 
-        self.checkBoxSolid.stateChanged.connect(self.slotSolidZone)
-
         self.lineEditP0.textChanged[str].connect(self.slotPressure)
         self.lineEditT0.textChanged[str].connect(self.slotTemperature)
         self.lineEditOxydant.textChanged[str].connect(self.slotTempOxydant)
@@ -404,15 +402,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.groupBoxPressure.setVisible(is_main_zone)
         self.groupBoxTemperature.setVisible(is_main_zone)
-        self.groupBoxSolidZone.setVisible(not is_main_zone)
 
         self.groupBoxMassMolar.hide()
-
-        if not is_main_zone:
-            if self.internal_cpl.isZoneCoupled(self.zone_id):
-                self.checkBoxSolid.setChecked(True)
-            else:
-                self.checkBoxSolid.setChecked(False)
 
         if mdl_atmo != "off":
             self.labelInfoT0.hide()
@@ -1286,15 +1277,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.m_sca.setDiffFormula(self.scalar, str(result), self.zone_id)
             self.pushButtonDiff.setToolTip(result)
             self.pushButtonDiff.setStyleSheet("background-color: green")
-
-
-    @pyqtSlot(int)
-    def slotSolidZone(self, val):
-
-        if val == 0:
-            self.internal_cpl.removeZone(self.zone_id)
-        else:
-            self.internal_cpl.addZone(self.zone_id)
 
 
 #-------------------------------------------------------------------------------
