@@ -252,8 +252,22 @@ _get_property_node(const char *property_name,
    */
   if (zone_name != NULL) {
     if (strcmp(zone_name, "all_cells")) {
-      tn = cs_tree_node_get_child(tn, "zone");
-      tn = cs_tree_node_get_sibling_with_tag(tn, "name", zone_name);
+      /* Get zone_id from xml */
+      cs_tree_node_t *id_n =
+        cs_tree_get_node(cs_glob_tree, "solution_domain/volumic_conditions/zone");
+      const char *id_s = NULL;
+      while (id_n != NULL) {
+        const char *zname = cs_tree_get_node(id_n, "label");
+        if (cs_gui_strcmp(zname, zone_name)) {
+          id_s = cs_tree_node_get_tag(id_n, "id");
+          break;
+        }
+        id_n = cs_tree_node_get_next_of_name(id_n);
+      }
+      if (id_s != NULL) {
+        tn = cs_tree_node_get_child(tn, "zone");
+        tn = cs_tree_node_get_sibling_with_tag(tn, "id", id_s);
+      }
     }
   }
 
@@ -331,7 +345,7 @@ _physical_property(cs_field_t          *c_prop,
                    const cs_zone_t     *z)
 {
   int user_law = 0;
-  const char *prop_choice = _properties_choice(c_prop->name, z->name);
+  const char *prop_choice = _properties_choice(c_prop->name, NULL);
 
   if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
@@ -346,7 +360,8 @@ _physical_property(cs_field_t          *c_prop,
     }
 
   }
-  else if (cs_gui_strcmp(prop_choice, "thermal_law")) {
+  else if (cs_gui_strcmp(prop_choice, "thermal_law") &&
+           cs_gui_strcmp(z->name, "all_cells")) {
     cs_phys_prop_type_t property = -1;
 
     if (cs_gui_strcmp(c_prop->name, "density"))
@@ -3066,7 +3081,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const char *law = NULL;
   double time0 = cs_timer_wtime();
 
   int n_zones_pp =
