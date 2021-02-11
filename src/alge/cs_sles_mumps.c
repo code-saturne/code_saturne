@@ -103,12 +103,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* MUMPS code to detect the calculation step */
-#define MUMPS_JOB_INIT            -1
-#define MUMPS_JOB_FACTSYMBOLIC     1
-#define MUMPS_JOB_FACTNUMERIC      2
-#define MUMPS_JOB_SOLVE            3
-#define MUMPS_JOB_ANALYSE_FACTO    4
 #define MUMPS_JOB_END             -2
+#define MUMPS_JOB_INIT            -1
+#define MUMPS_JOB_ANALYSIS         1
+#define MUMPS_JOB_FACTORIZATION    2
+#define MUMPS_JOB_SOLVE            3
 
 /* Default number for MPI_COMM_WORLD */
 #define USE_COMM_WORLD         -987654
@@ -1340,6 +1339,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
   smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
   smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+  smumps->ICNTL(6) = 0;    /* No column permutation */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -1878,6 +1878,7 @@ cs_sles_mumps_setup(void               *context,
   }
 
   /* 1. Initialize the MUMPS structure */
+  /* --------------------------------- */
 
   if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS ||
       c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT) {
@@ -1934,6 +1935,7 @@ cs_sles_mumps_setup(void               *context,
               "%s: Invalid type of solver for the MUMPS library\n", __func__);
 
   /* 2. Fill the MUMPS structure before the analysis step */
+  /* ---------------------------------------------------- */
 
   const cs_matrix_type_t  cs_mat_type = cs_matrix_get_type(a);
 
@@ -2044,23 +2046,43 @@ cs_sles_mumps_setup(void               *context,
 
   } /* End of switch */
 
-  /* Window to enable advanced user settings */
+  if (sd->smumps == NULL) {
 
-  if (c->setup_hook != NULL)
-    c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
+    sd->dmumps->job = MUMPS_JOB_ANALYSIS;
 
-  /* Update returned values */
+    /* Window to enable advanced user settings (before analysis) */
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
 
-  c->n_setups += 1;
+    dmumps_c(sd->dmumps);
 
-  /* 3. Analysis and factorization */
-  /* ----------------------------- */
+  }
+  else {
+
+    assert(sd->smumps != NULL);
+    sd->smumps->job = MUMPS_JOB_ANALYSIS;
+
+    /* Window to enable advanced user settings (before analysis) */
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
+
+    smumps_c(sd->smumps);
+
+  }
+
+  /* 3. Factorization */
+  /* ---------------- */
 
   MUMPS_INT  infog1, infog2;
 
   if (sd->smumps == NULL) {
 
-    sd->dmumps->job = MUMPS_JOB_ANALYSE_FACTO;
+    sd->dmumps->job = MUMPS_JOB_FACTORIZATION;
+
+    /* Window to enable advanced user settings (before factorization) */
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
+
     dmumps_c(sd->dmumps);
 
     /* Feedback */
@@ -2071,7 +2093,12 @@ cs_sles_mumps_setup(void               *context,
   else {
 
     assert(sd->smumps != NULL);
-    sd->smumps->job = MUMPS_JOB_ANALYSE_FACTO;
+    sd->smumps->job = MUMPS_JOB_FACTORIZATION;
+
+    /* Window to enable advanced user settings (before factorization) */
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
+
     smumps_c(sd->smumps);
 
     /* Feedback */
@@ -2089,7 +2116,7 @@ cs_sles_mumps_setup(void               *context,
                     "\n MUMPS feedback error code: INFOG(1)=%d, INFOG(2)=%d\n",
                     infog1, infog2);
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Error detected during the anaylis/factorization step",
+                " %s: Error detected during the analysis/factorization step",
                 __func__);
     }
     else {
@@ -2100,6 +2127,10 @@ cs_sles_mumps_setup(void               *context,
     }
 
   } /* rank_id = 0 */
+
+  /* Update returned values */
+
+  c->n_setups += 1;
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
