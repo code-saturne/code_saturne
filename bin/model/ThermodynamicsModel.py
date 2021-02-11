@@ -422,7 +422,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.get_property_node(fieldId, tag)
 
-        if zone != "1":
+        if str(zone) != "1":
             if node.xmlGetChildNode("zone", zone_id=zone):
                 node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
