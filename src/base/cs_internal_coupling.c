@@ -155,15 +155,13 @@ static inline cs_real_t
 _calc_heq(cs_real_t h1,
           cs_real_t h2)
 {
-
-  const cs_real_t h_eps = 1.e-6;
+  const cs_real_t h_eps = 1.e-12;
 
   cs_real_t heq = 0.;
-  if (h1 > h_eps && h2 > h_eps)
+  if (h1 + h2 > h_eps)
     heq = h1 * h2 / (h1 + h2);
 
   return heq;
-
 }
 
 /*----------------------------------------------------------------------------
