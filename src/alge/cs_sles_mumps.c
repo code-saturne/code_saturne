@@ -210,7 +210,7 @@ _have_perio(const cs_halo_t     *halo)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize the MUMPS structure in case of double-precision
- *        computation.
+ *        computation. Default settings.
  *
  * \param[in]      verbosity   level of verbosity requested
  * \param[in, out] dmumps      pointer to DMUMPS_STRUCT_C
@@ -218,35 +218,41 @@ _have_perio(const cs_halo_t     *halo)
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_dmumps(int                 verbosity,
-             DMUMPS_STRUC_C     *dmumps)
+_init_dmumps_settings(int                 verbosity,
+                      DMUMPS_STRUC_C     *dmumps)
 {
-  /* Manage verbosity and output */
-  /* --------------------------- */
-
   dmumps->ICNTL(1) = 6;      /* Error output: default value */
 
   if (verbosity <= 0) {
 
-    dmumps->ICNTL(1) = -1;   /* Rank statistics: default value */
     dmumps->ICNTL(2) = -1;   /* Rank statistics: default value */
     dmumps->ICNTL(3) = -1;   /* No global information printed */
-    dmumps->ICNTL(4) = 0;    /* No message printed */
+    dmumps->ICNTL(4) = 1;    /* Only error message printed */
     dmumps->ICNTL(11) = 0;   /* No error analysis */
 
   }
   else {
 
-    dmumps->ICNTL(2) = 0;    /* Rank statistics: default value */
-    dmumps->ICNTL(3) = 6;    /* Global information: default value */
-    dmumps->ICNTL(11) = 2;   /* Main error analysis */
+    if (verbosity == 1) {
+      dmumps->ICNTL(2) = -1;    /* Rank statistics: default value */
+      dmumps->ICNTL(3) = 6;     /* Global information: default value */
+      dmumps->ICNTL(4) = 1;     /* Only error messages printed */
+    }
+    else if (verbosity == 2) {
 
-    if (verbosity == 1)
-      dmumps->ICNTL(4) = 1;  /* Only error messages printed */
-    else if (verbosity == 2)
-      dmumps->ICNTL(4) = 2;  /* Verbosity level: default value */
-    else /* verbosity > 2 */
-      dmumps->ICNTL(4) = 4;  /* All messages are printed */
+      dmumps->ICNTL(2) = 6;    /* Rank statistics: default value */
+      dmumps->ICNTL(3) = 6;    /* Global information: default value */
+      dmumps->ICNTL(4) = 2;    /* Verbosity level: default value */
+
+    }
+    else { /* verbosity > 2 */
+
+      dmumps->ICNTL(2) = 6;    /* Rank statistics: default value */
+      dmumps->ICNTL(3) = 6;    /* Global information: default value */
+      dmumps->ICNTL(4) = 4;    /* All messages are printed */
+      dmumps->ICNTL(11) = 2;   /* Main error analysis */
+
+    }
 
   }
 
@@ -254,23 +260,6 @@ _init_dmumps(int                 verbosity,
   dmumps->ICNTL(20) = 0;   /* 0: dense RHS on rank 0 */
   dmumps->ICNTL(21) = 0;   /* 0: dense solution array on rank 0 */
 
-  if (cs_glob_n_ranks == 1) /* sequential run */
-    dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 */
-  else
-    dmumps->ICNTL(18) = 3;   /* 3: distributed matrix is given */
-
-#if defined(HAVE_MPI)
-  dmumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
-#else
-  dmumps->comm_fortran = USE_COMM_WORLD; /* Not used in this case and set to
-                                            the default value given by the
-                                            MUMPS documentation */
-#endif
-
-  /* First call: Initialization */
-  /* -------------------------- */
-
-  dmumps_c(dmumps);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -278,18 +267,29 @@ _init_dmumps(int                 verbosity,
  * \brief Set the linear system.
  *        Case of double-precision structure; MSR matrix as input; no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_dmumps(const cs_matrix_t    *a,
+_msr_dmumps(int                   verbosity,
+            const cs_matrix_t    *a,
             DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym == 0);
 
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  /* Retrieve local arrays associated to the current matrix */
+
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
 
@@ -328,7 +328,8 @@ _msr_dmumps(const cs_matrix_t    *a,
       _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
       _a[i] = (DMUMPS_REAL)x_val[i];
 
-    }
+    } /* Loop on columns */
+
   } /* Loop on rows */
 
 }
@@ -338,19 +339,33 @@ _msr_dmumps(const cs_matrix_t    *a,
  * \brief Set the linear system in case of parallel computation.
  *        Case of double-precision structure; MSR matrix as input; no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_parall_msr_dmumps(const cs_matrix_t    *a,
+_parall_msr_dmumps(int                   verbosity,
+                   const cs_matrix_t    *a,
                    DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym == 0);
 
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
+
+  /* Retrieve local arrays associated to the current matrix */
+
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /* Fill the MUMPS matrix */
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
@@ -359,17 +374,9 @@ _parall_msr_dmumps(const cs_matrix_t    *a,
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
 
-  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-
-  /* Retrieve local arrays associated to the current matrix */
-
-  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
-
-  /* Global number of rows */
-
   cs_gnum_t  n_g_rows = n_rows;
   cs_parall_counter(&n_g_rows, 1);
-  dmumps->n = n_g_rows;
+  dmumps->n = n_g_rows; /* Global number of rows */
 
   /* Allocate local arrays */
 
@@ -405,7 +412,8 @@ _parall_msr_dmumps(const cs_matrix_t    *a,
       _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
       _a[i] = (DMUMPS_REAL)x_val[i];
 
-    }
+    } /* Loop on columns */
+
   } /* Loop on rows */
 
 }
@@ -416,18 +424,28 @@ _parall_msr_dmumps(const cs_matrix_t    *a,
  *        Case of double-precision structure; Native matrix as input;
  *        no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_native_dmumps(const cs_matrix_t    *a,
+_native_dmumps(int                   verbosity,
+               const cs_matrix_t    *a,
                DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym == 0);
 
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
+  /* Retrieve local arrays associated to the current matrix */
 
   bool  symmetric = false;
   cs_lnum_t  n_faces = 0;
@@ -492,21 +510,39 @@ _native_dmumps(const cs_matrix_t    *a,
  *        Case of double-precision structure; Native matrix as input;
  *        no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_parall_native_dmumps(const cs_matrix_t    *a,
+_parall_native_dmumps(int                   verbosity,
+                      const cs_matrix_t    *a,
                       DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym == 0);
+
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
+
+  /* Retrieve the matrix arrays */
 
   bool  symmetric = false;
   cs_lnum_t  n_faces = 0;
   const cs_lnum_2_t  *face_cells;
   const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_native_arrays(a,
+                              &symmetric,
+                              &n_faces, &face_cells, &d_val, &x_val);
+
+  assert(symmetric == false);
+
+  /* Fill the MUMPS matrix */
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
@@ -515,13 +551,6 @@ _parall_native_dmumps(const cs_matrix_t    *a,
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
 
-  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-
-  cs_matrix_get_native_arrays(a,
-                              &symmetric,
-                              &n_faces, &face_cells, &d_val, &x_val);
-
-  assert(symmetric == false);
   cs_gnum_t  n_g_rows = n_rows;
   cs_parall_counter(&n_g_rows, 1);
   dmumps->n = n_g_rows;
@@ -578,22 +607,36 @@ _parall_native_dmumps(const cs_matrix_t    *a,
  * \brief Set the linear system.
  *        Case of double-precision structure; MSR matrix as input; symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_sym_dmumps(const cs_matrix_t    *a,
+_msr_sym_dmumps(int                   verbosity,
+                const cs_matrix_t    *a,
                 DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym > 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
+
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
 
   cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   dmumps->n = (MUMPS_INT)n_rows;
   if (cs_matrix_is_symmetric(a)) /* storage is already symmetric */
@@ -667,21 +710,35 @@ _msr_sym_dmumps(const cs_matrix_t    *a,
  * \brief Set the linear system in case of parallel computation.
  *        Case of double-precision structure; MSR matrix as input; symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_parall_msr_sym_dmumps(const cs_matrix_t    *a,
+_parall_msr_sym_dmumps(int                   verbosity,
+                       const cs_matrix_t    *a,
                        DMUMPS_STRUC_C       *dmumps)
 {
-  printf("\n\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-* [r%d] o^o %s\n",
-         cs_glob_rank_id, __func__);
   assert(dmumps->sym > 0);
+
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
+  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
   const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
@@ -689,17 +746,9 @@ _parall_msr_sym_dmumps(const cs_matrix_t    *a,
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);        /* TODO */
 
-  dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-
-  /* Retrieve local arrays associated to the current matrix */
-
-  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
-
-  /* Global number of rows */
-
   cs_gnum_t  n_g_rows = n_rows;
   cs_parall_counter(&n_g_rows, 1);
-  dmumps->n = n_g_rows;
+  dmumps->n = n_g_rows;  /* Global number of rows */
 
   /* Allocate local arrays */
 
@@ -740,7 +789,8 @@ _parall_msr_sym_dmumps(const cs_matrix_t    *a,
         _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
         _a[i] = (DMUMPS_REAL)x_val[i];
 
-      }
+      } /* Loop on columns */
+
     } /* Loop on rows */
 
   }
@@ -760,6 +810,7 @@ _parall_msr_sym_dmumps(const cs_matrix_t    *a,
         }
 
       } /* Loop on columns */
+
     } /* Loop on rows */
 
   } /* not a symmetric storage */
@@ -771,18 +822,27 @@ _parall_msr_sym_dmumps(const cs_matrix_t    *a,
  *        Case of double-precision structure; Native matrix as input;
  *        no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  dmumps      pointer to DMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_native_sym_dmumps(const cs_matrix_t    *a,
+_native_sym_dmumps(int                   verbosity,
+                   const cs_matrix_t    *a,
                    DMUMPS_STRUC_C       *dmumps)
 {
   assert(dmumps->sym > 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_dmumps_settings(verbosity, dmumps); /* default settings */
+
+  dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   bool  symmetric = false;
   cs_lnum_t  n_faces = 0;
@@ -792,6 +852,10 @@ _native_sym_dmumps(const cs_matrix_t    *a,
   cs_matrix_get_native_arrays(a,
                               &symmetric,
                               &n_faces, &face_cells, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   dmumps->n = (MUMPS_INT)n_rows;
   dmumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
@@ -872,7 +936,7 @@ _native_sym_dmumps(const cs_matrix_t    *a,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize the MUMPS structure in case of single-precision
- *        computation.
+ *        computation. Default settings.
  *
  * \param[in]      verbosity   level of verbosity requested
  * \param[in, out] smumps      pointer to SMUMPS_STRUC_C
@@ -880,58 +944,48 @@ _native_sym_dmumps(const cs_matrix_t    *a,
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_smumps(int                 verbosity,
-             SMUMPS_STRUC_C     *smumps)
+_init_smumps_settings(int                 verbosity,
+                      SMUMPS_STRUC_C     *smumps)
 {
-  /* Manage verbosity and output */
-  /* --------------------------- */
-
   smumps->ICNTL(1) = 6;      /* Error output: default value */
 
   if (verbosity <= 0) {
 
     smumps->ICNTL(2) = -1;   /* Rank statistics: default value */
     smumps->ICNTL(3) = -1;   /* No global information printed */
-    smumps->ICNTL(4) = 0;    /* No message printed */
+    smumps->ICNTL(4) = 1;    /* Only error message printed */
     smumps->ICNTL(11) = 0;   /* No error analysis */
 
   }
   else {
 
-    smumps->ICNTL(2) = 0;    /* Rank statistics: default value */
-    smumps->ICNTL(3) = 6;    /* Global information: default value */
-    smumps->ICNTL(11) = 2;   /* Main error analysis */
+    if (verbosity == 1) {
+      smumps->ICNTL(2) = -1;    /* Rank statistics: default value */
+      smumps->ICNTL(3) = 6;     /* Global information: default value */
+      smumps->ICNTL(4) = 1;     /* Only error messages printed */
+    }
+    else if (verbosity == 2) {
 
-    if (verbosity == 1)
-      smumps->ICNTL(4) = 1;  /* Only error messages printed */
-    else if (verbosity == 2)
-      smumps->ICNTL(4) = 2;  /* Verbosity level: default value */
-    else /* verbosity > 2 */
-      smumps->ICNTL(4) = 4;  /* All messages are printed */
+      smumps->ICNTL(2) = 6;    /* Rank statistics: default value */
+      smumps->ICNTL(3) = 6;    /* Global information: default value */
+      smumps->ICNTL(4) = 2;    /* Verbosity level: default value */
+
+    }
+    else { /* verbosity > 2 */
+
+      smumps->ICNTL(2) = 6;    /* Rank statistics: default value */
+      smumps->ICNTL(3) = 6;    /* Global information: default value */
+      smumps->ICNTL(4) = 4;    /* All messages are printed */
+      smumps->ICNTL(11) = 2;   /* Main error analysis */
+
+    }
 
   }
 
-  if (cs_glob_n_ranks == 1) { /* sequential run */
+  smumps->ICNTL(5) = 0;    /* 0: assembled / 1: elemental */
+  smumps->ICNTL(20) = 0;   /* 0: dense RHS on rank 0 */
+  smumps->ICNTL(21) = 0;   /* 0: dense solution array on rank 0 */
 
-    smumps->ICNTL(5) = 0;    /* 0: assembled / 1: elemental */
-    smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 */
-    smumps->ICNTL(20) = 0;   /* 0: dense RHS on rank 0 */
-    smumps->ICNTL(21) = 0;   /* 0: dense solution array on rank 0 */
-
-  }
-
-#if defined(HAVE_MPI)
-  smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
-#else
-  smumps->comm_fortran = USE_COMM_WORLD; /* Not used in this case and set to
-                                            the default value given by the
-                                            MUMPS documentation */
-#endif
-
-  /* First call: Initialization */
-  /* -------------------------- */
-
-  smumps_c(smumps);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -939,22 +993,35 @@ _init_smumps(int                 verbosity,
  * \brief Set the linear system.
  *        Case of single-precision structure; MSR matrix as input; no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_smumps(const cs_matrix_t    *a,
+_msr_smumps(int                   verbosity,
+            const cs_matrix_t    *a,
             SMUMPS_STRUC_C       *smumps)
 {
   assert(smumps->sym == 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+
+  /* Retrieve local arrays associated to the current matrix */
+
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
 
   cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
@@ -989,7 +1056,8 @@ _msr_smumps(const cs_matrix_t    *a,
       _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
       _a[i] = (SMUMPS_REAL)x_val[i];
 
-    }
+    } /* Loop on columns */
+
   } /* Loop on rows */
 
 }
@@ -999,18 +1067,33 @@ _msr_smumps(const cs_matrix_t    *a,
  * \brief Set the linear system in case of parallel computation.
  *        Case of single-precision structure; MSR matrix as input; no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_parall_msr_smumps(const cs_matrix_t    *a,
+_parall_msr_smumps(int                   verbosity,
+                   const cs_matrix_t    *a,
                    SMUMPS_STRUC_C       *smumps)
 {
+  assert(smumps->sym == 0);
+
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /* Fill the MUMPS matrix */
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
@@ -1019,17 +1102,9 @@ _parall_msr_smumps(const cs_matrix_t    *a,
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
 
-  smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-
-  /* Retrieve local arrays associated to the current matrix */
-
-  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
-
-  /* Global number of rows */
-
   cs_gnum_t  n_g_rows = n_rows;
   cs_parall_counter(&n_g_rows, 1);
-  smumps->n = (MUMPS_INT)n_g_rows;
+  smumps->n = (MUMPS_INT)n_g_rows; /* Global number of rows */
 
   /* Allocate local arrays */
 
@@ -1065,7 +1140,8 @@ _parall_msr_smumps(const cs_matrix_t    *a,
       _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
       _a[i] = (SMUMPS_REAL)x_val[i];
 
-    }
+    } /* Loop on columns */
+
   } /* Loop on rows */
 
 }
@@ -1076,18 +1152,26 @@ _parall_msr_smumps(const cs_matrix_t    *a,
  *        Case of single-precision structure; Native matrix as input;
  *        no symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_native_smumps(const cs_matrix_t    *a,
+_native_smumps(int                   verbosity,
+               const cs_matrix_t    *a,
                SMUMPS_STRUC_C       *smumps)
 {
   assert(smumps->sym == 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   bool  symmetric = false;
   cs_lnum_t  n_faces = 0;
@@ -1099,6 +1183,11 @@ _native_smumps(const cs_matrix_t    *a,
                               &n_faces, &face_cells, &d_val, &x_val);
 
   assert(symmetric == false);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
 
@@ -1151,22 +1240,36 @@ _native_smumps(const cs_matrix_t    *a,
  * \brief Set the linear system.
  *        Case of single-precision structure; MSR matrix as input; symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_sym_smumps(const cs_matrix_t    *a,
+_msr_sym_smumps(int                   verbosity,
+                const cs_matrix_t    *a,
                 SMUMPS_STRUC_C       *smumps)
 {
   assert(smumps->sym > 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
+
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
 
   cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
@@ -1206,9 +1309,11 @@ _msr_sym_smumps(const cs_matrix_t    *a,
         count++;
       }
 
-    }
+    } /* Loop on columns */
+
   } /* Loop on rows */
 
+  /* TODO: optimization when the storage is already symmetric */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1216,18 +1321,35 @@ _msr_sym_smumps(const cs_matrix_t    *a,
  * \brief Set the linear system in case of parallel computation.
  *        Case of single-precision structure; MSR matrix as input; symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_parall_msr_sym_smumps(const cs_matrix_t    *a,
+_parall_msr_sym_smumps(int                   verbosity,
+                       const cs_matrix_t    *a,
                        SMUMPS_STRUC_C       *smumps)
 {
+  assert(smumps->sym > 0);
+
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
+  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   const cs_lnum_t  *a_row_idx, *a_col_ids;
   const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
   const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
@@ -1235,17 +1357,9 @@ _parall_msr_sym_smumps(const cs_matrix_t    *a,
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);        /* TODO */
 
-  smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-
-  /* Retrieve local arrays associated to the current matrix */
-
-  cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
-
-  /* Global number of rows */
-
   cs_gnum_t  n_g_rows = n_rows;
   cs_parall_counter(&n_g_rows, 1);
-  smumps->n = n_g_rows;
+  smumps->n = n_g_rows;  /* Global number of rows */
 
   /* Allocate local arrays */
 
@@ -1286,7 +1400,8 @@ _parall_msr_sym_smumps(const cs_matrix_t    *a,
         _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
         _a[i] = (SMUMPS_REAL)x_val[i];
 
-      }
+      } /* Loop on columns */
+
     } /* Loop on rows */
 
   }
@@ -1306,6 +1421,7 @@ _parall_msr_sym_smumps(const cs_matrix_t    *a,
         }
 
       } /* Loop on columns */
+
     } /* Loop on rows */
 
   } /* not a symmetric storage */
@@ -1316,18 +1432,27 @@ _parall_msr_sym_smumps(const cs_matrix_t    *a,
  * \brief Set the linear system.
  *        Case of single-precision structure; Native matrix as input; symmetry
  *
+ * \param[in]       verbosity   level of verbosity
  * \param[in]       a           associated matrix
  * \param[in, out]  smumps      pointer to SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_native_sym_smumps(const cs_matrix_t    *a,
+_native_sym_smumps(int                   verbosity,
+                   const cs_matrix_t    *a,
                    SMUMPS_STRUC_C       *smumps)
 {
   assert(smumps->sym > 0);
 
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  /* Settings */
+
+  _init_smumps_settings(verbosity, smumps); /* default settings */
+
+  smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
+  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
+
+  /* Retrieve local arrays associated to the current matrix */
 
   bool  symmetric = false;
   cs_lnum_t  n_faces = 0;
@@ -1337,6 +1462,10 @@ _native_sym_smumps(const cs_matrix_t    *a,
   cs_matrix_get_native_arrays(a,
                               &symmetric,
                               &n_faces, &face_cells, &d_val, &x_val);
+
+  /*  Fill the MUMPS matrix */
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   smumps->n = (MUMPS_INT)n_rows;
   smumps->nnz = (MUMPS_INT8)(n_rows + 2*n_faces);
@@ -1415,6 +1544,7 @@ _native_sym_smumps(const cs_matrix_t    *a,
   }
 
   /* Update the nnz */
+
   smumps->nnz = (MUMPS_INT8)(n_rows + n_faces);
 }
 
@@ -1747,160 +1877,163 @@ cs_sles_mumps_setup(void               *context,
     sd = c->setup_data;
   }
 
-  int _verbosity = c->sles_param->verbosity;
-  if (_verbosity < 0)
-    _verbosity = verbosity;
+  /* 1. Initialize the MUMPS structure */
+
+  if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS ||
+      c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT) {
+
+    sd->smumps = NULL;        /* Not used anymore */
+
+    BFT_MALLOC(sd->dmumps, 1, DMUMPS_STRUC_C);
+
+    sd->dmumps->job = MUMPS_JOB_INIT;
+    sd->dmumps->par = 1;      /* all ranks are working */
+    sd->dmumps->sym = 0;
+
+    if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT)
+      sd->dmumps->sym = 2;
+
+#if defined(HAVE_MPI)
+    sd->dmumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
+#else
+    /* Not used in this case and set to the default value given by the MUMPS
+       documentation */
+    sd->dmumps->comm_fortran = USE_COMM_WORLD;
+#endif
+
+    dmumps_c(sd->dmumps); /* first call to MUMPS */
+
+  }
+  else if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT ||
+           c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT) {
+
+    sd->dmumps = NULL;        /* Not used anymore */
+
+    BFT_MALLOC(sd->smumps, 1, SMUMPS_STRUC_C);
+
+    sd->smumps->job = MUMPS_JOB_INIT;
+    sd->smumps->par = 1;       /* all ranks are working */
+    sd->smumps->sym = 0;
+
+    if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+      sd->smumps->sym = 2;
+
+#if defined(HAVE_MPI)
+    sd->smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
+#else
+    /* Not used in this case and set to the default value given by the MUMPS
+       documentation */
+    sd->smumps->comm_fortran = USE_COMM_WORLD;
+#endif
+
+    smumps_c(sd->smumps); /* first call to MUMPS */
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of solver for the MUMPS library\n", __func__);
+
+  /* 2. Fill the MUMPS structure before the analysis step */
 
   const cs_matrix_type_t  cs_mat_type = cs_matrix_get_type(a);
 
   switch (c->sles_param->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
-    {
-      sd->smumps = NULL;        /* Not used anymore */
+    if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
-      BFT_MALLOC(sd->dmumps, 1, DMUMPS_STRUC_C);
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _parall_msr_dmumps(verbosity, a, sd->dmumps);
+      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
+      /*   _parall_native_dmumps(verbosity, a, sd->dmumps); */
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format in parallel", __func__);
 
-      sd->dmumps->job = MUMPS_JOB_INIT;
-      sd->dmumps->par = 1;      /* all ranks are working */
-      sd->dmumps->sym = 0;
-
-      /* Initialization */
-
-      _init_dmumps(_verbosity, sd->dmumps);
-
-      /* Set the linear system */
-      if (cs_glob_n_ranks > 1) { /* Parallel computation */
-
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _parall_msr_dmumps(a, sd->dmumps);
-        else if (cs_mat_type == CS_MATRIX_NATIVE)
-          _parall_native_dmumps(a, sd->dmumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format in parallel", __func__);
-
-      }
-      else { /* Sequential computation */
-
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _msr_dmumps(a, sd->dmumps);
-        else if (cs_mat_type == CS_MATRIX_NATIVE)
-          _native_dmumps(a, sd->dmumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format", __func__);
-
-      }
     }
-    break;
+    else { /* Sequential computation */
 
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
-    {
-      sd->dmumps = NULL;        /* Not used anymore */
-      BFT_MALLOC(sd->smumps, 1, SMUMPS_STRUC_C);
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _msr_dmumps(verbosity, a, sd->dmumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _native_dmumps(verbosity, a, sd->dmumps);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format", __func__);
 
-      sd->smumps->job = MUMPS_JOB_INIT;
-      sd->smumps->par = 1;       /* all ranks are working */
-      sd->smumps->sym = 0;
-
-      _init_smumps(_verbosity, sd->smumps);
-
-      /* Set the linear system */
-      if (cs_glob_n_ranks > 1) { /* Parallel computation */
-
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _parall_msr_smumps(a, sd->smumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format in parallel", __func__);
-
-      }
-      else { /* Sequential computation */
-
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _msr_smumps(a, sd->smumps);
-        else if (cs_mat_type == CS_MATRIX_NATIVE)
-          _native_smumps(a, sd->smumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format", __func__);
-
-      }
     }
     break;
 
   case CS_PARAM_ITSOL_MUMPS_LDLT:
-    {
-      sd->smumps = NULL;        /* Not used anymore */
-      BFT_MALLOC(sd->dmumps, 1, DMUMPS_STRUC_C);
+    if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
-      sd->dmumps->job = MUMPS_JOB_INIT;
-      sd->dmumps->par = 1;      /* all ranks are working */
-      sd->dmumps->sym = 2;
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _parall_msr_sym_dmumps(verbosity, a, sd->dmumps);
+      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
+      /*   _parall_native_sym_dmumps(verbosity, a, sd->dmumps); */
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format in parallel", __func__);
 
-      _init_dmumps(_verbosity, sd->dmumps);
+    }
+    else { /* Sequential computation */
 
-      /* Set the linear system */
-      if (cs_glob_n_ranks > 1) { /* Parallel computation */
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _msr_sym_dmumps(verbosity, a, sd->dmumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _native_sym_dmumps(verbosity, a, sd->dmumps);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format", __func__);
 
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _parall_msr_sym_dmumps(a, sd->dmumps);
-        /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
-        /*   _parall_native_sym_dmumps(a, sd->dmumps); */
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format in parallel", __func__);
+    }
+    break;
 
-      }
-      else { /* Sequential computation */
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+    if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _msr_sym_dmumps(a, sd->dmumps);
-        else if (cs_mat_type == CS_MATRIX_NATIVE)
-          _native_sym_dmumps(a, sd->dmumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format", __func__);
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _parall_msr_smumps(verbosity, a, sd->smumps);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format in parallel", __func__);
 
-      }
+    }
+    else { /* Sequential computation */
+
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _msr_smumps(verbosity, a, sd->smumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _native_smumps(verbosity, a, sd->smumps);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format", __func__);
+
     }
     break;
 
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-    {
-      sd->dmumps = NULL;        /* Not used anymore */
-      BFT_MALLOC(sd->smumps, 1, SMUMPS_STRUC_C);
+    if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
-      sd->smumps->job = MUMPS_JOB_INIT;
-      sd->smumps->par = 1;      /* all ranks are working */
-      sd->smumps->sym = 2;
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _parall_msr_sym_smumps(verbosity, a, sd->smumps);
+      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
+      /*   _parall_native_sym_smumps(a, sd->smumps); */
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format in parallel", __func__);
 
-      _init_smumps(_verbosity, sd->smumps);
+    }
+    else { /* Sequential computation */
 
-      /* Set the linear system */
-      if (cs_glob_n_ranks > 1) { /* Parallel computation */
+      if (cs_mat_type == CS_MATRIX_MSR)
+        _msr_sym_smumps(verbosity, a, sd->smumps);
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _native_sym_smumps(verbosity, a, sd->smumps);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid matrix format", __func__);
 
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _parall_msr_sym_smumps(a, sd->smumps);
-        /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
-        /*   _parall_native_sym_smumps(a, sd->smumps); */
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format in parallel", __func__);
-
-      }
-      else { /* Sequential computation */
-
-        if (cs_mat_type == CS_MATRIX_MSR)
-          _msr_sym_smumps(a, sd->smumps);
-        else if (cs_mat_type == CS_MATRIX_NATIVE)
-          _native_sym_smumps(a, sd->smumps);
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid matrix format", __func__);
-
-      }
     }
     break;
 
@@ -1916,12 +2049,12 @@ cs_sles_mumps_setup(void               *context,
   if (c->setup_hook != NULL)
     c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
 
-  /* Update return values */
+  /* Update returned values */
 
   c->n_setups += 1;
 
-  /* Second call: analysis and factorization */
-  /* --------------------------------------- */
+  /* 3. Analysis and factorization */
+  /* ----------------------------- */
 
   MUMPS_INT  infog1, infog2;
 
