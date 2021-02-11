@@ -848,6 +848,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         m_elec = False
         m_atmo = False
         m_gwf = False
+        m_icm = False
 
         node_pm = case.xmlGetNode('thermophysical_models')
 
@@ -907,6 +908,16 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
             if m_thermal > 0:
                 m_cht = True
+
+            if not m_icm:
+                node = node_pm.xmlGetChildNode("internal_coupling")
+                if node:
+                    node = node.xmlGetChildNode("solid_zones")
+                    if node:
+                        if len(node.xmlGetChildNodeList("zone")) > 0:
+                            m_icm = True
+                        else:
+                            m_icm = False
 
         node = case.xmlGetNode('lagrangian', 'model')
         if node and node['model'] != "off":
@@ -1014,7 +1025,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Immersed boundaries is deactivated for the moment. Will be
         # reactivated following v6.1 once Page is updated in NCFD
         self.setRowShow(self.tr('Immersed Boundaries'), False)
-        self.setRowShow(self.tr("Coupling parameters"), m_lagr or m_ale or is_ncfd or m_cht)
+        self.setRowShow(self.tr("Coupling parameters"), m_lagr or m_ale or is_ncfd or m_cht or m_icm)
 
         # Time settings
 
