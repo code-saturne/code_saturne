@@ -274,6 +274,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxHgn.hide()
         self.comboBoxNeptuneCFD.hide()
 
+        self.checkBoxNeptuneHeatMass.hide()
         self.checkBoxPther.hide()
 
     def __stringModelFromCombo(self, name):
@@ -465,6 +466,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.__hideComboBox()
 
         self.comboBoxNeptuneCFD.show()
+        self.checkBoxNeptuneHeatMass.show()
 
         self.nept = MainFieldsModel(self.case)
 
