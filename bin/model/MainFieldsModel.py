@@ -811,7 +811,6 @@ class MainFieldsModel(Variables, Model):
         # Variables : neptune_cfd.core.XMLvariables.Variables
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
                                                     "surface_tension", "Surf_tens")
-        self._deleteFieldsProperties()
         energyModel = "total_enthalpy"
         if self.getHeatMassTransferStatus() == "off":
             energyModel = "off"
@@ -844,17 +843,6 @@ class MainFieldsModel(Variables, Model):
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
 
-            if flow_choice != "particles_flow":
-                # initialisation for thermodynamic material
-                if EOS == 1:
-                    defaultMaterial = "Water"
-                    self._setFieldMaterial("1", defaultMaterial)
-                    self._setFieldMaterial("2", defaultMaterial)
-                self._createSaturationProperties()
-                self._createWallFieldsProperties()
-            else:
-                self._deleteFieldsProperties()
-
             # Remove remnant fields from previous flow choice
             for fieldId in self.getFieldIdList():
                 if fieldId not in ["1", "2"]:
@@ -871,6 +859,13 @@ class MainFieldsModel(Variables, Model):
 
             if flow_choice != "boiling_flow" and flow_choice != "free_surface" and flow_choice != "multiregime":
                 self.XMLMassTrans.xmlRemoveChild('nucleate_boiling')
+
+            if (flow_choice == "particles_flow"):
+                self._deleteFieldsProperties()
+            else:
+                # Recreate fields in previous flow choice is "particles_flow"
+                status = self.getHeatMassTransferStatus()
+                self.setHeatMassTransferStatus(status)
 
         else :
             GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
@@ -895,6 +890,7 @@ class MainFieldsModel(Variables, Model):
             compressible = "off"
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
+
         self.case.undoStart()
 
         return node
@@ -1015,6 +1011,11 @@ class MainFieldsModel(Variables, Model):
         self.isOnOff(status)
         node = self.XMLNodethermo.xmlInitChildNode('heat_mass_transfer')
         node.xmlSetAttribute(status=status)
+        if status == "on":
+            self._createSaturationProperties()
+            self._createWallFieldsProperties()
+        else:
+            self._deleteFieldsProperties()
 
     @Variables.noUndo
     def getHeatMassTransferStatus(self):

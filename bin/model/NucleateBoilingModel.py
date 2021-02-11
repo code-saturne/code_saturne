@@ -326,7 +326,6 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
            self.setThicknessValue(value)
         return value
 
-
     @Variables.undoLocal
     def setThicknessValue(self, value):
         """
@@ -334,6 +333,21 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         """
         self.isGreater(value, 0.)
         self.XMLnucleate.xmlSetData('thicknessvalue', value)
+
+    def resetToDefaultValues(self):
+        default = self.defaultValues()
+        self.setWallFunctionModel(default["wallfunction"])
+        self.setHeatTransferModel(default["heatmodel"])
+        self.setYPlusModel(default["yplusmodel"])
+        self.setYPlusValue(default["yplusvalue"])
+        self.setMaxRadius(default["cavities_radius"])
+        self.setMaxDiameter(default["bubbles_diameter"])
+        self.setMaxOverSaturation(default["oversaturate_temperature"])
+        self.setThermalConductivity(default["thermal_cond"])
+        self.setDensity(default["density"])
+        self.setSpecificHeat(default["cp"])
+        self.setThicknessStatus(default["thicknessmodel"])
+        self.setThicknessValue(default["thicknessvalue"])
 
 
 #-------------------------------------------------------------------------------

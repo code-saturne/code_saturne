@@ -98,7 +98,6 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
            self.setYPlusValue(value)
         return value
 
-
     @Variables.undoLocal
     def setYPlusValue(self, value):
         """
@@ -106,6 +105,11 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
         """
         self.isGreater(value, 0.)
         self.XMLMassTrans.xmlSetData('yplusvalue', value)
+
+    def resetToDefaultValues(self):
+        default = self.defaultValues()
+        self.setYPlusModel(default["yplusmodel"])
+        self.setYPlusValue(default["yplusvalue"])
 
 
 #-------------------------------------------------------------------------------
