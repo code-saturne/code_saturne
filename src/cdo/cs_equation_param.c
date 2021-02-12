@@ -385,7 +385,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
     }
     else if (strcmp(keyval, "gcr") == 0)
-      eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
+      eqp->sles_param->solver = CS_PARAM_ITSOL_GCR;
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0)
