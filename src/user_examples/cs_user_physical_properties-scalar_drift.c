@@ -84,9 +84,6 @@ cs_user_physical_properties(cs_domain_t *domain)
   /* Key id for drift scalar */
   const int keydri = cs_field_key_id("drift_scalar_model");
 
-  /* Key id for scalar id */
-  const int keyscal = cs_field_key_id("scalar_id");
-
   /* Key id for diffusivity id */
   const int kivisl = cs_field_key_id("diffusivity_id");
 
@@ -133,16 +130,13 @@ cs_user_physical_properties(cs_domain_t *domain)
       /* Position of variables, coefficients
        * ----------------------------------- */
 
-      cs_real_t *cpro_taup = NULL, *cpro_taufpt = NULL, *cpro_vscal = NULL;
-
-      /* Scalar id */
-      int iscal = cs_field_get_key_int(f, keyscal);
+      cs_real_t *cpro_taup = NULL, *cpro_taufpt = NULL, *cpro_viscls = NULL;
 
       /* Scalar's diffusivity (Brownian motion) */
 
       int ifcvsl = cs_field_get_key_int(f, kivisl);
       if (ifcvsl > -1)
-        cpro_vscal = cs_field_by_id(ifcvsl)->val;
+        cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
       /* Coefficients of drift scalar CHOSEN BY THE USER
          Values given here are fictitious */
@@ -251,8 +245,8 @@ cs_user_physical_properties(cs_domain_t *domain)
         cs_real_t xvart = cvar_t[c_id];
         cs_real_t rho = cpro_rom[c_id];
         cs_real_t viscl = cpro_viscl[c_id];
-        cpro_vscal[c_id] =   rho*cs_physical_constants_kb*xvart
-                           * cuning/(3.*cs_math_pi*diamp*viscl);
+        cpro_viscls[c_id] =   rho*cs_physical_constants_kb*xvart
+                            * cuning/(3.*cs_math_pi*diamp*viscl);
       }
 
     } /* End of test on drift */
