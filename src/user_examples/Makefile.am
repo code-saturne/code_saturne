@@ -103,6 +103,7 @@ cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
 cs_user_lagr_particle-coal.c \
+cs_user_les_inflow-base.c\
 cs_user_mesh-boundary.c \
 cs_user_mesh-cartesian.c \
 cs_user_mesh-groups_from_free_faces.c \
@@ -119,6 +120,7 @@ cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-linear_solvers.c \
+cs_user_parameters-rotation.c \
 cs_user_parameters-volume_mass_injection.c \
 cs_user_parameters-time_moments.c \
 cs_user_performance_tuning-matrix.c \
@@ -126,6 +128,7 @@ cs_user_performance_tuning-numbering.c \
 cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
 cs_user_physical_properties.c \
+cs_user_physical_properties-scalar_drift.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
 cs_user_postprocess-profiles.c \
@@ -134,6 +137,11 @@ cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver-heat-equation.c \
+cs_user_source_terms-base.c \
+cs_user_source_terms-momentum.c \
+cs_user_source_terms-richards.c \
+cs_user_source_terms-scalar_in_a_channel.c \
+cs_user_source_terms-turbulence.c \
 cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_atmospheric_model.f90 \
@@ -173,22 +181,14 @@ cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-richards.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
-cs_user_les_inflow-base.c\
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \
-cs_user_parameters-rotation.f90 \
 cs_user_parameters.f90 \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
-cs_user_physical_properties-scalar_drift.f90 \
-cs_user_source_terms-base.c \
-cs_user_source_terms-momentum.c \
-cs_user_source_terms-richards.c \
-cs_user_source_terms-scalar_in_a_channel.c \
-cs_user_source_terms-turbulence.c \
 usthht.f90
 
 noinst_LTLIBRARIES = libcsexample.la
