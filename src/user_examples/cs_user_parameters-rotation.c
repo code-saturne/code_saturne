@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -41,6 +41,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -52,9 +58,11 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_physical_properties.c
+ * \file cs_user_parameters-rotation.c
  *
- * \brief User definition of physical properties.
+ * \brief Rotation parameters example.
+ *
+ * See \ref parameters for other examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -64,41 +72,38 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function called at each time step to define physical properties.
+ * \brief Define or modify general numerical and physical user parameters.
  *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * At the calling point of this function, most model-related most variables
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_domain_t *domain)
+cs_user_parameters(cs_domain_t *domain)
 {
-  CS_UNUSED(domain);
+  /* Rotation of the reference frame (omega in rad/s)
+   *
+   * If the rotation is not nul, then
+   *   icorio = 0: rotation is taken into account by rotating the mesh
+   *               (simulation in the absolute frame)
+   *            = 1: rotation is taken into account by Coriolis source terms
+   *                (simulation in the relative frame) */
 
-  /* Check fields exists */
-  if (CS_F_(lambda) == NULL)
-    bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
-  if (CS_F_(rho) == NULL)
-    bft_error(__FILE__, __LINE__, 0,_("error rho not variable\n"));
-  if (CS_F_(cp) == NULL)
-    bft_error(__FILE__, __LINE__, 0,_("error cp not variable\n"));
+  /*! [param_rotation] */
+  cs_physical_constants_t *p_constants = cs_get_glob_physical_constants();
+  p_constants->icorio = 0;
 
-  cs_real_t *cpro_lambda = CS_F_(lambda)->val;
-  cs_real_t *cpro_rho = CS_F_(rho)->val;
-  cs_real_t *cpro_cp = CS_F_(cp)->val;
-
-  /* Impose thermal conductivity, density and specific heat for solid zones */
-  {
-    /* Volume zone "CM" must be defined in the GUI or in cs_user_zones.c */
-    const cs_zone_t *z = cs_volume_zone_by_name("CM");
-
-    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-      cs_lnum_t cell_id = z->elt_ids[i];
-      cpro_lambda[cell_id] = 3.3;
-      cpro_rho[cell_id] = 7800.;
-      cpro_cp[cell_id] = 444.;
-    }
-  }
+  cs_rotation_define(0., 0., 2.,   /* rotation vector */
+                     0., 0., 0.);  /* invariant point */
+  /*! [param_rotation] */
 }
 
 /*----------------------------------------------------------------------------*/
