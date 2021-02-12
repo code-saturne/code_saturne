@@ -88,8 +88,8 @@ typedef struct {
 
   /* Structure used for synchronisation (parallel or periodic). Enable to
      switch from a scatter view (the mesh view) to a gather view (the algebraic
-     view) */
-  cs_range_set_t  *rset;
+     view). This structure is shared. */
+  const cs_range_set_t  *rset;
 
 } cs_saddle_system_t;
 

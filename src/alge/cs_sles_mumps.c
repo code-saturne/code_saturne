@@ -1946,8 +1946,8 @@ cs_sles_mumps_setup(void               *context,
 
       if (cs_mat_type == CS_MATRIX_MSR)
         _parall_msr_dmumps(verbosity, a, sd->dmumps);
-      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
-      /*   _parall_native_dmumps(verbosity, a, sd->dmumps); */
+      else if (cs_mat_type == CS_MATRIX_NATIVE)
+        _parall_native_dmumps(verbosity, a, sd->dmumps);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);

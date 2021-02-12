@@ -350,75 +350,6 @@ _face_gdot(cs_lnum_t    size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform a matrix-vector multiplication (matvec is not allocated
- *         when given as input parameter)
- *
- * \param[in]      mat        matrix
- * \param[in]      rset       pointer to a cs_range_set_t structure
- * \param[in]      vec_len    size of the vector length
- * \param[in, out] vec        vector
- * \param[out]     p_matvec   resulting vector for the matrix-vector product
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_matrix_vector_multiply(const cs_matrix_t         *mat,
-                        const cs_range_set_t      *rset,
-                        cs_lnum_t                  vec_len,
-                        cs_real_t                 *vec,
-                        cs_real_t                **p_matvec)
-{
-  if (mat == NULL || vec == NULL)
-    return;
-
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(mat);
-
-  /* Handle the input array
-   * n_rows = n_gather_elts <= n_scatter_elts = n_dofs (mesh view) <= n_cols
-   */
-  cs_real_t  *vecx = NULL;
-  if (n_cols > vec_len) {
-    BFT_MALLOC(vecx, n_cols, cs_real_t);
-    memcpy(vecx, vec, sizeof(cs_real_t)*vec_len);
-  }
-  else
-    vecx = vec;
-
-  /* scatter view to gather view */
-  if (rset != NULL)
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE,  /* type */
-                        1,             /* stride */
-                        vecx,          /* in:  size=n_sles_scatter_elts */
-                        vecx);         /* out: size=n_sles_gather_elts */
-
-  /* Handle the output array */
-  cs_real_t  *matvec = NULL;
-  BFT_MALLOC(matvec, n_cols, cs_real_t);
-  memset(matvec, 0, sizeof(cs_real_t)*n_cols);
-
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, mat, vecx, matvec);
-
-  /* gather to scatter view (i.e. algebraic to mesh view) */
-  cs_range_set_scatter(rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       vecx, vec);
-  cs_range_set_scatter(rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       matvec, matvec);
-
-  /* Free allocated memory if needed */
-  if (vecx != vec) {
-    assert(n_cols > vec_len);
-    BFT_FREE(vecx);
-  }
-
-  /* return the resulting array */
-  *p_matvec = matvec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define the matrix for an approximation of the Schur complement based
  *         on the inverse of the diagonal of the velocity block
  *
@@ -945,6 +876,9 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
                  const cs_saddle_system_t      *ssys,
                  cs_saddle_block_precond_t     *sbp)
 {
+  CS_UNUSED(ssys);
+  CS_UNUSED(nsp);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
@@ -954,9 +888,6 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const cs_lnum_t  b11_size = ssys->x1_size;
-  const cs_lnum_t  schur_size = ssys->x2_size;
 
   /* Native format for the Schur approximation matrix */
   cs_real_t   *diagK = NULL;

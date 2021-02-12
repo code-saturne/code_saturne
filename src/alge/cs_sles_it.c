@@ -3642,6 +3642,8 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
+  cs_sles_convergence_state_t cvg = CS_SLES_CONVERGED;
+
   CS_UNUSED(c);
   CS_UNUSED(a);
   CS_UNUSED(diag_block_size);
@@ -3651,6 +3653,8 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
   CS_UNUSED(vx);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
+
+  return cvg;
 }
 
 /*============================================================================

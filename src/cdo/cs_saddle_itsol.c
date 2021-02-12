@@ -598,7 +598,7 @@ _elman_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
 
-  cs_range_set_t  *rset = ssys->rset;
+  const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
   /* Prepare solving (handle parallelism) scatter --> gather transformation
@@ -760,7 +760,7 @@ _gs_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
 
-  cs_range_set_t  *rset = ssys->rset;
+  const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
   assert(sbp->m11_slesp != NULL);
@@ -941,6 +941,8 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
                      cs_real_t                   *z,
                      cs_real_t                   *pc_wsp)
 {
+  CS_UNUSED(pc_wsp);
+
   if (z == NULL)
     return 0;
 
@@ -952,7 +954,7 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
          sbp->schur_type == CS_PARAM_SCHUR_DIAG_INVERSE ||
          sbp->schur_type == CS_PARAM_SCHUR_LUMPED_INVERSE);
 
-  cs_range_set_t  *rset = ssys->rset;
+  const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
   /* Prepare solving (handle parallelism) scatter --> gather transformation
