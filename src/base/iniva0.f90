@@ -362,7 +362,7 @@ if(itytur.eq.2 .or. itytur.eq.5) then
   if (uref.ge.0.d0) then
     do iel = 1, ncelet
       cvar_k(iel) = 1.5d0*(0.02d0*uref)**2
-      cvar_ep(iel) = cvar_k(iel)**1.5d0*xcmu/almax
+      cvar_ep(iel) = cvar_k(iel)**1.5d0*cmu/almax
     enddo
 
     call clipke(ncel, 1)
