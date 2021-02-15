@@ -330,6 +330,12 @@ typedef enum {
  * GMRES. This option is only available with the support to the PETSc
  * library up to now.
  *
+ * \var CS_NAVSTO_SLES_USER
+ * Associated keyword: "user"
+ *
+ * Resolution using a user-defined function. This function fulfills a
+ * pre-defined prototype
+ *
  * \var CS_NAVSTO_SLES_UZAWA_AL
  * Associated keyword: "uzawa_al"
  *
@@ -359,6 +365,7 @@ typedef enum {
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
+  CS_NAVSTO_SLES_USER,
   CS_NAVSTO_SLES_UZAWA_AL,
   CS_NAVSTO_SLES_UZAWA_CG,
 

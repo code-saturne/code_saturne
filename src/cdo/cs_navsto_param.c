@@ -448,6 +448,9 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
                   " + GMRES\n");
     break;
+  case CS_NAVSTO_SLES_USER:
+    cs_log_printf(CS_LOG_SETUP, "User-defined\n");
+    break;
   case CS_NAVSTO_SLES_UZAWA_AL:
     cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
     break;

@@ -191,6 +191,41 @@ _setup_velocity_gamg(void)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * User function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User-defined algorithm to solve a saddle point problem (the system is
+ *        stored in a hybrid way). Please refer to cs_saddle_system_t structure
+ *        and cs_saddle_block_precond_t structure definitions.
+ *
+ * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in, out] sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_navsto_sles_solve(const cs_navsto_param_sles_t    *nslesp,
+                          cs_saddle_system_t              *ssys,
+                          cs_saddle_block_precond_t       *sbp,
+                          cs_real_t                       *x1,
+                          cs_real_t                       *x2,
+                          cs_iter_algo_info_t             *info)
+{
+  CS_UNUSED(nslesp);
+  CS_UNUSED(ssys);
+  CS_UNUSED(sbp);
+  CS_UNUSED(x1);
+  CS_UNUSED(x2);
+  CS_UNUSED(info);
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

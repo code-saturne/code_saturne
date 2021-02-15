@@ -64,6 +64,7 @@
 #include "cs_iter_algo.h"
 #include "cs_matrix_default.h"
 #include "cs_navsto_coupling.h"
+#include "cs_navsto_sles.h"
 #include "cs_parall.h"
 #include "cs_saddle_itsol.h"
 #include "cs_sles.h"
@@ -3420,7 +3421,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(xu, ssys->max_x1_size, cs_real_t);
   memcpy(xu, msles->u_f, ssys->x1_size*sizeof(cs_real_t));
 
-  switch (nsp->sles_param->strategy) {
+  switch (nslesp->strategy) {
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
     {
@@ -3479,6 +3480,21 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_MINRES:   /* No block preconditioning */
     cs_saddle_minres(ssys, NULL, xu, msles->p_c, saddle_info);
+    break;
+
+  case CS_NAVSTO_SLES_USER:     /* User-defined strategy */
+    {
+      /* Define block preconditionning */
+      cs_saddle_block_precond_t  *sbp =
+        cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_DIAG,
+                                       nslesp->schur_approximation,
+                                       eqp->sles_param,
+                                       msles->sles);
+
+      cs_user_navsto_sles_solve(nslesp, ssys, sbp, xu, msles->p_c, saddle_info);
+
+      cs_saddle_block_precond_free(&sbp);
+    }
     break;
 
   default:

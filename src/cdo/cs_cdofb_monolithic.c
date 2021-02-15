@@ -1813,6 +1813,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   case CS_NAVSTO_SLES_UZAWA_CG:
   case CS_NAVSTO_SLES_MINRES:
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
+  case CS_NAVSTO_SLES_USER:
     cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
     break;
