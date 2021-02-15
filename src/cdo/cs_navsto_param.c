@@ -402,18 +402,15 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   cs_log_printf(CS_LOG_SETUP, "%s SLES strategy: ", navsto);
   switch (nslesp->strategy) {
 
-  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "Handle the full system as it is.\n");
+  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
     break;
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
     cs_log_printf(CS_LOG_SETUP, "Block AMG + CG\n");
     break;
-  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
-    break;
-  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
-    cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner"
-                  " + GMRES\n");
+  case CS_NAVSTO_SLES_BY_BLOCKS:
+    cs_log_printf(CS_LOG_SETUP,
+                  "Blocks for velocity and pressure (deprecated)\n");
     break;
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
@@ -425,9 +422,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
                   cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
-                  " + GMRES\n");
+  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Handle the full system as it is.\n");
     break;
   case CS_NAVSTO_SLES_GKB_PETSC:
     cs_log_printf(CS_LOG_SETUP, "GKB algorithm (through PETSc)\n");
@@ -441,8 +437,16 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_MINRES:
     cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");
     break;
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:+
+    cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner"
+                  " + GMRES\n");
+    break;
   case CS_NAVSTO_SLES_MUMPS:
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
+    break;
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
+                  " + GMRES\n");
     break;
   case CS_NAVSTO_SLES_UZAWA_AL:
     cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
