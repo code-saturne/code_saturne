@@ -171,7 +171,7 @@ _cvg_test(cs_iter_algo_info_t       *info)
  *
  * \param[in]     ssys     pointer to a cs_saddle_system_t structure
  * \param[in]     scalar   scaling coefficient to apply
- * \param[in]     x        vector used for the norm computation
+ * \param[in]     x        vector to consider
  */
 /*----------------------------------------------------------------------------*/
 
@@ -261,7 +261,7 @@ _dot_product(cs_saddle_system_t   *ssys,
  * \brief Compute the norm of a vector split into the x1 and x2 part
  *        The synchronization is performed during the process.
  *
- * \param[in]     ssys      pointer to a cs_saddle_system_t structure
+ * \param[in]     ssys    pointer to a cs_saddle_system_t structure
  * \param[in]     x       vector used for the norm computation
  *
  * \return the value of the euclidean norm of x
@@ -1383,14 +1383,14 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
   /* --- ALGO END --- */
 
-#if 0
-  /* Compute the real residual norm at exit */
-  _compute_residual_3(ssys, x1, x2, v);
-  beta = _norm(ssys, v); /* ||v|| */
-  if (cs_glob_rank_id < 1)
-    printf(" >> Residual norm at exit= %6.4e\n", beta);
-  cs_log_printf(CS_LOG_DEFAULT, " >> Residual norm at exit= %6.4e\n", beta);
-#endif
+  if (info->verbosity > 1) {
+    /* Compute the real residual norm at exit */
+    _compute_residual_3(ssys, x1, x2, v);
+    beta = _norm(ssys, v); /* ||v|| */
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: Residual norm at exit= %6.4e\n", __func__, beta);
+  }
+
 
   /* Free temporary workspace */
   BFT_FREE(wsp);

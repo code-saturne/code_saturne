@@ -432,7 +432,7 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
     break;
   case CS_NAVSTO_SLES_GKB_SATURNE:
-    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (In-House)\n");
+    cs_log_printf(CS_LOG_SETUP, "in-house GKB algorithm\n");
     break;
   case CS_NAVSTO_SLES_MINRES:
     cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");

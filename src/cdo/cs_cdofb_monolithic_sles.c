@@ -827,6 +827,8 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
                  const cs_saddle_system_t      *ssys,
                  cs_saddle_block_precond_t     *sbp)
 {
+  CS_UNUSED(sbp);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -4582,7 +4584,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
      * Prepare the computation of the RHS for the Uzawa system:
      * rhs = -gamma*B^T.W^-1.(B.u - g) */
-# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+#   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
       uza->d__v[ip] -= b_c[ip];
       uza->res_p[ip] = uza->inv_mp[ip] * uza->d__v[ip];
