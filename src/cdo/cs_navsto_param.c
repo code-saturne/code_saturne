@@ -314,6 +314,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   nslesp->il_algo_atol = 1e-08;
   nslesp->il_algo_dtol = 1e3;
   nslesp->il_algo_verbosity = 0;
+  nslesp->il_algo_restart = 10;
 
   switch (algo_coupling) {
 
@@ -404,6 +405,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
 
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
     cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
     break;
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
     cs_log_printf(CS_LOG_SETUP, "Block AMG + CG\n");
@@ -415,6 +418,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
                   " + GMRES\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
     break;
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
     cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
@@ -430,6 +435,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     break;
   case CS_NAVSTO_SLES_GKB_GMRES:
     cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
     break;
   case CS_NAVSTO_SLES_GKB_SATURNE:
     cs_log_printf(CS_LOG_SETUP, "in-house GKB algorithm\n");
@@ -447,6 +454,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
                   " + GMRES\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
     break;
   case CS_NAVSTO_SLES_USER:
     cs_log_printf(CS_LOG_SETUP, "User-defined\n");
@@ -893,6 +902,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     if (nsp->sles_param->il_algo_rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the residual tolerance\n", __func__);
+    break;
+
+  case CS_NSKEY_IL_ALGO_RESTART:
+    nsp->sles_param->il_algo_restart = atoi(val);
     break;
 
   case CS_NSKEY_IL_ALGO_VERBOSITY:

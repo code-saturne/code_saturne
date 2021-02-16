@@ -486,6 +486,10 @@ _set_key(cs_equation_param_t   *eqp,
     }
     break;
 
+  case CS_EQKEY_ITSOL_RESTART:
+    eqp->sles_param->restart = atoi(keyval);
+    break;
+
   case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
     if (strcmp(keyval, "critical") == 0)
       eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;

@@ -434,6 +434,12 @@ typedef struct {
    */
   cs_real_t                     il_algo_dtol;
 
+  /*! \var il_algo_restart
+   *  Number of iterations before restarting the iterative solver associated to
+   *  the inner linear system
+   */
+  int                           il_algo_restart;
+
   /*! \var n_max_il_algo_iter
    *  Maximal number of iterations to solve the inner linear system
    */
@@ -858,6 +864,10 @@ typedef struct {
  * Navier-Stokes system since one has to handle the non-linearity in addition as
  * an outer process.
  *
+ * \var CS_NSKEY_IL_ALGO_RESTART
+ * Number of iterations before restarting a Krylov solver as the main solver
+ * (useful if the strategy implied a GMRES, flexible GMRES or GCR)
+ *
  * \var CS_NSKEY_IL_ALGO_VERBOSITY
  * Level of verbosity related to the inner linear algorithm (cf. \ref
  * CS_NSKEY_SLES_STRATEGY)
@@ -936,6 +946,7 @@ typedef enum {
   CS_NSKEY_IL_ALGO_ATOL,
   CS_NSKEY_IL_ALGO_DTOL,
   CS_NSKEY_IL_ALGO_RTOL,
+  CS_NSKEY_IL_ALGO_RESTART,
   CS_NSKEY_IL_ALGO_VERBOSITY,
   CS_NSKEY_MAX_IL_ALGO_ITER,
   CS_NSKEY_MAX_NL_ALGO_ITER,

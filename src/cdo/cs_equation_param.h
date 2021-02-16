@@ -1037,6 +1037,13 @@ typedef struct {
  * "weighted_rhs" or "weighted"
  * "filtered_rhs" or "filtered_rhs"
  *
+ * \var CS_EQKEY_ITSOL_RESTART
+ * Maximum number of iterations before restarting a Krylov solver
+ * Only useful with GMRES, flexible GMRES or GCR solvers.
+ * This value has an impact on the memory footprint since one has to store a
+ * buffer of double with a size equal to restart*sizeof(solution array)
+ * - Example: "20"
+ *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active
  * Available choices are:
@@ -1120,6 +1127,7 @@ typedef enum {
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
   CS_EQKEY_ITSOL_RESNORM_TYPE,
+  CS_EQKEY_ITSOL_RESTART,
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_SLES_VERBOSITY,

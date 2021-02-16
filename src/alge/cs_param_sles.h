@@ -87,6 +87,7 @@ typedef struct {
    */
   cs_param_resnorm_type_t  resnorm_type;
   int                      n_max_iter;   /*!< max. number of iterations */
+  int                      restart;      /*!< max. iter. before restarting  */
   double                   eps;          /*!< stopping criterion on accuracy */
 
 } cs_param_sles_t;
