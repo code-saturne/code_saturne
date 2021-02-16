@@ -3036,10 +3036,12 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NAVSTO_SLES_MINRES:
+  case CS_NAVSTO_SLES_GCR:
     cs_equation_param_set_sles(mom_eqp);
     break;
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
     {
       cs_equation_param_set_sles(mom_eqp);
 
@@ -3424,6 +3426,62 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   switch (nslesp->strategy) {
 
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
+    {
+      /* Define block preconditionning */
+      cs_saddle_block_precond_t  *sbp =
+        cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_DIAG,
+                                       nslesp->schur_approximation,
+                                       eqp->sles_param,
+                                       msles->sles);
+
+      /* Schur preconditionning */
+      cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
+
+      sbp->schur_slesp = schur_slesp;
+      if (msles->schur_sles == NULL)
+        /* This sles structure should have been defined by name */
+        sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+      /* Compute the schur approximation matrix */
+      switch (nslesp->schur_approximation) {
+
+      case CS_PARAM_SCHUR_DIAG_INVERSE:
+        _diag_schur_sbp(nsp, ssys, sbp);
+        break;
+      case CS_PARAM_SCHUR_ELMAN:
+        _elman_schur_sbp(nsp, ssys, sbp);
+        break;
+      case CS_PARAM_SCHUR_IDENTITY:
+        break; /* Nothing to do */
+      case CS_PARAM_SCHUR_LUMPED_INVERSE:
+        _invlumped_schur_sbp(nsp, ssys, sbp);
+        break;
+      case CS_PARAM_SCHUR_MASS_SCALED:
+        _scaled_mass_sbp(nsp, ssys, sbp);
+        break; /* Nothing to do */
+      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+        _scaled_mass_sbp(nsp, ssys, sbp);
+        _diag_schur_sbp(nsp, ssys, sbp);
+        break;
+      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+        _scaled_mass_sbp(nsp, ssys, sbp);
+        _invlumped_schur_sbp(nsp, ssys, sbp);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid Schur approximation.", __func__);
+      }
+
+      /* Call the inner linear algorithm */
+      cs_saddle_gcr(nslesp->il_algo_restart, ssys,
+                    sbp, xu, msles->p_c, saddle_info);
+
+      cs_saddle_block_precond_free(&sbp);
+    }
+    break;
+
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
     {
       /* Define block preconditionning */
@@ -3477,6 +3535,11 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
       cs_saddle_block_precond_free(&sbp);
     }
+    break;
+
+  case CS_NAVSTO_SLES_GCR:   /* No block preconditioning */
+    cs_saddle_gcr(nslesp->il_algo_restart, ssys, NULL,
+                  xu, msles->p_c, saddle_info);
     break;
 
   case CS_NAVSTO_SLES_MINRES:   /* No block preconditioning */

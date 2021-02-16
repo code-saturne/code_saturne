@@ -415,6 +415,14 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP,
                   "Blocks for velocity and pressure (deprecated)\n");
     break;
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
+    cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
+                  " + GCR\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
+    break;
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
                   " + GMRES\n");
@@ -429,6 +437,11 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     break;
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
     cs_log_printf(CS_LOG_SETUP, "Handle the full system as it is.\n");
+    break;
+  case CS_NAVSTO_SLES_GCR:
+    cs_log_printf(CS_LOG_SETUP, "in-house GCR\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
     break;
   case CS_NAVSTO_SLES_GKB_PETSC:
     cs_log_printf(CS_LOG_SETUP, "GKB algorithm (through PETSc)\n");
@@ -481,7 +494,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
 
   /* Additional settings for the Schur complement solver */
   if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG ||
-      nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES)
+      nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES ||
+      nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GCR)
     cs_param_sles_log(nslesp->schur_sles_param);
 
 }
@@ -1016,18 +1030,21 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     /* In-house strategies. Do not need a third-part library. */
     /* ------------------------------------------------------ */
 
-    if (strcmp(val, "diag_schur_minres") == 0 ||
-        strcmp(val, "schur_diag_minres") == 0)
-      nsp->sles_param->strategy = CS_NAVSTO_SLES_DIAG_SCHUR_MINRES;
-    else if (strcmp(val, "no_block") == 0)
-      nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-    else if (strcmp(val, "minres") == 0)
-      nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;
-    else if (strcmp(val, "block_amg_cg") == 0)
+    if (strcmp(val, "block_amg_cg") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
+    else if (strcmp(val, "diag_schur_gcr") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GCR;
+    else if (strcmp(val, "diag_schur_minres") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_DIAG_SCHUR_MINRES;
+    else if (strcmp(val, "gcr") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_GCR;
     else if (strcmp(val, "gkb_saturne") == 0 ||
              strcmp(val, "gkb") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+    else if (strcmp(val, "minres") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;
+    else if (strcmp(val, "no_block") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
     else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0)

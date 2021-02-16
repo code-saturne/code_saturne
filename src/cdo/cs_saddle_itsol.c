@@ -113,6 +113,31 @@ typedef int
  *============================================================================*/
 
 /*============================================================================
+ * Static inline private function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the position id in the array used to store a upper-right
+ *        triangular matrix
+ *
+ * \param[in]  m      size of the square matrix
+ * \param[in]  i      row id
+ * \param[in]  j      column id
+ *
+ * \return the position id in the array
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+_get_id(int    m,
+        int    i,
+        int    j)
+{
+  return j + i*m - (i*(i + 1))/2;
+}
+
+/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -177,7 +202,7 @@ _cvg_test(cs_iter_algo_info_t       *info)
 
 static void
 _scalar_scaling(cs_saddle_system_t   *ssys,
-                cs_real_t             scalar,
+                const cs_real_t       scalar,
                 cs_real_t            *x)
 {
   assert(x != NULL);
@@ -190,6 +215,37 @@ _scalar_scaling(cs_saddle_system_t   *ssys,
 # pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < ssys->x2_size; i++)
     x2[i] *= scalar;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the X += mu * Y
+ *        for vectors (X and Y) split into two parts
+ *
+ * \param[in]      ssys     pointer to a cs_saddle_system_t structure
+ * \param[in]      mu       multiplicative coefficient to apply
+ * \param[in]      y        array
+ * \param[in, out] x        resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_scaled_vector(cs_saddle_system_t   *ssys,
+                   const cs_real_t       mu,
+                   const cs_real_t      *y,
+                   cs_real_t            *x)
+{
+  assert(x != NULL && y != NULL);
+  cs_real_t  *x1 = x, *x2 = x + ssys->max_x1_size;
+  const cs_real_t  *y1 = y, *y2 = y + ssys->max_x1_size;
+
+# pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < ssys->x1_size; i++)
+    x1[i] += mu*y1[i];
+
+# pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < ssys->x2_size; i++)
+    x2[i] += mu*y2[i];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1096,6 +1152,72 @@ _no_pc_apply(cs_saddle_system_t          *ssys,
   return 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the function pointer on the preconditioner (pc) and its
+ *         workspace
+ *
+ * \param[in]  ssys      pointer to a cs_saddle_system_t structure
+ * \param[in]  sbp       block-preconditioner for the Saddle-point problem
+ * \param[out] wsp_size  size of the workspace dedicated to the preconditioner
+ * \param[out] p_wsp     double pointer on the workspace buffer
+ *
+ * \return a pointer to the preconditioner function to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_saddle_pc_apply_t *
+_set_pc(const cs_saddle_system_t          *ssys,
+        const cs_saddle_block_precond_t   *sbp,
+        cs_lnum_t                         *wsp_size,
+        cs_real_t                        **p_wsp)
+{
+  /* Initialization */
+  *wsp_size = 0;
+  *p_wsp = NULL;
+
+  if (sbp == NULL) /* No preconditioning */
+    return  _no_pc_apply;
+
+  else { /* There is a preconditioner to set */
+
+    switch (sbp->block_type) {
+
+    case CS_PARAM_PRECOND_BLOCK_NONE:
+      return _no_pc_apply; /* No preconditioning */
+
+    case CS_PARAM_PRECOND_BLOCK_DIAG:
+      switch (sbp->schur_type) {
+
+      case CS_PARAM_SCHUR_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_IDENTITY:
+      case CS_PARAM_SCHUR_LUMPED_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED:
+      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+        return  _diag_schur_pc_apply;
+
+      case CS_PARAM_SCHUR_ELMAN:
+        *wsp_size = 2*ssys->max_x1_size;
+        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+        return  _elman_schur_pc_apply;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid Schur approximation.", __func__);
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid block preconditioner.", __func__);
+    }
+
+  } /* preconditioner to set */
+
+  return NULL;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1218,48 +1340,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   /* Set pointer for the block preconditioning */
   cs_lnum_t  pc_wsp_size = 0;
   cs_real_t  *pc_wsp = NULL;
-  cs_saddle_pc_apply_t  *pc_apply = NULL;
-
-  if (sbp == NULL) /* No preconditioning */
-    pc_apply = _no_pc_apply;
-
-  else {
-
-    switch (sbp->block_type) {
-
-    case CS_PARAM_PRECOND_BLOCK_NONE:
-      /* No preconditioning */
-      pc_apply = _no_pc_apply;
-      break;
-    case CS_PARAM_PRECOND_BLOCK_DIAG:
-      switch (sbp->schur_type) {
-
-      case CS_PARAM_SCHUR_DIAG_INVERSE:
-      case CS_PARAM_SCHUR_IDENTITY:
-      case CS_PARAM_SCHUR_LUMPED_INVERSE:
-      case CS_PARAM_SCHUR_MASS_SCALED:
-      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
-      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-        pc_apply = _diag_schur_pc_apply;
-        break;
-      case CS_PARAM_SCHUR_ELMAN:
-        pc_apply = _elman_schur_pc_apply;
-        pc_wsp_size = 2*ssys->max_x1_size;
-        BFT_MALLOC(pc_wsp, pc_wsp_size, cs_real_t);
-        break;
-
-      default:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid Schur approximation.", __func__);
-      }
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid block preconditioner.", __func__);
-    }
-
-  }
+  cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
 
   /* --- ALGO BEGIN --- */
 
@@ -1391,8 +1472,189 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
                   " %s: Residual norm at exit= %6.4e\n", __func__, beta);
   }
 
+  /* Free temporary workspace */
+  BFT_FREE(wsp);
+  BFT_FREE(pc_wsp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the GCR algorithm to a saddle point problem (the system is
+ *        stored in a hybrid way). Please refer to cs_saddle_system_t structure
+ *        definition.
+ *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
+ *        vector.
+ *        This algorithm is taken from 2010 Notay's paper:
+ *        "An aggregation-based algebraic multigrid method" ETNA (vol. 37)
+ *
+ * \param[in]      restart  number of iterations before restarting
+ * \param[in]      ssys     pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp      block-preconditioner for the Saddle-point problem
+ * \param[in, out] x1       array for the first part
+ * \param[in, out] x2       array for the second part
+ * \param[in, out] info     pointer to a cs_iter_algo_info_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_gcr(int                          restart,
+              cs_saddle_system_t          *ssys,
+              cs_saddle_block_precond_t   *sbp,
+              cs_real_t                   *x1,
+              cs_real_t                   *x2,
+              cs_iter_algo_info_t         *info)
+{
+  /* Workspace: Specific buffers for this algorithm */
+  const int  triangular_size = (restart*(restart+1))/2;
+  double  *gamma = NULL;
+  BFT_MALLOC(gamma, triangular_size, double);
+  memset(gamma, 0, triangular_size*sizeof(double));
+
+  double  *alpha = NULL, *beta = NULL;
+  BFT_MALLOC(alpha, 2*restart, double);
+  memset(alpha, 0, 2*restart*sizeof(double));
+  beta = alpha + restart;
+
+  const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->max_x2_size;
+  cs_lnum_t  wsp_size = (2 + 2*restart)*ssys_size;
+  cs_real_t  *wsp = NULL;
+  BFT_MALLOC(wsp, wsp_size, cs_real_t);
+  memset(wsp, 0, wsp_size*sizeof(cs_real_t));
+
+  cs_real_t  *zsave = wsp;
+  cs_real_t  *csave = wsp + restart*ssys_size;
+  cs_real_t  *c_tmp = wsp + 2*restart*ssys_size; /* size = ssys_size */
+  cs_real_t  *r     = c_tmp + ssys_size;
+
+  /* Set pointer for the block preconditioning */
+  cs_lnum_t  pc_wsp_size = 0;
+  cs_real_t  *pc_wsp = NULL;
+  cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
+
+  /* --- ALGO BEGIN --- */
+
+  /* Compute the first residual: r = b - M.x */
+
+  _compute_residual_3(ssys, x1, x2, r);
+
+  info->res0 = _norm(ssys, r); /* ||r|| */
+  info->res = info->res0;
+
+  /* --- MAIN LOOP --- */
+
+  int  _restart = restart;
+
+  while (info->cvg == CS_SLES_ITERATING) {
+
+    if (info->n_algo_iter > 0)
+      _compute_residual_3(ssys, x1, x2, r);
+
+    for (int j = 0; j < _restart; j++) {
+
+      /* Apply preconditioning: M.z = r */
+
+      cs_real_t  *zj = zsave + j*ssys_size;
+      info->n_inner_iter += pc_apply(ssys, sbp, r, zj, pc_wsp);
+
+      /* Compute the matrix-vector product M.z = cj
+       * cj plays the role of the temporary buffer during the first part of the
+       * algorithm. During the second part, one builds the final state for cj
+       */
+
+      cs_real_t  *cj = csave + j*ssys_size;
+      _matvec_product(ssys, zj, cj);
+
+      for (int i = 0; i < j; i++) {
+
+        /* Compute and store gamma_ij (i < j)/ */
+
+        cs_real_t  *ci = csave + i*ssys_size;
+        const double  gamma_ij = _dot_product(ssys, ci, cj);
+
+        gamma[_get_id(restart, i,j)] = gamma_ij;
+
+        /* cj = cj - gamma_ij*ci */
+
+        _add_scaled_vector(ssys, -gamma_ij, ci, cj);
+
+      } /* i < j */
+
+      /* Case i == j
+       * gamma_jj = sqrt(<cj, cj>) */
+
+      const double  gamma_jj = _norm(ssys, cj);
+      gamma[_get_id(restart, j,j)] = gamma_jj;
+
+      /* Compute cj = 1/gamma_jj * cj  */
+
+      assert(fabs(gamma_jj) > 0);
+      _scalar_scaling(ssys, 1./gamma_jj, cj);
+
+      /* Compute alpha, store it and use ot to update the residual
+       * r = r - alpha_j*c_j */
+
+      const double  _alpha = _dot_product(ssys, r, cj);
+      alpha[j] = _alpha;
+
+      _add_scaled_vector(ssys, -_alpha, cj, r);
+
+      /* New residual norm */
+
+      info->res = _norm(ssys, r); /* ||r|| */
+
+      /* Check convergence */
+
+      _cvg_test(info);
+
+      if (info->cvg != CS_SLES_ITERATING)
+        _restart = j + 1; /* Stop the loop on j */
+
+    } /* j < _restart */
+
+    /* Compute the solution vector as a linear combination
+     *
+     * Compute the beta array s.t. gamma * beta = alpha (one recalls that gamma
+     * is an upper left triangular matrix of size _restart)
+     */
+
+    for (int ki = _restart - 1; ki > -1; ki--) {
+      double  _beta = 0;
+      for (int kj = ki + 1; kj < _restart; kj++)
+        _beta += gamma[_get_id(restart, ki,kj)] * beta[kj];
+
+      beta[ki] = 1./gamma[_get_id(restart, ki, ki)]*(alpha[ki] - _beta);
+    }
+
+    cs_real_t  *update = c_tmp;
+    memset(update, 0, ssys_size*sizeof(cs_real_t));
+    for (int k = 0; k < _restart; k++)
+      _add_scaled_vector(ssys, beta[k], zsave + k*ssys_size, update);
+
+    const cs_real_t  *u1 = update;
+#   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
+    for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
+      x1[i1] += u1[i1];
+
+    const cs_real_t  *u2 = u1 + ssys->max_x1_size;
+#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+      x2[i2] += u2[i2];
+
+  } /* Until convergence */
+
+  /* --- ALGO END --- */
+
+  if (info->verbosity > 1) {
+    /* Compute the real residual norm at exit */
+    _compute_residual_3(ssys, x1, x2, r);
+    double _beta = _norm(ssys, r); /* ||r|| */
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s: Residual norm at exit= %6.4e\n", __func__, _beta);
+  }
 
   /* Free temporary workspace */
+  BFT_FREE(gamma);
+  BFT_FREE(alpha);
   BFT_FREE(wsp);
   BFT_FREE(pc_wsp);
 }

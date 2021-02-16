@@ -230,6 +230,17 @@ typedef enum {
  * library up to now.
  *
  *
+ * \var CS_NAVSTO_SLES_DIAG_SCHUR_GCR
+ * Associated keyword: "diag_schur_gcr"
+ *
+ * The Stokes or Navier-Stokes system is solved using a GCR algorithm with a
+ * block diagonal preconditioner using an Schur approximation for the pressure
+ * block (the block 22). The system is stored using a hybrid
+ * assembled/unassembled blocks. The velocity block is assembled (with
+ * potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
+ *
+ *
  * \var CS_NAVSTO_SLES_DIAG_SCHUR_MINRES
  * Associated keyword: "diag_schur_minres"
  *
@@ -249,6 +260,16 @@ typedef enum {
  * options for solving a linear system such as the choice of the iterative
  * solver or the choice of the preconditioner or the type of residual
  * normalization
+ *
+ *
+ * \var CS_NAVSTO_SLES_GCR
+ * Associated keyword: "gcr"
+ *
+ * The Stokes or Navier-Stokes system is solved using a GCR algorithm without
+ * preconditioning. The system is stored using a hybrid assembled/unassembled
+ * blocks. The velocity block is assembled (with potentially sub-blocks for
+ * each component) and the velocity divergence/pressure gradient operators are
+ * unassembled.
  *
  *
  * \var CS_NAVSTO_SLES_GKB_PETSC
@@ -355,9 +376,11 @@ typedef enum {
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
   CS_NAVSTO_SLES_BY_BLOCKS,     /* deprecated */
+  CS_NAVSTO_SLES_DIAG_SCHUR_GCR,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_DIAG_SCHUR_MINRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
+  CS_NAVSTO_SLES_GCR,
   CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
