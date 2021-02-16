@@ -108,6 +108,9 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         """
         self.__boundary = boundary
 
+        # By default hide the syrthes instance line
+        self.lineEditSyrthes.hide()
+
         for nb in range(len(self.__modelEnergy.getItems())):
             self.__modelEnergy.delItem(0)
 
