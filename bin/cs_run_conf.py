@@ -114,6 +114,7 @@ class run_conf(object):
             return
 
         need_rebuild = rebuild
+        force_rebuild = False
 
         lines = []
 
@@ -125,6 +126,7 @@ class run_conf(object):
         except IOError:
             if create_if_missing or rebuild:
                 need_rebuild = True
+                force_rebuild = True
                 lines = []
             else:
                 print("Error: can not open or read %s\n" % self.path)
@@ -136,11 +138,11 @@ class run_conf(object):
         self.__parse__(lines)
 
         if need_rebuild:
-            self.rebuild_resource()
+            self.rebuild_resource(force_rebuild)
 
     #---------------------------------------------------------------------------
 
-    def rebuild_resource(self):
+    def rebuild_resource(self, force_rebuild=False):
         """
         Rebuild dictionnary using reference templates
         """
@@ -169,10 +171,13 @@ class run_conf(object):
                                              package=self.package)
 
         if job_lines:
-            self.sections[resource_name]['job_header'] = os.linesep.join(job_lines)
+            if force_rebuild or not 'job_header' in self.sections[resource_name]:
+                self.sections[resource_name]['job_header'] \
+                    = os.linesep.join(job_lines)
         else:
-            self.sections[resource_name]['n_procs'] = ''
-            self.sections[resource_name]['n_threads'] = ''
+            for k in ('n_procs', 'n_threads'):
+                if not k in self.sections[resource_name]:
+                    self.sections[resource_name][k] = ''
 
         return
 
