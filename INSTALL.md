@@ -931,7 +931,7 @@ the straigthforward method is to go into the CoolProp source directory,
 into the wrappers/Python subdirectory, then run:
 
 ```
-$ export PYTHONPATH=${COOLPROP_INSTALL_PREFIX}/lib/${python_version}/site-packages:$PYTHONPATH
+$ export PYTHONPATH=${COOLPROP_INSTALL_PREFIX}/lib64/${python_version}/site-packages:$PYTHONPATH
 $ python setup.py install --prefix=${COOLPROP_INSTALL_PREFIX}
 ```
 
