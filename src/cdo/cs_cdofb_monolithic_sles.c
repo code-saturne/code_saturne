@@ -1099,6 +1099,66 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   sbp->m11_inv_diag = inv_lumped;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the matrix for an approximation of the Schur complement based
+ *        on the inverse of the sum of the absolute values of the velocity
+ *        block
+ *
+ * \param[in]      nsp         pointer to a cs_navsto_param_t structure
+ * \param[in]      ssys        pointer to a saddle-point system structure
+ * \param[in]      schur_sles  sles structure dedicated to the Schur complement
+ * \param[in, out] sbp         pointer to a cs_saddle_block_precond_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_schur_approximation(const cs_navsto_param_t       *nsp,
+                     const cs_saddle_system_t      *ssys,
+                     cs_sles_t                     *schur_sles,
+                     cs_saddle_block_precond_t     *sbp)
+{
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
+
+  cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
+
+  sbp->schur_slesp = schur_slesp;
+  if (schur_sles == NULL)
+    /* This sles structure should have been defined by name */
+    sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+  /* Compute the schur approximation matrix */
+  switch (nslesp->schur_approximation) {
+
+  case CS_PARAM_SCHUR_DIAG_INVERSE:
+    _diag_schur_sbp(nsp, ssys, sbp);
+    break;
+  case CS_PARAM_SCHUR_ELMAN:
+    _elman_schur_sbp(nsp, ssys, sbp);
+    break;
+  case CS_PARAM_SCHUR_IDENTITY:
+    break; /* Nothing to do */
+  case CS_PARAM_SCHUR_LUMPED_INVERSE:
+    _invlumped_schur_sbp(nsp, ssys, sbp);
+    break;
+  case CS_PARAM_SCHUR_MASS_SCALED:
+    _scaled_mass_sbp(nsp, ssys, sbp);
+    break; /* Nothing to do */
+  case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+    _scaled_mass_sbp(nsp, ssys, sbp);
+    _diag_schur_sbp(nsp, ssys, sbp);
+    break;
+  case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+    _scaled_mass_sbp(nsp, ssys, sbp);
+    _invlumped_schur_sbp(nsp, ssys, sbp);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid Schur approximation.", __func__);
+  }
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3435,48 +3495,12 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                        eqp->sles_param,
                                        msles->sles);
 
-      /* Schur preconditionning */
-      cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
-
-      sbp->schur_slesp = schur_slesp;
-      if (msles->schur_sles == NULL)
-        /* This sles structure should have been defined by name */
-        sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
-
-      /* Compute the schur approximation matrix */
-      switch (nslesp->schur_approximation) {
-
-      case CS_PARAM_SCHUR_DIAG_INVERSE:
-        _diag_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_ELMAN:
-        _elman_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_IDENTITY:
-        break; /* Nothing to do */
-      case CS_PARAM_SCHUR_LUMPED_INVERSE:
-        _invlumped_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_MASS_SCALED:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        break; /* Nothing to do */
-      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        _diag_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        _invlumped_schur_sbp(nsp, ssys, sbp);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid Schur approximation.", __func__);
-      }
+      /* Define an approximation of the Schur complement */
+      _schur_approximation(nsp, ssys, msles->schur_sles, sbp);
 
       /* Call the inner linear algorithm */
-      cs_saddle_gcr(nslesp->il_algo_restart, ssys,
-                    sbp, xu, msles->p_c, saddle_info);
+      cs_saddle_gcr(nslesp->il_algo_restart, ssys, sbp,
+                    xu, msles->p_c, saddle_info);
 
       cs_saddle_block_precond_free(&sbp);
     }
@@ -3491,44 +3515,8 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                        eqp->sles_param,
                                        msles->sles);
 
-      /* Schur preconditionning */
-      cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
-
-      sbp->schur_slesp = schur_slesp;
-      if (msles->schur_sles == NULL)
-        /* This sles structure should have been defined by name */
-        sbp->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
-
-      /* Compute the schur approximation matrix */
-      switch (nslesp->schur_approximation) {
-
-      case CS_PARAM_SCHUR_DIAG_INVERSE:
-        _diag_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_ELMAN:
-        _elman_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_IDENTITY:
-        break; /* Nothing to do */
-      case CS_PARAM_SCHUR_LUMPED_INVERSE:
-        _invlumped_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_MASS_SCALED:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        break; /* Nothing to do */
-      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        _diag_schur_sbp(nsp, ssys, sbp);
-        break;
-      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-        _scaled_mass_sbp(nsp, ssys, sbp);
-        _invlumped_schur_sbp(nsp, ssys, sbp);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid Schur approximation.", __func__);
-      }
+      /* Define an approximation of the Schur complement */
+      _schur_approximation(nsp, ssys, msles->schur_sles, sbp);
 
       /* Call the inner linear algorithm */
       cs_saddle_minres(ssys, sbp, xu, msles->p_c, saddle_info);
@@ -3548,7 +3536,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_USER:     /* User-defined strategy */
     {
-      /* Define block preconditionning */
+      /* Define block preconditionning by default */
       cs_saddle_block_precond_t  *sbp =
         cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_DIAG,
                                        nslesp->schur_approximation,
