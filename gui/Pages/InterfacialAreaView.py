@@ -200,7 +200,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         """
         if self.lineEditMinDiameter.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
-            self.mdl.setMinDiameter(value)
+            self.mdl.setMinDiameter(self.currentid, value)
 
 
     @pyqtSlot(str)
@@ -209,7 +209,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         """
         if self.lineEditMaxDiameter.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
-            self.mdl.setMaxDiameter(value)
+            self.mdl.setMaxDiameter(self.currentid, value)
 
 
     def initializeVariables(self, fieldId):
@@ -233,10 +233,10 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
 
             self.groupBoxMinMaxDiameter.show()
 
-            value = self.mdl.getMinDiameter()
+            value = self.mdl.getMinDiameter(self.currentid)
             self.lineEditMinDiameter.setText(str(value))
 
-            value = self.mdl.getMaxDiameter()
+            value = self.mdl.getMaxDiameter(self.currentid)
             self.lineEditMaxDiameter.setText(str(value))
 
             if MainFieldsModel(self.case).getFieldNature(fieldId) != 'gas' :
