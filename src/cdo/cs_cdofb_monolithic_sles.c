@@ -3102,6 +3102,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
     {
       cs_equation_param_set_sles(mom_eqp);
 
@@ -3532,6 +3533,26 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_MINRES:   /* No block preconditioning */
     cs_saddle_minres(ssys, NULL, xu, msles->p_c, saddle_info);
+    break;
+
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+    {
+      /* Define block preconditionning */
+      cs_saddle_block_precond_t  *sbp =
+        cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR,
+                                       nslesp->schur_approximation,
+                                       eqp->sles_param,
+                                       msles->sles);
+
+      /* Define an approximation of the Schur complement */
+      _schur_approximation(nsp, ssys, msles->schur_sles, sbp);
+
+      /* Call the inner linear algorithm */
+      cs_saddle_gcr(nslesp->il_algo_restart, ssys, sbp,
+                    xu, msles->p_c, saddle_info);
+
+      cs_saddle_block_precond_free(&sbp);
+    }
     break;
 
   case CS_NAVSTO_SLES_USER:     /* User-defined strategy */

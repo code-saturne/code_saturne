@@ -616,12 +616,16 @@ typedef enum {
  * \var CS_PARAM_PRECOND_BLOCK_DIAG
  * Only the diagonal blocks are considered in the preconditioner
  *
+ * \var CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR
+ * The diagonal blocks and the upper blocks are considered in the
+ * preconditioner
  */
 
 typedef enum {
 
   CS_PARAM_PRECOND_BLOCK_NONE,
   CS_PARAM_PRECOND_BLOCK_DIAG,
+  CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR,
 
   CS_PARAM_N_PCD_BLOCK_TYPES
 

@@ -153,7 +153,8 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 static const char
 cs_param_precond_block_name[CS_PARAM_N_PCD_BLOCK_TYPES][CS_BASE_STRING_LEN] =
   { N_("No block preconditioner"),
-    N_("Diagonal block preconditioner") };
+    N_("Diagonal block preconditioner"),
+    N_("Upper triangular block preconditioner") };
 
 static const char
 cs_param_schur_approx_name[CS_PARAM_N_SCHUR_APPROX][CS_BASE_STRING_LEN] =
@@ -580,6 +581,7 @@ cs_param_get_precond_block_name(cs_param_precond_block_t   type)
   switch (type) {
   case CS_PARAM_PRECOND_BLOCK_NONE:
   case CS_PARAM_PRECOND_BLOCK_DIAG:
+  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
     return cs_param_precond_block_name[type];
 
   default:
