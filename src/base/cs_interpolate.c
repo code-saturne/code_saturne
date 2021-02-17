@@ -225,13 +225,13 @@ cs_interpolate_from_location_p0(void                *input,
 
 void
 cs_interpolate_from_location_p1(void                *input,
-                                 cs_datatype_t        datatype,
-                                 int                  val_dim,
-                                 cs_lnum_t            n_points,
-                                 const cs_lnum_t      point_location[],
-                                 const cs_real_3_t    point_coords[],
-                                 const void          *location_vals,
-                                 void                *point_vals)
+                                cs_datatype_t        datatype,
+                                int                  val_dim,
+                                cs_lnum_t            n_points,
+                                const cs_lnum_t      point_location[],
+                                const cs_real_3_t    point_coords[],
+                                const void          *location_vals,
+                                void                *point_vals)
 {
   /* If used with a non-real argument type, use P0 interpolation */
 

@@ -10225,7 +10225,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
           pfac += bc_coeff_b[f_id][j][k] * var[c_id][j];
 
         for (cs_lnum_t j = 0; j < 3; j++)
-          rhs[i][j] += pfac * n_d_dist[j];
+          rhs[k][j] += pfac * n_d_dist[j];
       }
 
     }
