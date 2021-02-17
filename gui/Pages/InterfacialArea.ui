@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>435</height>
+    <height>452</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -318,7 +318,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="labelNoDispersedPhase">
      <property name="text">
-      <string>No dispersed phase</string>
+      <string>No dispersed or GLIM phase</string>
      </property>
     </widget>
    </item>

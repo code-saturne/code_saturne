@@ -257,23 +257,31 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         self.XMLAreaDiam.xmlInitNode('max_diameter')
         self.XMLAreaDiam.xmlSetData('max_diameter', value)
 
-
     @Variables.noUndo
-    def getMaxDiameter(self) :
+    def getMaxDiameter(self):
         """
         """
         value = self.XMLAreaDiam.xmlGetDouble('max_diameter')
-        if value is None :
+        if value is None:
             self.setMaxDiameter(self.defaultValues()['maxdiam'])
             value = self.XMLAreaDiam.xmlGetDouble('max_diameter')
         return value
 
-#-------------------------------------------------------------------------------
+    def remove(self):
+        self.XMLAreaDiam.xmlRemoveChildren()
+        variables_model = Variables(self.case)
+        for fieldId in self.getFieldIdList():
+            variables_model.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
+            variables_model.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+
+
+# -------------------------------------------------------------------------------
 # DefineUsersScalars test case
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 class InterfacialAreaTestCase(ModelTest):
     """
     """
+
     def checkInterfacialAreaInstantiation(self):
         """Check whether the InterfacialAreaModel class could be instantiated"""
         model = None
