@@ -312,6 +312,17 @@ typedef enum {
  * The residual is computed in the energy norm.
  *
  *
+ * \var CS_NAVSTO_SLES_LOWER_SCHUR_GCR
+ * Associated keyword: "lower_schur_gcr"
+ *
+ * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
+ * lower triangular block preconditioner using a Schur approximation for the
+ * pressure block (the block 22). The system is stored using a hybrid
+ * assembled/unassembled blocks. The velocity block is assembled (with
+ * potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
+ *
+ *
  * \var CS_NAVSTO_SLES_MINRES
  * Associated keyword: "minres"
  *
@@ -396,6 +407,7 @@ typedef enum {
   CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
+  CS_NAVSTO_SLES_LOWER_SCHUR_GCR,
   CS_NAVSTO_SLES_MINRES,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,

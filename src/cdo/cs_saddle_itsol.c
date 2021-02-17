@@ -1121,6 +1121,163 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Apply a lower triangular block preconditioning with a potential Schur
+ *        approximation
+ *        Compute z such that P_l z = r
+ *
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in]      r       rhs of the preconditioning system
+ * \param[in, out] z       array to compute
+ * \param[in, out] pc_wsp  work space related to the preconditioner
+ *
+ * \return the number of iterations performed for this step of preconditioning
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_lower_schur_pc_apply(cs_saddle_system_t          *ssys,
+                      cs_saddle_block_precond_t   *sbp,
+                      cs_real_t                   *r,
+                      cs_real_t                   *z,
+                      cs_real_t                   *pc_wsp)
+{
+  if (z == NULL)
+    return 0;
+
+  /* Sanity checks */
+  assert(ssys != NULL && sbp != NULL);
+  assert(ssys->n_m11_matrices == 1);
+  assert(r != NULL);
+  assert(sbp->schur_type == CS_PARAM_SCHUR_IDENTITY ||
+         sbp->schur_type == CS_PARAM_SCHUR_DIAG_INVERSE ||
+         sbp->schur_type == CS_PARAM_SCHUR_LUMPED_INVERSE);
+  assert(pc_wsp != NULL);
+
+  const cs_range_set_t  *rset = ssys->rset;
+  cs_matrix_t  *m11 = ssys->m11_matrices[0];
+
+  /* 1. Solve m11 z1 = r1
+     ==================== */
+
+  /* Prepare solving (handle parallelism) scatter --> gather transformation
+   * stride = 1 for scalar-valued */
+  cs_equation_prepare_system(1, ssys->x1_size, m11, rset,
+                             false, /* no reduction of the rhs */
+                             z,     /* unknown */
+                             r);    /* rhs */
+
+  /* Compute the norm of r standing for the rhs (gather view)
+   * n_elts[0] corresponds to the number of element in the gather view
+   */
+  cs_lnum_t  n_x1_elts = ssys->x1_size;
+  if (rset != NULL)
+    n_x1_elts = rset->n_elts[0];
+  double  r_norm = cs_dot_xx(n_x1_elts, r);
+  cs_parall_sum(1, CS_DOUBLE, &r_norm);
+  r_norm = sqrt(fabs(r_norm));
+
+  /* Solve the linear solver */
+  memset(z, 0, sizeof(cs_real_t)*ssys->max_x1_size);
+
+  cs_solving_info_t  m11_info =
+    {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
+
+  assert(sbp->m11_slesp != NULL);
+  cs_param_sles_t  *m11_slesp = sbp->m11_slesp;
+  cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
+                                                    m11,
+                                                    CS_HALO_ROTATION_IGNORE,
+                                                    m11_slesp->eps,
+                                                    m11_info.rhs_norm,
+                                                    &(m11_info.n_it),
+                                                    &(m11_info.res_norm),
+                                                    r,
+                                                    z,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+  int n_iter = m11_info.n_it;
+  if (m11_slesp->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
+                  " residual % -8.4e | normalization % -8.4e\n",
+                  m11_slesp->name, code,
+                  m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
+
+  /* Move back: gather --> scatter view */
+  cs_range_set_scatter(ssys->rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       z, z);
+  cs_range_set_scatter(ssys->rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       r, r);
+
+  /* 2. Build r2_tilda = r2 - B.z1
+     ============================= */
+
+  const cs_real_t  *r2 = r + ssys->max_x1_size;
+  cs_real_t  *r2_tilda = pc_wsp;
+  cs_real_t  *z2 = z + ssys->max_x1_size;
+
+  _m21_vector_multiply(ssys, z, r2_tilda);
+
+# pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+    r2_tilda[i2] = r2[i2] - r2_tilda[i2];
+
+  /* 3. Solve S z2 = r2_tilda (S -> Schur approximation for the m22 block)
+     ===================================================================== */
+
+  /* Block m22 (or the Schur approx.) */
+  if (sbp->schur_sles == NULL ||
+      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
+    memcpy(z2, r2_tilda, sizeof(cs_real_t)*ssys->x2_size);
+
+  else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
+
+    assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
+
+#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+      z2[i2] = sbp->mass22_diag[i2]*r2_tilda[i2];
+
+  }
+  else {
+
+    /* Norm for the x2 DoFs (not shared so that there is no need to
+       synchronize) */
+    r_norm = cs_dot_xx(ssys->x2_size, r2_tilda);
+    cs_parall_sum(1, CS_DOUBLE, &r_norm);
+    r_norm = sqrt(fabs(r_norm));
+
+    memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
+    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
+                                                   sbp->schur_slesp,
+                                                   sbp->schur_matrix,
+                                                   r_norm,
+                                                   sbp->schur_sles,
+                                                   z2,
+                                                   r2_tilda);
+
+    if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
+        sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
+
+      assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
+
+#     pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+      for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+        z2[i2] = sbp->schur_scaling*z2[i2] + sbp->mass22_diag[i2]*r2_tilda[i2];
+
+    }
+
+  }
+
+  return n_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Apply an upper triangular block preconditioning.
  *        Compute z such that P_up z = r
  *
@@ -1160,7 +1317,8 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
 
   cs_real_t  *z2 = z + ssys->max_x1_size;
 
-  /* 1. Solve S z2 = r2 (S is the Schur approximation for the m22 block) */
+  /* 1. Solve S z2 = r2 (S -> Schur approximation for the m22 block)
+     =============================================================== */
 
   if (sbp->schur_sles == NULL ||
       sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
@@ -1209,7 +1367,8 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
 
   }
 
-  /* 2. Build r1_tilda = r1 - Bt.z2 */
+  /* 2. Build r1_tilda = r1 - Bt.z2
+     ============================== */
 
   cs_real_t  *r1_tilda = pc_wsp;
 
@@ -1371,6 +1530,26 @@ _set_pc(const cs_saddle_system_t          *ssys,
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid Schur approximation with diagonal block"
                   " preconditioning.", __func__);
+      }
+      break;
+
+    case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+      switch (sbp->schur_type) {
+
+      case CS_PARAM_SCHUR_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_IDENTITY:
+      case CS_PARAM_SCHUR_LUMPED_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED:
+      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+        *wsp_size = ssys->max_x2_size;
+        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+        return  _lower_schur_pc_apply;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid Schur approximation with lower triangular"
+                  " block preconditioning.", __func__);
       }
       break;
 

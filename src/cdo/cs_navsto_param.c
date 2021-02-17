@@ -454,6 +454,12 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_GKB_SATURNE:
     cs_log_printf(CS_LOG_SETUP, "in-house GKB algorithm\n");
     break;
+  case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
+    cs_log_printf(CS_LOG_SETUP, "Lower block preconditioner with Schur approx."
+                  " + (in-house) GCR\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
+    break;
   case CS_NAVSTO_SLES_MINRES:
     cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");
     break;
@@ -502,6 +508,7 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG          ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GCR    ||
+      nslesp->strategy == CS_NAVSTO_SLES_LOWER_SCHUR_GCR   ||
       nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GCR)
     cs_param_sles_log(nslesp->schur_sles_param);
 
@@ -1048,6 +1055,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "gkb_saturne") == 0 ||
              strcmp(val, "gkb") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+    else if (strcmp(val, "lower_schur_gcr") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_LOWER_SCHUR_GCR;
     else if (strcmp(val, "minres") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;
     else if (strcmp(val, "no_block") == 0)

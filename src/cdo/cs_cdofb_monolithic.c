@@ -1812,6 +1812,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
   case CS_NAVSTO_SLES_GCR:
   case CS_NAVSTO_SLES_GKB_SATURNE:
+  case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
   case CS_NAVSTO_SLES_MINRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
   case CS_NAVSTO_SLES_USER:
@@ -2047,6 +2048,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
   case CS_NAVSTO_SLES_GCR:
+  case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
   case CS_NAVSTO_SLES_MINRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
     sc->init_system = _init_system_default;
