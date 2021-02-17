@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_field_default.h"
 #include "cs_gradient.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
@@ -276,13 +277,22 @@ cs_interpolate_from_location_p1(void                *input,
       else if (f->bc_coeffs != NULL) {
         bc_coeff_a = f->bc_coeffs->a;
         bc_coeff_b = f->bc_coeffs->b;
+        if (f->dim > 1 && f->type & CS_FIELD_VARIABLE) {
+          int coupled = 0;
+          int coupled_key_id = cs_field_key_id_try("coupled");
+          if (coupled_key_id > -1)
+            coupled = cs_field_get_key_int(f, coupled_key_id);
+          if (coupled == 0) {   /* not handled in this case */
+            bc_coeff_a = NULL;
+            bc_coeff_b = NULL;
+          }
+        }
       }
       if (f->type & CS_FIELD_VARIABLE) {
-        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-        const cs_var_cal_opt_t *var_cal_opt
-          = cs_field_get_key_struct_const_ptr(f, key_cal_opt_id);
+        const cs_equation_param_t *eqp
+          = cs_field_get_equation_param_const(f);
         cs_gradient_type_t gradient_type = CS_GRADIENT_LSQ;
-        cs_gradient_type_by_imrgra(var_cal_opt->imrgra,
+        cs_gradient_type_by_imrgra(eqp->imrgra,
                                    &gradient_type,
                                    &halo_type);
       }
@@ -358,7 +368,6 @@ cs_interpolate_from_location_p1(void                *input,
             p_vals[i][j] = 0;
         }
       }
-
     }
     break;
 
