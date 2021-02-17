@@ -91,6 +91,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.groupBoxMinMaxDiameter.hide()
             self.groupBoxModel.hide()
             self.labelNoDispersedPhase.show()
+            self.mdl.remove()
             return
 
         # Combo box models
