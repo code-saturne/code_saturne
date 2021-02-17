@@ -197,11 +197,12 @@ typedef enum {
  * Associated keyword: "additive_gmres"
  *
  * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
- * system of equations is solved an additive preconditioner (block diagonal
- * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
- * Preconditioner/solver for the block 00 is set using the momentum equation.
- * This option is only available with the support to the PETSc library up to now.
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The
+ * Navier-Stokes system of equations is solved an additive preconditioner
+ * (block diagonal matrix where the block 00 is A_{00}) and the block 11 is set
+ * to the identity.  Preconditioner/solver for the block 00 is set using the
+ * momentum equation.  This option is only available with the support to the
+ * PETSc library up to now.
  *
  *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
@@ -234,7 +235,7 @@ typedef enum {
  * Associated keyword: "diag_schur_gcr"
  *
  * The Stokes or Navier-Stokes system is solved using a GCR algorithm with a
- * block diagonal preconditioner using an Schur approximation for the pressure
+ * block diagonal preconditioner using a Schur approximation for the pressure
  * block (the block 22). The system is stored using a hybrid
  * assembled/unassembled blocks. The velocity block is assembled (with
  * potentially sub-blocks for each component) and the velocity
@@ -245,7 +246,7 @@ typedef enum {
  * Associated keyword: "diag_schur_minres"
  *
  * The Stokes or Navier-Stokes system with an explicit advection is solved
- * using a MINRES algorithm with a block diagonal preconditioner using an Schur
+ * using a MINRES algorithm with a block diagonal preconditioner using a Schur
  * approximation for the pressure block (the block 22). The system is stored
  * using a hybrid assembled/unassembled blocks. The velocity block is assembled
  * (with potentially sub-blocks for each component) and the velocity
@@ -343,7 +344,7 @@ typedef enum {
  * Associated keyword: "upper_schur_gcr"
  *
  * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
- * upper triangular block preconditioner using an Schur approximation for the
+ * upper triangular block preconditioner using a Schur approximation for the
  * pressure block (the block 22). The system is stored using a hybrid
  * assembled/unassembled blocks. The velocity block is assembled (with
  * potentially sub-blocks for each component) and the velocity
