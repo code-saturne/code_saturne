@@ -771,9 +771,6 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free memory related to advection fields */
   cs_advection_field_destroy_all();
 
-  /* Free memory related to properties */
-  cs_property_destroy_all();
-
   /* Free memory related to the thermal module */
   cs_thermal_system_destroy();
 
