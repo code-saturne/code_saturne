@@ -269,6 +269,7 @@ def main(argv):
 CFDSTUDY_ROOT_DIR=%(prefix)s
 PYTHONPATH=%(pythondir)s/salome:%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH}
 export CFDSTUDY_ROOT_DIR PYTHONPATH
+export SALOME_PLEASE_SETUP_ENVIRONMENT_AS_BEFORE=1
 %(runsalome)s --modules=%(modules)s
 """
 
