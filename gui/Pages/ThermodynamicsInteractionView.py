@@ -38,6 +38,7 @@ from code_saturne.Base.QtPage import ComboModel, from_qvariant, to_text_string, 
 # -------------------------------------------------------------------------------
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsInteractionModel
+from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 from code_saturne.Pages.InterfacialForcesView import InteractionsTableModel
@@ -61,13 +62,21 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         Ui_ThermodynamicsInteraction.__init__(self)
         self.setupUi(self)
 
-        self.case = None
-        self.zone = None
-        self.model = None
+        self.case      = None
+        self.zone      = None
+        self.zone_name = None
+        self.zone_id   = None
+        self.model     = None
 
     def setup(self, case, zone_name):
         self.case = case
-        self.zone = zone_name  # should it be zone_name or zone ?
+
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+                self.zone_name = zone.getLabel()
+                self.zone_id   = zone.getCodeNumber()
+
         self.model = ThermodynamicsInteractionModel(self.case)
 
         self.groupBoxGeneral.hide()
@@ -185,7 +194,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         User formula for surface tension
         """
         # TODO getFormulaStComponents should probably be transferred to InterfacialForcesModel
-        exp, req, sca, symbols_st = self.model.getFormulaStComponents(self.field_id_a, self.field_id_b, self.zone)
+        exp, req, sca, symbols_st = self.model.getFormulaStComponents(self.field_id_a, self.field_id_b, self.zone_id)
 
         exa = """# water-air at 20°C
                     sigma = 0.075;
@@ -195,7 +204,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         vname = "SurfaceTension"
         dialog = QMegEditorView(parent=self,
                                 function_type='vol',
-                                zone_name='all_cells',
+                                zone_name=self.zone_name,
                                 variable_name=vname,
                                 expression=exp,
                                 required=req,
@@ -206,6 +215,6 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
-            self.model.setFormula(self.field_id_a, self.field_id_b, "surface_tension", result, self.zone)
+            self.model.setFormula(self.field_id_a, self.field_id_b, "surface_tension", result, self.zone_id)
             self.pushButtonSurfaceTension.setStyleSheet("background-color: green")
             self.pushButtonSurfaceTension.setToolTip(exp)

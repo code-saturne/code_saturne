@@ -444,7 +444,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.get_property_node(fieldId, tag)
 
-        if zone != "1":
+        if str(zone) != "1":
             if node.xmlGetChildNode("zone", zone_id=zone):
                 node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
@@ -580,7 +580,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
 
-    def getFormulaRhoComponents(self, fieldId, zone="all_cells"):
+    def getFormulaRhoComponents(self, fieldId, zone="1"):
         """
         User formula for density
         """
@@ -736,7 +736,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return exp, req, known_fields, symbols
 
-    def getFormulaTemperatureComponents(self, fieldId, zone="all_cells"):
+    def getFormulaTemperatureComponents(self, fieldId, zone="1"):
         """
         User formula for temperature as a function of enthalpy
         """
@@ -1072,7 +1072,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         node.xmlSetData('initial_value', val)
 
     @Variables.noUndo
-    def getFormula(self, field_id_a, field_id_b, tag, zone="all_cells"):
+    def getFormula(self, field_id_a, field_id_b, tag, zone="1"):
         """
         Return a formula for properties
         """
@@ -1084,12 +1084,10 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
         node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
 
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
-            else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+        if str(zone) != "1":
+            node = node.xmlGetChildNode("zone", zone_id=zone)
+            if node == None:
+                node = node.xmlInitChildNode("zone", zone_id=zone)
 
         if node:
             return node.xmlGetChildString('formula')
@@ -1097,7 +1095,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
             return None
 
     @Variables.undoLocal
-    def setFormula(self, field_id_a, field_id_b, tag, strg, zone="all_cells"):
+    def setFormula(self, field_id_a, field_id_b, tag, strg, zone="1"):
         """
         Gives a formula for properties
         """
@@ -1108,12 +1106,10 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
 
-        if zone != "all_cells":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
-            else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+        if str(zone) != "1":
+            node = node.xmlGetChildNode("zone", zone_id=zone)
+            if node == None:
+                node = node.xmlInitChildNode("zone", zone_id=zone)
 
         node.xmlSetData('formula', strg)
 
@@ -1127,7 +1123,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """Put initial value for surface tension"""
         self.setInitialValue(field_id_a, field_id_b, 'surface_tension', val)
 
-    def getFormulaComponents(self, field_id_a, field_id_b, tag, zone="all_cells"):
+    def getFormulaComponents(self, field_id_a, field_id_b, tag, zone="1"):
         """
         Get the formula components for a given tag
         """
@@ -1138,7 +1134,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
             msg = 'Formula is not available for field %s_%s in MEG' % (tag, str(fieldId))
             raise Exception(msg)
 
-    def getFormulaStComponents(self, field_id_a, field_id_b, zone="all_cells"):
+    def getFormulaStComponents(self, field_id_a, field_id_b, zone="1"):
         """
         User formula for surface tension
         """
