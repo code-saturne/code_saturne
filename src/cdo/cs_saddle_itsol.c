@@ -626,6 +626,83 @@ _matvec_product(cs_saddle_system_t   *ssys,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Solve the Schur approximation when the schur approximation is
+ *         among one of the following approximation
+ *         CS_PARAM_SCHUR_IDENTITY
+ *         CS_PARAM_SCHUR_MASS_SCALED
+ *         CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE
+ *         CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE
+ *         CS_PARAM_SCHUR_DIAG_INVERSE
+ *         CS_PARAM_SCHUR_LUMPED_INVERSE
+ *
+ * \param[in]      ssys     pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp      block-preconditioner structure
+ * \param[in]      r_schur  rhs of the Schur system (size = x2_size)
+ * \param[in, out] z_schur  array to compute (size = x2_size)
+ *
+ * \return the number of iterations performed for this step of preconditioning
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_solve_schur_approximation(cs_saddle_system_t          *ssys,
+                           cs_saddle_block_precond_t   *sbp,
+                           cs_real_t                   *r_schur,
+                           cs_real_t                   *z_schur)
+{
+  assert(r_schur != NULL && z_schur != NULL);
+
+  int  n_iter = 0;
+
+  if (sbp->schur_sles == NULL ||
+      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
+    memcpy(z_schur, r_schur, sizeof(cs_real_t)*ssys->x2_size);
+
+  else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
+
+    assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
+
+#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+      z_schur[i2] = sbp->mass22_diag[i2]*r_schur[i2];
+
+  }
+  else {
+
+    /* Norm for the x2 DoFs (not shared so that there is no need to
+       synchronize) */
+    double r_norm = cs_dot_xx(ssys->x2_size, r_schur);
+    cs_parall_sum(1, CS_DOUBLE, &r_norm);
+    r_norm = sqrt(fabs(r_norm));
+
+    memset(z_schur, 0, sizeof(cs_real_t)*ssys->x2_size);
+    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
+                                                   sbp->schur_slesp,
+                                                   sbp->schur_matrix,
+                                                   r_norm,
+                                                   sbp->schur_sles,
+                                                   z_schur,
+                                                   r_schur);
+
+    if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
+        sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
+
+      assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
+
+#     pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+      for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+        z_schur[i2] =
+          sbp->schur_scaling*z_schur[i2] + sbp->mass22_diag[i2]*r_schur[i2];
+
+    }
+
+  }
+
+  return n_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Apply a diagonal block preconditioning within a Schur complement
  *         approximation devised in Elman'99 SIAM J. SCI. COMP.
  *
@@ -1064,54 +1141,9 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
                        r, r);
 
   /* Block m22 (or the Schur approx.) */
-  if (sbp->schur_sles == NULL ||
-      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
-    memcpy(z + ssys->max_x1_size,
-           r + ssys->max_x1_size, sizeof(cs_real_t)*ssys->x2_size);
-
-  else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
-
-    assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-    const cs_real_t  *r2 = r + ssys->max_x1_size;
-    cs_real_t  *z2 = z + ssys->max_x1_size;
-#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-      z2[i2] = sbp->mass22_diag[i2]*r2[i2];
-
-  }
-  else {
-
-    /* Norm for the x2 DoFs (not shared so that there is no need to
-       synchronize) */
-    cs_real_t  *z2 = z + ssys->max_x1_size;
-    cs_real_t  *r2 = r + ssys->max_x1_size;
-
-    r_norm = cs_dot_xx(ssys->x2_size, r2);
-    cs_parall_sum(1, CS_DOUBLE, &r_norm);
-    r_norm = sqrt(fabs(r_norm));
-
-    memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                   sbp->schur_slesp,
-                                                   sbp->schur_matrix,
-                                                   r_norm,
-                                                   sbp->schur_sles,
-                                                   z2,
-                                                   r2);
-
-    if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
-        sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
-
-      assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-#     pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-      for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-        z2[i2] = sbp->schur_scaling*z2[i2] + sbp->mass22_diag[i2]*r2[i2];
-
-    }
-
-  }
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r + ssys->max_x1_size,  /* r_schur */
+                                       z + ssys->max_x1_size); /* z_schur */
 
   return n_iter;
 }
@@ -1162,8 +1194,7 @@ _lower_schur_pc_apply(cs_saddle_system_t          *ssys,
                              r);    /* rhs */
 
   /* Compute the norm of r standing for the rhs (gather view)
-   * n_elts[0] corresponds to the number of element in the gather view
-   */
+   * n_elts[0] corresponds to the number of element in the gather view */
   cs_lnum_t  n_x1_elts = ssys->x1_size;
   if (rset != NULL)
     n_x1_elts = rset->n_elts[0];
@@ -1223,49 +1254,7 @@ _lower_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 3. Solve S z2 = r2_tilda (S -> Schur approximation for the m22 block)
      ===================================================================== */
 
-  /* Block m22 (or the Schur approx.) */
-  if (sbp->schur_sles == NULL ||
-      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
-    memcpy(z2, r2_tilda, sizeof(cs_real_t)*ssys->x2_size);
-
-  else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
-
-    assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-      z2[i2] = sbp->mass22_diag[i2]*r2_tilda[i2];
-
-  }
-  else {
-
-    /* Norm for the x2 DoFs (not shared so that there is no need to
-       synchronize) */
-    r_norm = cs_dot_xx(ssys->x2_size, r2_tilda);
-    cs_parall_sum(1, CS_DOUBLE, &r_norm);
-    r_norm = sqrt(fabs(r_norm));
-
-    memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                   sbp->schur_slesp,
-                                                   sbp->schur_matrix,
-                                                   r_norm,
-                                                   sbp->schur_sles,
-                                                   z2,
-                                                   r2_tilda);
-
-    if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
-        sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
-
-      assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-#     pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-      for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-        z2[i2] = sbp->schur_scaling*z2[i2] + sbp->mass22_diag[i2]*r2_tilda[i2];
-
-    }
-
-  }
+  n_iter += _solve_schur_approximation(ssys, sbp, r2_tilda, z2);
 
   return n_iter;
 }
@@ -1311,52 +1300,9 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 1. Solve S z2 = r2 (S -> Schur approximation for the m22 block)
      =============================================================== */
 
-  if (sbp->schur_sles == NULL ||
-      sbp->schur_type == CS_PARAM_SCHUR_IDENTITY) /* Precond = Identity */
-    memcpy(z + ssys->max_x1_size,
-           r + ssys->max_x1_size, sizeof(cs_real_t)*ssys->x2_size);
-
-  else if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED) {
-
-    assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-    const cs_real_t  *r2 = r + ssys->max_x1_size;
-#   pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-      z2[i2] = sbp->mass22_diag[i2]*r2[i2];
-
-  }
-  else {
-
-    /* Norm for the x2 DoFs (not shared so that there is no need to
-       synchronize) */
-    cs_real_t  *r2 = r + ssys->max_x1_size;
-
-    r_norm = cs_dot_xx(ssys->x2_size, r2);
-    cs_parall_sum(1, CS_DOUBLE, &r_norm);
-    r_norm = sqrt(fabs(r_norm));
-
-    memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                   sbp->schur_slesp,
-                                                   sbp->schur_matrix,
-                                                   r_norm,
-                                                   sbp->schur_sles,
-                                                   z2,
-                                                   r2);
-
-    if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
-        sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
-
-      assert(sbp->mass22_diag != NULL); /* inverse of the scaled mass matrix */
-
-#     pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
-      for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
-        z2[i2] = sbp->schur_scaling*z2[i2] + sbp->mass22_diag[i2]*r2[i2];
-
-    }
-
-  }
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r + ssys->max_x1_size, /* r_schur */
+                                       z2);                   /* z_schur */
 
   /* 2. Build r1_tilda = r1 - Bt.z2
      ============================== */
