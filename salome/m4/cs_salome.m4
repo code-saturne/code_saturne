@@ -120,11 +120,18 @@ AC_REQUIRE([SALOME_CFD_AC_SALOME_ENV])
 if test x$with_salome != xno ; then
 
   if test "x$SALOMEENVCMD" != "x" ; then
-    KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
-    GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
+
+    (/bin/bash -c "$SALOMEENVCMD ; env > conftest.salome_env")
+
+    KERNEL_ROOT_DIR=$(grep KERNEL_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
+    GUI_ROOT_DIR=$(grep GUI_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
+
+    \rm -rf conftest.salome_env
+
     if test "x$OMNIIDL" == "x" ; then
-      OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+      OMNIIDL=$(/bin/bash -c $SALOMEENVCMD ; which omniidl)
     fi
+
   fi
 
   # Make sure omniidl will work by forcing PYTHONPATH
@@ -132,11 +139,12 @@ if test x$with_salome != xno ; then
   # with the sourced environment and PATH rather than $PYTHON here.
 
   if test "x$SALOMEENVCMD" != "x" ; then
+
     if test "x$OMNIIDLPYTHONPATH" = "x"; then
-     OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/config/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
+     OMNIIDLPYTHONPATH=$(/bin/bash $SALOMEENVCMD ; python -B "$srcdir/config/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
     fi
     if test "x$OMNIIDLLDLIBPATH" = "x"; then
-      OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/config/cs_config_test.py" ld_library_path_filter libpython*)
+      OMNIIDLLDLIBPATH=$(/bin/bash $SALOMEENVCMD ; python -B "$srcdir/config/cs_config_test.py" ld_library_path_filter libpython*)
     fi
   else
     if test "x$OMNIIDLPYTHONPATH" = "x"; then
