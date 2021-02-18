@@ -1006,9 +1006,6 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
-  assert(sbp->schur_type == CS_PARAM_SCHUR_IDENTITY ||
-         sbp->schur_type == CS_PARAM_SCHUR_DIAG_INVERSE ||
-         sbp->schur_type == CS_PARAM_SCHUR_LUMPED_INVERSE);
 
   const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
@@ -1149,9 +1146,6 @@ _lower_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
-  assert(sbp->schur_type == CS_PARAM_SCHUR_IDENTITY ||
-         sbp->schur_type == CS_PARAM_SCHUR_DIAG_INVERSE ||
-         sbp->schur_type == CS_PARAM_SCHUR_LUMPED_INVERSE);
   assert(pc_wsp != NULL);
 
   const cs_range_set_t  *rset = ssys->rset;
@@ -1308,9 +1302,6 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
-  assert(sbp->schur_type == CS_PARAM_SCHUR_IDENTITY ||
-         sbp->schur_type == CS_PARAM_SCHUR_DIAG_INVERSE ||
-         sbp->schur_type == CS_PARAM_SCHUR_LUMPED_INVERSE);
   assert(pc_wsp != NULL);
 
   const cs_range_set_t  *rset = ssys->rset;
