@@ -591,8 +591,8 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
 
   /* Output information about the convergence of the resolution */
   if (slesp->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
-                  " residual % -8.4e | normalization % -8.4e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
+                  " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,
                   sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
@@ -673,8 +673,8 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
   /* Output information about the convergence of the resolution */
   if (slesp->verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
-                  " residual % -8.4e | normalization % -8.4e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
+                  " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,
                   sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 

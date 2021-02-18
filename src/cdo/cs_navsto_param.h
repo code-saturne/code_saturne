@@ -351,6 +351,17 @@ typedef enum {
  * Direct solver to solve systems arising from the discretization of the
  * Navier-Stokes equations
  *
+ * \var CS_NAVSTO_SLES_SGS_SCHUR_GCR
+ * Associated keyword: "sgs_schur_gcr"
+ *
+ * The Stokes or Navier-Stokes system is solved using a GCR algorithm with a
+ * symmetric Gauss-Seidel block preconditioner using a Schur approximation for
+ * the pressure block (the block 22). The system is stored using a hybrid
+ * assembled/unassembled blocks. The velocity block is assembled (with
+ * potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
+ *
+ *
  * \var CS_NAVSTO_SLES_UPPER_SCHUR_GCR
  * Associated keyword: "upper_schur_gcr"
  *
@@ -411,6 +422,7 @@ typedef enum {
   CS_NAVSTO_SLES_MINRES,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,
+  CS_NAVSTO_SLES_SGS_SCHUR_GCR,
   CS_NAVSTO_SLES_UPPER_SCHUR_GCR,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_USER,

@@ -620,6 +620,11 @@ typedef enum {
  * The diagonal blocks and the lower blocks are considered in the
  * preconditioner
  *
+ * \var CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL
+ * A symmetric Gauss-Seidel block preconditioning is considered
+ * (cf. Y. Notay, "A new analysis of block preconditioners for saddle-point
+ * problems" (2014), SIAM J. Matrix. Anal. Appl.)
+ *
  * \var CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR
  * The diagonal blocks and the upper blocks are considered in the
  * preconditioner
@@ -630,6 +635,7 @@ typedef enum {
   CS_PARAM_PRECOND_BLOCK_NONE,
   CS_PARAM_PRECOND_BLOCK_DIAG,
   CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR,
+  CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL,
   CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR,
 
   CS_PARAM_N_PCD_BLOCK_TYPES

@@ -828,6 +828,7 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
                  cs_saddle_block_precond_t     *sbp)
 {
   CS_UNUSED(sbp);
+  CS_UNUSED(ssys);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
@@ -3103,6 +3104,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
   case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
     {
       cs_equation_param_set_sles(mom_eqp);
@@ -3490,6 +3492,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
   case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
     {
       /* Default */
@@ -3499,6 +3502,8 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
         block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
       else if (nslesp->strategy == CS_NAVSTO_SLES_LOWER_SCHUR_GCR)
         block_type = CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
+      else if (nslesp->strategy == CS_NAVSTO_SLES_SGS_SCHUR_GCR)
+        block_type = CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
 
       /* Define block preconditionning */
       cs_saddle_block_precond_t  *sbp =

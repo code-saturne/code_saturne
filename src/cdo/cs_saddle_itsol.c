@@ -944,7 +944,8 @@ _elman_schur_pc_apply(cs_saddle_system_t          *ssys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Apply experimental preconditioning: Compute z s.t. P_d z = r
+ * \brief Apply symmetric Gauss-Seidel block preconditioning
+ *        Compute z such that P_sgs z = r
  *
  * \param[in]      ssys     pointer to a cs_saddle_system_t structure
  * \param[in]      sbp      block-preconditioner for the Saddle-point problem
@@ -957,11 +958,11 @@ _elman_schur_pc_apply(cs_saddle_system_t          *ssys,
 /*----------------------------------------------------------------------------*/
 
 static int
-_gs_schur_pc_apply(cs_saddle_system_t          *ssys,
-                   cs_saddle_block_precond_t   *sbp,
-                   cs_real_t                   *r,
-                   cs_real_t                   *z,
-                   cs_real_t                   *pc_wsp)
+_sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
+                    cs_saddle_block_precond_t   *sbp,
+                    cs_real_t                   *r,
+                    cs_real_t                   *z,
+                    cs_real_t                   *pc_wsp)
 {
   if (z == NULL)
     return 0;
@@ -970,98 +971,44 @@ _gs_schur_pc_apply(cs_saddle_system_t          *ssys,
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
+  assert(pc_wsp != NULL);
 
   const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
-  assert(sbp->m11_slesp != NULL);
-  assert(sbp->schur_slesp != NULL);
+  /* 1. Solve m11 z1_hat = r1
+     ======================== */
 
   cs_real_t  *z1_hat = pc_wsp;
-  memset(z1_hat, 0, sizeof(cs_real_t)*ssys->x1_size);
 
-  /* Prepare solving (handle parallelism) scatter --> gather transformation
-   * stride = 1 for scalar-valued */
-  cs_equation_prepare_system(1, ssys->x1_size, m11, rset,
-                             false,    /* no reduction of the rhs */
-                             z1_hat,   /* unknown */
-                             r);       /* rhs */
+  int  n_iter = _solve_m11_approximation(ssys, sbp,
+                                         r, true,       /* = scatter r */
+                                         z1_hat, true); /* = scatter z */
 
-  /* Compute the norm of r standing for the rhs (gather view)
-   * n_elts[0] corresponds to the number of element in the gather view
-   */
-  double  r_norm = cs_dot_xx(rset->n_elts[0], r);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  /* 2. Build r2_hat = B.z1_hat - r2
+     =============================== */
 
-  /* Solve the linear solver */
-  cs_solving_info_t  m11_info =
-    {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
-
-  assert(sbp->m11_slesp != NULL);
-  cs_param_sles_t  *m11_slesp = sbp->m11_slesp;
-  cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
-                                                    m11,
-                                                    CS_HALO_ROTATION_IGNORE,
-                                                    m11_slesp->eps,
-                                                    m11_info.rhs_norm,
-                                                    &(m11_info.n_it),
-                                                    &(m11_info.res_norm),
-                                                    r,
-                                                    z1_hat,
-                                                    0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
-
-  /* Output information about the convergence of the resolution */
-  int n_iter = m11_info.n_it;
-  if (m11_slesp->verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
-                  " residual % -8.4e | normalization % -8.4e\n",
-                  m11_slesp->name, code,
-                  m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
-
-  /* Move back: gather --> scatter view */
-  cs_range_set_scatter(ssys->rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       z1_hat, z1_hat);
-  cs_range_set_scatter(ssys->rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       r, r);
-
-  /* Block m22 (or the Schur approx.) */
-  /* Norm for the x2 DoFs (not shared so that there is no need to
-     synchronize) */
-  cs_real_t  *z2 = z + ssys->max_x1_size;
-
-  /* c) r2_hat = m21 z1_hat
-   *    r2_hat = r2_hat - r2 */
   cs_real_t  *r2_hat = pc_wsp + ssys->max_x1_size;
 
-  _m21_vector_multiply(ssys, z1_hat, r2_hat);
+  _m21_vector_multiply(ssys, z1_hat, r2_hat); /* z1_hat has to be "scatter" */
 
   const cs_real_t  *r2 = r + ssys->max_x1_size;
-
 # pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
     r2_hat[i2] = r2_hat[i2] - r2[i2];
 
-  r_norm = cs_dot_xx(ssys->x2_size, r2_hat);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  /* 3. Solve S z2 = r2_hat (S -> Schur approximation for the m22 block)
+     =================================================================== */
 
-  memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-  n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                 sbp->schur_slesp,
-                                                 sbp->schur_matrix,
-                                                 r_norm,
-                                                 sbp->schur_sles,
-                                                 z2,
-                                                 r2_hat);
+  cs_real_t  *z2 = z + ssys->max_x1_size;
 
-  /* Third step: New resolution with m11
-   * m11 z1 = r1_tilda = m11 z1_hat + m12 z2
-   * z1 = -z1 + 2*z1_hat
-   */
+  n_iter += _solve_schur_approximation(ssys, sbp,
+                                       r2_hat, /* r_schur */
+                                       z2);    /* z_schur */
+
+  /* 4. Build r1_tilda = m11.z1_hat + m12.z2
+     ======================================= */
+
   cs_real_t  *r1_tilda = r2_hat;
 
   /* scatter view to gather view */
@@ -1081,51 +1028,20 @@ _gs_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* Update += of r1_tilda inside the following function */
   _m12_vector_multiply(ssys, z2, r1_tilda);
 
-  /* Prepare solving (handle parallelism) scatter --> gather transformation
-   * stride = 1 for scalar-valued */
-  cs_equation_prepare_system(1, ssys->x1_size, m11, rset,
-                             false,      /* no reduction of the rhs */
-                             z,          /* unknown */
-                             r1_tilda);  /* rhs */
+  /* 5. Solve M11.z1 = r1_tilda
+     ========================== */
 
-  /* Compute the norm of r standing for the rhs (gather view)
-   * n_elts[0] corresponds to the number of element in the gather view
-   */
-  r_norm = cs_dot_xx(rset->n_elts[0], r1_tilda);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  n_iter += _solve_m11_approximation(ssys, sbp,
+                                     r1_tilda, false, /* = no scatter */
+                                     z, false);       /* = no scatter z */
 
-  /* Second solve of the linear system m11 */
-  m11_info.n_it = 0, m11_info.res_norm = DBL_MAX, m11_info.rhs_norm = r_norm;
-
-  code = cs_sles_solve(sbp->m11_sles,
-                       m11,
-                       CS_HALO_ROTATION_IGNORE,
-                       m11_slesp->eps,
-                       m11_info.rhs_norm,
-                       &(m11_info.n_it),
-                       &(m11_info.res_norm),
-                       r1_tilda,
-                       z,
-                       0,      /* aux. size */
-                       NULL);  /* aux. buffers */
-
-  /* Output information about the convergence of the resolution */
-  n_iter += m11_info.n_it;
-  if (m11_slesp->verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
-                  " residual % -8.4e | normalization % -8.4e\n",
-                  m11_slesp->name, code,
-                  m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
-
-  /* Update z1 = -z1 + 2 z1_hat (still in gather wiew for both arrays) */
+  /* Last update z1 = -z1 + 2 z1_hat (still in gather wiew for both arrays) */
 # pragma omp parallel for if (rset->n_elts[0] > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < rset->n_elts[0]; i1++)
     z[i1] = 2*z1_hat[i1] - z[i1];
 
   /* Move back: gather --> scatter view */
-  cs_range_set_scatter(ssys->rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
+  cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        z, z);
 
   return n_iter;
@@ -1413,6 +1329,26 @@ _set_pc(const cs_saddle_system_t          *ssys,
         *wsp_size = ssys->max_x2_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return  _lower_schur_pc_apply;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid Schur approximation with lower triangular"
+                  " block preconditioning.", __func__);
+      }
+      break;
+
+    case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+      switch (sbp->schur_type) {
+
+      case CS_PARAM_SCHUR_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_IDENTITY:
+      case CS_PARAM_SCHUR_LUMPED_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED:
+      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+        *wsp_size = 2*ssys->max_x1_size;
+        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+        return  _sgs_schur_pc_apply;
 
       default:
         bft_error(__FILE__, __LINE__, 0,

@@ -470,9 +470,9 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_MUMPS:
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
     break;
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
-    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
-                  " + (in-house) GCR\n");
+  case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
+    cs_log_printf(CS_LOG_SETUP, "Symmetric Gauss-Seidel block preconditioner"
+                  " with Schur approx. + (in-house) GCR\n");
     cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
                   nslesp->il_algo_restart);
     break;
@@ -509,6 +509,7 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GCR    ||
       nslesp->strategy == CS_NAVSTO_SLES_LOWER_SCHUR_GCR   ||
+      nslesp->strategy == CS_NAVSTO_SLES_SGS_SCHUR_GCR     ||
       nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GCR)
     cs_param_sles_log(nslesp->schur_sles_param);
 
@@ -1061,6 +1062,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param->strategy = CS_NAVSTO_SLES_MINRES;
     else if (strcmp(val, "no_block") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    else if (strcmp(val, "sgs_schur_gcr") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_SGS_SCHUR_GCR;
     else if (strcmp(val, "upper_schur_gcr") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GCR;
     else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
