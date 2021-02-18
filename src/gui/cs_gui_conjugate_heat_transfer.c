@@ -85,7 +85,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_gui_syrthes_coupling_legacy(void)
 {
   const int *v_i = NULL;
@@ -151,7 +151,7 @@ _cs_gui_syrthes_coupling_legacy(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_gui_syrthes_coupling_bc(void)
 {
   /* First get the CHT parameters node */
