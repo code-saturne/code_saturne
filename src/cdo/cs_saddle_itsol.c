@@ -812,83 +812,32 @@ _elman_schur_pc_apply(cs_saddle_system_t          *ssys,
   const cs_range_set_t  *rset = ssys->rset;
   cs_matrix_t  *m11 = ssys->m11_matrices[0];
 
-  /* Prepare solving (handle parallelism) scatter --> gather transformation
-   * stride = 1 for scalar-valued */
-  cs_equation_prepare_system(1, ssys->x1_size, m11, rset,
-                             false, /* no reduction of the rhs */
-                             z,     /* unknown */
-                             r);    /* rhs */
+  /* 1. Solve m11 z1_hat = r1
+     ======================== */
 
-  /* Compute the norm of r standing for the rhs (gather view)
-   * n_elts[0] corresponds to the number of element in the gather view
-   */
-  double  r_norm = cs_dot_xx(rset->n_elts[0], r);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  int  n_iter = _solve_m11_approximation(ssys, sbp,
+                                         r, true,   /* = scatter r */
+                                         z, true);  /* = scatter z */
 
-  /* Solve the linear solver */
-  memset(z, 0, sizeof(cs_real_t)*ssys->x1_size);
 
-  cs_solving_info_t  m11_info =
-    {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
+  /* 2. Block M22 = the Schur approx.
+     S^-1 \approx (BBt)^-1 * BABt * (BBt)^-1 => Several sub-steps */
 
-  assert(sbp->m11_slesp != NULL);
-  cs_param_sles_t  *m11_slesp = sbp->m11_slesp;
-  cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
-                                                    m11,
-                                                    CS_HALO_ROTATION_IGNORE,
-                                                    m11_slesp->eps,
-                                                    m11_info.rhs_norm,
-                                                    &(m11_info.n_it),
-                                                    &(m11_info.res_norm),
-                                                    r,
-                                                    z,
-                                                    0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
-
-  /* Output information about the convergence of the resolution */
-  int n_iter = m11_info.n_it;
-  if (m11_slesp->verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %3d |"
-                  " residual % -8.4e | normalization % -8.4e\n",
-                  m11_slesp->name, code,
-                  m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
-
-  /* Move back: gather --> scatter view */
-  cs_range_set_scatter(ssys->rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       z, z);
-  cs_range_set_scatter(ssys->rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
-                       r, r);
-
-  /* Block m22 (or the Schur approx.) */
-
-  /* Norm for the x2 DoFs (not shared so that there is no need to
-     synchronize) */
   cs_real_t  *z2 = z + ssys->max_x1_size;
   cs_real_t  *r2 = r + ssys->max_x1_size;
 
-  r_norm = cs_dot_xx(ssys->x2_size, r2);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  /* 2.a: Solve BBt z2 = r2
+     ====================== */
 
-  /* S^-1 \approx (BBt)^-1 * BABt * (BBt)^-1
-   * a) Solve BBt z2 = r2
-   */
-  memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-  n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                 sbp->schur_slesp,
-                                                 sbp->schur_matrix,
-                                                 r_norm,
-                                                 sbp->schur_sles,
-                                                 z2,
-                                                 r2);
+  n_iter += _solve_schur_approximation(ssys, sbp, r2, z2);
 
-  /* b) m12z2 = m12.z2 */
-  cs_real_t  *m12z2 = pc_wsp;
+  /* 2.b: Compute m12z2 = m12.z2
+     =========================== */
+
+  cs_real_t  *m12z2 = pc_wsp;   /* size = x1_size */
 
   memset(m12z2, 0, ssys->x1_size*sizeof(cs_real_t));
+
   /* Update += of m12z2 inside the following function */
   _m12_vector_multiply(ssys, z2, m12z2);
 
@@ -898,46 +847,35 @@ _elman_schur_pc_apply(cs_saddle_system_t          *ssys,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
                          m12z2);
 
-  /* b) m11 * m12z2 = mmz */
+  /* 2.c: Compute mmz = M11 * m12z2
+     ============================== */
 
   /* scatter view to gather view */
-  if (rset != NULL)
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE, /* type */
-                        1,            /* stride */
-                        m12z2,        /* in:  size=n_sles_scatter_elts */
-                        m12z2);       /* out: size=n_sles_gather_elts */
+  cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
+                      m12z2,  /* in:  size=x1_size */
+                      m12z2); /* out: size=rset->n_elts[0] */
 
-  cs_real_t  *mmz = pc_wsp + ssys->max_x1_size;
+  cs_real_t  *mmz = pc_wsp + ssys->max_x1_size; /* size = x1_size */
   memset(mmz, 0, sizeof(cs_real_t)*ssys->max_x1_size);
 
   cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, m11, m12z2, mmz);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
-  cs_range_set_scatter(rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
+  cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        mmz, mmz);
 
-  /* c) m21 * mmz = r2_tilda */
+  /* 2.d: m21 * mmz = r2_tilda
+     ========================= */
+
   assert(ssys->x1_size >= ssys->x2_size);
-  cs_real_t  *r2_tilda = m12z2;
+  cs_real_t  *r2_tilda = m12z2; /* re-use the buffer */
 
   _m21_vector_multiply(ssys, mmz, r2_tilda);
 
-  /* d) Solve BBt z2 = r2_tilda */
-  r_norm = cs_dot_xx(ssys->x2_size, r2_tilda);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
-  r_norm = sqrt(fabs(r_norm));
+  /* 2.e: Solve BBt z2 = r2_tilda
+     ============================ */
 
-  memset(z2, 0, sizeof(cs_real_t)*ssys->x2_size);
-
-  n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                 sbp->schur_slesp,
-                                                 sbp->schur_matrix,
-                                                 r_norm,
-                                                 sbp->schur_sles,
-                                                 z2,
-                                                 r2_tilda);
+  n_iter += _solve_schur_approximation(ssys, sbp, r2_tilda, z2);
 
   return n_iter;
 }
