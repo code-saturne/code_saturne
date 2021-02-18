@@ -101,6 +101,7 @@
 #include "cs_preprocess.h"
 #include "cs_preprocessor_data.h"
 #include "cs_probe.h"
+#include "cs_property.h"
 #include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_restart.h"
@@ -521,8 +522,9 @@ _run(void)
 
   cs_internal_coupling_finalize();
 
-  /* Free thermal physical properties */
+  /* Free memory related to properties */
 
+  cs_property_destroy_all();
   cs_thermal_table_finalize();
 
   /* Free turbomachinery related structures */
