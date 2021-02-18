@@ -88,68 +88,47 @@ if test "x$with_salome" != "xno" ; then
 
   # Paths for libraries provided by SALOME distibution, for automatic checks
 
-  if test -z "$MEDCOUPLING_ROOT_DIR" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
-    else
-      MEDCOUPLING_ROOT_DIR=$(echo $MEDCOUPLING_ROOT_DIR)
-    fi
-  fi
+  if test "x$SALOMEENVCMD" != "x" ; then
 
-  if test -z "$HDF5HOME" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      HDF5HOME=$(eval $SALOMEENVCMD ; echo $HDF5HOME)
-    else
-      HDF5HOME=$(echo $HDF5HOME)
-    fi
-  fi
+    (/bin/bash -c "$SALOMEENVCMD ; env > conftest.salome_env")
 
-  if test -z "$MED3HOME" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
-    else
-      MED3HOME=$(echo $MED3HOME)
+    if test -z "$MEDCOUPLING_ROOT_DIR" ; then
+      MEDCOUPLING_ROOT_DIR=$(grep MEDCOUPLING_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
     fi
-  fi
 
-  if test -z "$CGNSHOME" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
-    else
-      CGNSHOME=$(echo $CGNSHOME)
+    if test -z "$HDF5HOME" ; then
+      HDF5HOME=$(grep HDF5HOME conftest.salome_env | cut -f2 -d'=')
     fi
-  fi
 
-  if test -z "$CATALYST_ROOT_DIR" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      CATALYST_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $CATALYST_ROOT_DIR)
-    else
-      CATALYST_ROOT_DIR=$(echo $CATALYST_ROOT_DIR)
+    if test -z "$MEDHOME" ; then
+      MEDHOME=$(grep MEDHOME conftest.salome_env | cut -f2 -d'=')
+      if test -z "$MEDHOME" ; then
+        MEDHOME=$(grep MED3HOME conftest.salome_env | cut -f2 -d'=')
+      fi
     fi
-  fi
 
-  if test -z "$COOLPROPHOME" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      COOLPROPHOME=$(eval $SALOMEENVCMD ; echo $COOLPROPHOME)
-    else
-      COOLPROPHOME=$(echo $COOLPROPHOME)
+    if test -z "$CGNSHOME" ; then
+      CGNSHOME=$(grep CGNSHOME conftest.salome_env | cut -f2 -d'=')
     fi
-  fi
 
-  if test -z "$METISDIR" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      METISDIR=$(eval $SALOMEENVCMD ; echo $METISDIR)
-    else
-      METISDIR=$(echo $METISDIR)
+    if test -z "$CATALYST_ROOT_DIR" ; then
+      CATALYST_ROOT_DIR=$(grep CATALYST_ROOT_DIR conftest.salome_env | cut -f2 -d'=')
     fi
-  fi
 
-  if test -z "$SCOTCHDIR" ; then
-    if test "x$SALOMEENVCMD" != "x" ; then
-      SCOTCHDIR=$(eval $SALOMEENVCMD ; echo $SCOTCHDIR)
-    else
-      SCOTCHDIR=$(echo $SCOTCHDIR)
+    if test -z "$COOLPROPHOME" ; then
+      COOLPROPHOME=$(grep COOLPROPHOME conftest.salome_env | cut -f2 -d'=')
     fi
+
+    if test -z "$METISDIR" ; then
+      METISDIR=$(grep METISDIR conftest.salome_env | cut -f2 -d'=')
+    fi
+
+    if test -z "$SCOTCHDIR" ; then
+      SCOTCHDIR=$(grep SCOTCHDIR conftest.salome_env | cut -f2 -d'=')
+    fi
+
+    \rm -rf conftest.salome_env
+
   fi
 
   AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
