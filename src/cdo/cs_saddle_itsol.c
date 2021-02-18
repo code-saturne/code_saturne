@@ -706,12 +706,6 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
 /*!
  * \brief  Solve the Schur approximation when the schur approximation is
  *         among one of the following approximation
- *         CS_PARAM_SCHUR_IDENTITY
- *         CS_PARAM_SCHUR_MASS_SCALED
- *         CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE
- *         CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE
- *         CS_PARAM_SCHUR_DIAG_INVERSE
- *         CS_PARAM_SCHUR_LUMPED_INVERSE
  *
  * \param[in]      ssys     pointer to a cs_saddle_system_t structure
  * \param[in]      sbp      block-preconditioner structure

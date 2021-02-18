@@ -547,42 +547,34 @@ typedef enum {
  *  | B   0  |
  *
  *  \var CS_PARAM_SCHUR_NONE
- *  Associated keyword: "none"
  *  There is no schur complement approximation.
  *
  *  \var CS_PARAM_SCHUR_DIAG_INVERSE
- *  Associated keyword: "diag_schur"
  *  The schur complement approximation is defined as B.diag(A)^-1.B^t
  *
  *  \var CS_PARAM_SCHUR_ELMAN
- *  Associated keyword: "elman_schur"
  *  The inverse of the schur complement matrix is approximated by
  *  (BBt)^-1 B.A.B^t (B.Bt)^-1
  *  This formulation is detailed in Elman'99, SIAM J. SCI. COMPUT.
  *
  *  \var CS_PARAM_SCHUR_IDENTITY
- *  Associated keyword: "identity"
  *  The schur complement approximation is simply the identity matrix
  *
  *  \var CS_PARAM_SCHUR_LUMPED_INVERSE
- *  Associated keyword: +"lumped_schur"
  *  The schur complement approximation is defined as B.lumped(A^-1).B^t where
  *  x=lumped(A^-1) results from A.x = 1 (1 is the array fills with 1 in each
  *  entry)
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED
- *  Associated keyword: "scaled_mass"
  *  The schur complement approximation is simply a scaled diagonal mass matrix
  *  related to the 22 block
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE
- *  Associated keyword: "n3s_schur" or "mass_scaled_diag_schur"
  *  The schur complement approximation is defined as
  *  S \approx alpha.M22 + 1/dt*B.diag(A)^-1.B^t
  *  where M22 is the mass matrix related to the (2,2) block
  *
  *  \var CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE
- *  Associated keyword: +"lumped_schur"
  *  The schur complement approximation is defined as
  *  S \approx alpha.M22 + 1/dt*B.lumped(A^-1).B^t
  *  where M22 is the mass matrix related to the (2,2) block and where
