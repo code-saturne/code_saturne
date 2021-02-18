@@ -1137,17 +1137,14 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
   cs_real_t  *r1_tilda = r2_hat;
 
   /* scatter view to gather view */
-  cs_range_set_gather(rset,
-                      CS_REAL_TYPE, /* type */
-                      1,            /* stride */
-                      z1_hat,       /* in:  size=n_sles_scatter_elts */
-                      z1_hat);      /* out: size=n_sles_gather_elts */
+  cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
+                      z1_hat,   /* in:  size=n_sles_scatter_elts */
+                      z1_hat);  /* out: size=n_sles_gather_elts */
 
   cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, m11, z1_hat, r1_tilda);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
-  cs_range_set_scatter(rset,
-                       CS_REAL_TYPE, 1, /* type and stride */
+  cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        r1_tilda, r1_tilda);
 
   /* Update += of r1_tilda inside the following function */
@@ -1594,7 +1591,8 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     _compute_residual_3(ssys, x1, x2, v);
     beta = _norm(ssys, v); /* ||v|| */
     cs_log_printf(CS_LOG_DEFAULT,
-                  " %s: Residual norm at exit= %6.4e\n", __func__, beta);
+                  " %s: Residual norm at exit= %6.4e in %d iterations\n",
+                  __func__, beta, info->n_algo_iter);
   }
 
   /* Free temporary workspace */
@@ -1774,7 +1772,8 @@ cs_saddle_gcr(int                          restart,
     _compute_residual_3(ssys, x1, x2, r);
     double _beta = _norm(ssys, r); /* ||r|| */
     cs_log_printf(CS_LOG_DEFAULT,
-                  " %s: Residual norm at exit= %6.4e\n", __func__, _beta);
+                  " %s: Residual norm at exit= %6.4e in %d iterations\n",
+                  __func__, _beta, info->n_algo_iter);
   }
 
   /* Free temporary workspace */

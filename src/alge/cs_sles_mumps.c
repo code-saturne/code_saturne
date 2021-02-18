@@ -2184,7 +2184,7 @@ cs_sles_mumps_solve(void                *context,
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  MUMPS_INT  infog1;
+  MUMPS_INT  infog1 = 0;
   cs_sles_mumps_t  *c = context;
   cs_sles_mumps_setup_t  *sd = c->setup_data;
 
