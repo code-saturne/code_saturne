@@ -151,10 +151,6 @@ class config:
         self.env_modules = "@cs_env_modules@"
         self.env_modulecmd = "@MODULECMD@"
 
-        # SALOME-related information
-
-        self.salome_env = "@SALOMEENVCMD@"
-
         # Setup the optionnal features
 
         self.features['debug'] = "@debug@"

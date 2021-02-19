@@ -98,6 +98,12 @@ Numerics and physical modeling:
 
 - Activate improved hydrostatic pressure interpolation (iphydr) by default.
 
+Architectural changes:
+
+- Move salome_cfd extensions to a separate repository.
+  It should allow both simplifying installation in some cases
+  and improving  maintainability.
+
 Release 6.3.0 (December 21 2020)
 --------------------------------
 
