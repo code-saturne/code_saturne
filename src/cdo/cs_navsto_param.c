@@ -459,6 +459,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                   " + (in-house) GCR\n");
     cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
                   nslesp->il_algo_restart);
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
   case CS_NAVSTO_SLES_MINRES:
     cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");
@@ -475,12 +477,22 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                   " with Schur approx. + (in-house) GCR\n");
     cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
                   nslesp->il_algo_restart);
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
                   " + GMRES\n");
     cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
                   nslesp->il_algo_restart);
+    break;
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
+                  " + (in-house) GCR\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
   case CS_NAVSTO_SLES_USER:
     cs_log_printf(CS_LOG_SETUP, "User-defined\n");
@@ -498,6 +510,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                   " + (in-house) GCR\n");
     cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
                   nslesp->il_algo_restart);
+    cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
+                  cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
 
   default:
