@@ -1134,7 +1134,7 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 4. Build r1_tilda = m11.z1_hat + m12.z2
      ======================================= */
 
-  cs_real_t  *r1_tilda = r2_hat;
+  cs_real_t  *r1_tilda = r2_hat; /* x1_size */
 
   /* scatter view to gather view */
   cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
@@ -1399,11 +1399,11 @@ _set_pc(const cs_saddle_system_t          *ssys,
       case CS_PARAM_SCHUR_MASS_SCALED:
       case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
       case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-        *wsp_size = ssys->max_x1_size + ssys->max_x2_size;
+        *wsp_size = 2*ssys->max_x1_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return _sgs_schur_pc_apply;
       case CS_PARAM_SCHUR_ELMAN:
-        *wsp_size = 3*ssys->max_x1_size + ssys->max_x2_size;
+        *wsp_size = 4*ssys->max_x1_size;
         BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
         return _sgs_schur_pc_apply;
 
