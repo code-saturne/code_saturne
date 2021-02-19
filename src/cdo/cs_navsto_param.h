@@ -403,6 +403,16 @@ typedef enum {
  * reformulation. Two systems are solved at each iteration (one related to the
  * velocity block, one related to the Schur complement approximation - size of
  * the pressure space).
+ *
+ * \var CS_NAVSTO_SLES_UZAWA_SCHUR_GCR
+ * Associated keyword: "uza_schur_gcr"
+ *
+ * The Stokes or Navier-Stokes system is solved using a GCR algorithm with an
+ * Uzawa algorithm tuned for block preconditioning and using a Schur
+ * approximation for the pressure block (the block 22). The system is stored
+ * using a hybrid assembled/unassembled blocks. The velocity block is assembled
+ * (with potentially sub-blocks for each component) and the velocity
+ * divergence/pressure gradient operators are unassembled.
  */
 
 typedef enum {
@@ -426,6 +436,7 @@ typedef enum {
   CS_NAVSTO_SLES_UPPER_SCHUR_GCR,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_USER,
+  CS_NAVSTO_SLES_UZAWA_SCHUR_GCR,
   CS_NAVSTO_SLES_UZAWA_AL,
   CS_NAVSTO_SLES_UZAWA_CG,
 

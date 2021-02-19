@@ -3098,6 +3098,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
     {
       cs_equation_param_set_sles(mom_eqp);
 
@@ -3486,6 +3487,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
   case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
     {
       /* Default */
       cs_param_precond_block_t
@@ -3496,6 +3498,8 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
         block_type = CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
       else if (nslesp->strategy == CS_NAVSTO_SLES_SGS_SCHUR_GCR)
         block_type = CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
+      else if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_SCHUR_GCR)
+        block_type = CS_PARAM_PRECOND_BLOCK_UZAWA;
 
       /* Define block preconditionning */
       cs_saddle_block_precond_t  *sbp =

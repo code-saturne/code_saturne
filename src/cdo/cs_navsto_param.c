@@ -493,6 +493,12 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "%s Schur approximation: %s\n", navsto,
                   cs_param_get_schur_approx_name(nslesp->schur_approximation));
     break;
+  case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
+    cs_log_printf(CS_LOG_SETUP, "Uzawa block preconditioner with Schur approx."
+                  " + (in-house) GCR\n");
+    cs_log_printf(CS_LOG_SETUP, "%s Restart threshold: %d\n", navsto,
+                  nslesp->il_algo_restart);
+    break;
 
   default:
     cs_log_printf(CS_LOG_SETUP, "Not set\n");
@@ -510,7 +516,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GCR    ||
       nslesp->strategy == CS_NAVSTO_SLES_LOWER_SCHUR_GCR   ||
       nslesp->strategy == CS_NAVSTO_SLES_SGS_SCHUR_GCR     ||
-      nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GCR)
+      nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GCR   ||
+      nslesp->strategy == CS_NAVSTO_SLES_UZAWA_SCHUR_GCR)
     cs_param_sles_log(nslesp->schur_sles_param);
 
 }
@@ -1070,6 +1077,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
     else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_CG;
+    else if (strcmp(val, "uza_schur_gcr") == 0 ||
+             strcmp(val, "uzawa_schur_gcr") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_SCHUR_GCR;
 
     /* All the following options need either PETSC or MUMPS */
     /* ---------------------------------------------------- */

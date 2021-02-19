@@ -1171,6 +1171,114 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Apply one iteration of Uzawa-CG algo. with a potential Schur approx.
+ *        Compute z such that P_uza z = r
+ *
+ * \param[in]      ssys    pointer to a cs_saddle_system_t structure
+ * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
+ * \param[in]      r       rhs of the preconditioning system
+ * \param[in, out] z       array to compute
+ * \param[in, out] pc_wsp  work space related to the preconditioner
+ *
+ * \return the number of iterations performed for this step of preconditioning
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_uza_schur_pc_apply(cs_saddle_system_t          *ssys,
+                    cs_saddle_block_precond_t   *sbp,
+                    cs_real_t                   *r,
+                    cs_real_t                   *z,
+                    cs_real_t                   *pc_wsp)
+{
+  if (z == NULL)
+    return 0;
+
+  /* Sanity checks */
+  assert(ssys != NULL && sbp != NULL);
+  assert(ssys->n_m11_matrices == 1);
+  assert(r != NULL);
+  assert(pc_wsp != NULL);
+
+  const cs_range_set_t  *rset = ssys->rset;
+
+  /* 1. Solve m11 z1 = r1
+     ==================== */
+
+  int  n_iter = _solve_m11_approximation(ssys, sbp,
+                                         r, true,   /* = scatter r */
+                                         z, true);  /* = scatter z */
+
+  /* 2. Build r2_hat = r2 - B.z1
+     =========================== */
+
+  const cs_real_t  *r2 = r + ssys->max_x1_size;
+  cs_real_t  *z2 = z + ssys->max_x1_size;
+  cs_real_t  *r2_hat = pc_wsp;  /* x2_size */
+
+  _m21_vector_multiply(ssys, z, r2_hat);
+
+# pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+    r2_hat[i2] = r2[i2] - r2_hat[i2];
+
+  /* 3. Solve S z2 = r2_hat (S -> Schur approximation for the m22 block)
+     =================================================================== */
+
+    n_iter += _solve_schur_approximation(ssys, sbp, r2_hat, z2);
+
+  /* 4. Build r1_tilda = Bt.z2 (minus to apply after)
+     ========================= */
+
+  cs_real_t  *r1_tilda = pc_wsp + ssys->max_x2_size; /* x1_size */
+
+  memset(r1_tilda, 0, ssys->max_x1_size*sizeof(cs_real_t));
+  _m12_vector_multiply(ssys, z2, r1_tilda);
+
+  if (rset->ifs != NULL)
+    cs_interface_set_sum(rset->ifs,
+                         ssys->x1_size,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         r1_tilda);
+
+  /* 5. Solve m11 z1_tilda = r1_tilda
+     ================================ */
+
+  cs_real_t  *z1_tilda = pc_wsp + ssys->max_x1_size + ssys->max_x2_size;
+
+  /* No need to scatter the r1_tilda array since it is not used anymore */
+  n_iter += _solve_m11_approximation(ssys, sbp,
+                                     r1_tilda, false, /* no scatter */
+                                     z1_tilda, true); /* scatter at exit */
+
+  /* 6. Build r2_tilda = B.z1_tilda
+     ============================== */
+
+  cs_real_t  *r2_tilda = z1_tilda + ssys->max_x1_size; /* x2_size */
+
+  _m21_vector_multiply(ssys, z1_tilda, r2_tilda); /* z1_tilda has to be
+                                                     "scatter" */
+
+  /* 7. Update solutions
+     =================== */
+
+  double denum = cs_dot(ssys->x2_size, z2, r2_tilda);
+  assert(fabs(denum)>0);
+  double zeta =  cs_dot(ssys->x2_size, z2, r2_hat)/denum;
+
+# pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
+    z[i1] += zeta * z1_tilda[i1];
+
+# pragma omp parallel for if (ssys->x2_size > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < ssys->x2_size; i2++)
+    z2[i2] *= -zeta;
+
+  return n_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Apply a block diagonal preconditioning: Compute z s.t. P_d z = r
  *
  * \param[in]      ssys    pointer to a cs_saddle_system_t structure
@@ -1326,6 +1434,26 @@ _set_pc(const cs_saddle_system_t          *ssys,
       default:
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid Schur approximation with upper triangular"
+                  " block preconditioning.", __func__);
+      }
+      break;
+
+    case CS_PARAM_PRECOND_BLOCK_UZAWA:
+      switch (sbp->schur_type) {
+
+      case CS_PARAM_SCHUR_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_IDENTITY:
+      case CS_PARAM_SCHUR_LUMPED_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED:
+      case CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE:
+      case CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+        *wsp_size = 2*(ssys->max_x1_size + ssys->max_x2_size);
+        BFT_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+        return  _uza_schur_pc_apply;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid Schur approximation with Uzawa"
                   " block preconditioning.", __func__);
       }
       break;

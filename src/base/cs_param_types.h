@@ -620,6 +620,9 @@ typedef enum {
  * \var CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR
  * The diagonal blocks and the upper blocks are considered in the
  * preconditioner
+ *
+ * \var CS_PARAM_PRECOND_BLOCK_UZAWA
+ * One iteration of block Uzawa is performed as preconditioner
  */
 
 typedef enum {
@@ -629,6 +632,7 @@ typedef enum {
   CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR,
   CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL,
   CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR,
+  CS_PARAM_PRECOND_BLOCK_UZAWA,
 
   CS_PARAM_N_PCD_BLOCK_TYPES
 
