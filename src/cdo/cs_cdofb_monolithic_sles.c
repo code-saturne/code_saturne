@@ -712,28 +712,21 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   const cs_lnum_t  b11_size = ssys->x1_size;
 
   /* Synchronize the diagonal values for the block m11 */
-  cs_matrix_t  *m11 = ssys->m11_matrices[0];
-  const cs_real_t  *diag_m11 = NULL;
-  cs_real_t  *_diag_m11 = NULL;
+  const cs_matrix_t  *m11 = ssys->m11_matrices[0];
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(m11);
+  const cs_real_t  *diag_m11 = cs_matrix_get_diagonal(m11);
 
-  if (cs_shared_range_set != NULL) {
+  cs_real_t  *inv_diag = NULL;
+  BFT_MALLOC(inv_diag, CS_MAX(b11_size, n_rows), cs_real_t);
 
-    BFT_MALLOC(_diag_m11, b11_size, cs_real_t);
-    cs_range_set_scatter(cs_shared_range_set,
-                         CS_REAL_TYPE,
-                         1,     /* treated as scalar-valued up to now */
-                         cs_matrix_get_diagonal(m11), /* gathered view */
-                         _diag_m11);
+  /*  Operation in gather view (the default view for a matrix */
+  for (cs_lnum_t i1 = 0; i1 < n_rows; i1++)
+    inv_diag[i1] = 1./diag_m11[i1];
 
-    diag_m11 = _diag_m11; /* scatter view (synchronized)*/
-
-  }
-  else {
-
-    diag_m11 = cs_matrix_get_diagonal(m11);
-    assert(m->periodicity == NULL && cs_glob_n_ranks == 1);
-
-  }
+  cs_range_set_scatter(cs_shared_range_set,
+                       CS_REAL_TYPE, 1, /* treated as scalar-valued up to now */
+                       inv_diag,        /* gathered view */
+                       inv_diag);       /* scatter view */
 
   /* Native format for the Schur approximation matrix */
   cs_real_t   *diagK = NULL;
@@ -748,12 +741,12 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   /* Add diagonal and extra-diagonal contributions from interior faces */
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
-    const cs_real_t  *a_ff = diag_m11 + 3*f_id;
+    const cs_real_t  *ia_ff = inv_diag + 3*f_id;
     const cs_nvec3_t  nvf = cs_quant_set_face_nvec(f_id, quant);
 
     double  contrib = 0;
     for (int k = 0; k < 3; k++)
-      contrib += 1./a_ff[k]*nvf.unitv[k]*nvf.unitv[k];
+      contrib += ia_ff[k]*nvf.unitv[k]*nvf.unitv[k];
     contrib *= -nvf.meas*nvf.meas;
 
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
@@ -771,17 +764,17 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   } /* Loop on interior faces */
 
   /* Add diagonal contributions from border faces*/
-  const cs_real_t  *diag_shift = diag_m11 + 3*n_i_faces;
+  const cs_real_t  *diag_shift = inv_diag + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    const cs_real_t  *a_ff = diag_shift + 3*f_id;
+    const cs_real_t  *ia_ff = diag_shift + 3*f_id;
 
     cs_nvec3_t  nvf;
     cs_nvec3(quant->b_face_normal + 3*f_id, &nvf);
 
     double  contrib = 0;
     for (int k = 0; k < 3; k++)
-      contrib += 1./a_ff[k]*nvf.unitv[k]*nvf.unitv[k];
+      contrib += ia_ff[k]*nvf.unitv[k]*nvf.unitv[k];
     contrib *= nvf.meas*nvf.meas;
 
     /* Diagonal contributions */
@@ -807,8 +800,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   /* Return arrays (to be freed when the algorithm is converged) */
   sbp->schur_diag = diagK;
   sbp->schur_xtra = xtraK;
-
-  BFT_FREE(_diag_m11);
+  sbp->m11_inv_diag = inv_diag;
 }
 
 /*----------------------------------------------------------------------------*/
