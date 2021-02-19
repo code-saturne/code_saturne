@@ -39,11 +39,7 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-if HAVE_SALOME
-SALOME = salome
-endif
-
-SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
+SUBDIRS = . $(PLE) $(PREPRO) src $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
 
 AUX_DIST =
 
@@ -145,9 +141,7 @@ edit_package = sed \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
-	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
-	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
-	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
+	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g'
 
 edit_cfg = sed \
 	-e 's|@cfg_prefix[@]|$(prefix)|g' \
@@ -172,9 +166,7 @@ edit_cfg = sed \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
-	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
-	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
-	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
+	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g'
 
 edit_shell = sed \
 	-e 's|@SHELL[@]|$(SHELL)|g' \
@@ -384,8 +376,6 @@ bin/model/XMLmodel.py \
 bin/model/XMLvariables.py
 
 # Install user scripts
-
-salomesysconfdir = ${sysconfdir}/salome
 
 dist_pkgdata_DATA = \
 COPYING
