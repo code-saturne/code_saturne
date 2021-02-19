@@ -241,9 +241,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             default = self.case['case_path']
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
@@ -252,7 +252,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_restart_dirs)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec_() == 1:
 

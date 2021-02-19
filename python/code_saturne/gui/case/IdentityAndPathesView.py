@@ -164,7 +164,7 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
         title    = self.tr("Select directory")
         default  = path_case
-        options  = QFileDialog.ShowDirsOnly # | QFileDialog.DontResolveSymlinks
+        options  = QFileDialog.Option.ShowDirsOnly # | QFileDialog.Option.DontResolveSymlinks
         dir_name = QFileDialog.getExistingDirectory(self, title, default, options)
         dir_name = str(dir_name)
 

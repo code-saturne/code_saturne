@@ -418,11 +418,11 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.setAlternatingRowColors(True)
-        self.treeViewNotebook.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewNotebook.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.treeViewNotebook.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewNotebook.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.treeViewNotebook.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.treeViewNotebook.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewNotebook.expandAll()
-        self.treeViewNotebook.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeViewNotebook.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.treeViewNotebook.setDragEnabled(False)
 
         nameDelegate = LabelDelegate(self.treeViewNotebook,

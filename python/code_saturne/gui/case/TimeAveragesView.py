@@ -95,7 +95,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
 
             if p_value in self.mdl.getTimeAverageNames():
@@ -175,7 +175,7 @@ class StartValueDelegate(QItemDelegate):
         editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             row = index.row()
             stype = index.model().getData(row, 2)
             if stype == 'time step':
@@ -438,12 +438,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.treeViewAverage.setItemDelegateForColumn(3, delegateStartValue)
         self.treeViewAverage.setItemDelegateForColumn(4, delegateRestart)
 
-        if QT_API == "PYQT4":
-            self.treeViewAverage.header().setResizeMode(QHeaderView.ResizeToContents)
-            self.treeViewAverage.header().setResizeMode(5, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.treeViewAverage.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.treeViewAverage.header().setSectionResizeMode(5, QHeaderView.Stretch)
+        self.treeViewAverage.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.treeViewAverage.header().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
 
         # Connections
         self.pushButtonAdd.clicked.connect(self.slotAddAverage)

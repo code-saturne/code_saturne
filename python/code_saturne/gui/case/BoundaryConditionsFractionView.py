@@ -135,7 +135,7 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
         """
         INPUT fraction value
         """
-        if self.lineEditFraction.validator().state == QValidator.Acceptable:
+        if self.lineEditFraction.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setFraction(self.__currentField, value)
 

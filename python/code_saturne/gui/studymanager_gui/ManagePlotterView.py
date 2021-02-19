@@ -242,7 +242,7 @@ class FloatDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = from_qvariant(editor.text(), float)
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -273,7 +273,7 @@ class IntDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = from_qvariant(editor.text(), int)
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -1237,13 +1237,10 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.tableViewSubplot.resizeColumnToContents(0)
         self.tableViewSubplot.resizeRowsToContents()
         self.tableViewSubplot.setAlternatingRowColors(True)
-        self.tableViewSubplot.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewSubplot.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewSubplot.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewSubplot.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSubplot.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewSubplot.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewSubplot.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewSubplot.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewSubplot.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         spidDelegate = SpidDelegate(self.tableViewSubplot, self.mdl)
         labelDelegate = LabelDelegate(self.tableViewSubplot)
@@ -1263,13 +1260,10 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.tableViewFigure.resizeColumnToContents(0)
         self.tableViewFigure.resizeRowsToContents()
         self.tableViewFigure.setAlternatingRowColors(True)
-        self.tableViewFigure.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewFigure.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewFigure.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewFigure.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewFigure.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewFigure.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewFigure.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewFigure.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewFigure.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         delegateText = TextDelegate(self.tableViewFigure)
         delegateInt = IntDelegate(self.tableViewFigure)
         labelFDelegate = LabelDelegate(self.tableViewFigure)
@@ -1288,22 +1282,22 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
                                                              self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.setAlternatingRowColors(True)
-        self.treeViewMeasurement.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewMeasurement.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.treeViewMeasurement.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewMeasurement.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.treeViewMeasurement.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.treeViewMeasurement.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewMeasurement.expandAll()
-        self.treeViewMeasurement.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeViewMeasurement.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.treeViewMeasurement.setDragEnabled(False)
 
         # model for treeViewCase
         self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
         self.treeViewCases.setModel(self.modelCase)
         self.treeViewCases.setAlternatingRowColors(True)
-        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewCases.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.treeViewCases.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.treeViewCases.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.treeViewCases.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewCases.expandAll()
-        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.treeViewCases.setDragEnabled(False)
 
 
@@ -1751,7 +1745,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         title = self.tr("File name")
         label = self.tr("post processing file name")
-        name = QInputDialog.getText(self, title, label, QLineEdit.Normal)[0]
+        name = QInputDialog.getText(self, title, label, QLineEdit.EchoMode.Normal)[0]
         self.mdl.addCaseDataFile(c_node, name)
 
         self.modelCase = StandardItemModelCase(self.mdl, self.current_study)

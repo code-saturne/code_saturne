@@ -201,7 +201,7 @@ class SolidView(QWidget, Ui_Solid):
     def slotCompaction(self, var):
         """
         """
-        if self.lineEditCompaction.validator().state == QValidator.Acceptable:
+        if self.lineEditCompaction.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setCompaction(value)
 
@@ -211,7 +211,7 @@ class SolidView(QWidget, Ui_Solid):
         """
         Setter slot.
         """
-        if self.lineEditFrictonalThres.validator().state == QValidator.Acceptable:
+        if self.lineEditFrictonalThres.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMinFrictionalThreshold(value)
 
@@ -221,7 +221,7 @@ class SolidView(QWidget, Ui_Solid):
         """
         Set elasiticity coefficient
         """
-        if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
+        if self.lineEditElastCoef.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setElastCoeff(value, self.currentid)
 

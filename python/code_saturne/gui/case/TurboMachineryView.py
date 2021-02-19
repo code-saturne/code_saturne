@@ -115,7 +115,7 @@ class VelocityDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -249,7 +249,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
         self.tableViewTurboMachinery.setAlternatingRowColors(True)
-        self.tableViewTurboMachinery.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewTurboMachinery.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         delegateVelocity = VelocityDelegate(self.tableViewTurboMachinery)
         self.tableViewTurboMachinery.setItemDelegateForColumn(0, delegateVelocity)
@@ -259,10 +259,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
 
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+        self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
 
         # Faces to join selection (Custom Widgets)
         model = StandardItemModelFaces(self, self.mdl, 'face_joining')
@@ -352,10 +349,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
     def dataChanged(self, topLeft, bottomRight):
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+        self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
 
         self.updateView()
 
@@ -397,7 +391,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for X
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditDX.validator().state == QValidator.Acceptable:
+        if self.lineEditDX.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
@@ -408,7 +402,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for Y
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditDY.validator().state == QValidator.Acceptable:
+        if self.lineEditDY.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
@@ -419,7 +413,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for Z
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditDZ.validator().state == QValidator.Acceptable:
+        if self.lineEditDZ.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
@@ -430,7 +424,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditX1.validator().state == QValidator.Acceptable:
+        if self.lineEditX1.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
@@ -441,7 +435,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditY1.validator().state == QValidator.Acceptable:
+        if self.lineEditY1.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
@@ -452,7 +446,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.lineEditZ1.validator().state == QValidator.Acceptable:
+        if self.lineEditZ1.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_z", val)
 

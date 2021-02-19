@@ -206,16 +206,11 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.tableViewFields.setModel(self.tableModelFields)
         self.tableViewFields.resizeColumnsToContents()
         self.tableViewFields.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewFields.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewFields.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewFields.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewFields.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewFields.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewFields.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
             self.tableModelFields.newItem(fieldId)

@@ -505,7 +505,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         @type text: C{QString}
         @param text: value
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             v = from_qvariant(text, float)
             self.__boundary.setVelocity(v)
 
@@ -597,7 +597,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_x', value)
 
@@ -607,7 +607,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_y', value)
 
@@ -617,7 +617,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setDirection('direction_z', value)
 
@@ -685,7 +685,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
     @pyqtSlot(str)
     def __slotTemperature(self, text):
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setOxydantTemperature(t)
 

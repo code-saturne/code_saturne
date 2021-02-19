@@ -171,14 +171,9 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.modelSyrthes = StandardItemModelSyrthes(self.__model)
         self.tableViewSyrthes.setModel(self.modelSyrthes)
 
-        if QT_API == "PYQT4":
-            self.tableViewSyrthes.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewSyrthes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewSyrthes.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSyrthes.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.tableViewSyrthes.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
         self.modelProjectionAxis = ComboModel(self.comboBoxProjectionAxis, 1, 1)
         self.modelProjectionAxis.addItem("off")
@@ -248,7 +243,7 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         """
         Input tolerance value.
         """
-        if self.lineEditTolerance.validator().state == QValidator.Acceptable:
+        if self.lineEditTolerance.validator().state == QValidator.State.Acceptable:
             text = self.lineEditTolerance.text()
             self.__model.setSyrthesTolerance(text)
 

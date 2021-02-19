@@ -74,7 +74,7 @@ def format(color, style=''):
     _format = QTextCharFormat()
     _format.setForeground(_color)
     if 'bold' in style:
-        _format.setFontWeight(QFont.Bold)
+        _format.setFontWeight(QFont.Weight.Bold)
     if 'italic' in style:
         _format.setFontItalic(True)
 
@@ -103,45 +103,45 @@ class XMLHighlighter(QSyntaxHighlighter):
 
     operators = [
         # logical
-        '!', '==', '!=', '<', '<=', '>', '>=', '&&', '\|\|',
+        '!', '==', '!=', '<', '<=', '>', '>=', '&&', r'\|\|',
         # Arithmetic
-        '=', '\+', '-', '\*', '/', '\^',
+        '=', r'\+', '-', r'\*', '/', r'\^',
     ]
 
-    braces = ['\{', '\}', '\(', '\)', '\[', '\]',]
+    braces = [r'\{', r'\}', r'\(', r'\)', r'\[', r'\]',]
 
 
     def __init__(self, document, symbols):
         QSyntaxHighlighter.__init__(self, document)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(Qt.darkMagenta)
-        keywordFormat.setFontWeight(QFont.Bold)
+        keywordFormat.setForeground(Qt.GlobalColor.darkMagenta)
+        keywordFormat.setFontWeight(QFont.Weight.Bold)
 
-        keywordPatterns = ["\\b?xml\\b", "/>", ">", "<"]
+        keywordPatterns = [r"\b\?xml\b", "/>", ">", "<"]
 
-        self.highlightingRules = [(QRegExp(pattern), keywordFormat)
+        self.highlightingRules = [(QRegularExpression(pattern), keywordFormat)
                 for pattern in keywordPatterns]
 
         xmlElementFormat = QTextCharFormat()
-        xmlElementFormat.setFontWeight(QFont.Bold)
-        xmlElementFormat.setForeground(Qt.green)
-        self.highlightingRules.append((QRegExp("\\b[A-Za-z0-9_]+(?=[\s/>])"), xmlElementFormat))
+        xmlElementFormat.setFontWeight(QFont.Weight.Bold)
+        xmlElementFormat.setForeground(Qt.GlobalColor.green)
+        self.highlightingRules.append((QRegularExpression(r"\b[A-Za-z0-9_]+(?=[\s/>])"), xmlElementFormat))
 
         xmlAttributeFormat = QTextCharFormat()
         xmlAttributeFormat.setFontItalic(True)
-        xmlAttributeFormat.setForeground(Qt.blue)
-        self.highlightingRules.append((QRegExp("\\b[A-Za-z0-9_]+(?=\\=)"), xmlAttributeFormat))
+        xmlAttributeFormat.setForeground(Qt.GlobalColor.blue)
+        self.highlightingRules.append((QRegularExpression(r"\b[A-Za-z0-9_]+(?=\=)"), xmlAttributeFormat))
 
         self.valueFormat = QTextCharFormat()
-        self.valueFormat.setForeground(Qt.red)
+        self.valueFormat.setForeground(Qt.GlobalColor.red)
 
-        self.valueStartExpression = QRegExp("\"")
-        self.valueEndExpression = QRegExp("\"(?=[\s></])")
+        self.valueStartExpression = QRegularExpression("\"")
+        self.valueEndExpression = QRegularExpression("\"(?=[\\s></])")
 
         singleLineCommentFormat = QTextCharFormat()
-        singleLineCommentFormat.setForeground(Qt.gray)
-        self.highlightingRules.append((QRegExp("<!--[^\n]*-->"), singleLineCommentFormat))
+        singleLineCommentFormat.setForeground(Qt.GlobalColor.gray)
+        self.highlightingRules.append((QRegularExpression("<!--[^\n]*-->"), singleLineCommentFormat))
 
 
     def highlightBlock(self, text):
@@ -151,35 +151,44 @@ class XMLHighlighter(QSyntaxHighlighter):
         for pattern, format in self.highlightingRules:
 
             #Create a regular expression from the retrieved pattern
-            expression = QRegExp(pattern)
+            expression = QRegularExpression(pattern)
 
             #Check what index that expression occurs at with the ENTIRE text
-            index = expression.indexIn(text)
-
-            while index >= 0:
-                length = expression.matchedLength()
+            i = expression.globalMatch(text)
+            while i.hasNext():
+                match = i.next()
+                index = match.capturedStart()
+                length = match.capturedLength()
                 self.setFormat(index, length, format)
-
-                index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
 
         startIndex = 0
         if self.previousBlockState() != 1:
-            startIndex = self.valueStartExpression.indexIn(text)
+            match = self.valueStartExpression.match(text)
+            if match.hasMatch():
+                startIndex = match.capturedStart(0)
+            else:
+                startIndex = -1
 
         while startIndex >= 0:
-            endIndex = self.valueEndExpression.indexIn(text, startIndex)
-
-            if endIndex == -1:
-                self.setCurrentBlockState(1)
-                commentLength = len(text) - startIndex
+            match = self.valueEndExpression.match(text, startIndex)
+            if match.hasMatch():
+                endIndex = match.capturedStart()
+                startIndexNext = endIndex
+                commentLength = endIndex - startIndex + match.capturedLength(0)
             else:
-                commentLength = endIndex - startIndex + self.valueEndExpression.matchedLength()
+                endIndex = len(text)
+                commentLength = endIndex - startIndex
 
             self.setFormat(startIndex, commentLength, self.valueFormat)
 
-            startIndex = self.valueStartExpression.indexIn(text, startIndex + commentLength);
+            startIndex += commentLength
+            match = self.valueStartExpression.match(text, startIndex)
+            if match.hasMatch():
+                startIndex = match.capturedStart(0)
+            else:
+                startIndex = -1
 
 #-------------------------------------------------------------------------------
 # Dialog to show current XML status

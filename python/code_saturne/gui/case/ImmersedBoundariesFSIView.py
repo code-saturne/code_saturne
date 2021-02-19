@@ -239,21 +239,21 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
 
     @pyqtSlot(str)
     def slotObjMinCycle(self, text):
-        if self.lineEditMinSubCycles.validator().state == QValidator.Acceptable:
+        if self.lineEditMinSubCycles.validator().state == QValidator.State.Acceptable:
             val = int(text)
             self.ibm.setObjectMinCycle(self.current_obj, text)
 
 
     @pyqtSlot(str)
     def slotObjMaxCycle(self, text):
-        if self.lineEditMaxSubCycles.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxSubCycles.validator().state == QValidator.State.Acceptable:
             val = int(text)
             self.ibm.setObjectMaxCycle(self.current_obj, text)
 
 
     @pyqtSlot(str)
     def slotObjCvCriteria(self, text):
-        if self.lineEditConvergenceCriteria.validator().state == QValidator.Acceptable:
+        if self.lineEditConvergenceCriteria.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectCvCriteria(self.current_obj, text)
 

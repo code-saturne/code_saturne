@@ -101,11 +101,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
              "k-omega-SST": "k-\u03C9 SST",
              "Spalart-Allmaras": "Spalart-Allmaras"}
 
-        if QT_API == "PYQT4":
-            e["k-epsilon-PL"] = "k-epsilon Linear Production"
-            e["v2f-BL-v2/k"] = "v2f BL-v2/k"
-            e["k-omega-SST"] = "k-omega SST"
-
         for k in ("k-epsilon-PL", "v2f-BL-v2/k",
                   "k-omega-SST", "Spalart-Allmaras"):
             self.modelTurbModel.addItem(self.tr(e[k]), k,
@@ -116,10 +111,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         e = {"Rij-SSG": "R\u1D62\u2C7C-\u03B5 SSG",
              "Rij-EBRSM": "R\u1D62\u2C7C-\u03B5 EBRSM"}
-
-        if QT_API == "PYQT4":
-            e["Rij-SSG"] = "Rij-SSG"
-            e["Rij-EBRSM"] = "Rij-EBRSM"
 
         for k in ("Rij-SSG", "Rij-EBRSM"):
             self.modelTurbModel.addItem(self.tr(e[k]), k,
@@ -145,10 +136,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         e = {"Rij-epsilon": "R\u1D62\u2C7C-\u03B5 LRR",
              "k-epsilon": "k-\u03B5"}
 
-        if QT_API == "PYQT4":
-            e["Rij-epsilon"] = "Rij-LRR"
-            e["k-epsilon"] = "k-epsilon"
-
         for k in ("Rij-epsilon", "k-epsilon"):
             self.modelTurbModel.addItem(self.tr(e[k]), k,
                                         groupName="Others")
@@ -156,7 +143,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelLength = ComboModel(self.comboBoxLength,2,1)
         self.modelLength.addItem(self.tr("Automatic"), 'automatic')
         self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
-        self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.comboBoxLength.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 
         self.labelTurbDiff.hide()
         self.comboBoxTurbDiff.hide()
@@ -319,7 +306,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private slot.
         Input XLOMLG.
         """
-        if self.lineEditLength.validator().state == QValidator.Acceptable:
+        if self.lineEditLength.validator().state == QValidator.State.Acceptable:
             l_scale = from_qvariant(text, float)
             self.model.setLengthScale(l_scale)
 
@@ -365,7 +352,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private slot.
         Input reference velocity.
         """
-        if self.lineEditV0.validator().state == QValidator.Acceptable:
+        if self.lineEditV0.validator().state == QValidator.State.Acceptable:
             v = from_qvariant(text, float)
             self.model.setVelocity(v)
 
@@ -396,7 +383,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private slot.
         Input reference length.
         """
-        if self.lineEditL0.validator().state == QValidator.Acceptable:
+        if self.lineEditL0.validator().state == QValidator.State.Acceptable:
             l = from_qvariant(text, float)
             self.model.setLength(l)
 

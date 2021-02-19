@@ -290,7 +290,7 @@ class FloatDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -319,7 +319,7 @@ class IntDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -630,12 +630,12 @@ class MeshInputDialog(QFileDialog):
         self.setNameFilter(self.name_filter)
 
         self.select_label = str(self.tr("Select"))
-        self.setLabelText(QFileDialog.Accept, self.select_label)
+        self.setLabelText(QFileDialog.DialogLabel.Accept, self.select_label)
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
         if hasattr(self, 'setOptions'):
             self.setOptions(options)
         search_urls = []
@@ -645,18 +645,18 @@ class MeshInputDialog(QFileDialog):
 
         self.currentChanged[str].connect(self._selectChange)
 
-        self.setFileMode(QFileDialog.ExistingFile)
+        self.setFileMode(QFileDialog.FileMode.ExistingFile)
 
 
     def _selectChange(self, spath):
-        mode = QFileDialog.ExistingFile
+        mode = QFileDialog.FileMode.ExistingFile
         path = str(spath)
         if os.path.basename(path) == 'mesh_input':
             if os.path.isdir(path):
-                mode = QFileDialog.Directory
+                mode = QFileDialog.FileMode.Directory
         self.setFileMode(mode)
         self.setNameFilter(self.name_filter)
-        self.setLabelText(QFileDialog.Accept, self.select_label)
+        self.setLabelText(QFileDialog.DialogLabel.Accept, self.select_label)
 
 
 #-------------------------------------------------------------------------------
@@ -924,9 +924,9 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
         for i in range(0, len(self.mesh_dirs)):
@@ -940,7 +940,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec_() == 1:
 
@@ -986,9 +986,9 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
         for i in range(0, len(self.mesh_dirs)):
@@ -1007,7 +1007,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
         if dialog.exec_() == 1:
             s = dialog.selectedFiles()
@@ -1039,20 +1039,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 if cmp_width > last_width:
                     last_width = cmp_width
 
-        if QT_API == "PYQT4":
-            self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.tableViewMeshes.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewMeshes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         if n_num == 0:
             self.tableViewMeshes.setColumnHidden(2, True)
         else:
             self.tableViewMeshes.setColumnHidden(2, False)
-            if QT_API == "PYQT4":
-                self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-            elif QT_API == "PYQT5":
-                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         if n_groups == 0:
             self.tableViewMeshes.setColumnHidden(5, True)
@@ -1060,15 +1053,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         else:
             self.tableViewMeshes.setColumnHidden(5, False)
             self.tableViewMeshes.setColumnHidden(6, False)
-            if QT_API == "PYQT4":
-                self.tableViewMeshes.horizontalHeader().setResizeMode(5, QHeaderView.ResizeToContents)
-                self.tableViewMeshes.horizontalHeader().setResizeMode(6, QHeaderView.ResizeToContents)
-            elif QT_API == "PYQT5":
-                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
-                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
 
         # We have a bug under KDE (but not Gnome) if the line below is not commented.
-        # self.tableViewMeshes.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeToContents)
+        # self.tableViewMeshes.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
 
         self.tableViewMeshes.horizontalHeader().setStretchLastSection(True)
 

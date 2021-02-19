@@ -218,7 +218,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         INPUT non condensable value
         """
-        if self.lineEditScalar.validator().state == QValidator.Acceptable:
+        if self.lineEditScalar.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
 
             _f_id, _sname = self.__currentScalar

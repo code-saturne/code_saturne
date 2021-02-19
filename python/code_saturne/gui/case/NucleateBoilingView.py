@@ -257,7 +257,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the Yplus value
         """
-        if self.lineEditYPlus.validator().state == QValidator.Acceptable:
+        if self.lineEditYPlus.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setYPlusValue(value)
 
@@ -267,7 +267,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the max radius
         """
-        if self.lineEditMaxRadius.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxRadius.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMaxRadius(value)
 
@@ -277,7 +277,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the max diameter
         """
-        if self.lineEditMaxDiam.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxDiam.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMaxDiameter(value)
 
@@ -287,7 +287,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the maximum oversaturation temperature
         """
-        if self.lineEditMaxOverSaturation.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxOverSaturation.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMaxOverSaturation(value)
 
@@ -297,7 +297,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the thermal conductivity
         """
-        if self.lineEditThermalConductivity.validator().state == QValidator.Acceptable:
+        if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setThermalConductivity(value)
 
@@ -307,7 +307,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the density
         """
-        if self.lineEditDensity.validator().state == QValidator.Acceptable:
+        if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setDensity(value)
 
@@ -317,7 +317,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the specific heat
         """
-        if self.lineEditSpecificHeat.validator().state == QValidator.Acceptable:
+        if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setSpecificHeat(value)
 
@@ -348,7 +348,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         """
         Update the thickness value
         """
-        if self.lineEditThickness.validator().state == QValidator.Acceptable:
+        if self.lineEditThickness.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setThicknessValue(value)
 

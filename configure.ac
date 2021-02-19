@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2025 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -887,18 +887,17 @@ if test "x$cs_have_frontend" = "xno" ; then
 fi
 
 #------------------------------------------------------------------------------
-# Checks for PyQt support.
+# Checks for PyQt5, PyQt6, or Pyside6 support.
 #------------------------------------------------------------------------------
-
-# Test for PyQt4 or PyQt5
-cs_have_gui_qt4=no
-cs_have_gui_qt5=no
 
 if test "x$cs_have_gui" = "xcheck" ; then
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "x5" ; then
+  cs_have_pyuic=no
+  cs_have_pyrcc=no
 
-    AC_MSG_CHECKING([for PyQt5 version >= 5.0])
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyqt5" ; then
+
+    AC_MSG_CHECKING([for PyQt5])
 
     prog="[import sys, string
 try: import PyQt5
@@ -915,28 +914,59 @@ sys.exit(0)]"
       AC_MSG_RESULT([no])
     else
       AC_MSG_RESULT([yes])
-      cs_have_gui=yes
-      cs_have_gui_qt5=yes
+      cs_have_gui=PyQt5
+    fi
+
+  fi
+
+  # Test for PyQt5 developer tools
+  if test "x$cs_have_gui" = "xPyQt5" ; then
+
+    # Try to find PyQt5 tools through Python interpreter
+    prog="[import os, sys
+from PyQt5.QtCore import QCoreApplication
+app = QCoreApplication([])
+path = app.applicationDirPath()
+sys.stdout.write(path)]"
+
+    PYPATH=`${PYTHON} -c "${prog}"`
+
+    AC_ARG_VAR([PYUIC5], [PyQt5 user interfaces compiler])
+    AC_ARG_VAR([PYRCC5], [PyQt5 resources compiler])
+
+    if test "x$PYUIC5" = "x" ; then
+      AC_PATH_PROG([PYUIC5], [pyuic5], [], [${PYPATH}:$PATH])
+      cs_have_pyuic="pyuic5"
+    fi
+    if test "x$PYRCC5" = "x" ; then
+      AC_PATH_PROG([PYRCC5], [pyrcc5], [], [${PYPATH}:$PATH])
+      cs_have_pyrcc="pyrc5"
+    fi
+
+    if test "x$PYUIC5" = "x" -o "x$PYRCC5" = "x" ; then
+      AC_MSG_FAILURE([cannot find PyQt5 dev tools, Graphical User Interface cannot be installed])
+      cs_have_gui=no
     fi
 
   fi
 
 fi
 
+# Test for PyQt6
+#---------------
+
 if test "x$cs_have_gui" = "xcheck" ; then
 
-  cs_have_gui=no
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "pyqt6" ; then
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "x4" ; then
-
-    AC_MSG_CHECKING([for PyQt4 version >= 4.5])
+    AC_MSG_CHECKING([for PyQt6])
 
     prog="[import sys, string
-try: import PyQt4
+try: import PyQt6
 except ImportError: sys.exit(1)
-from PyQt4.QtCore import *
-if list(map(int, QT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
-if list(map(int, PYQT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
+from PyQt6.QtCore import *
+if list(map(int, QT_VERSION_STR.split('.'))) < [6,0,0]: sys.exit(1)
+if list(map(int, PYQT_VERSION_STR.split('.'))) < [6,0,0]: sys.exit(1)
 sys.exit(0)]"
 
     ${PYTHON} -c "${prog}"
@@ -944,93 +974,113 @@ sys.exit(0)]"
 
     if test $retval -ne 0 ; then
       AC_MSG_RESULT([no])
-      AC_MSG_FAILURE([cannot find PyQt5 support (>= 5.0) or PyQt4 support (>= 4.5), Graphical User Interface cannot be installed])
+      AC_MSG_FAILURE([PyQt6 support (>= 6.0), Graphical User Interface cannot be installed])
     else
       AC_MSG_RESULT([yes])
-      cs_have_gui=yes
-      cs_have_gui_qt4=yes
+      cs_have_gui=PyQt6
     fi
   fi
 
-fi
+  # Test for PyQt6 developer tools
+  if test "x$cs_have_gui" = "xPyQt5" ; then
 
-# Test for PyQt4 developer tools
-if test "x$cs_have_gui_qt4" = "xyes" ; then
-
-  # Try to find PyQt4 tools through Python interpreter
-  prog="[import os, sys
-from PyQt4.QtCore import QCoreApplication
+    # Try to find PyQt6 tools through Python interpreter
+    prog="[import os, sys
+from PyQt6.QtCore import QCoreApplication
 app = QCoreApplication([])
 path = app.applicationDirPath()
 sys.stdout.write(path)]"
 
-  PYPATH=`${PYTHON} -c "${prog}"`
+    PYPATH=`${PYTHON} -c "${prog}"`
 
-  # On Cygwin hosts, the PATH does not seem to be correctly found
-  if test "$host_os" = cygwin ; then
-     PYPATH=/usr/lib/python$PYTHON_VERSION/site-packages/PyQt4
-  fi
+    AC_ARG_VAR([PYUIC6], [PyQt6 user interfaces compiler])
+    AC_ARG_VAR([RCC], [Qt resources compiler])
 
-  AC_ARG_VAR([PYUIC4], [PyQt4 user interfaces compiler])
-  AC_ARG_VAR([PYRCC4], [PyQt4 resources compiler])
-
-  # On MinGW (MSYS) or Cygwin (BASH) build systems, and for MinGW hosts,
-  # pyuic4 is a batch file and cannot be run from the shell.
-  # To bypass this issue, we launch pyuic4 through cmd.exe
-  # with a "standard" PATH.
-  # pyrcc4 does not need this trick as it is a standard executable.
-  if test "$host_os" = mingw64 ; then
-    if test "$build_os" = mingw64 ; then
-      CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
-    elif test "$build_os" = cygwin ; then
-      CMDPYUIC4="cmd /C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
+    if test "x$PYUIC6" = "x" ; then
+      AC_PATH_PROG([PYUIC6], [pyuic6], [], [${PYPATH}:$PATH])
+      cs_have_pyuic="pyuic6"
     fi
-  fi
+    if test "x$RCC" = "x" ; then
+      AC_PATH_PROG([RCC], [rcc], [], [${PYPATH}:$PATH])
+    fi
 
-  if test "x$PYUIC4" = "x" ; then
-    AC_PATH_PROG([PYUIC4], [pyuic4], [$CMDPYUIC4], [${PYPATH}:$PATH])
-  fi
-  if test "x$PYRCC4" = "x" ; then
-    AC_PATH_PROG([PYRCC4], [pyrcc4], [],           [${PYPATH}:$PATH])
-  fi
+    if test "x$PYUIC" = "x" -o "x$RCC" = "x" ; then
+      AC_MSG_FAILURE([cannot find PyQt6 dev tools, Graphical User Interface cannot be installed])
+      cs_have_gui=no
+    fi
 
-  if test "x$PYUIC4" = "x" -o "x$PYRCC4" = "x" ; then
-    AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
-    cs_have_gui=no
   fi
 
 fi
 
-# Test for PyQt5 developer tools
-if test "x$cs_have_gui_qt5" = "xyes" ; then
+# Test for Pyside6
+#------------------
 
-  # Try to find PyQt5 tools through Python interpreter
-  prog="[import os, sys
-from PyQt5.QtCore import QCoreApplication
+if test "x$cs_have_gui" = "xcheck" ; then
+
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyside6" ; then
+
+    AC_MSG_CHECKING([for PySide6])
+
+    prog="[import sys, string
+try: import PySide6
+except ImportError: sys.exit(1)
+from PySide6.QtCore import *
+if list(map(int, PySide6.QtCore.__version__.split('.'))) < [6,0,0]: sys.exit(1)
+if list(map(int, PySide6.__version__.split('.'))) < [6,0,0]: sys.exit(1)
+sys.exit(0)]"
+
+    ${PYTHON} -c "${prog}"
+    retval=$?
+
+    if test $retval -ne 0 ; then
+      AC_MSG_RESULT([no])
+      AC_MSG_FAILURE([cannot find PySide support (>= 6.0), Graphical User Interface cannot be installed])
+    else
+      AC_MSG_RESULT([yes])
+      cs_have_gui=PySide6
+    fi
+
+  fi
+
+  # Test for PySide6 developer tools
+  if test "x$cs_have_gui" = "xPySide6" ; then
+
+    # Try to find PyQt6 tools through Python interpreter
+    prog="[import os, sys
+from PySide6.QtCore import QCoreApplication
 app = QCoreApplication([])
 path = app.applicationDirPath()
 sys.stdout.write(path)]"
 
-  PYPATH=`${PYTHON} -c "${prog}"`
+    PYPATH=`${PYTHON} -c "${prog}"`
 
-  ## On Cygwin hosts, the PATH does not seem to be correctly found
-  #if test "$host_os" = cygwin ; then
-  #   PYPATH=/usr/lib/python$PYTHON_VERSION/site-packages/PyQt5
-  #fi
+    AC_ARG_VAR([PYSIDE6UIC], [PySide6 user interfaces compiler])
+    AC_ARG_VAR([PYSIDE6RCC], [Qt6 resources compiler])
 
-  AC_ARG_VAR([PYUIC5], [PyQt5 user interfaces compiler])
-  AC_ARG_VAR([PYRCC5], [PyQt5 resources compiler])
+    if test "x$PYSIDE6UIC" = "x" ; then
+      AC_PATH_PROG([PYSIDE6UIC], [pyside6-uic], [], [${PYPATH}:$PATH])
+    fi
+    if test "x$PYSIDE6RCC" = "x" ; then
+      AC_PATH_PROG([PYSIDE6RCC], [pyside6-rcc], [], [${PYPATH}:$PATH])
+    fi
 
-  if test "x$PYUIC5" = "x" ; then
-    AC_PATH_PROG([PYUIC5], [pyuic5], [$CMDPYUIC5], [${PYPATH}:$PATH])
-  fi
-  if test "x$PYRCC5" = "x" ; then
-    AC_PATH_PROG([PYRCC5], [pyrcc5], [],           [${PYPATH}:$PATH])
-  fi
+    if test "x$PYSIDE6UIC" != "x" ; then
+      cs_have_pyuic="pyside6_uic"
+    else
+      AC_PATH_PROG([UIC], [uic], [], [])
+    fi
+    if test "x$PYSIDE6RCC" != "x" ; then
+      cs_have_pyrcc="pyside6_rcc"
+    else
+      AC_PATH_PROG([RCC], [rcc], [], [])
+    fi
 
-  if test "x$PYUIC5" = "x" -o "x$PYRCC5" = "x" ; then
-    AC_MSG_FAILURE([cannot find PyQt5 dev tools, Graphical User Interface cannot be installed])
-    cs_have_gui=no
+    if test "x${PYSIDE6UIC}${UIC}" = "x" -o "x${PYSIDE6RCC}${RCC}" = "x" ; then
+      AC_MSG_FAILURE([cannot find PySide6 dev tools, Graphical User Interface cannot be installed])
+      cs_have_gui=no
+    fi
+
   fi
 
 fi
@@ -1039,12 +1089,13 @@ fi
 # Checks for Qt tools.
 #------------------------------------------------------------------------------
 
-AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" = "xyes"])
+AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" != "xno"])
 AC_SUBST(cs_have_gui)
-AM_CONDITIONAL(HAVE_QT4, [test "x$cs_have_gui_qt4" = "xyes"])
-AC_SUBST(cs_have_gui_qt4)
-AM_CONDITIONAL(HAVE_QT5, [test "x$cs_have_gui_qt5" = "xyes"])
-AC_SUBST(cs_have_gui_qt5)
+AM_CONDITIONAL(HAVE_PYSIDE6, [test "x$cs_have_gui" = "xPySide6"])
+AM_CONDITIONAL(HAVE_PYQT6, [test "x$cs_have_gui" = "xPyQt6"])
+AM_CONDITIONAL(HAVE_PYQT5, [test "x$cs_have_gui" = "xPyQt5"])
+AM_CONDITIONAL(HAVE_PYUIC, [test "x$cs_have_pyuic" != "xno"])
+AM_CONDITIONAL(HAVE_PYRCC, [test "x$cs_have_pyrcc" != "xno"])
 
 #------------------------------------------------------------------------------
 # Checks for header files.
@@ -1277,10 +1328,7 @@ echo " use malloc hooks: "$cs_have_malloc_hooks""
 if test x$cs_have_frontend = xno ; then
   echo " use frontend: no"
 else
-  echo " use graphical user interface: "$cs_have_gui""
-  if test x$cs_have_gui_qt4 = xyes ; then
-    echo "    Warning: using PyQt4 is deprecated"
-  fi
+  echo " graphical user interface: "$cs_have_gui""
 fi
 if test x$cs_have_backend = xno ; then
   echo " use backend: no"

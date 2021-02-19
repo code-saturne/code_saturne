@@ -87,7 +87,7 @@ class LineEditDelegateIndex(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -119,7 +119,7 @@ class LineEditDelegateFloat(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -302,8 +302,8 @@ class FansView(QWidget, Ui_FansForm):
         self.fansModel = StandardItemModelFans(self.mdl)
         self.tableViewFans.setModel(self.fansModel)
         self.tableViewFans.setAlternatingRowColors(True)
-        self.tableViewFans.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewFans.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewFans.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewFans.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateIdx = LineEditDelegateIndex(self.tableViewFans)
         self.tableViewFans.setItemDelegateForColumn(0, delegateIdx)
@@ -325,10 +325,7 @@ class FansView(QWidget, Ui_FansForm):
 
         self.tableViewFans.resizeColumnsToContents()
         self.tableViewFans.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewFans.horizontalHeader().setResizeMode(5,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewFans.horizontalHeader().setSectionResizeMode(5,QHeaderView.Stretch)
+        self.tableViewFans.horizontalHeader().setSectionResizeMode(5,QHeaderView.ResizeMode.Stretch)
 
         # Validator
         validatorInX = DoubleValidator(self.lineEditInletX)
@@ -429,7 +426,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditInletX.validator().state == QValidator.Acceptable:
+        if self.lineEditInletX.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "inlet_axis_x", val)
 
@@ -439,7 +436,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditInletY.validator().state == QValidator.Acceptable:
+        if self.lineEditInletY.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "inlet_axis_y", val)
 
@@ -449,7 +446,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditInletZ.validator().state == QValidator.Acceptable:
+        if self.lineEditInletZ.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "inlet_axis_z", val)
 
@@ -459,7 +456,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditOutletX.validator().state == QValidator.Acceptable:
+        if self.lineEditOutletX.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "outlet_axis_x", val)
 
@@ -469,7 +466,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditOutletY.validator().state == QValidator.Acceptable:
+        if self.lineEditOutletY.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "outlet_axis_y", val)
 
@@ -479,7 +476,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditOutletZ.validator().state == QValidator.Acceptable:
+        if self.lineEditOutletZ.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "outlet_axis_z", val)
 
@@ -489,7 +486,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditCoefX.validator().state == QValidator.Acceptable:
+        if self.lineEditCoefX.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "curve_coeffs_x", val)
 
@@ -499,7 +496,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditCoefY.validator().state == QValidator.Acceptable:
+        if self.lineEditCoefY.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "curve_coeffs_y", val)
 
@@ -509,7 +506,7 @@ class FansView(QWidget, Ui_FansForm):
         """
         """
         idx = self.tableViewFans.currentIndex().row()
-        if self.lineEditCoefZ.validator().state == QValidator.Acceptable:
+        if self.lineEditCoefZ.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "curve_coeffs_z", val)
 

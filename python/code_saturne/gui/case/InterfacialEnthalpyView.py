@@ -378,7 +378,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         Update the relaxation time for field a
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        if self.lineEditRelaxationTimeFielda.validator().state == QValidator.Acceptable:
+        if self.lineEditRelaxationTimeFielda.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_a, value)
 
@@ -389,7 +389,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         Update the relaxation time for field b
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
-        if self.lineEditRelaxationTimeFieldb.validator().state == QValidator.Acceptable:
+        if self.lineEditRelaxationTimeFieldb.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_b, value)
 

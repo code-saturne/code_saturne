@@ -54,8 +54,8 @@ try:
     from code_saturne.gui.base.QtWidgets import QMainWindow, QMessageBox, \
         QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
 except Exception:
-    # PyQt4
-    from code_saturne.gui.base.QtGui import QMainWindow, QMessageBox, \
+    # PyQt6
+    from code_saturne.gui.base.QtWidgets import QMainWindow, QMessageBox, \
         QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessagBox
 
 from code_saturne.model.Common import GuiParam
@@ -286,7 +286,7 @@ class CouplingEditorView(QWidget):
 
         lSpacer = QLabel()
         lSpacer.setText(30*" ")
-        vSpacer = QSpacerItem(40, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        vSpacer = QSpacerItem(40, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         layout.addWidget(lSpacer, rows, 0)
         layout.addItem(vSpacer, rows, 1)
 
@@ -341,8 +341,8 @@ class QCouplingEditor(QMainWindow):
         save_img_path = get_cs_data_path() + "/icons/22x22/document-save.png"
         icon_save     = QIcon()
         icon_save.addPixmap(QPixmap(_fromUtf8(save_img_path)),
-                            QIcon.Normal,
-                            QIcon.Off)
+                            QIcon.Mode.Normal,
+                            QIcon.State.Off)
         self.saveFileAction = QAction(icon_save, "Save", self)
         self.saveFileAction.setShortcut("Ctrl+S")
         self.saveFileAction.setStatusTip('Save file')
@@ -352,8 +352,8 @@ class QCouplingEditor(QMainWindow):
         close_img_path = get_cs_data_path() + "/icons/22x22/process-stop.png"
         icon_close     = QIcon()
         icon_close.addPixmap(QPixmap(_fromUtf8(close_img_path)),
-                             QIcon.Normal,
-                             QIcon.Off)
+                             QIcon.Mode.Normal,
+                             QIcon.State.Off)
         self.closeFileAction = QAction(icon_close, "Close file", self)
         self.closeFileAction.setShortcut("Ctrl+Q")
         self.closeFileAction.setStatusTip('Close opened file')

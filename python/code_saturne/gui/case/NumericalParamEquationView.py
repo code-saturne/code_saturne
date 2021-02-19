@@ -199,7 +199,7 @@ class BlendingFactorDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
@@ -232,7 +232,7 @@ class RhsReconstructionDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = from_qvariant(editor.text(), float)
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -270,7 +270,7 @@ class SolverDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             if index.column() == 3 or index.column() == 5:
                 value = from_qvariant(editor.text(), float)
             elif (index.column() == 2 or index.column() == 4):
@@ -986,7 +986,7 @@ class GradientFloatDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
@@ -1427,7 +1427,7 @@ class MinimumDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -1463,7 +1463,7 @@ class VerbosityDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
@@ -1497,7 +1497,7 @@ class MaximumDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -1652,13 +1652,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewScheme.setAlternatingRowColors(True)
         self.tableViewScheme.resizeColumnToContents(0)
         self.tableViewScheme.resizeRowsToContents()
-        self.tableViewScheme.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewScheme.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewScheme.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewScheme.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewScheme.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewScheme.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewScheme.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateISCHCV = SchemeOrderDelegate(self.tableViewScheme, self._tableViewLayout)
         self.tableViewScheme.setItemDelegateForColumn(1, delegateISCHCV)
@@ -1687,13 +1684,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewSolver.setAlternatingRowColors(True)
         self.tableViewSolver.resizeColumnToContents(0)
         self.tableViewSolver.resizeRowsToContents()
-        self.tableViewSolver.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewSolver.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewSolver.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewSolver.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewSolver.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewSolver.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         from code_saturne.model.TimeStepModel import TimeStepModel
         idtvar = TimeStepModel(self.case).getTimePassing()
@@ -1718,13 +1712,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewGradient.setAlternatingRowColors(True)
         self.tableViewGradient.resizeColumnToContents(0)
         self.tableViewGradient.resizeRowsToContents()
-        self.tableViewGradient.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewGradient.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewGradient.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewGradient.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewGradient.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewGradient.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewGradient.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewGradient.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewGradient.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateIMRGRA = GradientTypeDelegate(self.tableViewGradient)
         self.tableViewGradient.setItemDelegateForColumn(1, delegateIMRGRA)
@@ -1752,13 +1743,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewClipping.setAlternatingRowColors(True)
         self.tableViewClipping.resizeColumnToContents(0)
         self.tableViewClipping.resizeRowsToContents()
-        self.tableViewClipping.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewClipping.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewClipping.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewClipping.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewClipping.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewClipping.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewClipping.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewClipping.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewClipping.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateMin = MinimumDelegate(self.tableViewClipping)
         self.tableViewClipping.setItemDelegateForColumn(1, delegateMin)
@@ -1792,12 +1780,8 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         """
         fm = self.tableViewScheme.fontMetrics()
 
-        if QT_API == "PYQT4":
-            self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewScheme.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableViewScheme.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewScheme.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.tableViewScheme.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewScheme.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
         if self.modelScheme.nvd_count == 0 :
             self.tableViewScheme.setColumnHidden(4, True)

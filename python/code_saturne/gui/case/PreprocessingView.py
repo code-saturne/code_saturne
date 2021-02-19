@@ -131,7 +131,7 @@ class FloatDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -160,7 +160,7 @@ class IntDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -450,16 +450,12 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
 
         self.tableModelThinWall = StandardItemModelThinWall(self, self.mdl)
         self.tableViewThinWall.setModel(self.tableModelThinWall)
-        if QT_API == "PYQT4":
-            self.tableViewThinWall.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-            self.tableViewThinWall.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewThinWall.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-            self.tableViewThinWall.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+        self.tableViewThinWall.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewThinWall.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
         self.tableViewThinWall.resizeColumnsToContents()
         self.tableViewThinWall.resizeRowsToContents()
-        self.tableViewThinWall.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewThinWall.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewThinWall.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewThinWall.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateLabel   = MeshNumberDelegate(self.tableViewThinWall)
         delegateSupport = LineEditDelegateSelector(self.tableViewThinWall)
@@ -479,14 +475,11 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
 
         self.tableModelExtrude = StandardItemModelExtrude(self, self.mdl)
         self.tableViewExtrude.setModel(self.tableModelExtrude)
-        if QT_API == "PYQT4":
-            self.tableViewExtrude.horizontalHeader().setResizeMode(4,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewExtrude.horizontalHeader().setSectionResizeMode(4,QHeaderView.Stretch)
+        self.tableViewExtrude.horizontalHeader().setSectionResizeMode(4,QHeaderView.ResizeMode.Stretch)
         self.tableViewExtrude.resizeColumnsToContents()
         self.tableViewExtrude.resizeRowsToContents()
-        self.tableViewExtrude.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewExtrude.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewExtrude.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewExtrude.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateLabel   = MeshNumberDelegate(self.tableViewExtrude)
         delegateLayer   = IntDelegate(self.tableViewExtrude)
@@ -652,7 +645,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         @type text: C{QString}
         @param text: max angle of warped faces
         """
-        if self.lineEditWarp.validator().state == QValidator.Acceptable:
+        if self.lineEditWarp.validator().state == QValidator.State.Acceptable:
             var = float(text)
             self.mdl.setCutAngle(var)
 
@@ -684,7 +677,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         @type text: C{QString}
         @param text: angle for mesh smoothing
         """
-        if self.lineEditMeshSmooth.validator().state == QValidator.Acceptable:
+        if self.lineEditMeshSmooth.validator().state == QValidator.State.Acceptable:
             var = float(text)
             self.mdl.setSmoothAngle(var)
 
@@ -866,7 +859,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity translation for X
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.lineEditTX.validator().state == QValidator.Acceptable:
+            if self.lineEditTX.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
@@ -877,7 +870,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity translation for Y
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.lineEditTY.validator().state == QValidator.Acceptable:
+            if self.lineEditTY.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
@@ -888,7 +881,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity translation for Z
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.lineEditTZ.validator().state == QValidator.Acceptable:
+            if self.lineEditTZ.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
@@ -899,7 +892,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity rotation angle
         """
         if self.perio_mode == "rotation":
-            if self.lineEditAngle.validator().state == QValidator.Acceptable:
+            if self.lineEditAngle.validator().state == QValidator.State.Acceptable:
                 angle = float(text)
                 self.mdl.setRotationAngle(self.perio_id, angle)
 
@@ -910,7 +903,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity rotation for X
         """
         if self.perio_mode == "rotation":
-            if self.lineEditDX.validator().state == QValidator.Acceptable:
+            if self.lineEditDX.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
@@ -921,7 +914,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity rotation for Y
         """
         if self.perio_mode == "rotation":
-            if self.lineEditDY.validator().state == QValidator.Acceptable:
+            if self.lineEditDY.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
@@ -932,7 +925,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity rotation for Z
         """
         if self.perio_mode == "rotation":
-            if self.lineEditDZ.validator().state == QValidator.Acceptable:
+            if self.lineEditDZ.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
@@ -943,7 +936,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.lineEditX1.validator().state == QValidator.Acceptable:
+            if self.lineEditX1.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
@@ -954,7 +947,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.lineEditY1.validator().state == QValidator.Acceptable:
+            if self.lineEditY1.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
@@ -965,7 +958,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.lineEditZ1.validator().state == QValidator.Acceptable:
+            if self.lineEditZ1.validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
@@ -1036,7 +1029,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity translation
         """
         if self.perio_mode == "mixed":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.sender().validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
@@ -1047,7 +1040,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.sender().validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
@@ -1058,7 +1051,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.sender().validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
@@ -1069,7 +1062,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.sender().validator().state == QValidator.State.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 

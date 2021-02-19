@@ -492,13 +492,13 @@ class Actors(object):
         self.p[idx].select()
 
         if self.__view:
-            self.__view.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.__view.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
             self.__view.clearSelection()
             for idx in range(len(self.p)):
                 if self.p[idx].selected():
                     if idx not in self.__view.selectionModel().selectedRows():
                         self.__view.selectRow(idx)
-            self.__view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+            self.__view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
 
     def __unSelectAll(self):

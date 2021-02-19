@@ -91,7 +91,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -265,16 +265,11 @@ class TimeStepView(QWidget, Ui_TimeStep):
         self.tableViewCourantFourier.setModel(self.tableModelCourantFourier)
         self.tableViewCourantFourier.resizeColumnsToContents()
         self.tableViewCourantFourier.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewCourantFourier.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCourantFourier.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCourantFourier.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewCourantFourier.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCourantFourier.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCourantFourier.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewCourantFourier.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewCourantFourier.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewCourantFourier.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewCourantFourier.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewCourantFourier.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewCourantFourier.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewCourantFourier.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateMaxFourier = ValueDelegate(self.tableViewCourantFourier)
         delegateMaxCourant = ValueDelegate(self.tableViewCourantFourier)
@@ -341,7 +336,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotReferenceTimeStep(self, var):
         """
         """
-        if self.lineEditReferenceTimeStep.validator().state == QValidator.Acceptable:
+        if self.lineEditReferenceTimeStep.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setTimeStep(value)
 
@@ -350,7 +345,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotNumberTimeStep(self, var):
         """
         """
-        if self.lineEditNumberTimeStep.validator().state == QValidator.Acceptable:
+        if self.lineEditNumberTimeStep.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, int)
             self.mdl.setTimeStepsNumber(value)
 
@@ -359,7 +354,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotTimeAnalysis(self, var):
         """
         """
-        if self.lineEditTimeAnalysis.validator().state == QValidator.Acceptable:
+        if self.lineEditTimeAnalysis.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMaximumTime(value)
 
@@ -368,7 +363,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotDtMin(self, var):
         """
         """
-        if self.lineEditDtMin.validator().state == QValidator.Acceptable:
+        if self.lineEditDtMin.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMinDtDt0Variation(value)
 
@@ -377,7 +372,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotDtMax(self, var):
         """
         """
-        if self.lineEditDtMax.validator().state == QValidator.Acceptable:
+        if self.lineEditDtMax.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMaxDtDt0Variation(value)
 
@@ -386,7 +381,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotDtIncreasingMax(self, var):
         """
         """
-        if self.lineEditDtIncreasingMax.validator().state == QValidator.Acceptable:
+        if self.lineEditDtIncreasingMax.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMaxDtVariationIncreasing(value)
 
@@ -395,7 +390,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
     def slotDtDecreasingMax(self, var):
         """
         """
-        if self.lineEditDtDecreasingMax.validator().state == QValidator.Acceptable:
+        if self.lineEditDtDecreasingMax.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMaxDtVariationDecreasing(value)
 

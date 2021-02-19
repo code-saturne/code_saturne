@@ -79,7 +79,7 @@ TEXT_TYPES = (str,)
 
 # Qt Role used to differentiate whether a ComboBox entry is a group child
 # or not
-GroupRole = Qt.UserRole
+GroupRole = Qt.ItemDataRole.UserRole
 
 
 class GroupDelegate(QStyledItemDelegate):
@@ -164,6 +164,7 @@ class GroupItem():
         item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
 
         return item
+
 #==============================================================================
 # Strings
 #==============================================================================
@@ -171,8 +172,7 @@ class GroupItem():
 def is_text_string(obj):
     """Return True if `obj` is a text string,
               False if it is anything else,
-                    like binary data (Python 3) or
-                    QString (Python 2, PyQt API #1)"""
+                    like binary data"""
     return isinstance(obj, str)
 
 def to_text_string(obj, encoding=None):
@@ -241,11 +241,17 @@ def to_str(s):
 # Wrappers around QFileDialog static methods
 #==============================================================================
 
-def getexistingdirectory(parent=None, caption='', basedir='',
-                         options=QFileDialog.ShowDirsOnly):
+def getexistingdirectory(parent=None, caption='', basedir=''):
     """Wrapper around QtGui.QFileDialog.getExistingDirectory static method
-    Compatible with PyQt >=v4.4 (API #1 and #2) and PySide >=v1.0"""
+    Compatible with PyQt and PySide."""
     # Calling QFileDialog static method
+
+    # Try for PyQt5 and PyQt6 variants
+    try:
+        options = QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+    except Exception:
+        options = QFileDialog.Options.ShowDirsOnly | QFileDialog.Options.DontResolveSymlinks
+
     if sys.platform == "win32":
         # On Windows platforms: redirect standard outputs
         _temp1, _temp2 = sys.stdout, sys.stderr
@@ -681,7 +687,7 @@ class IntValidator(QIntValidator):
         """
         QIntValidator.__init__(self, parent)
         self.parent = parent
-        self.state = QValidator.Invalid
+        self.state = QValidator.State.Invalid
         self.__min = min
         self.__max = max
 
@@ -770,9 +776,9 @@ class IntValidator(QIntValidator):
         """
         Validation method.
 
-        QValidator.Invalid       0  The string is clearly invalid.
-        QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
-        QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
+        QValidator.State.Invalid       0  The string is clearly invalid.
+        QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
+        QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
         state = QIntValidator.validate(self, stri, pos)[0]
 
@@ -784,21 +790,21 @@ class IntValidator(QIntValidator):
             x = 0
             valid = False
 
-        if state == QValidator.Acceptable:
+        if state == QValidator.State.Acceptable:
             if self.exclusiveMin and x == self.bottom():
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
             elif self.exclusiveMax and x == self.top():
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
             elif x in self.exclusiveValues:
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
 
         palette = self.parent.palette()
 
-        if not valid or state == QValidator.Intermediate:
-            palette.setColor(QPalette.Text, QColor("red"))
+        if not valid or state == QValidator.State.Intermediate:
+            palette.setColor(QPalette.ColorRole.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QPalette.Text, QColor("black"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -821,9 +827,9 @@ class DoubleValidator(QDoubleValidator):
         Initialization for validator
         """
         QDoubleValidator.__init__(self, parent)
-        self.setLocale(QLocale(QLocale.C, QLocale.AnyCountry))
+        self.setLocale(QLocale(QLocale.C, QLocale.Country.AnyCountry))
         self.parent = parent
-        self.state = QValidator.Invalid
+        self.state = QValidator.State.Invalid
         self.__min = min
         self.__max = max
 
@@ -900,32 +906,32 @@ class DoubleValidator(QDoubleValidator):
         """
         Validation method.
 
-        QValidator.Invalid       0  The string is clearly invalid.
-        QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
-        QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
+        QValidator.State.Invalid       0  The string is clearly invalid.
+        QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
+        QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
         state = QDoubleValidator.validate(self, stri, pos)[0]
 
-        if state == QValidator.Acceptable:
+        if state == QValidator.State.Acceptable:
             try:
                 x = from_qvariant(stri, float)
             except Exception: # may be type error or localization issue
                 x = 0.0
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
 
-        if state == QValidator.Acceptable:
+        if state == QValidator.State.Acceptable:
             if self.exclusiveMin and x == self.bottom():
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
             elif self.exclusiveMax and x == self.top():
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
 
         palette = self.parent.palette()
 
-        if state != QValidator.Acceptable:
-            palette.setColor(QPalette.Text, QColor("red"))
+        if state != QValidator.State.Acceptable:
+            palette.setColor(QPalette.ColorRole.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QPalette.Text, QColor("black"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -963,23 +969,23 @@ class RegExpValidator(QRegExpValidator):
         """
         Validation method.
 
-        QValidator.Invalid       0  The string is clearly invalid.
-        QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
-        QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
+        QValidator.State.Invalid       0  The string is clearly invalid.
+        QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
+        QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
         state = self.__validator.validate(stri, pos)[0]
 
         if self.forbidden:
             if stri in self.forbidden:
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
 
         palette = self.parent.palette()
 
-        if state == QValidator.Intermediate:
-            palette.setColor(QPalette.Text, QColor("red"))
+        if state == QValidator.State.Intermediate:
+            palette.setColor(QPalette.ColorRole.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QPalette.Text, QColor("black"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -1016,9 +1022,9 @@ class RankSpinBoxWidget(QSpinBox):
     def stepEnabled(self):
         v = self.value()
         if v < 2:
-            return QAbstractSpinBox.StepUpEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
         else:
-            return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled | QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
 
 #-------------------------------------------------------------------------------
 # SpinBox progressing by multiplication and division for Buffer size
@@ -1073,9 +1079,9 @@ class BufferSpinBoxWidget(QSpinBox):
     def stepEnabled(self):
         v = self.value()
         if v < 1:
-            return QAbstractSpinBox.StepUpEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
         else:
-            return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled | QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
 
 #-------------------------------------------------------------------------------
 # Delegates to use
@@ -1129,7 +1135,7 @@ class LabelDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                           to_text_string)
         self.p_value = str(v)
 
@@ -1140,9 +1146,9 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
-            model.setData(index, p_value, Qt.DisplayRole)
+            model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 class FloatDelegate(QItemDelegate):
 
@@ -1178,19 +1184,19 @@ class FloatDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                               to_text_string)
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             selectionModel = self.parent.selectionModel()
 
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 class IntegerDelegate(QItemDelegate):
 
@@ -1226,7 +1232,7 @@ class IntegerDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                               to_text_string)
         editor.setText(value)
 
@@ -1234,11 +1240,11 @@ class IntegerDelegate(QItemDelegate):
 
         value = from_qvariant(editor.text(), int)
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 class ComboDelegate(QItemDelegate):
@@ -1302,7 +1308,7 @@ class ComboDelegate(QItemDelegate):
 
     def setEditorData(self, comboBox, index):
 
-        string = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        string = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                                to_text_string)
         comboBox.setEditText(string)
 
@@ -1314,7 +1320,7 @@ class ComboDelegate(QItemDelegate):
 
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 class BasicTableModel(QAbstractTableModel):
@@ -1333,15 +1339,15 @@ class BasicTableModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return len(self.headers)
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return QVariant()
-        elif role != Qt.DisplayRole:
+        elif role != Qt.ItemDataRole.DisplayRole:
             return QVariant()
         return self.data_table[index.row()][index.column()]
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Horizontal:
             return self.headers[section]
         return None
 
@@ -1351,8 +1357,8 @@ class BasicTableModel(QAbstractTableModel):
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def setData(self, index, value, role=Qt.EditRole):
-        if (role == Qt.EditRole) and (index.isValid()):
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+        if (role == Qt.ItemDataRole.EditRole) and (index.isValid()):
             self.data_table[index.row()][index.column()] = value
             self.dataChanged.emit(index, index)
             return True

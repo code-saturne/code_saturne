@@ -515,7 +515,7 @@ z = z1*s + z0*(1.-s);"""
         """
         lst = self.mdl.getProfilesLabelsList()
         if text not in lst:
-            if self.lineEditBaseName.validator().state == QValidator.Acceptable:
+            if self.lineEditBaseName.validator().state == QValidator.State.Acceptable:
                 self.mdl.setLabel(self.label_select, str(text))
                 self.label_select = str(text)
 
@@ -528,7 +528,7 @@ z = z1*s + z0*(1.-s);"""
     def slotFrequence(self, text):
         """
         """
-        if self.lineEditFreq.validator().state == QValidator.Acceptable:
+        if self.lineEditFreq.validator().state == QValidator.State.Acceptable:
             self.mdl.setOutputFrequency(self.label_select, int(text))
 
 
@@ -536,7 +536,7 @@ z = z1*s + z0*(1.-s);"""
     def slotFrequenceTime(self, text):
         """
         """
-        if self.lineEditFreqTime.validator().state == QValidator.Acceptable:
+        if self.lineEditFreqTime.validator().state == QValidator.State.Acceptable:
             self.mdl.setOutputFrequency(self.label_select, float(text))
 
 
@@ -544,7 +544,7 @@ z = z1*s + z0*(1.-s);"""
     def slotNbPoint(self, text):
         """
         """
-        if self.lineEditNbPoint.validator().state == QValidator.Acceptable:
+        if self.lineEditNbPoint.validator().state == QValidator.State.Acceptable:
             self.mdl.setNbPoint(self.label_select, int(text))
 
 

@@ -101,7 +101,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getScalarLabelList():
@@ -311,14 +311,10 @@ class SpeciesView(QWidget, Ui_Species):
         self.tableViewPassifScalar.setModel(self.tableModelScalar)
         self.tableViewPassifScalar.resizeColumnsToContents()
         self.tableViewPassifScalar.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewPassifScalar.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewPassifScalar.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewPassifScalar.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewPassifScalar.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewPassifScalar.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewPassifScalar.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewPassifScalar.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewPassifScalar.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewPassifScalar.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewPassifScalar.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateLabel  = LabelDelegate(self.tableViewPassifScalar)
         delegateField  = FieldDelegate(self.tableViewPassifScalar, self.mdl)
@@ -421,7 +417,7 @@ class SpeciesView(QWidget, Ui_Species):
         """
         Update the diffusion coefficient
         """
-        if self.lineEditDiffusionCoef.validator().state == QValidator.Acceptable:
+        if self.lineEditDiffusionCoef.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setDiffusionCoef(self.currentid, value)
 
@@ -431,7 +427,7 @@ class SpeciesView(QWidget, Ui_Species):
         """
         Update the schmidt
         """
-        if self.lineEditSchmidt.validator().state == QValidator.Acceptable:
+        if self.lineEditSchmidt.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setSchmidt(self.currentid, value)
 
@@ -441,7 +437,7 @@ class SpeciesView(QWidget, Ui_Species):
         """
         Update the minimum value
         """
-        if self.lineEditMinValue.validator().state == QValidator.Acceptable:
+        if self.lineEditMinValue.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMinValue(self.currentid, value)
 
@@ -451,7 +447,7 @@ class SpeciesView(QWidget, Ui_Species):
         """
         Update the maximum value
         """
-        if self.lineEditMaxValue.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxValue.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMaxValue(self.currentid, value)
 

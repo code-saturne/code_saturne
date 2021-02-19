@@ -281,7 +281,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         """
         INPUT energy value
         """
-        if self.lineEditEnergy.validator().state == QValidator.Acceptable:
+        if self.lineEditEnergy.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setEnthalpy(self.__currentField, value)
 

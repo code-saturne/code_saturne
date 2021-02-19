@@ -259,7 +259,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
         """
         INPUT energy value
         """
-        if self.lineEditEnergy.validator().state == QValidator.Acceptable:
+        if self.lineEditEnergy.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             energy_mode = self.ibm.getObjectBoundaryEnergyMode(self.current_obj)
 

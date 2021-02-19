@@ -122,7 +122,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -494,14 +494,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.tableViewCoals.setItemDelegateForColumn(3, delegateValue2)
             self.tableViewCoals.setItemDelegateForColumn(4, delegateValue2)
             self.tableViewCoals.show()
-            if QT_API == "PYQT4":
-                self.tableViewCoals.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-                self.tableViewCoals.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-                self.tableViewCoals.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
-            elif QT_API == "PYQT5":
-                self.tableViewCoals.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-                self.tableViewCoals.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-                self.tableViewCoals.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+            self.tableViewCoals.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            self.tableViewCoals.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            self.tableViewCoals.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         else:
             self.model.setCoalFouling("off")
             if hasattr(self, "modelCoals"):
@@ -514,7 +509,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         """
         Input NSTITS.
         """
-        if self.lineEditNSTITS.validator().state == QValidator.Acceptable:
+        if self.lineEditNSTITS.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, int)
             self.model.set2WayCouplingStartIteration(value)
 

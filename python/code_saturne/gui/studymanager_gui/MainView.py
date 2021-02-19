@@ -196,7 +196,7 @@ class MainView(object):
 
         if settings.contains("MainWindow/Color"):
             color = settings.value("MainWindow/Color",
-                                   self.palette().color(QPalette.Window).name())
+                                   self.palette().color(QPalette.ColorRole.Window).name())
             color = QColor(color)
             if color.isValid():
                 if not self.palette_default:
@@ -737,7 +737,7 @@ class MainView(object):
 
         choose GUI color
         """
-        c = self.palette().color(QPalette.Window)
+        c = self.palette().color(QPalette.ColorRole.Window)
         color = QColorDialog.getColor(c, self)
         if color.isValid():
             app = QCoreApplication.instance()
@@ -746,7 +746,7 @@ class MainView(object):
             app.setPalette(QPalette(color))
             settings = QSettings()
             settings.setValue("MainWindow/Color",
-                              self.palette().color(QPalette.Window).name())
+                              self.palette().color(QPalette.ColorRole.Window).name())
 
 
     def setFontSize(self):

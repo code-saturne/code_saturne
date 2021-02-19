@@ -2,6 +2,6 @@
 Provides QtGui classes and functions.
 """
 
-QT_API = "PYQT4"
+QT_API = "PYSIDE6"
 
-from PyQt4.QtGui import *
+from PySide6.QtGui import *

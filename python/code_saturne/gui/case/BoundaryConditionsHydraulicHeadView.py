@@ -166,7 +166,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         INPUT hydraulic head value
         """
-        if self.lineEditValueHydraulicHead.validator().state == QValidator.Acceptable:
+        if self.lineEditValueHydraulicHead.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setHydraulicHeadValue(t)
 
@@ -176,7 +176,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         INPUT hydraulic head flux
         """
-        if self.lineEditExHydraulicHead.validator().state == QValidator.Acceptable:
+        if self.lineEditExHydraulicHead.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setHydraulicHeadFlux(t)
 

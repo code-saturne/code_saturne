@@ -154,7 +154,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         @type text: C{QString}
         @param text: roughness height.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             r = from_qvariant(text, float)
             self.__boundary.setRoughness(r)
 

@@ -237,8 +237,8 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.tableViewTimeTables.setModel(self.tableModelTimeTables)
         self.tableViewTimeTables.resizeRowsToContents()
         self.tableViewTimeTables.setAlternatingRowColors(True)
-        self.tableViewTimeTables.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewTimeTables.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.tableViewTimeTables.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewTimeTables.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
         nameDelegate = LabelDelegate(self.tableViewTimeTables,
                                      xml_model=self.mdl)
@@ -254,14 +254,9 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         self.tableViewTimeTables.resizeColumnToContents(2)
 
-        if QT_API == "PYQT4":
-            self.tableViewTimeTables.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTimeTables.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTimeTables.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewTimeTables.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTimeTables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTimeTables.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tableViewTimeTables.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewTimeTables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewTimeTables.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
         #Connections
         self.pushButtonAddTimeTable.clicked.connect(self.slotSearchTable)
@@ -459,9 +454,9 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         default = os.path.join(self.case['case_path'], "DATA")
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options = QFileDialog.DontUseNativeDialog
+            options = QFileDialog.Option.DontUseNativeDialog
 
         filetypes = self.tr('csv file (*.csv);;text file (*.txt);;data file (*.dat);;All files (*)')
 
@@ -472,7 +467,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
         if dialog.exec_() == 1:
             s = dialog.selectedFiles()

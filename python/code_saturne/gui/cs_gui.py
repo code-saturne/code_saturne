@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -38,23 +38,16 @@ from optparse import OptionParser
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-# Force PyQt API 2 for PyQt4
-
-try:
-    import sip
-    for api in ('QDate', 'QDateTime', 'QString', 'QTextStream',
-                'QTime', 'QUrl', 'QVariant'):
-        sip.setapi(api, 2)
-except Exception:
-    pass
-
+from code_saturne.gui.base.QtCore    import *
+from code_saturne.gui.base.QtGui     import *
+from code_saturne.gui.base.QtWidgets import *
 try:
     from code_saturne.gui.base.QtCore    import *
     from code_saturne.gui.base.QtGui     import *
     from code_saturne.gui.base.QtWidgets import *
 except ImportError:
     print("\n  Error: Unable to import QtCore or QtGui modules.")
-    print("  Please check your PyQt4 or PyQt5 installation.\n")
+    print("  Please check your PyQt6 or PyQt5 installation.\n")
     sys.exit(0)
 
 
@@ -135,17 +128,15 @@ def main(argv, pkg):
     set_modules(pkg)
     source_rcfile(pkg)
 
-    from code_saturne import get_cs_data_path
-    images_path = os.path.join(get_cs_data_path(), 'icons')
+    images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
 
     # Test if EOS modules could be imported
     cfg = pkg.config
     if cfg.libs['eos'].have:
         eosprefix = cfg.libs['eos'].prefix
         try:
-            import sysconfig
-            _eosp = sysconfig.get_path('purelib', 'posix_prefix', vars={'base':eosprefix})
-            eospath = os.path.join(_eosp, 'eos')
+            from distutils import sysconfig
+            eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
         except Exception:
             eospath = ''
 
@@ -158,19 +149,6 @@ def main(argv, pkg):
         if eospath:
             if os.path.isdir(eospath) and not eospath in sys.path:
                 sys.path.insert(0, eospath)
-
-            elif not os.path.isdir(eospath):
-                # Hack to handle some systems which my name wrongly the package
-                try:
-                    eospath_bis = eospath.replace('python'+str(sysconfig.get_python_version()),
-                                                  'python.')
-                except Exception:
-                    eospath_bis = ''
-
-                if os.path.isdir(eospath_bis) and not eospath_bis in sys.path:
-                    sys.path.insert(0, eospath_bis)
-
-
 
     case, spl = process_cmd_line(argv)
 
@@ -193,16 +171,15 @@ def main(argv, pkg):
         app.installTranslator(translator)
 
     if spl:
-        app.setOverrideCursor(QCursor(Qt.WaitCursor))
-        # Choose correct splahs screen based on solver at runtime
-        if pkg.name == 'code_saturne':
-            pixmap = QPixmap('%s/splashscreen.png' % images_path)
-        else:
-            pixmap = QPixmap('%s/logo_salome_cfd.png' % images_path)
-
-        splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
+        app.setOverrideCursor(QCursor(Qt.CursorShape.WaitCursor))
+        pixmap = QPixmap('%s/splashscreen.png' % images_path)
+        splash = QSplashScreen(pixmap, Qt.WindowType.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is useful if the splashscreen is not a regular rectangle...
         splash.show()
+        if pkg.name == 'neptune_cfd':
+            splash.showMessage("%(name)s %(vers)s starting..." \
+                               % {'name': pkg.name, 'vers':pkg.version},
+                               Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
@@ -223,7 +200,7 @@ def main(argv, pkg):
         print("  Please check your display environment.\n")
         sys.exit(0)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

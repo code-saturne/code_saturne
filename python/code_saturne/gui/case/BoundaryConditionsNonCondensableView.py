@@ -147,7 +147,7 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         """
         INPUT non condensable value
         """
-        if self.lineEditNonCondensable.validator().state == QValidator.Acceptable:
+        if self.lineEditNonCondensable.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setNonCondensableValue(self.__currentField, self.__currentNonCondensable, value)
 

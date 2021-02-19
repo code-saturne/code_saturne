@@ -143,7 +143,7 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         """
         What to do when user clicks on 'OK'.
         """
-        if self.lineEditFreq.validator().state == QValidator.Acceptable:
+        if self.lineEditFreq.validator().state == QValidator.State.Acceptable:
             self.result['frequency'] = from_qvariant(self.lineEditFreq.text(), int)
         self.result['idiver']    = from_qvariant(self.comboBoxTSRay.currentText(), int)
         self.result['tempP']     = from_qvariant(self.comboBoxPrintT.currentText(), int)
@@ -335,7 +335,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
 
     def slotSetEmissivity(self, value):
-        if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
+        if self.lineEditEmissivity.validator().state == QValidator.State.Acceptable:
             field_id = self._current_particle_f_id
             self.partRadiationModel.setEmissivity(field_id, value)
 
@@ -572,7 +572,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotNdirec(self, text):
         """
         """
-        if self.lineEditNdirec.validator().state == QValidator.Acceptable:
+        if self.lineEditNdirec.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             self.rmdl.setNbDir(n)
 
@@ -615,7 +615,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotAbsorptionCoefficient(self, text):
         """
         """
-        if self.lineEditCoeff.validator().state == QValidator.Acceptable:
+        if self.lineEditCoeff.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.rmdl.setAbsorCoeff(c)
 
@@ -714,7 +714,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotSootDensity(self, text):
         """
         """
-        if self.lineEditSootDensity.validator().state == QValidator.Acceptable:
+        if self.lineEditSootDensity.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.gas.setSootDensity(c)
 
@@ -722,7 +722,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotSootFraction(self, text):
         """
         """
-        if self.lineEditSootFraction.validator().state == QValidator.Acceptable:
+        if self.lineEditSootFraction.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.gas.setSootFraction(c)
 
@@ -730,7 +730,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotLspFuel(self, text):
         """
         """
-        if self.lineEditLspFuel.validator().state == QValidator.Acceptable:
+        if self.lineEditLspFuel.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.gas.setSootLspFuel(c)
 

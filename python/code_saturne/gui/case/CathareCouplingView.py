@@ -220,14 +220,9 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.modelCathare = StandardItemModelCathare(self.__model)
         self.tableViewCathare.setModel(self.modelCathare)
 
-        if QT_API == "PYQT4":
-            self.tableViewCathare.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCathare.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCathare.horizontalHeader().setResizeMode(4, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewCathare.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCathare.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCathare.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.tableViewCathare.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewCathare.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewCathare.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
 
         delegateCathareElt = LabelDelegate(self.tableViewCathare)
         self.tableViewCathare.setItemDelegateForColumn(0, delegateCathareElt)
@@ -456,9 +451,9 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
 
@@ -469,7 +464,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec_() == 1:
 
@@ -487,9 +482,9 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
 
@@ -500,7 +495,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec_() == 1:
 
@@ -518,9 +513,9 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
 

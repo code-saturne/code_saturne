@@ -374,7 +374,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         """
         Input value of minimum pressure
         """
-        if self.lineEditMinimumPressure.validator().state == QValidator.Acceptable:
+        if self.lineEditMinimumPressure.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMinPressure(value)
 
@@ -384,7 +384,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         """
         Input value of maximum pressure
         """
-        if self.lineEditMaximumPressure.validator().state == QValidator.Acceptable:
+        if self.lineEditMaximumPressure.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setMaxPressure(value)
 
@@ -418,7 +418,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         """
         Input value of Maximum number of restart
         """
-        if self.lineEditMaxRestart.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxRestart.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, int)
             self.mdl.setMaxNumberOfRestart(value)
 
@@ -428,7 +428,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         """
         Input value of time-step splitting
         """
-        if self.lineEditTimeSplitting.validator().state == QValidator.Acceptable:
+        if self.lineEditTimeSplitting.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setTimeSplit(value)
 
@@ -438,7 +438,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         """
         Input value of pressure increment relaxation
         """
-        if self.lineEditPressureRelaxation.validator().state == QValidator.Acceptable:
+        if self.lineEditPressureRelaxation.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setPressureRelaxation(value)
 

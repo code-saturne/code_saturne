@@ -106,7 +106,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getFieldLabelsList():
@@ -568,16 +568,11 @@ class MainFieldsView(QWidget, Ui_MainFields):
         self.tableViewFields.setModel(self.tableModelFields)
         self.tableViewFields.resizeColumnsToContents()
         self.tableViewFields.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewFields.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewFields.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFields.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewFields.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewFields.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewFields.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewFields.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateLabel      = LabelDelegate(self.tableViewFields)
         delegateNature     = NatureDelegate(self.tableViewFields)

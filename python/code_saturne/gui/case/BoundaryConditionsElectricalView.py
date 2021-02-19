@@ -317,7 +317,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElec(self, var):
         """
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
@@ -326,7 +326,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElecIm(self, var):
         """
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
@@ -335,7 +335,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotSpecies(self, var):
         """
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 

@@ -228,14 +228,9 @@ class VolumicNatureView(QWidget, Ui_VolumicNatureForm):
 
         # Tune Qt Display parameters
         last_section = self.tableModel.columnCount(None) - 1
-        if QT_API == "PYQT4":
-            self.volumicZoneNatureTableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.volumicZoneNatureTableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.volumicZoneNatureTableView.horizontalHeader().setResizeMode(last_section, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.volumicZoneNatureTableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
+        self.volumicZoneNatureTableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.volumicZoneNatureTableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.ResizeMode.Stretch)
 
         self.case.undoStopGlobal()
 

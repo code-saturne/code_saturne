@@ -369,7 +369,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         # Avoid crash when change is induced by the combobox which
         # has no validator...
         _v = self.sender().validator()
-        if _v and _v.state == QValidator.Acceptable:
+        if _v and _v.state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setValue(self.zone.getCodeNumber(), field_name, val)
 
@@ -378,7 +378,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         # Avoid crash when change is induced by the combobox which
         # has no validator...
         _v = self.sender().validator()
-        if _v and _v.state == QValidator.Acceptable:
+        if _v and _v.state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setDispersionCoefficient(self.zone.getCodeNumber(), field_name, val)
 
@@ -387,7 +387,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         # Avoid crash when change is induced by the combobox which
         # has no validator...
         _v = self.sender().validator()
-        if _v and _v.state == QValidator.Acceptable:
+        if _v and _v.state == QValidator.State.Acceptable:
             value = float(text)
             scalar = self.scalar
             self.mdl.setGroundWaterScalarPropertyByZone(scalar,
@@ -399,7 +399,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
     def slotSetSoilDensity(self, text):
         """
         """
-        if self.lineEditSoilDensity.validator().state == QValidator.Acceptable:
+        if self.lineEditSoilDensity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.mdl.setSoilDensity(self.zone.getCodeNumber(), val)
 

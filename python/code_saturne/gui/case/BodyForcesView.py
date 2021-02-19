@@ -150,7 +150,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GX
         """
-        if self.lineEditX.validator().state == QValidator.Acceptable:
+        if self.lineEditX.validator().state == QValidator.State.Acceptable:
             gravity_x = from_qvariant(text, float)
             self.gmdl.setGravity('gravity_x', gravity_x)
 
@@ -160,7 +160,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GY
         """
-        if self.lineEditY.validator().state == QValidator.Acceptable:
+        if self.lineEditY.validator().state == QValidator.State.Acceptable:
             gravity_y = from_qvariant(text, float)
             self.gmdl.setGravity('gravity_y', gravity_y)
 
@@ -170,7 +170,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GZ
         """
-        if self.lineEditZ.validator().state == QValidator.Acceptable:
+        if self.lineEditZ.validator().state == QValidator.State.Acceptable:
             gravity_z = from_qvariant(text, float)
             self.gmdl.setGravity('gravity_z', gravity_z)
 
@@ -180,7 +180,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input OMEGAX
         """
-        if self.lineEditOMEGAX.validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAX.validator().state == QValidator.State.Acceptable:
             omega_x = from_qvariant(text, float)
             self.cmdl.setOmega('omega_x', omega_x)
 
@@ -190,7 +190,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input OMEGAY
         """
-        if self.lineEditOMEGAY.validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAY.validator().state == QValidator.State.Acceptable:
             omega_y = from_qvariant(text, float)
             self.cmdl.setOmega('omega_y', omega_y)
 
@@ -200,7 +200,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input OmegaZ
         """
-        if self.lineEditOMEGAZ.validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAZ.validator().state == QValidator.State.Acceptable:
             omega_z = from_qvariant(text, float)
             self.cmdl.setOmega('omega_z', omega_z)
 

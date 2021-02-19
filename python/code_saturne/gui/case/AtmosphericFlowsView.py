@@ -278,13 +278,13 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(str)
     def slotLongitude(self, text):
-        if self.lineEditLongCenter.validator().state == QValidator.Acceptable:
+        if self.lineEditLongCenter.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setLongitude(val)
 
     @pyqtSlot(str)
     def slotLatitude(self, text):
-        if self.lineEditLatCenter.validator().state == QValidator.Acceptable:
+        if self.lineEditLatCenter.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setLatitude(val)
 
@@ -295,19 +295,19 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(str)
     def slotMeteoZ0(self, text):
-        if self.lineEditLargeScaleRoughness.validator().state == QValidator.Acceptable:
+        if self.lineEditLargeScaleRoughness.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoZ0(val)
 
     @pyqtSlot(str)
     def slotMeteoPsea(self, text):
-        if self.lineEditPressureSeaLevel.validator().state == QValidator.Acceptable:
+        if self.lineEditPressureSeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoPsea(val)
 
     @pyqtSlot(str)
     def slotMeteoT0(self, text):
-        if self.lineEditTemperatureSeaLevel.validator().state == QValidator.Acceptable:
+        if self.lineEditTemperatureSeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoT0(val)
 
@@ -318,13 +318,13 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(str)
     def slotMeteoZref(self, text):
-        if self.lineEditZref.validator().state == QValidator.Acceptable:
+        if self.lineEditZref.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoZref(val)
 
     @pyqtSlot(str)
     def slotMeteoUstarOrDlmo(self, text):
-        if self.lineEditUstarOrDlmo.validator().state == QValidator.Acceptable:
+        if self.lineEditUstarOrDlmo.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             if self.comboBoxUstarOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUstar(val)
@@ -334,7 +334,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(str)
     def slotMeteoUrefOrDlmo(self, text):
-        if self.lineEditUrefOrDlmo.validator().state == QValidator.Acceptable:
+        if self.lineEditUrefOrDlmo.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             if self.comboBoxUrefOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUref(val)
@@ -344,13 +344,13 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(str)
     def slotMeteoQw0(self, text):
-        if self.lineEditHumiditySeaLevel.validator().state == QValidator.Acceptable:
+        if self.lineEditHumiditySeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoQw0(val)
 
     @pyqtSlot(str)
     def slotMeteoQwstar(self, text):
-        if self.lineEditHumidityFriction.validator().state == QValidator.Acceptable:
+        if self.lineEditHumidityFriction.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoQwstar(val)
 

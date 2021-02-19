@@ -240,14 +240,9 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         for zone in self.mdl.getZones():
             self.modelLocalization.addItem(zone)
 
-        if QT_API == "PYQT4":
-            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(last_section, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
+        self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.ResizeMode.Stretch)
 
         # Connections
         self.modelLocalization.dataChanged.connect(self.dataChanged)
@@ -306,7 +301,7 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         Warning: works only if the selection mode of the view is set to MultiSelection.
         """
         previous_selecion_mode = self.tableView.selectionMode()
-        self.tableView.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.tableView.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.tableView.clearSelection()
 
         if self.sender() == self.actionInlet:

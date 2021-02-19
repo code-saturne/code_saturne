@@ -70,7 +70,7 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         """
         Get label.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             label = str(text)
 
             if label in self.default['list']:

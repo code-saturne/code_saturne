@@ -67,14 +67,9 @@ from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant, to_text
 import numpy
 import matplotlib
 import matplotlib.pyplot
-if QT_API == 'PYQT4':
-    import matplotlib.backends.backend_qt4agg
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-else:
-    import matplotlib.backends.backend_qt5agg
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib.backends.backend_qt5agg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
 import xml
@@ -434,8 +429,8 @@ class MyMplCanvas(FigureCanvas):
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
-                                   QSizePolicy.Expanding,
-                                   QSizePolicy.Expanding)
+                                   QSizePolicy.Policy.Expanding,
+                                   QSizePolicy.Policy.Expanding)
         FigureCanvas.updateGeometry(self)
 
 
@@ -607,7 +602,7 @@ class MainView(object):
 
         if settings.contains("MainWindow/Color"):
             color = settings.value("MainWindow/Color",
-                                   self.palette().color(QPalette.Window).name())
+                                   self.palette().color(QPalette.ColorRole.Window).name())
             color = QColor(color)
             if color.isValid():
                 if not self.palette_default:
@@ -639,11 +634,11 @@ class MainView(object):
                                                 self.listFileProbes)
         self.treeViewDirectory.setModel(self.modelCases)
         self.treeViewDirectory.setAlternatingRowColors(True)
-        self.treeViewDirectory.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewDirectory.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.treeViewDirectory.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewDirectory.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.treeViewDirectory.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.treeViewDirectory.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewDirectory.expandAll()
-        self.treeViewDirectory.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeViewDirectory.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.treeViewDirectory.setDragEnabled(False)
         self.treeViewDirectory.resizeColumnToContents(0)
         self.treeViewDirectory.resizeColumnToContents(1)
@@ -781,7 +776,7 @@ class MainView(object):
 
         choose GUI color
         """
-        c = self.palette().color(QPalette.Window)
+        c = self.palette().color(QPalette.ColorRole.Window)
         color = QColorDialog.getColor(c, self)
         if color.isValid():
             app = QCoreApplication.instance()
@@ -790,7 +785,7 @@ class MainView(object):
             app.setPalette(QPalette(color))
             settings = QSettings()
             settings.setValue("MainWindow/Color",
-                              self.palette().color(QPalette.Window).name())
+                              self.palette().color(QPalette.ColorRole.Window).name())
 
 
     def setFontSize(self):
@@ -938,10 +933,7 @@ class MainView(object):
         dataPath = os.path.join(path, "..", "RESU")
         if os.path.isdir(dataPath): path = dataPath
 
-        dirName = getexistingdirectory(self, title,
-                                       path,
-                                       QFileDialog.ShowDirsOnly |
-                                       QFileDialog.DontResolveSymlinks)
+        dirName = getexistingdirectory(self, title, path)
         if not dirName:
             self.caseName = None
             return
@@ -953,7 +945,7 @@ class MainView(object):
         """
         Private slot.
         """
-        if self.lineEditTime.validator().state == QValidator.Acceptable:
+        if self.lineEditTime.validator().state == QValidator.State.Acceptable:
             time = from_qvariant(text, float)
             self.timeRefresh = time
             if self.timeRefresh != 0.:

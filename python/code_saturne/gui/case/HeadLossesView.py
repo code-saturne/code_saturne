@@ -173,7 +173,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotKxx(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_kxx.validator().state == QValidator.Acceptable:
+        if self.lineEdit_kxx.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kxx', value)
 
@@ -181,7 +181,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotKyy(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_kyy.validator().state == QValidator.Acceptable:
+        if self.lineEdit_kyy.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kyy', value)
 
@@ -189,7 +189,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotKzz(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_kzz.validator().state == QValidator.Acceptable:
+        if self.lineEdit_kzz.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kzz', value)
 
@@ -223,7 +223,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA11(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a11.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a11.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a11', value)
 
@@ -231,7 +231,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA12(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a12.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a12.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a12', value)
 
@@ -239,7 +239,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA13(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a13.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a13.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a13', value)
 
@@ -247,7 +247,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA21(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a21.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a21.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a21', value)
 
@@ -255,7 +255,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA22(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a22.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a22.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a22', value)
 
@@ -263,7 +263,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA23(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a23.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a23.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a23', value)
 
@@ -271,7 +271,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA31(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a31.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a31.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a31', value)
 
@@ -279,7 +279,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA32(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a32.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a32.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a32', value)
 
@@ -287,7 +287,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotA33(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
-        if self.lineEdit_a33.validator().state == QValidator.Acceptable:
+        if self.lineEdit_a33.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a33', value)
 

@@ -492,12 +492,8 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             self.model.addItem(self.ibm.getObjectName(obj),
                                self.ibm.getObjectMethod(obj))
 
-        if QT_API == "PYQT4":
-            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         self.model.dataChanged.connect(self.dataChanged)
 
@@ -521,13 +517,10 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             pass
 
         #STL seed points
-        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tableView.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
-        if QT_API == "PYQT4":
-            self.tableViewSTLPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSTLPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewSTLPoints.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateSTLObjectPoints = STLPointDelegate(self.tableViewSTLPoints)
         self.tableViewSTLPoints.setItemDelegate(delegateSTLObjectPoints)
@@ -572,9 +565,9 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             default = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+            options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         else:
-            options  = QFileDialog.DontUseNativeDialog
+            options  = QFileDialog.Option.DontUseNativeDialog
 
         l_mesh_dirs = []
         for i in range(0, len(self.mesh_dirs)):
@@ -593,7 +586,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if hasattr(dialog, 'setOptions'):
             dialog.setOptions(options)
         dialog.setSidebarUrls(l_mesh_dirs)
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
         if dialog.exec_() == 1:
             s = dialog.selectedFiles()

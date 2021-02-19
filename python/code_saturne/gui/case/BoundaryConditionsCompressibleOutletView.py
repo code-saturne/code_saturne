@@ -156,7 +156,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         """
         INPUT outlet pressure
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setPressureValue(t)
 

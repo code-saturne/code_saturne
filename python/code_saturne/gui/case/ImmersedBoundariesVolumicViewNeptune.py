@@ -493,14 +493,9 @@ class ImmersedBoundariesVolumicViewNeptune(QWidget, Ui_ImmersedBoundariesVolumic
                                    self.ibm.getObjectPhysicalProperties(obj),
                                    self.ibm.getObjectThermalSourceTerm(obj))
 
-        if QT_API == "PYQT4":
-            self.tableViewIBMVolumezone.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewIBMVolumezone.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            #self.tableViewIBMVolumezone.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewIBMVolumezone.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewIBMVolumezone.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            #self.tableViewIBMVolumezone.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tableViewIBMVolumezone.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewIBMVolumezone.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        #self.tableViewIBMVolumezone.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
         delegateMovingType = MovingTypeDelegate(self.tableViewIBMVolumezone, self.ibm)
         self.tableViewIBMVolumezone.setItemDelegateForColumn(2, delegateMovingType)

@@ -101,7 +101,7 @@ class NameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getSpeciesNamesList():
@@ -157,7 +157,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getSpeciesNamesList():
@@ -204,7 +204,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -403,14 +403,9 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.tableViewSpecies.setItemDelegateForColumn(5, delegateCoeffAbsorp)
 
         # tableView
-        if QT_API == "PYQT4":
-            self.tableViewSpecies.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-            self.tableViewSpecies.horizontalHeader().setResizeMode(0,QHeaderView.ResizeToContents)
-            self.tableViewSpecies.horizontalHeader().setResizeMode(1,QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableViewSpecies.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            self.tableViewSpecies.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeToContents)
-            self.tableViewSpecies.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeToContents)
+        self.tableViewSpecies.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tableViewSpecies.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewSpecies.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.ResizeToContents)
 
         # Set models and number of elements for combo boxes
         self.modelGasCombustionOption = ComboModel(self.comboBoxGasCombustionOption,1,1)
@@ -623,7 +618,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input Number of points for the tabulation (ENTH-TEMP)
         """
-        if self.lineEditNbPointsTabu.validator().state == QValidator.Acceptable:
+        if self.lineEditNbPointsTabu.validator().state == QValidator.State.Acceptable:
             NbPointsTabu = from_qvariant(text, int)
             self.thermodata.setNbPointsTabu(NbPointsTabu)
 
@@ -632,7 +627,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input Maximum temperature for the tabulation (ENTH-TEMP)
         """
-        if self.lineEditMaximumTemp.validator().state == QValidator.Acceptable:
+        if self.lineEditMaximumTemp.validator().state == QValidator.State.Acceptable:
             MaximumTemp = from_qvariant(text, float)
             self.thermodata.setMaximumTemp(MaximumTemp)
 
@@ -641,7 +636,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input Minimum temperature for the tabulation (ENTH-TEMP)
         """
-        if self.lineEditMinimumTemp.validator().state == QValidator.Acceptable:
+        if self.lineEditMinimumTemp.validator().state == QValidator.State.Acceptable:
             MinimumTemp = from_qvariant(text, float)
             self.thermodata.setMinimumTemp(MinimumTemp)
 
@@ -650,7 +645,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input the chemical formula for the Fuel
         """
-        if self.lineEditFuel.validator().state == QValidator.Acceptable:
+        if self.lineEditFuel.validator().state == QValidator.State.Acceptable:
             ChemicalFormula = from_qvariant(text, to_text_string)
             self.thermodata.setChemicalFormulaFuel(ChemicalFormula)
 
@@ -659,7 +654,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input volume proportion for O2
         """
-        if self.lineEditO2.validator().state == QValidator.Acceptable:
+        if self.lineEditO2.validator().state == QValidator.State.Acceptable:
             VolPropO2 = from_qvariant(text, float)
             self.thermodata.setVolPropO2(VolPropO2)
             self.lineEditN2.setText(str(round(1.0 - VolPropO2,12)))
@@ -669,7 +664,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input volume proportion for N2
         """
-        if self.lineEditN2.validator().state == QValidator.Acceptable:
+        if self.lineEditN2.validator().state == QValidator.State.Acceptable:
             VolPropN2 = from_qvariant(text, float)
             self.thermodata.setVolPropN2(VolPropN2)
             self.lineEditO2.setText(str(round(1.0 - VolPropN2,12)))
@@ -679,7 +674,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input the CO yield
         """
-        if self.lineEditCOyield.validator().state == QValidator.Acceptable:
+        if self.lineEditCOyield.validator().state == QValidator.State.Acceptable:
             COyield = from_qvariant(text, float)
             self.thermodata.setCOyield(COyield)
 
@@ -688,7 +683,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         Input the CS yield
         """
-        if self.lineEditCSyield.validator().state == QValidator.Acceptable:
+        if self.lineEditCSyield.validator().state == QValidator.State.Acceptable:
             CSyield = from_qvariant(text, float)
             self.thermodata.setCSyield(CSyield)
 

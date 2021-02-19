@@ -491,16 +491,11 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         self.tableViewTurbulence.setModel(self.tableModelTurbulence)
         self.tableViewTurbulence.resizeColumnsToContents()
         self.tableViewTurbulence.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewTurbulence.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTurbulence.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTurbulence.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewTurbulence.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewTurbulence.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewTurbulence.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewTurbulence.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewTurbulence.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewTurbulence.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateTurbulence = TurbulenceDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
         delegateTurbFlux = TurbFluxDelegate(self.tableViewTurbulence, self.mdl, self.dicoM2V, self.dicoV2M)
@@ -551,10 +546,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
     def dataChanged(self, topLeft, bottomRight):
         self.tableViewTurbulence.resizeColumnsToContents()
         self.tableViewTurbulence.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewTurbulence.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+        self.tableViewTurbulence.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
 
         row = self.tableViewTurbulence.currentIndex().row()
         self.update(row)
@@ -586,7 +578,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         """
         table_id = self.tableViewTurbulence.currentIndex().row()
         fieldId = self.mdl.mainFieldsModel.list_of_fields[table_id].f_id
-        if self.lineEditMixingLength.validator().state == QValidator.Acceptable:
+        if self.lineEditMixingLength.validator().state == QValidator.State.Acceptable:
             mix = from_qvariant(text, float)
             self.mdl.setMixingLength(fieldId, mix)
 

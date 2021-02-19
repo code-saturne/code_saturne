@@ -192,7 +192,7 @@ class PrecisionDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -225,7 +225,7 @@ class IterationDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -524,13 +524,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
         self.tableViewScheme.setAlternatingRowColors(True)
         self.tableViewScheme.resizeColumnToContents(0)
         self.tableViewScheme.resizeRowsToContents()
-        self.tableViewScheme.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewScheme.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewScheme.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewScheme.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewScheme.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewScheme.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewScheme.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateScheme   = SchemeDelegate(self.tableViewScheme, self.dicoM2V, self.dicoV2M)
 
@@ -542,13 +539,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
         self.tableViewSolver.setAlternatingRowColors(True)
         self.tableViewSolver.resizeColumnToContents(0)
         self.tableViewSolver.resizeRowsToContents()
-        self.tableViewSolver.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewSolver.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewSolver.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewSolver.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewSolver.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewSolver.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegateSolver    = SolverDelegate(self.tableViewSolver, self.dicoM2V, self.dicoV2M)
         delegatePrecision = PrecisionDelegate(self.tableViewSolver)
@@ -556,10 +550,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
         self.tableViewSolver.setItemDelegateForColumn(1, delegateSolver)
         self.tableViewSolver.setItemDelegateForColumn(2, delegatePrecision)
         self.tableViewSolver.setItemDelegateForColumn(3, delegateIteration)
-        if QT_API == "PYQT4":
-            self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         # Connect signals to slots
         self.modelSolver.dataChanged.connect(self.dataChangedSolver)

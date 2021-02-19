@@ -266,7 +266,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotEmissivity(self, text):
         """
         """
-        if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
+        if self.lineEditEmissivity.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setEmissivity(c)
 
@@ -275,7 +275,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotConductivity(self, text):
         """
         """
-        if self.lineEditConductivity.validator().state == QValidator.Acceptable:
+        if self.lineEditConductivity.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setThermalConductivity(c)
 
@@ -284,7 +284,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotThickness(self, text):
         """
         """
-        if self.lineEditThickness.validator().state == QValidator.Acceptable:
+        if self.lineEditThickness.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setThickness(c)
 
@@ -293,7 +293,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotExtTemperature(self, text):
         """
         """
-        if self.lineEditExtTemperature.validator().state == QValidator.Acceptable:
+        if self.lineEditExtTemperature.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setExternalTemperatureProfile(c)
 
@@ -302,7 +302,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
     def slotConductionFlux(self, text):
         """
         """
-        if self.lineEditConductionFlux.validator().state == QValidator.Acceptable:
+        if self.lineEditConductionFlux.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
             self.__boundary.setFlux(c)
 

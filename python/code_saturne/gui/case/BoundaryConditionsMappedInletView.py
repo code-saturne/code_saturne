@@ -176,7 +176,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         """
         INPUT value into direction of mapping translation
         """
-        if self.lineEditTranslationX.validator().state == QValidator.Acceptable:
+        if self.lineEditTranslationX.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setMappedInletTranslation('translation_x', value)
 
@@ -186,7 +186,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         """
         INPUT value into direction of mapping translation
         """
-        if self.lineEditTranslationY.validator().state == QValidator.Acceptable:
+        if self.lineEditTranslationY.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setMappedInletTranslation('translation_y', value)
 
@@ -196,7 +196,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         """
         INPUT value into direction of mapping translation
         """
-        if self.lineEditTranslationZ.validator().state == QValidator.Acceptable:
+        if self.lineEditTranslationZ.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setMappedInletTranslation('translation_z', value)
 

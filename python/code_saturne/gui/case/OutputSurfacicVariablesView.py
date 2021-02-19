@@ -218,13 +218,10 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
         self.tableViewOutput.setAlternatingRowColors(True)
         self.tableViewOutput.resizeColumnToContents(0)
         self.tableViewOutput.resizeRowsToContents()
-        self.tableViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewOutput.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewOutput.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewOutput.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewOutput.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewOutput.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewOutput.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewOutput.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewOutput.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         labelDelegate = LabelDelegate(self.tableViewOutput, self.mdl)
         self.tableViewOutput.setItemDelegateForColumn(0, labelDelegate)

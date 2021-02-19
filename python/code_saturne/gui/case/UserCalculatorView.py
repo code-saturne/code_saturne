@@ -102,7 +102,7 @@ class NameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getFunctionsNamesList():
@@ -350,18 +350,13 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
 
         self.tableModelCalc = StandardItemModelCalculator(self, self.mdl)
         self.tableViewUserCalculator.setModel(self.tableModelCalc)
-        if QT_API == "PYQT4":
-            self.tableViewUserCalculator.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-            self.tableViewUserCalculator.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-            self.tableViewUserCalculator.horizontalHeader().setResizeMode(2,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-            self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
-            self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(2,QHeaderView.Stretch)
+        self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
+        self.tableViewUserCalculator.horizontalHeader().setSectionResizeMode(2,QHeaderView.ResizeMode.Stretch)
         self.tableViewUserCalculator.resizeColumnsToContents()
         self.tableViewUserCalculator.resizeRowsToContents()
-        self.tableViewUserCalculator.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewUserCalculator.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewUserCalculator.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewUserCalculator.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateName     = NameDelegate(self.tableViewUserCalculator)
         delegateLocation = LocationDelegate(self.tableViewUserCalculator)

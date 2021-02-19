@@ -124,7 +124,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
         """
         INPUT fraction value
         """
-        if self.lineEditPressure.validator().state == QValidator.Acceptable:
+        if self.lineEditPressure.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setReferencePressure(value)
 

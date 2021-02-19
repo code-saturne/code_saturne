@@ -175,7 +175,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
     def slotDecayRate(self, text):
         """
         """
-        if self.lineEditDecayRate.validator().state == QValidator.Acceptable:
+        if self.lineEditDecayRate.validator().state == QValidator.State.Acceptable:
             val = float(text)
             scal = self.scalar
             self.mdl.setDecayRate(scal, val)

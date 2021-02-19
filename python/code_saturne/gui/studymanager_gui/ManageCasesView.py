@@ -197,7 +197,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
             model.setData(index, p_value, Qt.DisplayRole)
 
@@ -743,10 +743,10 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
         self.treeViewCases.setAlternatingRowColors(True)
-        self.treeViewCases.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.treeViewCases.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewCases.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.treeViewCases.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewCases.expandAll()
-        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.treeViewCases.setDragEnabled(False)
 
         runidDelegate = LabelDelegate(self.treeViewCases)
@@ -784,17 +784,17 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
         self.modelPostScripts = PostScriptItemModel(self.mdl, '', -1)
         self.tablePostScript.setModel(self.modelPostScripts)
-        self.tablePostScript.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tablePostScript.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tablePostScript.setGridStyle(Qt.NoPen)
         self.tablePostScript.setAlternatingRowColors(True)
 
         hh = self.tablePostScript.horizontalHeader()
-        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
         argsDelegate = TextDelegate(self.tablePostScript)
         self.tablePostScript.setItemDelegateForColumn(1, argsDelegate)
 
-        self.listInput.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.listInput.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.listInput.setAlternatingRowColors(True)
 
         self.groupBoxPrepro.hide()
@@ -847,7 +847,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
         dialog.setDirectory(path)
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
 
         if dialog.exec_() == 1:
 
@@ -878,7 +878,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
         dialog.setDirectory(path)
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
 
         if dialog.exec_() == 1:
 

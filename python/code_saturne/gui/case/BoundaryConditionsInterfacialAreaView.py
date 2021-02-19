@@ -130,7 +130,7 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
         """
         INPUT fraction value
         """
-        if self.lineEditDiameter.validator().state == QValidator.Acceptable:
+        if self.lineEditDiameter.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.__boundary.setDiameter(self.__currentField, value)
 

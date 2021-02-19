@@ -78,7 +78,7 @@ def format(color, style=''):
     _format = QTextCharFormat()
     _format.setForeground(_color)
     if 'bold' in style:
-        _format.setFontWeight(QFont.Bold)
+        _format.setFontWeight(QFont.Weight.Bold)
     if 'italic' in style:
         _format.setFontItalic(True)
 
@@ -138,12 +138,12 @@ class QMegHighlighter(QSyntaxHighlighter):
         Apply syntax highlighting to the given block of text.
         """
         for rx, fmt in self.rules:
-            pos = rx.indexIn(text, 0)
+            pos = rx.indexOf(text, 0)
             while pos != -1:
                 pos = rx.pos(0)
                 s = rx.cap(0)
                 self.setFormat(pos, len(s), fmt)
-                pos = rx.indexIn( text, pos+rx.matchedLength() )
+                pos = rx.indexOf( text, pos+rx.matchedLength() )
 
 #-------------------------------------------------------------------------------
 # Dialog for mathematical expression interpretor

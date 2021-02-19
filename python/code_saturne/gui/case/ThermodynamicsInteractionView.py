@@ -111,24 +111,16 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
     def _initializeInteractionsTable(self):
         self.tableViewInteractions.resizeColumnsToContents()
         self.tableViewInteractions.resizeRowsToContents()
-        self.tableViewInteractions.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewInteractions.setSelectionMode(QAbstractItemView.SingleSelection)
-        if QT_API == "PYQT4":
-            self.tableViewInteractions.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewInteractions.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewInteractions.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewInteractions.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewInteractions.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewInteractions.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tableViewInteractions.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewInteractions.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.tableViewInteractions.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewInteractions.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewInteractions.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
     def dataChanged(self, topLeft, bottomRight):
         self.tableViewInteractions.resizeColumnsToContents()
         self.tableViewInteractions.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewInteractions.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
     @pyqtSlot("QModelIndex")
     def slotSelectInteraction(self, index):
@@ -187,7 +179,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         """
         Update the surface tension
         """
-        if self.lineEditSurfaceTensionValue.validator().state == QValidator.Acceptable:
+        if self.lineEditSurfaceTensionValue.validator().state == QValidator.State.Acceptable:
             log.debug("slotSurfaceTensionValue -> %s" % float(value))
             self.model.setInitialValueTens(self.field_id_a, self.field_id_b, float(value))
 

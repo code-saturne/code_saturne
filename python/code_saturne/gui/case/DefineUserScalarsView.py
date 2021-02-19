@@ -107,7 +107,7 @@ class NameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
@@ -214,7 +214,7 @@ class VarianceNameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getScalarNameList() + model.mdl.getGasCombScalarsNameList() + model.mdl.getThermalScalarName():
@@ -576,12 +576,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         # tableView
         self.modelScalars = StandardItemModelScalars(self, self.mdl)
         self.modelVariance = StandardItemModelVariance(self, self.mdl)
-        if QT_API == "PYQT4":
-            self.tableScalars.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-            self.tableVariance.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableScalars.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            self.tableVariance.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableScalars.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tableVariance.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         # Delegates
         delegateLabel        = NameDelegate(self.tableScalars)

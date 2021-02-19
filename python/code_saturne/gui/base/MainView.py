@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2024 EDF S.A., France
+    @copyright: 1998-2026 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2 or later, see COPYING for details.
 """
@@ -133,7 +133,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.currentPath = path
         self.model = QFileSystemModel(self)
         self.model.setRootPath(self.currentPath)
-        self.model.setFilter(QDir.Dirs)
+        self.model.setFilter(QDir.Filter.Dirs)
 
         self.listViewDirectory.setModel(self.model)
         self.modelFolder = QStringListModel()
@@ -170,7 +170,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
         # construct list of study in current directory
         cpath = QDir(str(self.currentPath))
-        cpath.setFilter(QDir.Dirs | QDir.NoSymLinks)
+        cpath.setFilter(QDir.Filter.Dirs | QDir.Filter.NoSymLinks)
         lst = []
         self.modelFolder.setStringList([])
         for name in cpath.entryList():
@@ -341,7 +341,7 @@ class MainView(object):
 
 
     def ui_initialize(self):
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
         self.dockWidgetBrowser.setWidget(self.Browser)
@@ -353,9 +353,9 @@ class MainView(object):
         self.gridlayout.addWidget(self.frame,0,0,1,1)
 
         self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setFrameShape(QFrame.StyledPanel)
-        self.scrollArea.setFrameShadow(QFrame.Raised)
-        self.scrollArea.setFrameStyle(QFrame.NoFrame)
+        self.scrollArea.setFrameShape(QFrame.Shape.StyledPanel)
+        self.scrollArea.setFrameShadow(QFrame.Shadow.Raised)
+        self.scrollArea.setFrameStyle(QFrame.Shape.NoFrame)
 
         # connections
 
@@ -432,7 +432,7 @@ class MainView(object):
 
         if settings.contains("MainWindow/Color"):
             color = settings.value("MainWindow/Color",
-                                   self.palette().color(QPalette.Window).name())
+                                   self.palette().color(QPalette.ColorRole.Window).name())
             color = QColor(color)
             if color.isValid():
                 if not self.palette_default:
@@ -1084,14 +1084,14 @@ class MainView(object):
 
             n_errors = 0
             if state == 0:
-                box.setIcon(QMessageBox.Information)
+                box.setIcon(QMessageBox.Icon.Information)
                 msg = "User functions compilation succeeded."
                 if len(errors) > 0:
                     msg += '\n'
                     msg += 'Warnings were found:'
                     msg += '\n'
             else:
-                box.setIcon(QMessageBox.Critical)
+                box.setIcon(QMessageBox.Icon.Critical)
                 msg = 'User functions compilation failed with the following errors:\n'
 
             box.setText(msg)
@@ -1571,7 +1571,7 @@ class MainView(object):
 
         choose GUI color
         """
-        c = self.palette().color(QPalette.Window)
+        c = self.palette().color(QPalette.ColorRole.Window)
         color = QColorDialog.getColor(c, self)
         if color.isValid():
             app = QCoreApplication.instance()
@@ -1580,7 +1580,7 @@ class MainView(object):
             app.setPalette(QPalette(color))
             settings = QSettings()
             settings.setValue("MainWindow/Color",
-                              self.palette().color(QPalette.Window).name())
+                              self.palette().color(QPalette.ColorRole.Window).name())
 
 
     def setFontSize(self):
@@ -1966,16 +1966,18 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
 def isAlive(qobj):
     """
-    return True if the object qobj exists
+    return True if the object qobj exists (not in PySide)
 
     @param qobj: the name of the attribute
     @return: C{True} or C{False}
     """
-    import sip
     try:
+        import sip
         sip.unwrapinstance(qobj)
     except RuntimeError:
         return False
+    except Exception:
+        pass
     return True
 
 #-------------------------------------------------------------------------------

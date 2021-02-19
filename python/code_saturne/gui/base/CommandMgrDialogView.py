@@ -99,7 +99,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         Private slot. Manage the number of lines allowed in the display zone.
         """
         lines = from_qvariant(text, int)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             self.lines = lines
 
 
@@ -189,15 +189,15 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         Public slot. Enable the close button of the dialog window.
         """
 
-        if exitStatus != QProcess.NormalExit:
+        if exitStatus != QProcess.ExitStatus.NormalExit:
             error = self.proc.error()
-            if error == QProcess.FailedToStart:
+            if error == QProcess.ProcessError.FailedToStart:
                 print("failed to start")
-            elif error == QProcess.Timedout:
+            elif error == QProcess.ProcessError.Timedout:
                 print("timed out")
-            elif error == QProcess.WriteError:
+            elif error == QProcess.ProcessError.WriteError:
                 print("error trying to write to process")
-            elif error == QProcess.ReadError:
+            elif error == QProcess.ProcessError.ReadError:
                 print("error trying to read from process")
             else:
                 print("crashed or killed")
@@ -238,7 +238,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         Private slot. Kill the subprocess.
         """
-        if self.proc.state() == QProcess.NotRunning:
+        if self.proc.state() == QProcess.ProcessState.NotRunning:
             QMessageBox.warning(self,
                                 self.tr('Error'),
                                 self.tr('The process is not running.'))
@@ -323,7 +323,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.StandardOutput)
+        self.proc.setReadChannel(QProcess.ProcessChannel.StandardOutput)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
@@ -339,7 +339,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.StandardError)
+        self.proc.setReadChannel(QProcess.ProcessChannel.StandardError)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()

@@ -14,6 +14,13 @@
   <property name="windowTitle">
    <string>code_saturne</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/icons/22x22/logo_salome_cfd.png</normaloff>:/icons/22x22/logo_salome_cfd.png</iconset>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
   </property>
@@ -38,7 +45,7 @@
      <x>0</x>
      <y>0</y>
      <width>717</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuO_ptions">
@@ -73,8 +80,8 @@
       <string>&amp;User manuals</string>
      </property>
      <property name="icon">
-      <iconset resource="resource_base.qrc">
-        <normaloff>:data/icons/22x22/x-office-address-book.png</normaloff>:data/icons/22x22/x-office-address-book.png</iconset>
+      <iconset>
+       <normaloff>:data/icons/22x22/x-office-address-book.png</normaloff>:data/icons/22x22/x-office-address-book.png</iconset>
      </property>
      <addaction name="displayCSManualAction"/>
      <addaction name="displayCSTutorialAction"/>
@@ -110,7 +117,7 @@
       <string>Recent file</string>
      </property>
      <property name="icon">
-      <iconset resource="resource_base.qrc">
+      <iconset>
        <normaloff>:data/icons/22x22/format-justify-fill.png</normaloff>:data/icons/22x22/format-justify-fill.png</iconset>
      </property>
     </widget>
@@ -209,7 +216,7 @@
   </widget>
   <action name="fileOpenAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-open.png</normaloff>:data/icons/22x22/document-open.png</iconset>
    </property>
    <property name="text">
@@ -227,7 +234,7 @@
   </action>
   <action name="fileNewAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-new.png</normaloff>:data/icons/22x22/document-new.png</iconset>
    </property>
    <property name="text">
@@ -242,7 +249,7 @@
   </action>
   <action name="fileSaveAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-save.png</normaloff>:data/icons/22x22/document-save.png</iconset>
    </property>
    <property name="text">
@@ -257,7 +264,7 @@
   </action>
   <action name="filePythonAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-save.png</normaloff>:data/icons/22x22/document-save.png</iconset>
    </property>
    <property name="text">
@@ -269,7 +276,7 @@
   </action>
   <action name="fileSaveAsAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-save-as.png</normaloff>:data/icons/22x22/document-save-as.png</iconset>
    </property>
    <property name="text">
@@ -281,7 +288,7 @@
   </action>
   <action name="fileCloseAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/process-stop.png</normaloff>:data/icons/22x22/process-stop.png</iconset>
    </property>
    <property name="text">
@@ -296,7 +303,7 @@
   </action>
   <action name="openXtermAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/utilities-terminal.png</normaloff>:data/icons/22x22/utilities-terminal.png</iconset>
    </property>
    <property name="text">
@@ -311,7 +318,7 @@
   </action>
   <action name="displayCaseAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/text-xml.png</normaloff>:data/icons/22x22/text-xml.png</iconset>
    </property>
    <property name="text">
@@ -326,7 +333,7 @@
   </action>
   <action name="openDataEditorAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/data_editor-icon.png</normaloff>:data/icons/22x22/data_editor-icon.png</iconset>
    </property>
    <property name="text">
@@ -341,7 +348,7 @@
   </action>
   <action name="openSrcEditorAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/src_editor-icon.png</normaloff>:data/icons/22x22/src_editor-icon.png</iconset>
    </property>
    <property name="text">
@@ -356,7 +363,7 @@
   </action>
   <action name="testUserCompilationAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/compiler-icon.png</normaloff>:data/icons/22x22/compiler-icon.png</iconset>
    </property>
    <property name="text">
@@ -371,7 +378,7 @@
   </action>
   <action name="openResultsFileAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/resu_viewer-icon.png</normaloff>:data/icons/22x22/resu_viewer-icon.png</iconset>
    </property>
    <property name="text">
@@ -416,7 +423,7 @@
   </action>
   <action name="displayAboutAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/help-browser.png</normaloff>:data/icons/22x22/help-browser.png</iconset>
    </property>
    <property name="text">
@@ -428,7 +435,7 @@
   </action>
   <action name="displayLicenceAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/application-certificate.png</normaloff>:data/icons/22x22/application-certificate.png</iconset>
    </property>
    <property name="text">
@@ -556,7 +563,7 @@
   </action>
   <action name="fileQuitAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/system-log-out.png</normaloff>:data/icons/22x22/system-log-out.png</iconset>
    </property>
    <property name="text">
@@ -571,7 +578,7 @@
   </action>
   <action name="backgroundColorAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/preferences-desktop-wallpaper.png</normaloff>:data/icons/22x22/preferences-desktop-wallpaper.png</iconset>
    </property>
    <property name="text">
@@ -580,7 +587,7 @@
   </action>
   <action name="actionFont">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/preferences-desktop-font.png</normaloff>:data/icons/22x22/preferences-desktop-font.png</iconset>
    </property>
    <property name="text">
@@ -595,7 +602,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/edit-undo.png</normaloff>:data/icons/22x22/edit-undo.png</iconset>
    </property>
    <property name="text">
@@ -607,7 +614,7 @@
   </action>
   <action name="actionRedo">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/edit-redo.png</normaloff>:data/icons/22x22/edit-redo.png</iconset>
    </property>
    <property name="text">
@@ -619,7 +626,7 @@
   </action>
   <action name="caseNewAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/document-new.png</normaloff>:data/icons/22x22/document-new.png</iconset>
    </property>
    <property name="text">
@@ -639,7 +646,7 @@
   </action>
   <action name="runOrSubmitAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/run_button.png</normaloff>:data/icons/22x22/run_button.png</iconset>
    </property>
    <property name="text">
@@ -654,7 +661,7 @@
   </action>
   <action name="editCouplingParametersAction">
    <property name="icon">
-    <iconset resource="resource_base.qrc">
+    <iconset>
      <normaloff>:data/icons/22x22/coupling_editor.png</normaloff>:data/icons/22x22/coupling_editor.png</iconset>
    </property>
    <property name="text">

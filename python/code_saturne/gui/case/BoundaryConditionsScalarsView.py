@@ -835,7 +835,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueThermal(self, var):
         """
         """
-        if self.lineEditValueThermal.validator().state == QValidator.Acceptable:
+        if self.lineEditValueThermal.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             thermal_type = self.thermal_type.split(':')[0]
             if thermal_type in ('dirichlet', 'neumann'):
@@ -848,7 +848,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueSpecies(self, var):
         """
         """
-        if self.lineEditValueSpecies.validator().state == QValidator.Acceptable:
+        if self.lineEditValueSpecies.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             if self.species_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.species, self.species_type, value)
@@ -860,7 +860,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueVoidFraction(self, var):
         """
         """
-        if self.lineEditValueVoidFraction.validator().state == QValidator.Acceptable:
+        if self.lineEditValueVoidFraction.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             hgn_type = self.hgn_type.split(':')[0]
             _hgn_name = self.hgn.getHgnName()
@@ -874,7 +874,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueMeteo(self, var):
         """
         """
-        if self.lineEditValueMeteo.validator().state == QValidator.Acceptable:
+        if self.lineEditValueMeteo.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             if self.meteo_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.meteo, self.meteo_type, value)
@@ -886,7 +886,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExThermal(self, var):
         """
         """
-        if self.lineEditExThermal.validator().state == QValidator.Acceptable:
+        if self.lineEditExThermal.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.thermal, 'exchange_coefficient', value)
 
@@ -895,7 +895,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExSpecies(self, var):
         """
         """
-        if self.lineEditExSpecies.validator().state == QValidator.Acceptable:
+        if self.lineEditExSpecies.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
@@ -904,7 +904,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExVoidFraction(self, var):
         """
         """
-        if self.lineEditExVoidFraction.validator().state == QValidator.Acceptable:
+        if self.lineEditExVoidFraction.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.hgn.getHgnName(),
                                            'exchange_coefficient',
@@ -915,7 +915,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExMeteo(self, var):
         """
         """
-        if self.lineEditExMeteo.validator().state == QValidator.Acceptable:
+        if self.lineEditExMeteo.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.meteo, 'exchange_coefficient', value)
 

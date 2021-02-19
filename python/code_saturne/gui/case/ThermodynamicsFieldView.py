@@ -548,8 +548,8 @@ temperature = enthalpy / 1000;
 
         self.tableModelProperties = StandardItemModelProperty(self.mdl, self.ncond, self.dicoM2V, self.dicoV2M)
         self.tableViewProperties.setModel(self.tableModelProperties)
-        self.tableViewProperties.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewProperties.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewProperties.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewProperties.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateMaterials = MaterialsDelegate(self.tableViewProperties, self.mdl, self.dicoM2V, self.dicoV2M)
         delegateMethod    = MethodDelegate(self.tableViewProperties, self.mdl, self.dicoM2V, self.dicoV2M)
@@ -631,10 +631,7 @@ temperature = enthalpy / 1000;
 
         self.tableViewProperties.resizeColumnsToContents()
         self.tableViewProperties.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewProperties.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewProperties.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.tableViewProperties.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
         self.initializeWidget()
 
@@ -742,10 +739,7 @@ temperature = enthalpy / 1000;
     def dataChanged(self, topLeft, bottomRight):
         self.tableViewProperties.resizeColumnsToContents()
         self.tableViewProperties.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewProperties.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewProperties.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+        self.tableViewProperties.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
 
         row = self.tableViewProperties.currentIndex().row()
         self.update(row)
@@ -860,7 +854,7 @@ temperature = enthalpy / 1000;
         Update the density
         """
         fieldId = self.currentFluid
-        if self.lineEditDensity.validator().state == QValidator.Acceptable:
+        if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             rho = float(text)
             self.mdl.setInitialValueDensity(fieldId, rho)
 
@@ -871,7 +865,7 @@ temperature = enthalpy / 1000;
         Update the molecular viscosity
         """
         fieldId = self.currentFluid
-        if self.lineEditViscosity.validator().state == QValidator.Acceptable:
+        if self.lineEditViscosity.validator().state == QValidator.State.Acceptable:
             mu = float(text)
             self.mdl.setInitialValueViscosity(fieldId,mu)
 
@@ -882,7 +876,7 @@ temperature = enthalpy / 1000;
         Update the specific heat
         """
         fieldId = self.currentFluid
-        if self.lineEditSpecificHeat.validator().state == QValidator.Acceptable:
+        if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             cp = float(text)
             self.mdl.setInitialValueHeat(fieldId,cp)
 
@@ -893,7 +887,7 @@ temperature = enthalpy / 1000;
         Update the thermal conductivity
         """
         fieldId = self.currentFluid
-        if self.lineEditThermalConductivity.validator().state == QValidator.Acceptable:
+        if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             al = float(text)
             self.mdl.setInitialValueCond(fieldId,al)
 

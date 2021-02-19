@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -83,7 +83,7 @@ def loc_format(color, style=''):
 
     # Bold font
     if 'bold' in style:
-        f.setFontWeight(QtGui.QFont.Bold)
+        f.setFontWeight(QtGui.QFont.Weight.Bold)
 
     # Italic font
     if 'italic' in style:
@@ -413,8 +413,8 @@ class QExpandingMessageBox(QMessageBox):
         self.setMaximumHeight(16777215)
         self.setMinimumWidth(10)
         self.setMaximumWidth(16777215)
-        self.setSizePolicy(QSizePolicy.Expanding,
-                           QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,
+                           QSizePolicy.Policy.Expanding)
 
         text = self.findChild(QTextEdit)
         if text != None:
@@ -427,8 +427,8 @@ class QExpandingMessageBox(QMessageBox):
             text.setMaximumHeight(16777215)
             text.setMinimumWidth(1000)
             text.setMaximumWidth(16777215)
-            text.setSizePolicy(QSizePolicy.Expanding,
-                               QSizePolicy.Expanding)
+            text.setSizePolicy(QSizePolicy.Policy.Expanding,
+                               QSizePolicy.Policy.Expanding)
 
         return result
 
@@ -726,8 +726,8 @@ class QFileEditor(QMainWindow):
         open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
         icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
-                            QtGui.QIcon.Normal,
-                            QtGui.QIcon.Off)
+                            QtGui.QIcon.Mode.Normal,
+                            QtGui.QIcon.State.Off)
         self.openFileAction = QAction(icon_open, "Open", self)
         self.openFileAction.setShortcut("Ctrl+O")
         self.openFileAction.setStatusTip('Open File')
@@ -737,8 +737,8 @@ class QFileEditor(QMainWindow):
         new_img_path = os.path.join(icons_path, 'document-new.png')
         icon_new     = QtGui.QIcon()
         icon_new.addPixmap(QtGui.QPixmap(_fromUtf8(new_img_path)),
-                          QtGui.QIcon.Normal,
-                          QtGui.QIcon.Off)
+                          QtGui.QIcon.Mode.Normal,
+                          QtGui.QIcon.State.Off)
         self.newFileAction = QAction(icon_new, "New", self)
         self.newFileAction.setShortcut("Ctrl+E")
         self.newFileAction.setStatusTip('Create new file')
@@ -748,8 +748,8 @@ class QFileEditor(QMainWindow):
         save_img_path = os.path.join(icons_path, 'document-save.png')
         icon_save     = QtGui.QIcon()
         icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
-                          QtGui.QIcon.Normal,
-                          QtGui.QIcon.Off)
+                          QtGui.QIcon.Mode.Normal,
+                          QtGui.QIcon.State.Off)
         self.saveFileAction = QAction(icon_save, "Save", self)
         self.saveFileAction.setShortcut("Ctrl+S")
         self.saveFileAction.setStatusTip('Save file')
@@ -759,8 +759,8 @@ class QFileEditor(QMainWindow):
         saveas_img_path = os.path.join(icons_path, 'document-save-as.png')
         icon_saveas     = QtGui.QIcon()
         icon_saveas.addPixmap(QtGui.QPixmap(_fromUtf8(saveas_img_path)),
-                              QtGui.QIcon.Normal,
-                              QtGui.QIcon.Off)
+                              QtGui.QIcon.Mode.Normal,
+                              QtGui.QIcon.State.Off)
         self.saveFileAsAction = QAction(icon_saveas, "Save as", self)
         self.saveFileAsAction.setStatusTip('Save file as')
         self.saveFileAsAction.triggered.connect(self.saveFileAs)
@@ -769,8 +769,8 @@ class QFileEditor(QMainWindow):
         close_img_path = os.path.join(icons_path, 'process-stop.png')
         icon_close     = QtGui.QIcon()
         icon_close.addPixmap(QtGui.QPixmap(_fromUtf8(close_img_path)),
-                             QtGui.QIcon.Normal,
-                             QtGui.QIcon.Off)
+                             QtGui.QIcon.Mode.Normal,
+                             QtGui.QIcon.State.Off)
         self.closeFileAction = QAction(icon_close, "Close file", self)
         self.closeFileAction.setShortcut("Ctrl+Q")
         self.closeFileAction.setStatusTip('Close opened file')
@@ -780,8 +780,8 @@ class QFileEditor(QMainWindow):
         quit_img_path = os.path.join(icons_path, 'system-log-out.png')
         icon_quit     = QtGui.QIcon()
         icon_quit.addPixmap(QtGui.QPixmap(_fromUtf8(quit_img_path)),
-                          QtGui.QIcon.Normal,
-                          QtGui.QIcon.Off)
+                          QtGui.QIcon.Mode.Normal,
+                          QtGui.QIcon.State.Off)
         self.quitAction = QAction(icon_quit, "Quit", self)
         self.quitAction.setStatusTip('Quit the editor')
         self.quitAction.triggered.connect(self.closeApplication)
@@ -875,7 +875,7 @@ class QFileEditor(QMainWindow):
         # Font
         base_font = QtGui.QFont()
         base_font.setFamily("Courier")
-        base_font.setStyleHint(QtGui.QFont.Monospace)
+        base_font.setStyleHint(QtGui.QFont.StyleHint.Monospace)
         base_font.setFixedPitch(True)
         base_font.setPointSize(10)
 
@@ -890,7 +890,7 @@ class QFileEditor(QMainWindow):
         textEdit.textChanged.connect(self.updateFileState)
         textEdit.setReadOnly(self.readOnly)
         policy = textEdit.sizePolicy()
-        policy.setHorizontalPolicy(QSizePolicy.Expanding)
+        policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
         textEdit.setSizePolicy(policy)
 
         # tab

@@ -93,7 +93,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
 
             if p_value in self.mdl.getLabelsList():
@@ -574,9 +574,9 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl, self.calculator)
         self.treeViewOutput.setModel(self.modelOutput)
         self.treeViewOutput.setAlternatingRowColors(True)
-        self.treeViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewOutput.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.treeViewOutput.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewOutput.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.treeViewOutput.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.treeViewOutput.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.treeViewOutput.expandAll()
         self.treeViewOutput.setDragEnabled(False)
 

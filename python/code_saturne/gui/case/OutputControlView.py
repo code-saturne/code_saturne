@@ -107,7 +107,7 @@ class LabelWriterDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getWriterLabelList():
@@ -164,7 +164,7 @@ class LabelMeshDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getMeshLabelList():
@@ -1289,7 +1289,7 @@ class MonitoringPointDelegate(QItemDelegate):
         editor = self.sender()
         if isinstance(editor, QLineEdit):
             self.commitData.emit(editor)
-            self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
+            self.closeEditor.emit(editor, QAbstractItemDelegate.EndEditHint.NoHint)
 
 
     def setEditorData(self, editor, index):
@@ -1440,13 +1440,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewPoints.resizeColumnToContents(0)
         self.tableViewPoints.resizeRowsToContents()
         self.tableViewPoints.setAlternatingRowColors(True)
-        self.tableViewPoints.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewPoints.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewPoints.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewPoints.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewPoints.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewPoints.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewPoints.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewPoints.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.delegate = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
         self.tableViewPoints.setItemDelegate(self.delegate)
 
@@ -1455,13 +1452,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewWriter.resizeColumnToContents(0)
         self.tableViewWriter.resizeRowsToContents()
         self.tableViewWriter.setAlternatingRowColors(True)
-        self.tableViewWriter.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewWriter.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewWriter.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewWriter.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewWriter.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewWriter.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewWriter.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         delegate_label_writer = LabelWriterDelegate(self.tableViewWriter)
         self.tableViewWriter.setItemDelegateForColumn(0, delegate_label_writer)
@@ -1475,19 +1469,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.resizeColumnToContents(0)
         self.tableViewMesh.resizeRowsToContents()
         self.tableViewMesh.setAlternatingRowColors(True)
-        self.tableViewMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableViewMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            self.tableViewMesh.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.tableViewMesh.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewMesh.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewMesh.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_mesh = LabelMeshDelegate(self.tableViewMesh)
@@ -1503,17 +1491,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewLagrangianMesh.resizeColumnToContents(0)
         self.tableViewLagrangianMesh.resizeRowsToContents()
         self.tableViewLagrangianMesh.setAlternatingRowColors(True)
-        self.tableViewLagrangianMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewLagrangianMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewLagrangianMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.tableViewLagrangianMesh.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewLagrangianMesh.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewLagrangianMesh.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.tableViewLagrangianMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_lag_mesh = LabelMeshDelegate(self.tableViewLagrangianMesh)
@@ -1808,7 +1791,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output
         """
-        if self.lineEditNTLIST.validator().state == QValidator.Acceptable:
+        if self.lineEditNTLIST.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(n)
@@ -1819,7 +1802,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output for lagrangian variables
         """
-        if self.lineEditNTLAL.validator().state == QValidator.Acceptable:
+        if self.lineEditNTLAL.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(n)
@@ -1910,10 +1893,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelMesh.getItem(row)['id']
 
             self.modelAssociatedWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
-            if QT_API == "PYQT4":
-                self.tableViewAssociatedWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-            elif QT_API == "PYQT5":
-                self.tableViewAssociatedWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.tableViewAssociatedWriter.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
             delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedWriter, 0)
             self.tableViewAssociatedWriter.setItemDelegateForColumn(0, delegate_associated_writer)
@@ -1936,10 +1916,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelLagrangianMesh.getItem(row)['id']
 
             self.modelAssociatedLagrangianWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
-            if QT_API == "PYQT4":
-                self.tableViewAssociatedLagrangianWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-            elif QT_API == "PYQT5":
-                self.tableViewAssociatedLagrangianWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.tableViewAssociatedLagrangianWriter.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
             delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedLagrangianWriter, 1)
             self.tableViewAssociatedLagrangianWriter.setItemDelegateForColumn(0, delegate_associated_writer)
@@ -2091,7 +2068,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 n = from_qvariant(self.lineEditFrequency.text(), int)
             else:
                 n = 1
-            if self.lineEditFrequency.validator().state == QValidator.Acceptable:
+            if self.lineEditFrequency.validator().state == QValidator.State.Acceptable:
                 log.debug("slotPostproFrequency = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
@@ -2105,7 +2082,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            if self.lineEditFrequencyTime.validator().state == QValidator.Acceptable:
+            if self.lineEditFrequencyTime.validator().state == QValidator.State.Acceptable:
                 n = from_qvariant(text, float)
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
@@ -2796,7 +2773,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.lineEditFRTimePlot.validator().state == QValidator.Acceptable:
+        if self.lineEditFRTimePlot.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, float)
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
@@ -2807,7 +2784,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.lineEditTimePlot.validator().state == QValidator.Acceptable:
+        if self.lineEditTimePlot.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
@@ -2977,7 +2954,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         @type text: C{QString}
         @param text: radius for display probes
         """
-        if self.lineEditProbesRadius.validator().state == QValidator.Acceptable:
+        if self.lineEditProbesRadius.validator().state == QValidator.State.Acceptable:
             r = from_qvariant(text, float)
             self.case['probes'].setRadius(r)
 

@@ -294,8 +294,8 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.pressureModel = StandardItemModelPressureDrop(self.mdl)
         self.tableViewPressureDrop.setModel(self.pressureModel)
         self.tableViewPressureDrop.setAlternatingRowColors(True)
-        self.tableViewPressureDrop.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewPressureDrop.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewPressureDrop.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewPressureDrop.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateIdxPres = IntegerDelegate(self.tableViewPressureDrop,
                                           minVal=0)
@@ -307,18 +307,15 @@ class BalanceView(QWidget, Ui_BalanceForm):
 
         self.tableViewPressureDrop.resizeColumnsToContents()
         self.tableViewPressureDrop.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewPressureDrop.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewPressureDrop.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+        self.tableViewPressureDrop.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
 
         # tableView scalar balance
         self.modelScalarBalance = StandardItemModelScalarBalance(self.mdl)
         self.tableViewScalarBalance.setModel(self.modelScalarBalance)
         self.tableViewScalarBalance.resizeColumnToContents(0)
         self.tableViewScalarBalance.setAlternatingRowColors(True)
-        self.tableViewScalarBalance.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewScalarBalance.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewScalarBalance.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewScalarBalance.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateIdxScalar = IntegerDelegate(self.tableViewScalarBalance,
                                             minVal=0)
@@ -333,10 +330,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
 
         self.tableViewScalarBalance.resizeColumnsToContents()
         self.tableViewScalarBalance.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewScalarBalance.horizontalHeader().setResizeMode(2,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewScalarBalance.horizontalHeader().setSectionResizeMode(2,QHeaderView.Stretch)
+        self.tableViewScalarBalance.horizontalHeader().setSectionResizeMode(2,QHeaderView.ResizeMode.Stretch)
 
         # QListView layout
         self.gridlayout1 = QGridLayout(self.widgetDrag)

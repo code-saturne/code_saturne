@@ -365,41 +365,41 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
 
     @pyqtSlot(str)
     def slotObjDensity(self, text):
-        if self.lineEditDensity.validator().state == QValidator.Acceptable:
+        if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDensity(self.current_obj, val)
 
 
     @pyqtSlot(str)
     def slotObjMass(self, text):
-        if self.lineEditMass.validator().state == QValidator.Acceptable:
+        if self.lineEditMass.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectMass(self.current_obj, val)
 
 
     @pyqtSlot(str)
     def slotObjStiffness(self, text):
-        if self.lineEditStiffness.validator().state == QValidator.Acceptable:
+        if self.lineEditStiffness.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectStiffness(self.current_obj, val)
 
 
     @pyqtSlot(str)
     def slotObjDamping(self, text):
-        if self.lineEditDamping.validator().state == QValidator.Acceptable:
+        if self.lineEditDamping.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDamping(self.current_obj, val)
 
 
     @pyqtSlot(str)
     def slotObjSpecificHeat(self, text):
-        if self.lineEditSpecificHeat.validator().state == QValidator.Acceptable:
+        if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectSpecificHeat(self.current_obj, val)
 
     @pyqtSlot(str)
     def slotObjThermalConductivity(self, text):
-        if self.lineEditThermalConductivity.validator().state == QValidator.Acceptable:
+        if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectThermalConductivity(self.current_obj, val)
 

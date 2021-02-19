@@ -197,7 +197,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT hydraulic diameter
         """
-        if self.lineEditDiameter.validator().state == QValidator.Acceptable:
+        if self.lineEditDiameter.validator().state == QValidator.State.Acceptable:
             diam = from_qvariant(text, float)
             self.__boundary.setHydraulicDiameter(diam)
 
@@ -207,7 +207,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT turbulent intensity
         """
-        if self.lineEditIntensity.validator().state == QValidator.Acceptable:
+        if self.lineEditIntensity.validator().state == QValidator.State.Acceptable:
             intens = from_qvariant(text, float)
             self.__boundary.setTurbulentIntensity(intens)
 

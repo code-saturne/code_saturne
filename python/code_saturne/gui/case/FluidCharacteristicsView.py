@@ -826,7 +826,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Input PRESS.
         """
-        if self.lineEditP0.validator().state == QValidator.Acceptable:
+        if self.lineEditP0.validator().state == QValidator.State.Acceptable:
             p = from_qvariant(text, float)
             self.mdl.setPressure(p)
 
@@ -836,7 +836,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Input TEMPERATURE.
         """
-        if self.lineEditT0.validator().state == QValidator.Acceptable:
+        if self.lineEditT0.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTemperature(t)
 
@@ -846,7 +846,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Input oxydant TEMPERATURE.
         """
-        if self.lineEditOxydant.validator().state == QValidator.Acceptable:
+        if self.lineEditOxydant.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTempOxydant(t)
 
@@ -856,7 +856,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Input fuel TEMPERATURE.
         """
-        if self.lineEditFuel.validator().state == QValidator.Acceptable:
+        if self.lineEditFuel.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTempFuel(t)
 
@@ -866,7 +866,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Input Mass molar.
         """
-        if self.lineEditMassMolar.validator().state == QValidator.Acceptable:
+        if self.lineEditMassMolar.validator().state == QValidator.State.Acceptable:
             m = from_qvariant(text, float)
             self.mdl.setMassemol(m)
 
@@ -1068,7 +1068,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the density
         """
-        if self.lineEditRho.validator().state == QValidator.Acceptable:
+        if self.lineEditRho.validator().state == QValidator.State.Acceptable:
             rho = from_qvariant(text, float)
             self.mdl.setInitialValueDensity(rho)
 
@@ -1077,7 +1077,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the density of fluid 1 for VoF module
         """
-        if self.lineEditRho1.validator().state == QValidator.Acceptable:
+        if self.lineEditRho1.validator().state == QValidator.State.Acceptable:
             rho = from_qvariant(text, float)
             self.mdl.setVofValueDensity(0, rho)
 
@@ -1086,7 +1086,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the density of fluid 2 for VoF module
         """
-        if self.lineEditRho2.validator().state == QValidator.Acceptable:
+        if self.lineEditRho2.validator().state == QValidator.State.Acceptable:
             rho = from_qvariant(text, float)
             self.mdl.setVofValueDensity(1, rho)
 
@@ -1095,7 +1095,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the molecular viscosity
         """
-        if self.lineEditMu.validator().state == QValidator.Acceptable:
+        if self.lineEditMu.validator().state == QValidator.State.Acceptable:
             mu = from_qvariant(text, float)
             self.mdl.setInitialValueViscosity(mu)
 
@@ -1105,7 +1105,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the molecular viscosity
         """
-        if self.lineEditMu1.validator().state == QValidator.Acceptable:
+        if self.lineEditMu1.validator().state == QValidator.State.Acceptable:
             mu = from_qvariant(text, float)
             self.mdl.setVofValueViscosity(0, mu)
 
@@ -1115,7 +1115,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the molecular viscosity
         """
-        if self.lineEditMu2.validator().state == QValidator.Acceptable:
+        if self.lineEditMu2.validator().state == QValidator.State.Acceptable:
             mu = from_qvariant(text, float)
             self.mdl.setVofValueViscosity(1, mu)
 
@@ -1125,7 +1125,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the surface tension
         """
-        if self.lineEditSigma.validator().state == QValidator.Acceptable:
+        if self.lineEditSigma.validator().state == QValidator.State.Acceptable:
             sigma = from_qvariant(text, float)
             self.mdl.setInitialValueSurfaceTension(sigma)
 
@@ -1135,7 +1135,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the specific heat
         """
-        if self.lineEditCp.validator().state == QValidator.Acceptable:
+        if self.lineEditCp.validator().state == QValidator.State.Acceptable:
             cp = from_qvariant(text, float)
             self.mdl.setInitialValueHeat(cp)
 
@@ -1145,7 +1145,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the volumic viscosity
         """
-        if self.lineEditViscv0.validator().state == QValidator.Acceptable:
+        if self.lineEditViscv0.validator().state == QValidator.State.Acceptable:
             viscv0 = from_qvariant(text, float)
             self.mdl.setInitialValueVolumeViscosity(viscv0)
 
@@ -1155,7 +1155,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the thermal conductivity
         """
-        if self.lineEditAl.validator().state == QValidator.Acceptable:
+        if self.lineEditAl.validator().state == QValidator.State.Acceptable:
             al = from_qvariant(text, float)
             self.mdl.setInitialValueCond(al)
 
@@ -1165,7 +1165,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the thermal conductivity
         """
-        if self.lineEditDiftl0.validator().state == QValidator.Acceptable:
+        if self.lineEditDiftl0.validator().state == QValidator.State.Acceptable:
             diftl0 = from_qvariant(text, float)
             self.mdl.setInitialValueDyn(diftl0)
 
@@ -1175,7 +1175,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         Update the thermal conductivity
         """
-        if self.lineEditDiff.validator().state == QValidator.Acceptable:
+        if self.lineEditDiff.validator().state == QValidator.State.Acceptable:
             diff = from_qvariant(text, float)
             self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 

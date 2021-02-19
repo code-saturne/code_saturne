@@ -107,7 +107,7 @@ class SearchBar(QWidget):
         cursor = self.textEditContent.textCursor()
         cursor.setPosition(start)
 
-        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, end - start)
+        cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, end - start)
         self.textEditContent.setTextCursor(cursor)
 
     def startSearch(self):

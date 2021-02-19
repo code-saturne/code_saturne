@@ -151,7 +151,7 @@ class BatchRunningStopByIterationDialogView(QDialog,
         """
         Private slot to set an iteration number to stop the code.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.sender().validator().state == QValidator.State.Acceptable:
             iter = from_qvariant(text, int)
             self.iter = iter
 
@@ -229,7 +229,7 @@ class ListingDialogView(CommandMgrDialogView):
         """
         if self.proc is None:
             return
-        self.proc.setReadChannel(QProcess.StandardOutput)
+        self.proc.setReadChannel(QProcess.ProcessChannel.StandardOutput)
 
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
@@ -333,7 +333,7 @@ class ListingDialogView(CommandMgrDialogView):
         """
         Public slot. Handle the current status of the process.
         """
-        bool = not(state == QProcess.NotRunning)
+        bool = not(state == QProcess.ProcessState.NotRunning)
         self.pushButtonKill.setEnabled(bool)
         self.pushButtonStop.setEnabled(bool)
         self.pushButtonStopAt.setEnabled(bool)
@@ -552,7 +552,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        if self.lineEditJobName.validator().state == QValidator.Acceptable:
+        if self.lineEditJobName.validator().state == QValidator.State.Acceptable:
             self.jmdl.batch.params['job_name'] = str(v)
 
 
@@ -629,7 +629,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
+        if self.lineEditJobAccount.validator().state == QValidator.State.Acceptable:
             self.jmdl.batch.params['job_account'] = str(v)
 
 
@@ -638,7 +638,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
+        if self.lineEditJobWCKey.validator().state == QValidator.State.Acceptable:
             self.jmdl.batch.params['job_wckey'] = str(v)
 
 
@@ -696,7 +696,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
     def slotJobRunId(self, v):
         """
         """
-        if self.lineEditRunId.validator().state == QValidator.Acceptable:
+        if self.lineEditRunId.validator().state == QValidator.State.Acceptable:
             self.run_dict['id'] = str(v)
 
 

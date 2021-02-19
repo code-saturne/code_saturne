@@ -174,7 +174,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
     @pyqtSlot(str)
     def slotNsuit(self, text):
-        if self.lineEditNSUIT.validator().state == QValidator.Acceptable:
+        if self.lineEditNSUIT.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             self.nsuit = n
             log.debug("getNsuit-> nsuit = %s" % n)
@@ -371,7 +371,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             default = self.case['case_path']
 
         title = self.tr("Select checkpoint/restart directory")
-        options = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly | QFileDialog.ShowDirsOnly
+        options = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly | QFileDialog.Option.ShowDirsOnly
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
@@ -379,12 +379,12 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         dialog.setOptions(options)
         dialog.setSidebarUrls(l_restart_dirs)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         name_filter = str(self.tr("Checkpoint directory (checkpoint*)"))
         dialog.setNameFilter(name_filter)
 
-        dialog.setLabelText(QFileDialog.Accept, str(self.tr("Select")))
+        dialog.setLabelText(QFileDialog.DialogLabel.Accept, str(self.tr("Select")))
 
         if dialog.exec_() == 1:
 
@@ -421,7 +421,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         if not default:
             default = self.case['case_path']
 
-        options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        options  = QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
@@ -429,12 +429,12 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         dialog.setOptions(options)
         dialog.setSidebarUrls(l_restart_dirs)
-        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
 
         name_filter = str(self.tr("Imported or preprocessed mesh (mesh_input mesh_output *.csm)"))
         dialog.setNameFilter(name_filter)
 
-        dialog.setLabelText(QFileDialog.Accept, str(self.tr("Select")))
+        dialog.setLabelText(QFileDialog.DialogLabel.Accept, str(self.tr("Select")))
 
         if dialog.exec_() == 1:
 

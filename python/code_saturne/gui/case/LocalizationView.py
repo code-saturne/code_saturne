@@ -106,7 +106,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
 
             if p_value in self.mdl.getLabelsZonesList():
@@ -152,7 +152,7 @@ class CodeNumberDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
 
             # Check for unicity
@@ -385,14 +385,9 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         for zone in self.mdl.getZones():
             self.modelLocalization.addItem(zone)
 
-        if QT_API == "PYQT4":
-            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(last_section, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.Stretch)
+        self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.ResizeMode.Stretch)
 
         # Connections
         self.pushButtonNew.clicked.connect(self.slotAddZone)

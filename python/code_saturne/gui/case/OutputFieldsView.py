@@ -83,16 +83,16 @@ class ProbesValidator(QRegExpValidator):
         super(ProbesValidator, self).__init__(regExp, parent)
         self.parent = parent
         self.mdl = xml_model
-        self.state = QValidator.Invalid
+        self.state = QValidator.State.Invalid
 
 
     def validate(self, stri, pos):
         """
         Validation method.
 
-        QValidator.Invalid       0  The string is clearly invalid.
-        QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
-        QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
+        QValidator.State.Invalid       0  The string is clearly invalid.
+        QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
+        QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
         state = QRegExpValidator.validate(self, stri, pos)[0]
 
@@ -101,17 +101,17 @@ class ProbesValidator(QRegExpValidator):
             if probe not in self.mdl.getVariableProbeList():
                 valid = False
 
-        if state == QValidator.Acceptable:
+        if state == QValidator.State.Acceptable:
             if not valid:
-                state = QValidator.Intermediate
+                state = QValidator.State.Intermediate
 
         palette = self.parent.palette()
 
-        if state == QValidator.Intermediate:
-            palette.setColor(QPalette.Text, QColor("red"))
+        if state == QValidator.State.Intermediate:
+            palette.setColor(QPalette.ColorRole.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QPalette.Text, QColor("black"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -146,7 +146,7 @@ class ProbesDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -188,7 +188,7 @@ class NameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getVariableLabelsList():
@@ -402,27 +402,19 @@ class OutputFieldsView(QWidget, Ui_OutputFields):
         self.tableViewGlobalVariables.setModel(self.tableModelGlobalVariables)
         self.tableViewGlobalVariables.resizeColumnsToContents()
         self.tableViewGlobalVariables.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewGlobalVariables.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewGlobalVariables.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewGlobalVariables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewGlobalVariables.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewGlobalVariables.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewGlobalVariables.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewGlobalVariables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewGlobalVariables.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewGlobalVariables.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewGlobalVariables.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         self.tableModelFieldsVariables = StandardItemModelGlobalVariables(self, self.currentid, self.mdl)
         self.tableViewFieldsVariables.setModel(self.tableModelFieldsVariables)
         self.tableViewFieldsVariables.resizeColumnsToContents()
         self.tableViewFieldsVariables.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewFieldsVariables.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFieldsVariables.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewFieldsVariables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFieldsVariables.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewFieldsVariables.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewFieldsVariables.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewFieldsVariables.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewFieldsVariables.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewFieldsVariables.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewFieldsVariables.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateNameG   = NameDelegate(self.tableViewGlobalVariables)
         delegateNameF   = NameDelegate(self.tableViewFieldsVariables)

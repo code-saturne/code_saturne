@@ -80,16 +80,16 @@ class InternalCouplingView(QWidget):
         self.checkBoxScalars.stateChanged.connect(self.slotScalarState)
         self.checkBoxScalars.setText("couple scalar in solid zones")
 
-        spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        spacerItem = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         hbox.addWidget(self.comboBoxScalars)
-        hbox.addItem(QSpacerItem(40, 2, QSizePolicy.Minimum, QSizePolicy.Minimum))
+        hbox.addItem(QSpacerItem(40, 2, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
         hbox.addWidget(self.checkBoxScalars)
         hbox.addItem(spacerItem)
 
         vbox.addItem(hbox)
 
-        vbox.addItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        vbox.addItem(QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         self.setLayout(vbox)
 

@@ -190,7 +190,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
     def slotDefaultDiameter(self, var):
         """
         """
-        if self.lineEditDefaultDiameter.validator().state == QValidator.Acceptable:
+        if self.lineEditDefaultDiameter.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setInitialDiameter(self.currentid, value)
 
@@ -199,7 +199,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
     def slotMinDiameter(self, var):
         """
         """
-        if self.lineEditMinDiameter.validator().state == QValidator.Acceptable:
+        if self.lineEditMinDiameter.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMinDiameter(self.currentid, value)
 
@@ -208,7 +208,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
     def slotMaxDiameter(self, var):
         """
         """
-        if self.lineEditMaxDiameter.validator().state == QValidator.Acceptable:
+        if self.lineEditMaxDiameter.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
             self.mdl.setMaxDiameter(self.currentid, value)
 

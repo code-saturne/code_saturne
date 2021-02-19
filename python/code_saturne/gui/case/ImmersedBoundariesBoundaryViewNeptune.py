@@ -232,14 +232,9 @@ class ImmersedBoundariesBoundaryViewNeptune(QWidget, Ui_ImmersedBoundariesBounda
             self.model_vol.addItem(self.ibm.getObjectName(obj),
                                    self.ibm.getObjectBoundaryConditionNature(obj))
 
-        if QT_API == "PYQT4":
-            self.tableViewIBMBoundaryzone.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewIBMBoundaryzone.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            #self.tableViewIBMBoundaryzone.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewIBMBoundaryzone.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewIBMBoundaryzone.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            #self.tableViewIBMBoundaryzone.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tableViewIBMBoundaryzone.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewIBMBoundaryzone.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        #self.tableViewIBMBoundaryzone.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
         delegateBCType = BoundaryConditionNatureTypeDelegate(self.tableViewIBMBoundaryzone, self.ibm)
         self.tableViewIBMBoundaryzone.setItemDelegateForColumn(1, delegateBCType)

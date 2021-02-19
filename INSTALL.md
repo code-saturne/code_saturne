@@ -729,9 +729,9 @@ and the matching Python bindings must be available. On most modern
 Linux distributions, this is available through the package manager,
 which is by far the preferred solution.
 
-On systems on which both PyQt4 and Pyqt5 are available, PyQt5 will be selected
+On systems on which both PyQt6 and Pyqt5 are available, PyQt5 will be selected
 by default, but the selection may be forced by defining
-`QT_SELECT=4` or `QT_SELECT=5`.
+`QT_SELECT=6` or `QT_SELECT=5`.
 
 When running on a system which does
 not provide these libraries, there are several alternatives:

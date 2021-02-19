@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -195,12 +195,12 @@ class TreeModel(QAbstractItemModel):
         column = index.column()
 
         icons_path = os.path.join(get_cs_data_path(), 'icons', '22x22')
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             # return text for columns
             if column == 0:
                 return item.itemData[column]
 
-        elif role == Qt.DecorationRole:
+        elif role == Qt.ItemDataRole.DecorationRole:
             # return icon for first column
             if column == 0:
                 page_name = item.itemData[0]
@@ -210,59 +210,59 @@ class TreeModel(QAbstractItemModel):
 
                 if page_name == self.tr('Mesh'):
                     img_path = os.path.join(icons_path, 'cube_mesh.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Calculation features'):
                     img_path = os.path.join(icons_path, 'calculation_features.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 #                elif page_name == self.tr('Volume zones'):
 #                    img_path = ":/icons/22x22/volume_zones.png"
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Volume conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Immersed volume conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 #                elif page_name == self.tr('Boundary zones'):
-#                    img_path = ":/icons/22x22/boundary_conditions.png"
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+#                    img_path = os.path.join(icons_path, 'boundary_conditions.png')
+#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Boundary conditions'):
                     img_path = os.path.join(icons_path, 'cube_bc.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Immersed boundary conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Time settings'):
                     img_path = os.path.join(icons_path, 'time_stepping.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Numerical parameters'):
                     img_path = os.path.join(icons_path, 'numerical_params.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Postprocessing'):
                     img_path = os.path.join(icons_path, 'postprocessing.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == 'Closure modeling':
                     img_path = os.path.join(icons_path, 'closure_modeling.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Performance settings'):
                     img_path = os.path.join(icons_path, 'run_parameters.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 
                 elif item.itemType == "folder-new":
-                    icon = style.standardIcon(QStyle.SP_FileLinkIcon)
+                    icon = style.standardIcon(QStyle.StandardPixmap.SP_FileLinkIcon)
                 elif item.itemType == "folder-close":
-                    icon = style.standardIcon(QStyle.SP_FileIcon)
+                    icon = style.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
                 elif item.itemType == "folder-open":
-                    icon = style.standardIcon(QStyle.SP_FileIcon)
+                    icon = style.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
                 elif item.itemType == "file-open":
-                    icon = style.standardIcon(QStyle.SP_FileIcon)
+                    icon = style.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
                 elif item.itemType == "file-new":
-                    icon = style.standardIcon(QStyle.SP_FileLinkIcon)
+                    icon = style.standardIcon(QStyle.StandardPixmap.SP_FileLinkIcon)
                 if sys.platform.startswith("win"):
                     if item.itemType == "file-open":
-                        icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
+                        icon = style.standardIcon(QStyle.StandardPixmap.SP_ToolBarHorizontalExtensionButton)
                     elif item.itemType == "file-new":
-                        icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
+                        icon = style.standardIcon(QStyle.StandardPixmap.SP_ToolBarHorizontalExtensionButton)
 
                 return icon
 
@@ -275,9 +275,9 @@ class TreeModel(QAbstractItemModel):
         @param index: used to locate data in a data model
         """
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemDataRole.ItemIsEnabled
 
-        flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
         return flags
 
@@ -286,7 +286,7 @@ class TreeModel(QAbstractItemModel):
 
         @return: C{QVariant}
         """
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.ItemDataRole.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.rootItem.data(section)
 
         return None
@@ -372,7 +372,7 @@ class TreeModel(QAbstractItemModel):
                 pass
             v = self.data(index, role)
 
-            if flags == Qt.MatchExactly:
+            if flags == Qt.MatchFlag.MatchExactly:
                 if value == v:
                     result.append(index)
             else:
@@ -384,12 +384,12 @@ class TreeModel(QAbstractItemModel):
 
         return result
 
-    def itemLocalization(self, data, role=Qt.DisplayRole):
+    def itemLocalization(self, data, role=Qt.ItemDataRole.DisplayRole):
         info = []
         search_item = from_qvariant(data, to_text_string)
 
         start = self.index(0, 0, QModelIndex())
-        indexList = self.match(start, role, search_item, -1, Qt.MatchExactly)
+        indexList = self.match(start, role, search_item, -1, Qt.MatchFlag.MatchExactly)
 
         for index in indexList:
             item = index.internalPointer()
@@ -405,7 +405,7 @@ class TreeModel(QAbstractItemModel):
         nb_items = len(self.getItem(parent).childItems)
         self.insertRows(nb_items, 1, parent)
         last_index = self.index(nb_items, 0, parent)
-        self.setData(last_index, value, role=Qt.EditRole)
+        self.setData(last_index, value, role=Qt.ItemDataRole.EditRole)
         return
 
     def insertRows(self, position, rows, parent=QModelIndex()):
@@ -422,8 +422,8 @@ class TreeModel(QAbstractItemModel):
         self.endRemoveRows()
         return success
 
-    def setData(self, index, value, role=Qt.EditRole):
-        if role != Qt.EditRole:
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+        if role != Qt.ItemDataRole.EditRole:
             return False
         item = self.getItem(index)
         result = item.setData(index.column(), value)
@@ -463,13 +463,13 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.treeView.setModel(self.model)
         self.treeView.header().hide()
         self.treeView.setAnimated(True)
-        self.treeView.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.treeView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.treeView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.treeView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.treeView.setAlternatingRowColors(True)
         self.treeView.setWindowTitle("Simple Tree Model")
 
         # Popup menu
-        self.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.treeView.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.treeView.customContextMenuRequested[QPoint].connect(self.displayPopup)
 
         # Receive change in selection
@@ -651,7 +651,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         if index != None:
             self.treeView.selectionModel().select(index,
-                                                  QItemSelectionModel.SelectCurrent)
+                                                  QItemSelectionModel.SelectionFlag.SelectionFlag.SelectionFlag.SelectCurrent)
 
         return
 

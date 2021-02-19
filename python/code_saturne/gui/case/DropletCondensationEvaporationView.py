@@ -133,7 +133,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
         """
         Update the Yplus value
         """
-        if self.lineEditYPlus.validator().state == QValidator.Acceptable:
+        if self.lineEditYPlus.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.mdl.setYPlusValue(value)
 

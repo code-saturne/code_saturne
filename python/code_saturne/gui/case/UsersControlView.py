@@ -100,7 +100,7 @@ class NameDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_pname = str(editor.text())
 
             if new_pname in model.mdl.getUserNamesList():
@@ -345,18 +345,13 @@ class UsersControlView(QWidget, Ui_UsersControl):
 
         self.tableModelUsers = StandardItemModelUsersControl(self, self.mdl)
         self.tableViewUsers.setModel(self.tableModelUsers)
-        if QT_API == "PYQT4":
-            self.tableViewUsers.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-            self.tableViewUsers.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
-            self.tableViewUsers.horizontalHeader().setResizeMode(2,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewUsers.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-            self.tableViewUsers.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
-            self.tableViewUsers.horizontalHeader().setSectionResizeMode(2,QHeaderView.Stretch)
+        self.tableViewUsers.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewUsers.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
+        self.tableViewUsers.horizontalHeader().setSectionResizeMode(2,QHeaderView.ResizeMode.Stretch)
         self.tableViewUsers.resizeColumnsToContents()
         self.tableViewUsers.resizeRowsToContents()
-        self.tableViewUsers.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewUsers.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewUsers.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewUsers.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateName     = NameDelegate(self.tableViewUsers)
         delegateLocation = LocationDelegate(self.tableViewUsers)

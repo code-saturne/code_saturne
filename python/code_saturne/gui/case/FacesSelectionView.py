@@ -154,7 +154,7 @@ class FractionPlaneDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.DisplayRole)
 
@@ -332,12 +332,8 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         self.tableView.setModel(self.modelFaces)
 
-        if QT_API == "PYQT4":
-            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        elif QT_API == "PYQT5":
-            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.tableView.horizontalHeader().setStretchLastSection(True)
 
         delegateFraction = FractionPlaneDelegate(self.tableView)
@@ -353,8 +349,8 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
         delegateSelector = LineEditDelegateSelector(self.tableView)
         self.tableView.setItemDelegateForColumn(4, delegateSelector)
 
-        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         # Connections
 

@@ -42,31 +42,13 @@ if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
 #-------------------------------------------------------------------------------
 
 try:
-    import sip
-    for api in ('QDate', 'QDateTime', 'QString', 'QTextStream',
-                'QTime', 'QUrl', 'QVariant'):
-        sip.setapi(api, 2)
-except Exception:
-    pass
-
-try:
     from code_saturne.gui.base.QtCore    import *
     from code_saturne.gui.base.QtGui     import *
     from code_saturne.gui.base.QtWidgets import *
 except ImportError:
     print("\n  Error: Unable to import QtCore or QtGui modules.")
-    print("  Please check your PyQt4 or PyQt5 installation.\n")
+    print("  Please check your PyQt5 or PyQt6 installation.\n")
     sys.exit(0)
-
-
-if list(map(int, QT_VERSION_STR.split( "."))) < [4, 3, 0]:
-    raise SystemExit("Graphical user interface requires Qt 4.3 or later "\
-                     "(found %s)." % QT_VERSION_STR)
-
-
-if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
-    raise SystemExit("Graphical user interface requires PyQt 4.3 or later "\
-                     "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -137,7 +119,7 @@ def main(argv, pkg):
     locale = QLocale.system().name()
     translator = QTranslator(app)
     if translator.load("qt_" + locale,
-                       QLibraryInfo.location(QLibraryInfo.TranslationsPath)):
+                       QLibraryInfo.location(QLibraryInfo.LibraryPath.TranslationsPath)):
         app.installTranslator(translator)
 
     from code_saturne.gui.studymanager_gui.MainView import MainView

@@ -103,7 +103,7 @@ class LabelDelegate(QItemDelegate):
         if not editor.isModified():
             return
 
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             new_plabel = str(editor.text())
 
             if new_plabel in model.mdl.getNonCondensableLabelList():
@@ -235,7 +235,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if not editor.isModified():
             return
-        if editor.validator().state == QValidator.Acceptable:
+        if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
@@ -431,14 +431,10 @@ class NonCondensableView(QWidget, Ui_NonCondensable):
         self.tableViewNonCondensable.setModel(self.tableModelNonCondensable)
         self.tableViewNonCondensable.resizeColumnsToContents()
         self.tableViewNonCondensable.resizeRowsToContents()
-        if QT_API == "PYQT4":
-            self.tableViewNonCondensable.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewNonCondensable.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewNonCondensable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewNonCondensable.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.tableViewNonCondensable.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableViewNonCondensable.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableViewNonCondensable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.tableViewNonCondensable.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.tableViewNonCondensable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableViewNonCondensable.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
         delegateLabel  = LabelDelegate(self.tableViewNonCondensable)
         delegateType   = TypeDelegate(self.tableViewNonCondensable)

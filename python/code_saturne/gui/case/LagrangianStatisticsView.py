@@ -378,13 +378,10 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
         self.tableViewVolumicNames.setModel(self.modelVolumicNames)
         self.tableViewVolumicNames.setAlternatingRowColors(True)
-        self.tableViewVolumicNames.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewVolumicNames.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewVolumicNames.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewVolumicNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewVolumicNames.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewVolumicNames.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewVolumicNames.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewVolumicNames.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewVolumicNames.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
 
     def _initBoundariesNames(self):
@@ -395,13 +392,10 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
         self.tableViewBoundariesNames.setModel(self.modelBoundariesNames)
         self.tableViewBoundariesNames.setAlternatingRowColors(True)
-        self.tableViewBoundariesNames.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewBoundariesNames.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewBoundariesNames.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewBoundariesNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewBoundariesNames.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableViewBoundariesNames.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.tableViewBoundariesNames.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableViewBoundariesNames.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.tableViewBoundariesNames.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
 
     @pyqtSlot()
@@ -421,7 +415,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NBCLST.
         """
-        if self.lineEditNBCLST.validator().state == QValidator.Acceptable:
+        if self.lineEditNBCLST.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, int)
             self.model.setGroupOfParticlesValue(value)
 
@@ -447,7 +441,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input IDSTNT.
         """
-        if self.lineEditIDSTNT.validator().state == QValidator.Acceptable:
+        if self.lineEditIDSTNT.validator().state == QValidator.State.Acceptable:
             text = self.lineEditIDSTNT.text()
             value = from_qvariant(text, int)
             valnds =  self.model.getIterSteadyStart()
@@ -467,7 +461,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NSTIST.
         """
-        if self.lineEditNSTIST.validator().state == QValidator.Acceptable:
+        if self.lineEditNSTIST.validator().state == QValidator.State.Acceptable:
             text = self.lineEditNSTIST.text()
             value = from_qvariant(text, int)
             valids =  self.model.getIterationStart()
@@ -487,7 +481,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input SEUIL.
         """
-        if self.lineEditSEUIL.validator().state == QValidator.Acceptable:
+        if self.lineEditSEUIL.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
             self.model.setThresholdValue(value)
 
@@ -514,7 +508,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NSTBOR.
         """
-        if self.lineEditNSTBOR.validator().state == QValidator.Acceptable:
+        if self.lineEditNSTBOR.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, int)
             self.model.setIterationStartBoundary(value)
 
