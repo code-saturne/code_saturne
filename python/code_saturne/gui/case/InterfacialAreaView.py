@@ -152,7 +152,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field
@@ -167,7 +167,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.modelSourceTerm.disableItem(0)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotModel(self, text):
         """
         INPUT type for choice of model
@@ -177,7 +177,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.initializeVariables(self.currentid)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSourceTerm(self, text):
         """
         INPUT type for choice of model source term
@@ -186,7 +186,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.mdl.setSourceTerm(self.currentid, model)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDefaultDiameter(self, var):
         """
         """
@@ -195,7 +195,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setInitialDiameter(self.currentid, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMinDiameter(self, var):
         """
         """
@@ -204,7 +204,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setMinDiameter(self.currentid, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaxDiameter(self, var):
         """
         """

@@ -243,7 +243,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         else:
             self.groupBoxDefinition.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field
@@ -321,7 +321,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonScalar.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurbulenceModel(self, text):
         """
         INPUT label for choice of turbulence model
@@ -344,7 +344,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonTurbulence.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotEnergyModel(self, text):
         """
         INPUT label for choice of energy model
@@ -370,7 +370,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonEnergy.setStyleSheet("background-color: None")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNonCondensableType(self, text):
         """
         INPUT label for choice of non condensable model
@@ -385,7 +385,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonNonCondensable.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotScalarName(self, text):
         """
         INPUT label for choice of scalar
@@ -400,7 +400,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonScalar.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVelocity(self):
         """
         Formula for velocity
@@ -433,7 +433,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonVelocity.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFraction(self):
         """
         Formula for fraction
@@ -468,7 +468,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(result)
 
-    @pyqtSlot()
+    @Slot()
     def slotTurbulence(self):
         """
         Formula for turbulence
@@ -553,7 +553,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonTurbulence.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotEnergy(self):
         """
         Formula for energy
@@ -599,7 +599,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonEnergy.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPressure(self):
         """
         Formula for pressure
@@ -635,7 +635,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             self.pushButtonPressure.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotNonCondensable(self):
         """
         Formula for non condensable
@@ -668,7 +668,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             self.pushButtonNonCondensable.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotScalar(self):
         """
         Formula for species

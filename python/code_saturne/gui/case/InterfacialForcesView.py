@@ -284,7 +284,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.tableViewInteractions.resizeRowsToContents()
         self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectInteraction(self, index):
         if not(index.isValid()):
             self.groupBoxContinuousMomentumTransfer.hide()
@@ -311,7 +311,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         elif predefined_flow == "multiregime":
             self.lockMultiregimeFlowOptions()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotContinuousMomentumTransfer(self, text):
         """
         configure momentum transfer for continuous phases
@@ -321,44 +321,44 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
         self.mdl.setContinuousCouplingModel(self.field_id_a, self.field_id_b, value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotInterfaceSharpening(self, text):
         model = self.modelInterfaceSharpening.dicoV2M[text]
         log.debug("slotInterfaceSharpening -> %s" % model)
         self.mdl.setInterfaceSharpeningModel(self.field_id_a, self.field_id_b, model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSurfaceTensionModel(self, text):
         model = self.modelSurfaceTension.dicoV2M[text]
         log.debug("slotSurfaceTension -> %s" % model)
         self.mdl.setSurfaceTensionModel(self.field_id_a, self.field_id_b, model)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDispersedDrag(self, text):
         model = self.modelDispersedDrag.dicoV2M[text]
         log.debug("slotDispersedDrag -> %s" % model)
         self.mdl.setDragModel(self.field_id_a, self.field_id_b, model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLift(self, text):
         model = self.modelLift.dicoV2M[text]
         log.debug("slotLift -> %s" % model)
         self.mdl.setLiftModel(self.field_id_a, self.field_id_b, model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAddedMass(self, text):
         model = self.modelAddedMass.dicoV2M[text]
         log.debug("slotAddedMass -> %s" % model)
         self.mdl.setAddMassModel(self.field_id_a, self.field_id_b, model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurbulenceDispersion(self, text):
         model = self.modelTurbulenceDispersion.dicoV2M[text]
         log.debug("slotTurbulenceDispersion -> %s" % model)
         self.mdl.setTurbDispModel(self.field_id_a, self.field_id_b, model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWallForce(self, text):
         model = self.modelWallForce.dicoV2M[text]
         log.debug("slotWallForce -> %s" % model)

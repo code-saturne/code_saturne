@@ -161,7 +161,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceVelocity(self, text):
         """
         Private slot.
@@ -206,7 +206,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.labelUnitVelocity.setText(str('kg/s'))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityValue(self, text):
         """
         Private slot.
@@ -221,7 +221,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setVelocity(self.__currentField, v)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotVelocityFormula(self):
         """
         """
@@ -273,7 +273,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
@@ -297,7 +297,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotDirectionFormula(self):
         """
         """

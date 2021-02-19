@@ -161,7 +161,7 @@ class SolidView(QWidget, Ui_Solid):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field
@@ -170,7 +170,7 @@ class SolidView(QWidget, Ui_Solid):
         self.initializeVariables(self.currentid)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFriction(self, text):
         """
         INPUT type for choice of friction model
@@ -179,7 +179,7 @@ class SolidView(QWidget, Ui_Solid):
         self.mdl.setFrictionModel(self.currentid, model)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGranular(self, text):
         """
         INPUT type for choice of granular model
@@ -188,7 +188,7 @@ class SolidView(QWidget, Ui_Solid):
         self.mdl.setGranularModel(self.currentid, model)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotKinetic(self, text):
         """
         INPUT type for choice of kinetic model
@@ -197,7 +197,7 @@ class SolidView(QWidget, Ui_Solid):
         self.mdl.setKineticModel(self.currentid, model)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCompaction(self, var):
         """
         """
@@ -206,7 +206,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setCompaction(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFrictionalThreshold(self, var):
         """
         Setter slot.
@@ -216,7 +216,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setMinFrictionalThreshold(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSetElasticity(self, var):
         """
         Set elasiticity coefficient
@@ -250,7 +250,7 @@ class SolidView(QWidget, Ui_Solid):
         self.modelKinetic.setItem(str_model = model)
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotCoupling(self, checked):
         """
         check box for polydispersed coupling

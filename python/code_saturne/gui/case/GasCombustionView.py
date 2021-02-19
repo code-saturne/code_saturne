@@ -84,7 +84,7 @@ class NameDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_pname = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -140,7 +140,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_pname = ""
         rx = "[chonslCHONSL()][CHONSLchonsl()0-9]{0," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -440,7 +440,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         validatorMaximumTemp  = DoubleValidator(self.lineEditMaximumTemp, min=273.0)
         validatorMinimumTemp  = DoubleValidator(self.lineEditMinimumTemp, min=273.0)
         rx = "[chonlCHONL()][CHONLchonl()0-9]{0," + str(LABEL_LENGTH_MAX-1) + "}"
-        validatorFuel         = RegExpValidator(self.lineEditFuel,QRegExp(rx))
+        validatorFuel         = RegExpValidator(self.lineEditFuel,QRegularExpression(rx))
         validatorO2  = DoubleValidator(self.lineEditO2, min=1e-12, max=1.0)
         validatorN2  = DoubleValidator(self.lineEditN2, min=0.0, max=1.0)
         validatorCOyield  = DoubleValidator(self.lineEditCOyield, min=0.0)
@@ -532,7 +532,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGasCombustionOption(self, text):
         """
         Private slot.
@@ -542,7 +542,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.mdl.setGasCombustionOption(option)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotSearchThermochemistryData(self):
         """
         Select a properties file of data for electric arc
@@ -566,7 +566,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.mdl.setThermoChemistryDataFileName(file)
             self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
 
-    @pyqtSlot()
+    @Slot()
     def slotCreateJanafFile(self):
         """
         Determine if the Thermochemistry file is created with the GUI.
@@ -588,7 +588,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.groupBoxGenerateDataFile.hide()
             self.groupBoxAutomatic.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotUserChoice(self):
         """
         """
@@ -613,7 +613,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
                 data = self.modelSpecies.getItem(row)
                 self.thermodata.updateSpecies(data)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNbPointsTabu(self, text):
         """
         Input Number of points for the tabulation (ENTH-TEMP)
@@ -622,7 +622,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             NbPointsTabu = from_qvariant(text, int)
             self.thermodata.setNbPointsTabu(NbPointsTabu)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaximumTemp(self, text):
         """
         Input Maximum temperature for the tabulation (ENTH-TEMP)
@@ -631,7 +631,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             MaximumTemp = from_qvariant(text, float)
             self.thermodata.setMaximumTemp(MaximumTemp)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMinimumTemp(self, text):
         """
         Input Minimum temperature for the tabulation (ENTH-TEMP)
@@ -640,7 +640,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             MinimumTemp = from_qvariant(text, float)
             self.thermodata.setMinimumTemp(MinimumTemp)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFuel(self, text):
         """
         Input the chemical formula for the Fuel
@@ -649,7 +649,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             ChemicalFormula = from_qvariant(text, to_text_string)
             self.thermodata.setChemicalFormulaFuel(ChemicalFormula)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVolPropO2(self, text):
         """
         Input volume proportion for O2
@@ -659,7 +659,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.thermodata.setVolPropO2(VolPropO2)
             self.lineEditN2.setText(str(round(1.0 - VolPropO2,12)))
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVolPropN2(self, text):
         """
         Input volume proportion for N2
@@ -669,7 +669,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.thermodata.setVolPropN2(VolPropN2)
             self.lineEditO2.setText(str(round(1.0 - VolPropN2,12)))
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCOyield(self, text):
         """
         Input the CO yield
@@ -678,7 +678,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             COyield = from_qvariant(text, float)
             self.thermodata.setCOyield(COyield)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCSyield(self, text):
         """
         Input the CS yield
@@ -687,7 +687,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             CSyield = from_qvariant(text, float)
             self.thermodata.setCSyield(CSyield)
 
-    @pyqtSlot()
+    @Slot()
     def slotAddSpecies(self):
         """
         Add a new item in the table when the 'Create' button is pushed.
@@ -695,7 +695,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.tableViewSpecies.clearSelection()
         self.modelSpecies.newItem()
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteSpecies(self):
         """
         Just delete the current selected entries from the table and
@@ -716,7 +716,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
 
         self.tableViewSpecies.clearSelection()
 
-    @pyqtSlot()
+    @Slot()
     def slotGenerateJanafFile(self):
         """
         Generate the Thermochemistry file.
@@ -742,7 +742,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot("QModelIndex, QModelIndex")
+    @Slot("QModelIndex, QModelIndex")
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableViewSpecies.resizeRowToContents(row)

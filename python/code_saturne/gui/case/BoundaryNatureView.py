@@ -259,7 +259,7 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         """
         current = self.tableView.currentIndex()
 
-    @pyqtSlot()
+    @Slot()
     def slotContextMenu(self):
         """
         Public slot
@@ -293,7 +293,7 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         for col in range(topLeft.column(), bottomRight.column() + 1):
             self.tableView.resizeColumnToContents(col)
 
-    @pyqtSlot()
+    @Slot()
     def slotSelectBoundaries(self):
         """
         Public slot.

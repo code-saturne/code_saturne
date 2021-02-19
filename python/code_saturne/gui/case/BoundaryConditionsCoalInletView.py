@@ -448,7 +448,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__modelCoalMass.setRatio(self.__ratio)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceVelocity(self, text):
         """
         Private slot.
@@ -495,7 +495,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityValue(self, text):
         """
         Private slot.
@@ -510,7 +510,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setVelocity(v)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotVelocityFormula(self):
         """
         """
@@ -558,7 +558,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
@@ -592,7 +592,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirX(self, text):
         """
         INPUT value into direction of inlet flow
@@ -602,7 +602,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_x', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirY(self, text):
         """
         INPUT value into direction of inlet flow
@@ -612,7 +612,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_y', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirZ(self, text):
         """
         INPUT value into direction of inlet flow
@@ -622,7 +622,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_z', value)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotDirectionFormula(self):
         """
         """
@@ -664,7 +664,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotInletType(self, text):
         """
         INPUT inlet type : 'oxydant' or 'oxydant + coal'
@@ -683,14 +683,14 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__updateTables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTemperature(self, text):
         if self.sender().validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setOxydantTemperature(t)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def __slotOxydantNumber(self, i):
         self.__boundary.setOxydantNumber(i)
 

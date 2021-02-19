@@ -236,7 +236,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.lineEditNbPoint.setValidator(validatorNbPoint)
 
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        validatorBaseName =  RegExpValidator(self.lineEditBaseName, QRegExp(rx))
+        validatorBaseName =  RegExpValidator(self.lineEditBaseName, QRegularExpression(rx))
         self.lineEditBaseName.setValidator(validatorBaseName)
 
         #update list of variables, properties, scalars ...
@@ -266,7 +266,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             default['label'] = label
             default['list'] = self.mdl.getProfilesLabelsList()
             rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-            default['regexp'] = QRegExp(rx)
+            default['regexp'] = QRegularExpression(rx)
             from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
             if dialog.exec_():
@@ -277,7 +277,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         return label
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFrequencyType(self, text):
         """
         Input choice for frequency for profile.
@@ -312,7 +312,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.mdl.setOutputFrequency(self.label_select, nfreq)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFormatType(self, text):
         """
         Input choice for frequency for profile.
@@ -337,7 +337,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelProfile.addItem(label, " ; ".join(lst))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddProfile(self):
         """
         Set in view label and variables to see on profile
@@ -348,7 +348,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.__eraseEntries()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteProfile(self):
         """
         Delete the profile from the list (one by one).
@@ -366,7 +366,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.__eraseEntries()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectProfile(self, index):
         """
         Return the selected item from the list.
@@ -426,7 +426,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.pushButtonFormula.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddVarProfile(self):
         """
         Add a new var from list to profile
@@ -445,7 +445,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteVarProfile(self):
         """
         Supress a var from profile
@@ -469,7 +469,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.treeViewProfile.clearSelection()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormula(self):
         """
         """
@@ -509,7 +509,7 @@ z = z1*s + z0*(1.-s);"""
             self.pushButtonFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotBaseName(self, text):
         """
         """
@@ -524,7 +524,7 @@ z = z1*s + z0*(1.-s);"""
                 self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFrequence(self, text):
         """
         """
@@ -532,7 +532,7 @@ z = z1*s + z0*(1.-s);"""
             self.mdl.setOutputFrequency(self.label_select, int(text))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFrequenceTime(self, text):
         """
         """
@@ -540,7 +540,7 @@ z = z1*s + z0*(1.-s);"""
             self.mdl.setOutputFrequency(self.label_select, float(text))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNbPoint(self, text):
         """
         """
@@ -548,7 +548,7 @@ z = z1*s + z0*(1.-s);"""
             self.mdl.setNbPoint(self.label_select, int(text))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSnapToCenter(self):
         """
         """
@@ -557,7 +557,7 @@ z = z1*s + z0*(1.-s);"""
         else:
             self.mdl.setSnapMode(self.label_select, "none")
 
-    @pyqtSlot()
+    @Slot()
     def slotActivateInterpolation(self):
         """
         """

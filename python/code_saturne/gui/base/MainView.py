@@ -155,7 +155,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.pushButtonCopyFrom.clicked.connect(self.slotCopyFromCase)
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotParentDirectory(self, index):
         if index.row() == 1 and index.column() == 0:
             # ".." change directory
@@ -187,13 +187,13 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.modelFolder.setStringList(lst)
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectFolder(self, index):
         if index.row() > 1:
             self.lineEditCaseName.setText(str(self.model.fileName(index)))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotChangeDirectory(self, text):
         """
         change directory
@@ -204,7 +204,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotChangeName(self, text):
         """
         change case name
@@ -212,7 +212,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.caseName = str(text)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPostStatus(self):
         if self.checkBoxPost.isChecked():
             self.createPost = True
@@ -220,7 +220,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.createPost = False
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeshStatus(self):
         if self.checkBoxMesh.isChecked():
             self.createMesh = True
@@ -228,7 +228,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.createMesh = False
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCopyFromStatus(self):
         if self.checkBoxCopyFrom.isChecked():
             self.copyFrom = True
@@ -240,7 +240,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.pushButtonCopyFrom.setEnabled(False)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCopyFromCase(self):
         title = self.tr("Choose an existing case")
 
@@ -259,7 +259,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.pushButtonCopyFrom.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def accept(self):
         """
         Method called when user clicks 'OK'
@@ -347,10 +347,14 @@ class MainView(object):
         self.dockWidgetBrowser.setWidget(self.Browser)
 
         self.scrollArea = QScrollArea(self.frame)
-        self.gridlayout1.addWidget(self.scrollArea,0,0,1,1)
-        #self.gridlayout1.setMargin(0)
-        self.gridlayout1.setSpacing(0)
-        self.gridlayout.addWidget(self.frame,0,0,1,1)
+        if hasattr(self, 'gridlayout1'):
+            self.gridlayout1.addWidget(self.scrollArea,0,0,1,1)
+            self.gridlayout1.setSpacing(0)
+            self.gridlayout.addWidget(self.frame,0,0,1,1)
+        else:
+            self.gridLayout1.addWidget(self.scrollArea,0,0,1,1)
+            self.gridLayout1.setSpacing(0)
+            self.gridLayout.addWidget(self.frame,0,0,1,1)
 
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setFrameShape(QFrame.Shape.StyledPanel)
@@ -1343,7 +1347,7 @@ class MainView(object):
         self.updateTitleBar()
 
 
-    @pyqtSlot()
+    @Slot()
     def jobFileSave(self):
         """
         public slot

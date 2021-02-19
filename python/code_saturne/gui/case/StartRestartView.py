@@ -143,7 +143,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFreq(self, text):
         """
         Creation of popup window's widgets
@@ -172,7 +172,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
             self.lineEditNSUIT.setEnabled(True)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNsuit(self, text):
         if self.lineEditNSUIT.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
@@ -351,7 +351,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.__comboModelMesh.setItem(str_model=v)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchRestartDirectory(self):
         """
         Search restart file (directory) in list of directories
@@ -401,7 +401,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotStartRestart(self):
         """
         Handle restart.
@@ -441,7 +441,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.updateRestartTimes()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRestartMesh(self, text):
         """
         Define restart mesh behavior.
@@ -453,7 +453,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.model.setRestartMeshBehavior(v)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFrozenField(self):
         """
         Input if calculation on frozen velocity and pressure fields or not
@@ -464,7 +464,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.model.setFrozenField('off')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications

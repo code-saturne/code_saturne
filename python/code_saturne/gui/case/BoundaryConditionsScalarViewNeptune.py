@@ -180,7 +180,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceScalar(self, text):
         """
         INPUT choice of non condensable
@@ -200,7 +200,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.updateWidget()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotScalarTypeChoice(self, text):
         """
         INPUT Condition type choice for scalar
@@ -213,7 +213,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
 
         self.updateWidget()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotScalar(self, text):
         """
         INPUT non condensable value
@@ -225,7 +225,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
             self.__boundary.setScalarValue(_f_id, _sname, value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotScalarFormula(self):
         """
         """

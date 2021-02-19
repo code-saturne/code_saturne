@@ -130,7 +130,7 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotFraction(self, text):
         """
         INPUT fraction value
@@ -140,7 +140,7 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
             self.__boundary.setFraction(self.__currentField, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceFraction(self, text):
         """
         INPUT choice of method of calculation of fraction for outlet

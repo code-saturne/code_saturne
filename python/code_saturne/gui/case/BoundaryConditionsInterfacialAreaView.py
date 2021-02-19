@@ -125,7 +125,7 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDiameter(self, text):
         """
         INPUT fraction value

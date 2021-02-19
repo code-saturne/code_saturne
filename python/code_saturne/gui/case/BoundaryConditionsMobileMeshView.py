@@ -179,7 +179,7 @@ class LineEditCoupling(Coupling):
     # as it is slightly faster and uses less memory, but is causes a crash
     # with PyQt5 (not PyQt4) when connecting to a signal from another class.
 
-    # @pyqtSlot(str)
+    # @Slot(str)
     def __slotTextChanged(self, text):
         """
         Update the model
@@ -229,7 +229,7 @@ class FormulaCoupling(Coupling):
 
     # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    # @pyqtSlot(bool)
+    # @Slot(bool)
     def __slotFormula(self, checked):
         """
         Run formula editor.
@@ -470,7 +470,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
 
         self.case.undoStartGlobal()
 
-    @pyqtSlot()
+    @Slot()
     def __slotFormula(self):
         """
         Run formula editor.
@@ -524,7 +524,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
             self.pushButtonMobilBoundary.setToolTip(result)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotExtSolverType(self, text):
         """
         Input External solver : code_aster or user.
@@ -536,7 +536,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
 
         self.__boundary.setALEExtSolver(solver)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotCombo(self, text):
         """
         Called when the combobox changed.

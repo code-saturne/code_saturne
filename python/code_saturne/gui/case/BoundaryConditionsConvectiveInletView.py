@@ -133,7 +133,7 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
         self.hide()
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotConvectiveInlet(self, checked):
         """
         Private slot.

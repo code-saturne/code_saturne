@@ -118,7 +118,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         self.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotHeadLossesFormula(self):
         """
         """

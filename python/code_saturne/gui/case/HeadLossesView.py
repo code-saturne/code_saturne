@@ -169,7 +169,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.groupBox_3.setChecked(False)
         self.groupBox_3.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotKxx(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -177,7 +177,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kxx', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotKyy(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -185,7 +185,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kyy', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotKzz(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -193,7 +193,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setCoefficient(zone_id, 'kzz', value)
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotTransfoMatrix(self, checked):
         self.groupBox_3.setFlat(not checked)
         zone_id = self.zone.getCodeNumber()
@@ -219,7 +219,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.lineEdit_a32.setText(str(a32))
         self.lineEdit_a33.setText(str(a33))
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA11(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -227,7 +227,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a11', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA12(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -235,7 +235,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a12', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA13(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -243,7 +243,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a13', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA21(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -251,7 +251,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a21', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA22(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -259,7 +259,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a22', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA23(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -267,7 +267,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a23', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA31(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -275,7 +275,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a31', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA32(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)
@@ -283,7 +283,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value = from_qvariant(text, float)
             model.setMatrixComponent(zone_id, 'a32', value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotA33(self, text):
         zone_id = self.zone.getCodeNumber()
         model = HeadLossesModel(self.case)

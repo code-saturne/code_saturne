@@ -78,7 +78,7 @@ class LabelDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -638,7 +638,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.treeViewOutput.expandAll()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCorrectionEstimator(self, text):
         """
         Private slot.
@@ -651,7 +651,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDriftEstimator(self, text):
         """
         Private slot.
@@ -664,7 +664,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPredictionEstimator(self, text):
         """
         Private slot.
@@ -677,7 +677,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTotalEstimator(self, text):
         """
         Private slot.

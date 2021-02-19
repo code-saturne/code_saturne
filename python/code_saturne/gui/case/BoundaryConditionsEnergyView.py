@@ -230,7 +230,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.labelEnergy.setText(bc_energy_units.get(energyChoice,''))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceEnergy(self, text):
         """
         INPUT choice of method of calculation of the energy
@@ -276,7 +276,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         self.__setSubWidgetsStatus(energy_choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotEnergy(self, text):
         """
         INPUT energy value
@@ -286,7 +286,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.__boundary.setEnthalpy(self.__currentField, value)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotEnergySyrthes(self):
         """
         Input syrthes instance name
@@ -308,7 +308,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.__boundary.setEnthalpy(self.__currentField, value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         """
         """

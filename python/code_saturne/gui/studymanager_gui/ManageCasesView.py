@@ -180,7 +180,7 @@ class LabelDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}|^$"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -212,7 +212,7 @@ class TagsDelegate(LabelDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "[\-_,A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}|^$"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -235,7 +235,7 @@ class ExpTimeDelegate(LabelDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "^([0-3]?[0-9]|4[0-8]):[0-5][0-9]$"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -258,7 +258,7 @@ class NProcsDelegate(LabelDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "^([0-2]?[0-9]?[0-9])$"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -1072,7 +1072,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
                     self.listInput.addItem(str(name))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCompareStatus(self):
         """
         """
@@ -1085,7 +1085,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             self.mdl.setCompareStatus(study, idx, "off")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNotebookArgs(self, text):
         """
         """
@@ -1096,7 +1096,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.setNotebookArgs(study, idx, args)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotParametricArgs(self, text):
         """
         """
@@ -1107,7 +1107,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.setParametricArgs(study, idx, args)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotKwArgs(self, text):
         """
         """
@@ -1118,7 +1118,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.setKwArgs(study, idx, args)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCompareArgs(self, text):
         """
         """
@@ -1129,7 +1129,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.setCompareArgs(study, idx, args)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPostArgs(self, text):
         """
         """

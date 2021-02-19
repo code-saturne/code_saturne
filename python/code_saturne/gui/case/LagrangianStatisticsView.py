@@ -398,7 +398,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.tableViewBoundariesNames.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotISUIST(self):
         """
         Input ISUIST.
@@ -410,7 +410,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.model.setRestartStatisticsStatus(status)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNBCLST(self, text):
         """
         Input NBCLST.
@@ -419,7 +419,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             value = from_qvariant(text, int)
             self.model.setGroupOfParticlesValue(value)
 
-    @pyqtSlot()
+    @Slot()
     def slotISTALA(self):
         """
         Input ISTALA.
@@ -436,7 +436,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
                 del self.modelVolumicNames
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIDSTNT(self):
         """
         Input IDSTNT.
@@ -456,7 +456,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterationStart(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotNSTIST(self):
         """
         Input NSTIST.
@@ -476,7 +476,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterSteadyStart(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSEUIL(self, text):
         """
         Input SEUIL.
@@ -486,7 +486,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setThresholdValue(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIENSI3(self):
         """
         Input IENSI3.
@@ -503,7 +503,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
                 del self.modelBoundariesNames
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNSTBOR(self, text):
         """
         Input NSTBOR.

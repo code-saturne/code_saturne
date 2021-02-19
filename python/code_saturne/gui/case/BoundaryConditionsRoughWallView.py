@@ -126,7 +126,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         self.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotRoughness(self):
         """
         Private slot.
@@ -144,7 +144,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
             self.lineEditRoughCoef.setText(str(r))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotRoughnessHeight(self, text):
         """
         Private slot.

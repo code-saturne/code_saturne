@@ -376,7 +376,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.lineEditStop.setText(str(value))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimePassing(self, text):
         """
         Input IDTVAR.
@@ -388,7 +388,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.__setTimePassingDisplay(idtvar)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStopCritModel(self, text):
         """
         Select stop criterion model
@@ -411,7 +411,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.__setStopCritDisplay()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStopCritValue(self, text):
         """
         Input stop criterion
@@ -429,7 +429,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
                 self.mdl.setStopCriterion(model, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeStep(self, text):
         """
         Input DTREF.
@@ -439,7 +439,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setTimeStep(time_step)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNTERUP(self,text):
         """
         Set value for parameterNTERUP
@@ -456,7 +456,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         log.debug("slotNTERUP-> %s" % NTERUP)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotNTERUP2(self, var):
         """
         Set value for velocity-pressure parameter sweep number
@@ -465,7 +465,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         log.debug("slotNTERUP2-> %s" % var)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRelaxCoef(self, text):
         """
         Input relaxation coefficient.
@@ -475,7 +475,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setRelaxCoefficient(relax_coef)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOptionCOUMAX(self, text):
         """
         Input COUMAX.
@@ -485,7 +485,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('max_courant_num', courant_max)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOptionFOUMAX(self, text):
         """
         Input FOUMAX.
@@ -495,7 +495,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('max_fourier_num', fourier_max)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOptionCDTMIN(self, text):
         """
         Input CDTMIN.
@@ -505,7 +505,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOptionCDTMAX(self, text):
         """
         Input CDTMAX.
@@ -515,7 +515,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOptionVARRDT(self, text):
         """
         Input VARRDT.
@@ -525,7 +525,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_var', time_step_var)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalTimeStep(self):
         """
         Input IPTLRO.

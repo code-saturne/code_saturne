@@ -302,7 +302,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.tableViewCourantFourier.resizeColumnToContents(col)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeStepOption(self, text):
         """
         INPUT time option
@@ -312,7 +312,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeStop(self, text):
         """
         INPUT time stop option
@@ -332,7 +332,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.lineEditTimeAnalysis.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotReferenceTimeStep(self, var):
         """
         """
@@ -341,7 +341,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStep(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNumberTimeStep(self, var):
         """
         """
@@ -350,7 +350,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStepsNumber(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeAnalysis(self, var):
         """
         """
@@ -359,7 +359,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaximumTime(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDtMin(self, var):
         """
         """
@@ -368,7 +368,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMinDtDt0Variation(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDtMax(self, var):
         """
         """
@@ -377,7 +377,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtDt0Variation(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDtIncreasingMax(self, var):
         """
         """
@@ -386,7 +386,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtVariationIncreasing(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDtDecreasingMax(self, var):
         """
         """

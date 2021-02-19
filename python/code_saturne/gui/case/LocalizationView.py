@@ -89,7 +89,7 @@ class LabelDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -412,7 +412,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         """
         current = self.tableView.currentIndex()
 
-    @pyqtSlot()
+    @Slot()
     def slotAddZone(self):
         """
         Insert a new item in the table view.
@@ -421,7 +421,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         self.slotChangeSelection()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteZone(self):
         """
         Private Slot.
@@ -448,7 +448,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             self.modelLocalization.dataChanged.emit(index, index)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddFromPrePro(self):
         """
         Research a preprocessor log to pick colors or groups of cells or faces.
@@ -468,7 +468,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
                     self.modelLocalization.addItem(zone)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotContextMenu(self):
         """
         Public slot
@@ -485,7 +485,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         fileMenu.show()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMerge(self):
         """
         public slot
@@ -513,7 +513,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             self.modelLocalization.addItem(zone)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddFromSalome(self):
         """
         When GUI is embeded in the Salome desktop. Add selection criteria from

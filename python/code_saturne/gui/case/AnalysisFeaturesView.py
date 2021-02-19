@@ -584,7 +584,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotRadioButton(self):
 
         checkCur = None
@@ -713,7 +713,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.checkPrev = checkCur
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLagrangian(self, text):
         """
         Private slot.
@@ -726,7 +726,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAtmospheric(self, text):
         """
         Called when the comboBoxAtmospheric changed
@@ -737,7 +737,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJouleEffect(self, text):
         """
         Private slot.
@@ -750,7 +750,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSinglePhase(self, text):
         """
         Private slot.
@@ -763,7 +763,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGroundwater(self, text):
         """
         Called when the comboBoxGroundwater changed
@@ -782,7 +782,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNeptuneCFD(self, text):
         """
         Called when the comboBoxNeptuneCFD changed
@@ -826,7 +826,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotNeptuneHeatMass(self, val):
         predefined_flow = self.nept.getPredefinedFlow()
         if val == 0:
@@ -840,7 +840,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                     field.enthalpy_model = "total_enthalpy"
         self.browser.configureTree(self.case)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotReactiveFlows(self, text):
         """
         Called when the ReactiveFlows changed
@@ -866,7 +866,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.checkBoxPther.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGasCombustion(self, text):
         """
         Private slot.
@@ -880,7 +880,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCoalCombustion(self, text):
         """
         Private slot.
@@ -899,7 +899,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHgn(self, text):
         """
         Called when the comboBoxHgn changed
@@ -910,7 +910,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHTS(self, text):
         """
         Called when the comboBoxHTS changed
@@ -924,7 +924,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurboModel(self, text):
         """
         Input turbomachinery model.
@@ -935,7 +935,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotALE(self, val):
 
         if val == 0:
@@ -946,7 +946,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotFans(self, val):
 
         if val == 0:
@@ -957,7 +957,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPther(self):
         """
         Set value for parameter IPTHRM (activation of Pther)

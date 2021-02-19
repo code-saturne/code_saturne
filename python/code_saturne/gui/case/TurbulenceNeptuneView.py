@@ -571,7 +571,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                     self.mdl.setThermalTurbulentFlux(fieldId, 'sgdh')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMixingLength(self, text):
         """
         Update the mixing length
@@ -583,7 +583,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
             self.mdl.setMixingLength(fieldId, mix)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotContinuousCoupling(self, text):
         """
         define continuous/continuous coupling modele

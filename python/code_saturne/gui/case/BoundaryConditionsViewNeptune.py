@@ -221,7 +221,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
 
         self.tableViewFields.clicked[QModelIndex].connect(self.__slotSelectField)
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def __slotSelectField(self, index):
         """
         Select a Field in the QTable
@@ -250,7 +250,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         elif self.__nature == 'symmetry':
             self.__selectSymmetryBoundary(boundary)
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def __slotSelectBoundary(self):
         """
         Select a boundary in the QTreeView.

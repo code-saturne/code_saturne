@@ -90,7 +90,7 @@ class NameDelegate(QItemDelegate):
         self.old_pname = ""
         #editor.installEventFilter(self)
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -197,7 +197,7 @@ class VarianceNameDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_pname = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -632,7 +632,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddScalar(self):
         """
         Add a new item in the table when the 'Create' button is pushed.
@@ -641,7 +641,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelScalars.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteScalar(self):
         """
         Just delete the current selected entries from the table and
@@ -680,7 +680,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddVariance(self):
         """
         Add a new item in the table when the 'Create' button is pushed.
@@ -689,7 +689,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelVariance.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteVariance(self):
         """
         Just delete the current selected entries from the table and
@@ -713,7 +713,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableVariance.clearSelection()
 
 
-    @pyqtSlot("QModelIndex, QModelIndex")
+    @Slot("QModelIndex, QModelIndex")
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableView.resizeRowToContents(row)

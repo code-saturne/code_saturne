@@ -380,7 +380,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddPressureDrop(self):
         """
         Add Pressure Drop
@@ -390,7 +390,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewPressureDrop.clearSelection()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeletePressureDrop(self):
         """
         Delete the selected Pressure Drop from the list
@@ -401,7 +401,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewPressureDrop.clearSelection()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddScalarBalance(self):
         """
         Set in view label and variables to see on scalar balance
@@ -411,7 +411,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.__eraseEntries()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteScalarBalance(self):
         """
         Delete the scalar balance from the list (one by one).
@@ -428,7 +428,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
             self.__eraseEntries()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectScalarBalance(self, index):
         """
         Return the selected item from the list.
@@ -446,7 +446,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.modelDrop.setStringList(liste)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddVarProfile(self):
         """
         Add a new var from list to profile
@@ -466,7 +466,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
             self.modelScalarBalance.replaceItem(row, " ; ".join(liste))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteVarProfile(self):
         """
         Supress a var from profile

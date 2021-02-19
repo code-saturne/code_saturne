@@ -692,7 +692,7 @@ temperature = enthalpy / 1000;
         self.mdl.setPropertyMode(currentFluid, tag, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateRho(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -700,7 +700,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'Density', 'density')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateMu(self, text):
         """
         Method to call 'getState' with correct arguements for 'Mu'
@@ -708,7 +708,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'Viscosity', 'molecular_viscosity')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateCp(self, text):
         """
         Method to call 'getState' with correct arguements for 'Cp'
@@ -716,7 +716,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'SpecificHeat', 'specific_heat')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateAl(self, text):
         """
         Method to call 'getState' with correct arguements for 'Al'
@@ -848,7 +848,7 @@ temperature = enthalpy / 1000;
             self.groupBoxConstantProperties.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRho(self, text):
         """
         Update the density
@@ -859,7 +859,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueDensity(fieldId, rho)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMu(self, text):
         """
         Update the molecular viscosity
@@ -870,7 +870,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueViscosity(fieldId,mu)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCp(self, text):
         """
         Update the specific heat
@@ -881,7 +881,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueHeat(fieldId,cp)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAl(self, text):
         """
         Update the thermal conductivity
@@ -892,7 +892,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueCond(fieldId,al)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaRho(self):
         """
         User formula for density
@@ -922,7 +922,7 @@ temperature = enthalpy / 1000;
             self.pushButtonDensity.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaMu(self):
         """
         User formula for molecular viscosity
@@ -952,7 +952,7 @@ temperature = enthalpy / 1000;
             self.pushButtonViscosity.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaCp(self):
         """
         User formula for specific heat
@@ -982,7 +982,7 @@ temperature = enthalpy / 1000;
             self.pushButtonSpecificHeat.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaAl(self):
         """
         User formula for thermal conductivity
@@ -1012,7 +1012,7 @@ temperature = enthalpy / 1000;
             self.pushButtonThermalConductivity.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotEOS(self):
         """
         call EOS GUI
@@ -1034,7 +1034,7 @@ temperature = enthalpy / 1000;
                 self.runProcess = subprocess.Popen(command, shell=True)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaTemperature(self):
         """
         User formula for temperature as a function of enthalpy
@@ -1064,7 +1064,7 @@ temperature = enthalpy / 1000;
             self.pushButtonTemperature.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormuladrodp(self):
         """
         User formula for d(ro) / dp (compressible flow)
@@ -1093,7 +1093,7 @@ temperature = enthalpy / 1000;
             self.pushButtondRodp.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormuladrodh(self):
         """
         User formula for d(ro) / dh (compressible flow)

@@ -184,7 +184,7 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
                 else:
                     _button.setStyleSheet(_nok_str)
 
-    @pyqtSlot()
+    @Slot()
     def slotFormula(self, name):
         """
         User formula for a given saturation property.

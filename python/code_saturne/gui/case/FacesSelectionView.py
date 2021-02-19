@@ -75,7 +75,7 @@ class LineEditDelegateVerbosity(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("^[0-9 ]*$"))
+        validator =  RegExpValidator(editor, QRegularExpression("^[0-9 ]*$"))
         editor.setValidator(validator)
         return editor
 
@@ -103,7 +103,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
+        validator =  RegExpValidator(editor, QRegularExpression("[ -~]*"))
         editor.setValidator(validator)
 
         # Autocompletion for selection criteria!

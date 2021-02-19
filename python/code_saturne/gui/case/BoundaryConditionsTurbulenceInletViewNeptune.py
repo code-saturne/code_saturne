@@ -167,7 +167,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceTurbulence(self, text):
         """
         INPUT choice of method of calculation of the turbulence
@@ -199,7 +199,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.pushButtonTurb.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDiam(self, text):
         """
         INPUT hydraulic diameter
@@ -209,7 +209,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.__boundary.setHydraulicDiameter(self.__currentField, diam)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotIntensity(self, text):
         """
         INPUT turbulent intensity
@@ -219,7 +219,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.__boundary.setTurbulentIntensity(self.__currentField, intens)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotTurbulenceFormula(self):
         """
         User formula for turbulence

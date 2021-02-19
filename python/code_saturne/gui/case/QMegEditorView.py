@@ -341,7 +341,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
 
         self.comboBox_Insert.activated[str].connect(self._addOperator)
 
-    @pyqtSlot()
+    @Slot()
     def slotClearBackground(self):
         """
         Private slot.
@@ -357,7 +357,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
             block_format.clearBackground()
             cursor.setBlockFormat(block_format)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def _addOperator(self, _operator):
         self.textEditExpression.textCursor().insertText(_operator)
 

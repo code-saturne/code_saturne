@@ -107,7 +107,7 @@ class ImmersedBoundariesSourceTermView(QWidget, Ui_ImmersedBoundariesSourceTerm)
             self.pushButtonThermalSourceTerm.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalSourceTerm(self):
         """
         Formula for Temperature

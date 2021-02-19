@@ -354,7 +354,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotChangeSelection(self, text=None):
         """
         detect change selection to update constant properties
@@ -362,7 +362,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddRotor(self):
         """
         Add rotor
@@ -373,7 +373,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteRotor(self):
         """
         Delete the selected rotor from the list
@@ -385,7 +385,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationX(self, text):
         """
         Periodicity rotation for X
@@ -396,7 +396,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationY(self, text):
         """
         Periodicity rotation for Y
@@ -407,7 +407,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationZ(self, text):
         """
         Periodicity rotation for Z
@@ -418,7 +418,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationX1(self, text):
         """
         Periodicity : center of rotation
@@ -429,7 +429,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationY1(self, text):
         """
         Periodicity : center of rotation
@@ -440,7 +440,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationZ1(self, text):
         """
         Periodicity : center of rotation

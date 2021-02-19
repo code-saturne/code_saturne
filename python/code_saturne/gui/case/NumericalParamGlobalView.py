@@ -215,7 +215,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISSE(self):
         """
         Set value for parameter IVISSE
@@ -226,7 +226,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setTransposedGradient("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIPUCOU(self):
         """
         Set value for parameter IPUCOU
@@ -237,7 +237,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setVelocityPressureCoupling("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotICFGRP(self):
         """
         Set value for parameter IPUCOU
@@ -248,7 +248,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setHydrostaticEquilibrium("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotImprovedPressure(self):
         """
         Input IHYDPR.
@@ -259,7 +259,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setHydrostaticPressure("off")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRELAXP(self, text):
         """
         Set value for parameter RELAXP
@@ -270,7 +270,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             log.debug("slotRELAXP-> %s" % relaxp)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSRROM(self, text):
         """
         Set value for parameter SRROM
@@ -281,7 +281,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             log.debug("slotSRROM-> %s" % srrom)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGradientType(self, text):
         """
         Set value for parameter GradientType
@@ -298,7 +298,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.comboBoxExtNeighbors.show()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExtNeighbors(self, text):
         """
         Set extended neighborhood type
@@ -307,7 +307,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.model.setExtendedNeighborType(enh_type)
         log.debug("slotExtNeighbors-> %s" % enh_type)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDensityVar(self, text):
         """
         Set algorithm for density variation in time

@@ -79,7 +79,7 @@ class LabelDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_p_value = ""
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -491,7 +491,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelAverage.addItem(label, ntdmom, ttdmom, imoold, idfmom_view)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddAverage(self):
         """
         Set in view
@@ -502,7 +502,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotdeleteTimeAverage(self):
         """
         Delete the selected average from the list (one by one).
@@ -524,7 +524,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectAverage(self, index):
         """
         Return the selected item from the Hlist.
@@ -542,7 +542,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelDrop.setStringList(lst)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddVarAverage(self):
         """
         Add a new var from list to profile
@@ -561,7 +561,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.updateView()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteVarAverage(self):
         """
         Supress a var from profile

@@ -587,13 +587,13 @@ class BrowserView(QWidget, Ui_BrowserForm):
             # FIXME: this return should not be in a loop
             return self.treeView.isRowHidden(row, index)
 
-    @pyqtSlot('QModelIndex')
+    @Slot('QModelIndex')
     def onItemPressed(self, index):
         item = index.internalPointer()
         if item.itemType == "file-new":
             item.itemType = "file-open"
 
-    @pyqtSlot('QModelIndex')
+    @Slot('QModelIndex')
     def onFolderOpen(self, index):
         """
         public slot
@@ -607,7 +607,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if item.itemType == "folder-new" or item.itemType == "folder-close":
             item.itemType = "folder-open"
 
-    @pyqtSlot('QModelIndex')
+    @Slot('QModelIndex')
     def onFolderClose(self, index):
         """
         public slot
@@ -621,7 +621,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if item.itemType == "folder-new" or item.itemType == "folder-open":
             item.itemType = "folder-close"
 
-    @pyqtSlot()
+    @Slot()
     def displayPopup(self):
         """
         public slot
@@ -703,7 +703,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             index = self.model.index(row, column, parent)
             self.treeView.expand(index)
 
-    @pyqtSlot()
+    @Slot()
     def openTreeFolder(self):
         """
         public slot
@@ -733,7 +733,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             index = self.model.index(row, column, parent)
             self.treeView.collapse(index)
 
-    @pyqtSlot()
+    @Slot()
     def closeTreeFolder(self):
         """
         public slot

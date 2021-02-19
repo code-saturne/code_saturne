@@ -112,7 +112,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
 
         self.case.undoStartGlobal()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotYPlus(self, text):
         """
         configure Y Plus model
@@ -128,7 +128,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
            self.lineEditYPlus.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotYPlusValue(self, text):
         """
         Update the Yplus value

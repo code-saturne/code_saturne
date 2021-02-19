@@ -102,7 +102,7 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog,
         self.pushButtonClose.clicked.connect(self.slotDebugclose)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDebugclose(self):
         """
         Close debugging page
@@ -146,7 +146,7 @@ class BatchRunningStopByIterationDialogView(QDialog,
         self.lineEditStopIter.textChanged[str].connect(self.__slotStopIter)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotStopIter(self, text):
         """
         Private slot to set an iteration number to stop the code.
@@ -222,7 +222,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.proc.waitForFinished(100)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotReadFromStdout(self):
         """
         Public slot to handle the readyReadStandardOutput signal of the process.
@@ -287,7 +287,7 @@ class ListingDialogView(CommandMgrDialogView):
         QMessageBox.warning(self, self.tr("Warning"), msg)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotStop(self):
         """
         Private slot. Stops the code at the end of the current iteration.
@@ -297,7 +297,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.__stopExec(iter, msg)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotStopAt(self):
         """
         Private slot. Stops the code at the end of the given iteration.
@@ -311,7 +311,7 @@ class ListingDialogView(CommandMgrDialogView):
             self.__stopExec(result['iter'], msg)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotCvgTool(self):
         """
         Private slot. Running convergence tracking tool
@@ -328,7 +328,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.runProcess = subprocess.Popen(cmd)
 
 
-    @pyqtSlot("QProcess::ProcessState")
+    @Slot("QProcess::ProcessState")
     def slotStateChanged(self, state):
         """
         Public slot. Handle the current status of the process.
@@ -443,15 +443,15 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         if self.jmdl.batch.rm_type != None:
             validatorSimpleName = RegExpValidator(self.lineEditJobName,
-                                                  QRegExp("[_A-Za-z0-9]*"))
+                                                  QRegularExpression("[_A-Za-z0-9]*"))
             validatorAccountName = RegExpValidator(self.lineEditJobAccount,
-                                                   QRegExp("\\S+"))
+                                                   QRegularExpression("\\S+"))
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobAccount.setValidator(validatorAccountName)
             self.lineEditJobWCKey.setValidator(validatorAccountName)
 
         validatorRunId = RegExpValidator(self.lineEditRunId,
-                                         QRegExp("[_A-Za-z0-9]*"))
+                                         QRegularExpression("[_A-Za-z0-9]*"))
         self.lineEditRunId.setValidator(validatorRunId)
 
         self.checkBoxForce.stateChanged.connect(self.slotForce)
@@ -579,7 +579,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
                 self.pushButtonRunSubmit.setText("Save case and run calculation")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJobName(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -588,7 +588,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.jmdl.batch.params['job_name'] = str(v)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotJobNodes(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -601,7 +601,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.lineEditTotMPI.setText(str(tot_ranks))
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotJobPpn(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -618,7 +618,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotJobProcs(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -626,7 +626,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.job_procs  = str(self.spinBoxProcs.text())
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotJobThreads(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -639,7 +639,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotJobWallTime(self):
 
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
@@ -649,14 +649,14 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.jmdl.batch.params['job_walltime'] = job_walltime
 
 
-    @pyqtSlot()
+    @Slot()
     def slotClass(self):
 
         self.jmdl.batch.params['job_class'] \
             = str(self.comboBoxClass.currentText())
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJobAccount(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -665,7 +665,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.jmdl.batch.params['job_account'] = str(v)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJobWCKey(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -674,7 +674,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.jmdl.batch.params['job_wckey'] = str(v)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotNProcs(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -685,7 +685,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.job_dict['n_procs'] = None
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotNThreads(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -696,7 +696,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.job_dict['n_threads'] = None
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotBuildType(self, v):
 
         if v == 0:
@@ -724,7 +724,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.displayScriptInfo()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJobRunId(self, v):
         """
         """
@@ -736,7 +736,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             else:
                 self.checkBoxForce.show()
 
-    @pyqtSlot()
+    @Slot()
     def slotForce(self):
         """
         Set force option
@@ -747,7 +747,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.run_dict['force'] = c
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCancel(self):
         """
         Close dialog with no modifications
@@ -756,7 +756,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         QDialog.accept(self)
 
 
-    @pyqtSlot()
+    @Slot()
     def switchBox(self):
         if not self.pushButtonAdvparam.isChecked():
 
@@ -821,7 +821,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.jmdl.updateComputeBuildInfo(compute_build=self.jmdl.run_dict['compute_build'])
 
 
-    @pyqtSlot()
+    @Slot()
     def slotApply(self):
         """
         Apply changes and close dialog without running computation
@@ -831,7 +831,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         QDialog.accept(self)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotBatchRunning(self):
         """
         Launch code_saturne batch running.
@@ -879,7 +879,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         os.chdir(prv_dir)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDebug(self, text):
         """
         Input for Debug.
@@ -888,7 +888,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.job_dict['debug_args'] = self.debug.strip()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDebugHelp(self):
         """
         Show help page for debugging
@@ -898,7 +898,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         dialog.show()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotStage(self):
         """
         Set staging option
@@ -910,7 +910,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.__update_stages__()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotInitialize(self):
         """
         Set initialization option
@@ -922,7 +922,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.__update_stages__()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCompute(self):
         """
         Set compute option
@@ -934,7 +934,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.__update_stages__()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFinalize(self):
         """
         Set compute option
@@ -946,7 +946,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.__update_stages__()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotTrace(self):
         """
         Update log type for trace
@@ -957,7 +957,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.trace_iter = False
 
 
-    @pyqtSlot()
+    @Slot()
     def slotLogParallel(self):
         """
         Update log type for trace

@@ -168,7 +168,7 @@ if (xray2 < xr2) {
 
         self.case.undoStartGlobal()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNalinf(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -177,7 +177,7 @@ if (xray2 < xr2) {
             nalinf = from_qvariant(text, int)
             self.mdl.setSubIterations(nalinf)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotViscosityType(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -193,7 +193,7 @@ if (xray2 < xr2) {
             self.pushButtonFormula.setStyleSheet("background-color: red")
         return visco
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotALESolverType(self, text):
         """
         Input ALE solver : legacy or cdo.
@@ -209,7 +209,7 @@ if (xray2 < xr2) {
             self.pushButtonFormula.setStyleSheet("background-color: red")
         return solver
 
-    @pyqtSlot()
+    @Slot()
     def slotFormula(self):
         """
         Run formula editor.

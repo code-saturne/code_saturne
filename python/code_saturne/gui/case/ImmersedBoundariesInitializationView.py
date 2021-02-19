@@ -106,7 +106,7 @@ class ImmersedBoundariesInitializationView(QWidget, Ui_ImmersedBoundariesInitial
             self.pushButtonTemperature.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotTemperature(self):
         """
         Formula for Temperature

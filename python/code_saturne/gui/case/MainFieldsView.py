@@ -89,7 +89,7 @@ class LabelDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -628,7 +628,7 @@ class MainFieldsView(QWidget, Ui_MainFields):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddField(self):
         """
         Add a Field.
@@ -644,7 +644,7 @@ class MainFieldsView(QWidget, Ui_MainFields):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteField(self):
         """
         Delete the Field from the list (one by one).

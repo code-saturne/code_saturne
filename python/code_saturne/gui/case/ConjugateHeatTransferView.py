@@ -223,22 +223,22 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         for syrthes_name, boundary_labels in self.__model.getSyrthesCouplingList():
             self.modelSyrthes.addItem([syrthes_name, ", ".join(boundary_labels)])
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotProjectionAxis(self, value):
         self.__model.setSyrthesProjectionAxis(value)
         return
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVerbosity(self, value):
         self.__model.setSyrthesVerbosity(value)
         pass
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVisualization(self, value):
         self.__model.setSyrthesVisualization(value)
         pass
 
-    @pyqtSlot()
+    @Slot()
     def slotTolerance(self):
         """
         Input tolerance value.

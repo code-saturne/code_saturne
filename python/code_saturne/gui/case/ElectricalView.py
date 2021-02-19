@@ -138,7 +138,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def __initializeWidget(self):
         """
         Initialize widget
@@ -189,7 +189,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     self.lineEditEpsilon.setText(str(definition))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPower(self, text):
         """
         Input Imposed Power
@@ -199,7 +199,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPower(power)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCurrent(self, text):
         """
         Input Imposed current intensity
@@ -209,7 +209,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setCurrent(current)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotJouleModel(self, text):
         """
         Input Joule model.
@@ -218,7 +218,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.model.setJouleModel(model)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotScaling(self):
         """
         Input "Electric variables" scaling.
@@ -231,7 +231,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.__initializeWidget()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotScalingModel(self, text):
         """
         Input scaling model.
@@ -241,7 +241,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.__initializeWidget()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDirection(self, text):
         """
         Input current density direction for scaling.
@@ -250,7 +250,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.model.setDirection(direction)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPlaneDefA(self, text):
         """
         Input define plane
@@ -260,7 +260,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("A", current)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPlaneDefB(self, text):
         """
         Input define plane
@@ -270,7 +270,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("B", current)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPlaneDefC(self, text):
         """
         Input define plane
@@ -280,7 +280,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("C", current)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPlaneDefD(self, text):
         """
         Input define plane
@@ -290,7 +290,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("D", current)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPlaneDefEpsilon(self, text):
         """
         Input define plane

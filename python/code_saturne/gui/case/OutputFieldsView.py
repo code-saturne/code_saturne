@@ -71,7 +71,7 @@ log.setLevel(GuiParam.DEBUG)
 #
 #-------------------------------------------------------------------------------
 
-class ProbesValidator(QRegExpValidator):
+class ProbesValidator(QRegularExpressionValidator):
     """
     Validator for real data.
     """
@@ -79,7 +79,7 @@ class ProbesValidator(QRegExpValidator):
         """
         Initialization for validator
         """
-        regExp = QRegExp("^[0-9 ]*$")
+        regExp = QRegularExpression("^[0-9 ]*$")
         super(ProbesValidator, self).__init__(regExp, parent)
         self.parent = parent
         self.mdl = xml_model
@@ -94,7 +94,7 @@ class ProbesValidator(QRegExpValidator):
         QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QRegExpValidator.validate(self, stri, pos)[0]
+        state = QRegularExpressionValidator.validate(self, stri, pos)[0]
 
         valid = True
         for probe in str(stri).split():
@@ -171,7 +171,7 @@ class NameDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -457,7 +457,7 @@ class OutputFieldsView(QWidget, Ui_OutputFields):
             self.tableViewFieldsVariables.resizeColumnToContents(col)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field

@@ -298,7 +298,7 @@ class CouplingEditorView(QWidget):
     # ---------------------------------------------------------------
 
     # ---------------------------------------------------------------
-    @pyqtSlot()
+    @Slot()
     def dataModifed(self):
 
         self.data_modified = True

@@ -554,7 +554,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotThermalChoice(self, text):
         """
         INPUT label for choice of zone
@@ -563,7 +563,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotThermalTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -578,7 +578,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT label for choice of zone
@@ -587,7 +587,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -597,7 +597,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVoidFractionChoice(self, text):
         """
         INPUT label for choice of zone
@@ -608,7 +608,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVoidFractionTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -618,7 +618,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoChoice(self, text):
         """
         INPUT label for choice of zone
@@ -627,7 +627,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -637,7 +637,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         """
         """
@@ -690,7 +690,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.pushButtonThermal.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSpeciesFormula(self):
         """
         """
@@ -736,7 +736,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.pushButtonSpecies.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVoidFractionFormula(self):
         """
         """
@@ -785,7 +785,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.pushButtonVoidFraction.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeteoFormula(self):
         """
         """
@@ -831,7 +831,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.pushButtonMeteo.setToolTip(exp)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotValueThermal(self, var):
         """
         """
@@ -844,7 +844,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.thermal, 'dirichlet', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotValueSpecies(self, var):
         """
         """
@@ -856,7 +856,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.species, 'dirichlet', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotValueVoidFraction(self, var):
         """
         """
@@ -870,7 +870,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(_hgn_name, 'dirichlet', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotValueMeteo(self, var):
         """
         """
@@ -882,7 +882,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.meteo, 'dirichlet', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExThermal(self, var):
         """
         """
@@ -891,7 +891,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.__boundary.setScalarValue(self.thermal, 'exchange_coefficient', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExSpecies(self, var):
         """
         """
@@ -900,7 +900,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExVoidFraction(self, var):
         """
         """
@@ -911,7 +911,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                                            value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExMeteo(self, var):
         """
         """
@@ -919,7 +919,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             value = from_qvariant(var, float)
             self.__boundary.setScalarValue(self.meteo, 'exchange_coefficient', value)
 
-    @pyqtSlot()
+    @Slot()
     def slotChooseSyrthesInstance(self):
 
         value = str(self.lineEditSyrthesInstance.text())

@@ -124,7 +124,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def initializeWidget(self, scalar_list):
         """
         """
@@ -138,7 +138,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.modelChemistryModel.setItem(str_model=value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPermeabilityType(self, text):
         """
         Input permeability type : isotrop or anisotrop.
@@ -147,7 +147,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setPermeabilityType(mdl)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesName(self, text):
         """
         Method to choose the scalar whose properties shall be changed
@@ -161,7 +161,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.modelChemistryModel.setItem(str_model=value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotChemistryModel(self, text):
         """
         Input chemistry model for soil-water partition : Kd or Kd + precipitation
@@ -171,7 +171,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setChemistryModel(scal, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDecayRate(self, text):
         """
         """

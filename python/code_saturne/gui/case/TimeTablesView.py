@@ -308,7 +308,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.lineEditTimeOffset.setEnabled(use_offset)
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectTable(self, index):
         """
         Action when user clicks on the table
@@ -328,7 +328,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
             self._update_page_view()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchTable(self):
         """
         Slot for file selection
@@ -346,7 +346,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
                 self.tableModelTimeTables.addRow(_f)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteTable(self):
         """
         Delete an entry in the table
@@ -357,14 +357,14 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.deleteTable(idx)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotRowsToSkip(self, val):
         """
         Set number of rows to skip when importing table
         """
         self.mdl.setTableProperty(self.table_id, 'skip_rows', str(val))
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotColImportMode(self, text):
         """
         Set import mode of data columns
@@ -372,14 +372,14 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'cols2import', str(text))
         self._update_page_view()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotColToImport(self, text):
         """
         Set selection criteria for columns (if user defined import mode)
         """
         self.mdl.setTableProperty(self.table_id, 'col_ids', str(text))
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHeadImportMode(self, text):
         """
         Set import mode for headers (data labels)
@@ -390,7 +390,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         self._update_page_view()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHeadToImport(self, text):
         """
         Set headers value
@@ -398,7 +398,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'headers_list', str(text))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotImportHeadersFromFile(self):
         """
         Import headers fro a data file
@@ -415,7 +415,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         return
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotHeadLine(self, val):
         """
         Define line from which to import headers
@@ -423,7 +423,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'headers_line', int(val))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOffsetMode(self, mode):
         """
         Set Offset mode if needed.
@@ -434,7 +434,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self._update_page_view()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeOffsetVal(self, val):
         """
         Set Offset mode if needed.

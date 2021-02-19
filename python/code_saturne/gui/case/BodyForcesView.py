@@ -145,7 +145,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGravityX(self, text):
         """
         Input GX
@@ -155,7 +155,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.gmdl.setGravity('gravity_x', gravity_x)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGravityY(self, text):
         """
         Input GY
@@ -165,7 +165,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.gmdl.setGravity('gravity_y', gravity_y)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGravityZ(self, text):
         """
         Input GZ
@@ -175,7 +175,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.gmdl.setGravity('gravity_z', gravity_z)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOmegaX(self, text):
         """
         Input OMEGAX
@@ -185,7 +185,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.cmdl.setOmega('omega_x', omega_x)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOmegaY(self, text):
         """
         Input OMEGAY
@@ -195,7 +195,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.cmdl.setOmega('omega_y', omega_y)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOmegaZ(self, text):
         """
         Input OmegaZ

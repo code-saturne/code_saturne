@@ -84,7 +84,7 @@ class LabelDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -391,7 +391,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.checkBoxDiffusion.setChecked(isDiffus)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddScalar(self):
         """
         Add a scalar
@@ -400,7 +400,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.tableModelScalar.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteScalar(self):
         """
         Delete the a scalar from the list (one by one).
@@ -412,7 +412,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.groupBoxScalarProperties.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDiffusionCoef(self, text):
         """
         Update the diffusion coefficient
@@ -422,7 +422,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setDiffusionCoef(self.currentid, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSchmidt(self, text):
         """
         Update the schmidt
@@ -432,7 +432,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setSchmidt(self.currentid, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMinValue(self, text):
         """
         Update the minimum value
@@ -442,7 +442,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMinValue(self.currentid, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaxValue(self, text):
         """
         Update the maximum value
@@ -452,7 +452,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMaxValue(self.currentid, value)
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotTimeDepend(self, checked):
         """
         check box for time depend
@@ -463,7 +463,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.mdl.setTimeDependStatus(self.currentid, status)
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotDiffusion(self, checked):
         """
         check box for diffusion

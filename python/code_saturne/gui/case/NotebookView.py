@@ -476,7 +476,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.update()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddVariable(self):
         """
         Add one variable
@@ -487,7 +487,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.treeViewNotebook.expandAll()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteVariable(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -501,7 +501,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.treeViewNotebook.expandAll()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotImportVariable(self):
         """
         select a csv/txt file to add and update variables

@@ -83,7 +83,7 @@ class NameDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_name = ""
         rx = "[_a-zA-Z:][_A-Za-z0-9:]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -372,7 +372,7 @@ class UsersControlView(QWidget, Ui_UsersControl):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddUsers(self):
         """
         Add a scalar
@@ -381,7 +381,7 @@ class UsersControlView(QWidget, Ui_UsersControl):
         self.tableModelUsers.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteUsers(self):
         """
         Delete the a scalar from the list (one by one).

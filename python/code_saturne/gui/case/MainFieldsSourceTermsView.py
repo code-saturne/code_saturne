@@ -140,7 +140,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
             self.pushButtonThermal.hide()
             self.labelThermal.hide()
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar
@@ -176,7 +176,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
             self.pushButtonThermal.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field

@@ -130,7 +130,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.hide()
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotSlidingWall(self, checked):
         """
         Private slot.
@@ -155,7 +155,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.lineEditSlideW.setText(str(w))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityU(self, text):
         """
         Private slot.
@@ -170,7 +170,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
             self.__boundary.setVelocityComponent(value, '0')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityV(self, text):
         """
         Private slot.
@@ -185,7 +185,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
             self.__boundary.setVelocityComponent(value, '1')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityW(self, text):
         """
         Private slot.

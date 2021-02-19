@@ -509,7 +509,7 @@ class ImmersedBoundariesVolumicViewNeptune(QWidget, Ui_ImmersedBoundariesVolumic
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view

@@ -135,7 +135,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         # Validators
 
-        partListVd = RegExpValidator(self.lineEdit_PartList, QRegExp("[0-9- ]*"))
+        partListVd = RegExpValidator(self.lineEdit_PartList, QRegularExpression("[0-9- ]*"))
         self.lineEdit_PartList.setValidator(partListVd)
 
         # Connections
@@ -220,7 +220,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchPartInputDirectory(self):
         """
         Search for the partition input directory in list of directories
@@ -268,7 +268,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             log.debug("slotSearchPartInputDirectory-> %s" % self.partinput_path)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPartition(self):
         """
         Determine if existing partitioning is used.
@@ -301,7 +301,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.lineEditPartInputDir.setText("")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPartitionList(self, text):
         """
         Input for Partitioner.
@@ -310,7 +310,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionList(self.partition_list.strip())
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPartOut(self, text):
         """
         Partitioner execution mode option.
@@ -319,7 +319,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionOut(self.partition_out)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPartType(self, text):
         """
         Partitioner execution mode option.
@@ -328,7 +328,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionType(self.partition_alg)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotRankStep(self, text):
         """
         Input for Partitioner.
@@ -337,7 +337,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionRankStep(self.rank_step)
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotIgnorePerio(self, checked):
         """
         Ignore periodicity.
@@ -348,7 +348,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.mdl.setIgnorePerio("off")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotBlockIOReadMethod(self, text):
         """
         Partitioner execution mode option.
@@ -357,7 +357,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOReadMethod(self.blockio_read_method)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotBlockIOWriteMethod(self, text):
         """
         Partitioner execution mode option.
@@ -366,7 +366,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOWriteMethod(self.blockio_write_method)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotBlockIORankStep(self, text):
         """
         Input for Partitioner.
@@ -375,7 +375,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIORankStep(self.blockio_rank_step)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotBlockIOMinSize(self, text):
         """
         Input for Partitioner.
@@ -384,7 +384,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOMinSize(self.blockio_min_size)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAllToAll(self, text):
         """
         All to all data exchange option.
@@ -393,7 +393,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setAllToAll(self.all_to_all)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotchanged(self, index):
         """
         Changed tab

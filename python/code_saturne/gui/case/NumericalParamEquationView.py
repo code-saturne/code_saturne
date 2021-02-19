@@ -1766,7 +1766,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self._tableViewLayout()
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotchanged(self, index):
         """
         Changed tab

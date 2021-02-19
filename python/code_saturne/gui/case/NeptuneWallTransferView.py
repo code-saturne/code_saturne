@@ -127,7 +127,7 @@ class NeptuneWallTransferView(QWidget, Ui_NeptuneWallTransferForm):
     def set_connections(self):
         self.comboBoxWallTransferType.currentTextChanged[str].connect(self.slot_set_wall_model)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slot_set_wall_model(self, text):
         model = self.combomodel_wallmodel.dicoV2M[text]
         self.xml_model.wall_transfer_type = model

@@ -119,7 +119,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotPressure(self, text):
         """
         INPUT fraction value
@@ -128,7 +128,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
             value = from_qvariant(text, float)
             self.__boundary.setReferencePressure(value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def _slotChoicePressure(self, text):
         """
         Input choice of pressure boundary condition.

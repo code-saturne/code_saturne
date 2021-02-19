@@ -346,7 +346,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceVelocity(self, text):
         """
         Private slot.
@@ -393,7 +393,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotVelocityValue(self, text):
         """
         Private slot.
@@ -408,7 +408,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setVelocity(v)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotVelocityFormula(self):
         """
         """
@@ -457,7 +457,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
@@ -491,7 +491,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirX(self, text):
         """
         INPUT value into direction of inlet flow
@@ -501,7 +501,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_x', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirY(self, text):
         """
         INPUT value into direction of inlet flow
@@ -511,7 +511,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_y', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDirZ(self, text):
         """
         INPUT value into direction of inlet flow
@@ -521,7 +521,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_z', value)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotDirectionFormula(self):
         """
         """
@@ -565,7 +565,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotInletType(self, text):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'
@@ -577,7 +577,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotPressure(self):
         """
         Pressure selected or not for the initialisation.
@@ -589,7 +589,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotDensity(self):
         """
         Density selected or not for the initialisation.
@@ -601,7 +601,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotTemperature(self):
         """
         Temperature selected or not for the initialisation.
@@ -613,7 +613,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotEnergy(self):
         """
         Energy selected or not for the initialisation.
@@ -625,7 +625,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotPressureValue(self, text):
         """
         INPUT inlet Pressure
@@ -635,7 +635,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('pressure', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotDensityValue(self, text):
         """
         INPUT inlet Density
@@ -645,7 +645,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('density', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTemperatureValue(self, text):
         """
         INPUT inlet Temperature
@@ -655,7 +655,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('temperature', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotEnergyValue(self, text):
         """
         INPUT inlet Energy
@@ -665,7 +665,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('energy', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTotalPressure(self, text):
         """
         INPUT inlet total pressure
@@ -675,7 +675,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('total_pressure', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTotalEnthalpy(self, text):
         """
         INPUT inlet total enthalpy
@@ -685,7 +685,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('enthalpy', t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTemperatureGasComb(self, text):
         """
         INPUT inlet temperature
@@ -695,7 +695,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setGasCombustionTemperature(t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotMeanMixtureFraction(self, text):
         """
         INPUT inlet mean mixutre fraction
@@ -705,7 +705,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setMeanMixtureFraction(f)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotInletTypeGasComb(self, text):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'

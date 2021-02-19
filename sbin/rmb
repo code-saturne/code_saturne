@@ -16,7 +16,7 @@ for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx src/*/*.cu \
             NEWS.md
 do
   tmpfile=`basename $file`
-  sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile
+  sed -e 's/ *$//' -e 's/pyqtSlot/Slot/g' $file > $RMBDIR/$tmpfile
   diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
   if [ $? = 1 ]
   then

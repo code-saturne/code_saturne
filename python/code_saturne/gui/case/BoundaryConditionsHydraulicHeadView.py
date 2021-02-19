@@ -161,7 +161,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHydraulicHeadValue(self, text):
         """
         INPUT hydraulic head value
@@ -171,7 +171,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.__boundary.setHydraulicHeadValue(t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHydraulicHeadFlux(self, text):
         """
         INPUT hydraulic head flux
@@ -181,7 +181,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.__boundary.setHydraulicHeadFlux(t)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotHydraulicHeadFormula(self):
         """
         """
@@ -221,7 +221,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.pushButtonHydraulicHead.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotHydraulicHeadChoice(self, text):
         """
         INPUT label for choice of zone

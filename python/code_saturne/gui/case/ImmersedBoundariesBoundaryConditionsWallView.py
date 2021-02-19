@@ -198,7 +198,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
                     self.pushButtonEnergy.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotChoiceVelocity(self):
         """
         Private slot.
@@ -213,7 +213,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
             self.ibm.setObjectBoundaryVelocityMode(self.current_obj,'wall_law')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceEnergy(self, text):
         """
         INPUT choice of method of calculation of the energy
@@ -254,7 +254,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
 
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotEnergy(self, text):
         """
         INPUT energy value
@@ -270,7 +270,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
 
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         objId = self.current_obj
         energy_mode = self.ibm.getObjectBoundaryEnergyMode(objId)

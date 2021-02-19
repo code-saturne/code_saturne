@@ -166,7 +166,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISV1(self):
         """
         Input IVISV1.
@@ -177,7 +177,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setFluidVelocityStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISV2(self):
         """
         Input IVISV2.
@@ -188,7 +188,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticlesVelocityStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISTP(self):
         """
         Input IVISTP.
@@ -199,7 +199,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setResidentTimeStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISDM(self):
         """
         Input IVISDM.
@@ -210,7 +210,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleDiameterStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISTE(self):
         """
         Input IVISTE.
@@ -221,7 +221,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleTemperatureStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISMP(self):
         """
         Input IVISMP.
@@ -232,7 +232,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleMassStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISDK(self):
         """
         Input IVISDK.
@@ -243,7 +243,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCoalParticleDiameterStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISCH(self):
         """
         Input IVISCH.
@@ -254,7 +254,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCoalParticleMassStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIVISCK(self):
         """
         Input IVISCK.
@@ -265,7 +265,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCokeParticleMassStatus("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMoisture(self):
         """
         Input IVISCK.

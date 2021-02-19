@@ -321,7 +321,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotOnePhase(self):
         """
         Set the number of coupled phases to one
@@ -329,7 +329,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
 
         self.__model.setNphases(1)
 
-    @pyqtSlot()
+    @Slot()
     def slotAllPhases(self):
 
 
@@ -337,7 +337,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
 
         self.__model.setNphases(np)
 
-    @pyqtSlot()
+    @Slot()
     def slotAddCathare(self):
         """
         Set in view label and variables to see on profile
@@ -357,7 +357,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
                                   neptune_bc, neptune_1d_zone)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteCathare(self):
         """
         Delete the profile from the list (one by one).
@@ -382,7 +382,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
 
         return cpl_state
 
-    @pyqtSlot()
+    @Slot()
     def slotActivateCpl(self):
         """
         Activate or Deactivate the NEPTUNE_CFD/CATHARE coupling
@@ -405,39 +405,39 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
             self.lineEditCplTime.setText(str(self.__model.getCplTime()))
             self.lineEditCathareInitTime.setText(str(self.__model.getCathareTime()))
 
-    @pyqtSlot()
+    @Slot()
     def slotCathareFile(self):
 
         value = str(self.lineEditCathareFile.text())
         self.__model.setCathareFile(value)
 
-    @pyqtSlot()
+    @Slot()
     def slotCplName(self):
 
         value = str(self.lineEditCplName.text())
         self.__model.setCplName(value)
 
-    @pyqtSlot()
+    @Slot()
     def slotCplTime(self):
 
         value = float(self.lineEditCplTime.text())
         self.__model.setCplTime(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCathareTime(self):
 
         value = float(self.lineEditCathareInitTime.text())
         self.__model.setCathareTime(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCathareInstanceName(self):
 
         value = str(self.lineEditCathareInstance.text())
         self.__model.setCathareInstanceName(value)
 
-    @pyqtSlot()
+    @Slot()
     def slotNeptuneInstanceName(self):
 
         value = str(self.lineEditNeptuneInstance.text())

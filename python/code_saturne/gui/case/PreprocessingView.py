@@ -91,7 +91,7 @@ class LineEditDelegateSelector(QItemDelegate):
         editor.setCompleter(completer)
 
         # Validator
-        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
+        validator =  RegExpValidator(editor, QRegularExpression("[ -~]*"))
         editor.setValidator(validator)
 
         return editor
@@ -618,7 +618,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotFacesCutting(self, checked):
         """
         Private slot.
@@ -637,7 +637,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.frameWarp.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWarpParam(self, text):
         """
         Private slot.
@@ -650,7 +650,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.mdl.setCutAngle(var)
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotMeshSmooth(self, checked):
         """
         Private slot.
@@ -669,7 +669,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.frameSmooth.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeshSmoothParam(self, text):
         """
         Private slot.
@@ -682,7 +682,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.mdl.setSmoothAngle(var)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeletePeriodicity(self):
         """
         Delete a periodicity from the list.
@@ -775,7 +775,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.__setValuesMixed(perio)
 
 
-    @pyqtSlot("QItemSelection")
+    @Slot("QItemSelection")
     def slotUpdatePeriodicity(self, current):
         """
         This slot updates the display for the periodicity selected
@@ -798,7 +798,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         txt = str(self.comboBoxPeriodicity.currentText())
         self.slotPeriodicityMode(txt)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPeriodicityMode(self, text):
         """
         Do we have a periodicity ?
@@ -853,7 +853,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.__setValuesPeriodicTransformation(self.perio_id, self.perio_mode)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTranslationX(self, text):
         """
         Periodicity translation for X
@@ -864,7 +864,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTranslationY(self, text):
         """
         Periodicity translation for Y
@@ -875,7 +875,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTranslationZ(self, text):
         """
         Periodicity translation for Z
@@ -886,7 +886,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAngleRotation(self, text):
         """
         Periodicity rotation angle
@@ -897,7 +897,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationAngle(self.perio_id, angle)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationX(self, text):
         """
         Periodicity rotation for X
@@ -908,7 +908,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationY(self, text):
         """
         Periodicity rotation for Y
@@ -919,7 +919,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRotationZ(self, text):
         """
         Periodicity rotation for Z
@@ -930,7 +930,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationX1(self, text):
         """
         Periodicity : center of rotation
@@ -941,7 +941,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationY1(self, text):
         """
         Periodicity : center of rotation
@@ -952,7 +952,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationZ1(self, text):
         """
         Periodicity : center of rotation
@@ -964,62 +964,62 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
 
 
     # Methods for matrix components
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix11(self, text):
         self.__cmdTransformationMatrix("matrix_11", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix12(self, text):
         self.__cmdTransformationMatrix("matrix_12", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix13(self, text):
         self.__cmdTransformationMatrix("matrix_13", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix14(self, text):
         self.__cmdTransformationMatrix("matrix_14", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix21(self, text):
         self.__cmdTransformationMatrix("matrix_21", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix22(self, text):
         self.__cmdTransformationMatrix("matrix_22", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix23(self, text):
         self.__cmdTransformationMatrix("matrix_23", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix24(self, text):
         self.__cmdTransformationMatrix("matrix_24", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix31(self, text):
         self.__cmdTransformationMatrix("matrix_31", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix32(self, text):
         self.__cmdTransformationMatrix("matrix_32", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix33(self, text):
         self.__cmdTransformationMatrix("matrix_33", text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMatrix34(self, text):
         self.__cmdTransformationMatrix("matrix_34", text)
 
@@ -1034,7 +1034,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationX2(self, text):
         """
         Periodicity : center of rotation
@@ -1045,7 +1045,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationY2(self, text):
         """
         Periodicity : center of rotation
@@ -1056,7 +1056,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCenterRotationZ2(self, text):
         """
         Periodicity : center of rotation
@@ -1067,7 +1067,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotchanged(self, index):
         """
         Changed tab
@@ -1075,7 +1075,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         self.case['current_tab'] = index
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddThinWall(self):
         """
         Add a thin wall
@@ -1084,7 +1084,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         self.tableModelThinWall.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteThinWall(self):
         """
         Delete the a thin wall from the list (one by one).
@@ -1095,7 +1095,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.tableModelThinWall.deleteItem(row)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddExtrude(self):
         """
         Add a thin wall
@@ -1104,7 +1104,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         self.tableModelExtrude.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteExtrude(self):
         """
         Delete the a thin wall from the list (one by one).

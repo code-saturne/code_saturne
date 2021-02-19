@@ -143,7 +143,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         self.hide()
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotMappedInlet(self, checked):
         """
         Private slot.
@@ -171,7 +171,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTrX(self, text):
         """
         INPUT value into direction of mapping translation
@@ -181,7 +181,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
             self.__boundary.setMappedInletTranslation('translation_x', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTrY(self, text):
         """
         INPUT value into direction of mapping translation
@@ -191,7 +191,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
             self.__boundary.setMappedInletTranslation('translation_y', value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotTrZ(self, text):
         """
         INPUT value into direction of mapping translation

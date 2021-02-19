@@ -363,48 +363,48 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                 __button.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjDensity(self, text):
         if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDensity(self.current_obj, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjMass(self, text):
         if self.lineEditMass.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectMass(self.current_obj, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjStiffness(self, text):
         if self.lineEditStiffness.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectStiffness(self.current_obj, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjDamping(self, text):
         if self.lineEditDamping.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDamping(self.current_obj, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjSpecificHeat(self, text):
         if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectSpecificHeat(self.current_obj, val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotObjThermalConductivity(self, text):
         if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectThermalConductivity(self.current_obj, val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateRho(self, text):
         """
         Method to call 'getState' with correct arguements for 'Rho'
@@ -412,14 +412,14 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         self.__changeChoice(str(text), 'Density', 'density')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateSti(self, text):
         """
         Method to call 'getState' with correct arguements for 'Sti'
         """
         self.__changeChoice(str(text), 'Stiffness', 'stiffness')
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateDam(self, text):
         """
         Method to call 'getState' with correct arguements for 'Dam'
@@ -427,7 +427,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         self.__changeChoice(str(text), 'Damping', 'damping')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateCp(self, text):
         """
         Method to call 'getState' with correct arguements for 'Cp'
@@ -435,7 +435,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         self.__changeChoice(str(text), 'SpecificHeat', 'specific_heat')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateAl(self, text):
         """
         Method to call 'getState' with correct arguements for 'Al'
@@ -443,7 +443,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         self.__changeChoice(str(text), 'ThermalConductivity', 'thermal_conductivity')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPorousVelocityFormula(self):
         """
         Explicit formula for the velocity of the porous (solid) media
@@ -479,7 +479,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
             self.ibm.setObjectImposedMovingFormula(objId-1, result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaRho(self):
         """
         User formula for density of the porous object
@@ -510,7 +510,7 @@ rho = 1.293 * (273.15 / temperature);"""
             self.ibm.setObjectRhoFormula(objId-1, result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaCp(self):
         """
         User formula for specific heat of the porous object
@@ -540,7 +540,7 @@ rho = 1.293 * (273.15 / temperature);"""
             self.ibm.setObjectCpFormula(objId-1, result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaAl(self):
         """
         User formula for specific heat of the porous object
@@ -570,7 +570,7 @@ rho = 1.293 * (273.15 / temperature);"""
             self.ibm.setObjectAlFormula(objId-1, result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaInertia(self):
         """
         User formula for inertia of the porous object
@@ -612,7 +612,7 @@ rho = 1.293 * (273.15 / temperature);"""
 
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotChoiceModeling(self):
 
         if self.radioButtonDensity.isChecked():

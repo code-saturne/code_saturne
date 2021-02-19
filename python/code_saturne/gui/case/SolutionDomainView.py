@@ -188,7 +188,7 @@ class MeshNumberDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        vd = RegExpValidator(editor, QRegExp("[0-9- ]*"))
+        vd = RegExpValidator(editor, QRegularExpression("[0-9- ]*"))
         editor.setValidator(vd)
         editor.installEventFilter(self)
         return editor
@@ -251,7 +251,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
+        validator =  RegExpValidator(editor, QRegularExpression("[ -~]*"))
         editor.setValidator(validator)
         return editor
 
@@ -1099,7 +1099,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-    @pyqtSlot()
+    @Slot()
     def selectInputMesh(self):
 
         # Open a File Dialog in order to search the mesh_input file or directory.
@@ -1124,7 +1124,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             self.modifyInputMesh(mi)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def modifyInputMesh(self, text):
         """
         Modify the mesh_input/mesh_output value
@@ -1135,7 +1135,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.mesh_input = text
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSetInputMesh(self):
 
         self.radioButtonImport.setChecked(False)
@@ -1156,7 +1156,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.setMeshOriginChoice("mesh_input")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSetImportMesh(self):
 
         self.radioButtonImport.setChecked(True)
@@ -1175,7 +1175,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.setMeshOriginChoice("mesh_import")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSetCartesianMesh(self):
         self.radioButtonImport.setChecked(False)
         self.radioButtonExists.setChecked(False)
@@ -1199,7 +1199,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.slotSetCartesianParam(val, k)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSetCartesianParam(self, text, name):
 
         val = text
@@ -1220,7 +1220,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.mdl.setCartesianParam(d, p,val)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchMesh(self):
         msg = self.tr("Select a mesh file.")
         self.stbar.showMessage(msg, 2000)
@@ -1231,7 +1231,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self._addMeshInList(file_name)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteMesh(self):
         """
         Delete the selected mesh from the list
@@ -1252,7 +1252,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotArgRunType(self, text):
         """
         Input run type option.
@@ -1263,7 +1263,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeshSaveOnModify(self):
         """
         Input if mesh should be saved if modified or not

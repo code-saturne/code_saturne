@@ -131,7 +131,7 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotChoiceNonCondensable(self, text):
         """
         INPUT choice of non condensable
@@ -142,7 +142,7 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         self.lineEditNonCondensable.setText(str(val))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotNonCondensable(self, text):
         """
         INPUT non condensable value

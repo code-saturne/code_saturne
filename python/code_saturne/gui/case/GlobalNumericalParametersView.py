@@ -305,7 +305,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.modelVelocityAlgorithm.setItem(str_model="mean_velocity_relative_velocity")
             self.comboBoxVelocityAlgorithm.setEnabled(False)
 
-    @pyqtSlot()
+    @Slot()
     def slotRestart(self):
         """
         Input if restart time step if not converged
@@ -335,7 +335,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.groupBoxRestartOption.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPotentialState(self):
         """
         Input if restart time step if not converged
@@ -346,7 +346,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setPotentielState('off')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFacesReconstruction(self):
         """
         Input if faces reconstruction
@@ -358,7 +358,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setFacesReconstruction('off')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMultigrid(self):
         """
         Input if multigrid for pressure
@@ -369,7 +369,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMultigridStatus('off')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMinimumPressure(self, text):
         """
         Input value of minimum pressure
@@ -379,7 +379,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMinPressure(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaximumPressure(self, text):
         """
         Input value of maximum pressure
@@ -389,7 +389,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMaxPressure(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications
@@ -413,7 +413,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setAlphaPressureCycles(result['alpha_p_cycle'])
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaxRestart(self, text):
         """
         Input value of Maximum number of restart
@@ -423,7 +423,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMaxNumberOfRestart(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTimeSplitting(self, text):
         """
         Input value of time-step splitting
@@ -433,7 +433,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setTimeSplit(value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPressureRelaxation(self, text):
         """
         Input value of pressure increment relaxation
@@ -443,7 +443,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setPressureRelaxation(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotUpwindAlphaEnergy(self):
         """
         Input if upwind scheme for mass and energy
@@ -454,7 +454,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setUpwindScheme('off')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotStopRestart(self):
         """
         Input if stop if no convergence
@@ -465,7 +465,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setStopNoConvergence('off')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVelocityAlgorithm(self, text):
         """
         Input velocity algorithm model
@@ -474,7 +474,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         self.mdl.setVelocityPredictorAlgo(model)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotRegulateBadCells(self):
         """
         Activate bad cells regulations.

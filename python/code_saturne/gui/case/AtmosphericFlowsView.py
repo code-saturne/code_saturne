@@ -210,11 +210,11 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
 
     #--------------- Functions for the groupBox LargeScalaMeteData--------------
-    @pyqtSlot(QDateTime)
+    @Slot(QDateTime)
     def __slotDateTime(self, startTime):
             self.__model.setStartTime(startTime.toPyDateTime())
 
-    @pyqtSlot(int)
+    @Slot(int)
     def __slotComboBoxUrefOrDlmo(self, indCurrent):
         text = self.lineEditUrefOrDlmo.text()
         val = from_qvariant(text, float)
@@ -235,7 +235,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.lineEditZref.setEnabled(False)
             self.labelDimZref.setEnabled(False)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def __slotComboBoxUstarOrDlmo(self, indCurrent):
         text = self.lineEditUstarOrDlmo.text()
         val = from_qvariant(text, float)
@@ -250,7 +250,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__model.setMeteoDlmo(val)
             self.__model.setMeteoUstar(-1.)
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotGroupBoxLargeScaleMeteo(self, checked):
         """
         Called when groupBox state changed
@@ -263,7 +263,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.groupBoxLargeScaleMeteo.setChecked(checked)
         self.__model.setLargeScaleMeteoStatus(status)
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotApplyLargeScaleMeteo(self, checked):
         """
         Called when groupBox state changed
@@ -276,53 +276,53 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.groupBoxLargeScaleMeteo.setChecked(checked)
         self.__model.setLargeScaleMeteoStatus(status)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLongitude(self, text):
         if self.lineEditLongCenter.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setLongitude(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLatitude(self, text):
         if self.lineEditLatCenter.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setLatitude(val)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotDomainOrientation(self, text):
         val = self.spinBoxDomainOrientation.value()
         self.__model.setDomainOrientation(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoZ0(self, text):
         if self.lineEditLargeScaleRoughness.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoZ0(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoPsea(self, text):
         if self.lineEditPressureSeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoPsea(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoT0(self, text):
         if self.lineEditTemperatureSeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoT0(val)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotWindDir(self, text):
         val = self.spinBoxWindDir.value()
         self.__model.setWindDir(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoZref(self, text):
         if self.lineEditZref.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoZref(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoUstarOrDlmo(self, text):
         if self.lineEditUstarOrDlmo.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
@@ -332,7 +332,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUstar(-1.)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoUrefOrDlmo(self, text):
         if self.lineEditUrefOrDlmo.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
@@ -342,13 +342,13 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUref(-1.)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoQw0(self, text):
         if self.lineEditHumiditySeaLevel.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoQw0(val)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoQwstar(self, text):
         if self.lineEditHumidityFriction.validator().state == QValidator.State.Acceptable:
             val = from_qvariant(text, float)
@@ -358,7 +358,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
 
     #--------------- Functions for the groupBox Activate Chemistry--------------
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotGroupBoxActChemistry(self, checked):
         """
         Called when groupBox state changed
@@ -374,7 +374,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     #--------------- Functions for the groupBox  MeteoDataFile-----------------
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def __slotGroupBoxMeteoData(self, checked):
         """
         Called when groupBox state changed
@@ -389,7 +389,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__slotGroupBoxLargeScaleMeteo(False)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotSearchMeteoData(self):
         """
         Select a meteorological file of data

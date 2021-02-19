@@ -235,7 +235,7 @@ class VolumicNatureView(QWidget, Ui_VolumicNatureForm):
         self.case.undoStopGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotUpdateTree(self):
 
         if self.tree:

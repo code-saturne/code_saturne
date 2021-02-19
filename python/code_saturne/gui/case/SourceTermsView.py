@@ -240,7 +240,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.labelSpecies.hide()
             self.groupBoxTransport.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT label for choice of species
@@ -254,7 +254,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.pushButtonSpecies.setToolTip("Use the formula editor to define a source term for this species.")
             self.pushButtonSpecies.setStyleSheet("background-color: red")
 
-    @pyqtSlot()
+    @Slot()
     def slotMomentumFormula(self):
         """
         Set momentumFormula of the source term
@@ -287,7 +287,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             self.pushButtonMomentum.setToolTip(result)
             self.pushButtonMomentum.setStyleSheet("background-color: green")
 
-    @pyqtSlot()
+    @Slot()
     def slotSpeciesFormula(self):
         """
         """
@@ -315,7 +315,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             self.pushButtonSpecies.setToolTip(result)
             self.pushButtonSpecies.setStyleSheet("background-color: green")
 
-    @pyqtSlot()
+    @Slot()
     def slotSpeciesGroundWaterFormula(self):
         """
         """
@@ -343,7 +343,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             self.pushButtonSpecies2.setToolTip(result)
             self.pushButtonSpecies2.setStyleSheet("background-color: green")
 
-    @pyqtSlot()
+    @Slot()
     def slotRichardsFormula(self):
         """
         """
@@ -370,7 +370,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             self.pushButtonRichards.setToolTip(result)
             self.pushButtonRichards.setStyleSheet("background-color: green")
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar

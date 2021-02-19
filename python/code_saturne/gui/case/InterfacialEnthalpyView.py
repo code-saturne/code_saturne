@@ -219,7 +219,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
         self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSelectInteraction(self, value):
         """
         Select a Field in the QTable
@@ -321,7 +321,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldaModel.addItem(self.tr("Droplet model for vapour"), "droplet_model_for_vapour")
                 self.modelFieldbModel.addItem(self.tr("Droplet model for liquid"), "droplet_model_for_liquid")
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSolidEnergyTransfer(self, text):
         """
         set model for solid enthalpy transfer
@@ -329,7 +329,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         choice = self.modelSolidEnergyTransfer.dicoV2M[text]
         self.mdl.setSolidEnergyTransfer(choice)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFieldaModel(self, text):
         """
         set model for field a
@@ -340,7 +340,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.updateLiquidVaporModel()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPonderationCoefFielda(self, text):
         """
         set ponderation coefficient for field a
@@ -350,7 +350,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_a, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFieldbModel(self, text):
         """
         set model for field b
@@ -361,7 +361,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.updateLiquidVaporModel()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPonderationCoefFieldb(self, text):
         """
         set ponderation coefficient for field b
@@ -372,7 +372,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_b, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRelaxationTimeFielda(self, text):
         """
         Update the relaxation time for field a
@@ -383,7 +383,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_a, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRelaxationTimeFieldb(self, text):
         """
         Update the relaxation time for field b
@@ -393,7 +393,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             value = from_qvariant(text, float)
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_b, value)
 
-    @pyqtSlot()
+    @Slot()
     def slotPoolBoilingModel(self):
         """
         Activate or deactivate the pool boiling model

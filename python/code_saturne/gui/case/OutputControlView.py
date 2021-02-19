@@ -90,7 +90,7 @@ class LabelWriterDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_A-Za-z0-9\(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -147,7 +147,7 @@ class LabelMeshDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_A-Za-z0-9 \(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -1278,7 +1278,7 @@ class MonitoringPointDelegate(QItemDelegate):
                 editor.setValidator(DoubleValidator(editor))
             else:
                 rx = "[_A-Za-z0-9\(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-                editor.setValidator(RegExpValidator(editor, QRegExp(rx)))
+                editor.setValidator(RegExpValidator(editor, QRegularExpression(rx)))
             editor.setFrame(False)
             editor.returnPressed.connect(self.commitAndCloseEditor)
             editor.setCursorPosition(0)
@@ -1728,7 +1728,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutputListing(self, text):
         """
         INPUT choice of the output listing
@@ -1757,7 +1757,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditNTLIST.setText(str(ntlist))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotChoiceNTLAL(self, text):
         """
         INPUT choice of the output listing for lagrangian variables
@@ -1786,7 +1786,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditNTLAL.setText(str(ntlist))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotListingFrequency(self, text):
         """
         Input the frequency of the listing output
@@ -1797,7 +1797,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setListingFrequency(n)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNTLAL(self, text):
         """
         Input the frequency of the listing output for lagrangian variables
@@ -1815,7 +1815,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelWriter.newData(name, writer_id, format, directory)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -1827,7 +1827,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                             self.mdl.getWriterFormat(writer_id),
                             self.mdl.getWriterDirectory(writer_id))
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -1870,7 +1870,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxLagrangianVariable.hide()
         self.groupBoxAssociatedLagrangianWriter.hide()
 
-    @pyqtSlot(QModelIndex,QModelIndex)
+    @Slot(QModelIndex,QModelIndex)
     def slotDataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableViewWriter.resizeRowToContents(row)
@@ -1932,7 +1932,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 writer_row = writer_row +1
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectWriter(self, index):
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
@@ -2001,7 +2001,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__updateOptionsFormat(options, row)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWriterFrequencyChoice(self, text):
         """
         INPUT choice of the output frequency for a writer
@@ -2053,7 +2053,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWriterFrequency(self, text):
         """
         Input the frequency of the post-processing output
@@ -2073,7 +2073,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWriterFrequencyTime(self, text):
         """
         Input the frequency of the post-processing output
@@ -2088,7 +2088,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotWriterFrequencyFormula(self):
         """
         """
@@ -2123,7 +2123,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.pushButtonFrequency.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWriterTimeDependency(self, text):
         """
         Input type of post-processing for mesh
@@ -2136,7 +2136,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                              self.modelTimeDependency.dicoV2M[str(text)])
 
 
-    @pyqtSlot()
+    @Slot()
     def slotWriterOutputStart(self):
         """
         Input output start flag
@@ -2151,7 +2151,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setWriterOutputStartStatus(writer_id, st)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotWriterOutputEnd(self):
         """
         Input output end flag
@@ -2186,7 +2186,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         return row, writer_id, options
 
 
-    @pyqtSlot()
+    @Slot()
     def slotWriterSeparateMeshes(self):
         """
         Writer separate meshes option
@@ -2208,7 +2208,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setWriterOptions(writer_id, l)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotWriterParallelIO(self):
         """
         Parallel IO option
@@ -2230,7 +2230,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setWriterOptions(writer_id, l)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWriterOptions(self):
         """
         Create line for command of format's options
@@ -2398,7 +2398,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelLagrangianMesh.newData(name, mesh_id, mesh_type, density, selection)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCatalystImplementation(self, text):
         """
         Select Catalyst implementation type
@@ -2408,7 +2408,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setCatalystImplementation(impl_type)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddMesh(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2424,7 +2424,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                           self.mdl.getMeshLocation(mesh_id))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteMesh(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2473,7 +2473,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddLagrangianMesh(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2487,7 +2487,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                     self.mdl.getMeshLocation(mesh_id))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteLagrangianMesh(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2536,7 +2536,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectMesh(self, index):
         cindex = self.tableViewMesh.currentIndex()
         if cindex != (-1,-1):
@@ -2558,7 +2558,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.showAssociatedWriterTable()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectLagrangianMesh(self, index):
         cindex = self.tableViewLagrangianMesh.currentIndex()
         if cindex != (-1,-1):
@@ -2580,7 +2580,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.showAssociatedLagrangianWriterTable()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAllVariables(self):
         """
         Toggle all variables output
@@ -2595,7 +2595,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setMeshAllVariablesStatus(mesh_id, "off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAllLagrangianVariables(self):
         """
         Toggle all lagrangian variables output
@@ -2624,7 +2624,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelAssociatedLagrangianWriter.newItem(name)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddAssociatedWriter(self):
         """
         Add one writer to a mesh.
@@ -2644,7 +2644,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__insertAssociatedWriter(self.mdl.getWriterLabel(associated_writer_id))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteAssociatedWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2669,7 +2669,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.__insertAssociatedWriter(label)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddAssociatedLagrangianWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2690,7 +2690,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__insertAssociatedLagrangianWriter(self.mdl.getWriterLabel(associated_writer_id))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteAssociatedLagrangianWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2715,7 +2715,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.__insertAssociatedLagrangianWriter(label)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutputProbeFmt(self, text):
         """
         INPUT choice of the output for the probes (.dat, .csv)
@@ -2725,7 +2725,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setMonitoringPointFormat(fmt)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMonitoringPoint(self, text):
         """
         Input choice of the output of monitoring points files
@@ -2768,7 +2768,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditFRTimePlot.setText(str(frlist))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMonitoringPointFrequencyTime(self, text):
         """
         Input the frequency of the monitoring point output
@@ -2779,7 +2779,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setMonitoringPointFrequencyTime(n)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMonitoringPointFrequency(self, text):
         """
         Input the frequency of the monitoring point output
@@ -2797,7 +2797,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelMonitoring.insertData(num, name, X, Y, Z)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddMonitoringPoint(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2814,7 +2814,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__salomeHandlerAddMonitoringPoint(num, 0., 0., 0.)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteMonitoringPoints(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2847,7 +2847,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.toolButtonDuplicate.setEnabled(False)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDuplicateMonitoringPoints(self):
         """
         Duplicate monitoring points selected with these coordinates in the list in the Hlist
@@ -2876,7 +2876,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             idx = idx + 1
 
 
-    @pyqtSlot()
+    @Slot()
     def slotImportMonitoringPoints(self):
         """
         select a csv file to add probes
@@ -2922,7 +2922,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 l2[i] = l2[i] - 1
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectedActors(self, idx):
         """
         If salome, hightlights monitoring points in the VTK view.
@@ -2936,7 +2936,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.case['probes'].select(str(name))
 
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def slotProbesDisplay(self, checked):
         """
         @type checked: C{True} or C{False}
@@ -2948,7 +2948,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.case['probes'].setVisibility(0)
 
 
-    @pyqtSlot('QString')
+    @Slot('QString')
     def slotProbesRadius(self, text):
         """
         @type text: C{QString}
@@ -2959,7 +2959,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.case['probes'].setRadius(r)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotProbeSnapMode(self):
        """
        Set snap mode for probes.
@@ -2971,7 +2971,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
            self.mdl.setMonitoringPointsSnap("none")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotProbesInterpolation(self):
         """
         Activate interpolation for probes.
@@ -2997,7 +2997,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         return steady
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotTabChanged(self, index):
         """
         Changed tab

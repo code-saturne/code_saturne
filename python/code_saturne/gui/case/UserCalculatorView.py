@@ -85,7 +85,7 @@ class NameDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_name = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -385,7 +385,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddCalc(self):
         """
         Add a scalar
@@ -394,7 +394,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         self.tableModelCalc.newItem()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteCalc(self):
         """
         Delete the a scalar from the list (one by one).
@@ -405,7 +405,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
             self.tableModelCalc.deleteItem(row)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaCalculator(self):
         """
         Modify postprocessing formula
@@ -434,7 +434,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
             self.pushButtonFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def __slotSelectCalc(self, index):
         """
         Select the user array in the QTable

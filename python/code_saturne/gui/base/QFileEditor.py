@@ -35,27 +35,8 @@ import sys, os, shutil
 from code_saturne import get_cs_data_path
 from code_saturne.gui.base import QtGui, QtCore, QtWidgets
 
-# Check if QString exists
-has_qstring = True
-try:
-    from code_saturne.gui.base.QtCore import QString
-    _fromUtf8 = QString.fromUtf8
-except ImportError:
-    has_qstring = False
-    def _fromUtf8(s):
-        return s
-
-    def QString(s):
-        return s
-
-try:
-    # PyQt5
-    from code_saturne.gui.base.QtWidgets import QMainWindow, QMessageBox, \
-        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
-except Exception:
-    # PyQt4
-    from code_saturne.gui.base.QtGui import QMainWindow, QMessageBox, \
-        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
+from code_saturne.gui.base.QtWidgets import QMainWindow, QMessageBox, \
+    QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
 
 import code_saturne.gui.base.resource_base_rc
 from code_saturne.gui.base.SearchBar import SearchBar
@@ -345,10 +326,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
                 if ok_to_highlight:
                     self.setFormat(index, length, rule.format)
-                if has_qstring:
-                    index = text.indexOf(exp, index + length)
-                else:
-                    index = text.find(exp.cap(), index + length)
+                index = text.find(exp.cap(), index + length)
 
         self.setCurrentBlockState(0)
 
@@ -382,10 +360,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
             else:
                 self.setCurrentBlockState(ref_state)
-                if has_qstring:
-                    length = text.length() - start + add
-                else:
-                    length = len(text) - start + add
+                length = len(text) - start + add
 
             self.setFormat(start, length, format_styles['comment'])
             start = endExpression.indexIn(text, start + length)
@@ -725,7 +700,7 @@ class QFileEditor(QMainWindow):
         # Open file action
         open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
-        icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
+        icon_open.addPixmap(QtGui.QPixmap(open_img_path),
                             QtGui.QIcon.Mode.Normal,
                             QtGui.QIcon.State.Off)
         self.openFileAction = QAction(icon_open, "Open", self)
@@ -736,7 +711,7 @@ class QFileEditor(QMainWindow):
         # New file action
         new_img_path = os.path.join(icons_path, 'document-new.png')
         icon_new     = QtGui.QIcon()
-        icon_new.addPixmap(QtGui.QPixmap(_fromUtf8(new_img_path)),
+        icon_new.addPixmap(QtGui.QPixmap(new_img_path),
                           QtGui.QIcon.Mode.Normal,
                           QtGui.QIcon.State.Off)
         self.newFileAction = QAction(icon_new, "New", self)
@@ -747,7 +722,7 @@ class QFileEditor(QMainWindow):
         # Save action
         save_img_path = os.path.join(icons_path, 'document-save.png')
         icon_save     = QtGui.QIcon()
-        icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
+        icon_save.addPixmap(QtGui.QPixmap(save_img_path),
                           QtGui.QIcon.Mode.Normal,
                           QtGui.QIcon.State.Off)
         self.saveFileAction = QAction(icon_save, "Save", self)
@@ -758,7 +733,7 @@ class QFileEditor(QMainWindow):
         # Save as action
         saveas_img_path = os.path.join(icons_path, 'document-save-as.png')
         icon_saveas     = QtGui.QIcon()
-        icon_saveas.addPixmap(QtGui.QPixmap(_fromUtf8(saveas_img_path)),
+        icon_saveas.addPixmap(QtGui.QPixmap(saveas_img_path),
                               QtGui.QIcon.Mode.Normal,
                               QtGui.QIcon.State.Off)
         self.saveFileAsAction = QAction(icon_saveas, "Save as", self)
@@ -768,7 +743,7 @@ class QFileEditor(QMainWindow):
         # Close file action
         close_img_path = os.path.join(icons_path, 'process-stop.png')
         icon_close     = QtGui.QIcon()
-        icon_close.addPixmap(QtGui.QPixmap(_fromUtf8(close_img_path)),
+        icon_close.addPixmap(QtGui.QPixmap(close_img_path),
                              QtGui.QIcon.Mode.Normal,
                              QtGui.QIcon.State.Off)
         self.closeFileAction = QAction(icon_close, "Close file", self)
@@ -779,7 +754,7 @@ class QFileEditor(QMainWindow):
         # Exit editor action
         quit_img_path = os.path.join(icons_path, 'system-log-out.png')
         icon_quit     = QtGui.QIcon()
-        icon_quit.addPixmap(QtGui.QPixmap(_fromUtf8(quit_img_path)),
+        icon_quit.addPixmap(QtGui.QPixmap(quit_img_path),
                           QtGui.QIcon.Mode.Normal,
                           QtGui.QIcon.State.Off)
         self.quitAction = QAction(icon_quit, "Quit", self)

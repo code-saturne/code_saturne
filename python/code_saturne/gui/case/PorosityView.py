@@ -138,7 +138,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         else:
             self.pushButtonPorosity.setStyleSheet("background-color: red")
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPorosity(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -148,7 +148,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         self.model.setPorosityModel(zone_id, choice)
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaPorosity(self):
         """
         User formula for density

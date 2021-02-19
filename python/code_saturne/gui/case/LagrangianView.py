@@ -80,7 +80,7 @@ class LabelDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         self.old_label = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
         return editor
@@ -354,7 +354,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         self.case.undoStartGlobal()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNORDRE(self, text):
         """
         Input NORDRE.
@@ -363,7 +363,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.model.setSchemeOrder(int(value))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMODCPL(self):
         """
         Input MODCPL.
@@ -374,7 +374,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setRegularParticles(1)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotISUILA(self):
         """
         Input ISUILA.
@@ -385,7 +385,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setRestart("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotISTTIO(self):
         """
         Input ISTTIO.
@@ -396,7 +396,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setCarrierFlowSteady("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIDEPST(self):
         """
         Input IDEPST.
@@ -407,7 +407,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setDepositionSubmodel("off")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotIPHYLA(self, text):
         """
         Input IPHYLA.
@@ -453,7 +453,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.slotIENCRA()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotITPVAR(self):
         """
         Input ITPVAR.
@@ -464,7 +464,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setHeating("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIMPVAR(self):
         """
         Input IMPVAR.
@@ -475,7 +475,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setEvaporation("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotIENCRA(self):
         """
         Input IENCRA.
@@ -504,7 +504,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.tableViewCoals.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNSTITS(self, text):
         """
         Input NSTITS.
@@ -514,7 +514,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingStartIteration(value)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotLTSDYN(self):
         """
         Input LTSDYN.
@@ -525,7 +525,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingDynamic("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotLTSMAS(self):
         """
         Input LTSMAS.
@@ -536,7 +536,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingMass("off")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotLTSTHE(self):
         """
         Input LTSTHE.

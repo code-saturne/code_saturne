@@ -430,7 +430,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonCombustion.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurbulenceChoice(self, text):
         """
         INPUT choice of method of initialization
@@ -458,7 +458,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setTurbFormula(zone_id, None)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotThermalChoice(self, text):
         """
         INPUT choice of method of initialization
@@ -480,7 +480,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonThermal.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT label for choice of zone_id
@@ -490,7 +490,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.updateViewSpecies(zone_id)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMeteoChoice(self, text):
         """
         INPUT label for choice of zone_id
@@ -500,7 +500,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.updateViewMeteo(zone_id)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCombustionChoice(self, text):
         """
         INPUT label for choice of zone_id
@@ -510,7 +510,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.updateViewCombustion(zone_id)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVelocityFormula(self):
         """
         INPUT choice of method of initialization
@@ -537,7 +537,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonVelocity.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVelocityChoice(self):
         zone_id = str(self.zone.getCodeNumber())
         exp = self.init.getVelocityFormula(zone_id)
@@ -551,7 +551,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setVelocityFormula(zone_id, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVoidFractionFormula(self):
         """
         INPUT choice of method of initialization
@@ -578,7 +578,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonVoidFraction.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotVoidFractionChoice(self):
         zone_id = str(self.zone.getCodeNumber())
         exp = self.init.getVoidFractionFormula(zone_id)
@@ -592,7 +592,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setVoidFractionFormula(zone_id, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotHydraulicHeadCheck(self):
         zone_id = str(self.zone.getCodeNumber())
 
@@ -607,7 +607,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setHydraulicHeadFormula(zone_id, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSpeciesCheck(self):
         zone_id = str(self.zone.getCodeNumber())
         self.scalar = self.modelSpecies.dicoV2M[self.comboBoxSpecies.currentText()]
@@ -622,7 +622,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setSpeciesFormula(zone_id, self.scalar, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeteoCheck(self):
         zone_id = str(self.zone.getCodeNumber())
         self.scalar = self.modelMeteo.dicoV2M[self.comboBoxMeteo.currentText()]
@@ -637,7 +637,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setMeteoFormula(zone_id, self.scalar, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCombustionCheck(self):
         zone_id = str(self.zone.getCodeNumber())
         self.scalar = self.modelCombustion.dicoV2M[self.comboBoxCombustion.currentText()]
@@ -652,7 +652,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setCombustionFormula(zone_id, self.scalar, None)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotTurbulenceFormula(self):
         """
         INPUT user formula
@@ -693,7 +693,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonTurbulence.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar
@@ -721,7 +721,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonThermal.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSpeciesFormula(self):
         """
         Input the initial formula of species
@@ -750,7 +750,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonSpecies.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeteoFormula(self):
         """
         """
@@ -777,7 +777,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonMeteo.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCombustionFormula(self):
         """
         """
@@ -805,7 +805,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonCombustion.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPressure(self):
         """
         Pressure selected or not for the initialisation.
@@ -842,7 +842,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 if box_list[0] == 'Temperature':
                     self.checkBoxEnergy.setEnabled(False)
 
-    @pyqtSlot()
+    @Slot()
     def slotDensity(self):
         """
         Density selected or not for the initialisation.
@@ -879,7 +879,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 if box_list[0] == 'Temperature':
                     self.checkBoxEnergy.setEnabled(False)
 
-    @pyqtSlot()
+    @Slot()
     def slotTemperature(self):
         """
         Temperature selected or not for the initialisation.
@@ -914,7 +914,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __checkBox.setEnabled(True)
             self.checkBoxEnergy.setEnabled(True)
 
-    @pyqtSlot()
+    @Slot()
     def slotEnergy(self):
         """
         Energy selected or not for the initialisation.
@@ -957,7 +957,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.checkBoxTemperature.setEnabled(True)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPressureFormula(self):
         """
         Input the initial Pressure formula
@@ -984,7 +984,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonPressure.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotHydraulicHeadFormula(self):
         """
         Input the initial Hydraulic Head formula
@@ -1011,7 +1011,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonHydraulicHead.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDensityFormula(self):
         """
         Input the initial Density formula
@@ -1038,7 +1038,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonDensity.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotTemperatureFormula(self):
         """
         Input the initial Temperature formula
@@ -1065,7 +1065,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonTemperature.setToolTip(result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotEnergyFormula(self):
         """
         Input the initial Energy formula

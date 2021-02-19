@@ -1387,7 +1387,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         return d_node, p_idx_r
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotTabSelector(self, selected_index):
         """
         Update when tab selection changed, in case sub-plot ids have
@@ -1414,7 +1414,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.treeViewCases.clearSelection()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStudy(self, text):
         """
         INPUT choice of study
@@ -1559,7 +1559,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionFigure()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAssociatedFiguresSubplot(self):
         """
         Private slot.
@@ -1584,7 +1584,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionFigure()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAssociatedMeasurementSubplot(self):
         """
         Private slot.
@@ -1710,7 +1710,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionMeasurement()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotMeasurementPlot(self):
         """
         Private slot.
@@ -1737,7 +1737,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.slotChangeSelectionMeasurement()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCaseAddData(self):
         """
         """
@@ -1755,7 +1755,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionCases()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCaseDeleteData(self):
         """
         """
@@ -1770,7 +1770,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionCases()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCaseAddPlot(self):
         """
         """
@@ -1797,7 +1797,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.slotChangeSelectionCases()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCaseDeletePlot(self):
         """
         """
@@ -1812,7 +1812,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.slotChangeSelectionCases()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCasePlot(self):
         """
         Private slot.
@@ -1838,7 +1838,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.slotChangeSelectionCases()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCaseAssociatedSubplot(self):
         """
         """

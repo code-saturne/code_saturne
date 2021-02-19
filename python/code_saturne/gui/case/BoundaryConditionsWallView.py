@@ -118,7 +118,7 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotWall(self, text):
         """
         INPUT wall model

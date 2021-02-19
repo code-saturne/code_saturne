@@ -599,7 +599,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         return mesh_files
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view
@@ -610,7 +610,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.updatePageView()
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotCheckActivate(self, val):
 
         # Set the method state
@@ -690,7 +690,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                 self.groupBoxSTL.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAdd(self):
 
         name = self.ibm.defaultValues()['object_name'] \
@@ -717,7 +717,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDelete(self):
         row = self.tableView.currentIndex().row()
 
@@ -733,7 +733,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotExplicitFormula(self):
         """
         Explicit formula for variable porosity
@@ -781,7 +781,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             self.ibm.setObjectFormula(objId-1, result)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchMEDMesh(self):
         msg = self.tr("Select a mesh file.")
         self.stbar.showMessage(msg, 2000)
@@ -794,7 +794,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             self.lineEditMEDFile.setText(os.path.basename(file_name[0]))
 
 
-    @pyqtSlot()
+    @Slot()
     def slotSearchSTLMesh(self):
         msg = self.tr("Select a mesh file.")
         self.stbar.showMessage(msg, 2000)
@@ -808,7 +808,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                 self.lineEditSTLFile.setText(os.path.basename(file_name[0]))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotIBMDim(self):
         """
         """
@@ -816,7 +816,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.ibm.setIBMDim(val)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddSTLPoint(self):
         """
         Add one STL seed point with these coordinates in the list
@@ -830,7 +830,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.ibm.addSTLSeedPoint(objId, num, x=0.0, y=0.0, z=0.0)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteSTLPoint(self):
         """
         Just delete the current selected seed point

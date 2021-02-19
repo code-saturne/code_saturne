@@ -265,7 +265,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.lineEditValueSpecies.setText(str(v))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotElecChoice(self, text):
         """
         INPUT choice for electric potential type
@@ -275,7 +275,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotElecImChoice(self, text):
         """
         INPUT choice for imaginary electric potential type
@@ -285,7 +285,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotVectorChoice(self, text):
         """
         INPUT choice for potential vector type
@@ -295,7 +295,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT species choice
@@ -304,7 +304,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotVectorComponentChoice(self, text):
         """
         INPUT potential vector component choice
@@ -313,7 +313,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotElec(self, var):
         """
         """
@@ -322,7 +322,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPotElecIm(self, var):
         """
         """
@@ -331,7 +331,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSpecies(self, var):
         """
         """
@@ -386,7 +386,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         return result
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPotElecFormula(self):
         """
         """
@@ -395,7 +395,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.pushButtonPotElecFormula.setStyleSheet("background-color: green")
             self.pushButtonPotElecFormula.setToolTip(exp)
 
-    @pyqtSlot()
+    @Slot()
     def slotPotElecImFormula(self):
         """
         """
@@ -405,7 +405,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.pushButtonPotElecImFormula.setToolTip(exp)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotPotVectorFormula(self):
         """
         """

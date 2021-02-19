@@ -821,7 +821,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setReference(reference)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPressure(self,  text):
         """
         Input PRESS.
@@ -831,7 +831,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setPressure(p)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTemperature(self,  text):
         """
         Input TEMPERATURE.
@@ -841,7 +841,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setTemperature(t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTempOxydant(self,  text):
         """
         Input oxydant TEMPERATURE.
@@ -851,7 +851,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setTempOxydant(t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTempFuel(self,  text):
         """
         Input fuel TEMPERATURE.
@@ -861,7 +861,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setTempFuel(t)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMassemol(self,  text):
         """
         Input Mass molar.
@@ -871,7 +871,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setMassemol(m)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMaterial(self, text):
         """
         Method to call 'setMaterial'
@@ -883,7 +883,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.updateTypeChoice(old_choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMethod(self, text):
         """
         Method to call 'setMethod'
@@ -893,7 +893,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.updateReference(self.mdl.getMaterials(), choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotReference(self, text):
         """
         Method to call 'setReference'
@@ -902,7 +902,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl.setReference(choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateRho(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -910,7 +910,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Rho', 'density')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateMu(self, text):
         """
         Method to call 'getState' with correct arguements for 'Mu'
@@ -918,7 +918,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Mu', 'molecular_viscosity')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateSigma(self, text):
         """
         Method to call 'getState' with correct arguments for 'Sigma'
@@ -926,7 +926,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Sigma', 'surface_tension')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateCp(self, text):
         """
         Method to call 'getState' with correct arguements for 'Cp'
@@ -934,7 +934,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Cp', 'specific_heat')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateViscv0(self, text):
         """
         Method to call 'getState' with correct arguements for 'Viscv0'
@@ -942,7 +942,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Viscv0', 'volume_viscosity')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateAl(self, text):
         """
         Method to call 'getState' with correct arguements for 'Al'
@@ -950,7 +950,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Al', 'thermal_conductivity')
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotStateDiff(self, text):
         """
         Method to set diffusion choice for the coefficient
@@ -976,7 +976,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNameDiff(self, text):
         """
         Method to set the variance scalar choosed
@@ -1063,7 +1063,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setPropertyMode(tag, choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRho(self, text):
         """
         Update the density
@@ -1072,7 +1072,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             rho = from_qvariant(text, float)
             self.mdl.setInitialValueDensity(rho)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRho1(self, text):
         """
         Update the density of fluid 1 for VoF module
@@ -1081,7 +1081,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             rho = from_qvariant(text, float)
             self.mdl.setVofValueDensity(0, rho)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRho2(self, text):
         """
         Update the density of fluid 2 for VoF module
@@ -1090,7 +1090,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             rho = from_qvariant(text, float)
             self.mdl.setVofValueDensity(1, rho)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMu(self, text):
         """
         Update the molecular viscosity
@@ -1100,7 +1100,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueViscosity(mu)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMu1(self, text):
         """
         Update the molecular viscosity
@@ -1110,7 +1110,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setVofValueViscosity(0, mu)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotMu2(self, text):
         """
         Update the molecular viscosity
@@ -1120,7 +1120,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setVofValueViscosity(1, mu)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSigma(self, text):
         """
         Update the surface tension
@@ -1130,7 +1130,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueSurfaceTension(sigma)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCp(self, text):
         """
         Update the specific heat
@@ -1140,7 +1140,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueHeat(cp)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotViscv0(self, text):
         """
         Update the volumic viscosity
@@ -1150,7 +1150,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueVolumeViscosity(viscv0)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAl(self, text):
         """
         Update the thermal conductivity
@@ -1160,7 +1160,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueCond(al)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDiftl0(self, text):
         """
         Update the thermal conductivity
@@ -1170,7 +1170,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueDyn(diftl0)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDiff(self, text):
         """
         Update the thermal conductivity
@@ -1180,7 +1180,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaRho(self):
         """
         User formula for density
@@ -1219,7 +1219,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonRho.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaMu(self):
         """
         User formula for molecular viscosity
@@ -1259,7 +1259,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonMu.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaCp(self):
         """
         User formula for specific heat
@@ -1287,7 +1287,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonCp.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaViscv0(self):
         """
         User formula for volumic viscosity
@@ -1315,7 +1315,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonViscv0.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaAl(self):
         """
         User formula for thermal conductivity
@@ -1352,7 +1352,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonAl.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotFormulaDiff(self):
         """
         User formula for the diffusion coefficient

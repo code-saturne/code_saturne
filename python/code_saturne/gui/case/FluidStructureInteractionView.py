@@ -251,7 +251,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.spinBox_ast_viz.setValue(ast_vis)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotNalimx(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -261,7 +261,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setMaxIterations(nalimx)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def __slotEpalim(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -271,7 +271,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setPrecision(epalim)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotStructureTimePlot(self, val):
 
         if val == 0:
@@ -280,7 +280,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setInternalStructuresTimePlot("on")
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slot_ast_log(self, text):
         """
         Set value for code_aster logging
@@ -289,7 +289,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         log.debug("slot_ast_log-> %s" % text)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slot_ast_vis(self, text):
         """
         Set value for code_aster logging
@@ -298,7 +298,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         log.debug("slot_ast_vis-> %s" % text)
 
 
-    @pyqtSlot()
+    @Slot()
     def __slotAdvanced(self):
         """
         Private slot.

@@ -485,7 +485,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.slotSoot()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotThermalScalar(self, text):
         """
         Update the thermal scalar markup.
@@ -497,7 +497,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotEmissivityField(self, text):
         """
         Update current field id for particles radiaitive model.
@@ -507,7 +507,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self._update_emissivity_line()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotFluidRadiativeTransfer(self):
         """
         """
@@ -542,7 +542,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.__setSoot__()
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotRadRestart(self, val):
         """
         """
@@ -552,7 +552,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setRestart("on")
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotDirection(self, text):
         """
         """
@@ -568,7 +568,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.lineEditNdirec.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNdirec(self, text):
         """
         """
@@ -577,7 +577,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setNbDir(n)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTypeCoefficient(self, text):
         """
         """
@@ -611,7 +611,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.lineEditCoeff.setDisabled(True)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotAbsorptionCoefficient(self, text):
         """
         """
@@ -620,7 +620,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setAbsorCoeff(c)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications
@@ -644,7 +644,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setIntensityResolution(result['intensity'])
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSoot(self):
         """
         """
@@ -710,7 +710,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.labelSootFractionbis.hide()
             self.lineEditSootFraction.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSootDensity(self, text):
         """
         """
@@ -718,7 +718,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             c  = from_qvariant(text, float)
             self.gas.setSootDensity(c)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSootFraction(self, text):
         """
         """
@@ -726,7 +726,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             c  = from_qvariant(text, float)
             self.gas.setSootFraction(c)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLspFuel(self, text):
         """
         """

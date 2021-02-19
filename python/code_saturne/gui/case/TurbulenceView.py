@@ -300,7 +300,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.checkBoxRijCoupled.setChecked(False)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLengthScale(self, text):
         """
         Private slot.
@@ -311,7 +311,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setLengthScale(l_scale)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurbulenceModel(self, text):
         """
         Private slot.
@@ -322,7 +322,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.__initializeView()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotWallFunction(self, text):
         """
         Private slot.
@@ -336,7 +336,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.labelWallFunctionsDesc.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotTurbDiff(self, text):
         """
         Private slot.
@@ -346,7 +346,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.model.setTurbDiffModel(m)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotVelocity(self,  text):
         """
         Private slot.
@@ -357,7 +357,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setVelocity(v)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLengthChoice(self,text):
         """
         Private slot.
@@ -377,7 +377,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         log.debug("slotlengthchoice-> %s" % choice)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotLength(self,  text):
         """
         Private slot.
@@ -388,7 +388,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setLength(l)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotGravity(self):
         """
         Activate or deactivate gravity source terms
@@ -399,7 +399,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setGravity('off')
 
 
-    @pyqtSlot()
+    @Slot()
     def slotRijCoupled(self):
         """
         Activate or deactivate Rij component coupling

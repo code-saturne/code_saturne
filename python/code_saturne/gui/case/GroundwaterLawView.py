@@ -188,7 +188,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
         self.lineEdit_clstar.setValidator(DoubleValidator(self.lineEdit_clstar))
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def selectGroundwaterLawZones(self):
         label = self.zone.getLabel()
         name = self.zone.getCodeNumber()
@@ -340,7 +340,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxSaturated.hide()
         self.groupBoxSoluteProperties.hide()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotGroundwaterLaw(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -395,7 +395,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                                                         field_name,
                                                         value)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotSetSoilDensity(self, text):
         """
         """
@@ -403,7 +403,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             val = float(text)
             self.mdl.setSoilDensity(self.zone.getCodeNumber(), val)
 
-    @pyqtSlot()
+    @Slot()
     def slotFormula(self):
         """
         User formula for Groundwater functions
@@ -431,7 +431,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.pushButtonUserLaw.setStyleSheet("background-color: green")
             self.pushButtonUserLaw.setToolTip(result)
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotNameDiff(self, text):
         """
         Method to choose the scalar which properties shall be changed

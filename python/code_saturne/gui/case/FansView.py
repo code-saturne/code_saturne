@@ -369,7 +369,7 @@ class FansView(QWidget, Ui_FansForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotAddFan(self):
         """
         Add a fan to list
@@ -380,7 +380,7 @@ class FansView(QWidget, Ui_FansForm):
         self.groupBoxFanOption.hide()
 
 
-    @pyqtSlot()
+    @Slot()
     def slotDeleteFan(self):
         """
         Delete the selected fan from the list
@@ -392,7 +392,7 @@ class FansView(QWidget, Ui_FansForm):
         self.groupBoxFanOption.hide()
 
 
-    @pyqtSlot("QModelIndex")
+    @Slot("QModelIndex")
     def slotSelectFan(self, index):
         """
         Return the selected item from the list.
@@ -421,7 +421,7 @@ class FansView(QWidget, Ui_FansForm):
         self.lineEditCoefZ.setText(str(CoefZ))
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotInletX(self, text):
         """
         """
@@ -431,7 +431,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "inlet_axis_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotInletY(self, text):
         """
         """
@@ -441,7 +441,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "inlet_axis_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotInletZ(self, text):
         """
         """
@@ -451,7 +451,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "inlet_axis_z", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutletX(self, text):
         """
         """
@@ -461,7 +461,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "outlet_axis_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutletY(self, text):
         """
         """
@@ -471,7 +471,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "outlet_axis_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutletZ(self, text):
         """
         """
@@ -481,7 +481,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "outlet_axis_z", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCoefX(self, text):
         """
         """
@@ -491,7 +491,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "curve_coeffs_x", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCoefY(self, text):
         """
         """
@@ -501,7 +501,7 @@ class FansView(QWidget, Ui_FansForm):
             self.mdl.setFanProperty(idx, "curve_coeffs_y", val)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotCoefZ(self, text):
         """
         """

@@ -945,7 +945,7 @@ class DoubleValidator(QDoubleValidator):
         return text
 
 
-class RegExpValidator(QRegExpValidator):
+class RegExpValidator(QRegularExpressionValidator):
     """
     Validator for regular expression.
     """
@@ -953,12 +953,12 @@ class RegExpValidator(QRegExpValidator):
         """
         Initialization for validator
         """
-        QRegExpValidator.__init__(self, parent)
+        QRegularExpressionValidator.__init__(self, parent)
         self.parent = parent
-        self.state = QRegExpValidator.Invalid
+        self.state = QRegularExpressionValidator.Invalid
         self.forbidden = forbidden_labels
 
-        self.__validator = QRegExpValidator(rx, parent)
+        self.__validator = QRegularExpressionValidator(rx, parent)
 
         if "{1," + str(LABEL_LENGTH_MAX) + "}" in rx.pattern():
             msg = self.tr("The maximum length of the label is %i characters" % LABEL_LENGTH_MAX)
@@ -1108,7 +1108,7 @@ class LabelDelegate(QItemDelegate):
         if rx is None:
             rx = "[ -~]*"
 #            "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        self.regExp = QRegExp(rx)
+        self.regExp = QRegularExpression(rx)
 
         # Auto completion
         self._comp_list = auto_completion

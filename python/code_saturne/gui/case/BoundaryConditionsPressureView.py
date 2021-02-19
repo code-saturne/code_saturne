@@ -123,7 +123,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPressureValue(self, text):
         """
         INPUT outlet pressure

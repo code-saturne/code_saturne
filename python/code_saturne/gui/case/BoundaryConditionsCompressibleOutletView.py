@@ -139,7 +139,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOutletType(self, text):
         """
         INPUT outlet type
@@ -151,7 +151,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.initialize()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotPressureValue(self, text):
         """
         INPUT outlet pressure

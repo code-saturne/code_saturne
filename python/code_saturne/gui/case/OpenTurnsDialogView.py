@@ -205,7 +205,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOtStudyMode(self, text):
         """
         Host type: localhost or a distant one (defined in code_saturne.cfg).
@@ -231,7 +231,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.arch_path = self.hosts_binpath[host_name]
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotBuildChoice(self, text):
         """
         Sets the hostname
@@ -239,7 +239,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setBuildName(text)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotOtDistWdir(self, text):
         """
         Set the distant workdir path
@@ -247,7 +247,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setDistWorkdir(text)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateNodesNumber(self, v):
         """
         Update the number of required computation nodes
@@ -256,7 +256,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         n = int(self.spinBoxNumberNodes.text())
         self.mdl.setClusterParams(nnodes=n)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateNprocs(self, v):
         """
         Update the number of required processes
@@ -265,7 +265,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         n = int(self.spinBoxLocalProcs.text())
         self.mdl.setNprocs(n)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateTasksNumber(self, v):
         """
         Update the number of required mpi tasks per node
@@ -275,7 +275,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(ntasks=n)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateThreadsNumber(self, v):
         """
         Update the number of required threads per processor
@@ -285,7 +285,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(nthreads=n)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateWCDays(self, v):
         """
         Update the wall clock days value
@@ -297,7 +297,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateWCHours(self, v):
         """
         Update the wall clock hours value
@@ -309,7 +309,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateWCMinutes(self, v):
         """
         Update the wall clock minutes value
@@ -321,7 +321,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @pyqtSlot(int)
+    @Slot(int)
     def slotUpdateWCSeconds(self, v):
         """
         Update the wall clock seconds value
@@ -333,7 +333,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotUpdateWckey(self, text):
         """
         Update the WCKEY variable
@@ -342,7 +342,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWCKEY(text)
 
 
-    @pyqtSlot()
+    @Slot()
     def slotLaunchCsOt(self):
         """
         Translate the Code_Sature reference case and study into an OpenTurs
@@ -368,7 +368,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
             print("This option is only available within the SALOME_CFD platform")
 
 
-    @pyqtSlot()
+    @Slot()
     def slotCancel(self):
         """
         Close dialog with no modifications

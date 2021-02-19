@@ -254,7 +254,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.hide()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotRadiativeChoice(self, text):
         cond = self.modelRadiative.dicoV2M[str(text)]
         log.debug("slotRadiativeChoice cond = %s "%cond)
@@ -262,7 +262,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.__updateView__()
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotEmissivity(self, text):
         """
         """
@@ -271,7 +271,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.__boundary.setEmissivity(c)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotConductivity(self, text):
         """
         """
@@ -280,7 +280,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.__boundary.setThermalConductivity(c)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotThickness(self, text):
         """
         """
@@ -289,7 +289,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.__boundary.setThickness(c)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotExtTemperature(self, text):
         """
         """
@@ -298,7 +298,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.__boundary.setExternalTemperatureProfile(c)
 
 
-    @pyqtSlot(str)
+    @Slot(str)
     def slotConductionFlux(self, text):
         """
         """
