@@ -1747,7 +1747,7 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
   }
 
   /* Return the pointer to values */
-  p_pty_vals = values;
+  *p_pty_vals = values;
 }
 
 /*----------------------------------------------------------------------------*/
