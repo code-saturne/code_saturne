@@ -17,6 +17,9 @@ Bug fixes:
 
 - GUI: Fix usage of formula for user scalar diffusivity.
 
+- GUI: fix incomplete handling of compressible boundary conditions
+  preventing run unless completed in user subroutines.
+
 - Ensure profiles are ordered by curvilinear coordinates in serial mode.
 
 - Scripts: fix MPMD (coupling) backup "script" launch mode.
