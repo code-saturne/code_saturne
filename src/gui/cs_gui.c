@@ -231,13 +231,13 @@ _thermal_table_option(const char *name)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the tree node associated to a given property and zone.
  *----------------------------------------------------------------------------*/
 
-static const cs_tree_node_t *
+static cs_tree_node_t *
 _get_property_node(const char *property_name,
                    const char *zone_name)
 {
-
   cs_tree_node_t *tn = cs_tree_find_node(cs_glob_tree, "property");
   while (tn != NULL) {
     const char *name = cs_tree_node_get_child_value_str(tn, "name");
@@ -272,7 +272,6 @@ _get_property_node(const char *property_name,
   }
 
   return tn;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -298,13 +297,13 @@ _properties_choice(const char *property_name,
 }
 
 /*----------------------------------------------------------------------------
+ * Return the formula associated to a given property and zone.
  *----------------------------------------------------------------------------*/
 
 static const char*
 _property_formula(const char *property_name,
                   const char *zone_name)
 {
-
   const char *law = NULL;
 
   cs_tree_node_t *node = _get_property_node(property_name, zone_name);
@@ -314,7 +313,6 @@ _property_formula(const char *property_name,
   law = cs_tree_node_get_value_str(node);
 
   return law;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -421,7 +419,6 @@ _physical_property(cs_field_t          *c_prop,
                          thermodynamic_pressure,
                          _thermal_f_val,
                          c_prop->val);
-
   }
 }
 
@@ -2286,7 +2283,8 @@ void CS_PROCF(uiporo, UIPORO)(void)
   }
 
   cs_tree_node_t *tn_p
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/porosities/porosity");
+    = cs_tree_get_node(cs_glob_tree,
+                       "thermophysical_models/porosities/porosity");
 
   for (int z_id = 0; z_id < n_zones; z_id++) {
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
