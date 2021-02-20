@@ -2098,7 +2098,7 @@ must be completed by the user.
 \begin{list}{-}{}
 \item \texttt{ieos}: equation of state (only perfect gas with a constant adiabatic coefficient,
                       \texttt{ieos=1} is available, but the user can complete the subroutine
-                      \texttt{cfther}, which is not a user subroutine, to add new equations of state).
+                      \texttt{cs\_cf\_thermo}, which is not a user subroutine, to add new equations of state).
 \item \texttt{call field\_set\_key\_int(ivarfl(isca(itempk)), kivisl, ...)}: molecular thermal conductivity, constant (\texttt{-1}) or variable (\texttt{0}).
 \item  \texttt{iviscv}: volumetric molecular viscosity, constant (\texttt{0}) or variable (\texttt{1}).
 \end{list}
@@ -2152,7 +2152,7 @@ pressure, density, temperature and specific total energy, only 2 variables out
 of these 4 are independent. The user may then initialise the desired variable pair
 (apart from temperature-energy) and the two other variables will be
 calculated automatically by giving the right value to the variable
-\texttt{ithvar} used for the call to the subroutine \texttt{cfther}.
+\texttt{ithvar} used for the call to the \texttt{cs\_cf\_thermo} routine.
 
 %==================================
 \subsubsection{Management of variable physical properties}
@@ -2170,7 +2170,7 @@ which is then called at each time step. This subroutine replaces and is similar 
 The user should check that the defined laws are valid for
 the whole variation range of the variables. Moreover, as only the perfect gas with a constant
 adiabatic coefficient equation of state is available, it is not advised to give a law for the isobaric
-specific heat without modifying the equation of state in the subroutine \texttt{cfther} which is not
+specific heat without modifying the equation of state in the subroutine \texttt{cs\_cf\_thermo} which is not
 a user subroutine.
 
 %==================================
