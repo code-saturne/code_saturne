@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2021 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -120,7 +120,7 @@ integer          ifadir
 integer          iut  , ivt   , iwt, ialt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
-integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus
+integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus, f_id_wdist
 integer          modntl
 
 double precision pref
@@ -1969,6 +1969,22 @@ if (modntl.eq.0) then
 
   write(nfecra,7030)
 
+endif
+
+!===============================================================================
+! Ensure icodcl is set for wall distance
+!===============================================================================
+
+call field_get_id_try("wall_distance", f_id_wdist)
+
+if (f_id_wdist .ge. 0) then
+  do ivar = 1, nvar
+    if (ivarfl(ivar) .eq. f_id_wdist) then
+      do ifac = 1, nfabor
+        if (icodcl(ifac,ivar).eq.0) icodcl(ifac,ivar) = 3
+      enddo
+    endif
+  enddo
 endif
 
 !===============================================================================
