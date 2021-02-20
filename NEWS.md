@@ -35,6 +35,10 @@ Numerics:
   another solver to solve saddle-point problem arising from the monolithic
   coupling of CDO face-based schemes for the (Navier-)Stokes equations.
 
+Architectural changes:
+
+- Move salome extensions (CFDSTUDY module) to a separate repository.
+
 Release 7.0.0 (unreleased)
 --------------------------
 
