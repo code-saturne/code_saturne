@@ -697,7 +697,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
 
   if (cs_gui_strcmp(choice, "imposed_inlet")) {
 
-    cs_real_t te_in = 0;
+    cs_real_t te_in = cs_math_infinite_r;
 
     boundaries->itype[izone] = CS_ESICF;
 
@@ -740,7 +740,7 @@ _inlet_compressible(cs_tree_node_t  *tn_vp,
     cs_gui_node_get_child_real
       (tn_vp, "total_pressure", &boundaries->prein[izone]);
 
-    cs_real_t h_in = 0;
+    cs_real_t h_in = cs_math_infinite_r;
     cs_gui_node_get_child_real(tn_vp, "enthalpy", &h_in);
 
     cs_equation_param_t *eqp = _get_equation_param("total_energy");
@@ -1079,9 +1079,9 @@ _init_boundaries(void)
 
     else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
       boundaries->itype[izone]     = 0;
-      boundaries->prein[izone]     = 0;
-      boundaries->rhoin[izone]     = 0;
-      boundaries->tempin[izone]    = 0;
+      boundaries->prein[izone]     = cs_math_infinite_r;
+      boundaries->rhoin[izone]     = cs_math_infinite_r;
+      boundaries->tempin[izone]    = cs_math_infinite_r;
     }
 
     else if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {

@@ -83,6 +83,9 @@ User changes:
 
 Bug fixes:
 
+- GUI: fix incomplete handling of compressible boundary conditions
+  preventing run unless completed in user subroutines.
+
 - Fix off-by-one return values in cs_selector_get_family_list
   (advanced user selection).
 
