@@ -257,7 +257,7 @@ _get_property_node(const char *property_name,
         cs_tree_get_node(cs_glob_tree, "solution_domain/volumic_conditions/zone");
       const char *id_s = NULL;
       while (id_n != NULL) {
-        const char *zname = cs_tree_get_node(id_n, "label");
+        const char *zname = cs_tree_node_get_tag(id_n, "label");
         if (cs_gui_strcmp(zname, zone_name)) {
           id_s = cs_tree_node_get_tag(id_n, "id");
           break;
@@ -2975,8 +2975,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
             tn_combustion2 = cs_tree_get_node(tn_combustion2, "formula");
             tn_combustion2 = _add_zone_id_test_attribute(tn_combustion2, z->id);
-            const char *zone_id
-              = cs_tree_node_get_child_value_str(tn_combustion2, "zone_id");
 
             cs_field_t *c_comb = cs_field_by_name_try(name);
 
@@ -3078,7 +3076,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
 void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   double time0 = cs_timer_wtime();
 
   int n_zones_pp =
@@ -3174,8 +3171,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
       user_id++;
-
-      int user_law = 0;
 
       if (   cs_field_get_key_int(f, kscavr) < 0
           && cs_field_get_key_int(f, kivisl) >= 0) {
