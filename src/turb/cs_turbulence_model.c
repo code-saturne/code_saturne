@@ -1405,6 +1405,11 @@ cs_set_type_order_turbulence_model(void)
     _turb_model.type = CS_TURB_LES;
     _turb_model.order = CS_TURB_ALGEBRAIC;
   }
+
+  else {
+    _turb_model.iturb = 0;
+    _turb_model.itytur = CS_TURB_TYPE_NONE;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
