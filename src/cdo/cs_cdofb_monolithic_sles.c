@@ -2985,11 +2985,11 @@ cs_cdofb_monolithic_sles_clean(cs_cdofb_monolithic_sles_t   *msles)
   if (msles == NULL)
     return;
 
-  for (int i = 0; i < msles->n_row_blocks*msles->n_row_blocks; i++)
-    cs_matrix_destroy(&(msles->block_matrices[i]));
-
   cs_sles_free(msles->sles);
   cs_sles_free(msles->schur_sles);
+
+  for (int i = 0; i < msles->n_row_blocks*msles->n_row_blocks; i++)
+    cs_matrix_destroy(&(msles->block_matrices[i]));
 
   /* b_f and b_c are stored consecutively */
   BFT_FREE(msles->b_f);
