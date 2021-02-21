@@ -814,7 +814,7 @@ class case:
             app_id += 1
 
         for d in self.domains:
-            s_args = d.solver_command(app_id=app_id)
+            s_args = d.solver_command()
             if len(cmd) > 0:
                 cmd += ' : '
             cmd += '-n ' + str(d.n_procs) \
@@ -944,7 +944,7 @@ class case:
         for d in self.domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_command(app_id=app_id)
+            s_args = d.solver_command()
             e.write('  cd ' + s_args[0] + '\n')
             e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
