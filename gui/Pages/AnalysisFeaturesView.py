@@ -760,13 +760,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         predefined_flow = self.nept.getPredefinedFlow()
         if val == 0:
             self.nept.setHeatMassTransferStatus("off")
-            for field_id in self.nept.getFieldIdList():
-                self.nept.setEnergyModel(field_id, "off")
             NeptuneWallTransferModel(self.case).clear()
             InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
         else:
             self.nept.setHeatMassTransferStatus("on")
             for field_id in self.nept.getFieldIdList():
+                self.nept.setEnergyResolution(field_id, "on")
                 self.nept.setEnergyModel(field_id, "total_enthalpy")
         self.browser.configureTree(self.case)
 
