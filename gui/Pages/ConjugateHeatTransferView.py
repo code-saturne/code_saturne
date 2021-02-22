@@ -190,8 +190,13 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.comboBoxProjectionAxis.currentTextChanged[str].connect(self.slotProjectionAxis)
         self.lineEditVerbosity.textChanged[str].connect(self.slotVerbosity)
         self.lineEditVisualization.textChanged[str].connect(self.slotVisualization)
+        self.lineEditTolerance.editingFinished.connect(self.slotTolerance)
         self.lineEditVerbosity.setValidator(IntValidator(self.lineEditVerbosity))
         self.lineEditVisualization.setValidator(IntValidator(self.lineEditVisualization))
+
+        _tolValidator = DoubleValidator(self.lineEditTolerance, min=0.)
+        _tolValidator.setExclusiveMin()
+        self.lineEditTolerance.setValidator(_tolValidator)
 
         self.initializeParameters()
 
@@ -217,6 +222,8 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         else:
             self.lineEditVisualization.setText("1")
 
+        tolerance = self.__model.getSyrthesTolerance()
+        self.lineEditTolerance.setText(tolerance)
 
         for syrthes_name, boundary_labels in self.__model.getSyrthesCouplingList():
             self.modelSyrthes.addItem([syrthes_name, ", ".join(boundary_labels)])
@@ -235,6 +242,15 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
     def slotVisualization(self, value):
         self.__model.setSyrthesVisualization(value)
         pass
+
+    @pyqtSlot()
+    def slotTolerance(self):
+        """
+        Input tolerance value.
+        """
+        if self.lineEditTolerance.validator().state == QValidator.Acceptable:
+            text = self.lineEditTolerance.text()
+            self.__model.setSyrthesTolerance(text)
 
 #-------------------------------------------------------------------------------
 # End

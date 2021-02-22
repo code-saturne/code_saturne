@@ -183,6 +183,20 @@ class ConjugateHeatTransferModel(Variables, Model):
     def getSyrthesProjectionAxis(self):
         return self.__node_syr.xmlGetString('projection_axis')
 
+    @Variables.undoLocal
+    def setSyrthesTolerance(self, value):
+        self.__node_syr.xmlSetData('tolerance', value)
+
+    @Variables.noUndo
+    def getSyrthesTolerance(self):
+
+        val = self.__node_syr.xmlGetString('tolerance')
+        if not val or val == "":
+            val = "0.1"
+            self.setSyrthesTolerance(val)
+
+        return val
+
 #-------------------------------------------------------------------------------
 # ConjugateHeatTransferModel test case
 #-------------------------------------------------------------------------------
