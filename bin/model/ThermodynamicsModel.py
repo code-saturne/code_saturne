@@ -107,6 +107,57 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         return default
 
+    def getDefaultFormula(self, field_id, property_name):
+        """
+        Return default formula for a given property.
+        """
+
+        label = self.m_out.getVariableLabel(field_id, property_name)
+        formula = ""
+        if "SaturationEnthalpy" in property_name:
+            formula = label + " = 0.;"
+
+        elif "d_Hsat_d_P_" in property_name:
+            formula = label + " = 0.;"
+
+        elif property_name == "SaturationTemperature":
+            formula = label + " = 273.15;"
+
+        elif property_name == "d_Tsat_d_P":
+            formula = label + " = 0.;"
+
+        elif property_name == "LatentHeat":
+            formula = label + " = 0.;"
+
+        return formula
+
+
+
+    def getExampleFormula(self, field_id, property_name):
+        """
+        Return an example formula for a given property.
+        """
+
+        label = self.m_out.getVariableLabel(field_id, property_name)
+        formula = ""
+        if "SaturationEnthalpy" in property_name:
+            formula = label + " = 0.;"
+
+        elif "d_Hsat_d_P_" in property_name:
+            formula = label + " = 0.;"
+
+        elif property_name == "SaturationTemperature":
+            formula = label + " = 273.15;"
+
+        elif property_name == "d_Tsat_d_P":
+            formula = label + " = 0.;"
+
+        elif property_name == "LatentHeat":
+            formula = label + " = 0.;"
+
+        return formula
+
+
     def propertiesFormulaList(self):
         lst = ('density', 'molecular_viscosity',
                'specific_heat', 'thermal_conductivity',

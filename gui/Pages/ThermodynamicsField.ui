@@ -14,261 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_15">
-   <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBoxEauvap">
-     <property name="title">
-      <string>Saturation properties</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_14">
-      <item row="0" column="0">
-       <widget class="QGroupBox" name="groupBoxDensity_5">
-        <property name="title">
-         <string>Saturation Enthalpy (Hsat)</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="0" column="0">
-          <widget class="QComboBox" name="comboBoxHsat"/>
-         </item>
-         <item row="0" column="1">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>71</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButtonHsat">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-             :/new/prefix1/icons/22x22/edit-find-replace.png
-            </iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>61</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QGroupBox" name="groupBoxDensity_8">
-        <property name="title">
-         <string>enthalpy of saturation derivative (dHsat/dp)</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_7">
-         <item row="0" column="0">
-          <widget class="QComboBox" name="comboBoxdHsatdp"/>
-         </item>
-         <item row="0" column="1">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>71</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButtondHsatdp">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-             :/new/prefix1/icons/22x22/edit-find-replace.png
-            </iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>61</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QGroupBox" name="groupBoxDensity_7">
-        <property name="title">
-         <string>Saturation temperature (Tsat)</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_10">
-         <item row="0" column="0">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>71</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtonTsat">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-             :/new/prefix1/icons/22x22/edit-find-replace.png
-            </iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>61</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QGroupBox" name="groupBoxDensity_10">
-        <property name="title">
-         <string>Saturation temperature derivative (dTsat/dp)</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_11">
-         <item row="0" column="0">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>261</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtondTsatdp">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-             :/new/prefix1/icons/22x22/edit-find-replace.png
-            </iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>61</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QGroupBox" name="groupBoxDensity_9">
-        <property name="title">
-         <string>Latente heat (Hlat)</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_12">
-         <item row="0" column="0">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>261</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtonHlat">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-             :/new/prefix1/icons/22x22/edit-find-replace.png
-            </iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>61</width>
-             <height>26</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxThermodynamic">
      <property name="title">
@@ -434,9 +179,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                  :/new/prefix1/icons/22x22/edit-find-replace.png
-                 </iconset>
+                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>
@@ -582,9 +325,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                    :/new/prefix1/icons/22x22/edit-find-replace.png
-                   </iconset>
+                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -712,9 +453,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                    :/new/prefix1/icons/22x22/edit-find-replace.png
-                   </iconset>
+                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -834,9 +573,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                    :/new/prefix1/icons/22x22/edit-find-replace.png
-                   </iconset>
+                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -961,9 +698,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                    :/new/prefix1/icons/22x22/edit-find-replace.png
-                   </iconset>
+                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1043,9 +778,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                  :/new/prefix1/icons/22x22/edit-find-replace.png
-                 </iconset>
+                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1127,9 +860,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                  :/new/prefix1/icons/22x22/edit-find-replace.png
-                 </iconset>
+                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1282,7 +1013,7 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0">
+   <item row="3" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

@@ -54,6 +54,7 @@ class NeptuneThermodynamicsView(QWidget, Ui_NeptuneThermodynamics):
         self.case = case
         self.zone_name = zone_name
         self.tabFieldProperties.setup(self.case, self.zone_name)
+        self.tabSaturationProperties.setup(self.case, self.zone_name)
         self.tabInteractionProperties.setup(self.case, self.zone_name)
 
     @pyqtSlot(int)

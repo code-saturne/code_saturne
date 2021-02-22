@@ -126,6 +126,7 @@ OpenTurnsDialogView.py \
 SolidView.py \
 ThermodynamicsFieldView.py \
 ThermodynamicsInteractionView.py \
+ThermodynamicsSaturationView.py \
 NeptuneThermodynamicsView.py \
 TimeStepViewNeptune.py \
 VolumicNatureView.py \
@@ -232,6 +233,7 @@ OutputFields.ui \
 Solid.ui \
 ThermodynamicsField.ui \
 ThermodynamicsInteraction.ui \
+ThermodynamicsSaturation.ui \
 NeptuneThermodynamics.ui \
 NumericalParamEquationNeptune.ui \
 BoundaryConditionsPressure.ui \
