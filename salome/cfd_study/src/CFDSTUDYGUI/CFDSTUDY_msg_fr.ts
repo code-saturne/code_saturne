@@ -555,8 +555,8 @@
             <translation>Le cas par défaut : %s existe déjà dans l'étude CFD %s</translation>
         </message>
         <message>
-            <source>NO_FILE_CFD_GUI_FOUND</source>
-            <translation>Le fichier : %s, n'existe pas dans le répertoire DATA du cas : %s</translation>
+            <source>NO_CASE_STRUCTURE_FOUND</source>
+            <translation>Le répertoire : %s ne correspond pas à une structure de cas.</translation>
         </message>
         <message>
             <source>MESH_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>

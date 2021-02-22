@@ -555,8 +555,8 @@
             <translation>Default case name: %s already exists in the CFD Study %s</translation>
         </message>
         <message>
-            <source>NO_FILE_CFD_GUI_FOUND</source>
-            <translation>No %s file found into DATA directory case name: %s</translation>
+            <source>NO_CASE_STRUCTURE_FOUND</source>
+            <translation>Directory: %s does not match a case structure.</translation>
         </message>
         <message>
             <source>MESH_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>

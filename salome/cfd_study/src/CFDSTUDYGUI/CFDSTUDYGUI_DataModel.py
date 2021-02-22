@@ -1758,7 +1758,7 @@ def checkPreMEDType(theObject):
 
 def checkCaseLaunchGUI(theCase):
     """
-    Checks if I{theCase} has the script to start GUI in the DATA folder.
+    Checks if I{theCase} structure seems correct the DATA folder.
 
     @type theCase: C{SObject}
     @param theCase: object from the Object Browser.
@@ -1771,28 +1771,23 @@ def checkCaseLaunchGUI(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if not len(aChildList) == 1:
         # no DATA folder
-        print("There are no data folder in selected by user case")
+        print("There is no data folder in case selected by user")
         return False
 
     aDataObj =  aChildList[0]
     aDataPath = _GetPath(aDataObj)
 
     import sys
-    if CFD_Code() == "Code_Saturne":
-        if sys.platform.startswith("win"):
-            aChildList = ScanChildren(aDataObj, "^SaturneGUI.bat$")
-        else:
-            aChildList = ScanChildren(aDataObj, "^SaturneGUI$")
-    elif CFD_Code() == "NEPTUNE_CFD":
-        if sys.platform.startswith("win"):
-            aChildList = ScanChildren(aDataObj, "^NeptuneGUI.bat$")
-        else:
-            aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
-    if not len(aChildList) == 1:
-        if Trace(): print("There are no SaturneGUI or NeptuneGUI in selected by user case")
-        return False
+    is_case = False
+    aChildList = ScanChildren(aDataObj, "^run.cfg$")
+    if len(aChildList) == 1:
+        is_case = True
+    else:
+        aChildList = ScanChildren(aDataObj, "^SRC$")
+        if len(aChildList) == 1:
+            is_case = True
 
-    return True
+    return is_case
 
 
 def checkCode(theCase):

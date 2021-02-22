@@ -1920,7 +1920,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotLaunchGUI(self, study=None, case=None):
         """
         Build the command line for the GUI of Code_Saturne/NEPTUNE_CFD.
-        Launch a new CFD IHM with popup menu on case object into SALOME Object browser
+        Launch a new CFD GUI with popup menu on case object into SALOME Object browser
         """
         log.debug("slotLaunchGUI")
         #get current selection
@@ -1959,16 +1959,18 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         aDataPath = CFDSTUDYGUI_DataModel._GetPath(aDataObj)
         # object of 'CFDSTUDYGUI' file
         import sys
-        if CFD_Code() == CFD_Saturne:
-            if sys.platform.startswith("win"):
-                aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^SaturneGUI.bat$")
-            else:
-                aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^SaturneGUI$")
-            if len(aChildList) == 0:
-                # no 'CFDSTUDYGUI' file
-                mess = cfdstudyMess.trMessage(self.tr("NO_FILE_CFD_GUI_FOUND"),["SaturneGUI",aCaseName])
-                cfdstudyMess.aboutMessage(mess)
-                return
+        is_case = False
+        aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^run.cfg$")
+        if len(aChildList) == 1:
+            is_case = True
+        if not is_case:
+            aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^SRC$")
+            if len(aChildList) == 1:
+                is_case = True
+        if not is_case:
+            mess = cfdstudyMess.trMessage(self.tr("NO_CASE_STRUCTURE_FOUND"),[aCaseName])
+            cfdstudyMess.aboutMessage(mess)
+            return
         elif CFD_Code() == CFD_Neptune:
             if sys.platform.startswith("win"):
                 aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^NeptuneGUI.bat$")
@@ -1976,7 +1978,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^NeptuneGUI$")
             if len(aChildList) == 0:
                 # no 'CFDSTUDYGUI' file
-                mess = cfdstudyMess.trMessage(self.tr("NO_FILE_CFD_GUI_FOUND"),["NeptuneGUI",aCaseName])
+                mess = cfdstudyMess.trMessage(self.tr("NO_CASE_STRUCTURE_FOUND"),[aCaseName])
                 cfdstudyMess.aboutMessage(mess)
                 return
         aCmd.append('-n')
