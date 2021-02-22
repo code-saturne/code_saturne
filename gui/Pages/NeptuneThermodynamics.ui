@@ -24,6 +24,11 @@
        <string>Field properties</string>
       </attribute>
      </widget>
+     <widget class="ThermodynamicsSaturationView" name="tabSaturationProperties">
+      <attribute name="title">
+       <string>Saturation properties</string>
+      </attribute>
+     </widget>
      <widget class="ThermodynamicsInteractionView" name="tabInteractionProperties">
       <attribute name="title">
        <string>Interaction properties</string>
@@ -38,6 +43,12 @@
    <class>ThermodynamicsFieldView</class>
    <extends>QWidget</extends>
    <header location="global">ThermodynamicsFieldView</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ThermodynamicsSaturationView</class>
+   <extends>QWidget</extends>
+   <header>ThermodynamicsSaturationView</header>
    <container>1</container>
   </customwidget>
   <customwidget>

@@ -1320,9 +1320,11 @@ class meg_to_c_interpreter:
         elif self.module_name == 'neptune_cfd':
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel
+            from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 
             tm = ThermodynamicsModel(self.case)
             mfm = MainFieldsModel(self.case)
+            iem = InterfacialEnthalpyModel(self.case)
 
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
@@ -1347,7 +1349,6 @@ class meg_to_c_interpreter:
 
                 for fieldId in tm.getFieldIdList():
                     if tm.getMaterials(fieldId) == 'user_material':
-                        user_gas_liq_fields = True
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
                                 name = fk + '_' + str(fieldId)
@@ -1385,17 +1386,25 @@ class meg_to_c_interpreter:
                                                     exp, req, sym, sca)
 
             # User properties for Water/Steam kind flows
-            if mfm.getPredefinedFlow() != 'None' and \
-               mfm.getPredefinedFlow() != "particles_flow":
-                if user_gas_liq_fields:
-                    for fk in gas_liq_fields:
-                        for zone in vlm.getZones():
-                            zname = zone.getLabel()
-                            z_id = str(zone.getCodeNumber())
-                            if zone.isNatureActivated('physical_properties'):
-                                exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=z_id)
-                                self.init_block('vol', zname, fk,
-                                                exp, req, sym, sca)
+            if tm:
+                cpl_field_ids = iem.getEnthalpyCoupleFieldId()
+                if cpl_field_ids:
+                    id_a = cpl_field_ids[0]
+                    id_b = cpl_field_ids[1]
+                    if tm.getMethod(id_a) == "user_properties" and \
+                            tm.getMethod(id_b) == "user_properties":
+                        user_gas_liq_fields = True
+
+
+            if user_gas_liq_fields:
+                for fk in gas_liq_fields:
+                    for zone in vlm.getZones():
+                        zname = zone.getLabel()
+                        z_id = str(zone.getCodeNumber())
+                        if zone.isNatureActivated('physical_properties'):
+                            exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=z_id)
+                            self.init_block('vol', zname, fk,
+                                            exp, req, sym, sca)
 
 
         # Porosity for both solvers
