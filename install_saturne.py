@@ -620,8 +620,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="4.0.0",
-                    archive="med-4.0.0.tar.gz",
+                    version="4.1.0",
+                    archive="med-4.1.0.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -643,9 +643,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.9",
-                    archive="scotch_6.0.9.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/38187/%s")
+                    version="6.1.0",
+                    archive="scotch_6.1.0.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v6.1.0/%s")
 
     #---------------------------------------------------------------------------
 
