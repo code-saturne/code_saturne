@@ -551,18 +551,17 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.comboBoxEnergy.hide()
         self.pushButtonEnergy.hide()
 
-        if self.mdl.getEnergyResolution(fieldId) == "on" or \
-           ThermodynamicsModel(self.case).getMaterials(fieldId) != 'user_material':
+        if self.mdl.getEnergyResolution(fieldId) == "on":
             self.labelEnergy.show()
             self.comboBoxEnergy.show()
             self.pushButtonEnergy.show()
 
             model = self.mdl.getEnergyModel(zone, fieldId)
-            self.modelEnergy.setItem(str_model = model)
+            self.modelEnergy.setItem(str_model=model)
 
             if model == "enthalpy" or model == "temperature":
                 self.pushButtonEnergy.setEnabled(True)
-            elif model == "hsat_P" :
+            elif model == "hsat_P":
                 self.pushButtonEnergy.setEnabled(False)
                 self.pushButtonEnergy.setStyleSheet("background-color: None")
 

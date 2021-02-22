@@ -173,7 +173,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         Check if EOS material laws can be activated
         """
         for field_id in self.getFieldIdList():
-            if self.getEnergyModel(field_id) == "off":
+            if self.getEnergyModel(field_id) == "off" or self.getEnergyResolution(field_id) == "off":
                 return False
         return {1: True, 0: False}[EOS]
 
