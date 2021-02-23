@@ -1577,13 +1577,14 @@ ecs_maillage__calc_coo_ext(ecs_maillage_t  *maillage)
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(maillage != NULL);
-  assert(maillage->vertex_coords != NULL);
 
   nbr = maillage->n_vertices;
   vertex_coords = maillage->vertex_coords;
 
   if (nbr < 1)
     return;
+
+  assert(maillage->vertex_coords != NULL);
 
   ipos = 0;
 
