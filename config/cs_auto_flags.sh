@@ -149,7 +149,7 @@ if test "x$GCC" = "xyes"; then
 
   if test -n "`echo $cs_ac_cc_version | grep ICC`" ; then
     cs_gcc=icc
-  elif test -n "`echo $cs_ac_cc_version | grep ICX`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep -e ICX -e DPC++ -e oneAPI`" ; then
     cs_gcc=icx
   elif test -n "`echo $cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
@@ -300,10 +300,10 @@ elif test "x$cs_gcc" = "xicx" ; then
 
   # Default compiler flags
   cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -ftrapuv"
+  cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_omp="-qopenmp"
+  cflags_default_omp="-fiopenmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -320,7 +320,6 @@ elif test "x$cs_gcc" = "xclang"; then
   cs_cc_compiler_known=yes
 
   # Default compiler flags
-  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
   cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
@@ -474,7 +473,7 @@ if test "x$GXX" = "xyes"; then
 
   if test -n "`echo $cs_ac_cxx_version | grep ICC`" ; then
     cs_gxx=icpc
-  elif test -n "`echo $cs_ac_cxx_version | grep ICX`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep -e ICX -e DPC++ -e oneAPI`" ; then
     cs_gxx=icpx
   elif test -n "`echo $cs_ac_cxx_version | grep clang`" ; then
     cs_gxx=clang
@@ -625,10 +624,10 @@ elif test "x$cs_gxx" = "xicpx"; then
 
   # Default compiler flags
   cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cxxflags_default_dbg="-g -O0 -ftrapuv"
+  cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
-  cxxflags_default_omp="-qopenmp"
+  cxxflags_default_omp="-fiopenmp"
   cxxflags_default_std="-funsigned-char"
 
 # Otherwise, are we using clang ?
@@ -646,7 +645,6 @@ elif test "x$cs_gxx" = "xclang"; then
   cs_cxx_compiler_known=yes
 
   # Default compiler flags
-  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
   cxxlags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
