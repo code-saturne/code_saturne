@@ -245,6 +245,7 @@ typedef enum {
   CS_ENUMF_(dt_dp),          /*!< dtemp/dpress derivative */
   CS_ENUMF_(kindiff),        /*!< Particles kinetic diffusivity */
   CS_ENUMF_(coldiff),        /*!< Particles collisional diffusivity */
+  CS_ENUMF_(elast),          /*!< Particles restitution coefficient */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
