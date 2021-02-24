@@ -3,6 +3,20 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: Add more options for probes/profiles:
+  * User can now choose whether or not to snap a probe/profile point
+    which is currently the default behavior. When snap is activated for
+    a set of points and several are contained within the same cell, we
+    only keep the one closest to the cell center.
+  * User can now activate the interpolation for probes/profiles, hence
+    providing an interpolated value at the chosen coordinate instead of
+    the value of the closest cell center.
+  * For better robustness for the interpolation, users can now only
+    define fields as output for probes/profiles, and no longer only a
+    component. For example, for the velocity, all 3 components will be
+    written. For older xml files which contained components, the latter
+    are kept for the sake of compatibility.
+
 - GUI: User formulae for physical properties can now be defined
   over multiple zones.
   * This changes the handling of physical properties.
