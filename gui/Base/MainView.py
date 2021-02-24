@@ -761,12 +761,32 @@ class MainView(object):
             if node_ext != None:
                 deprecated_couplings += node_ext.xmlGetChildNodeList("syrthes")
         if deprecated_couplings != []:
+            # Write a file containing previous definitions
+            syrlog = open("deprecated_syrthes_coupling_data.txt", "w")
+            syrlog.write("SYRTHES INSTANCE | SELECTION CRITERIA;\n")
+            syrlog.write("-------------------------------------\n")
+            _pad = len("SYRTHES INSTANCE ")
+            for n in deprecated_couplings:
+                _sname = n.xmlGetChildString("syrthes_name")
+                if not _sname:
+                    _sname = "undefined"
+                _scrit = n.xmlGetChildString("selection_criteria")
+                syrlog.write("%s| %s\n" % (_sname.ljust(_pad), _scrit))
+            syrlog.close()
+
+            # Print warning message
             title = "Warning"
             msg = "Old XML format detected for external conjugate heat transfer coupling.\n\n"
             msg += "This XML should still be valid to launch a Code_Saturne computation outside of the GUI," \
                    "but is not maintained anymore.\n"
+            msg += "Old definitions are removed from the XML file and are stored in the "
+            msg += "DATA folder within the 'deprecated_syrthes_coupling_data.txt file'.\n"
             msg += "Please fill in the coupling information again."
             QMessageBox.warning(self, title, msg)
+
+            # Delete old definitions which are now stored in the syrlog file
+            for n in deprecated_couplings:
+                n.xmlRemoveNode()
 
         # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())

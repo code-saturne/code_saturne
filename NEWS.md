@@ -3,6 +3,14 @@ Release 7.0 (unreleased)
 
 User changes:
 
+- GUI: Remove legacy definitions of syrthes coupling when opening old XML file:
+  * Strating from v7.0 a syrthes coupling is defined as a boundary
+    condition and no longer as an independent model.
+  * Pre v7.0 definitions are saved to a file
+    'deprecated_syrthes_coupling_data.txt' and are then removed from the
+    XML file.
+  * A warning pop-up informs the user of the change.
+
 - GUI: Add more options for probes/profiles:
   * User can now choose whether or not to snap a probe/profile point
     which is currently the default behavior. When snap is activated for
