@@ -165,7 +165,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
     @Variables.noUndo
     def getSyrthesVerbosity(self):
-        return self.__node_syr.xmlGetString('verbosity')
+        return self.__node_syr.xmlGetChildString('verbosity')
 
     @Variables.undoLocal
     def setSyrthesVisualization(self, value):
@@ -173,7 +173,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
     @Variables.noUndo
     def getSyrthesVisualization(self):
-        return self.__node_syr.xmlGetString('visualization')
+        return self.__node_syr.xmlGetChildString('visualization')
 
     @Variables.undoLocal
     def setSyrthesProjectionAxis(self, value):
@@ -181,7 +181,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
     @Variables.noUndo
     def getSyrthesProjectionAxis(self):
-        return self.__node_syr.xmlGetString('projection_axis')
+        return self.__node_syr.xmlGetChildString('projection_axis')
 
     @Variables.undoLocal
     def setSyrthesTolerance(self, value):
@@ -190,7 +190,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     @Variables.noUndo
     def getSyrthesTolerance(self):
 
-        val = self.__node_syr.xmlGetString('tolerance')
+        val = self.__node_syr.xmlGetChildString('tolerance')
         if not val or val == "":
             val = "0.1"
             self.setSyrthesTolerance(val)
