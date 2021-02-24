@@ -116,8 +116,8 @@ class SolidView(QWidget, Ui_Solid):
 
         self.modelKinetic = ComboModel(self.comboBoxKinetic, 3, 1)
         self.modelKinetic.addItem(self.tr("none"), "none")
-        self.modelKinetic.addItem(self.tr("uncorrelate collision"), "uncorrelate_collision")
-        self.modelKinetic.addItem(self.tr("correlate collision"), "correlate_collision")
+        self.modelKinetic.addItem(self.tr("uncorrelated collision"), "uncorrelate_collision")
+        self.modelKinetic.addItem(self.tr("correlated collision"), "correlate_collision")
 
         # Validators
 

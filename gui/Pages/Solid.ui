@@ -141,7 +141,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>friction model</string>
+             <string>frictional model</string>
             </property>
            </widget>
           </item>
@@ -155,7 +155,7 @@
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>granular model</string>
+             <string>collisional model</string>
             </property>
            </widget>
           </item>
