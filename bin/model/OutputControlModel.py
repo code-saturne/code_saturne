@@ -74,6 +74,8 @@ class OutputControlModel(Model):
         default['probe_recording_frequency_time'] = 0.1
         default['probe_format'] = "CSV"
         default['coordinate'] = 0.0
+        default['probes_snap'] = 'snap_to_center'
+        default['probes_interpolation'] = 'no'
 
         return default
 
@@ -1079,6 +1081,56 @@ class OutputControlModel(Model):
         """
         self.isInList(choice, ('DAT', 'CSV'))
         node = self.node_out.xmlInitNode('probe_format', 'choice')
+        node['choice'] = choice
+
+
+    @Variables.noUndo
+    def getMonitoringPointsSnap(self):
+        """
+        Return status of SnapToCenter activation or not.
+        """
+
+        node = self.node_out.xmlInitNode('probes_snap', 'choice')
+        choice = node['choice']
+        if not choice:
+            choice = self.defaultInitialValues()['probes_snap']
+            self.setMonitoringPointsSnap(choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setMonitoringPointsSnap(self, choice):
+        """
+        Set choice of snap mode
+        """
+
+        node = self.node_out.xmlInitNode('probes_snap', 'choice')
+        node['choice'] = choice
+
+
+    @Variables.noUndo
+    def getMonitoringPointsInterpolation(self):
+        """
+        Return status of probes interpolation activation.
+        """
+
+        node = self.node_out.xmlInitNode('probes_interpolation', 'choice')
+        choice = node['choice']
+        if not choice:
+            choice = self.defaultInitialValues()['probes_interpolation']
+            self.setMonitoringPointsInterpolation(choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setMonitoringPointsInterpolation(self, choice):
+        """
+        Activate/deactivate interpolation for monitoring points.
+        """
+
+        node = self.node_out.xmlInitNode('probes_interpolation', 'choice')
         node['choice'] = choice
 
 

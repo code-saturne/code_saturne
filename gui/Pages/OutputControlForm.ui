@@ -27,7 +27,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="tabOUTPUT">
       <attribute name="title">
@@ -1302,6 +1302,37 @@
                <size>
                 <width>18</width>
                 <height>22</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QCheckBox" name="checkBoxSnapToCenter">
+              <property name="text">
+               <string>One probe per cell</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBoxActivateInterpolation">
+              <property name="text">
+               <string>Activate interpolation</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
                </size>
               </property>
              </spacer>

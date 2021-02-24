@@ -220,6 +220,9 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.lineEditFreqTime.textChanged[str].connect(self.slotFrequenceTime)
         self.lineEditNbPoint.textChanged[str].connect(self.slotNbPoint)
 
+        self.checkBoxSnapToCenter.clicked.connect(self.slotSnapToCenter)
+        self.checkBoxActivateInterpolation.clicked.connect(self.slotActivateInterpolation)
+
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
         validatorFreq.setExclusiveMin(True)
@@ -399,6 +402,17 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         self.lineEditNbPoint.setText(str(nb_point))
 
+        if self.mdl.getSnapMode(label) == "snap_to_center":
+            self.checkBoxSnapToCenter.setChecked(True)
+        else:
+            self.checkBoxSnapToCenter.setChecked(False)
+
+        if self.mdl.getProfileInterpolation(label) == "yes":
+            self.checkBoxActivateInterpolation.setChecked(True)
+        else:
+            self.checkBoxActivateInterpolation.setChecked(False)
+
+
         self.modelDrop.setStringList([])
         liste = [str(s) for s in liste]
 
@@ -532,6 +546,25 @@ z = z1*s + z0*(1.-s);"""
         """
         if self.lineEditNbPoint.validator().state == QValidator.Acceptable:
             self.mdl.setNbPoint(self.label_select, int(text))
+
+
+    @pyqtSlot()
+    def slotSnapToCenter(self):
+        """
+        """
+        if self.checkBoxSnapToCenter.isChecked():
+            self.mdl.setSnapMode(self.label_select, "snap_to_center")
+        else:
+            self.mdl.setSnapMode(self.label_select, "none")
+
+    @pyqtSlot()
+    def slotActivateInterpolation(self):
+        """
+        """
+        if self.checkBoxActivateInterpolation.isChecked():
+            self.mdl.setProfileInterpolation(self.label_select, "yes")
+        else:
+            self.mdl.setProfileInterpolation(self.label_select, "no")
 
 
 #-------------------------------------------------------------------------------
