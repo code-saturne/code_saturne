@@ -568,7 +568,7 @@ _define_profiles(void)
     cs_probe_set_auto_var(pset, false);
 
     /* Set snap mode. Default is "SNAP_TO_CENTER" */
-    const char *snap_mode = _get_profile_child_str(tn, "snap_mode");
+    const char *snap_mode = cs_tree_node_get_child_value_str(tn, "snap_mode");
     if (cs_gui_strcmp(snap_mode, "snap_to_vertex"))
       cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_VERTEX);
     else if (cs_gui_strcmp(snap_mode, "none"))
@@ -577,8 +577,8 @@ _define_profiles(void)
       cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_ELT_CENTER);
 
     /* Activate interpolation if needed. Default is no */
-    const char *activate_interpolation =
-      _get_profile_child_str(tn, "interpolation");
+    const char *activate_interpolation
+      = cs_tree_node_get_child_value_str(tn, "interpolation");
     if (cs_gui_strcmp(activate_interpolation, "yes"))
       cs_probe_set_option(pset, "interpolation", "1");
 
@@ -870,9 +870,9 @@ cs_gui_postprocess_meshes(void)
                                      (const char **)probe_labels);
 
     /* Set snap mode. Default is "SNAP_TO_CENTER" */
-    const char *snap_mode =
-      cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probes_snap"),
-                           "choice");
+    const char *snap_mode
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probes_snap"),
+                             "choice");
     if (cs_gui_strcmp(snap_mode, "snap_to_vertex"))
       cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_VERTEX);
     else if (cs_gui_strcmp(snap_mode, "none"))
@@ -881,9 +881,10 @@ cs_gui_postprocess_meshes(void)
       cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_ELT_CENTER);
 
     /* Activate interpolation if needed. Default is no */
-    const char *activate_interpolation =
-      cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probes_interpolation"),
-                           "choice");
+    const char *activate_interpolation
+      = cs_tree_node_get_tag(cs_tree_node_get_child(tn_o,
+                                                    "probes_interpolation"),
+                             "choice");
     if (cs_gui_strcmp(activate_interpolation, "yes"))
       cs_probe_set_option(pset, "interpolation", "1");
 

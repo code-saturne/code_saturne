@@ -1094,7 +1094,6 @@ class OutputControlModel(Model):
         choice = node['choice']
         if not choice:
             choice = self.defaultInitialValues()['probes_snap']
-            self.setMonitoringPointsSnap(choice)
 
         return choice
 
@@ -1105,8 +1104,13 @@ class OutputControlModel(Model):
         Set choice of snap mode
         """
 
-        node = self.node_out.xmlInitNode('probes_snap', 'choice')
-        node['choice'] = choice
+        if choice == self.defaultInitialValues()['probes_snap']:
+            node = self.node_out.xmlGetNode('probes_snap', 'choice')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            node = self.node_out.xmlInitNode('probes_snap', 'choice')
+            node['choice'] = choice
 
 
     @Variables.noUndo
@@ -1119,7 +1123,6 @@ class OutputControlModel(Model):
         choice = node['choice']
         if not choice:
             choice = self.defaultInitialValues()['probes_interpolation']
-            self.setMonitoringPointsInterpolation(choice)
 
         return choice
 
@@ -1130,8 +1133,13 @@ class OutputControlModel(Model):
         Activate/deactivate interpolation for monitoring points.
         """
 
-        node = self.node_out.xmlInitNode('probes_interpolation', 'choice')
-        node['choice'] = choice
+        if choice == self.defaultInitialValues()['probes_interpolation']:
+            node = self.node_out.xmlGetNode('probes_interpolation', 'choice')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            node = self.node_out.xmlInitNode('probes_interpolation', 'choice')
+            node['choice'] = choice
 
 
     @Variables.undoLocal

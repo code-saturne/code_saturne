@@ -170,7 +170,10 @@ class ProfilesModel(Model):
         """
         """
         node = self.node_prof.xmlGetNode('profile', label=label)
-        node.xmlSetData('snap_mode', mode)
+        if mode == self.__defaultValues()['snap_mode']:
+            node.xmlRemoveChild('snap_mode')
+        else:
+            node.xmlSetData('snap_mode', mode)
 
 
     @Variables.noUndo
@@ -181,7 +184,6 @@ class ProfilesModel(Model):
         mode = node.xmlGetString('snap_mode')
         if not mode:
             mode = self.__defaultValues()['snap_mode']
-            self.setSnapMode(label, mode)
         return mode
 
 
@@ -190,7 +192,10 @@ class ProfilesModel(Model):
         """
         """
         node = self.node_prof.xmlGetNode('profile', label = label)
-        node.xmlSetData('interpolation', state)
+        if state == self.__defaultValues()["interpolation"]:
+            node.xmlRemoveChild('interpolation')
+        else:
+            node.xmlSetData('interpolation', state)
 
 
     @Variables.noUndo
@@ -201,7 +206,6 @@ class ProfilesModel(Model):
         state = node.xmlGetString('interpolation')
         if not state:
             state = self.__defaultValues()["interpolation"]
-            self.setProfileInterpolation(label, state)
 
         return state
 
