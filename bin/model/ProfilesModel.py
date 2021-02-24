@@ -75,13 +75,15 @@ class ProfilesModel(Model):
         Returns a dictionnary with default values.
         """
         value = {}
-        value['nfreq']     = -1
-        value['formula']   =  "x = 0;\ny = s;\nz = 0;\n"
-        value['points']    =  200
-        value['label']     =  "profile"
-        value['choice']    =  "frequency"
-        value['frequency'] =  1
-        value['format']    =  "CSV"
+        value['nfreq']         = -1
+        value['formula']       =  "x = 0;\ny = s;\nz = 0;\n"
+        value['points']        =  200
+        value['label']         =  "profile"
+        value['choice']        =  "frequency"
+        value['frequency']     =  1
+        value['format']        =  "CSV"
+        value['snap_mode']     =  "snap_to_center"
+        value['interpolation'] =  "no"
 
         return value
 
@@ -161,6 +163,51 @@ class ProfilesModel(Model):
         self.isInList(label, self.getProfilesLabelsList())
         node = self.node_prof.xmlGetNode('profile', label = label)
         return node.xmlGetInt('points')
+
+
+    @Variables.undoLocal
+    def setSnapMode(self, label, mode):
+        """
+        """
+        node = self.node_prof.xmlGetNode('profile', label=label)
+        if mode == self.__defaultValues()['snap_mode']:
+            node.xmlRemoveChild('snap_mode')
+        else:
+            node.xmlSetData('snap_mode', mode)
+
+
+    @Variables.noUndo
+    def getSnapMode(self, label):
+        """
+        """
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        mode = node.xmlGetString('snap_mode')
+        if not mode:
+            mode = self.__defaultValues()['snap_mode']
+        return mode
+
+
+    @Variables.undoLocal
+    def setProfileInterpolation(self, label, state):
+        """
+        """
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        if state == self.__defaultValues()["interpolation"]:
+            node.xmlRemoveChild('interpolation')
+        else:
+            node.xmlSetData('interpolation', state)
+
+
+    @Variables.noUndo
+    def getProfileInterpolation(self, label):
+        """
+        """
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        state = node.xmlGetString('interpolation')
+        if not state:
+            state = self.__defaultValues()["interpolation"]
+
+        return state
 
 
     @Variables.noUndo

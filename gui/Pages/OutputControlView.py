@@ -1533,6 +1533,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.comboBoxTimePlot.activated[str].connect(self.slotMonitoringPoint)
         self.comboBoxProbeFmt.activated[str].connect(self.slotOutputProbeFmt)
 
+        # Check box
+        self.checkBoxSnapToCenter.clicked.connect(self.slotProbeSnapMode)
+        self.checkBoxActivateInterpolation.clicked.connect(self.slotProbesInterpolation)
+
 
         # Validators
 
@@ -1650,6 +1654,16 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__insertMonitoringPoint(num, name, X, Y, Z)
             if self.case['salome']:
                 self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
+
+        if self.mdl.getMonitoringPointsSnap() == 'snap_to_center':
+            self.checkBoxSnapToCenter.setChecked(True)
+        else:
+            self.checkBoxSnapToCenter.setChecked(False)
+
+        if self.mdl.getMonitoringPointsInterpolation() == 'yes':
+            self.checkBoxActivateInterpolation.setChecked(True)
+        else:
+            self.checkBoxActivateInterpolation.setChecked(False)
 
         # Writer initialisation
 
@@ -2877,6 +2891,30 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.lineEditProbesRadius.validator().state == QValidator.Acceptable:
             r = from_qvariant(text, float)
             self.case['probes'].setRadius(r)
+
+
+    @pyqtSlot()
+    def slotProbeSnapMode(self):
+       """
+       Set snap mode for probes.
+       """
+
+       if self.checkBoxSnapToCenter.isChecked():
+           self.mdl.setMonitoringPointsSnap("snap_to_center")
+       else:
+           self.mdl.setMonitoringPointsSnap("none")
+
+
+    @pyqtSlot()
+    def slotProbesInterpolation(self):
+        """
+        Activate interpolation for probes.
+        """
+
+        if self.checkBoxActivateInterpolation.isChecked():
+            self.mdl.setMonitoringPointsInterpolation("yes")
+        else:
+            self.mdl.setMonitoringPointsInterpolation("no")
 
 
     def isSteady(self):

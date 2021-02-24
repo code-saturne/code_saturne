@@ -88,7 +88,8 @@ class TimeAveragesModel(Model):
         """
         mdl = OutputVolumicVariablesModel(self.case)
 
-        self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=False)
+        # For time averages, we also consider field components
+        self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=False, get_components=True)
 
         return self.dicoLabel2Name
 
