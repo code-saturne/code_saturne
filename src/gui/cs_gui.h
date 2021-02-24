@@ -409,7 +409,7 @@ cs_gui_finalize(void);
  * cku11, cku22, cku33, cku12, cku13, cku23.
  *
  * \param[in]       zone       pointer to zone structure
- * \param[in]       cvara_vel  pointer to the velocity values of the previous time step
+ * \param[in]       cvara_vel  velocity values at the  previous time step
  * \param[in, out]  cku        head loss coefficients
  */
 /*----------------------------------------------------------------------------*/

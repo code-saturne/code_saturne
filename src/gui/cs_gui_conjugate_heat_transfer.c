@@ -158,16 +158,16 @@ _cs_gui_syrthes_coupling_bc(void)
   const char path_c[] = "conjugate_heat_transfer/external_coupling";
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
-  const cs_real_t *v_r =
-    cs_tree_node_get_child_values_real(tn_c, "tolerance");
+  const cs_real_t *v_r
+    = cs_tree_node_get_child_values_real(tn_c, "tolerance");
   double tolerance = (v_r != NULL) ? v_r[0] : 0.1;
 
-  const int *v_e =
-    cs_tree_node_get_child_values_int(tn_c, "verbosity");
+  const int *v_e
+    = cs_tree_node_get_child_values_int(tn_c, "verbosity");
   int verbosity = (v_e != NULL) ? v_e[0] : 0;
 
-  const int *v_i =
-    cs_tree_node_get_child_values_int(tn_c, "visualization");
+  const int *v_i
+    = cs_tree_node_get_child_values_int(tn_c, "visualization");
   int visualization = (v_i != NULL) ? v_i[0] : 1;
 
   char projection_axis = ' ';
@@ -241,9 +241,9 @@ _cs_gui_syrthes_coupling_bc(void)
 void
 cs_gui_syrthes_coupling(void)
 {
-
   /* Check if new style of coupling is available */
-  const char path_c[] = "conjugate_heat_transfer/external_coupling/syrthes_instances/instance";
+  const char path_c[]
+    = "conjugate_heat_transfer/external_coupling/syrthes_instances/instance";
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
   /* Prioritize BC declaration of SYRTHES */
