@@ -241,7 +241,9 @@ _cs_gui_syrthes_coupling_bc(void)
 void
 cs_gui_syrthes_coupling(void)
 {
-  const char path_c[] = "boundary_conditions/wall/syrthes";
+
+  /* Check if new style of coupling is available */
+  const char path_c[] = "conjugate_heat_transfer/external_coupling/syrthes_instances/instance";
   cs_tree_node_t *tn_c = cs_tree_find_node(cs_glob_tree, path_c);
 
   /* Prioritize BC declaration of SYRTHES */
