@@ -4216,11 +4216,11 @@ integer          isou  , jsou
 do isou = 1, 3
 
   ! Gradient BCs
-  coefa(isou) = pimpv(isou)*normal(isou)                    &
+  coefa(isou) = - qimpv(isou)/max(hint, 1.d-300)
     ! "[1 -n(x)n] Qimp / hint" is divided into two
-              - qimpv(isou)/max(hint, 1.d-300)
   do jsou = 1, 3
-    coefa(isou) = coefa(isou) + normal(isou)*normal(jsou)*qimpv(jsou)/max(hint, 1.d-300)
+    coefa(isou) = coefa(isou) &
+      + normal(isou)*normal(jsou)*(pimpv(jsou)+qimpv(jsou)/max(hint, 1.d-300))
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0 - normal(isou)*normal(jsou)
     else
@@ -4229,11 +4229,11 @@ do isou = 1, 3
   enddo
 
   ! Flux BCs
-  cofaf(isou) = -hint*pimpv(isou)*normal(isou)              &
+  cofaf(isou) = qimpv(isou)
     ! "[1 -n(x)n] Qimp" is divided into two
-              + qimpv(isou)
   do jsou = 1, 3
-    cofaf(isou) = cofaf(isou) - normal(isou)*normal(jsou)*qimpv(jsou)
+    cofaf(isou) = cofaf(isou) &
+      - normal(isou)*normal(jsou)*(hint*pimpv(jsou)+qimpv(jsou))
     cofbf(isou,jsou) = hint*normal(isou)*normal(jsou)
   enddo
 
@@ -4318,11 +4318,11 @@ hintnm(3) = hint(6)*normal(1) + hint(5)*normal(2) + hint(3)*normal(3)
 do isou = 1, 3
 
   ! Gradient BCs
-  coefa(isou) = pimpv(isou)*normal(isou)                    &
+  coefa(isou) = - qshint(isou)
     ! "[1 -n(x)n] Qimp / hint" is divided into two
-              - qshint(isou)
   do jsou = 1, 3
-    coefa(isou) = coefa(isou) + normal(isou)*normal(jsou)*qshint(jsou)
+    coefa(isou) = coefa(isou) &
+      + normal(isou)*normal(jsou)*(pimpv(jsou)+qshint(jsou))
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0 - normal(isou)*normal(jsou)
     else
@@ -4331,11 +4331,11 @@ do isou = 1, 3
   enddo
 
   ! Flux BCs
-  cofaf(isou) = -hintpv(isou)*normal(isou)              &
+  cofaf(isou) = qimpv(isou)
     ! "[1 -n(x)n] Qimp" is divided into two
-              + qimpv(isou)
   do jsou = 1, 3
-    cofaf(isou) = cofaf(isou) - normal(isou)*normal(jsou)*qimpv(jsou)
+    cofaf(isou) = cofaf(isou) &
+      - normal(isou)*normal(jsou)*(hintpv(jsou)+qimpv(jsou))
     cofbf(isou,jsou) = hintnm(isou)*normal(jsou)
   enddo
 
@@ -4355,10 +4355,10 @@ end subroutine set_generalized_sym_vector_aniso
 !> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
-!> \param[in]     pimpv         Dirichlet value to impose on the normal
-!>                              component
+!> \param[in]     pimpv         Dirichlet value to impose on the tangential
+!>                              components
 !> \param[in]     qimpv         Flux value to impose on the
-!>                              tangential components
+!>                              normal component
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     normal        normal
 !_______________________________________________________________________________
@@ -4392,22 +4392,23 @@ do isou = 1, 3
 
   ! Gradient BCs
   ! "[1 -n(x)n] Pimp" is divided into two
-  coefa(isou) = pimpv(isou)                                    &
-              - normal(isou)*qimpv(isou)/max(hint, 1.d-300)
+  coefa(isou) = pimpv(isou)
   do jsou = 1, 3
-    coefa(isou) = coefa(isou) - normal(isou)*normal(jsou)*pimpv(jsou)
+    coefa(isou) = coefa(isou) &
+      - normal(isou)*normal(jsou)*(pimpv(jsou)+qimpv(jsou)/max(hint, 1.d-300))
     coefb(isou,jsou) = normal(isou)*normal(jsou)
   enddo
 
   ! Flux BCs
   ! "[1 -n(x)n] Pimp" is divided into two
-  cofaf(isou) = -hint*pimpv(isou)            &
-              + normal(isou)*qimpv(isou)
+  cofaf(isou) = -hint*pimpv(isou)
   do jsou = 1, 3
-    cofaf(isou) = cofaf(isou) + normal(isou)*normal(jsou)*pimpv(jsou)*hint
+    cofaf(isou) = cofaf(isou) &
+      + normal(isou)*normal(jsou)*(qimpv(jsou)+pimpv(jsou)*hint)
     if (jsou.eq.isou) then
-      cofbf(isou,jsou) = hint*normal(isou)*normal(jsou)
+      cofbf(isou,jsou) = hint*(1.d0-normal(isou)*normal(jsou))
     else
+      cofbf(isou,jsou) = -hint*normal(isou)*normal(jsou)
     endif
   enddo
 
@@ -4427,10 +4428,10 @@ end subroutine set_generalized_dirichlet_vector
 !> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
-!> \param[in]     pimpv         Dirichlet value to impose on the normal
-!>                              component
+!> \param[in]     pimpv         Dirichlet value to impose on the tangential
+!>                              components
 !> \param[in]     qimpv         Flux value to impose on the
-!>                              tangential components
+!>                              normal component
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     normal        normal
 !_______________________________________________________________________________
@@ -4493,22 +4494,23 @@ do isou = 1, 3
 
   ! Gradient BCs
   ! "[1 -n(x)n] Pimp" is divided into two
-  coefa(isou) = pimpv(isou)                                    &
-              - normal(isou)*qshint(isou)
+  coefa(isou) = pimpv(isou)
   do jsou = 1, 3
-    coefa(isou) = coefa(isou) - normal(isou)*normal(jsou)*pimpv(jsou)
+    coefa(isou) = coefa(isou) &
+      - normal(isou)*normal(jsou)*(pimpv(jsou)+qshint(jsou))
     coefb(isou,jsou) = normal(isou)*normal(jsou)
   enddo
 
   ! Flux BCs
   ! "[1 -n(x)n] Pimp" is divided into two
-  cofaf(isou) = -hintpv(isou)            &
-              + normal(isou)*qimpv(isou)
+  cofaf(isou) = -hintpv(isou)
   do jsou = 1, 3
-    cofaf(isou) = cofaf(isou) + normal(isou)*normal(jsou)*hintpv(jsou)
+    cofaf(isou) = cofaf(isou) &
+      + normal(isou)*normal(jsou)*(qimpv(jsou)+hintpv(jsou))
     if (jsou.eq.isou) then
-      cofbf(isou,jsou) = hintnm(isou)*normal(jsou)
+      cofbf(isou,jsou) = hint(isou)-hintnm(isou)*normal(jsou)
     else
+      cofbf(isou,jsou) = -hintnm(isou)*normal(jsou)
     endif
   enddo
 
