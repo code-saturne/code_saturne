@@ -863,14 +863,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if model != "off" and self.comp.getCompressibleModel() == 'off':
             for item in self.thermal_group:
                 item.show()
+
             th_formula = self.init.getThermalFormula(zone_id)
+            # If no formula, then automatic initialization
             if not th_formula:
-                th_formula = self.init.getDefaultThermalFormula()
-                self.pushButtonThermal.setStyleSheet("background-color: red")
+                self.pushButtonThermal.hide()
+                self.modelThermal.setItem(str_model="automatic")
             else:
+                self.modelThermal.setItem(str_model="formula")
                 self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.init.setThermalFormula(zone_id, th_formula)
-            self.pushButtonThermal.setToolTip(th_formula)
+                self.pushButtonThermal.setToolTip(th_formula)
 
         # Initialisation of the termodynamics values for the compressible model
         if self.comp.getCompressibleModel() != 'off':
