@@ -744,6 +744,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             if choice == QMessageBox.Yes:
                 self.nept.setPredefinedFlow(model)
             else:
+                self.modelNeptuneCFD.setItem(str_model=model_p)
                 return
 
         self.checkBoxALE.hide()
