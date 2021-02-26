@@ -340,7 +340,7 @@ cs_lagr_car(int              iprev,
       cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
 
-      cs_real_t vpart[3], vflui[3];
+      cs_real_t mean_part_vel[3], fluid_vel[3];
 
       if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
 
@@ -353,9 +353,13 @@ cs_lagr_car(int              iprev,
         tl  = CS_MAX(tl, cs_math_epzero);
 
         for (cs_lnum_t i = 0; i < 3; i++) {
-          vpart[i] = part_vel[i];
-          vflui[i] = part_vel_seen[i];
+          mean_part_vel[i] = part_vel[i];
+          fluid_vel[i] = part_vel_seen[i];
         }
+
+        /* Compute the main direction in the global reference
+         * frame */
+        cs_real_t dir[3] = {0, 0, 0};
 
         if (turb_disp_model) {
 
@@ -373,17 +377,21 @@ cs_lagr_car(int              iprev,
           if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
             for (cs_lnum_t i = 0; i < 3; i++) {
-              vpart[i] = stat_vel->val[cell_id * 3 + i];
-              vflui[i] = extra->vel->vals[iprev][cell_id * 3 + i];
+              mean_part_vel[i] = stat_vel->val[cell_id * 3 + i];
+              fluid_vel[i] = extra->vel->vals[iprev][cell_id * 3 + i];
             }
 
           }
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            dir[i] = mean_part_vel[i] - fluid_vel[i];
+          cs_math_3_normalize(dir, dir);
 
         }
 
         cs_real_t uvwdif = 0.;
         for  (cs_lnum_t i = 0; i < 3; i++)
-          uvwdif += cs_math_sq(vflui[i] - vpart[i]);
+          uvwdif += cs_math_sq(fluid_vel[i] - mean_part_vel[i]);
 
         uvwdif = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
 
@@ -409,16 +417,26 @@ cs_lagr_car(int              iprev,
 
             /* Deprecated irijco = 0 */
             if (extra->cvar_rij == NULL) {
-              cs_real_t r11  = extra->cvar_r11->vals[iprev][cell_id];
-              cs_real_t r22  = extra->cvar_r22->vals[iprev][cell_id];
-              cs_real_t r33  = extra->cvar_r33->vals[iprev][cell_id];
-              ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
+              cs_real_t rij[6] = {
+                extra->cvar_r11->vals[iprev][cell_id],
+                extra->cvar_r22->vals[iprev][cell_id],
+                extra->cvar_r33->vals[iprev][cell_id],
+                0,//FIXME extra->cvar_r12->vals[iprev][cell_id],
+                0,//extra->cvar_r23->vals[iprev][cell_id],
+                0};//extra->cvar_r13->vals[iprev][cell_id]};
+              /* Note that n.R.n = R : n(x)n */
+              cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
+              cs_real_t tr_r = cs_math_6_trace(rij);
+              // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
+              ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1]) /* bbi[1] == bbi[2] is used */
                          / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
             } else {
-              cs_real_t r11  = extra->cvar_rij->vals[iprev][6*cell_id    ];
-              cs_real_t r22  = extra->cvar_rij->vals[iprev][6*cell_id + 1];
-              cs_real_t r33  = extra->cvar_rij->vals[iprev][6*cell_id + 2];
-              ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
+              cs_real_t *rij = &(extra->cvar_rij->vals[iprev][6*cell_id]);
+              /* Note that n.R.n = R : n(x)n */
+              cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
+              cs_real_t tr_r = cs_math_6_trace(rij);
+              // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
+              ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1]) /* bbi[1] == bbi[2] is used */
                          / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
             }
 
@@ -520,8 +538,8 @@ cs_lagr_car(int              iprev,
 
           for (cs_lnum_t i = 0; i < 3; i++) {
             cs_real_t vpm   = stat_vel->val[cell_id*3 + i];
-            cs_real_t vflui = extra->vel->vals[iprev][cell_id*3 + i];
-            piil[ip][id] += gradvf[cell_id][id][i] * (vpm - vflui);
+            cs_real_t fluid_vel = extra->vel->vals[iprev][cell_id*3 + i];
+            piil[ip][id] += gradvf[cell_id][id][i] * (vpm - fluid_vel);
           }
 
         }
