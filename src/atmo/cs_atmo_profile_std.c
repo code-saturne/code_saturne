@@ -90,8 +90,8 @@ BEGIN_C_DECLS
  * \brief compute standard atmospheric profile (Holton p 374)
  *
  * \param[in]       z          absolute altitude in m
- * \param[out]      p          pressure in pa
- * \param[out]      t          temperature in k
+ * \param[out]      p          pressure in Pa
+ * \param[out]      t          temperature in K
  * \param[out]      r          density in kg/m3
  */
 /*----------------------------------------------------------------------------*/

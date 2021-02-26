@@ -85,7 +85,19 @@
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_volume_zone.h"
-
+#include "cs_balance.h"
+#include "cs_blas.h"
+#include "cs_convection_diffusion.h"
+#include "cs_gradient.h"
+#include "cs_parameters.h"
+#include "cs_porous_model.h"
+#include "cs_timer.h"
+#include "cs_matrix_building.h"
+#include "cs_matrix_default.h"
+#include "cs_sles.h"
+#include "cs_sles_default.h"
+#include "cs_face_viscosity.h"
+#include "cs_divergence.h"
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -484,6 +496,300 @@ _strtolower(char        *dest,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This auxiliary function solve a Poisson equation for hydrostatic
+ *  pressure :
+ *  \f$ \divs ( \grad P ) = \divs ( f ) \f$
+ * \param[in]      f_ext       external forcing
+ * \param[in]      dfext       external forcing increment
+ * \param[in]      name        field name
+ * \param[in]      min_z       Minimum altitude of the domain
+ * \param[in]      p_ground    Pressure at the minimum altitude
+ * \param[in,out]  i_massflux  Internal mass flux
+ * \param[in,out]  b_massflux  Boundary mass flux
+ * \param[in,out]  i_viscm     Internal face viscosity
+ * \param[in,out]  i_viscm     Boundary face viscosity
+ * \param[in,out]  dam         Working array
+ * \param[in,out]  xam         Working array
+ * \param[in,out]  dpvar       Pressure increment
+ * \param[in,out]  rhs         Working array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
+                              cs_real_3_t  dfext[],
+                              cs_real_t    pvar[],
+                              const char  *name,
+                              cs_real_t    min_z,
+                              cs_real_t    p_ground,
+                              cs_real_t    i_massflux[],
+                              cs_real_t    b_massflux[],
+                              cs_real_t    i_viscm[],
+                              cs_real_t    b_viscm[],
+                              cs_real_t    dam[],
+                              cs_real_t    xam[],
+                              cs_real_t    dpvar[],
+                              cs_real_t    rhs[])
+
+{
+  /* Local variables */
+  cs_domain_t *domain = cs_glob_domain;
+  cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
+  cs_field_t *f = cs_field_by_name(name);
+  int f_id = f->id;
+  int inc, niterf, iccocg;
+
+  cs_var_cal_opt_t vcopt;
+  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
+
+  /*============================================================================
+   * 0.  Initialization
+   *==========================================================================*/
+
+  /* solving info */
+  cs_solving_info_t sinfo;
+  int key_sinfo_id = cs_field_key_id("solving_info");
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  }
+
+  /* Symmetric matrix, except if advection */
+  int isym = 1;
+  bool symmetric = true;
+
+  /* Matrix block size */
+  cs_lnum_t eb_size[4], db_size[4];
+  int ibsize = 1, iesize = 1;
+
+  db_size[0] = ibsize;
+  db_size[1] = ibsize;
+  db_size[2] = ibsize;
+  db_size[3] = ibsize*ibsize;
+
+  eb_size[0] = iesize;
+  eb_size[1] = iesize;
+  eb_size[2] = iesize;
+  eb_size[3] = iesize*iesize;
+
+  cs_real_3_t *next_fext;
+  BFT_MALLOC(next_fext, m->n_cells_with_ghosts, cs_real_3_t);
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    next_fext[cell_id][0] = f_ext[cell_id][0] + dfext[cell_id][0];
+    next_fext[cell_id][1] = f_ext[cell_id][1] + dfext[cell_id][1];
+    next_fext[cell_id][2] = f_ext[cell_id][2] + dfext[cell_id][2];
+  }
+
+  /* --> Handle parallelism and periodicity */
+  if (cs_glob_rank_id  >= 0 || cs_glob_mesh->n_init_perio > 0)
+    cs_mesh_sync_var_vect((cs_real_t *)next_fext);
+
+  /* Boundary conditions
+   *====================*/
+
+  vcopt.ndircl = 0;
+
+  /* To solve hydrostatic pressure:
+   * p_ground on the lowest face, homogeneous Neumann everywhere else */
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    cs_real_t hint = 1. / mq->b_dist[face_id];
+    cs_real_t qimp = 0.;
+    if ((b_face_cog[face_id][2] - min_z) < 0.005) {//FIXME dimensionless value
+      cs_real_t pimp = p_ground;
+      cs_boundary_conditions_set_dirichlet_scalar(&(f->bc_coeffs->a[face_id]),
+                                                  &(f->bc_coeffs->af[face_id]),
+                                                  &(f->bc_coeffs->b[face_id]),
+                                                  &(f->bc_coeffs->bf[face_id]),
+                                                  pimp,
+                                                  hint,
+                                                  cs_math_big_r);
+      vcopt.ndircl = 1;
+    }
+    else {
+      cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
+                                                &(f->bc_coeffs->af[face_id]),
+                                                &(f->bc_coeffs->b[face_id]),
+                                                &(f->bc_coeffs->bf[face_id]),
+                                                qimp,
+                                                hint);
+    }
+  }
+
+  cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
+  cs_real_t *rovsdt;
+  BFT_MALLOC(rovsdt, m->n_cells, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+    rovsdt[cell_id] = 0.;
+
+  /* Faces viscosity */
+  cs_real_t *c_visc;
+  BFT_MALLOC(c_visc, m->n_cells_with_ghosts, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
+    c_visc[cell_id] = 1.;
+
+  cs_face_viscosity(m, mq, vcopt.imvisf, c_visc, i_viscm, b_viscm);
+
+  cs_matrix_wrapper_scalar(vcopt.iconv,
+                           vcopt.idiff,
+                           vcopt.ndircl,
+                           isym,
+                           vcopt.thetav,
+                           0,
+                           f->bc_coeffs->b,
+                           f->bc_coeffs->bf,
+                           rovsdt,
+                           i_massflux,
+                           b_massflux,
+                           i_viscm,
+                           b_viscm,
+                           NULL,
+                           dam,
+                           xam);
+
+  /* Right hand side
+   *================*/
+
+  cs_ext_force_flux(m,
+                    mq,
+                    1, /* init */
+                    vcopt.nswrgr,
+                    next_fext,
+                    f->bc_coeffs->bf,
+                    i_massflux,
+                    b_massflux,
+                    i_viscm,
+                    b_viscm,
+                    c_visc,
+                    c_visc,
+                    c_visc);
+
+  cs_real_t *divergfext;
+  BFT_MALLOC(divergfext, m->n_cells_with_ghosts, cs_real_t);
+
+  cs_divergence(m,
+                1, /* init */
+                i_massflux,
+                b_massflux,
+                divergfext);
+
+  /* --- Right hand side residual */
+  cs_real_t rnorm = sqrt(cs_gdot(m->n_cells, divergfext, divergfext));
+  cs_real_t residu = rnorm;
+
+  /* Initial Right-Hand-Side */
+  cs_diffusion_potential(-1,//FIXME why not f_id?
+                         m,
+                         mq,
+                         1, /* init */
+                         1, /* inc */
+                         vcopt.imrgra,
+                         1, /* iccocg */
+                         vcopt.nswrgr,
+                         vcopt.imligr,
+                         1, /* iphydp */
+                         vcopt.iwgrec,
+                         vcopt.iwarni,
+                         vcopt.epsrgr,
+                         vcopt.climgr,
+                         next_fext,
+                         pvar,
+                         f->bc_coeffs->a,
+                         f->bc_coeffs->b,
+                         f->bc_coeffs->af,
+                         f->bc_coeffs->bf,
+                         i_viscm,
+                         b_viscm,
+                         c_visc,
+                         rhs);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+    rhs[cell_id] = - divergfext[cell_id] - rhs[cell_id];
+
+  cs_real_t ressol = 0;
+  for (int sweep = 0;
+       sweep < vcopt.nswrsm && residu > (rnorm * vcopt.epsrsm);
+       sweep++) {
+
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+      dpvar[cell_id] = 0.;
+
+    ressol = residu;
+    cs_sles_solve_native(f_id,
+                         "",
+                         symmetric,
+                         db_size,
+                         eb_size,
+                         dam,
+                         xam,
+                         0,
+                         vcopt.epsilo,
+                         rnorm,
+                         &niterf,
+                         &ressol,
+                         rhs,
+                         dpvar);
+
+    /* Update variable and right-hand-side */
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+      pvar[cell_id] += dpvar[cell_id];
+
+
+    cs_diffusion_potential(-1,//FIXME why not f_id?
+                           m,
+                           mq,
+                           1, /* init */
+                           1, /* inc */
+                           vcopt.imrgra,
+                           1, /* iccocg */
+                           vcopt.nswrgr,
+                           vcopt.imligr,
+                           1, /* iphydp */
+                           vcopt.iwgrec,
+                           vcopt.iwarni,
+                           vcopt.epsrgr,
+                           vcopt.climgr,
+                           next_fext,
+                           pvar,
+                           f->bc_coeffs->a,
+                           f->bc_coeffs->b,
+                           f->bc_coeffs->af,
+                           f->bc_coeffs->bf,
+                           i_viscm,
+                           b_viscm,
+                           c_visc,
+                           rhs);
+
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+      rhs[cell_id] = - divergfext[cell_id] - rhs[cell_id];
+
+    /* --- Convergence test */
+    residu = sqrt(cs_gdot(m->n_cells, rhs, rhs));
+
+    /* Writing */
+    if (vcopt.iwarni >= 2) {
+      bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
+          name, sweep, residu, rnorm);
+      bft_printf("%s: Current reconstruction sweep: %d, "
+          "Iterations for solver: %d\n", name, sweep, niterf);
+    }
+
+  }
+
+  cs_sles_free_native(f_id, "");
+
+  BFT_FREE(divergfext);
+  BFT_FREE(next_fext);
+  BFT_FREE(rovsdt);
+  BFT_FREE(c_visc);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -553,7 +859,6 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Friction temperature */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g);
-  cs_real_t tstar = aopt->meteo_tstar;
 
   /* BL height according to Marht 1982 formula */
   /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
@@ -620,20 +925,19 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t u_met_min;
   cs_real_t theta_met_min;
 
-  if (aopt->compute_z_ground == true){
+  if (aopt->compute_z_ground == true)
     cs_atmo_z_ground_compute();
-  }
+
   cs_real_t *z_ground = cs_field_by_name_try("z_ground")->val;
 
   BFT_MALLOC(dlmo_var, m->n_cells, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    dlmo_var[cell_id]=0.0;
+    dlmo_var[cell_id] = 0.0;
   }
 
-  if (dlmo>0) {
+  if (dlmo > 0)
     ri_max = 0.75; // Value chosen to limit buoyancy vs shear production
-  }
 
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
@@ -662,14 +966,6 @@ cs_atmo_compute_meteo_profiles(void)
     /* epsilon profile */
     cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
       * cs_mo_phim(z+z0, dlmo)*(1.-ri_f); //FIXME min (1, ri_f) ?
-
-    /* TODO compute hydrostatic pressure and density profiles
-     * with Laplace integration  (see atlecm.f90) */
-    cs_atmo_profile_std((z+z0),
-                        &(cpro_met_p[cell_id]),
-                        &(cpro_met_t[cell_id]),
-                        &(cpro_met_rho[cell_id]));
-
 
     /* Very stable cases */
     if (ri_f > ri_max) {
@@ -715,6 +1011,8 @@ cs_atmo_compute_meteo_profiles(void)
       }
     }
   }
+
+  cs_atmo_hydrostatic_profiles_compute();
   BFT_FREE(dlmo_var);
 }
 
@@ -846,9 +1144,10 @@ cs_atmo_z_ground_compute(void)
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++){
     rovsdt[cell_id] = 0.;
-
+    dpvar[cell_id] = 0.;
+  }
   /* Right hand side
    *================*/
 
@@ -876,41 +1175,56 @@ cs_atmo_z_ground_compute(void)
 
   /* In case of a theta-scheme, set theta = 1;
      no relaxation in steady case either */
+  cs_real_t inf_norm = 1.;
 
-  cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
-                                     -1,  /* no over loops */
-                                     f->id,
-                                     f->name,
-                                     0,   /* iescap */
-                                     0,   /* imucpp */
-                                     norm,
-                                     &vcopt,
-                                     f->val_pre,
-                                     f->val,
-                                     f->bc_coeffs->a,
-                                     f->bc_coeffs->b,
-                                     f->bc_coeffs->af,
-                                     f->bc_coeffs->bf,
-                                     i_massflux,
-                                     b_massflux,
-                                     i_massflux, /* viscosity, not used */
-                                     b_massflux, /* viscosity, not used */
-                                     i_massflux, /* viscosity, not used */
-                                     b_massflux, /* viscosity, not used */
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     0, /* icvflb (upwind) */
-                                     NULL,
-                                     rovsdt,
-                                     rhs,
-                                     f->val,
-                                     dpvar,
-                                     NULL,
-                                     NULL);
+  /* Overall loop in order to ensure convergence */
+  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+
+    cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
+                                       -1,  /* no over loops */
+                                       f->id,
+                                       f->name,
+                                       0,   /* iescap */
+                                       0,   /* imucpp */
+                                       norm,
+                                       &vcopt,
+                                       f->val_pre,
+                                       f->val,
+                                       f->bc_coeffs->a,
+                                       f->bc_coeffs->b,
+                                       f->bc_coeffs->af,
+                                       f->bc_coeffs->bf,
+                                       i_massflux,
+                                       b_massflux,
+                                       i_massflux, /* viscosity, not used */
+                                       b_massflux, /* viscosity, not used */
+                                       i_massflux, /* viscosity, not used */
+                                       b_massflux, /* viscosity, not used */
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       0, /* icvflb (upwind) */
+                                       NULL,
+                                       rovsdt,
+                                       rhs,
+                                       f->val,
+                                       dpvar,
+                                       NULL,
+                                       NULL);
+
+    /* Compute the L_infinity norm */
+    inf_norm = 0.;
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      inf_norm = fmax(inf_norm, abs(f->val[cell_id]-f->val_pre[cell_id]));//FIXME make it dimensionless
+
+      /* Current to previous */
+      f->val_pre[cell_id] = f->val[cell_id];
+    }
+
+    cs_parall_max(1, CS_REAL_TYPE, &inf_norm);
+  }
 
   /* Free memory */
-
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
@@ -923,7 +1237,7 @@ cs_atmo_z_ground_compute(void)
  *  This function solves the following transport equation on \f$ \varia \f$:
  *  \f[
  *  \divs \left( \grad \varia \right)
- *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right)
  *  \f]
  *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
  *  is the potential temperature.
@@ -940,7 +1254,183 @@ cs_atmo_z_ground_compute(void)
 void
 cs_atmo_hydrostatic_profiles_compute(void)
 {
- //TODO
+   /* Initialization
+   *===============*/
+
+  cs_domain_t *domain = cs_glob_domain;
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+ cs_real_3_t *restrict i_face_normal =
+     (const cs_real_3_t *restrict)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal =
+     (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
+  cs_field_t *f = cs_field_by_name("meteo_pressure");
+  cs_var_cal_opt_t vcopt;
+  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
+  cs_field_t *potemp = cs_field_by_name("meteo_pot_temperature");
+  cs_field_t *density = cs_field_by_name("meteo_density");
+  cs_field_t *temp = cs_field_by_name("meteo_temperature");
+
+  cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
+  cs_atmo_option_t *aopt = &_atmo_option;
+  cs_real_t g = cs_math_3_norm(phys_cst->gravity);
+
+
+  /* Get the lowest altitude (should also be minimum of z_ground)
+   *=============================================================*/
+
+  cs_real_t z_min = cs_math_big_r;
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id ++) {
+    if (b_face_cog[face_id][2] < z_min)
+      z_min = b_face_cog[face_id][2];
+  }
+
+  cs_parall_min(1, CS_REAL_TYPE, &z_min);
+
+  /* p_ground is computed with a Laplace profile */
+
+  cs_real_t p_ground = aopt->meteo_psea
+                      * exp( -g * z_min / (rair * aopt->meteo_t0));
+  cs_real_t rho0 = p_ground / ( rair * aopt->meteo_t0 );
+
+  /* Initialize variables
+   *=====================*/
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++){
+    f->val[cell_id] = rho0 *rair
+                     * potemp->val[cell_id]
+                     * pow((p_ground/aopt->meteo_psea),2./7.);//FIXME use gamma-1
+  }
+
+  cs_real_t *i_massflux = NULL;
+  cs_real_t *b_massflux = NULL;
+  BFT_MALLOC(i_massflux, m->n_i_faces, cs_real_t);
+  BFT_MALLOC(b_massflux, m->n_b_faces, cs_real_t);
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
+    i_massflux[face_id] = 0.;
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
+    b_massflux[face_id] = 0.;
+
+  cs_real_t *i_viscm = NULL;
+  BFT_MALLOC(i_viscm, m->n_i_faces, cs_real_t);
+
+  cs_real_t *b_viscm = NULL;
+  BFT_MALLOC(b_viscm, m->n_b_faces, cs_real_t);
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++){
+    i_viscm[face_id] = 0.;
+  }
+
+  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++){
+    b_viscm[face_id] = 0.;
+  }
+
+  cs_real_3_t *f_ext, *dfext;
+  BFT_MALLOC(f_ext, m->n_cells, cs_real_3_t);
+  BFT_MALLOC(dfext, m->n_cells, cs_real_3_t);
+
+  /* dfext is actually a dummy used to copy calhyd */
+  /* f_ext is initialized with an initial density */
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    f_ext[cell_id][0] = rho0 * phys_cst->gravity[0];//FIXME why not rho g with variable rho?
+    dfext[cell_id][0] = 0.;
+    f_ext[cell_id][1] = rho0 * phys_cst->gravity[1];
+    dfext[cell_id][1] = 0.;
+    f_ext[cell_id][2] = rho0 * phys_cst->gravity[2];
+    dfext[cell_id][2] = 0;
+  }
+
+  /* Solving
+  *=========*/
+
+  cs_real_t *dam = NULL;
+  BFT_MALLOC(dam, m->n_cells, cs_real_t);
+
+  cs_real_t *xam = NULL;
+  BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
+
+  cs_real_t *rhs = NULL;
+  BFT_MALLOC(rhs, m->n_cells, cs_real_t);
+
+  cs_real_t *dpvar = NULL;
+  BFT_MALLOC(dpvar, m->n_cells, cs_real_t);
+
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++){
+    dpvar[cell_id] = 0.;
+    dam[cell_id] = 0.;
+    rhs[cell_id] = 0.;
+  }
+
+  cs_real_t inf_norm = 1.;
+
+  /* Loop to compute pressure profile */
+  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {//FIXME 100 or nswrsm
+
+    _hydrostatic_pressure_compute(f_ext,
+                                  dfext,
+                                  f->val,
+                                  f->name,
+                                  z_min,
+                                  p_ground,
+                                  i_massflux,
+                                  b_massflux,
+                                  i_viscm,
+                                  b_viscm,
+                                  dam,
+                                  xam,
+                                  dpvar,
+                                  rhs);
+
+    /* L infinity residual computation and forcing update */
+    inf_norm = 0.;
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      inf_norm = fmax(abs(dpvar[cell_id]), inf_norm);
+
+      /* f_ext = rho^k * g */
+      f_ext[cell_id][0] = pow(f->val[cell_id], 5./7.) * pow(aopt->meteo_psea, 2./7.)//FIXME use gamma
+                         / ( rair * potemp->val[cell_id] )
+                         * phys_cst->gravity[0];
+      f_ext[cell_id][1] = pow(f->val[cell_id], 5./7.) * pow(aopt->meteo_psea, 2./7.)
+                         / ( rair * potemp->val[cell_id] )
+                         * phys_cst->gravity[1];
+      f_ext[cell_id][2] = pow(f->val[cell_id], 5./7.) * pow(aopt->meteo_psea, 2./7.)
+                         / ( rair * potemp->val[cell_id] )
+                         * phys_cst->gravity[2];
+    }
+    cs_parall_max(1, CS_REAL_TYPE ,&inf_norm);
+  }
+
+  /* Once the pressure computed, finalize the computation of
+   * density and temperature */
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    temp->val[cell_id] = potemp->val[cell_id]
+                        * pow((f->val[cell_id]/aopt->meteo_psea), 2./7.);
+    density->val[cell_id] = f->val[cell_id]
+                            / ( rair * temp->val[cell_id] );
+  }
+
+  /* Free memory */
+  BFT_FREE(dpvar);
+  BFT_FREE(rhs);
+  BFT_FREE(i_viscm);
+  BFT_FREE(b_viscm);
+  BFT_FREE(xam);
+  BFT_FREE(dam);
+  BFT_FREE(f_ext);
+  BFT_FREE(dfext);
+  BFT_FREE(b_massflux);
+  BFT_FREE(i_massflux);
+
 }
 
 /*----------------------------------------------------------------------------*/

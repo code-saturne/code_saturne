@@ -484,7 +484,8 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   vcopt%iconv = 1
   vcopt%blencv= 0.d0 ! Pure upwind
   vcopt%istat = 0
-  vcopt%nswrsm = 1
+  vcopt%nswrsm = 100
+  vcopt%epsrsm = 1.d-3
   vcopt%idiff  = 0
   vcopt%idifft = 0
   vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
@@ -506,9 +507,29 @@ endif
 if (imeteo.ge.2) then
   f_name  = 'meteo_pressure'
   f_label = 'Meteo pressure'
-  ! Now create matching property
-  call add_property_field(f_name, f_label, 1, .false., iflid)
-  call field_set_key_int(iflid, keylog, 1)
+  call add_variable_field(f_name, f_label, 1, ivar)
+  iflid = ivarfl(ivar)
+
+  ! Pure convection equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(iflid, vcopt)
+  vcopt%iconv = 0
+  vcopt%blencv= 0.d0 ! Pure upwind
+  vcopt%istat = 0
+  vcopt%idircl = 1
+  vcopt%nswrsm = 100
+  vcopt%nswrgr = 100
+  vcopt%imrgra = 0
+  vcopt%imligr = -1
+  vcopt%epsilo = 0.000001
+  vcopt%epsrsm = 1.d-3
+  vcopt%epsrgr = 0.0001
+  vcopt%climgr = 1.5
+  vcopt%idiff  = 1
+  vcopt%idifft = 0
+  vcopt%idften = 1
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+  vcopt%thetav = 1
+  call field_set_key_struct_var_cal_opt(iflid, vcopt)
 
   f_name  = 'meteo_density'
   f_label = 'Meteo rho'
