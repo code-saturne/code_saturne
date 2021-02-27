@@ -445,7 +445,7 @@ double cs_turb_dpow = -1.;
 double cs_turb_cmu = 0.09;
 
 /*! \f$ C_\mu^\frac{1}{4} \f$ */
-double cs_turb_cmu025;
+double cs_turb_cmu025 = 0.547722557; /* computed more precisely later */
 
 /*!
  * Constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
@@ -1451,27 +1451,29 @@ void
 cs_turb_compute_constants(void)
 {
   cs_turb_dpow   = 1./(1.+cs_turb_bpow);
-  cs_turb_cmu025 = pow(cs_turb_cmu,0.25);
+  cs_turb_cmu025 = pow(cs_turb_cmu, 0.25);
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
+
+  int k_turb_schmidt = cs_field_key_id("turbulent_schmidt");
 
   cs_field_pointer_ensure_init();
 
   if (CS_F_(k) != NULL)
-    cs_field_set_key_double(CS_F_(k), cs_field_key_id("turbulent_schmidt"), 1.);
+    cs_field_set_key_double(CS_F_(k), k_turb_schmidt, 1.);
 
   if (CS_F_(phi) != NULL)
-    cs_field_set_key_double(CS_F_(phi), cs_field_key_id("turbulent_schmidt"), 1.);
+    cs_field_set_key_double(CS_F_(phi), k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
-    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.22);
+    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.15);
+    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.15);
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
-    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.5);
+    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.5);
   else
-    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.30);
+    cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.30);
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
     cs_turb_csrij = 0.21;
