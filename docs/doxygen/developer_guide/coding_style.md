@@ -172,6 +172,17 @@ The following coding rules are strongly recommended:
   values is that a compiler may issue a warning when a `switch`
   construct has no `case` for a given enumeration value.
 
+Automatic formatting
+--------------------
+
+A `.clang-format` configuration file is available in the top-level
+source directory, so the [clang-format](https://clang.llvm.org/docs/ClangFormat.html)
+tool may be used to obtain an acceptable presentation.
+Automated formatting does not exactly follow the above recommendations,
+but is as close as possible using the available parameters, so can provide
+a good starting point, though it is not activated automatically to allow for
+manual fine-tuning.
+
 Language {#sec_prg_lang_c}
 --------
 
@@ -420,7 +431,7 @@ Fortran continues to be one of the best supported languages in HPC
 - No or few "community" tools aside from PHOTRAN (for Eclipse)
   - sign of a more reduced user base;
   - compilers are not as user tested as for C and C++;
-- This is one of the main reasons for focusing more on C, less on Fortran
+- This is one of the main reasons for focusing more on C, less on Fortran.
   - The other being that many features we need are available in Fortran compilers
     only since 5 or so years, while equivalent (less complete, but sufficient)
     features existed in C 20 years ago (i.e. Fortran 95 and 2003 were too little,
