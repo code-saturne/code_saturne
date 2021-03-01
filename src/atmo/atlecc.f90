@@ -427,14 +427,13 @@ return
 !============================
 
  99   continue
-write ( nfecra,9998 )
-call csexit (1)
-!==========
+write(nfecra, 9998)
+
+return
 
  999  continue
-write ( nfecra,9999 )
+write(nfecra, 9999)
 call csexit (1)
-!==========
 
 !--------
 ! FORMATS
@@ -525,15 +524,14 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecc)      ',/,&
-'@     =======                                                ',/,&
-'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
-'@                                                            ',/,&
-'@  Error opening the chemistry profile file                  ',/,&
-'@  check the name of the chemistry file                      ',/,&
-'@                                                            ',/,&
-'@  The computation will not be run                           ',/,&
-'@                                                            ',/,&
+'@ @@  WARNING:   ATMOSPHERIC CHEMISTRY (atlecc)'              ,/,&
+'@     ======='                                                ,/,&
+'@'                                                            ,/,&
+'@  No chemistry profile given'                                ,/,&
+'@  check the name of the chemistry file'                      ,/,&
+'@'                                                            ,/,&
+'@  The chemistry variable will be set to 0.'                  ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  9999 format(                                                           &

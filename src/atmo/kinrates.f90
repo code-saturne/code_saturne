@@ -162,8 +162,12 @@ do iel = 1, ncel
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, qvmet, zent, ttcabs, hspec )
 
-  else
+  else if (met_qv_id.ge.0) then
     hspec = cpro_met_qv(iel)
+
+  ! Dry
+  else
+    hspec = 0.d0
   endif
 
   ! Call the computation of kinetic rates

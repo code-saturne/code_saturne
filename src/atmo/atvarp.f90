@@ -151,7 +151,7 @@ endif
 ! Do not change this order
 if (iaerosol.eq.CS_ATMO_AEROSOL_SSH) ichemistry = 4
 ! if a chemical scheme is solved, a concentration profiles
-! file must be used
+! file  named 'chemistry' should be used
 if (ichemistry.ge.1) ifilechemistry = ichemistry
 if (nogaseouschemistry .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF) ichemistry = 0
 
