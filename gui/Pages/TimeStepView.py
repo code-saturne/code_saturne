@@ -162,9 +162,11 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             idtvar = 0
-            self.modelTimeOptions.disableItem(str_model='1')
-            self.modelTimeOptions.disableItem(str_model='2')
-            self.modelTimeOptions.disableItem(str_model='-1')
+
+            # Deactivate all modes except constant time step
+            for itm in self.modelTimeOptions.getItems():
+                if str(itm) != "0":
+                    self.modelTimeOptions.disableItem(str_model=itm)
 
         # Constraints on time step from Lagrangian model
 
@@ -173,11 +175,13 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if model in ['one_way', 'two_way']:
             if idtvar not in [0, 1]:
                 idtvar = 0
-            self.modelTimeOptions.disableItem(str_model='2')
-            self.modelTimeOptions.disableItem(str_model='-1')
-            if model == 'two_way':
-                idtvar = 0
-                self.modelTimeOptions.disableItem(str_model='1')
+
+            # Deactivate certain modes
+            for itm in self.modelTimeOptions.getItems():
+                if str(itm) == "2":
+                    self.modelTimeOptions.disableItem(str_model=itm)
+                elif str(itm) == "1" and model == 'two_way':
+                    self.modelTimeOptions.disableItem(str_model=itm)
 
         # Constraints on time step from compressible model
 
@@ -186,8 +190,13 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if model != 'off':
             if idtvar not in [0, 1]:
                 idtvar = 0
-            self.modelTimeOptions.disableItem(str_model='2')
-            self.modelTimeOptions.disableItem(str_model='-1')
+
+            # Deactivate steady time step
+            # Using list to allow additions in the future
+            for itm in self.modelTimeOptions.getItems():
+                if str(itm) in ["2"]:
+                    self.modelTimeOptions.disableItem(str_model=itm)
+
             self.labelNTERUP.setText("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes")
             self.comboBoxNTERUP.hide()
             self.spinBoxNTERUP.show()
@@ -199,9 +208,11 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if model != 'off':
             if idtvar not in [0, 1]:
                 idtvar = 0
-            self.modelTimeOptions.disableItem(str_model='1')
-            self.modelTimeOptions.disableItem(str_model='2')
-            self.modelTimeOptions.disableItem(str_model='-1')
+
+            # Deactivate all modes except constant time step
+            for itm in self.modelTimeOptions.getItems():
+                if str(itm) != "0":
+                    self.modelTimeOptions.disableItem(str_model=itm)
 
         # Change time step option if required by model constraints
 
