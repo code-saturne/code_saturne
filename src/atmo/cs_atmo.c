@@ -622,9 +622,9 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
   cs_real_t *rovsdt;
-  BFT_MALLOC(rovsdt, m->n_cells, cs_real_t);
+  BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rovsdt[cell_id] = 0.;
 
   /* Faces viscosity */
@@ -1304,7 +1304,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   /* Initialize variables
    *=====================*/
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++){
-    f->val[cell_id] = rho0 *rair
+    f->val[cell_id] = rho0 * rair
                      * potemp->val[cell_id]
                      * pow((p_ground/aopt->meteo_psea),2./7.);//FIXME use gamma-1
   }
@@ -1335,8 +1335,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   cs_real_3_t *f_ext, *dfext;
-  BFT_MALLOC(f_ext, m->n_cells, cs_real_3_t);
-  BFT_MALLOC(dfext, m->n_cells, cs_real_3_t);
+  BFT_MALLOC(f_ext, m->n_cells_with_ghosts, cs_real_3_t);
+  BFT_MALLOC(dfext, m->n_cells_with_ghosts, cs_real_3_t);
 
   /* dfext is actually a dummy used to copy calhyd */
   /* f_ext is initialized with an initial density */
@@ -1354,16 +1354,16 @@ cs_atmo_hydrostatic_profiles_compute(void)
   *=========*/
 
   cs_real_t *dam = NULL;
-  BFT_MALLOC(dam, m->n_cells, cs_real_t);
+  BFT_MALLOC(dam, m->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *xam = NULL;
   BFT_MALLOC(xam, m->n_i_faces, cs_real_t);
 
   cs_real_t *rhs = NULL;
-  BFT_MALLOC(rhs, m->n_cells, cs_real_t);
+  BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *dpvar = NULL;
-  BFT_MALLOC(dpvar, m->n_cells, cs_real_t);
+  BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++){
     dpvar[cell_id] = 0.;
