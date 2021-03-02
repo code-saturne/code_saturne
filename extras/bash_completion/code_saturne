@@ -32,7 +32,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="studymanager smgr studymanagergui smgrgui bdiff bdump compile config create gui info run trackcvg"
+    cmds="studymanager smgr studymanagergui smgrgui bdiff bdump compile config cplgui create gui info run trackcvg parametric submit symbol2line update up"
 
     # Help and Case options
     local helpOpts="-h --help"
