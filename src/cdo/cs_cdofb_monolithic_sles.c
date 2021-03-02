@@ -3287,7 +3287,8 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 /*!
  * \brief  Solve a linear system arising from the discretization of the
  *         Navier-Stokes equation with a CDO face-based approach.
- *         The full system is treated as one block and then sent to PETSc
+ *         The full system is treated as one block and solved as it is.
+ *         In this situation, PETSc or MUMPS are usually considered.
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
