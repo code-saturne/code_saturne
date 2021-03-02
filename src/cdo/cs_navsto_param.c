@@ -375,7 +375,12 @@ _navsto_param_sles_free(cs_navsto_param_sles_t    **p_nslesp)
   if (nslesp == NULL)
     return;
 
-  cs_param_sles_free(&nslesp->schur_sles_param);
+  cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
+
+  cs_sles_t  *schur_sles = cs_sles_find(-1, schur_slesp->name);
+  cs_sles_free(schur_sles);
+
+  cs_param_sles_free(&schur_slesp);
 
   BFT_FREE(nslesp);
 
