@@ -2287,6 +2287,7 @@ cs_sles_mumps_solve(void                *context,
     else {
 
       assert(cs_glob_n_ranks > 1);
+      assert(sizeof(SMUMPS_REAL) == sizeof(float));
 
       /* Gather on the rank 0 (= host rank for MUMPS) the global RHS array */
 
