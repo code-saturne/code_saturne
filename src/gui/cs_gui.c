@@ -267,7 +267,7 @@ _get_property_node(const char *property_name,
       }
       if (id_s != NULL) {
         tn = cs_tree_node_get_child(tn, "zone");
-        tn = cs_tree_node_get_sibling_with_tag(tn, "id", id_s);
+        tn = cs_tree_node_get_sibling_with_tag(tn, "zone_id", id_s);
       }
     }
   }
