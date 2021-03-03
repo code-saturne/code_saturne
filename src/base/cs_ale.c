@@ -1338,8 +1338,11 @@ cs_ale_project_displacement(const int           ale_bc_type[],
   }
 
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
-    for (int i = 0; i < dim; i++)
-      disp_proj[v_id][i] /= vtx_counter[v_id];
+    /* Might be null for a vertex belonging to sliding faces only */
+    if (vtx_counter[v_id] > 0.) {
+      for (int i = 0; i < dim; i++)
+        disp_proj[v_id][i] /= vtx_counter[v_id];
+    }
   }
 
   /* If the boundary face IS a sliding face.
