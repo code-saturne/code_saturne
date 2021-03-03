@@ -634,7 +634,9 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     c_visc[cell_id] = 1.;
 
-  cs_face_viscosity(m, mq, vcopt.imvisf, c_visc, i_viscm, b_viscm);
+  int imvisf = cs_glob_space_disc->imvisf;
+
+  cs_face_viscosity(m, mq, imvisf, c_visc, i_viscm, b_viscm);
 
   cs_matrix_wrapper_scalar(vcopt.iconv,
                            vcopt.idiff,
