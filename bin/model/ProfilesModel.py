@@ -67,6 +67,7 @@ class ProfilesModel(Model):
         self.node_pro_vp    = self.node_model_vp.xmlGetNodeList('property')
 
         self.__var_prop_list = self.getVariablesAndVolumeProperties()
+        self.__var_prop_list_compat = self.dicoLabel2Name_compat.keys()
 
 
     def __defaultValues(self):
@@ -97,6 +98,8 @@ class ProfilesModel(Model):
         mdl = OutputVolumicVariablesModel(self.case)
 
         self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=True)
+        self.dicoLabel2Name_compat = mdl.getVolumeFieldsLabel2Name(time_averages=True,
+                                                                   get_components=True)
 
         return list(self.dicoLabel2Name.keys())
 
@@ -284,8 +287,8 @@ class ProfilesModel(Model):
         node = self.node_prof.xmlGetNode('profile', label = label)
         node.xmlRemoveChild('var_prop')
         for var in lst:
-            self.isInList(var, self.__var_prop_list)
-            (name, comp) = self.dicoLabel2Name[var]
+            self.isInList(var, self.__var_prop_list_compat)
+            (name, comp) = self.dicoLabel2Name_compat[var]
             node.xmlAddChild('var_prop', name=name, component=comp)
 
 
@@ -359,8 +362,8 @@ class ProfilesModel(Model):
             self.setNbPoint(label, NbPoint)
 
         for var in node.xmlGetChildNodeList('var_prop'):
-            for name in self.__var_prop_list:
-                if self.dicoLabel2Name[name] == (var['name'], var['component']) :
+            for name in self.__var_prop_list_compat:
+                if self.dicoLabel2Name_compat[name] == (var['name'], var['component']) :
                     lst.append(name)
 
         return label, fmt, lst, choice, freq, formula, NbPoint
