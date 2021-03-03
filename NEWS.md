@@ -3,6 +3,8 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- ALE: Fix bug when a vertex belongs to sliding faces only.
+
 - GUI: fix incomplete handling of compressible boundary conditions
   preventing run unless completed in user subroutines.
 
