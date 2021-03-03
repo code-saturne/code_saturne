@@ -1484,7 +1484,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Connections
 
-        self.tabWidget.currentChanged[int].connect(self.slotchanged)
+        self.tabWidget.currentChanged[int].connect(self.slotTabChanged)
         self.modelWriter.dataChanged.connect(self.slotDataChanged)
         self.tableViewMesh.clicked.connect(self.slotSelectMesh)
         self.tableViewLagrangianMesh.clicked.connect(self.slotSelectLagrangianMesh)
@@ -2329,6 +2329,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         else:
             self.checkBoxSeparateMeshes.show()
 
+        if format == "med":
+            self.modelTimeDependency.disableItem(str_model="transient_coordinates")
+            self.modelTimeDependency.disableItem(str_model="transient_connectivity")
+            self.modelTimeDependency.setItem(str_model="fixed_mesh")
+        else:
+            self.modelTimeDependency.enableItem(str_model="transient_coordinates")
+            self.modelTimeDependency.enableItem(str_model="transient_connectivity")
 
     def __insertMesh(self, name, mesh_id, mesh_type, selection):
         """
@@ -2932,7 +2939,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
 
     @pyqtSlot(int)
-    def slotchanged(self, index):
+    def slotTabChanged(self, index):
         """
         Changed tab
         """
