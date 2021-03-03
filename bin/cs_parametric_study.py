@@ -128,7 +128,7 @@ class cs_modify_xml(object):
         from code_saturne.model.XMLengine import Case
 
         try:
-            case = Case(package = pkg, file_name = filepath)
+            case = Case(package = pkg, file_name = xml_file)
         except:
             print("Error while reading parameters files.")
             print("This file is not in accordance with XML specifications.")
@@ -517,7 +517,7 @@ class cs_modify_xml(object):
         """
         self.initNotebookModel()
 
-        if name not in self.notebookModel.getVarNamesList():
+        if name not in self.notebookModel.getVarNameList():
             raise Exception("%s is not in the notebook!" % name)
 
         self.notebookModel.setVariableValue(val=val, var=name)
@@ -690,7 +690,7 @@ def update_xml_file(pkg, filepath, options):
     # --------------------
     # Mesh parameters
 
-    if options.mesh != []:
+    if options.mesh:
         xml_controller.cleanMeshList()
         for m in options.mesh:
             xml_controller.addMesh(m, None)
@@ -713,7 +713,7 @@ def update_xml_file(pkg, filepath, options):
     if options.TimeStep:
         xml_controller.setTimeStep(options.TimeStep)
 
-    if options.timeModel:
+    if options.TimeModel:
         xml_controller.setUnsteadySimulation()
     # --------------------
 
@@ -745,7 +745,7 @@ def update_xml_file(pkg, filepath, options):
         xml_controller.setRestartPath(restart_path)
     # --------------------
 
-    case.xmlSaveDocument()
+    xml_controller.saveXml()
 
 
 # ------------------------------------------------------------------------------
