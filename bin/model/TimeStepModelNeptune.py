@@ -70,6 +70,17 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         self.isInList(model, ('constant', 'uniform', 'steady'))
 
+        # CFL/Fo
+        for f_id in self.getFieldIdList():
+            field_name = self.getLabel(f_id)
+            for tag in ['courant_number', 'fourier_number']:
+                Variables(self.case).setNewVariableProperty("property",
+                                                            "",
+                                                            self.__timeParameters,
+                                                            f_id,
+                                                            tag,
+                                                            tag+"_"+field_name)
+
         oldmodel = None
         childNode = self.__timeParameters.xmlGetNode('time_passing')
         if childNode != None :

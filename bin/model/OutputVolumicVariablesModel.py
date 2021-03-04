@@ -603,9 +603,12 @@ class OutputVolumicVariablesModel(Variables, Model):
                 if node2:
                     nodeList.append(node2)
 
+            # We are looping on the list since for NCFD we have one of each
+            # for each phase. If not courant/fourier is available, the list
+            # is empty, hence the second for loop does nothing.
             for prop in ('courant_number', 'fourier_number'):
-                L = node1.xmlGetNode('property', name=prop)
-                if L: nodeList.append(L)
+                for _n in node1.xmlGetChildNodeList('property', name=prop):
+                    nodeList.append(_n)
 
         return nodeList
 
