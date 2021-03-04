@@ -1357,7 +1357,7 @@ _init_boundaries(void)
       }
 
       /* Electric arc scalars only if required */
-      if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] < 0)
+      if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] < 0)
         scalar_sections[1] = NULL;
 
       /* Loop on possible specific model scalar sections */
