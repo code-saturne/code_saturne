@@ -77,6 +77,9 @@ User changes:
 
 Bug fixes:
 
+- Fix overwite of user-defined function settings for probe writer
+  by GUI or default settings.
+
 - GUI: fix incomplete handling of compressible boundary conditions
   preventing run unless completed in user subroutines.
 

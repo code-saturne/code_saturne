@@ -897,29 +897,6 @@ cs_gui_postprocess_meshes(void)
 
   }
 
-  v_i = cs_tree_node_get_child_values_int(tn_o, "probe_recording_frequency");
-  int frequency_n = (v_i != NULL) ? v_i[0] : 1;
-
-  v_r = cs_tree_node_get_child_values_real
-    (tn_o, "probe_recording_frequency_time");
-  cs_real_t frequency_t = (v_r != NULL) ? v_r[0] : -1.;
-
-  /* Time plot (probe) format string */
-  const char *fmt_opts
-    = cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probe_format"),
-                           "choice");
-
-  cs_post_define_writer(CS_POST_WRITER_PROBES,   /* writer_id */
-                        "",                      /* case_name */
-                        "monitoring",            /* dir_name */
-                        "time_plot",
-                        fmt_opts,
-                        FVM_WRITER_FIXED_MESH,
-                        false,                   /* output_at_start */
-                        false,                   /* output_at_end */
-                        frequency_n,
-                        frequency_t);
-
   /* Profile definitions;
      note that this may lead to additional writer definitions, as
      the GUI does not yet present profiles in a consistent
@@ -1022,6 +999,33 @@ cs_gui_postprocess_writers(void)
                           time_step,
                           time_value);
   }
+
+  /* Probes default writer */
+
+  const int *v_i
+    = cs_tree_node_get_child_values_int(tn_o, "probe_recording_frequency");
+  int frequency_n = (v_i != NULL) ? v_i[0] : 1;
+
+  const cs_real_t *v_r
+    = cs_tree_node_get_child_values_real(tn_o, "probe_recording_frequency_time");
+  cs_real_t frequency_t = (v_r != NULL) ? v_r[0] : -1.;
+
+  /* Time plot (probe) format string */
+  const char *fmt_opts
+    = cs_tree_node_get_tag(cs_tree_node_get_child(tn_o, "probe_format"),
+                           "choice");
+
+  cs_post_define_writer(CS_POST_WRITER_PROBES,   /* writer_id */
+                        "",                      /* case_name */
+                        "monitoring",            /* dir_name */
+                        "time_plot",
+                        fmt_opts,
+                        FVM_WRITER_FIXED_MESH,
+                        false,                   /* output_at_start */
+                        false,                   /* output_at_end */
+                        frequency_n,
+                        frequency_t);
+
 }
 
 /*----------------------------------------------------------------------------*/
