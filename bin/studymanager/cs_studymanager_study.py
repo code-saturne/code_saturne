@@ -698,7 +698,7 @@ class Case(object):
     def disable(self):
 
         self.disabled = True
-        msg = "    - Case %s --> DISABLED" %(case.title)
+        msg = "    - Case %s --> DISABLED" %(self.title)
 
         return msg
 
