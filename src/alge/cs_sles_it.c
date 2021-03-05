@@ -2655,7 +2655,7 @@ _gcr(cs_sles_it_t              *c,
   cvg = CS_SLES_ITERATING;
 
   /* Current Restart */
-  while(cvg == CS_SLES_ITERATING){
+  while (cvg == CS_SLES_ITERATING) {
 
     n_iter = 0;
 
@@ -2666,7 +2666,7 @@ _gcr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       rk[ii] -= rhs[ii];
 
@@ -2681,15 +2681,11 @@ _gcr(cs_sles_it_t              *c,
     /*-------------------*/
 
 #if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = sk[ii];
-
 #else
-
-    memcpy(dk, sk, n_rows * sizeof(cs_real_t));
-
+    memcpy(dk, sk, n_rows*sizeof(cs_real_t));
 #endif
 
     residue = sqrt(_dot_product_xx(c, rk));
@@ -2700,7 +2696,7 @@ _gcr(cs_sles_it_t              *c,
     /* If no solving required, finish here */
 
     cvg = _convergence_test(c, (n_restart * n_k_per_restart) + n_iter,
-                           residue, convergence);
+                            residue, convergence);
 
     if (cvg == CS_SLES_ITERATING) {
 
@@ -2715,13 +2711,13 @@ _gcr(cs_sles_it_t              *c,
       cs_real_t d_ro_1 = (CS_ABS(ro_1[0]) > DBL_MIN) ? 1. / ro_1[0] : 0.;
       alpha =  - ro_0 * d_ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
-#     pragma omp for nowait
+#       pragma omp for nowait
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           vx[ii] += (alpha * dk[ii]);
 
-#     pragma omp for nowait
+#       pragma omp for nowait
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           rk[ii] += (alpha * zk[ii]);
       }
@@ -2736,7 +2732,7 @@ _gcr(cs_sles_it_t              *c,
     }
 
     /* Current Iteration on k */
-    /*-------------------*/
+    /* ---------------------- */
 
     while (cvg == CS_SLES_ITERATING && n_iter < n_k_per_restart) {
 
@@ -2769,11 +2765,11 @@ _gcr(cs_sles_it_t              *c,
 
       cs_matrix_vector_multiply(rotation_mode, a, sk, gk);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         dk[(n_iter - 1) * wa_size + ii] = sk[ii];
 
-      for(cs_lnum_t jj = 0; jj < n_iter - 1; jj++){
+      for(cs_lnum_t jj = 0; jj < n_iter - 1; jj++) {
 
         gk_zkm1 = _dot_product(c, gk, zk + jj * wa_size);
 
@@ -2782,9 +2778,10 @@ _gcr(cs_sles_it_t              *c,
 
         beta = - gk_zkm1 * d_ro_1;
 
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+#      pragma omp parallel for if(n_rows > CS_THR_MIN)
        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           dk[(n_iter - 1) * wa_size + ii] += beta * dk[jj * wa_size + ii];
+
       }
 
       cs_matrix_vector_multiply(rotation_mode, a,
@@ -2800,20 +2797,23 @@ _gcr(cs_sles_it_t              *c,
         1. / ro_1[n_iter - 1] : 0.;
       alpha =  - ro_0 * d_ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
-#     pragma omp for nowait
+#       pragma omp for nowait
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           vx[ii] += (alpha * dk[(n_iter - 1) * wa_size + ii]);
 
-#     pragma omp for nowait
+#       pragma omp for nowait
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           rk[ii] += (alpha * zk[(n_iter - 1) * wa_size + ii]);
       }
-    }
+
+    } /* Needs iterating or k < n_restart */
 
     n_restart += 1;
-  }
+
+  } /* Needs iterating */
+
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
@@ -2853,8 +2853,6 @@ _gmres(cs_sles_it_t              *c,
        size_t                     aux_size,
        void                      *aux_vectors)
 {
-  CS_UNUSED(diag_block_size);
-
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   int l_iter, l_old_iter;
   double    beta, dot_prod, residue;
