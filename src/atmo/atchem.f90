@@ -90,7 +90,7 @@ integer, save         ::  nbchim
 !> number of altitudes for the concentration profiles file
 integer, save         ::  nbchmz
 !> number of initialized chemical species in the concentration profiles file
-integer, save         ::  nespgi
+integer, save         ::  nespgi = 0
 
 !> indices of chemical species in the concentration profiles file
 integer, allocatable, dimension(:)          :: idespgi
