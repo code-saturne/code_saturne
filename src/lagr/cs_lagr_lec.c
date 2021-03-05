@@ -706,7 +706,7 @@ cs_lagr_restart_read_p(void)
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
 
   if (cs_restart_present() < 1)
-    cs_glob_lagr_time_scheme->isuila == 0;
+    cs_glob_lagr_time_scheme->isuila = 0;
 
   if (cs_glob_lagr_time_scheme->isuila == 0)
     return;
