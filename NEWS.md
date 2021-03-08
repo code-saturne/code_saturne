@@ -40,6 +40,10 @@ User changes:
 
 Numerics:
 
+- Add GCR (Generalized Conjugate Residual) which enables a flexible
+  preconditioning for non-symmetric linear system. Equivalent to a flexible
+  GMRES.
+
 - Several improvements for the MUMPS interface
   * Add a MUMPS interface for native matrices (with or without symmetric
     storage).
@@ -50,6 +54,8 @@ Numerics:
 
 - CDO: Add block preconditioning for symmetric saddle-point problem and a
   MINRES algorithm (relying on a tuned storage of the saddle-point system).
+  GCR algorithm for more complex block preconditionning such upper/lower Schur
+  block preconditioning or Symmetric Gauss-Seidel block preconditioning.
   Several approximations of the Schur complement are available.
 
 - CDO: Add an Uzawa algorithm accelerated with a CG (conjuguate gradient)
