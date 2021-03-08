@@ -148,7 +148,8 @@ double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
-double precision, dimension(:,:), allocatable :: gradp
+double precision, allocatable, dimension(:,:), target :: gradp
+double precision, dimension(:,:), pointer :: cpro_gradp
 double precision, dimension(:), pointer :: coefa_dp, coefb_dp
 double precision, dimension(:,:), pointer :: da_uu
 double precision, dimension(:,:), pointer :: vel, vela
@@ -903,8 +904,15 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
 
-    !Allocation
-    allocate(gradp(3, ncelet))
+    ! Pressure increment gradient
+    call field_get_id_try("pressure_increment_gradient", f_id)
+    if (f_id.ge.0) then
+      call field_get_val_v(f_id, cpro_gradp)
+    else
+      !Allocation
+      allocate(gradp(3,ncelet))
+      cpro_gradp => gradp
+    endif
 
     if (ivofmt.ne.0) then
       call field_get_key_int(ivarfl(ipr), kwgrec, iflwgr)
@@ -918,7 +926,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     call field_gradient_potential(f_iddp, 0, 0, inc,                   &
                                   iccocg, iphydr,                      &
-                                  dfrcxt, gradp)
+                                  dfrcxt, cpro_gradp)
 
     ! Update the velocity field
     !--------------------------
@@ -935,7 +943,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
-                 + dtsrom*(dfrcxt(isou, iel)-gradp(isou,iel))
+                 + dtsrom*(dfrcxt(isou, iel)-cpro_gradp(isou,iel))
           enddo
         enddo
 
@@ -947,21 +955,21 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
           vel(1, iel) = vel(1, iel)                              &
                + unsrom*(                                        &
-                 dttens(1,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
-               + dttens(4,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
-               + dttens(6,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
+                 dttens(1,iel)*(dfrcxt(1, iel)-cpro_gradp(1,iel))     &
+               + dttens(4,iel)*(dfrcxt(2, iel)-cpro_gradp(2,iel))     &
+               + dttens(6,iel)*(dfrcxt(3, iel)-cpro_gradp(3,iel))     &
                )
           vel(2, iel) = vel(2, iel)                              &
                + unsrom*(                                        &
-                 dttens(4,iel)*(dfrcxt(1, iel)-gradp(1,iel))     &
-               + dttens(2,iel)*(dfrcxt(2, iel)-gradp(2,iel))     &
-               + dttens(5,iel)*(dfrcxt(3, iel)-gradp(3,iel))     &
+                 dttens(4,iel)*(dfrcxt(1, iel)-cpro_gradp(1,iel))     &
+               + dttens(2,iel)*(dfrcxt(2, iel)-cpro_gradp(2,iel))     &
+               + dttens(5,iel)*(dfrcxt(3, iel)-cpro_gradp(3,iel))     &
                )
           vel(3, iel) = vel(3, iel)                              &
                + unsrom*(                                        &
-                 dttens(6,iel)*(dfrcxt(1 ,iel)-gradp(1,iel))     &
-               + dttens(5,iel)*(dfrcxt(2 ,iel)-gradp(2,iel))     &
-               + dttens(3,iel)*(dfrcxt(3 ,iel)-gradp(3,iel))     &
+                 dttens(6,iel)*(dfrcxt(1 ,iel)-cpro_gradp(1,iel))     &
+               + dttens(5,iel)*(dfrcxt(2 ,iel)-cpro_gradp(2,iel))     &
+               + dttens(3,iel)*(dfrcxt(3 ,iel)-cpro_gradp(3,iel))     &
                )
         enddo
       endif
@@ -994,7 +1002,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel) - dtsrom*gradp(isou,iel)
+            vel(isou,iel) = vel(isou,iel) - dtsrom*cpro_gradp(isou,iel)
           enddo
         enddo
 
@@ -1007,21 +1015,21 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
           vel(1, iel) = vel(1, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(1,iel)*(gradp(1,iel))    &
-                               + dttens(4,iel)*(gradp(2,iel))    &
-                               + dttens(6,iel)*(gradp(3,iel))    &
+                                 dttens(1,iel)*(cpro_gradp(1,iel))    &
+                               + dttens(4,iel)*(cpro_gradp(2,iel))    &
+                               + dttens(6,iel)*(cpro_gradp(3,iel))    &
                                )
           vel(2, iel) = vel(2, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(4,iel)*(gradp(1,iel))    &
-                               + dttens(2,iel)*(gradp(2,iel))    &
-                               + dttens(5,iel)*(gradp(3,iel))    &
+                                 dttens(4,iel)*(cpro_gradp(1,iel))    &
+                               + dttens(2,iel)*(cpro_gradp(2,iel))    &
+                               + dttens(5,iel)*(cpro_gradp(3,iel))    &
                                )
           vel(3, iel) = vel(3, iel)                              &
                       - unsrom*(                                 &
-                                 dttens(6,iel)*(gradp(1,iel))    &
-                               + dttens(5,iel)*(gradp(2,iel))    &
-                               + dttens(3,iel)*(gradp(3,iel))    &
+                                 dttens(6,iel)*(cpro_gradp(1,iel))    &
+                               + dttens(5,iel)*(cpro_gradp(2,iel))    &
+                               + dttens(3,iel)*(cpro_gradp(3,iel))    &
                                )
         enddo
 
@@ -1029,7 +1037,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     endif
 
     !Free memory
-    deallocate(gradp)
+    if (allocated(gradp)) deallocate(gradp)
 
   ! RT0 update from the mass fluxes
   else
