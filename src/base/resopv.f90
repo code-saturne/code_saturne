@@ -1312,16 +1312,6 @@ if (i_vof_mass_transfer.ne.0) then
   enddo
 endif
 
-! --- Initial right hand side
-do iel = 1, ncel
-  rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
-enddo
-
-! --- Right hand side residual
-residu = sqrt(cs_gdot(ncel,rhs,rhs))
-
-sinfo%rnsmbr = residu
-
 ! --- Norm resiudal
 ! Historical norm for the pressure step:
 !       div(rho u* + dt gradP^(n))-Gamma
@@ -1396,20 +1386,6 @@ if (iterns.le.1) then
   sinfo%nbivar = 0
 endif
 
-! Pressure derive for the log
-if (rnormp.lt.epzero) then
-  sinfo%dervar = - sinfo%rnsmbr
-else
-  sinfo%dervar = sinfo%rnsmbr/rnormp
-endif
-
-isweep = 1
-
-! Writing
-if (vcopt_p%iwarni.ge.2) then
-  write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
-endif
-
 ! Dynamic relaxation initialization
 !----------------------------------
 if (iswdyp.ge.1) then
@@ -1423,51 +1399,82 @@ if (iswdyp.ge.1) then
   nadxk = 0.d0
 
   rnorm2 = rnormp**2
+endif
 
-  iccocg = 1
-  init = 1
-  inc  = 0
-  if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-  imrgrp = vcopt_p%imrgra
-  nswrgp = vcopt_p%nswrgr
-  imligp = vcopt_p%imligr
-  iwgrp  = vcopt_p%iwgrec
-  iwarnp = vcopt_p%iwarni
-  epsrgp = vcopt_p%epsrgr
-  climgp = vcopt_p%climgr
-  ircflp = vcopt_p%ircflu
+! --- Initial right hand side
+iccocg = 1
+init = 1
+inc  = 0
+if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+imrgrp = vcopt_p%imrgra
+nswrgp = vcopt_p%nswrgr
+imligp = vcopt_p%imligr
+iwgrp  = vcopt_p%iwgrec
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+ircflp = vcopt_p%ircflu
 
-  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
-    call itrgrp &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
-   epsrgp , climgp , extrap ,                                                  &
-   dfrcxt ,                                                                    &
-   phi    ,                                                                    &
-   coefa_dp  , coefb_dp  ,                                                     &
-   coefaf_dp , coefbf_dp ,                                                     &
-   viscf  , viscb  ,                                                           &
-   viscap ,                                                                    &
-   rhs0   )
+  call itrgrp &
+    ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
+    iwgrp  , iwarnp ,                                                           &
+    epsrgp , climgp , extrap ,                                                  &
+    dfrcxt ,                                                                    &
+    phi    ,                                                                    &
+    coefa_dp  , coefb_dp  ,                                                     &
+    coefaf_dp , coefbf_dp ,                                                     &
+    viscf  , viscb  ,                                                           &
+    viscap ,                                                                    &
+    rhs    )
 
-  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
-    call itrgrv &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwgrp  , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                              &
-   dfrcxt ,                                                                &
-   phi    ,                                                                &
-   coefa_dp  , coefb_dp  ,                                                 &
-   coefaf_dp , coefbf_dp ,                                                 &
-   viscf  , viscb  ,                                                       &
-   vitenp ,                                                                &
-   weighf , weighb ,                                                       &
-   rhs0   )
+  call itrgrv &
+    ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
+    iphydr , iwgrp  , iwarnp ,                                              &
+    epsrgp , climgp , extrap ,                                              &
+    dfrcxt ,                                                                &
+    phi    ,                                                                &
+    coefa_dp  , coefb_dp  ,                                                 &
+    coefaf_dp , coefbf_dp ,                                                 &
+    viscf  , viscb  ,                                                       &
+    vitenp ,                                                                &
+    weighf , weighb ,                                                       &
+    rhs    )
 
-  endif
+endif
 
+! Dynamic relaxation: stores the initial rhs
+if (iswdyp.ge.1) then
+  do iel = 1, ncel
+    rhs0(iel) = rhs(iel)
+  enddo
+endif
+
+! Finalize the rhs initialization
+do iel = 1, ncel
+  rhs(iel) = -rhs(iel) - cpro_divu(iel) - rovsdt(iel)*phi(iel)
+enddo
+
+! --- Right hand side residual
+residu = sqrt(cs_gdot(ncel,rhs,rhs))
+
+sinfo%rnsmbr = residu
+
+! Pressure derive for the log
+if (rnormp.lt.epzero) then
+  sinfo%dervar = - sinfo%rnsmbr
+else
+  sinfo%dervar = sinfo%rnsmbr/rnormp
+endif
+
+isweep = 1
+
+! Writing
+if (vcopt_p%iwarni.ge.2) then
+  write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
 endif
 
 ! Reconstruction loop (beginning)
