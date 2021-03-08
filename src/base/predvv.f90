@@ -75,7 +75,7 @@
 !>                               \f$ \Gamma^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
-!> \param[in]     dfrcxt        variation of the external forces
+!> \param[out]    dfrcxt        variation of the external forces
 !                               making the hydrostatic pressure
 !> \param[in]     tpucou        non scalar time step in case of
 !>                              velocity pressure coupling
