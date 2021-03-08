@@ -100,7 +100,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /* Define pointer f to the current turbulent variable field */
   const cs_field_t  *f = cs_field_by_id(f_id);
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   /*! [current_turb_3] */
 

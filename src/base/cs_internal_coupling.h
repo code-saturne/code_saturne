@@ -532,9 +532,9 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 void
 cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
                                    cs_lnum_t                     *n_local,
-                                   cs_lnum_t                     *faces_local[],
+                                   const cs_lnum_t               *faces_local[],
                                    cs_lnum_t                     *n_distant,
-                                   cs_lnum_t                     *faces_distant[]);
+                                   const cs_lnum_t               *faces_distant[]);
 
 /*----------------------------------------------------------------------------
  * Log information about a given internal coupling entity
