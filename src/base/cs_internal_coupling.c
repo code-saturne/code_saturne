@@ -2335,9 +2335,9 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
 void
 cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
                                    cs_lnum_t                     *n_local,
-                                   cs_lnum_t                     *faces_local[],
+                                   const cs_lnum_t               *faces_local[],
                                    cs_lnum_t                     *n_distant,
-                                   cs_lnum_t                     *faces_distant[])
+                                   const cs_lnum_t               *faces_distant[])
 {
   if (n_local != NULL)
     *n_local = cpl->n_local;

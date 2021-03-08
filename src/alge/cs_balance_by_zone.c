@@ -841,10 +841,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t  hint, hext, heq;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t  n_local = 0;
   cs_lnum_t  n_distant = 0;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   cs_internal_coupling_t *cpl = NULL;
 
   /* Temperature indicator.
@@ -2553,10 +2553,10 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
   cs_real_t hint, hext, heq;
-  cs_lnum_t *faces_local = NULL;
+  const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local = 0;
   cs_lnum_t n_distant = 0;
-  cs_lnum_t *faces_distant = NULL;
+  const cs_lnum_t *faces_distant = NULL;
   cs_internal_coupling_t *cpl = NULL;
 
  /* Physical properties
