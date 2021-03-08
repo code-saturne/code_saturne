@@ -236,10 +236,12 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
     case CS_PHYS_PROP_INTERNAL_ENERGY:
       bft_error(__FILE__, __LINE__, 0,
                 _("bad choice: internal energy not available yet"));
+      eos_o = NULL;
       break;
     case CS_PHYS_PROP_QUALITY:
       bft_error(__FILE__, __LINE__, 0,
                 _("bad choice: quality not available yet"));
+      eos_o = NULL;
       break;
     case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
       eos_o = new NEPTUNE::EOS_Field("lambda", "lambda", n_vals, val);
@@ -250,6 +252,7 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
     case CS_PHYS_PROP_SPEED_OF_SOUND:
       bft_error(__FILE__, __LINE__, 0,
                 _("bad choice: speed of sound not available yet"));
+      eos_o = NULL;
       break;
   }
 

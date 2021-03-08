@@ -463,7 +463,7 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
 {
 
