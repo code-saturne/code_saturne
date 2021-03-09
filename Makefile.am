@@ -523,5 +523,5 @@ install-shortcut:
 	fi ; \
 	cp "$(top_srcdir)/extras/code_saturne.desktop.template" "$${DESKTOPPATH}/code_saturne_$(VERSION).desktop"; \
 	sed -i -e 's|CSPATH|$(prefix)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop; \
-	sed -i -e 's|CSVERSION|$(VERSION)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ;
+	sed -i -e 's|CSVERSION|$(VERSION)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ; \
 	sed -i -e 's|DSOLVER|'$${DESKTOPSOLVER}'|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ;
