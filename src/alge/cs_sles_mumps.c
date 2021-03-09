@@ -1769,9 +1769,9 @@ cs_sles_mumps_free(void  *context)
       }
       else {
 
-        BFT_FREE(sd->dmumps->irn_loc);
-        BFT_FREE(sd->dmumps->jcn_loc);
-        BFT_FREE(sd->dmumps->a_loc);
+        BFT_FREE(sd->smumps->irn_loc);
+        BFT_FREE(sd->smumps->jcn_loc);
+        BFT_FREE(sd->smumps->a_loc);
 
       }
 
