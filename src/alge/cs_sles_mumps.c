@@ -2199,13 +2199,17 @@ cs_sles_mumps_solve(void                *context,
 
   switch (c->sles_param->solver) {
 
-    /* MUMPS with singe-precision arrays */
-    /* --------------------------------- */
+    /* MUMPS with double-precision arrays */
+    /* ---------------------------------- */
 
   case CS_PARAM_ITSOL_MUMPS:
   case CS_PARAM_ITSOL_MUMPS_LDLT:
+
+    /* Sanity checks */
+
     assert(sd->dmumps != NULL);
     assert(sizeof(cs_real_t) == sizeof(DMUMPS_REAL));
+    assert(sizeof(cs_real_t) == sizeof(DMUMPS_COMPLEX));
 
     /* Build the RHS */
     if (cs_glob_n_ranks == 1) { /* sequential run */
@@ -2266,12 +2270,17 @@ cs_sles_mumps_solve(void                *context,
     }
     break; /* double-precision */
 
-    /* MUMPS with singe-precision arrays */
-    /* --------------------------------- */
+    /* MUMPS with single-precision arrays */
+    /* ---------------------------------- */
 
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
-    assert(sd->smumps != NULL);    /* Sanity checks */
+
+    /* Sanity checks */
+
+    assert(sd->smumps != NULL);
+    assert(sizeof(SMUMPS_REAL) == sizeof(float));
+    assert(sizeof(SMUMPS_COMPLEX) == sizeof(float));
 
     /* Build the RHS */
 
@@ -2279,15 +2288,17 @@ cs_sles_mumps_solve(void                *context,
 
       assert(n_rows == sd->smumps->n);
       sd->smumps->nrhs = 1;
-      BFT_MALLOC(sd->smumps->rhs, n_rows, SMUMPS_REAL);
+      BFT_MALLOC(sd->smumps->rhs, n_rows, float);
+
+      /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX
+      *  SMUMPS_COMPLEX = SMUMPS_REAL = float (see mumps_c_types.h) */
       for (cs_lnum_t i = 0; i < n_rows; i++)
-        sd->smumps->rhs[i] = (SMUMPS_REAL)rhs[i];
+        sd->smumps->rhs[i] = (SMUMPS_COMPLEX)rhs[i];
 
     }
     else {
 
       assert(cs_glob_n_ranks > 1);
-      assert(sizeof(SMUMPS_REAL) == sizeof(float));
 
       /* Gather on the rank 0 (= host rank for MUMPS) the global RHS array */
 
