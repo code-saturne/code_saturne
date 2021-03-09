@@ -2304,18 +2304,19 @@ cs_sles_mumps_solve(void                *context,
 
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = sd->smumps->n;
-      SMUMPS_REAL  *glob_rhs = NULL;
+      float  *glob_rhs = NULL;
       if (cs_glob_rank_id == root_rank)
-        BFT_MALLOC(glob_rhs, n_g_rows, SMUMPS_REAL);
+        BFT_MALLOC(glob_rhs, n_g_rows, float);
 
       /* Use vx (an initial guess is not useful for a direct solver) to define
        * a single-precision rhs */
+      float  *_svx = (float *)vx;
 
 #     pragma omp parallel for if (n_rows > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_rows; i++)
-        vx[i] = (SMUMPS_REAL)rhs[i];
+        _svx[i] = (float)rhs[i];
 
-      cs_parall_gather_f(root_rank, n_rows, n_g_rows, (SMUMPS_REAL *)vx,
+      cs_parall_gather_f(root_rank, n_rows, n_g_rows, _svx,
                          glob_rhs);
 
       sd->smumps->rhs = glob_rhs;
@@ -2347,13 +2348,13 @@ cs_sles_mumps_solve(void                *context,
 
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = sd->smumps->n;
-      SMUMPS_REAL  *glob_rhs = sd->smumps->rhs;
+      float  *glob_rhs = sd->smumps->rhs;
+      float  *_svx = (float *)vx;
 
-      cs_parall_scatter_f(root_rank, n_rows, n_g_rows, glob_rhs,
-                          (SMUMPS_REAL *)vx);
+      cs_parall_scatter_f(root_rank, n_rows, n_g_rows, glob_rhs, _svx);
 
       for (cs_lnum_t i = n_rows-1; i > -1; i--)
-        vx[i] = (cs_real_t)vx[i]; /* avoid overwritting */
+        vx[i] = (cs_real_t)_svx[i]; /* avoid overwritting */
 
     }
 
