@@ -382,7 +382,6 @@ _serializer_init(cs_file_serializer_t  *s,
                  size_t                 buf_block_size,
                  void                  *buf,
                  MPI_Comm               comm)
-
 {
   cs_lnum_t l_count = 0;
 
