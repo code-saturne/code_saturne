@@ -1606,7 +1606,11 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
       beta = 0.d0
     elseif (isweep.eq.2) then
       beta = 0.d0
-      alph = -paxkrk/max(nadxk, 1.d-30*rnorm2)
+      if (max(nadxk, 1.d-30*rnorm2).le.1.d-30) then
+        alph = 1.d0
+      else
+        alph = -paxkrk/max(nadxk, 1.d-30*rnorm2)
+      endif
     else
       alph = -(paxkrk + beta*paxm1ax)/max(nadxk, 1.d-30*rnorm2)
     endif
