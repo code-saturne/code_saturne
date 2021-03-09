@@ -259,8 +259,9 @@ _set_key(cs_equation_param_t   *eqp,
     if (eqp->strong_pena_bc_coeff < 1.)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value of the penalization coefficient %5.3e\n"
-                " This should be positive and large.",
-                __func__, eqp->strong_pena_bc_coeff);
+                " This should be positive and large.\n"
+                " Equation: %s\n",
+                __func__, eqp->strong_pena_bc_coeff, eqname);
     break;
 
   case CS_EQKEY_BC_WEAK_PENA_COEFF:
@@ -268,8 +269,9 @@ _set_key(cs_equation_param_t   *eqp,
     if (eqp->weak_pena_bc_coeff < 0.)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value of the penalization coefficient %5.3e\n"
-                " This should be positive.",
-                __func__, eqp->weak_pena_bc_coeff);
+                " This should be positive.\n"
+                " Equation: %s\n",
+                __func__, eqp->weak_pena_bc_coeff, eqname);
     break;
 
   case CS_EQKEY_DO_LUMPING:
@@ -554,8 +556,9 @@ _set_key(cs_equation_param_t   *eqp,
 #endif
       else
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid choice of AMG type. Please modify your settings",
-                  __func__);
+                  "%s: Invalid choice of AMG type for equation %s.\n"
+                  " Please modify your settings",
+                  __func__, eqname);
 
     }
     else if (strcmp(keyval, "amg_block") == 0 ||
@@ -582,7 +585,8 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
         cs_base_warn(__FILE__, __LINE__);
-        bft_printf(" Switch to PETSc multigrid since Hypre is not available.");
+        bft_printf(" Switch to PETSc multigrid since Hypre is not available"
+                   " for equation %s.\n", eqname);
         eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
@@ -592,7 +596,9 @@ _set_key(cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid choice for block AMG\n", __func__);
+                  "%s: Invalid choice for block AMG for equation %s\n"
+                  " Please check your settings.",
+                  __func__, eqname);
         break;
       }
 
@@ -715,7 +721,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->time_scheme = CS_TIME_SCHEME_THETA;
     else if (strcmp(keyval, "bdf2") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_BDF2;
-      bft_error(__FILE__, __LINE__, 0, " Soon available...");
+      bft_error(__FILE__, __LINE__, 0, " Eq. %s\n"
+                " Soon available...", eqname);
     }
     else {
       const char *_val = keyval;
