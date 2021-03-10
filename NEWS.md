@@ -3,6 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- GUI: fix handling of `mod` operator in mathematical expressions
+  (convert it to `fmod`, not integer modulo operator).
+
 - Fix mapped inlet for turbulence.
 
 - GUI: Fix usage of formula for user scalar diffusivity.
@@ -12,7 +15,7 @@ Bug fixes:
 - Scripts: fix MPMD (coupling) backup "script" launch mode.
 
 - GUI: Remove old placeholder for Lagrangian BC's, add missing Lagrangian
-       section in neptune_cfd BCs.
+  section in neptune_cfd BCs.
 
 - GUI: Fix input of head loss coefficients.
 
