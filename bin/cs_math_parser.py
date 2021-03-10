@@ -340,108 +340,6 @@ class cs_math_parser:
 
     #---------------------------------------------------------------------------
 
-    def update_expressions_syntax(self, expressions):
-        """
-        Update legacy expressions, such as "mod"
-        """
-
-        new_exp = []
-        skip_to = 0
-
-        for i, e in enumerate(expressions):
-
-            if i < skip_to:
-                continue
-
-            if isinstance(e, (list,)):
-                a = self.update_expressions_syntax(e)
-                new_exp.append(self.update_expressions_syntax(e))
-
-            else:
-
-                # Translate "modulus" syntax
-                if e[0] == 'mod':
-                    valid = True
-                    sub_expr = None
-                    ic = -1 # start of comma separating x and y,
-                    iy = -1 # start of second argument
-                    pc = -1 # position of closing parenthesis
-                    try:
-                        sub_expr = expressions[i+1]
-                        po = sub_expr[0][0]
-                        if po != '(':
-                            valid = False
-                        # Check position of comma (if x is complex, might not be at i+3)
-                        j = 1
-                        while ic < 0:
-                            if isinstance(sub_expr[j], (list,)):
-                                j += 1
-                            elif sub_expr[j][0] != ',':
-                                j += 1
-                            else:
-                                ic = j
-                        iy = ic+1
-                        j = iy+1
-                        while pc < 0:
-                            if isinstance(sub_expr[j], (list,)):
-                                j += 1
-                            elif sub_expr[j][0] != ')':
-                                j += 1
-                            else:
-                                pc = j
-                        if pc+1 != len(sub_expr):
-                            valid = False
-                    except Exception:
-                       valid = False
-
-                    if valid:
-                        skip_to = i+2
-                        j = 1
-                        new_sub = []
-                        x = sub_expr[j]
-                        li, ci = self.get_start_lc(x)
-                        new_sub.append(('((int)', li, ci))
-                        if ic > 2:
-                            sub_sub = []
-                            sub_sub.append(('(', li, ci))
-                            while j < ic:
-                                x = sub_expr[j]
-                                sub_sub.append(x)
-                                j += 1
-                            li, ci = self.get_start_lc(x)
-                            sub_sub.append((')', li, ci))
-                            new_sub.append(sub_sub)
-                        else:
-                            new_sub.append(x)
-                        new_sub.append(('% (int)', li, ci))
-                        j = ic+1
-                        x = sub_expr[j]
-                        if pc - j > 1:
-                            sub_sub = []
-                            li, ci = self.get_start_lc(x)
-                            sub_sub.append(('(', li, ci))
-                            while j < pc:
-                                x = sub_expr[j]
-                                sub_sub.append(x)
-                                j += 1
-                            li, ci = self.get_start_lc(x)
-                            sub_sub.append((')', li, ci))
-                            new_sub.append(sub_sub)
-                        else:
-                            new_sub.append(x)
-                        li, ci = self.get_start_lc(x)
-                        new_sub.append((')', li, ci))
-                        new_exp.append(new_sub)
-                    else:
-                        new_exp.append(e)
-
-                else:
-                    new_exp.append(e)
-
-        return new_exp
-
-    #---------------------------------------------------------------------------
-
     def recurse_expressions_syntax(self, expressions):
         """
         Recursively Update expressions
@@ -496,11 +394,12 @@ class cs_math_parser:
     def rename_math_functions(self, expressions):
         """
         Rename mathematical functions using the internal functions of
-        Code_Saturne.
+        Code_Saturne or standard math library.
         """
         _cs_math_internal_name = {'abs':'cs_math_fabs',
                                   'min':'cs_math_fmin',
-                                  'max':'cs_math_fmax'}
+                                  'max':'cs_math_fmax',
+                                  'mod':'fmod'}
 
         new_exp = []
 
@@ -905,7 +804,6 @@ class cs_math_parser:
 
         tokens = self.rename_math_functions(tokens)
         tokens = self.build_expressions(exp_lines, tokens)
-        tokens = self.update_expressions_syntax(tokens)
         tokens = self.recurse_expressions_syntax(tokens)
 
         #-------------------------
