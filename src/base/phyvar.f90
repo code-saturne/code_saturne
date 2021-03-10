@@ -72,6 +72,7 @@ use period
 use ppppar
 use ppthch
 use ppincl
+use lagran
 use mesh
 use field
 use field_operator
@@ -108,6 +109,8 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
+double precision s, s11, s22, s33, delta, c_k, c_epsilon
+double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
@@ -122,6 +125,7 @@ double precision, dimension(:), pointer :: cvar_voidf
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
 double precision, allocatable, dimension(:) :: ttmp
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:,:,:), allocatable :: gradv
 
 integer          ipass
 data             ipass /0/
@@ -445,26 +449,30 @@ elseif (iturb.eq.40) then
 ! 4.5 LES Smagorinsky
 ! ===================
 
-  call vissma
+  allocate(gradv(3, 3, ncelet))
+  call vissma (gradv)
 
 elseif (iturb.eq.41) then
 
 ! 4.6 LES dynamic
 ! ===============
 
+  allocate(gradv(3, 3, ncelet))
+
   call visdyn &
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   ckupdc , smacel )
+   ckupdc , smacel, gradv )
 
 elseif (iturb.eq.42) then
 
 ! 4.7 LES WALE
 ! ============
 
-  call viswal
+  allocate(gradv(3, 3, ncelet))
+  call viswal (gradv)
 
 elseif (itytur.eq.5) then
 
@@ -730,7 +738,48 @@ if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0.and.icvevm.eq.1) then
 endif
 
 !===============================================================================
-! 7. User modification of the turbulent viscosity and symmetric tensor
+! 7. Compute subgrid turbulence values for LES if required
+!===============================================================================
+
+if (itytur.eq.4 .and. iilagr.gt.0) then
+
+  call field_get_val_s_by_name("k", cvar_k)
+  call field_get_val_s_by_name("epsilon", cvar_ep)
+
+  c_epsilon = 1.0
+
+  do iel = 1, ncel
+
+    s11  = gradv(1, 1, iel)
+    s22  = gradv(2, 2, iel)
+    s33  = gradv(3, 3, iel)
+
+    dudy = gradv(2, 1, iel)
+    dvdx = gradv(1, 2, iel)
+    dudz = gradv(3, 1, iel)
+    dwdx = gradv(1, 3, iel)
+    dvdz = gradv(3, 2, iel)
+    dwdy = gradv(2, 3, iel)
+
+    s = s11**2 + s22**2 + s33**2         &
+        + 0.5d0 * ((dudy + dvdx)**2      &
+        +          (dudz + dwdx)**2      &
+        +          (dvdz + dwdy)**2)
+    s = sqrt(2.0d0 * s)
+
+    delta = xlesfl * (ales*volume(iel))**bles
+
+    cvar_ep(iel) = (csmago * delta)**2 * s**3
+    cvar_k(iel) =  c_epsilon * (delta * cvar_ep(iel))**(2.0d0/3.0d0)
+
+  enddo
+
+endif
+
+if (allocated(gradv)) deallocate (gradv)
+
+!===============================================================================
+! 8. User modification of the turbulent viscosity and symmetric tensor
 !    diffusivity
 !===============================================================================
 
@@ -742,7 +791,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 8. Clipping of the turbulent viscosity in dynamic LES
+! 9. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -772,8 +821,8 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 9. Checking of the user values and put turbulent viscosity to 0 in
-!    disabled cells
+! 10. Checking of the user values and put turbulent viscosity to 0 in
+!     disabled cells
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions

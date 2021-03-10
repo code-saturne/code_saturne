@@ -36,10 +36,14 @@
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[out]    gradv         the computed velocity gradients
+!______________________________________________________________________________!
 
-subroutine viswal
-
-!===============================================================================
+subroutine viswal (gradv)
 
 !===============================================================================
 ! Module files
@@ -61,6 +65,8 @@ implicit none
 
 ! Arguments
 
+double precision, intent(inout) :: gradv(3,3,ncelet)
+
 ! Local variables
 
 integer          iel, inc
@@ -72,7 +78,6 @@ double precision sijd, s, sd, sinv
 double precision con, trace_g2
 double precision dudx(ndim,ndim), kdelta(ndim,ndim), g2(ndim,ndim)
 
-double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
 
@@ -90,9 +95,6 @@ third  = 1.d0/3.d0
 !===============================================================================
 ! 2. Computation of the velocity gradient
 !===============================================================================
-
-! Allocate temporary arrays for gradients calculation
-allocate(gradv(3,3,ncelet))
 
 inc = 1
 iprev = 0
@@ -160,8 +162,7 @@ do iel = 1, ncel
       !        - 1/3 Dij dUk/dXl dUl/dXk
 
       sijd = 0.5d0*(g2(i,j)+g2(j,i))-third*kdelta(i,j)*trace_g2
-
-      sd = sd + sijd**2
+      sd   = sd + sijd**2
     enddo
   enddo
 
@@ -185,9 +186,6 @@ do iel = 1, ncel
   visct(iel) = crom(iel) * delta * con
 
 enddo
-
-! Free memory
-deallocate(gradv)
 
 !-------
 ! Format
