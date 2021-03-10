@@ -343,7 +343,7 @@ class StandardItemModelMainFields(QStandardItemModel):
         self.headers = [ self.tr("Field\nlabel"),
                          self.tr("Phase of\nfield"),
                          self.tr("Interfacial criterion"),
-                         self.tr("Carrier field"),
+                         self.tr("Carrier phase"),
                          self.tr("Compressible"),
                          self.tr("Energy\nresolution")]
 

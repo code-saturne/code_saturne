@@ -178,7 +178,7 @@ class StandardItemModelUserScalar(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [ self.tr("Label"),
-                         self.tr("Carrier Field")]
+                         self.tr("Convective phase")]
 
         self.setColumnCount(len(self.headers))
         self.parent = parent
@@ -326,8 +326,8 @@ class SpeciesView(QWidget, Ui_Species):
         # Validators
         validatorDiffusionCoef   = DoubleValidator(self.lineEditDiffusionCoef, min = 0.0)
         validatorSchmidt = DoubleValidator(self.lineEditSchmidt, min = 0.0)
-        validatorMin     = DoubleValidator(self.lineEditMinValue, min = 0.0)
-        validatorMax     = DoubleValidator(self.lineEditMaxValue, min = 0.0)
+        validatorMin     = DoubleValidator(self.lineEditMinValue)
+        validatorMax     = DoubleValidator(self.lineEditMaxValue)
 
         self.lineEditDiffusionCoef.setValidator(validatorDiffusionCoef)
         self.lineEditSchmidt.setValidator(validatorSchmidt)
