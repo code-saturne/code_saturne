@@ -3,6 +3,10 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- GUI: Fix behavior of Post-processing page when default meshes (cells or
+  boundary faces) are no longer associated to a writer and another mesh of the
+  same type is associated to a writer.
+
 - GUI: fix handling of `mod` operator in mathematical expressions
   (convert it to `fmod`, not integer modulo operator).
 

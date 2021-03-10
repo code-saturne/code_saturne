@@ -376,7 +376,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             label = self.mdl.dicoLabelName[name]
             printing = self.mdl.getPrintingStatus(name)
 
-            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
+            if not OutputControlModel(self.case).isVolumeWriterActive():
                 post = "off"
                 self.mdl.setPostStatus(name, post)
             else:
@@ -453,7 +453,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             else:
                 item.item.status[c_id] = "off"
             if c_id == 1:
-                if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
+                if not OutputControlModel(self.case).isVolumeWriterActive():
                     item.item.status[1] = "off"
             if item not in self.noderoot.values():
 
