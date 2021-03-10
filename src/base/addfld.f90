@@ -473,6 +473,21 @@ if (ineedy.eq.1) then
 
 endif
 
+! Add Subgrid TKE and dissipation for LES and Particle modelling
+if (itytur.eq.4 .and. iilagr.gt.0) then
+  ityloc = 1 ! variables defined on cells
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ! Warning, not ik or ivarfl(ik)
+  call field_find_or_create('k', itycat, ityloc, idim1, iflid)
+  call field_set_key_int(iflid, keyvis, 1)
+  call field_set_key_int(iflid, keylog, 1)
+
+  ! Warning, not iep or ivarfl(iep)
+  call field_find_or_create('epsilon', itycat, ityloc, idim1, iflid)
+  call field_set_key_int(iflid, keyvis, 1)
+  call field_set_key_int(iflid, keylog, 1)
+end if
+
 if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   f_name  = 'z_ground'
   f_label = 'Z ground'

@@ -158,6 +158,7 @@ cs_lagr_gradients(int            time_id,
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
   assert(turb_model != NULL);
   if (   turb_model->itytur == 2
+      || turb_model->itytur == 4
       || turb_model->itytur == 5
       || turb_model->itytur == 6) {
     BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
