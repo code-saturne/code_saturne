@@ -253,7 +253,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [ self.tr("Field label"),
-                         self.tr("Carrier field"),
+                         self.tr("Carrier phase"),
                          self.tr("Turbulence model"),
                          self.tr("Thermal turbulent flux"),
                          self.tr("Reverse coupling")]
