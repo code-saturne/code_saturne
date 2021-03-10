@@ -722,7 +722,7 @@ def update_xml_file(pkg, filepath, options):
     if options.imrgra:
         xml_controller.setGradientReconstruction(options.imrgra)
 
-    if (options.blencv):
+    if options.blencv:
         for elt in options.blencv:
             fname, factor = elt.split(':')
             xml_controller.setBlendingFactor(fname, factor)
@@ -730,7 +730,7 @@ def update_xml_file(pkg, filepath, options):
 
     # --------------------
     # Notebook
-    if len(options.notebook) > 0:
+    if options.notebook:
         for var in options.notebook:
             vname, value = var.split(':')
             xml_controller.changeNotebookParameter(vname, value)
