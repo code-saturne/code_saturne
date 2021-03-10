@@ -238,7 +238,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
                       'implicit none', 'use', 'subroutine', 'function',
                       'double precision', 'real', 'integer', 'char',
                       'allocatable', 'allocate', 'deallocate', 'dimension',
-                      'select case']
+                      'select case', 'call']
 
         c_kw       = ['if', 'else', 'for', 'switch', 'while',
                       '\#', 'include', 'pass', 'return', 'del', 'delete',
