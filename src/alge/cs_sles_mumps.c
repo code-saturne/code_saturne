@@ -2293,7 +2293,7 @@ cs_sles_mumps_solve(void                *context,
       /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX
       *  SMUMPS_COMPLEX = SMUMPS_REAL = float (see mumps_c_types.h) */
       for (cs_lnum_t i = 0; i < n_rows; i++)
-        sd->smumps->rhs[i] = (SMUMPS_COMPLEX)rhs[i];
+        sd->smumps->rhs[i] = (float)rhs[i];
 
     }
     else {
@@ -2339,6 +2339,8 @@ cs_sles_mumps_solve(void                *context,
       for (cs_lnum_t i = 0; i < n_rows; i++)
         vx[i] = (cs_real_t)sd->smumps->rhs[i];
 
+      BFT_FREE(sd->smumps->rhs);
+
     }
     else {
 
@@ -2356,9 +2358,10 @@ cs_sles_mumps_solve(void                *context,
       for (cs_lnum_t i = n_rows-1; i > -1; i--)
         vx[i] = (cs_real_t)_svx[i]; /* avoid overwritting */
 
+      BFT_FREE(glob_rhs);
+
     }
 
-    BFT_FREE(sd->smumps->rhs);
     sd->smumps->rhs = NULL;
 
     break; /* single-precision */
