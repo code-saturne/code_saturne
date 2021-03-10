@@ -1355,10 +1355,10 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
     if (cs_gui_strcmp(vars->model, "compressible_model")) {
       boundaries->itype[izone]     = 0;
-      boundaries->prein[izone]     = 0;
-      boundaries->rhoin[izone]     = 0;
-      boundaries->tempin[izone]    = 0;
-      boundaries->entin[izone]     = 0;
+      boundaries->prein[izone]     = cs_math_infinite_r;
+      boundaries->rhoin[izone]     = cs_math_infinite_r;
+      boundaries->tempin[izone]    = cs_math_infinite_r;
+      boundaries->entin[izone]     = cs_math_infinite_r;
     }
 
     if (cs_gui_strcmp(vars->model, "groundwater_model")) {
