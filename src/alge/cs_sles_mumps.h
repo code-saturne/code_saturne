@@ -63,6 +63,16 @@ BEGIN_C_DECLS
 
 #define CS_SLES_MUMPS_JOB_INIT -1
 
+/* Set of macros defined in order to match MUMPS documentation (because of the
+ * difference between C/FORTRAN programming language
+ */
+#define ICNTL(I)   icntl[(I)-1]
+#define CNTL(I)    cntl[(I)-1]
+#define INFOG(I)   infog[(I)-1]
+#define INFO(I)    info[(I)-1]
+#define RINFOG(I)  rinfog[(I)-1]
+#define RINFO(I)   rinfo[(I)-1]
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

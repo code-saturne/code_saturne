@@ -112,16 +112,6 @@ BEGIN_C_DECLS
 /* Default number for MPI_COMM_WORLD */
 #define USE_COMM_WORLD         -987654
 
-/* Set of macros defined in order to match MUMPS documentation (because of the
- * difference between C/FORTRAN programming language
- */
-#define ICNTL(I)   icntl[(I)-1]
-#define CNTL(I)    cntl[(I)-1]
-#define INFOG(I)   infog[(I)-1]
-#define INFO(I)    info[(I)-1]
-#define RINFOG(I)  rinfog[(I)-1]
-#define RINFO(I)   rinfo[(I)-1]
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
