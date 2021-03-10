@@ -59,8 +59,8 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         default['carrierField']     = 1
         default['diffusion_coefficient']    = 1e-5
         default['schmidt']          = 0.9
-        default['minValue']         = 0
-        default['maxValue']         = 1
+        default['minValue']         = 0.0
+        default['maxValue']         = 1.0
         default['timeDependStatus'] = "on"
         default['diffusionStatus']  = "on"
         default['coupledModel']     = "coupled"
