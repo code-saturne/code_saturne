@@ -928,6 +928,38 @@ class OutputControlModel(Model):
         return associated_writer
 
 
+    @Variables.noUndo
+    def isVolumeWriterActive(self):
+        """
+        Check if at least one volumic mesh is associated to a writer.
+        """
+        status = False
+
+        for mesh_id in self.getMeshIdList():
+            if self.getMeshType(mesh_id) in ["cells", "VolumicZone"]:
+                if self.getAssociatedWriterIdList(mesh_id):
+                    status = True
+                    break
+
+        return status
+
+
+    @Variables.noUndo
+    def isSurfaceWriterActive(self):
+        """
+        Check if at least one surface mesh is associated to a writer.
+        """
+        status = False
+
+        for mesh_id in self.getMeshIdList():
+            if self.getMeshType(mesh_id) in ["boundary_faces", "BoundaryZone"]:
+                if self.getAssociatedWriterIdList(mesh_id):
+                    status = True
+                    break
+
+        return status
+
+
     def addAssociatedWriter(self, mesh_id, lagrangian):
         """Public method.
         Input a new user associated writer to a mesh
