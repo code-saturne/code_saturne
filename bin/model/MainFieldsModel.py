@@ -233,7 +233,8 @@ class MainFieldsModel(Variables, Model):
 
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "vol_f_"+field_name, post = True)
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U_"+field_name, dim='3', post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
+        if self.getEnergyResolution(fieldNumber) == "on":
+            Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
 
         # Physical properties are set by default to "constant" to avoid uninitialized states with the GUI
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
