@@ -1405,7 +1405,7 @@ endif
 iccocg = 1
 init = 1
 inc  = 0
-if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+if (iphydr.eq.1.or.iifren.eq.1.or.staggered.eq.1) inc = 1
 imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
