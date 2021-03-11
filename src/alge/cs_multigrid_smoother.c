@@ -1840,6 +1840,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
   c->pc = c->_pc;
 
   c->n_max_iter = n_iter;
+  c->restart_interval = 20;
 
   c->n_setups = 0;
   c->n_solves = 0;

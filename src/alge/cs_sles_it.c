@@ -2621,7 +2621,7 @@ _gcr(cs_sles_it_t              *c,
   /* In case of the standard GCR, n_k_per_restart --> Inf,
    * or stops until convergence*/
   unsigned n_iter = 0;
-  const unsigned n_k_per_restart = 20;
+  const unsigned n_k_per_restart = c->restart_interval;
 
   size_t wa_size;
 
@@ -2862,7 +2862,7 @@ _gmres(cs_sles_it_t              *c,
   cs_real_t *restrict dk, *restrict gk;
   cs_real_t *restrict bk, *restrict fk, *restrict krk;
 
-  cs_lnum_t krylov_size_max = 40;
+  cs_lnum_t krylov_size_max = c->restart_interval;
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -3968,6 +3968,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->ignore_convergence = false;
 
   c->n_max_iter = n_max_iter;
+  c->restart_interval = 20; /* Default value commonly found in the literature */
 
   c->n_setups = 0;
   c->n_solves = 0;
@@ -4084,6 +4085,10 @@ cs_sles_it_copy(const void  *context)
       d->pc = c->pc;
     }
 
+    /* If useful, copy the restart interval */
+    if (c->type == CS_SLES_GMRES || c->type == CS_SLES_GCR)
+      d->restart_interval = c->restart_interval;
+
 #if defined(HAVE_MPI)
     d->comm = c->comm;
 #endif
@@ -4117,10 +4122,13 @@ cs_sles_it_log(const void  *context,
       cs_log_printf(log_type,
                     _("  Preconditioning:                   %s\n"),
                     _(cs_sles_pc_get_type_name(c->pc)));
+    if (c->type == CS_SLES_GMRES || c->type == CS_SLES_GCR)
+      cs_log_printf(log_type,
+                    "  Restart interval:                  %d\n",
+                    c->restart_interval);
     cs_log_printf(log_type,
                   _("  Maximum number of iterations:      %d\n"),
                   c->n_max_iter);
-
   }
 
   else if (log_type == CS_LOG_PERFORMANCE) {
@@ -4304,10 +4312,12 @@ cs_sles_it_setup(void               *context,
     break;
 
   case CS_SLES_GCR:
+    assert(c->restart_interval > 1);
     c->solve = _gcr;
     break;
 
   case CS_SLES_GMRES:
+    assert(c->restart_interval > 1);
     c->solve = _gmres;
     break;
 
@@ -4686,6 +4696,7 @@ cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
 
     dest->update_stats = src->update_stats;
     dest->n_max_iter = src->n_max_iter;
+    dest->restart_interval = src->restart_interval;
 
     dest->plot_time_stamp = src->plot_time_stamp;
     dest->plot = src->plot;
@@ -4842,6 +4853,26 @@ cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
                                   cs_sles_convergence_state_t   threshold)
 {
   context->fallback_cvg = threshold;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the number of iterations to be done before restarting the
+ *        solver. Useful only for GCR or GMRES algorithms.
+ *
+ * \param[in, out]  context    pointer to iterative solver info and context
+ * \param[in]       interval   convergence level under which fallback is used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
+                                int                           interval)
+{
+  if (context == NULL)
+    return;
+
+  context->restart_interval = interval;
 }
 
 /*----------------------------------------------------------------------------*/

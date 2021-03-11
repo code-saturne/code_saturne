@@ -162,6 +162,10 @@ struct _cs_sles_it_t {
                                               solvers used as preconditioners */
 
   int                  n_max_iter;         /* maximum number of iterations */
+  int                  restart_interval;   /* maximum number of iterations
+                                              before restarting the algorithm
+                                              (only applicable for GMRES or GCR
+                                              algorithm up to now) */
 
   cs_sles_it_solve_t  *solve;              /* pointer to solve function */
 

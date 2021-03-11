@@ -477,6 +477,20 @@ void
 cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
                                   cs_sles_convergence_state_t   threshold);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the number of iterations to be done before restarting the
+ *        solver. Useful only for GCR or GMRES algorithms.
+ *
+ * \param[in, out]  context    pointer to iterative solver info and context
+ * \param[in]       interval   convergence level under which fallback is used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
+                                int                           interval);
+
 /*----------------------------------------------------------------------------
  * Query mean number of rows under which Conjugate Gradient algorithm
  * uses the single-reduction variant.
