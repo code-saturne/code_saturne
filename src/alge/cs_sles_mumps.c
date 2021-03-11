@@ -289,7 +289,7 @@ _msr_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -297,7 +297,7 @@ _msr_dmumps(int                   verbosity,
 
     dmumps->irn[row_id] = (MUMPS_INT)(row_id + 1);
     dmumps->jcn[row_id] = (MUMPS_INT)(row_id + 1);
-    dmumps->a[row_id] = (DMUMPS_REAL)d_val[row_id];
+    dmumps->a[row_id] = (double)d_val[row_id];
 
   }
 
@@ -305,7 +305,7 @@ _msr_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+  double  *_a = dmumps->a + n_rows;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -315,7 +315,7 @@ _msr_dmumps(int                   verbosity,
 
       _irn[i] = row_num;
       _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
-      _a[i] = (DMUMPS_REAL)x_val[i];
+      _a[i] = (double)x_val[i];
 
     } /* Loop on columns */
 
@@ -373,7 +373,7 @@ _parall_msr_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -382,7 +382,7 @@ _parall_msr_dmumps(int                   verbosity,
     cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     dmumps->irn_loc[row_id] = (MUMPS_INT)row_gnum;
     dmumps->jcn_loc[row_id] = (MUMPS_INT)row_gnum;
-    dmumps->a_loc[row_id] = (DMUMPS_REAL)d_val[row_id];
+    dmumps->a_loc[row_id] = (double)d_val[row_id];
 
   }
 
@@ -390,7 +390,7 @@ _parall_msr_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn_loc + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a_loc + n_rows;
+  double  *_a = dmumps->a_loc + n_rows;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -399,7 +399,7 @@ _parall_msr_dmumps(int                   verbosity,
 
       _irn[i] = (MUMPS_INT)row_gnum;
       _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-      _a[i] = (DMUMPS_REAL)x_val[i];
+      _a[i] = (double)x_val[i];
 
     } /* Loop on columns */
 
@@ -451,7 +451,7 @@ _native_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -459,7 +459,7 @@ _native_dmumps(int                   verbosity,
 
     dmumps->irn[i] = (MUMPS_INT)(i + 1);
     dmumps->jcn[i] = (MUMPS_INT)(i + 1);
-    dmumps->a[i] = (DMUMPS_REAL)d_val[i];
+    dmumps->a[i] = (double)d_val[i];
 
   }
 
@@ -467,7 +467,7 @@ _native_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+  double  *_a = dmumps->a + n_rows;
 
   cs_lnum_t  count = 0;
   for (cs_lnum_t i = 0; i < n_faces; i++) {
@@ -478,14 +478,14 @@ _native_dmumps(int                   verbosity,
     if (c0_id < n_rows) {
       _irn[count] = c0_id + 1;
       _jcn[count] = (MUMPS_INT)(c1_id + 1);
-      _a[count] = (DMUMPS_REAL)x_val[2*i];
+      _a[count] = (double)x_val[2*i];
       count++;
     }
 
     if (c1_id < n_rows) {
       _irn[count] = c1_id + 1;
       _jcn[count] = (MUMPS_INT)(c0_id + 1);
-      _a[count] = (DMUMPS_REAL)x_val[2*i+1];
+      _a[count] = (double)x_val[2*i+1];
       count++;
     }
 
@@ -548,7 +548,7 @@ _parall_native_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -557,7 +557,7 @@ _parall_native_dmumps(int                   verbosity,
     cs_gnum_t  row_gnum = row_g_id[i] + 1;
     dmumps->irn_loc[i] = (MUMPS_INT)(row_gnum);
     dmumps->jcn_loc[i] = (MUMPS_INT)(row_gnum);
-    dmumps->a_loc[i] = (DMUMPS_REAL)d_val[i];
+    dmumps->a_loc[i] = (double)d_val[i];
 
   }
 
@@ -565,7 +565,7 @@ _parall_native_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn_loc + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a_loc + n_rows;
+  double  *_a = dmumps->a_loc + n_rows;
 
   cs_lnum_t  count = 0;
   for (cs_lnum_t i = 0; i < n_faces; i++) {
@@ -576,14 +576,14 @@ _parall_native_dmumps(int                   verbosity,
     if (c0_id < n_rows) {
       _irn[count] = row_g_id[c0_id] + 1;
       _jcn[count] = (MUMPS_INT)(row_g_id[c1_id] + 1);
-      _a[count] = (DMUMPS_REAL)x_val[2*i];
+      _a[count] = (double)x_val[2*i];
       count++;
     }
 
     if (c1_id < n_rows) {
       _irn[count] = row_g_id[c1_id] + 1;
       _jcn[count] = (MUMPS_INT)(row_g_id[c0_id] + 1);
-      _a[count] = (DMUMPS_REAL)x_val[2*i+1];
+      _a[count] = (double)x_val[2*i+1];
       count++;
     }
 
@@ -635,7 +635,7 @@ _msr_sym_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -643,7 +643,7 @@ _msr_sym_dmumps(int                   verbosity,
 
     dmumps->irn[row_id] = (MUMPS_INT)(row_id + 1);
     dmumps->jcn[row_id] = (MUMPS_INT)(row_id + 1);
-    dmumps->a[row_id] = (DMUMPS_REAL)d_val[row_id];
+    dmumps->a[row_id] = (double)d_val[row_id];
 
   }
 
@@ -651,7 +651,7 @@ _msr_sym_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+  double  *_a = dmumps->a + n_rows;
 
   if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
@@ -663,7 +663,7 @@ _msr_sym_dmumps(int                   verbosity,
         assert(a_col_ids[i] < n_rows);
         _irn[i] = row_num;
         _jcn[i] = a_col_ids[i] + 1;
-        _a[i] = (DMUMPS_REAL)x_val[i];
+        _a[i] = (double)x_val[i];
 
       } /* Loop on columns */
 
@@ -683,7 +683,7 @@ _msr_sym_dmumps(int                   verbosity,
         if (col_num < row_num) {
           _irn[count] = row_num;
           _jcn[count] = col_num;
-          _a[count] = (DMUMPS_REAL)x_val[i];
+          _a[count] = (double)x_val[i];
           count++;
         }
 
@@ -748,7 +748,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a_loc, dmumps->nnz_loc, double);
 
   /* Add diagonal entries */
 
@@ -757,7 +757,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
     cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     dmumps->irn_loc[row_id] = (MUMPS_INT)row_gnum;
     dmumps->jcn_loc[row_id] = (MUMPS_INT)row_gnum;
-    dmumps->a_loc[row_id] = (DMUMPS_REAL)d_val[row_id];
+    dmumps->a_loc[row_id] = (double)d_val[row_id];
 
   }
 
@@ -765,7 +765,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn_loc + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a_loc + n_rows;
+  double  *_a = dmumps->a_loc + n_rows;
 
   if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
@@ -776,7 +776,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
         _irn[i] = (MUMPS_INT)row_gnum;
         _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-        _a[i] = (DMUMPS_REAL)x_val[i];
+        _a[i] = (double)x_val[i];
 
       } /* Loop on columns */
 
@@ -794,7 +794,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
         if (a_col_ids[i] < row_id) {
           _irn[count] = (MUMPS_INT)row_gnum;
           _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-          _a[count] = (DMUMPS_REAL)x_val[i];
+          _a[count] = (double)x_val[i];
           count++;
         }
 
@@ -851,7 +851,7 @@ _native_sym_dmumps(int                   verbosity,
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
-  BFT_MALLOC(dmumps->a, dmumps->nnz, DMUMPS_REAL);
+  BFT_MALLOC(dmumps->a, dmumps->nnz, double);
 
   /* Add diagonal entries */
 
@@ -859,7 +859,7 @@ _native_sym_dmumps(int                   verbosity,
 
     dmumps->irn[i] = (MUMPS_INT)(i + 1);
     dmumps->jcn[i] = (MUMPS_INT)(i + 1);
-    dmumps->a[i] = (DMUMPS_REAL)d_val[i];
+    dmumps->a[i] = (double)d_val[i];
 
   }
 
@@ -867,7 +867,7 @@ _native_sym_dmumps(int                   verbosity,
 
   MUMPS_INT  *_irn = dmumps->irn + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
-  DMUMPS_REAL  *_a = dmumps->a + n_rows;
+  double  *_a = dmumps->a + n_rows;
 
   if (symmetric) {
 
@@ -880,14 +880,14 @@ _native_sym_dmumps(int                   verbosity,
       if (c0_id < c1_id) {
         _irn[count] = c0_id + 1;
         _jcn[count] = (MUMPS_INT)(c1_id + 1);
-        _a[count] = (DMUMPS_REAL)x_val[i];
+        _a[count] = (double)x_val[i];
         count++;
       }
       else {
         assert(c0_id > c1_id);
         _irn[count] = c1_id + 1;
         _jcn[count] = (MUMPS_INT)(c0_id + 1);
-        _a[count] = (DMUMPS_REAL)x_val[i];
+        _a[count] = (double)x_val[i];
         count++;
       }
 
@@ -905,14 +905,14 @@ _native_sym_dmumps(int                   verbosity,
       if (c0_id < c1_id) {
         _irn[count] = c0_id + 1;
         _jcn[count] = (MUMPS_INT)(c1_id + 1);
-        _a[count] = (DMUMPS_REAL)x_val[2*i];
+        _a[count] = (double)x_val[2*i];
         count++;
       }
       else {
         assert(c1_id < c0_id);
         _irn[count] = c1_id + 1;
         _jcn[count] = (MUMPS_INT)(c0_id + 1);
-        _a[count] = (DMUMPS_REAL)x_val[2*i+1];
+        _a[count] = (double)x_val[2*i+1];
         count++;
       }
 
@@ -1017,7 +1017,7 @@ _msr_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1025,7 +1025,7 @@ _msr_smumps(int                   verbosity,
 
     smumps->irn[row_id] = (MUMPS_INT)(row_id + 1);
     smumps->jcn[row_id] = (MUMPS_INT)(row_id + 1);
-    smumps->a[row_id] = (SMUMPS_REAL)d_val[row_id];
+    smumps->a[row_id] = (float)d_val[row_id];
 
   }
 
@@ -1033,7 +1033,7 @@ _msr_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
-  SMUMPS_REAL  *_a = smumps->a + n_rows;
+  float  *_a = smumps->a + n_rows;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -1043,7 +1043,7 @@ _msr_smumps(int                   verbosity,
 
       _irn[i] = row_num;
       _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
-      _a[i] = (SMUMPS_REAL)x_val[i];
+      _a[i] = (float)x_val[i];
 
     } /* Loop on columns */
 
@@ -1101,7 +1101,7 @@ _parall_msr_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
 
   /* Add diagonal entries */
 
@@ -1110,7 +1110,7 @@ _parall_msr_smumps(int                   verbosity,
     cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     smumps->irn_loc[row_id] = (MUMPS_INT)row_gnum;
     smumps->jcn_loc[row_id] = (MUMPS_INT)row_gnum;
-    smumps->a_loc[row_id] = (SMUMPS_REAL)d_val[row_id];
+    smumps->a_loc[row_id] = (float)d_val[row_id];
 
   }
 
@@ -1118,7 +1118,7 @@ _parall_msr_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn_loc + n_rows;
-  SMUMPS_REAL  *_a = smumps->a_loc + n_rows;
+  float  *_a = smumps->a_loc + n_rows;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -1127,7 +1127,7 @@ _parall_msr_smumps(int                   verbosity,
 
       _irn[i] = (MUMPS_INT)row_gnum;
       _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-      _a[i] = (SMUMPS_REAL)x_val[i];
+      _a[i] = (float)x_val[i];
 
     } /* Loop on columns */
 
@@ -1182,7 +1182,7 @@ _native_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1190,7 +1190,7 @@ _native_smumps(int                   verbosity,
 
     smumps->irn[i] = (MUMPS_INT)(i + 1);
     smumps->jcn[i] = (MUMPS_INT)(i + 1);
-    smumps->a[i] = (SMUMPS_REAL)d_val[i];
+    smumps->a[i] = (float)d_val[i];
 
   }
 
@@ -1198,7 +1198,7 @@ _native_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
-  SMUMPS_REAL  *_a = smumps->a + n_rows;
+  float  *_a = smumps->a + n_rows;
 
   cs_lnum_t  count = 0;
   for (cs_lnum_t i = 0; i < n_faces; i++) {
@@ -1209,14 +1209,14 @@ _native_smumps(int                   verbosity,
     if (c0_id < n_rows) {
       _irn[count] = c0_id + 1;
       _jcn[count] = (MUMPS_INT)(c1_id + 1);
-      _a[count] = (SMUMPS_REAL)x_val[2*i];
+      _a[count] = (float)x_val[2*i];
       count++;
     }
 
     if (c1_id < n_rows) {
       _irn[count] = c1_id + 1;
       _jcn[count] = (MUMPS_INT)(c0_id + 1);
-      _a[count] = (SMUMPS_REAL)x_val[2*i+1];
+      _a[count] = (float)x_val[2*i+1];
       count++;
     }
 
@@ -1265,7 +1265,7 @@ _msr_sym_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1273,7 +1273,7 @@ _msr_sym_smumps(int                   verbosity,
 
     smumps->irn[row_id] = (MUMPS_INT)(row_id + 1);
     smumps->jcn[row_id] = (MUMPS_INT)(row_id + 1);
-    smumps->a[row_id] = (SMUMPS_REAL)d_val[row_id];
+    smumps->a[row_id] = (float)d_val[row_id];
 
   }
 
@@ -1281,7 +1281,7 @@ _msr_sym_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
-  SMUMPS_REAL  *_a = smumps->a + n_rows;
+  float  *_a = smumps->a + n_rows;
 
   cs_lnum_t  count = n_rows;
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
@@ -1294,7 +1294,7 @@ _msr_sym_smumps(int                   verbosity,
       if (col_num < row_num) {
         _irn[count] = row_num;
         _jcn[count] = col_num;
-        _a[count] = (SMUMPS_REAL)x_val[i];
+        _a[count] = (float)x_val[i];
         count++;
       }
 
@@ -1360,7 +1360,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
-  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a_loc, smumps->nnz_loc, float);
 
   /* Add diagonal entries */
 
@@ -1369,7 +1369,7 @@ _parall_msr_sym_smumps(int                   verbosity,
     cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     smumps->irn_loc[row_id] = (MUMPS_INT)row_gnum;
     smumps->jcn_loc[row_id] = (MUMPS_INT)row_gnum;
-    smumps->a_loc[row_id] = (SMUMPS_REAL)d_val[row_id];
+    smumps->a_loc[row_id] = (float)d_val[row_id];
 
   }
 
@@ -1377,7 +1377,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn_loc + n_rows;
-  SMUMPS_REAL  *_a = smumps->a_loc + n_rows;
+  float  *_a = smumps->a_loc + n_rows;
 
   if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
@@ -1388,7 +1388,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
         _irn[i] = (MUMPS_INT)row_gnum;
         _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-        _a[i] = (SMUMPS_REAL)x_val[i];
+        _a[i] = (float)x_val[i];
 
       } /* Loop on columns */
 
@@ -1406,7 +1406,7 @@ _parall_msr_sym_smumps(int                   verbosity,
         if (a_col_ids[i] < row_id) {
           _irn[count] = (MUMPS_INT)row_gnum;
           _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-          _a[count] = (SMUMPS_REAL)x_val[i];
+          _a[count] = (float)x_val[i];
           count++;
         }
 
@@ -1462,7 +1462,7 @@ _native_sym_smumps(int                   verbosity,
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
-  BFT_MALLOC(smumps->a, smumps->nnz, SMUMPS_REAL);
+  BFT_MALLOC(smumps->a, smumps->nnz, float);
 
   /* Add diagonal entries */
 
@@ -1470,7 +1470,7 @@ _native_sym_smumps(int                   verbosity,
 
     smumps->irn[i] = (MUMPS_INT)(i + 1);
     smumps->jcn[i] = (MUMPS_INT)(i + 1);
-    smumps->a[i] = (SMUMPS_REAL)d_val[i];
+    smumps->a[i] = (float)d_val[i];
 
   }
 
@@ -1478,7 +1478,7 @@ _native_sym_smumps(int                   verbosity,
 
   MUMPS_INT  *_irn = smumps->irn + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
-  SMUMPS_REAL  *_a = smumps->a + n_rows;
+  float  *_a = smumps->a + n_rows;
 
   if (symmetric) {
 
@@ -1491,14 +1491,14 @@ _native_sym_smumps(int                   verbosity,
       if (c0_id < c1_id) {
         _irn[count] = c0_id + 1;
         _jcn[count] = (MUMPS_INT)(c1_id + 1);
-        _a[count] = (SMUMPS_REAL)x_val[i];
+        _a[count] = (float)x_val[i];
         count++;
       }
       else {
         assert(c0_id > c1_id);
         _irn[count] = c1_id + 1;
         _jcn[count] = (MUMPS_INT)(c0_id + 1);
-        _a[count] = (SMUMPS_REAL)x_val[i];
+        _a[count] = (float)x_val[i];
         count++;
       }
 
@@ -1517,14 +1517,14 @@ _native_sym_smumps(int                   verbosity,
       if (c0_id < c1_id) {
         _irn[count] = c0_id + 1;
         _jcn[count] = (MUMPS_INT)(c1_id + 1);
-        _a[count] = (SMUMPS_REAL)x_val[2*i];
+        _a[count] = (float)x_val[2*i];
         count++;
       }
       else {
         assert(c1_id < c0_id);
         _irn[count] = c1_id + 1;
         _jcn[count] = (MUMPS_INT)(c0_id + 1);
-        _a[count] = (SMUMPS_REAL)x_val[2*i+1];
+        _a[count] = (float)x_val[2*i+1];
         count++;
       }
 
@@ -1873,6 +1873,12 @@ cs_sles_mumps_setup(void               *context,
   if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS ||
       c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT) {
 
+    /* Sanity checks: DMUMPS_COMPLEX = DMUMPS_REAL = double
+     * (see mumps_c_types.h) */
+
+    assert(sizeof(double) == sizeof(DMUMPS_COMPLEX));
+    assert(sizeof(double) == sizeof(DMUMPS_REAL));
+
     sd->smumps = NULL;        /* Not used anymore */
 
     BFT_MALLOC(sd->dmumps, 1, DMUMPS_STRUC_C);
@@ -1897,6 +1903,12 @@ cs_sles_mumps_setup(void               *context,
   }
   else if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT ||
            c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT) {
+
+    /* Sanity checks: SMUMPS_COMPLEX = SMUMPS_REAL = float
+     * (see mumps_c_types.h) */
+
+    assert(sizeof(float) == sizeof(SMUMPS_COMPLEX));
+    assert(sizeof(float) == sizeof(SMUMPS_REAL));
 
     sd->dmumps = NULL;        /* Not used anymore */
 
@@ -2198,15 +2210,14 @@ cs_sles_mumps_solve(void                *context,
     /* Sanity checks */
 
     assert(sd->dmumps != NULL);
-    assert(sizeof(cs_real_t) == sizeof(DMUMPS_REAL));
-    assert(sizeof(cs_real_t) == sizeof(DMUMPS_COMPLEX));
+    assert(sizeof(double) == sizeof(cs_real_t));
 
     /* Build the RHS */
     if (cs_glob_n_ranks == 1) { /* sequential run */
 
       assert(n_rows == sd->dmumps->n);
       sd->dmumps->nrhs = 1;
-      memcpy(vx, rhs, n_rows*sizeof(cs_real_t));
+      memcpy(vx, rhs, n_rows*sizeof(double));
       sd->dmumps->rhs = vx;
 
     }
@@ -2219,9 +2230,9 @@ cs_sles_mumps_solve(void                *context,
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = sd->dmumps->n;
 
-      DMUMPS_REAL  *glob_rhs = NULL;
+      double  *glob_rhs = NULL;
       if (cs_glob_rank_id == root_rank)
-        BFT_MALLOC(glob_rhs, n_g_rows, DMUMPS_REAL);
+        BFT_MALLOC(glob_rhs, n_g_rows, double);
 
       cs_parall_gather_r(root_rank, n_rows, n_g_rows, rhs, glob_rhs);
 
@@ -2236,7 +2247,8 @@ cs_sles_mumps_solve(void                *context,
     infog1 = sd->dmumps->INFOG(1);     /* feedback */
     *residue = sd->dmumps->RINFOG(11); /* scaled residual */
 
-    /* Free buffers */
+    /* Post-resolution operations */
+
     if (cs_glob_n_ranks == 1)
       sd->dmumps->rhs = NULL;
 
@@ -2249,7 +2261,7 @@ cs_sles_mumps_solve(void                *context,
 
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = sd->dmumps->n;
-      DMUMPS_REAL  *glob_rhs = sd->dmumps->rhs;
+      double  *glob_rhs = sd->dmumps->rhs;
 
       cs_parall_scatter_r(root_rank, n_rows, n_g_rows, glob_rhs, vx);
 
@@ -2269,8 +2281,6 @@ cs_sles_mumps_solve(void                *context,
     /* Sanity checks */
 
     assert(sd->smumps != NULL);
-    assert(sizeof(SMUMPS_REAL) == sizeof(float));
-    assert(sizeof(SMUMPS_COMPLEX) == sizeof(float));
 
     /* Build the RHS */
 
@@ -2280,8 +2290,7 @@ cs_sles_mumps_solve(void                *context,
       sd->smumps->nrhs = 1;
       BFT_MALLOC(sd->smumps->rhs, n_rows, float);
 
-      /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX
-      *  SMUMPS_COMPLEX = SMUMPS_REAL = float (see mumps_c_types.h) */
+      /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX */
       for (cs_lnum_t i = 0; i < n_rows; i++)
         sd->smumps->rhs[i] = (float)rhs[i];
 
@@ -2320,7 +2329,7 @@ cs_sles_mumps_solve(void                *context,
     infog1 = sd->smumps->INFOG(1);     /* feedback */
     *residue = sd->smumps->RINFOG(11); /* scaled residual */
 
-    /* Free buffers */
+    /* Post-resolution operations */
 
     if (cs_glob_n_ranks == 1) {
 
@@ -2345,8 +2354,10 @@ cs_sles_mumps_solve(void                *context,
 
       cs_parall_scatter_f(root_rank, n_rows, n_g_rows, glob_rhs, _svx);
 
+      /* avoid overwritting since sizeof(float) should lower than
+         sizeof(cs_real_t) */
       for (cs_lnum_t i = n_rows-1; i > -1; i--)
-        vx[i] = (cs_real_t)_svx[i]; /* avoid overwritting */
+        vx[i] = (cs_real_t)_svx[i];
 
       BFT_FREE(glob_rhs);
 
