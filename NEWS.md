@@ -3,6 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- GUI: fix handling of `mod` operator in mathematical expressions
+  (convert it to `fmod`, not integer modulo operator).
+
 - k-eps user source terms was not taken into account in C.
 
 - ALE: Fix bug when a vertex belongs to sliding faces only.
