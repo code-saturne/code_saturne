@@ -76,6 +76,24 @@ BEGIN_C_DECLS
  * Private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return true if a solver involving the MUMPS library is requested
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_mumps_is_needed(cs_param_itsol_type_t   solver)
+{
+  if (solver == CS_PARAM_ITSOL_MUMPS ||
+      solver == CS_PARAM_ITSOL_MUMPS_LDLT ||
+      solver == CS_PARAM_ITSOL_MUMPS_FLOAT ||
+      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+    return true;
+  else
+    return false;
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,8 +179,7 @@ static void
 _petsc_set_pc_type(cs_param_sles_t   *slesp,
                    PC                 pc)
 {
-  if (slesp->solver == CS_PARAM_ITSOL_MUMPS ||
-      slesp->solver == CS_PARAM_ITSOL_MUMPS_LDLT)
+  if (_mumps_is_needed(slesp->solver))
     return; /* Direct solver: Nothing to do at this stage */
 
   switch (slesp->precond) {
@@ -870,6 +887,65 @@ _petsc_block_jacobi_hook(void     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if the settings are consitent. Can apply minor modifications.
+ *
+ * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_settings(cs_param_sles_t     *slesp)
+{
+
+  /* Checks related to MUMPS */
+
+  if (_mumps_is_needed(slesp->solver)) {
+#if defined(HAVE_MUMPS)
+    slesp->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
+    slesp->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+#else  /* MUMPS: no, PETSc: yes: PETSc with MUMPS: no */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Error detected while setting the SLES \"%s\"\n"
+              " MUMPS is not available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+#endif  /* PETSC_HAVE_MUMPS */
+#else   /* MUMPS: no, PETSc: no */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Error detected while setting the SLES \"%s\"\n"
+              " MUMPS is not available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
+  }
+  else {
+    if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Error detected while setting the SLES \"%s\"\n"
+                " MUMPS class is not coherent with your settings.\n",
+                " Please check your installation settings.\n",
+                __func__, slesp->name);
+  }
+
+  /* Checks related to GCR/GMRES algorithms */
+
+  if (slesp->solver == CS_PARAM_ITSOL_GMRES ||
+      slesp->solver == CS_PARAM_ITSOL_GCR)
+    if (slesp->restart < 2)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Error detected while setting the SLES \"%s\"\n"
+                " The restart interval (=%d) is not big enough.\n",
+                " Please check your installation settings.\n",
+                __func__, slesp->name, slesp->restart);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Case of saturne's own solvers.
@@ -1490,6 +1566,8 @@ cs_param_sles_set(bool                 use_field_id,
 {
   if (slesp == NULL)
     return 0;
+
+  _check_settings(slesp);
 
   switch (slesp->solver_class) {
 
