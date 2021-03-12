@@ -1011,6 +1011,7 @@ typedef struct {
  *                          recommended choice when used inside a preconditioner
  * - "mumps_ldlt"    --> Direct solver (very robust but memory consumming)
  *                       LDLT factorization (through PETSc or MUMPS).
+ * - "sym_gauss_seidel" or "sgs" --> Symmetric Gauss-Seidel algorithm
  * - "user"          --> User-defined iterative solver (rely on the function
  *                       cs_user_sles_it_solver())
  * - "none"          --> No solver.

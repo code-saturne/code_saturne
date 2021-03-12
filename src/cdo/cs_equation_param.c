@@ -447,6 +447,11 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
 
     }
+    else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
+             strcmp(keyval, "sgs") == 0) {
+      eqp->sles_param->solver = CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL;
+      eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+    }
     else if (strcmp(keyval, "user") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_USER_DEFINED;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
