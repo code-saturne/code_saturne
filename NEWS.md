@@ -3,6 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Mesh joining: fix crash when number of joined faces is smaller
+  than the number of MPI ranks.
+
 - GUI: Fix behavior of Post-processing page when default meshes (cells or
   boundary faces) are no longer associated to a writer and another mesh of the
   same type is associated to a writer.
