@@ -2439,20 +2439,21 @@ cs_sles_mumps_log(const void  *context,
     cs_log_printf(log_type,
                   "  Solver type:                       MUMPS\n"
                   "    Storage:                           %s\n"
-                  "    Symm type:                         %s\n",
-                  storage_type_name, sym_type_name);
+                  "    Symm type:                         %s\n"
+                  "    Library version:                   %s\n",
+                  storage_type_name, sym_type_name, MUMPS_VERSION);
 
   }
   else if (log_type == CS_LOG_PERFORMANCE) {
 
     cs_log_printf(log_type,
                   _("\n"
-                    "  Solver type:                   MUMPS\n"
+                    "  Solver type:                   MUMPS %s\n"
                     "  Number of setups:              %12d\n"
                     "  Number of solves:              %12d\n"
                     "  Total setup time:              %12.3f\n"
                     "  Total solution time:           %12.3f\n"),
-                  c->n_setups, c->n_solves,
+                  MUMPS_VERSION, c->n_setups, c->n_solves,
                   c->t_setup.wall_nsec*1e-9, c->t_solve.wall_nsec*1e-9);
 
   }
