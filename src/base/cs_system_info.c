@@ -229,9 +229,10 @@ _sys_info_issue(char      *issue_str,
         else /* If no info was kept, empty string */
           issue_str[0] = '\0';
       }
-    }
 
-    fclose (fp);
+
+      fclose (fp);
+    }
 
   }
 
