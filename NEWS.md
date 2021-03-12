@@ -3,6 +3,9 @@ Release 6.2.2 (Unreleased)
 
 Bug fixes:
 
+- Mesh joining: fix crash when number of joined faces is smaller
+  than the number of MPI ranks.
+
 - GUI: fix handling of `mod` operator in mathematical expressions
   (convert it to `fmod`, not integer modulo operator).
 
