@@ -107,7 +107,7 @@ BEGIN_C_DECLS
  *                                    - for scalars,
  *                                      cp*(viscls+visct/turb_schmidt)*gradt
  * \param[out] tparop   wall temperature in Kelvin
- * \param[in]  qincip   dradiative flux density at boundaries
+ * \param[in]  qincip   radiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
  * \param[in]  xlamp    thermal conductivity coefficient of wall faces (w/m/k)
  * \param[in]  epap     wall thickness (m)
