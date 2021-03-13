@@ -56,6 +56,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
+#include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -911,11 +912,6 @@ _compute_net_flux(const int        itypfb[],
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   cs_real_t  xmissing = -cs_math_big_r * 0.2;
 
-  /* Initializations */
-
-  /* Net flux dendity for the boundary faces
-   * The provided examples are sufficient in most of cases.*/
-
   /* If the boundary conditions given above have been modified
    *   it is necessary to change the way in which density is calculated from
    *   the net radiative flux consistently.*/
@@ -956,6 +952,64 @@ _compute_net_flux(const int        itypfb[],
       net_flux[ifac] = xmissing;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the internal coupling contribution from
+ *        the net radiation flux.
+ *
+ * \param[in, out]  cpl       internal coupling structure
+ * \param[in]       net_flux  net flux (W/m2)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
+                                         const cs_real_t          net_flux[])
+{
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* Bulk implicit and explicit source terms */
+  cs_real_t *rad_estm = CS_FI_(rad_est, 0)->val;
+
+  cs_lnum_t  n_local = 0, n_distant = 0;
+  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+
+  cs_internal_coupling_coupled_faces(cpl,
+                                     &n_local,
+                                     &faces_local,
+                                     &n_distant,
+                                     &faces_distant);
+
+  cs_real_t *net_flux_local, *net_flux_distant;
+  BFT_MALLOC(net_flux_local, n_local, cs_real_t);
+  BFT_MALLOC(net_flux_distant, n_distant, cs_real_t);
+
+  /* Compute radiant net flux at internal coupling boundary face */
+
+  for (cs_lnum_t i = 0; i < n_distant; i++) {
+    cs_lnum_t face_id = faces_distant[i];
+    net_flux_distant[i] = net_flux[face_id];
+  }
+
+  cs_internal_coupling_exchange_var(cpl,
+                                    1, /* Dimension */
+                                    net_flux_distant,
+                                    net_flux_local);
+
+  for (cs_lnum_t i = 0; i < n_local; i++) {
+    cs_lnum_t face_id = faces_local[i];
+    cs_lnum_t cell_id = m->b_face_cells[face_id];
+
+    rad_estm[cell_id] +=   net_flux_local[i]
+                         * mq->b_face_surf[face_id]
+                         / mq->cell_vol[cell_id];
+  }
+
+  BFT_FREE(net_flux_local);
+  BFT_FREE(net_flux_distant);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1244,7 +1298,7 @@ cs_rad_transfer_solve(int               bc_type[],
     if (temp_field != NULL)
       cvara_scalt = temp_field->vals[1];
     else
-      cvara_scalt = CS_FI_(t,0)->val;
+      cvara_scalt = CS_FI_(t, 0)->val;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       tempk[cell_id] = cvara_scalt[cell_id] + xptk;
@@ -1383,8 +1437,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    if (   rt_params->imoadf >= 1
-        || rt_params->imfsck == 1) {
+    if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
 
       assert(gg_id == 0); /* TODO: merge ckg and kgi ? */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2059,6 +2112,22 @@ cs_rad_transfer_solve(int               bc_type[],
      * post-processing of that term when the transported variable is the
      * temperature (for combustion, it is always enthalpy) */
 
+  }
+
+  /* Internal coupling contribution */
+  if (cs_internal_coupling_n_couplings() > 0) {
+    cs_internal_coupling_t *cpl = NULL;
+
+    cs_field_t *tf = cs_thermal_model_field();
+    if (tf != NULL) {
+      const int coupling_key_id = cs_field_key_id("coupling_entity");
+      int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
+      if (coupling_id >= 0)
+        cpl = cs_internal_coupling_by_id(coupling_id);
+    }
+
+    if (cpl != NULL)
+      _net_flux_internal_coupling_contribution(cpl, f_fnet->val);
   }
 
   if (verbosity > 0)
