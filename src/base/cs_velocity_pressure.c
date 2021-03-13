@@ -453,6 +453,27 @@ cs_velocity_pressure_set_n_buoyant_scalars(void)
   }
 }
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Set `fluid_solid` flag if solid zones are present.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_set_solid(void)
+{
+  const int n_zones = cs_volume_zone_n_zones();
+
+  for (int id = 0; id < n_zones; id++) {
+    const cs_zone_t  *z = cs_volume_zone_by_id(id);
+    if (z->type & CS_VOLUME_ZONE_SOLID) {
+      /* Activate the solid flag */
+      _velocity_pressure_model.fluid_solid = true;
+      break;
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print the volocity-pressure model parameters to setup log.

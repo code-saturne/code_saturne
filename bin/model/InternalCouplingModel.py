@@ -87,16 +87,6 @@ class InternalCouplingModel(Variables, Model):
         return lst
 
 
-    def isZoneCoupled(self, zone_name):
-        """Check if a zone is coupled or not."""
-
-        retval = False
-        if zone_name in self.getZonesList():
-            retval = True
-
-        return retval
-
-
     def addScalar(self, scalar_name):
         """Add a coupled scalar"""
 

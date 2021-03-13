@@ -362,6 +362,25 @@ cs_volume_zone_select_type_cells(int        type_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Tag cells of a given zone type
+ *
+ * The tag array should be initialized. The given tag_value is associted
+ * to cells of the given zone type using a logical "or", so multiple flag
+ * bits can be handled using the same array if necessary.
+ *
+ * \param[in]       zone_type_flag  zone types to tag
+ * \param[in]       tag_value  tag value to add to cells of matching zones
+ * \param[in, out]  tag        tag value for each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_volume_zone_tag_cell_type(int  zone_type_flag,
+                             int  tag_value,
+                             int  tag[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print volume zones information to listing file
  */
 /*----------------------------------------------------------------------------*/

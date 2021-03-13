@@ -681,19 +681,6 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
                                  cs_real_t         tab_local[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Tag disabled solid cells for fluid_solid mode.
- *
- * \param[in, out] m     pointer to a cs_mesh_t structure
- * \param[in, out] mq    pointer to a cs_mesh_quantities_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_tag_disable_cells(cs_mesh_t            *m,
-                                       cs_mesh_quantities_t *mq);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
