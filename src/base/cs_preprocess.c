@@ -260,6 +260,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   bool allow_modify = cs_preprocess_mesh_is_needed();
 
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
   /* Disable all writers until explicitely enabled for this stage */
 
   cs_post_disable_writer(0);
@@ -285,7 +288,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   /* Read Preprocessor output */
 
-  cs_preprocessor_data_read_mesh(cs_glob_mesh,
+  cs_preprocessor_data_read_mesh(m,
                                  cs_glob_mesh_builder);
 
   if (allow_modify) {
@@ -296,35 +299,35 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
     /* Insert boundaries if necessary */
 
-    cs_gui_mesh_boundary(cs_glob_mesh);
-    cs_user_mesh_boundary(cs_glob_mesh);
+    cs_gui_mesh_boundary(m);
+    cs_user_mesh_boundary(m);
 
-    cs_internal_coupling_preprocess(cs_glob_mesh);
+    cs_internal_coupling_preprocess(m);
 
   }
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-  cs_mesh_update_auxiliary(cs_glob_mesh);
+  cs_mesh_init_halo(m, cs_glob_mesh_builder, halo_type);
+  cs_mesh_update_auxiliary(m);
 
   if (allow_modify) {
 
     /* Possible geometry modification */
 
-    cs_gui_mesh_extrude(cs_glob_mesh);
-    cs_user_mesh_modify(cs_glob_mesh);
+    cs_gui_mesh_extrude(m);
+    cs_user_mesh_modify(m);
 
     /* Discard isolated faces if present */
 
     cs_post_add_free_faces();
-    cs_mesh_discard_free_faces(cs_glob_mesh);
+    cs_mesh_discard_free_faces(m);
 
     /* Smoothe mesh if required */
 
-    cs_gui_mesh_smoothe(cs_glob_mesh);
-    cs_user_mesh_smoothe(cs_glob_mesh);
+    cs_gui_mesh_smoothe(m);
+    cs_user_mesh_smoothe(m);
 
     /* Triangulate warped faces if necessary */
 
@@ -337,7 +340,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       if (cwf_threshold >= 0.0) {
 
         t1 = cs_timer_wtime();
-        cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
+        cs_mesh_warping_cut_faces(m, cwf_threshold, cwf_post);
         t2 = cs_timer_wtime();
 
         bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
@@ -347,39 +350,38 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
     /* Now that mesh modification is finished, save mesh if modified */
 
-    cs_gui_mesh_save_if_modified(cs_glob_mesh);
-    cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
-
+    cs_gui_mesh_save_if_modified(m);
+    cs_user_mesh_save(m); /* Disable or force */
   }
 
   bool need_partition = cs_partition_get_preprocess();
-  if (cs_glob_mesh->modified & CS_MESH_MODIFIED_BALANCE)
+  if (m->modified & CS_MESH_MODIFIED_BALANCE)
     need_partition = true;
 
   bool need_save = false;
-  if (   (cs_glob_mesh->modified > 0 && cs_glob_mesh->save_if_modified > 0)
-      || cs_glob_mesh->save_if_modified > 1)
+  if (   (m->modified > 0 && m->save_if_modified > 0)
+      || m->save_if_modified > 1)
     need_save = true;
 
   if (need_partition) {
     if (need_save) {
-      cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output.csm");
+      cs_mesh_save(m, cs_glob_mesh_builder, NULL, "mesh_output.csm");
       need_save = false;
     }
     else
-      cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
+      cs_mesh_to_builder(m, cs_glob_mesh_builder, true, NULL);
 
-    cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
-    cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
-    cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-    cs_mesh_update_auxiliary(cs_glob_mesh);
+    cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+    cs_mesh_from_builder(m, cs_glob_mesh_builder);
+    cs_mesh_init_halo(m, cs_glob_mesh_builder, halo_type);
+    cs_mesh_update_auxiliary(m);
   }
 
   else if (need_save)
-    cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output.csm");
+    cs_mesh_save(m, NULL, NULL, "mesh_output.csm");
 
-  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
-  cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces;
+  m->n_b_faces_all = m->n_b_faces;
+  m->n_g_b_faces_all = m->n_g_b_faces;
 
   /* Destroy the temporary structure used to build the main mesh */
 
@@ -392,18 +394,18 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_user_numbering();
 
-  cs_renumber_mesh(cs_glob_mesh);
+  cs_renumber_mesh(m);
 
   /* Initialize group classes */
 
-  cs_mesh_init_group_classes(cs_glob_mesh);
+  cs_mesh_init_group_classes(m);
 
   /* Print info on mesh */
 
-  cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
+  cs_mesh_print_info(m, _("Mesh"));
 
   /* Second pass to define internal coupling locators */
-  cs_internal_coupling_map(cs_glob_mesh);
+  cs_internal_coupling_map(m);
 
   /* Compute geometric quantities related to the mesh */
 
@@ -414,17 +416,19 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* If fluid_solid mode is activated: disable solid cells for the dynamics */
   cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
   if (vp_model->fluid_solid)
-    cs_glob_mesh_quantities->has_disable_flag = 1;
+    mq->has_disable_flag = 1;
 
-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_quantities_compute(m, mq);
 
   /* If fluid_solid mode is activate: disable solid cells for the dynamics */
   cs_porous_model_init_disable_flag();
-  if (vp_model->fluid_solid)
-    cs_internal_coupling_tag_disable_cells(cs_glob_mesh, cs_glob_mesh_quantities);
+  if (vp_model->fluid_solid) {
+    assert(mq->has_disable_flag == 1);
+    cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, mq->c_disable_flag);
+  }
 
-  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_bad_cells_detect(m, mq);
+  cs_user_mesh_bad_cells_tag(m, mq);
   t2 = cs_timer_wtime();
 
   bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
@@ -432,20 +436,19 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Initialize selectors and locations for the mesh */
 
   cs_mesh_init_selectors();
-  cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_mesh_location_build(m, -1);
   cs_volume_zone_build_all(true);
   cs_volume_zone_print_info();
   cs_boundary_zone_build_all(true);
   cs_boundary_zone_print_info();
 
-  cs_ext_neighborhood_reduce(cs_glob_mesh,
-                             cs_glob_mesh_quantities);
+  cs_ext_neighborhood_reduce(m, mq);
 
   /* For debugging purposes */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_mesh_dump(cs_glob_mesh);
-  cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_dump(m);
+  cs_mesh_quantities_dump(m, mq);
 #endif
 
   /* Re-enable writers disabled when entering this stage */

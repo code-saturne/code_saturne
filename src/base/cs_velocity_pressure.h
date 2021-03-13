@@ -206,6 +206,15 @@ cs_get_glob_velocity_pressure_param(void);
 void
 cs_velocity_pressure_set_n_buoyant_scalars(void);
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Set `fluid_solid` flag if solid zones are present.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_set_solid(void);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print the stokes model parameters to setup.log.

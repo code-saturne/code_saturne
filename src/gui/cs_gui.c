@@ -4691,6 +4691,11 @@ cs_gui_zones(void)
     if (_zone_is_type(tn, "thermal_source_term"))
       type_flag = type_flag | CS_VOLUME_ZONE_SOURCE_TERM;
 
+    /* Check for solid zones */
+
+    if (_zone_is_type(tn, "solid"))
+      type_flag = type_flag | CS_VOLUME_ZONE_SOLID;
+
     /* Check if zone is used to define variable physical properties */
     if (_zone_is_type(tn, "physical_properties"))
       type_flag = type_flag | CS_VOLUME_ZONE_PHYSICAL_PROPERTIES;
@@ -4938,21 +4943,13 @@ cs_gui_error_estimator(int *iescal,
 void
 cs_gui_internal_coupling(void)
 {
-
-  cs_tree_node_t *node_int_cpl =
-    cs_tree_get_node(cs_glob_tree, "thermophysical_models/internal_coupling");
+  cs_tree_node_t *node_int_cpl
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/internal_coupling");
 
   if (node_int_cpl != NULL) {
     cs_tree_node_t *nz = cs_tree_node_get_child(node_int_cpl, "solid_zones");
     int nzones = cs_tree_get_sub_node_count(nz, "zone");
     if (nzones > 0) {
-
-      /* Activate the solid flag */
-      cs_velocity_pressure_model_t *vp_model
-        = cs_get_glob_velocity_pressure_model();
-      vp_model->fluid_solid = true;
-
-      /* Add the zones defined in the GUI */
       for (cs_tree_node_t *tn = cs_tree_node_get_child(nz, "zone");
            tn != NULL;
            tn = cs_tree_node_get_next_of_name(tn)) {
@@ -4983,7 +4980,6 @@ cs_gui_internal_coupling(void)
       }
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -110,6 +110,12 @@ interface
     implicit none
   end subroutine cs_gui_radiative_transfer_parameters
 
+  subroutine cs_velocity_pressure_set_solid()  &
+       bind(C, name='cs_velocity_pressure_set_solid')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_velocity_pressure_set_solid
+
   subroutine cs_runaway_check_define_field_max(f_id, value)  &
        bind(C, name='cs_runaway_check_define_field_max')
     use, intrinsic :: iso_c_binding
@@ -171,6 +177,10 @@ endif
 
 call cs_gui_user_variables
 call cs_gui_user_arrays
+
+! Solid zones
+
+call cs_velocity_pressure_set_solid
 
 !===============================================================================
 ! 2. Initialize parameters for specific physics

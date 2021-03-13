@@ -424,7 +424,6 @@ cs_f_velocity_pressure_cell_is_1d(cs_lnum_t  cell_id)
   } else {
     return 0;
   }
-
 }
 
 /*============================================================================
@@ -486,6 +485,27 @@ cs_velocity_pressure_set_n_buoyant_scalars(void)
       if (cs_field_get_key_int(f, key_buo)) {
         _velocity_pressure_model.n_buoyant_scal += 1;
       }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Set `fluid_solid` flag if solid zones are present.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_set_solid(void)
+{
+  const int n_zones = cs_volume_zone_n_zones();
+
+  for (int id = 0; id < n_zones; id++) {
+    const cs_zone_t  *z = cs_volume_zone_by_id(id);
+    if (z->type & CS_VOLUME_ZONE_SOLID) {
+      /* Activate the solid flag */
+      _velocity_pressure_model.fluid_solid = true;
+      break;
     }
   }
 }
@@ -704,9 +724,8 @@ cs_velocity_pressure_param_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    staggered %d (1D staggered scheme option) \n"),
+     _("    staggered %d (1D staggered scheme option)\n"),
      vp_param->staggered);
-
 }
 
 /*----------------------------------------------------------------------------*/
