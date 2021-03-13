@@ -153,9 +153,6 @@ _line_to_array(FILE       *radfile,
   }
 
   *nvalues = index;
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -180,7 +177,6 @@ _gridposnbsg1(cs_real_t  trad,
               int        interp_method,
               int        itx[4][4])
 {
-
   int itrad[4] = {0};
   int ita[4]   = {0};
   int ico2a[4] = {0};
@@ -437,7 +433,6 @@ _seval(int       n,
   cs_real_t dx = u - x[i];
 
   return y[i] + dx * (b[i] + dx * (c[i] + dx * d[i]));
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -536,7 +531,8 @@ _splmi(int        n,
           && 2.0 * al[i] + be[i] > 3.0
           && al[i] + 2.0 * be[i] > 3.0) {
 
-        cs_real_t phi = al[i] - pow((2.0 * al[i] + be[i] - 3.0), 2.0) / (al[i] + be[i] - 2.0) / 3.0;
+        cs_real_t phi = al[i] -   pow((2.0 * al[i] + be[i] - 3.0), 2.0)
+                                / (al[i] + be[i] - 2.0) / 3.0;
 
         if (phi < 0.0) {
           cs_real_t ti = 3.0 / sqrt (pow (al[i], 2.0) + pow (be[i], 2.0));
