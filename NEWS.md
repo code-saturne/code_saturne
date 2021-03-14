@@ -3,6 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Fix potential issue (compilation error) when generating user law
+  formulae for volume conditions.
+
 - Mesh joining: fix crash when number of joined faces is smaller
   than the number of MPI ranks.
 
