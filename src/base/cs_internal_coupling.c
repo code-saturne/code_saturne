@@ -61,6 +61,7 @@
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_mesh_boundary.h"
+#include "cs_mesh_group.h"
 #include "cs_mesh_quantities.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
@@ -366,6 +367,7 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->coupled_faces);
   BFT_FREE(cpl->cells_criteria);
   BFT_FREE(cpl->faces_criteria);
+  BFT_FREE(cpl->volume_zone_ids);
   BFT_FREE(cpl->namesca);
   ple_locator_destroy(cpl->locator);
 }
@@ -625,6 +627,9 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->cells_criteria = NULL;
   cpl->faces_criteria = NULL;
 
+  cpl->n_volume_zones = 0;
+  cpl->volume_zone_ids = NULL;
+
   cpl->n_local = 0;
   cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
 
@@ -666,6 +671,8 @@ _criteria_initialize(const char               criteria_cells[],
 /*----------------------------------------------------------------------------
  * Define face to face mappings for internal couplings.
  *
+ * The caller is responsible for freeing the list.
+ *
  * parameters:
  *   cpl          <->  pointer to internal coupling structure
  *   coupling_id  <--  associated coupling id
@@ -685,6 +692,81 @@ _auto_group_name(cs_internal_coupling_t  *cpl,
 }
 
 /*----------------------------------------------------------------------------
+ * Get selected cells list.
+ *
+ * parameters:
+ *   m         <--  pointer to mesh structure to modify
+ *   cpl       <-- pointer to coupling structure to modify
+ *   n_cells   --> number of associated cells
+ *   cell_list --> associated cells list
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_cell_list(cs_mesh_t               *m,
+               cs_internal_coupling_t  *cpl,
+               cs_lnum_t               *n_cells,
+               cs_lnum_t              **cell_list)
+{
+  cs_lnum_t  n_selected_cells = 0;
+  cs_lnum_t *selected_cells = NULL;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
+
+  if (cpl->cells_criteria != NULL) {
+    cs_selector_get_cell_list(cpl->cells_criteria,
+                              &n_selected_cells,
+                              selected_cells);
+  }
+
+  /* For zone selection, zones may not be built yet, so use selection
+     mechanism directly. */
+
+  else if (cpl->n_volume_zones > 0) {
+
+    int *cell_flag;
+    BFT_MALLOC(cell_flag, n_cells_ext, int);
+    for (cs_lnum_t i = 0; i < n_cells_ext; i++)
+      cell_flag[i] = 0;
+
+    for (int i = 0; i < cpl->n_volume_zones; i++) {
+      const cs_zone_t *z = cs_volume_zone_by_id(cpl->volume_zone_ids[i]);
+      const char *criteria
+        = cs_mesh_location_get_selection_string(z->location_id);
+
+      if (criteria == NULL)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Only zones based on selection criteria strings "
+             "(not functions) are currently\n"
+             "supperted for the selection of internal coupling volumes.\n\n"
+             "This is not the case for zone: \"%s\"."), z->name);
+
+      cs_selector_get_cell_list(criteria, &n_selected_cells, selected_cells);
+
+      for (cs_lnum_t j = 0; j < n_selected_cells; j++)
+        cell_flag[selected_cells[j]] = 1;
+    }
+
+    n_selected_cells = 0;
+    for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+      if (cell_flag[i] == 1) {
+        selected_cells[n_selected_cells] = i;
+        n_selected_cells++;
+      }
+    }
+
+    BFT_FREE(cell_flag);
+  }
+
+  BFT_REALLOC(selected_cells, n_selected_cells, cs_lnum_t);
+
+  *n_cells = n_selected_cells;
+  *cell_list = selected_cells;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize internal coupling and insert boundaries
  * using cell selection criteria ONLY.
  *
@@ -697,17 +779,15 @@ static void
 _volume_initialize_insert_boundary(cs_mesh_t               *m,
                                    cs_internal_coupling_t  *cpl)
 {
-  cs_lnum_t  n_selected_cells;
-  cs_lnum_t *selected_cells = NULL;
-
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  cs_lnum_t  n_sel_cells = 0;
+  cs_lnum_t *sel_cells = NULL;
 
   /* Selection of Volume zone using volumic selection criteria*/
 
-  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
-  cs_selector_get_cell_list(cpl->cells_criteria,
-                            &n_selected_cells,
-                            selected_cells);
+  _get_cell_list(m,
+                 cpl,
+                 &n_sel_cells,
+                 &sel_cells);
 
   int coupling_id = _n_internal_couplings - 1;
 
@@ -715,10 +795,67 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
 
   cs_mesh_boundary_insert_separating_cells(m,
                                            cpl->faces_criteria,
-                                           n_selected_cells,
-                                           selected_cells);
+                                           n_sel_cells,
+                                           sel_cells);
 
-  BFT_FREE(selected_cells);
+  /* Select faces adjacent to volume zone and add appropriate group
+     so as to be able to easily extract separate sides */
+
+  {
+    cs_lnum_t  n_sel_faces = 0;
+    cs_lnum_t *sel_faces_ext = NULL, *sel_faces_int = NULL;
+    int *cell_flag;
+
+    BFT_MALLOC(cell_flag, m->n_cells, int);
+    for (cs_lnum_t i = 0; i < m->n_cells; i++)
+      cell_flag[i] = 0;
+
+    for (cs_lnum_t i = 0; i < n_sel_cells; i++)
+      cell_flag[sel_cells[i]] = 1;
+
+    BFT_MALLOC(sel_faces_ext, m->n_b_faces, cs_lnum_t);
+    cs_selector_get_b_face_list(cpl->faces_criteria,
+                                &n_sel_faces,
+                                sel_faces_ext);
+
+    cs_lnum_t n_sel_int = 0, n_sel_ext = 0;
+    BFT_MALLOC(sel_faces_int, n_sel_faces, cs_lnum_t);
+
+    for (cs_lnum_t i = 0; i < n_sel_faces; i++) {
+      cs_lnum_t face_id = sel_faces_ext[i];
+      if (cell_flag[m->b_face_cells[face_id]]) {
+        sel_faces_ext[n_sel_ext] = face_id;
+        n_sel_ext++;
+      }
+      else {
+        sel_faces_int[n_sel_int] = face_id;
+        n_sel_int++;
+      }
+    }
+
+    BFT_FREE(cell_flag);
+
+    char group_name[64];
+
+    snprintf(group_name, 63, "%s_exterior", cpl->faces_criteria);
+    group_name[63] = '\0';
+    cs_mesh_group_b_faces_add(m,
+                              group_name,
+                              n_sel_ext,
+                              sel_faces_ext);
+
+    snprintf(group_name, 63, "%s_interior", cpl->faces_criteria);
+    group_name[63] = '\0';
+    cs_mesh_group_b_faces_add(m,
+                              group_name,
+                              n_sel_int,
+                              sel_faces_int);
+
+    BFT_FREE(sel_faces_int);
+    BFT_FREE(sel_faces_ext);
+  }
+
+  BFT_FREE(sel_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -733,7 +870,7 @@ static void
 _volume_face_initialize(cs_mesh_t               *m,
                         cs_internal_coupling_t  *cpl)
 {
-  cs_lnum_t  n_selected_cells;
+  cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_faces = NULL;
   cs_lnum_t *selected_cells = NULL;
 
@@ -743,10 +880,10 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   /* Selection of Volume zone using selection criteria */
 
-  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
-  cs_selector_get_cell_list(cpl->cells_criteria,
-                            &n_selected_cells,
-                            selected_cells);
+  _get_cell_list(m,
+                 cpl,
+                 &n_selected_cells,
+                 &selected_cells);
 
   /* Initialization */
 
@@ -951,15 +1088,51 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_zone(cs_mesh_t       *mesh,
-                              const cs_zone_t *z)
+cs_internal_coupling_add_volume_zone(cs_mesh_t       *mesh,
+                                     const cs_zone_t *z)
 {
+  CS_UNUSED(mesh);
 
-  const char *criteria =
-    cs_mesh_location_get_selection_string(z->location_id);
+  int z_ids[] = {z->id};
 
-  cs_internal_coupling_add_volume(mesh, criteria);
+  cs_internal_coupling_add_volume_zones(1, z_ids);
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling volume using given cs_zone_t. Then, this volume will
+ * be separated from the rest of the domain with thin walls.
+ *
+ * \param[in]  n_zones   number of associated volume zones
+ * \param[in]  zone_ids  ids of associated volume zones
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volume_zones(int        n_zones,
+                                      const int  zone_ids[])
+{
+  if (_n_internal_couplings > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              "Only one volume can be added in this version.");
+
+  BFT_REALLOC(_internal_coupling,
+              _n_internal_couplings + 1,
+              cs_internal_coupling_t);
+
+  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
+
+  _cpl_initialize(cpl);
+
+  cpl->id = _n_internal_couplings;
+
+  cpl->n_volume_zones = n_zones;
+  BFT_MALLOC(cpl->volume_zone_ids, n_zones, int);
+
+  for (int i = 0; i < n_zones; i++)
+    cpl->volume_zone_ids[i] = zone_ids[i];
+
+  _n_internal_couplings++;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2718,13 +2891,27 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
 
   cs_parall_counter(&n_local, 1);
 
-  bft_printf("   Coupled scalar: %s\n"
-             "   Cell group selection criterion: %s\n"
-             "   Face group selection criterion: %s\n"
+  bft_printf("   Coupled scalar: %s\n",
+             cpl->namesca);
+
+  if (cpl->cells_criteria != NULL)
+    bft_printf("   Cell group selection criterion: %s\n",
+               cpl->cells_criteria);
+
+  if (cpl->faces_criteria != NULL)
+    bft_printf("   Face group selection criterion: %s\n",
+               cpl->faces_criteria);
+
+  if (cpl->n_volume_zones > 0) {
+    bft_printf("   Volume zones:\n");
+    for (int i = 0; i < cpl->n_volume_zones; i++) {
+      cs_zone_t *z = cs_volume_zone_by_id(cpl->volume_zone_ids[i]);
+      bft_printf("      %s\n", z->name);
+    }
+  }
+
+  bft_printf("\n"
              "   Locator: n dist points (total coupled boundary faces) = %llu\n",
-             cpl->namesca,
-             cpl->cells_criteria,
-             cpl->faces_criteria,
              (unsigned long long)n_local);
 }
 
@@ -2767,7 +2954,8 @@ cs_internal_coupling_preprocess(cs_mesh_t  *mesh)
 {
   for (int i = 0; i < _n_internal_couplings; i++) {
     cs_internal_coupling_t *cpl = _internal_coupling + i;
-    if (cpl->cells_criteria != NULL && cpl->faces_criteria == NULL) {
+    if (   (cpl->cells_criteria != NULL || cpl->n_volume_zones > 0)
+        && cpl->faces_criteria == NULL) {
       /* Insert wall boundaries,
        * locators are initialized afterwards */
       _volume_initialize_insert_boundary(mesh, cpl);

@@ -73,6 +73,11 @@ typedef struct {
   char  *cells_criteria;
   char  *faces_criteria;
 
+  /* Associated zone ids */
+
+  int   n_volume_zones;
+  int  *volume_zone_ids;
+
   cs_lnum_t  n_local; /* Number of faces */
   cs_lnum_t *faces_local; /* Coupling boundary faces, numbered 0..n-1 */
 
@@ -153,8 +158,22 @@ cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_zone(cs_mesh_t       *mesh,
-                              const cs_zone_t *z);
+cs_internal_coupling_add_volume_zone(cs_mesh_t       *mesh,
+                                     const cs_zone_t *z);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define coupling volume using given cs_zone_t. Then, this volume will
+ * be separated from the rest of the domain with thin walls.
+ *
+ * \param[in]  n_zones   number of associated volume zones
+ * \param[in]  zone_ids  ids of associated volume zones
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volume_zones(int        n_zones,
+                                      const int  zone_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
