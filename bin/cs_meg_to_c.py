@@ -449,12 +449,12 @@ class meg_to_c_interpreter:
                 if lnn in fn:
                     fn = fl
 
-                glob_tokens[fl] = \
-                    'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
-                    % (fl, fn)
+             glob_tokens[fl] = \
+                 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
+                 % (fl, fn)
 
-                loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
-                        % (fl, fl)
+             loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
+                     % (fl, fl)
 
         # ------------------------
 
