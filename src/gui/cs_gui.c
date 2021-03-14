@@ -4925,26 +4925,37 @@ cs_gui_error_estimator(int *iescal,
 void
 cs_gui_internal_coupling(void)
 {
+  int n_zones = cs_volume_zone_n_zones();
+
+  int n_volume_zones = 0;
+  for (int i = 0; i < n_zones; i++) {
+    const cs_zone_t  *z = cs_volume_zone_by_id(i);
+    if (z->type & CS_VOLUME_ZONE_SOLID)
+      n_volume_zones += 1;
+  }
+
+  if (n_volume_zones < 1)
+    return;
+
   cs_tree_node_t *node_int_cpl
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/internal_coupling");
 
   if (node_int_cpl != NULL) {
-    cs_tree_node_t *nz = cs_tree_node_get_child(node_int_cpl, "solid_zones");
-    int nzones = cs_tree_get_sub_node_count(nz, "zone");
-    if (nzones > 0) {
-      for (cs_tree_node_t *tn = cs_tree_node_get_child(nz, "zone");
-           tn != NULL;
-           tn = cs_tree_node_get_next_of_name(tn)) {
 
-        const char *zname = cs_tree_node_get_tag(tn, "name");
-        const cs_zone_t *z = cs_volume_zone_by_name_try(zname);
-        if (z == NULL)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Zone %s does not exist!.\n"), zname);
+    int j = 0;
+    int *z_ids;
+    BFT_MALLOC(z_ids, n_volume_zones, int);
 
-        cs_internal_coupling_add_zone(cs_glob_mesh, z);
-      }
+    for (int i = 0; i < n_zones; i++) {
+      const cs_zone_t  *z = cs_volume_zone_by_id(i);
+      if (z->type & CS_VOLUME_ZONE_SOLID)
+        z_ids[j++] = z->id;
+    }
 
+    cs_internal_coupling_add_volume_zones(n_volume_zones, z_ids);
+    BFT_FREE(z_ids);
+
+    if (n_volume_zones > 0) {
       cs_tree_node_t *ns
         = cs_tree_node_get_child(node_int_cpl, "coupled_scalars");
       /* Add the coupled scalars defined in the GUI */
