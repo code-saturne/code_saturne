@@ -396,7 +396,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperature.
         """
         value = self.node_fluid.xmlGetDouble('reference_temperature')
-        if not value :
+        if value == None:
            t_str = 'reference_temperature'
            value = self.defaultFluidCharacteristicsValues()[t_str]
            self.setTemperature(value)
@@ -418,7 +418,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperaturefor Oxydant.
         """
         value = self.node_fluid.xmlGetDouble('reference_oxydant_temperature')
-        if not value :
+        if value == None:
            ot_str = 'reference_oxydant_temperature'
            value = self.defaultFluidCharacteristicsValues()[ot_str]
            self.setTempOxydant(value)
@@ -440,7 +440,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperature.
         """
         value = self.node_fluid.xmlGetDouble('reference_fuel_temperature')
-        if not value :
+        if value == None:
            ft_str = 'reference_fuel_temperature'
            value = self.defaultFluidCharacteristicsValues()[ft_str]
            self.setTempFuel(value)
@@ -462,7 +462,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference molar mass.
         """
         value = self.node_fluid.xmlGetDouble('reference_molar_mass')
-        if not value :
+        if value == None:
            mm_str = 'reference_molar_mass'
            value = self.defaultFluidCharacteristicsValues()[mm_str]
            self.setMassemol(value)

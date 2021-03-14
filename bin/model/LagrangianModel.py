@@ -428,7 +428,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('fouling_coefficient_1', coal=icoal)
-        if not value:
+        if value == None:
             value = self.defaultParticlesValues()['fouling_coefficient_1']
             self.setCoef1OfFouling(icoal, value)
         return value
@@ -454,7 +454,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('fouling_coefficient_2', coal=icoal)
-        if not value:
+        if value == None:
             value = self.defaultParticlesValues()['fouling_coefficient_2']
             self.setCoef2OfFouling(icoal, value)
         return value

@@ -1304,7 +1304,7 @@ omega = 0.;"""
         n = self.boundNode.xmlInitNode('mapped_inlet', status='on')
         if n:
             value = n.xmlGetChildDouble(component)
-        if not value:
+        if value == None:
             value = 0.0
         return value
 
@@ -3339,7 +3339,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('emissivity')
-        if not val:
+        if val == None:
             val = self.__defaultValues()['emissivity']
             self.setEmissivity(val)
 
@@ -3365,7 +3365,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('wall_thermal_conductivity')
-        if not val:
+        if val == None:
             val = self.__defaultValues()['wall_thermal_conductivity']
             self.setThermalConductivity(val)
 
@@ -3390,7 +3390,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('thickness')
-        if not val:
+        if val == None:
             val = self.__defaultValues()['thickness']
             self.setThickness(val)
 
@@ -3415,7 +3415,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('external_temperature_profile')
-        if not val:
+        if val == None:
             val = self.__defaultValues()['external_temperature_profile']
             self.setExternalTemperatureProfile(val)
 
@@ -3440,7 +3440,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('internal_temperature_profile')
-        if not val:
+        if val == None:
             val = self.__defaultValues()['internal_temperature_profile']
             self.setInternalTemperatureProfile(val)
 
@@ -3490,7 +3490,7 @@ class RadiativeWallBoundary(Boundary) :
             val = nod_ray_cond.xmlGetInt(rayvar)
         else:
             val = nod_ray_cond.xmlGetDouble(rayvar)
-        if not val:
+        if val == None:
             val = self.__defaultValues()[rayvar]
             self.setValRay(val, rayvar)
 
@@ -3576,7 +3576,7 @@ class CouplingMobilBoundary(Boundary) :
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitChildNode(nodeName)
         value = node.xmlGetChildDouble(subNodeName)
-        if not value:
+        if value == None:
             value = self._defaultValues[nodeName + '_' + subNodeName]
             setter(value)
         return value

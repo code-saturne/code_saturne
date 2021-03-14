@@ -293,7 +293,7 @@ class LagrangianStatisticsModel(Model):
         Return the limit statistical weight value.
         """
         value = self.node_stat.xmlGetDouble('threshold')
-        if not value:
+        if value == None:
             value = self._defaultLagrangianStatisticsValues()['threshold']
             self.setThresholdValue(value)
         return value

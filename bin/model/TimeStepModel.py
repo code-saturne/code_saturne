@@ -228,7 +228,7 @@ class TimeStepModel(Model):
         """
         self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
         value = self.node_algo.xmlGetInt('piso_sweep_number')
-        if not value:
+        if value == None:
             value = self.defaultValues()['piso_sweep_number']
             self.setVelocityPressureParamSweepNumber(value)
         return value
