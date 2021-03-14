@@ -491,6 +491,7 @@ cs_rad_transfer_bcs(int         nvar,
       }
 
       else if (   rad_bc_code !=  -1
+               && rad_bc_code != CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX
                && rad_bc_code != cs_glob_rad_transfer_params->ifinfe) {
         nrferr[8]++;
         icoerr[9]    = face_zone_id[face_id];
@@ -577,7 +578,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[2], 1, &icoerr[2], NULL);
     if (nrferr[2] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "isothp must be defined on all wall faces.\n"
                       "It has not been defined for %llu faces.\n\n"
                       "  last undefined face value:  %d\n"),
@@ -589,7 +590,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[3], 1, &icoerr[3], NULL);
     if (nrferr[3] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "isothp must be defined only on wall faces.\n"
                       "It has been defined for %llu non-wall faces.\n\n"
                       "  last such face value:  %d\n"),
@@ -601,7 +602,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[4], 2, &icoerr[4], &rvferr[0]);
     if (nrferr[4] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
                       "This is not the case for %llu faces.\n\n"
@@ -617,7 +618,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[5], 5, &icoerr[5], &rvferr[2]);
     if (nrferr[5] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
                       "  XLAMP, EPAP, and TEXTP must be > 0\n\n"
@@ -640,7 +641,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err (&nrferr[6], 4, &icoerr[6], &rvferr[7]);
     if (nrferr[6] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  XLAMP, EPAP and TEXTP must be > 0\n\n"
                       "This is not the case for %llu faces.\n\n"
@@ -660,7 +661,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[7], 2, &icoerr[7], &rvferr[11]);
     if (nrferr[7] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
                       "This is not the case for %llu faces.\n\n"
@@ -676,13 +677,13 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[13], 2, &icoerr[14], &rvferr[25]);
     if (nrferr[13] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP  must be in range [0.; 1.]\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
                       "    EPSP  = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     "CS_BOUNDARY_RAD_1D_WALL_T",
                     (unsigned long long)nrferr[13],
                     icoerr[15],
@@ -692,11 +693,11 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[8], 2, &icoerr[9], NULL);
     if (nrferr[8] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "Forbidden value of ISOTHM for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
                       "    ISOTHM = %d\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     (unsigned long long)nrferr[8],
                     icoerr[9],
                     icoerr[10]);
@@ -705,7 +706,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[9], 3, &icoerr[11], &rvferr[14]);
     if (nrferr[9] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  XLAMP, EPAP and TEXTP must not be defined\n\n"
                       "This is not the case for %llu faces.\n\n"
@@ -713,7 +714,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    XLAMP = %12.4e\n"
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     "CS_BOUNDARY_RAD_WALL_GRAY",
                     (unsigned long long)nrferr[9],
                     icoerr[11],
@@ -725,13 +726,13 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[10], 1, &icoerr[12], &rvferr[17]);
     if (nrferr[10] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP must not be defined\n\n"
                       "This is not the case for %llu faces.\n\n"
                       "  last such face (zone  %d):\n"
                       "    EPSP = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     "CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T",
                     (unsigned long long)nrferr[10],
                     icoerr[12],
@@ -741,7 +742,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[11], 3, &icoerr[13], &rvferr[18]);
     if (nrferr[11] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  XLAMP, EPAP and TEXTP must not be defined\n\n"
                       "This is not the case for %llu faces.\n\n"
@@ -749,7 +750,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    XLAMP = %12.4e\n"
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     "CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX",
                     (unsigned long long)nrferr[11],
                     icoerr[13],
@@ -761,7 +762,7 @@ cs_rad_transfer_bcs(int         nvar,
     _sync_rad_bc_err(&nrferr[12], 4, &icoerr[14], &rvferr[21]);
     if (nrferr[12] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
+                    _("\n%s\n\n"
                       "With isothp = %s\n"
                       "  EPSP, XLAMP, EPAP and TEXTP must not be defined\n\n"
                       "This is not the case for %llu faces.\n\n"
@@ -770,7 +771,7 @@ cs_rad_transfer_bcs(int         nvar,
                       "    XLAMP = %12.4e\n"
                       "    EPAP  = %12.4e\n"
                       "    TEXTP = %12.4e\n"),
-                    _("Radiative boundary conditions errors:\n"),
+                    _("Radiative boundary conditions errors"),
                     "CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX",
                     (unsigned long long)nrferr[12],
                     icoerr[14],
