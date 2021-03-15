@@ -739,8 +739,8 @@ class domain(base_domain):
 
         dir_files = os.listdir(self.data_dir)
 
-        if self.package.guiname in dir_files:
-            dir_files.remove(self.package.guiname)
+        if self.package.name in dir_files:
+            dir_files.remove(self.package.name)
 
         for f in dir_files:
             src = os.path.join(self.data_dir, f)
@@ -1780,8 +1780,8 @@ class cathare_domain(domain):
 
         dir_files = os.listdir(self.data_dir)
 
-        if self.package.guiname in dir_files:
-            dir_files.remove(self.package.guiname)
+        if self.package.name in dir_files:
+            dir_files.remove(self.package.name)
 
         for f in dir_files:
             src = os.path.join(self.data_dir, f)

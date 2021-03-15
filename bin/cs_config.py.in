@@ -129,7 +129,13 @@ class config:
         # depend on availability, but names are reserved here);
         # Must be all lowercase to simplify tests across scripts.
 
-        self.solver_modules = ('code_saturne', 'neptune_cfd')
+        self.solver_modules = {}
+
+        self.solver_modules['code_saturne'] \
+            = {'solver': 'cs_solver' + self.exeext}
+
+        self.solver_modules['neptune_cfd'] \
+            = {'solver': 'nc_solver' + self.exeext}
 
         # Headers and libraries to add for specific executable/module names
 

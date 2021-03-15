@@ -163,9 +163,10 @@ def update_case(options, pkg):
             shutil.copy(abs_f, user)
             unset_executable(user)
 
-        old_gui_script = os.path.join(data, pkg.guiname)
-        if os.path.isfile(old_gui_script):
-            os.remove(old_gui_script)
+        for s in ("SaturneGUI", "NeptuneGUI"):
+            old_gui_script = os.path.join(data, s)
+            if os.path.isfile(old_gui_script):
+                os.remove(old_gui_script)
 
         # Rebuild launch script
         create_local_launcher(pkg, data)
