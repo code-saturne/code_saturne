@@ -252,7 +252,7 @@ class MainFieldsModel(Variables, Model):
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "elasticity", "elasticity_"+field_name)
         if self.getEnergyResolution(fieldNumber) == "on":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
-        if self.getCriterion(fieldNumber) == "dispersed":
+        if self.getCriterion(fieldNumber) == "dispersed" or self.getPredefinedFlow() == "multiregime":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "diameter", "diam_"+field_name)
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
 
@@ -480,7 +480,7 @@ class MainFieldsModel(Variables, Model):
 
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
         # Activated if dispersed or second continuous phase of GLIM
-        if self.getCriterion(fieldId) == "dispersed":
+        if self.getCriterion(fieldId) == "dispersed" or self.getPredefinedFlow() == "multiregime":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
         else :
@@ -774,7 +774,7 @@ class MainFieldsModel(Variables, Model):
                 node.xmlRemoveNode()
 
         # suppress continuous-dispersed information
-        if (len(self.getDispersedFieldList()) < 1) :
+        if (len(self.getDispersedFieldList()) < 1) and self.getPredefinedFlow() != "multiregime":
             node = self.XMLClosure.xmlGetNode('interfacial_area_diameter')
             if node:
                 node.xmlRemoveNode()
