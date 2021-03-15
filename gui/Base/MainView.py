@@ -1744,12 +1744,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
 
         prepro_only = self.case['run_type'] != 'standard'
+        from code_saturne.cs_package import package as cs_package
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            from neptune_cfd.nc_package import package as nc_package
-            self.package = nc_package()
+            self.package = cs_package(name = "neptune_cfd")
             return XMLinitNeptune(self.case).initialize(prepro_only)
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
-            from code_saturne.cs_package import package as cs_package
             self.package = cs_package()
             return XMLinit(self.case).initialize(prepro_only)
 
@@ -1853,12 +1852,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        if self.package.name == 'neptune_cfd':
-            self.displayManual(self.package, 'user')
-        else:
-            from neptune_cfd.nc_package import package as nc_package
-            pkg = nc_package()
-            self.displayManual(pkg, 'user')
+        from code_saturne.cs_package import package as cs_package
+        pkg = cs_package(name = 'neptune_cfd')
+        self.displayManual(pkg, 'user')
 
 
     def displayNCTutorial(self):
@@ -1867,12 +1863,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        if self.package.name == 'neptune_cfd':
-            self.displayManual(self.package, 'tutorial')
-        else:
-            from neptune_cfd.nc_package import package as nc_package
-            pkg = nc_package()
-            self.displayManual(pkg, 'tutorial')
+        from code_saturne.cs_package import package as cs_package
+        pkg = cs_package(name = 'neptune_cfd')
+        self.displayManual(pkg, 'tutorial')
 
 
     def displayNCTheory(self):
@@ -1881,12 +1874,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        if self.package.name == 'neptune_cfd':
-            self.displayManual(self.package, 'theory')
-        else:
-            from neptune_cfd.nc_package import package as nc_package
-            pkg = nc_package()
-            self.displayManual(pkg, 'theory')
+        from code_saturne.cs_package import package as cs_package
+        pkg = cs_package(name = 'neptune_cfd')
+        self.displayManual(pkg, 'theory')
 
 
     def displayNCDoxygen(self):
@@ -1895,12 +1885,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        if self.package.name == 'neptune_cfd':
-            self.displayManual(self.package, 'Doxygen')
-        else:
-            from neptune_cfd.nc_package import package as nc_package
-            pkg = nc_package()
-            self.displayManual(pkg, 'Doxygen')
+        from code_saturne.cs_package import package as cs_package
+        pkg = cs_package(name = 'neptune_cfd')
+        self.displayManual(pkg, 'Doxygen')
 
 
     def slotUndo(self):
