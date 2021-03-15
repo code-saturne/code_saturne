@@ -137,7 +137,7 @@ class cs_modify_xml(object):
         if self.pkg.name == 'code_saturne':
             from code_saturne.model.XMLinitialize import XMLinit
         else:
-            from model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
+            from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
 
         self.xml = xml_file
 
