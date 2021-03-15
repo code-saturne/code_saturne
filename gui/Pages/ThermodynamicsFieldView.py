@@ -418,6 +418,10 @@ lambda = 4.431e-4 * temperature + 5.334e-2;
 """
 
     temperature="""
+# if total enthalpy is used you need to use the specific enthalpy insted
+# of enthalpy. Specific enthalpy is computed using:
+# hspec = enthalpy - 0.5*square_norm(U)
+
 Cp = 1000
 temperature = enthalpy / 1000;
 """

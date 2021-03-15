@@ -794,7 +794,10 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
         exp = self.getFormula(fieldId, 'temperature', zone)
         if not exp:
-            exp = label + " = 273.15;"
+            exp = "# If working with total enthalpy, you need to compute\n"
+            exp+= "# the specific enthalpy using:\n"
+            exp+= "# hspec = enthalpy - 0.5*square_norm(U)\n"
+            exp+= label + " = 273.15;"
         req = [(label, 'temperature')]
 
         # Predefined Symbols
@@ -809,6 +812,13 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
+
+            # If working on total enthalpy, velocity is needed in order
+            # to compute specific_enthalpy
+            if MainFieldsModel(self.case).getEnergyModel(fieldId) == 'total_enthalpy':
+                ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
+                symbols.append((ulabel, 'velocity_'+str(fieldId)))
+                known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
 
         symbols.append(('volume', 'Zone volume'))
 
