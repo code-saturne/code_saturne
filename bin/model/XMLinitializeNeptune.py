@@ -586,9 +586,10 @@ class XMLinitNeptune(BaseXmlInit):
                         name += '_' + nodevar['field_id']
                     component = nodevar['component']
                     nodevar.xmlRemoveNode()
-                    newnode = node.xmlInitNode('var_prop', name=name)
                     if component:
-                       newnode['component'] = component
+                        newnode = node.xmlInitNode('var_prop', name=name, component=component)
+                    else:
+                        newnode = node.xmlInitNode('var_prop', name=name)
 
         for node in self.case.xmlGetNodeList('profile'):
             if node:
