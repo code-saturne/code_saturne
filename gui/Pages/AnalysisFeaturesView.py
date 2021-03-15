@@ -219,11 +219,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             # variable (environment variable has precedence
             # for ease of testing)
             enable_neptune_cfd = False
-            try:
-                from neptune_cfd.nc_package import package as nc_package
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            neptune_cfd_bin = os.path.join(pkg.get_dir('bindir'),
+                                           'neptune_cfd' + pkg.config.shext)
+            if os.path.isfile(neptune_cfd_bin):
                 enable_neptune_cfd = True
-            except Exception:
-                pass
             ev_enable = os.getenv('CS_GUI_ENABLE_NEPTUNE_CFD')
             if ev_enable:
                 try:
@@ -587,12 +588,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.init_neptune()
 
-            try:
-                from neptune_cfd.nc_package import package as nc_package
-                self.case['package'] = nc_package()
-            except Exception:
-                from code_saturne.cs_package import package as cs_package
-                self.case['package'] = cs_package()
+            from code_saturne.cs_package import package as cs_package
+            self.case['package'] = cs_package(name = "neptune_cfd")
 
             if hasattr(self.parent, 'updateTitleBar'):
                 self.parent.updateTitleBar()

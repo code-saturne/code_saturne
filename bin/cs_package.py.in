@@ -113,6 +113,17 @@ class package:
                                 "@pdfdir@"),
                      'sysconfdir': ("etc", "@sysconfdir@")}
 
+        # Adjust docdir for additional modules.
+
+        # We should try to find a cleaner/more conistant solution,
+        # perhaps storing all documents in the main module's
+        # directory (code_saturne).
+
+        docdir_1 = self.dirs['docdir'][1]
+        docdir_1 = os.path.join(os.path.split(docdir_1)[0], name)
+        self.dirs['docdir'] = (self.dirs['docdir'][0],
+                               docdir_1)
+
     def get_dir(self, installdir):
 
         # First, handle the standard "non relocatable" case
