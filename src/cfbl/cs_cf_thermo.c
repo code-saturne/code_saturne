@@ -1211,12 +1211,12 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
         /*  Density */
         brom[face_id] = ro1;
         /*  Velocity */
-        bc_vel[face_id][0] =  vel[cell_id][0]
-                       - a * b_face_normal[face_id][0] / b_face_surf[face_id];
-        bc_vel[face_id][1] =  vel[cell_id][1]
-                       - a * b_face_normal[face_id][1] / b_face_surf[face_id];
-        bc_vel[face_id][2] =  vel[cell_id][2]
-                       - a * b_face_normal[face_id][2] / b_face_surf[face_id];
+        bc_vel[face_id][0] =  vel[cell_id][0] - a * b_face_normal[face_id][0]
+                                                  / b_face_surf[face_id];
+        bc_vel[face_id][1] =  vel[cell_id][1] - a * b_face_normal[face_id][1]
+                                                  / b_face_surf[face_id];
+        bc_vel[face_id][2] =  vel[cell_id][2] - a * b_face_normal[face_id][2]
+                                                  / b_face_surf[face_id];
         /*  Total energy */
         bc_en[face_id] =  (pinf+gamma*psginf) / ((gamma-1.) * brom[face_id])
                         + 0.5 * cs_math_3_square_norm(bc_vel[face_id]);
@@ -1314,7 +1314,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
   int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
-  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_STIFFENED_GAS || ieos == CS_EOS_GAS_MIX) {
+  if (   ieos == CS_EOS_IDEAL_GAS
+      || ieos == CS_EOS_STIFFENED_GAS
+      || ieos == CS_EOS_GAS_MIX) {
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 
@@ -1636,7 +1638,7 @@ cs_cf_thermo_eps_sup(const cs_real_t  *dens,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This subroutine is a driver allowing to call the appropriate
+ * \brief This function is a driver allowing to call the appropriate
  * thermodynamical functions depending on the quantities provided by the user.
  * Hence it is only used during the initialization step and at the boundaries
  * of type supersonic inlet. It is described in the following how to select the
