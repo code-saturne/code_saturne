@@ -101,6 +101,7 @@ class ProfilesModel(Model):
         self.dicoLabel2Name_compat = mdl.getVolumeFieldsLabel2Name(time_averages=True,
                                                                    get_components=True)
 
+
         return list(self.dicoLabel2Name.keys())
 
 
@@ -285,12 +286,7 @@ class ProfilesModel(Model):
         """
         self.isInList(label, self.getProfilesLabelsList())
         node = self.node_prof.xmlGetNode('profile', label = label)
-        node.xmlRemoveChild('var_prop')
-        for var in lst:
-            self.isInList(var, self.__var_prop_list_compat)
-            (name, comp) = self.dicoLabel2Name_compat[var]
-            node.xmlAddChild('var_prop', name=name, component=comp)
-
+        OutputVolumicVariablesModel(self.case).setVariablesAtNode(node, lst, time_averages=True, get_components=True)
 
     @Variables.noUndo
     def getVariable(self, label):
@@ -299,13 +295,7 @@ class ProfilesModel(Model):
         """
         self.isInList(label, self.getProfilesLabelsList())
         node = self.node_prof.xmlGetNode('profile', label = label)
-
-        lst = []
-        for var in node.xmlGetChildNodeList('var_prop'):
-            for name in self.__var_prop_list:
-                if self.dicoLabel2Name[name] == (var['name'], var['component']) :
-                    lst.append(name)
-        return lst
+        return OutputVolumicVariablesModel(self.case).getVariablesAtNode(node, time_averages=True, get_components=False)
 
 
     @Variables.undoLocal
@@ -328,7 +318,6 @@ class ProfilesModel(Model):
         frequency and coordinates.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        lst = []
         node = self.node_prof.xmlGetNode('profile', label = label)
         choice = node.xmlGetString('output_type')
 
@@ -361,10 +350,7 @@ class ProfilesModel(Model):
             NbPoint = self.__defaultValues()['points']
             self.setNbPoint(label, NbPoint)
 
-        for var in node.xmlGetChildNodeList('var_prop'):
-            for name in self.__var_prop_list_compat:
-                if self.dicoLabel2Name_compat[name] == (var['name'], var['component']) :
-                    lst.append(name)
+        lst = OutputVolumicVariablesModel(self.case).getVariablesAtNode(node, time_averages=True, get_components=True)
 
         return label, fmt, lst, choice, freq, formula, NbPoint
 
