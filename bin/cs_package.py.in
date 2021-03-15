@@ -42,8 +42,14 @@ class package:
 
         if reload_config:
             import importlib
-            config = importlib.import_module('cs_config')
-            self.config = config.config()
+            try:
+                config = importlib.import_module('cs_config', package='code_saturne')
+                self.config = config.config()
+            except Exception:  # Upon installation
+                import traceback
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                          limit=2, file=sys.stderr)
         else:
             self.config = cs_config.config()
 
@@ -233,8 +239,16 @@ class package:
             else:
                 import importlib
                 importlib.invalidate_caches()
-                package = importlib.import_module('cs_package')
-                pkg = package.package(reload_config=True)
+                try:
+                    package = importlib.import_module('cs_package',
+                                                      package='code_saturne')
+                    pkg = package.package(reload_config=True)
+                except Exception:
+                    import traceback
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                              limit=2, file=sys.stderr)
+                    pkg = self
             sys.path.pop(0)
             if pkg.config.features['relocatable'] != "no":
                 pkg.dirs['cs_root_dir'] = os.path.normpath(os.path.join(pythondir,
