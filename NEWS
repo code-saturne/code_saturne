@@ -1,11 +1,3 @@
-Release 5.0.14 (unreleased)
-===========================
-
-Bug fixes:
-
-- GUI: fix incomplete handling of compressible boundary conditions
-  preventing run unless completed in user subroutines.
-
 Release 5.0.13 (Dec 22 2020)
 ============================
 
