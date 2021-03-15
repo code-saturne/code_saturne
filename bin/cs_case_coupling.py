@@ -88,7 +88,7 @@ def coupling(package,
         # First, determine parameter file to use for code_saturne
         # or associated modules (ensuring backwards compatibiliy)
 
-        if solver_s in package.config.solver_modules \
+        if solver_s in package.config.solver_modules.keys() \
            or solver_s == 'cathare':
 
             param = None
@@ -140,7 +140,7 @@ def coupling(package,
 
         # Now build case domain for the different solvers:
 
-        if solver_s in package.config.solver_modules:
+        if solver_s in package.config.solver_modules.keys():
 
             dom = domain(package,
                          package_compute = package_compute,

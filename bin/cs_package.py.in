@@ -36,7 +36,10 @@ except Exception:
 
 class package:
 
-    def __init__(self, scriptdir=None, reload_config=False):
+    def __init__(self,
+                 scriptdir=None,
+                 reload_config=False,
+                 name="@PACKAGE_NAME@"):
 
         # System configuration (compilers, pre-requisites, ...)
 
@@ -55,7 +58,7 @@ class package:
 
         # Package information
 
-        self.name = "@PACKAGE_NAME@"
+        self.name = name
         self.tarname = "@PACKAGE_TARNAME@"
         self.pkgversion = "@PACKAGE_VERSION@"
         self.string = "@PACKAGE_STRING@"
@@ -69,10 +72,9 @@ class package:
         self.code_name = "Code_Saturne"
 
         self.preprocessor = "cs_preprocess" + self.config.exeext
-        self.solver = "cs_solver" + self.config.exeext
+        self.solver = self.config.solver_modules[name]['solver']
         self.check_syntax = "cs_check_syntax" + self.config.exeext
         self.io_dump = "cs_io_dump" + self.config.exeext
-        self.guiname = "SaturneGUI" + self.config.shext
         self.runcase = "runcase" + self.config.shext
         self.runsolver = "run_solver" + self.config.shext
         self.configfile = "code_saturne" + self.config.cfgext
@@ -235,14 +237,15 @@ class package:
                 reload(cs_config)
                 import cs_package
                 reload(cs_package)
-                pkg = cs_package.package()
+                pkg = cs_package.package(name=self.name)
             else:
                 import importlib
                 importlib.invalidate_caches()
                 try:
                     package = importlib.import_module('cs_package',
                                                       package='code_saturne')
-                    pkg = package.package(reload_config=True)
+                    pkg = package.package(reload_config=True,
+                                          name=self.name)
                 except Exception:
                     import traceback
                     exc_type, exc_value, exc_traceback = sys.exc_info()
