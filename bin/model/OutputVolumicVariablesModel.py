@@ -196,8 +196,36 @@ class OutputVolumicVariablesModel(Variables, Model):
                             label1 = label + "[" + str(ii) + "]"
                             dicoLabel2Name[label1] = (name, str(ii))
 
+                is_scalar = not( (dim != None) and (int(dim)>1) )
+                if is_scalar:
+                    dicoLabel2Name[label] = (name, None) 
+
         return dicoLabel2Name
 
+    def getVariablesAtNode(self, node, time_averages=False, get_components=False):
+        recognized_variables = []
+        dicoLabel2Name =self.getVolumeFieldsLabel2Name(time_averages=time_averages, get_components=get_components)
+        for xml_variable in node.xmlGetChildNodeList('var_prop'):
+            for name, label in dicoLabel2Name.items():
+                component = label[1]
+                is_recognized = (label[0] == xml_variable['name'])
+                if component:
+                    is_recognized = (label == (xml_variable['name'], xml_variable['component']))
+                if is_recognized:
+                    recognized_variables.append(name)
+        return recognized_variables
+
+    def setVariablesAtNode(self, node, variables, time_averages=False, get_components=False):
+        node.xmlRemoveChild('var_prop')
+        dicoLabel2Name = self.getVolumeFieldsLabel2Name(time_averages=time_averages,
+                                      get_components=get_components)
+        authorized_variables = dicoLabel2Name.keys()
+        for var in variables:
+            self.isInList(var, authorized_variables)
+            (name, comp) = dicoLabel2Name[var]
+            if comp == None:
+                comp = -1
+            node.xmlAddChild('var_prop', name=name, component=comp)
 
     def __updateListFilter(self, node_list, category, remain_list=None):
         """

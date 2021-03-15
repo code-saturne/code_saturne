@@ -148,17 +148,13 @@ class TimeAveragesModel(Model):
         @rtype: C{Tuple}
         """
         self.isInt(imom)
-        lst = []
         restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
         timestart = node.xmlGetDouble('time_start')
         restart = node.xmlGetInt('restart_from_time_average')
 
-        for var in node.xmlGetChildNodeList('var_prop'):
-            for name in list(self.dicoLabel2Name.keys()):
-                if self.dicoLabel2Name[name] == (var['name'], var['component']):
-                    lst.append(name)
+        lst = OutputVolumicVariablesModel(self.case).getVariablesAtNode(node, time_averages=False, get_components=True)
         return node['name'], start, timestart, restart, lst
 
 
@@ -246,12 +242,7 @@ class TimeAveragesModel(Model):
         """
         self.isInList(name, self.getTimeAverageNames())
         node = self.node_mean.xmlInitNode('time_average', name=name)
-        node.xmlRemoveChild('var_prop')
-        for var in lst:
-            self.isInList(var, self.__var_prop_list)
-            (name, comp) = self.dicoLabel2Name[var]
-            node.xmlAddChild('var_prop', name=name, component=comp)
-
+        OutputVolumicVariablesModel(self.case).setVariablesAtNode(node, lst, time_averages=False, get_components=True)
 
     @Variables.noUndo
     def getVariable(self, name):
@@ -260,13 +251,7 @@ class TimeAveragesModel(Model):
         """
         self.isInList(name, self.getTimeAverageNames())
         node = self.node_mean.xmlInitNode('time_average', name=name)
-
-        lst = []
-        for var in node.xmlGetChildNodeList('var_prop'):
-            for name in self.__var_prop_list:
-                if self.dicoLabel2Name[name] == (var['name'], var['component']) :
-                    lst.append(name)
-        return lst
+        return OutputVolumicVariablesModel(self.case).getVariablesAtNode(node, time_averages=False, get_components=True)
 
 
     @Variables.noUndo
