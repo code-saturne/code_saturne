@@ -104,6 +104,7 @@ class QMegHighlighter(QSyntaxHighlighter):
          'cos', 'sin', 'tan', 'exp', 'sqrt', 'log',
          'acos', 'asin', 'atan', 'atan2', 'cosh', 'sinh',
          'tanh', 'abs', 'mod', 'int', 'min', 'max',
+         'square_norm',
          'pi', 'e', 'while', 'if', 'else'
     ]
 
@@ -253,6 +254,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
                   "<b>int</b>: floor<br>"\
                   "<b>min</b>: minimum<br>"\
                   "<b>max</b>: maximum<br>"\
+                  "<b>square_norm</b>: square norm of a vector<br>"\
                   "<br>"\
                   "<big><u>Useful constants:</u></big><br>"\
                   "<b>pi</b> = 3.14159265358979323846<br>"\

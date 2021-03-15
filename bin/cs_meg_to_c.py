@@ -444,16 +444,29 @@ class meg_to_c_interpreter:
         # Fields
         label_not_name = ['Additional scalar', 'Thermal scalar', 'Pressure']
         for f in known_fields:
-            (fl, fn) = f
+            # Get label, name and dimension
+            try:
+                (fl, fn, fdim) = f
+                if fdim < 1:
+                    fdim = 1
+            except:
+                (fl, fn) = f
+                fdim = 1
+
             for lnn in label_not_name:
                 if lnn in fn:
                     fn = fl
 
             glob_tokens[fl] = \
-            'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
-            % (fl, fn)
+                 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
+                 % (fl, fn)
 
-            loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' % (fl, fl)
+            if fdim == 1:
+                loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
+                     % (fl, fl)
+            else:
+                loop_tokens[fl] = 'const cs_real_t *%s = %s_vals + %d*c_id;' \
+                     % (fl, fl, fdim)
 
         # ------------------------
 

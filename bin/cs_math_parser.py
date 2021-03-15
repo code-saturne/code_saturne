@@ -399,7 +399,8 @@ class cs_math_parser:
         _cs_math_internal_name = {'abs':'cs_math_fabs',
                                   'min':'cs_math_fmin',
                                   'max':'cs_math_fmax',
-                                  'mod':'fmod'}
+                                  'mod':'fmod',
+                                  'square_norm':'cs_math_3_square_norm'}
 
         new_exp = []
 
