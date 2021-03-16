@@ -86,12 +86,13 @@ class BatchRunningModel(object):
                     self.runcase_path = runcase_path
 
         if self.runcase_path:
+            from code_saturne import cs_runcase
             runcase = cs_runcase.runcase(runcase_path,
                                          package=self.pkg)
             sections = runcase.run_conf_sections(resource_name=self.resource_name,
                                                  batch_template=i_c['batch'])
 
-            self.run_conf = cs_run_conf.run_conf(run_conf_path,
+            self.run_conf = cs_run_conf.run_conf(self.path,
                                                  package=self.pkg,
                                                  create_if_missing=True)
             for sn in sections:
