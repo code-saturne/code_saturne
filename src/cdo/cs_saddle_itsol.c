@@ -516,17 +516,11 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
 
   } /* Loop on x2 elements */
 
-  if (rset->ifs != NULL) {
+  if (rset->ifs != NULL)
     cs_interface_set_sum(rset->ifs,
                          ssys->x1_size,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
                          m12x2);
-    /* The RHS is not reduced by default */
-    cs_interface_set_sum(rset->ifs,
-                         ssys->x1_size,
-                         1, false, CS_REAL_TYPE, /* stride, interlaced */
-                         ssys->rhs1);
-  }
 
   const cs_matrix_t  *m11 = ssys->m11_matrices[0];
   cs_matrix_vector_multiply_gs_allocated(rset, m11, x1, res1);
@@ -1783,6 +1777,14 @@ cs_saddle_gcr(int                          restart,
   cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
 
   /* --- ALGO BEGIN --- */
+
+  /* The RHS is not reduced by default */
+
+  if (ssys->rset->ifs != NULL)
+    cs_interface_set_sum(ssys->rset->ifs,
+                         ssys->x1_size,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         ssys->rhs1);
 
   /* Compute the first residual: r = b - M.x */
 
