@@ -1128,8 +1128,11 @@ module optcal
   !> flag for activating imposed mass flux
   integer :: DRIFT_SCALAR_IMPOSED_MASS_FLUX
 
-  !> flag for activating imposed mass flux
+  !> flag for seting the mass flux to zero at all boundaries
   integer :: DRIFT_SCALAR_ZERO_BNDY_FLUX
+
+  !> flag for seting the mass flux to zero at walls only
+  integer :: DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS
 
   parameter (DRIFT_SCALAR_ADD_DRIFT_FLUX=1)
   parameter (DRIFT_SCALAR_THERMOPHORESIS=2)
@@ -1138,6 +1141,7 @@ module optcal
   parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=5)
   parameter (DRIFT_SCALAR_IMPOSED_MASS_FLUX=6)
   parameter (DRIFT_SCALAR_ZERO_BNDY_FLUX=7)
+  parameter (DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS=8)
 
   !> flag for isotropic diffusion
   integer :: ISOTROPIC_DIFFUSION

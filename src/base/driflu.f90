@@ -556,6 +556,18 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
           enddo
         enddo
       enddo
+    else if (btest(iscdri, DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS)) then
+      do ifac = 1, nfabor
+        do isou = 1, 3
+          coefa1(isou, ifac) = 0.d0
+          do jsou = 1, 3
+            coefb1(isou, jsou, ifac) = 0.d0
+          enddo
+          if (itypfb(ifac).ne.iparoi .and. itypfb(ifac).ne.iparug) then
+            coefb1(isou, isou, ifac) = 1.d0
+          endif
+        enddo
+      enddo
     else
       do ifac = 1, nfabor
         do isou = 1, 3
