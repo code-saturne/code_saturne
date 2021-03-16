@@ -163,6 +163,8 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         # lift
         default['liftmodel']                     = 'Tomiyama_SMD'
+        if self.getPredefinedFlow() == "droplet_flow":
+            default['liftmodel'] = "Zeng_Baalbaki"
 
         # turbulent dispersion
         default['turbulent_dispersion_model']    = self.getAvailableTurbulenteDispersionModelList(fieldaId, fieldbId)[0]
