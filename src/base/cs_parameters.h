@@ -131,7 +131,8 @@ enum {
   CS_DRIFT_SCALAR_ELECTROPHORESIS = (1 << 4),
   CS_DRIFT_SCALAR_CENTRIFUGALFORCE = (1 << 5),
   CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX = (1 << 6),
-  CS_DRIFT_SCALAR_ZERO_BNDY_FLUX = (1 << 7)
+  CS_DRIFT_SCALAR_ZERO_BNDY_FLUX = (1 << 7),
+  CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS = (1 << 8)
 };
 
 /*----------------------------------------------------------------------------
