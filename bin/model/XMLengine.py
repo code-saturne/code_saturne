@@ -673,7 +673,7 @@ class XMLElement:
         elif nodeList:
             for node in nodeList:
                 child = self._inst(node)
-                if textNode:
+                if textNode != None:
                     child.xmlSetTextNode(textNode)
                     elementList.append(child)
                 else:
