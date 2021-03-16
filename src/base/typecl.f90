@@ -1620,7 +1620,7 @@ enddo
 do ivar = 1, nvar
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
   do ifac = 1, nfabor
-    if (icodcl(ifac,ivar).eq.1 .or. icodcl(ifac,ivar).eq.5) then
+    if (icodcl(ifac,ivar).eq.1 .or. icodcl(ifac,ivar).eq.5.or. icodcl(ifac,ivar).eq.15) then
       vcopt%ndircl = vcopt%ndircl +1
     endif
   enddo

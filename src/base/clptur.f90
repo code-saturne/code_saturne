@@ -2627,7 +2627,7 @@ do ifac = 1, nfabor
     endif
 
     ! wall function and Dirichlet or Neumann on the scalar
-    if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.3)) then
+    if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15.or.icodcl(ifac,ivar).eq.3)) then
       ! Note: to make things clearer yplus is always
       ! "y uk /nu" even for rough modelling. And the roughness correction is
       ! multiplied afterwards where needed.
@@ -2642,6 +2642,12 @@ do ifac = 1, nfabor
       ! lambda/y * Pr_l *yk/T+ = lambda / nu * Pr_l * uk / T+ = rho cp uk / T+
       ! so "Pr_l * yk/T+" is the correction factor compared to a laminar profile
       hflui = rkl/distbf *hflui
+
+      ! User exchange coefficient
+        if (icodcl(ifac,ivar).eq.15) then
+          hflui = rcodcl(ifac,ivar,2)
+          yptp(ifac) = hflui/prdtl * distbf/rkl
+        endif
 
     else
 
@@ -2714,7 +2720,7 @@ do ifac = 1, nfabor
 
     hflui = hbnd(ifac)
 
-    if (abs(hext).gt.rinfin*0.5d0) then
+    if (abs(hext).gt.rinfin*0.5d0.or.icodcl(ifac,ivar).eq.15) then
       heq = hflui
     else
       heq = hflui*hext/(hflui+hext)
@@ -2723,7 +2729,7 @@ do ifac = 1, nfabor
     ! ---> Dirichlet Boundary condition with a wall function correction
     !      with or without an additional exchange coefficient hext
 
-    if (icodcl(ifac,ivar).eq.5) then
+    if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
       if (turb_flux_model_type.ge.1) then
@@ -2759,6 +2765,17 @@ do ifac = 1, nfabor
       ! Flux BCs
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
+
+      ! For the couple faces with h_user (ie icodcl(ifac,ivar)=15) 
+      !reset to zero af/bf coeff. 
+      !By default icodcl(ifac,ivar)=0) for coupled faces
+      if (vcopt%icoupl.gt.0) then
+        if (cpl_faces(ifac)) then
+           ! Flux BCs
+           cofafp(ifac) = 0.d0
+           cofbfp(ifac) =  0.d0
+        endif
+      endif
 
       ! Storage of the thermal exchange coefficient
       ! (conversion in case of energy or enthalpy)
@@ -2809,7 +2826,7 @@ do ifac = 1, nfabor
       ! Turbulent diffusive flux of the scalar T
       ! (blending factor so that the component v'T' have only
       !  mu_T/(mu+mu_T)* Phi_T)
-      if (icodcl(ifac,ivar).eq.5) then
+      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
         phit = cofafp(ifac)+cofbfp(ifac)*val_s(iel)
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
@@ -2882,7 +2899,7 @@ do ifac = 1, nfabor
     if (b_f_id.ge.0 .or. iscal.eq.iscalt) then
 
       ! Wall function
-      if (icodcl(ifac,ivar).eq.5) then
+      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
         if (iscal.eq.iscalt) then
           phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
         else
@@ -3196,6 +3213,10 @@ do ifac = 1, nfabor
       ! Compute lambda/y * (y+-d+)/T+
       hflui = rkl/distbf *hflui
 
+      ! User exchange coefficient
+    else if (icodcl(ifac,ivar).eq.15) then
+      hflui = rcodcl(ifac,ivar,2)
+
     else
 
       ! y+/T+ *PrT
@@ -3267,7 +3288,7 @@ do ifac = 1, nfabor
 
     hflui = hbnd(ifac)
 
-    if (abs(hext).gt.rinfin*0.5d0) then
+    if (abs(hext).gt.rinfin*0.5d0.or.icodcl(ifac,ivar).eq.15) then
       heq = hflui
     else
       heq = hflui*hext/(hflui+hext)
@@ -3276,7 +3297,7 @@ do ifac = 1, nfabor
     ! ---> Dirichlet Boundary condition with a wall function correction
     !      with or without an additional exchange coefficient hext
 
-    if (icodcl(ifac,ivar).eq.5) then
+    if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
       if (turb_flux_model_type.ge.1) then
