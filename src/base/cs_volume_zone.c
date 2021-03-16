@@ -988,7 +988,7 @@ cs_volume_zone_tag_cell_type(int  zone_type_flag,
       const cs_lnum_t *_cell_ids = z->elt_ids;
       if (_cell_ids != NULL) {
         for (cs_lnum_t j = 0; j < _n_cells; j++)
-          tag[_cell_ids[i]] |= tag_value;
+          tag[_cell_ids[j]] |= tag_value;
       }
       else {
         for (cs_lnum_t j = 0; j < _n_cells; j++)

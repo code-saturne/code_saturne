@@ -420,13 +420,6 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_mesh_quantities_compute(m, mq);
 
-  /* If fluid_solid mode is activate: disable solid cells for the dynamics */
-  cs_porous_model_init_disable_flag();
-  if (vp_model->fluid_solid) {
-    assert(mq->has_disable_flag == 1);
-    cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, mq->c_disable_flag);
-  }
-
   cs_mesh_bad_cells_detect(m, mq);
   cs_user_mesh_bad_cells_tag(m, mq);
   t2 = cs_timer_wtime();
@@ -443,6 +436,13 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_boundary_zone_print_info();
 
   cs_ext_neighborhood_reduce(m, mq);
+
+  /* If fluid_solid mode is activateed, disable solid cells for the dynamics */
+  cs_porous_model_init_disable_flag();
+  if (vp_model->fluid_solid) {
+    assert(mq->has_disable_flag == 1);
+    cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, mq->c_disable_flag);
+  }
 
   /* For debugging purposes */
 
