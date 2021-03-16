@@ -276,17 +276,19 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
     def lockDropletFlowOptions(self):
         self.modelDispersedDrag.setItem(str_model="Wen_Yu")
-        self.modelLift.setItem(str_model="Zeng_Baalbaki")
+        self.comboBoxDispersedDrag.setEnabled(False)
+
         self.modelLift.disableItem(str_model="Tomiyama_SMD")
         self.modelLift.disableItem(str_model="coef_cst")
-        self.modelAddedMass.setItem(str_model="none")
-        self.modelTurbulenceDispersion.setItem(str_model="none")
-        self.modelWallForce.setItem(str_model="none")
-
-        self.comboBoxDispersedDrag.setEnabled(False)
         self.comboBoxLift.setEnabled(True)
+
+        self.modelAddedMass.setItem(str_model="none")
         self.comboBoxAddedMass.setEnabled(False)
+
+        self.modelTurbulenceDispersion.setItem(str_model="none")
         self.comboBoxTurbulenceDispersion.setEnabled(False)
+
+        self.modelWallForce.setItem(str_model="none")
         self.comboBoxWallForce.setEnabled(False)
 
     def lockMultiregimeFlowOptions(self):
