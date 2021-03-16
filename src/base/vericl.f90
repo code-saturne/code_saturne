@@ -638,7 +638,8 @@ if (nscal.ge.1) then
            icodcl(ifac,ivar).ne.11.and.                             &
            icodcl(ifac,ivar).ne.12.and.                             &
            icodcl(ifac,ivar).ne.13.and.                             &
-           icodcl(ifac,ivar).ne.14)                                 &
+           icodcl(ifac,ivar).ne.14.and.                             &
+           icodcl(ifac,ivar).ne.15)                                 &
            ! Only for scalars
            .or. ( icodcl(ifac,ivar).eq.12.and. f_dim.gt.1)          &
            ! Only for vectors
@@ -652,7 +653,7 @@ if (nscal.ge.1) then
         icodsc(2) = icodcl(ifac,ivar)
         nstosc = nstosc + 1
       endif
-      if(icodcl(ifac,ivar).eq. 5.and.                             &
+      if((icodcl(ifac,ivar).eq. 5.or.icodcl(ifac,ivar).eq.15).and.                             &
          iscavr(iis).gt.0        ) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
