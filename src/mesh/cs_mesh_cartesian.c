@@ -496,8 +496,10 @@ cs_mesh_cartesian_define_simple(int        ncells[3],
 {
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
-  if (mp == NULL)
-    mp = _cs_mesh_cartesian_init(3);
+  if (mp == NULL) {
+    cs_mesh_cartesian_create();
+    mp = cs_mesh_cartesian_get_params();
+  }
 
   for (int idim = 0; idim < 3; idim++)
     mp->params[idim] =
@@ -525,8 +527,10 @@ cs_mesh_cartesian_define_dir_user(int       idir,
 {
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
-  if (mp == NULL)
-    mp = _cs_mesh_cartesian_init(3);
+  if (mp == NULL) {
+    cs_mesh_cartesian_create();
+    mp = cs_mesh_cartesian_get_params();
+  }
 
   _cs_mesh_cartesian_direction_t *dirp = NULL;
   BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
@@ -571,6 +575,7 @@ cs_mesh_cartesian_define_from_csv(const char *csv_file_name)
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
   const int _ndim = 3;
+
   if (mp == NULL) {
     cs_mesh_cartesian_create();
     mp = cs_mesh_cartesian_get_params();
@@ -674,8 +679,10 @@ cs_mesh_cartesian_define_dir_params(int                     idim,
 {
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_get_params();
 
-  if (mp == NULL)
-    mp = _cs_mesh_cartesian_init(3);
+  if (mp == NULL) {
+    cs_mesh_cartesian_create();
+    mp = cs_mesh_cartesian_get_params();
+  }
 
   cs_mesh_cartesian_law_t _law = law;
   cs_real_t _p   = progression;
