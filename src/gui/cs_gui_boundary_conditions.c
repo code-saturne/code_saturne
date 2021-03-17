@@ -1080,7 +1080,7 @@ _init_boundaries(void)
     else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
       boundaries->itype[izone]     = 0;
       boundaries->prein[izone]     = cs_math_infinite_r;
-      boundaries->rhoin[izone]     = cs_math_infinite_r;
+      boundaries->rhoin[izone]     = 0;
       boundaries->tempin[izone]    = cs_math_infinite_r;
     }
 
