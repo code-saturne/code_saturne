@@ -414,10 +414,10 @@ if (muzero.gt.epzero) then
         ! Note Old formula
         ! req = 1.d6*( (3.d0*romray(i)*qlray(i)) /                 &
         !              (4.*pi*1000.*ncray(i)*1.d6))**(1./3.)       &
-        !      *exp(sigc**2)
+        !      *dexp(sigc**2)
         req = 1.d3*( (3.d0*romray(i)*qlray(i)) /                 &
           (4.d0*pi*ncray(i)))**(1.d0/3.d0)   &
-          *exp(sigc**2)
+          *dexp(sigc**2)
       else
         req = 1.5d0 * rm
       endif
@@ -457,8 +457,8 @@ if (muzero.gt.epzero) then
       do k = 5, 12 !5 to 12 because we there is no energy in the
         !4 first spectral band defined by Chuang 2002
         copioc20(k)=omega0(k) &
-          + beta1(k)*(1.d0-exp(-beta3(k)*(black_carbon_frac-nu0))) &
-          + beta2(k)*(1.d0-exp(-beta4(k)*(black_carbon_frac-nu0)))
+          + beta1(k)*(1.d0-dexp(-beta3(k)*(black_carbon_frac-nu0))) &
+          + beta2(k)*(1.d0-dexp(-beta4(k)*(black_carbon_frac-nu0)))
         copioc(k) = (copioc20(k)*dm/dm0) &
           / (1.d0 + 1.8d0*copioc20(k)*(dm/dm0 - 1.d0))
         piocv(k) = 1.d0 - copioc(k)
@@ -484,14 +484,14 @@ if (muzero.gt.epzero) then
       pioch2o=0.60d0*pioch2o_1+0.40d0*pioch2o_2
 
       gasymo3 =( 0.868d0 + 14.d-5*req  &
-        - 61.d-4*exp(-0.25*req))*pioco3_1*0.24d0 &
+        - 61.d-4*dexp(-0.25*req))*pioco3_1*0.24d0 &
         + ( 0.868d0 + 25.d-5*req  &
-        - 63.d-4*exp(-0.25*req))*pioco3_2*0.76d0
+        - 63.d-4*dexp(-0.25*req))*pioco3_2*0.76d0
 
       gasymh2o = ( 0.867d0 + 31.d-5*req  &
-        - 78.d-4*exp(-0.195d0*req))*0.60d0*pioch2o_1 &
+        - 78.d-4*dexp(-0.195d0*req))*0.60d0*pioch2o_1 &
         + ( 0.864d0 + 54.d-5*req &
-        - 0.133d0*exp(-0.194d0*req))*0.40d0*pioch2o_2
+        - 0.133d0*dexp(-0.194d0*req))*0.40d0*pioch2o_2
 
       gco3(i)=gasymo3
       gch2o(i)=gasymh2o
@@ -740,33 +740,33 @@ if (muzero.gt.epzero) then
           refx, trax, epsc, dqqv)
 
         ref(l,n)=fneray(l)*refx
-        tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*exp(-5.d0*dqqv/3.d0)
+        tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*dexp(-5.d0*dqqv/3.d0)
         refs(l,n) = ref(l,n)
         tras(l,n) = tra(l,n)
 
         ! trard transmissivity for direct radiation
-        trard(l,n) = fneray(l)*exp(-m*(dqqv+tauc(l)+tauah2o(l))) &
-          +(1.d0-fneray(l))*exp(-m*(dqqv+tauah2o(l)))
+        trard(l,n) = fneray(l)*dexp(-m*(dqqv+tauc(l)+tauah2o(l))) &
+          +(1.d0-fneray(l))*dexp(-m*(dqqv+tauah2o(l)))
 
       else
 
         ! in the clear sky layers
         ref(l,n) = 0.d0
-        tra(l,n) = exp(-5.d0*tau(l,n)/3.d0)
+        tra(l,n) = dexp(-5.d0*tau(l,n)/3.d0)
         refs(l,n) = ref(l,n)
         tras(l,n) = tra(l,n)
 
-        trard(l,n)=exp(-m*(dqqv+tauah2o(l)))
+        trard(l,n)=dexp(-m*(dqqv+tauah2o(l)))
 
 
-        if(l.ge.itopp1) tra(l,n) = exp(-m*tau(l,n))
+        if(l.ge.itopp1) tra(l,n) = dexp(-m*tau(l,n))
         if (iaer.eq.1) then
           call reftra  &
             (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0, tauah2o(l), &
             refx, trax, epsc,dqqv)
 
           ref(l,n)=fneba(l)*refx
-          tra(l,n)=fneba(l)*trax+(1.d0-fneba(l))*exp(-5.d0*dqqv/3.d0)
+          tra(l,n)=fneba(l)*trax+(1.d0-fneba(l))*dexp(-5.d0*dqqv/3.d0)
 
         endif
 
@@ -1091,7 +1091,7 @@ contains
     b = 20000.d0
     c = 5000.d0
 
-    rayuoz = a*(1.d0 + exp(-b/c))/(1.d0 + exp((zh-b)/c))
+    rayuoz = a*(1.d0 + dexp(-b/c))/(1.d0 + dexp((zh-b)/c))
 
   end function rayuoz
 
