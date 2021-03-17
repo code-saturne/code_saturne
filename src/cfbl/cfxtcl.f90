@@ -694,12 +694,11 @@ deallocate(bc_en, bc_pr, bc_tk, bc_fracv, bc_fracm, bc_frace, bc_vel)
 '@    =========                                               ',/,&
 '@    two and only two independant variables among            ',/,&
 '@    P, rho, T and E have to be imposed at boundaries of type',/,&
-'@    iesicf in uscfcl (iccfth = ',I10,').                  ',/,&
+'@    iesicf in uscfcl (iccfth = ',i10,').                  ',/,&
 '@                                                            ',/,&
 '@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@    Check the boundary conditions in                        ',/,&
-'@    cs_user_boundary_conditions                             ',/,&
+'@    Check the boundary condition definitions.               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
