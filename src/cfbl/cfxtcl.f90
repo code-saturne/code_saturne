@@ -109,14 +109,14 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac  , iel
 integer          ii    , iccfth
 integer          icalep
-integer          ien   , itk
+integer          ien   , itk, niv
 integer          nvarcf
 
 integer          nvcfmx
 parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
-double precision hint, bmasfl
+double precision hint, bmasfl, drom
 
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -329,15 +329,34 @@ do ifac = 1, nfabor
     ! we look for the variable to be initialized
     ! (if a zero value has been given, it is not adapted, so it will
     ! be considered as not initialized and the computation will stop
-    ! displaying an error message
-    iccfth = 10000
-    if(rcodcl(ifac,ipr,1).lt.rinfin*0.5d0) iccfth = 2*iccfth
-    if(brom(ifac).gt.0.d0                ) iccfth = 3*iccfth
-    if(rcodcl(ifac,itk,1).lt.rinfin*0.5d0) iccfth = 5*iccfth
-    if(rcodcl(ifac,ien,1).lt.rinfin*0.5d0) iccfth = 7*iccfth
+    ! displaying an error message. The boundary density may
+    ! be pre-initialized to the cell density also, so is tested last.
 
-    if(iccfth.le.70000.and.iccfth.ne.60000.or.iccfth.eq.350000) then
-      write(nfecra,1000)iccfth
+    iel = ifabor(ifac)
+    drom = abs(crom(iel) - brom(ifac))
+
+    niv = 0
+    iccfth = 10000
+    if (rcodcl(ifac,ipr,1).lt.rinfin*0.5d0) then
+      iccfth = 2*iccfth
+      niv = niv + 1
+    endif
+    if (rcodcl(ifac,itk,1).lt.rinfin*0.5d0) then
+      iccfth = 5*iccfth
+      niv = niv + 1
+    endif
+    if (rcodcl(ifac,ien,1).lt.rinfin*0.5d0) then
+      iccfth = 7*iccfth
+      niv = niv + 1
+    endif
+
+    if (brom(ifac).gt.0.d0 .and. (niv.lt.2 .or. drom.gt.epzero)) then
+      iccfth = 3*iccfth
+      niv = niv + 1
+    endif
+
+    if (niv .ne. 2) then
+      write(nfecra,1000) iccfth
       call csexit (1)
     endif
     iccfth = iccfth + 900
