@@ -2692,7 +2692,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           const char *formula_turb = NULL;
           cs_tree_node_t *tn_turb
             = cs_tree_get_node(cs_glob_tree,
-                               "thermophysical_models/turbulence/initialization");
+                               "thermophysical_models/"
+                               "turbulence/initialization");
           tn_turb = _add_zone_id_test_attribute(tn_turb, z->id);
           tn_turb = cs_tree_get_node(tn_turb, "formula");
           formula_turb = cs_tree_node_get_value_str(tn_turb);
@@ -2842,7 +2843,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           const char *formula_sca    = NULL;
           cs_tree_node_t *tn_sca
             = cs_tree_get_node(cs_glob_tree,
-                               "thermophysical_models/thermal_scalar/variable/formula");
+                               "thermophysical_models/"
+                               "thermal_scalar/variable/formula");
           tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
           formula_sca = cs_tree_node_get_value_str(tn_sca);
 
@@ -2970,7 +2972,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           int size = cs_tree_get_sub_node_count_simple(tn_gas, "variable");
 
           for (int j = 0; j < size; j++) {
-            cs_tree_node_t *tn_combustion = cs_tree_get_node(tn_gas, "variable");
+            cs_tree_node_t *tn_combustion = cs_tree_get_node(tn_gas,
+                                                             "variable");
             for (int i = 1;
                  tn_combustion != NULL && i < j + 1;
                  i++) {
