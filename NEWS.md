@@ -4,7 +4,7 @@ Release 7.0 (unreleased)
 User changes:
 
 - GUI: Remove legacy definitions of syrthes coupling when opening old XML file:
-  * Strating from v7.0 a syrthes coupling is defined as a boundary
+  * Starting from v7.0 a syrthes coupling is defined as a boundary
     condition and no longer as an independent model.
   * Pre v7.0 definitions are saved to a file
     'deprecated_syrthes_coupling_data.txt' and are then removed from the
@@ -103,9 +103,11 @@ Numerics and physical modeling:
 
 - Activate improved hydrostatic pressure interpolation (iphydr) by default.
 
+- Add an explicit treatment of the advection term in CDO face-based equations.
+
 Architectural changes:
 
-- Move salome_cfd extensions to a separate repository.
+- Move salome_cfd extensions (CFDSTUDY module) to a separate repository.
   It should allow both simplifying installation in some cases
   and improving  maintainability.
 
