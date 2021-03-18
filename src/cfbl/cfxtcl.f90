@@ -371,9 +371,6 @@ do ifac = 1, nfabor
 
     call cs_cf_thermo(iccfth, ifac-1, bc_en, bc_pr, bc_tk, bc_vel)
 
-    ! Rusanov fluxes, mass flux and boundary conditions types (icodcl) are
-    ! dealt with further below
-
 !===============================================================================
 ! 3.2 Outlet with imposed pressure
 !===============================================================================
@@ -396,8 +393,6 @@ do ifac = 1, nfabor
     bc_vel(3,ifac) = rcodcl(ifac,iw,1)
 
     call cs_cf_thermo_subsonic_outlet_bc(bc_en, bc_pr, bc_vel, ifac-1)
-
-    ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
 ! 3.3 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
@@ -425,8 +420,6 @@ do ifac = 1, nfabor
 
     call cs_cf_thermo_ph_inlet_bc(bc_en, bc_pr, bc_vel, ifac-1)
 
-    ! mass fluxes and boundary conditions codes, see further below.
-
 !===============================================================================
 ! 3.4 Inlet with imposed rho*U and rho*U*H
 !===============================================================================
@@ -452,9 +445,9 @@ do ifac = 1, nfabor
 
 !===============================================================================
 ! 4. Complete the treatment for inlets and outlets:
-!    - mass fluxes computation
 !    - boundary convective fluxes computation (analytical or Rusanov) if needed
 !    - B.C. code (Dirichlet or Neumann)
+!    - Dirichlet values
 !===============================================================================
 
   if (itypfb(ifac).eq.iesicf.or.                    &
@@ -464,15 +457,16 @@ do ifac = 1, nfabor
       itypfb(ifac).eq.ieqhcf) then
 
 !===============================================================================
-! 4.1 Mass fluxes computation and
-!     boundary convective fluxes computation (analytical or Rusanov) if needed
+! 4.1 Boundary convective fluxes computation (analytical or Rusanov) if needed
 !     (gamma should already have been computed if Rusanov fluxes are computed)
 !===============================================================================
 
     ! Rusanov fluxes are computed only for the imposed inlet for stability
-    ! reasons (the mass flux computation is concluded)
+    ! reasons.
     if (itypfb(ifac).eq.iesicf) then
 
+    ! Dirichlet for velocity and pressure are computed in order to
+    ! impose the Rusanov fluxes in mass, momentum and energy balance.
       call cfrusb(ifac, bc_en, bc_pr, bc_vel)
 
     ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
@@ -514,8 +508,6 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(ifrace),3) = 0.d0
       endif
     endif
-
-
 
 !===============================================================================
 ! 4.3 Boundary conditions codes (Dirichlet or Neumann)

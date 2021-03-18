@@ -3,6 +3,11 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Compressible: fix imposed inlet/outlet boundary condition.
+  Boundary mass flux was not computed using the Rusanov scheme,
+  and was not consistant with momentum and energy convective fluxes on
+  the boundary faces with imposed inlet/outlet boundary condition.
+
 - Mesh joining: fix crash when number of joined faces is smaller
   than the number of MPI ranks.
 
