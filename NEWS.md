@@ -1,10 +1,38 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Numerics:
+
+- Add GCR (Generalized Conjugate Residual) which enables a flexible
+  preconditioning for non-symmetric linear system. Equivalent to a flexible
+  GMRES.
+
+- Several improvements for the MUMPS interface
+  * Add a MUMPS interface for native matrices (with or without symmetric
+    storage).
+  * Add a MUMPS interface to handle single-precision arithmetic. This
+  functionnality allows one to get a better efficiency without degrading
+  the accuracy when considering MUMPS as a preconditioner while reducing
+  the memory consumption.
+
+- CDO: Add block preconditioning for symmetric saddle-point problem and a
+  MINRES algorithm (relying on a tuned storage of the saddle-point system).
+  GCR algorithm for more complex block preconditionning such upper/lower Schur
+  block preconditioning or Symmetric Gauss-Seidel block preconditioning.
+  Several approximations of the Schur complement are available.
+
+- CDO: Add an Uzawa algorithm accelerated with a CG (conjuguate gradient)
+  strategy and preconditioned with a Cahouet-Chabard technique. This is
+  another solver to solve saddle-point problem arising from the monolithic
+  coupling of CDO face-based schemes for the (Navier-)Stokes equations.
+
+Release 7.0.0 (unreleased)
+--------------------------
+
 User changes:
 
 - GUI: Remove legacy definitions of syrthes coupling when opening old XML file:
-  * Strating from v7.0 a syrthes coupling is defined as a boundary
+  * Starting from v7.0 a syrthes coupling is defined as a boundary
     condition and no longer as an independent model.
   * Pre v7.0 definitions are saved to a file
     'deprecated_syrthes_coupling_data.txt' and are then removed from the
@@ -37,47 +65,6 @@ User changes:
     internal coupling functions for a given set of scalars (see the
     "Coupling parameters" page).
   * The internal coupling function is now available in the GUI.
-
-Numerics:
-
-- Add GCR (Generalized Conjugate Residual) which enables a flexible
-  preconditioning for non-symmetric linear system. Equivalent to a flexible
-  GMRES.
-
-- Several improvements for the MUMPS interface
-  * Add a MUMPS interface for native matrices (with or without symmetric
-    storage).
-  * Add a MUMPS interface to handle single-precision arithmetic. This
-  functionnality allows one to get a better efficiency without degrading
-  the accuracy when considering MUMPS as a preconditioner while reducing
-  the memory consumption.
-
-- CDO: Add block preconditioning for symmetric saddle-point problem and a
-  MINRES algorithm (relying on a tuned storage of the saddle-point system).
-  GCR algorithm for more complex block preconditionning such upper/lower Schur
-  block preconditioning or Symmetric Gauss-Seidel block preconditioning.
-  Several approximations of the Schur complement are available.
-
-- CDO: Add an Uzawa algorithm accelerated with a CG (conjuguate gradient)
-  strategy and preconditioned with a Cahouet-Chabard technique. This is
-  another solver to solve saddle-point problem arising from the monolithic
-  coupling of CDO face-based schemes for the (Navier-)Stokes equations.
-
-Architectural changes:
-
-- Move salome extensions (CFDSTUDY module) to a separate repository.
-
-Bug fixes:
-
-- Compressible : fix imposed inlet / outlet boundary condition.
-  Boundary mass flux was not computed using the Rusanov scheme,
-  and was not consistant with momentum and energy convective fluxes on
-  the boundary faces with imposed inlet / outlet boundary condition.
-
-Release 7.0.0 (unreleased)
---------------------------
-
-User changes:
 
 - Add a `cs_base_get_run_identity` utility function, allowing the
   user to query the run_id, case and study name from a running
@@ -118,6 +105,14 @@ User changes:
 
 Bug fixes:
 
+- Compressible: fix imposed inlet/outlet boundary condition.
+  Boundary mass flux was not computed using the Rusanov scheme,
+  and was not consistant with momentum and energy convective fluxes on
+  the boundary faces with imposed inlet/outlet boundary condition.
+
+- Fix overwite of user-defined function settings for probe writer
+  by GUI or default settings.
+
 - GUI: fix incomplete handling of compressible boundary conditions
   preventing run unless completed in user subroutines.
 
@@ -136,7 +131,13 @@ Numerics and physical modeling:
 
 - Activate improved hydrostatic pressure interpolation (iphydr) by default.
 
-- Add an explicit treatment of the advection term in CDO face-based equations
+- Add an explicit treatment of the advection term in CDO face-based equations.
+
+Architectural changes:
+
+- Move salome_cfd extensions (CFDSTUDY module) to a separate repository.
+  It should allow both simplifying installation in some cases
+  and improving  maintainability.
 
 Release 6.3.0 (December 21 2020)
 --------------------------------
