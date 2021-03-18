@@ -77,6 +77,11 @@ User changes:
 
 Bug fixes:
 
+- Compressible: fix imposed inlet/outlet boundary condition.
+  Boundary mass flux was not computed using the Rusanov scheme,
+  and was not consistant with momentum and energy convective fluxes on
+  the boundary faces with imposed inlet/outlet boundary condition.
+
 - Fix overwite of user-defined function settings for probe writer
   by GUI or default settings.
 
