@@ -67,6 +67,13 @@ Architectural changes:
 
 - Move salome extensions (CFDSTUDY module) to a separate repository.
 
+Bug fixes:
+
+- Compressible : fix imposed inlet / outlet boundary condition.
+  Boundary mass flux was not computed using the Rusanov scheme,
+  and was not consistant with momentum and energy convective fluxes on
+  the boundary faces with imposed inlet / outlet boundary condition.
+
 Release 7.0.0 (unreleased)
 --------------------------
 
