@@ -1833,6 +1833,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             cs_lnum_t face_id = bz->elt_ids[elt_id];
             rcodcl[ivarp * n_b_faces + face_id] = boundaries->prein[izone];
           }
+          qimp[zone_nbr-1] = boundaries->qimp[izone];
         }
 
         if (boundaries->itype[izone] == CS_ESICF) {
