@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * rho_e the electric charge density
  * j the electric source current (or current for short)
  *
- * One assumes a quasi-static approximation of the maxwell equations
+ * One assumes a quasi-static approximation of the Maxwell equations
  * i.e. ones solves the Ampere equation: curl(H) = j
  * and one solves the Faraday equation: curl(E) = -partial_t B
  *
@@ -197,7 +197,7 @@ cs_maxwell_log_setup(void);
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -262,7 +262,7 @@ cs_maxwell_extra_op(const cs_cdo_connect_t      *connect,
  *         Prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
- * \param[in, out] input        pointer to a optional structure (here a
+ * \param[in, out] input        pointer to an optional structure (here a
  *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call

@@ -68,22 +68,22 @@ struct _maxwell_t {
 
   cs_flag_t   model;      /* Modelling for the Maxwell module */
   cs_flag_t   options;    /* Flag dedicated to general options to handle
-                           * the Maxwell module*/
+                           * the Maxwell module */
   cs_flag_t   post_flag;  /* Flag dedicated to the post-processing
                            * of the Maxwell module */
 
   /* Properties associated to this module */
   cs_real_t       e_perm_ref;      /* Reference value of the electric
                                     * permeability */
-  cs_property_t  *e_permeability;  /* Electric permeability ofently denoted
+  cs_property_t  *e_permeability;  /* Electric permeability oftenly denoted
                                     * by epsilon */
 
   cs_real_t       m_perm_ref;      /* Reference value of the magnetic
                                     * permittivity */
-  cs_property_t  *m_permittivity;  /* Magnetic permittivity ofently denoted
+  cs_property_t  *m_permittivity;  /* Magnetic permittivity oftenly denoted
                                     * by mu */
 
-  cs_property_t  *conductivity;    /* Conductivity in Ohm's law ofently denoted
+  cs_property_t  *conductivity;    /* Conductivity in Ohm's law oftenly denoted
                                     * by sigma */
 
   /* Fields associated to this module */
@@ -109,7 +109,7 @@ struct _maxwell_t {
   cs_field_t   *j_field;        /* J = density flux field */
   cs_real_t    *j_field_array;  /* J across dual faces */
 
-  cs_field_t   *joule_effect;   /* Joulle effect power (W.m^-3) */
+  cs_field_t   *joule_effect;   /* Joule effect power (W.m^-3) */
 };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -829,7 +829,7 @@ cs_maxwell_extra_op(const cs_cdo_connect_t      *connect,
  *         Prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
- * \param[in, out] input        pointer to a optional structure (here a
+ * \param[in, out] input        pointer to an optional structure (here a
  *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
