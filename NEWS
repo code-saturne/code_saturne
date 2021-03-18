@@ -1,3 +1,11 @@
+Release 5.0.14 (Unreleased)
+===========================
+
+Bug fixes
+---------
+
+- GUI: fix compressible imposed inlet boundary condition handling.
+
 Release 5.0.13 (Dec 22 2020)
 ============================
 

@@ -2127,6 +2127,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             rcodcl[ivarp * n_b_faces + ifbr] = boundaries->prein[izone];
             rcodcl[ivare * n_b_faces + ifbr] = boundaries->entin[izone];
           }
+          qimp[zone_nbr-1] = boundaries->qimp[izone];
         }
 
         if (boundaries->itype[izone] == CS_ESICF) {
