@@ -2627,7 +2627,9 @@ do ifac = 1, nfabor
     endif
 
     ! wall function and Dirichlet or Neumann on the scalar
-    if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15.or.icodcl(ifac,ivar).eq.3)) then
+    if ( iturb.ne.0 .and. &
+        (icodcl(ifac,ivar).eq.5 .or. icodcl(ifac,ivar).eq.15 .or. &
+         icodcl(ifac,ivar).eq.3)) then
       ! Note: to make things clearer yplus is always
       ! "y uk /nu" even for rough modelling. And the roughness correction is
       ! multiplied afterwards where needed.
@@ -2644,10 +2646,10 @@ do ifac = 1, nfabor
       hflui = rkl/distbf *hflui
 
       ! User exchange coefficient
-        if (icodcl(ifac,ivar).eq.15) then
-          hflui = rcodcl(ifac,ivar,2)
-          yptp(ifac) = hflui/prdtl * distbf/rkl
-        endif
+      if (icodcl(ifac,ivar).eq.15) then
+        hflui = rcodcl(ifac,ivar,2)
+        yptp(ifac) = hflui/prdtl * distbf/rkl
+      endif
 
     else
 
@@ -2766,9 +2768,9 @@ do ifac = 1, nfabor
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
 
-      ! For the couple faces with h_user (ie icodcl(ifac,ivar)=15) 
-      !reset to zero af/bf coeff. 
-      !By default icodcl(ifac,ivar)=0) for coupled faces
+      ! For the coupled faces with h_user (ie icodcl(ifac,ivar)=15)
+      ! reset to zero af/bf coeff.
+      ! By default icodcl(ifac,ivar)=0) for coupled faces
       if (vcopt%icoupl.gt.0) then
         if (cpl_faces(ifac)) then
            ! Flux BCs
@@ -2816,6 +2818,14 @@ do ifac = 1, nfabor
         ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
         !  gain for the fluid) in W/m2
         bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
+
+        ! Cancel flux BCs for coupled faces
+        if (vcopt%icoupl.gt.0) then
+          if (cpl_faces(ifac)) then
+            cofafp(ifac) = 0.d0
+            cofbfp(ifac) = 0.d0
+          endif
+        endif
       endif
 
     endif ! End if icodcl.eq.5
