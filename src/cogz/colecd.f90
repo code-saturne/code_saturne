@@ -69,7 +69,6 @@ integer          ncgm, nrgm
 integer          inicoe, inicha
 integer          idebch, ifinch, lonch
 integer          ichai, ichcoe
-integer          atgaze(ngazem, natom)
 integer          iereac(ngazem)
 integer          ncoel, icoel
 integer          mode
@@ -78,6 +77,7 @@ double precision tmin, tmax
 double precision kabse(ngazem)
 double precision wmolce(ngazem)
 double precision cpgaze(ngazem,npot)
+double precision atgaze(ngazem, natom)
 double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
 double precision mfuel, mreac, epsi, nmolg, bilan
 double precision moxyd
