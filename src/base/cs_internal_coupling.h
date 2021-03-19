@@ -96,9 +96,6 @@ typedef struct {
   /* OF vectors  */
   cs_real_3_t *offset_vect;
 
-  /* User information */
-  char *namesca;
-
 } cs_internal_coupling_t;
 
 /*============================================================================
