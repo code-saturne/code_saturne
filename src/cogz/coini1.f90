@@ -174,9 +174,8 @@ tinoxy = -grand
 nmaxf = 9
 nmaxh = 9
 
-! ---> Masse volumique variable et viscosite constante (pour les suites)
+! ---> Masse volumique variable
 irovar = 1
-ivivar = 0
 
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
