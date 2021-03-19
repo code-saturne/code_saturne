@@ -304,7 +304,12 @@ class BatchRunningModel(object):
             if not self.run_conf:
                 return
         else:
-            self.__update__()
+            try:
+                self.__update__()
+            except Exception:
+                print("Error: can not update %s\n" % self.path)
+                print("Probably not in a standard case directory structure.")
+                return
 
         if param != None:
             param = os.path.basename(param)
