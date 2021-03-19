@@ -368,7 +368,6 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->cells_criteria);
   BFT_FREE(cpl->faces_criteria);
   BFT_FREE(cpl->volume_zone_ids);
-  BFT_FREE(cpl->namesca);
   ple_locator_destroy(cpl->locator);
 }
 
@@ -641,8 +640,6 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->g_weight = NULL;
   cpl->ci_cj_vect = NULL;
   cpl->offset_vect = NULL;
-
-  cpl->namesca = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -2845,13 +2842,6 @@ cs_internal_coupling_setup(void)
     if (f->type & CS_FIELD_VARIABLE) {
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.icoupl > 0) {
-
-        if (coupling_id == 0) {
-          /* Update user information */
-          BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
-          // FIXME:= Leaves the name of the first coupled scalar
-          strcpy(cpl->namesca, f->name);
-        }
         coupling_id++;
       }
     }
@@ -2890,9 +2880,6 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
   cs_gnum_t n_local = cpl->n_local;
 
   cs_parall_counter(&n_local, 1);
-
-  bft_printf("   Coupled scalar: %s\n",
-             cpl->namesca);
 
   if (cpl->cells_criteria != NULL)
     bft_printf("   Cell group selection criterion: %s\n",
