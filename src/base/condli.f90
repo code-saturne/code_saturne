@@ -271,6 +271,8 @@ double precision, allocatable, dimension(:) :: vbt2h
 double precision, dimension(:), pointer :: permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 
+logical(c_bool), dimension(:), pointer ::  cpl_faces
+
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -2645,6 +2647,10 @@ if (nscal.ge.1) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
+    if (vcopt%icoupl.gt.0) then
+      call field_get_coupled_faces(ivarfl(isca(ii)), cpl_faces)
+    endif
+
     if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.turb_flux_model_type.eq.3) then
       if (iturb.ne.32.or.turb_flux_model_type.eq.3) then
         call field_get_val_v(ivsten, visten)
@@ -2858,7 +2864,7 @@ if (nscal.ge.1) then
         ! Storage of the thermal exchange coefficient
         ! (conversion in case of energy or enthaly)
         ! the exchange coefficient is in W/(m2 K)
-        ! Usefull for thermal coupling or radiative transfer
+        ! Useful for thermal coupling or radiative transfer
         if (icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3) then
           if (iirayo.ge.1 .and. ii.eq.iscalt.or.isvhbl.gt.0) then
 
@@ -2896,6 +2902,14 @@ if (nscal.ge.1) then
             ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
             !  gain for the fluid) in W/m2
             bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
+
+            ! Cancel flux BCs for coupled faces
+            if (vcopt%icoupl.gt.0) then
+              if (cpl_faces(ifac)) then
+                cofafp(ifac) = 0.d0
+                cofbfp(ifac) = 0.d0
+              endif
+            endif
           endif
 
         endif
