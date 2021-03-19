@@ -858,7 +858,10 @@ cs_rad_transfer_bcs(int         nvar,
       int t_bc_code = icodcl[ivart*n_b_faces + face_id];
       int sgn = (t_bc_code < 0) ? - 1 : 1;
       if (sgn*t_bc_code != icodw)
-        icodcl[ivart*n_b_faces + face_id] = icodw*sgn;
+        if (icodcl[ivart*n_b_faces + face_id] == 15)
+            icodcl[ivart*n_b_faces + face_id] = 15*sgn;
+        else
+            icodcl[ivart*n_b_faces + face_id] = icodw*sgn;
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }
@@ -937,7 +940,7 @@ cs_rad_transfer_bcs(int         nvar,
      (at first pass, it is zero)
      -> Compute convective flux, by which we mean:
      convective flux parallel to wall; we assume the wall is watertight
-     The flux is computed in dans condli/clptur, except at the first
+     The flux is computed in condli/clptur, except at the first
      pass with no restart, as cs_rad_transfer_bcs is called first.
    */
 
