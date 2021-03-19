@@ -388,20 +388,35 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.initializeVanGenuchten(name)
 
     def slotSetModelValue(self, text, field_name):
-        if self.sender().validator().state == QValidator.Acceptable:
+
+        # Avoid crash when change is induced by the combobox which
+        # has no validator...
+        _v = self.sender().validator()
+        if _v and _v.state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(self.zone.getCodeNumber(), field_name, val)
 
     def slotSetDispersionCoefficient(self, text, field_name):
-        if self.sender().validator().state == QValidator.Acceptable:
+
+        # Avoid crash when change is induced by the combobox which
+        # has no validator...
+        _v = self.sender().validator()
+        if _v and _v.state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setDispersionCoefficient(self.zone.getCodeNumber(), field_name, val)
 
     def slotSetScalarProperty(self, text, field_name):
-        if self.sender().validator().state == QValidator.Acceptable:
+
+        # Avoid crash when change is induced by the combobox which
+        # has no validator...
+        _v = self.sender().validator()
+        if _v and _v.state == QValidator.Acceptable:
             value = float(text)
             scalar = self.scalar
-            self.mdl.setGroundWaterScalarPropertyByZone(scalar, self.zone.getCodeNumber(), field_name, value)
+            self.mdl.setGroundWaterScalarPropertyByZone(scalar,
+                                                        self.zone.getCodeNumber(),
+                                                        field_name,
+                                                        value)
 
     @pyqtSlot(str)
     def slotSetSoilDensity(self, text):
