@@ -926,7 +926,7 @@ _check_settings(cs_param_sles_t     *slesp)
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
-                " MUMPS class is not coherent with your settings.\n",
+                " MUMPS class is not coherent with your settings.\n"
                 " Please check your installation settings.\n",
                 __func__, slesp->name);
   }
@@ -938,7 +938,7 @@ _check_settings(cs_param_sles_t     *slesp)
     if (slesp->restart < 2)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
-                " The restart interval (=%d) is not big enough.\n",
+                " The restart interval (=%d) is not big enough.\n"
                 " Please check your installation settings.\n",
                 __func__, slesp->name, slesp->restart);
 
