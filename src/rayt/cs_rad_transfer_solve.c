@@ -787,19 +787,20 @@ _cs_rad_transfer_sol(int                        gg_id,
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
             f_qincid->val[face_id] += aa * radiance[cell_id];
-
           }
 
           /* Specific to Atmo (Direct Solar, diFfuse Solar, Infra Red) */
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                     vect_s) < 0.0 && f_up != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_up->val[gg_id + cell_id * stride] += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
+              f_up->val[gg_id + cell_id * stride]
+                += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                          vect_s) > 0.0 && f_down != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_down->val[gg_id + cell_id * stride] += radiance[cell_id] * domegat * vect_s[2];
+              f_down->val[gg_id + cell_id * stride]
+                += radiance[cell_id] * domegat * vect_s[2];
           }
         }
       }
@@ -951,6 +952,36 @@ _compute_net_flux(const int        itypfb[],
     else
       net_flux[ifac] = xmissing;
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set absolrption coefficient to zeor by default in solid zones.
+ *
+ * This could be overwritten if necessary the cs_user_rad_transfer_absorption
+ * function.
+ *
+ * The medium is considered transparent to avoid interaction with
+ * the radiation model. For semi-transparent solids, it could be modified.
+ *
+ * \param[out]  ck       medium's absorption coefficient (zero if transparent)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_internal_coupling_zero_solid_absorption(cs_real_t  ck[])
+{
+  int n_zones = cs_volume_zone_n_zones();
+
+  for (int i = 0; i < n_zones; i++) {
+    const cs_zone_t  *z = cs_volume_zone_by_id(i);
+    if (z->type & CS_VOLUME_ZONE_SOLID) {
+      for (cs_lnum_t j = 0; j < z->n_elts; j++) {
+        cs_lnum_t cell_id = z->elt_ids[j];
+        ck[cell_id] = 0;
+      }
+    }
   }
 }
 
@@ -1359,9 +1390,9 @@ cs_rad_transfer_solve(int               bc_type[],
     if (   rt_params->type == CS_RAD_TRANSFER_P1
         && cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1
         && ipadom <= 3)
-
       cs_rad_transfer_absorption_check_p1(ckg);
 
+    _internal_coupling_zero_solid_absorption(ckg);
 
     /* Only necessary when grey gas radiation properties are applied.
        In case of the ADF model this test does not make sense. */

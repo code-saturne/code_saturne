@@ -107,10 +107,14 @@ int ipacli = 0;
 /*!
  * \brief Adjust radiative BC's for internal coupling.
  *
+ * If emissivity has not bee defined on solid faces, it is set to 0
+ * on those faces.
+ *
  * \param[in, out]  cpl     internal coupling structure
  * \param[in, out]  isothm  internal coupling BC type
  * \param[in, out]  xlamp   conductivity (W/m/K)
  * \param[in, out]  epap    thickness (m)
+ * \param[in, out]  beps    emissivity
  * \param[in, out]  textp   outside temperature (K)
  */
 /*----------------------------------------------------------------------------*/
@@ -120,9 +124,13 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
                            int                      isothm[],
                            cs_real_t                xlamp[],
                            cs_real_t                epap[],
+                           cs_real_t                beps[],
                            cs_real_t                textp[])
 {
+  const cs_mesh_t *m = cs_glob_mesh;
+
   cs_lnum_t  n_local = 0, n_distant = 0;
+  bool have_unset = false;
   const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
 
   cs_internal_coupling_coupled_faces(cpl,
@@ -136,7 +144,32 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
     isothm[face_id] = CS_BOUNDARY_RAD_WALL_GRAY;
     xlamp[face_id] = -cs_math_big_r;
     textp[face_id] = -cs_math_big_r;
- }
+    if (beps[face_id] < 0)
+      have_unset = true;
+  }
+
+  if (have_unset) {
+    int *is_solid = NULL;
+
+    if (n_distant > 0) {
+      cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+      BFT_MALLOC(is_solid, n_cells_ext, int);
+      for (cs_lnum_t i = 0; i < n_cells_ext; i++)
+        is_solid[i] = 0;
+      cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, is_solid);
+    }
+
+    for (cs_lnum_t i = 0; i < n_distant; i++) {
+      cs_lnum_t face_id = faces_local[i];
+      if (beps[face_id] < 0) {
+        cs_lnum_t cell_id = m->b_face_cells[face_id];
+        if (is_solid[cell_id])
+          beps[face_id] = 0;
+      }
+    }
+
+    BFT_FREE(is_solid);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -378,26 +411,6 @@ cs_rad_transfer_bcs(int         nvar,
                                    f_beps->val,
                                    text);
 
-    /* Internal coupling settings */
-    if (cs_internal_coupling_n_couplings() > 0) {
-      cs_internal_coupling_t *cpl = NULL;
-
-      cs_field_t *tf = cs_thermal_model_field();
-      if (tf != NULL) {
-        const int coupling_key_id = cs_field_key_id("coupling_entity");
-        int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
-        if (coupling_id >= 0)
-          cpl = cs_internal_coupling_by_id(coupling_id);
-      }
-
-      if (cpl != NULL)
-        _set_internal_coupling_bcs(cpl,
-                                   isothm,
-                                   f_bxlam->val,
-                                   f_bepa->val,
-                                   text);
-    }
-
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "   ** Information on the radiative module\n"
@@ -449,6 +462,27 @@ cs_rad_transfer_bcs(int         nvar,
                                  f_bepa->val,
                                  f_beps->val,
                                  text);
+
+  /* Internal coupling settings */
+  if (cs_internal_coupling_n_couplings() > 0) {
+    cs_internal_coupling_t *cpl = NULL;
+
+    cs_field_t *tf = cs_thermal_model_field();
+    if (tf != NULL) {
+      const int coupling_key_id = cs_field_key_id("coupling_entity");
+      int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
+      if (coupling_id >= 0)
+        cpl = cs_internal_coupling_by_id(coupling_id);
+    }
+
+    if (cpl != NULL)
+      _set_internal_coupling_bcs(cpl,
+                                 isothm,
+                                 f_bxlam->val,
+                                 f_bepa->val,
+                                 f_beps->val,
+                                 text);
+  }
 
   /* Check user BC definitions */
 
