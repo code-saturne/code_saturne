@@ -2768,17 +2768,6 @@ do ifac = 1, nfabor
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
 
-      ! For the coupled faces with h_user (ie icodcl(ifac,ivar)=15)
-      ! reset to zero af/bf coeff.
-      ! By default icodcl(ifac,ivar)=0) for coupled faces
-      if (vcopt%icoupl.gt.0) then
-        if (cpl_faces(ifac)) then
-           ! Flux BCs
-           cofafp(ifac) = 0.d0
-           cofbfp(ifac) =  0.d0
-        endif
-      endif
-
       ! Storage of the thermal exchange coefficient
       ! (conversion in case of energy or enthalpy)
       ! the exchange coefficient is in W/(m2 K)
@@ -2818,17 +2807,20 @@ do ifac = 1, nfabor
         ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
         !  gain for the fluid) in W/m2
         bfconv(ifac) = cofafp(ifac) + cofbfp(ifac)*theipb(ifac)
+      endif
 
-        ! Cancel flux BCs for coupled faces
-        if (vcopt%icoupl.gt.0) then
-          if (cpl_faces(ifac)) then
-            cofafp(ifac) = 0.d0
-            cofbfp(ifac) = 0.d0
-          endif
+      ! For the coupled faces with h_user (ie icodcl(ifac,ivar)=15)
+      ! reset to zero af/bf coeff.
+      ! By default icodcl(ifac,ivar)=0) for coupled faces
+      if (vcopt%icoupl.gt.0) then
+        if (cpl_faces(ifac)) then
+          ! Flux BCs
+          cofafp(ifac) = 0.d0
+          cofbfp(ifac) =  0.d0
         endif
       endif
 
-    endif ! End if icodcl.eq.5
+    endif ! End if icodcl.eq.5 .or. icodcl.eq.15
 
     !--> Turbulent heat flux
     if (turb_flux_model_type.eq.3) then
