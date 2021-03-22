@@ -126,6 +126,8 @@ Bug fixes:
 
 Numerics and physical modeling:
 
+- Allow combination of radiative transfer and internal coupling.
+
 - Change default precision for linear solvers
   from 1e-8 to 1e-5 except for the pressure field.
 
