@@ -1173,7 +1173,7 @@ _lagesd(cs_real_t             dtp,
 
   /* Retrieve of the turbulent kinetic energy */
   cs_real_t  enertur;
-  if (extra->itytur == 2 || extra->itytur == 4 || 
+  if (extra->itytur == 2 || extra->itytur == 4 ||
       extra->iturb == 50 || extra->iturb == 60)
     enertur  = extra->cvar_k->vals[1][cell_id];
 
