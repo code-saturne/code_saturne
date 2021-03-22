@@ -1381,19 +1381,24 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   cs_param_get_advection_extrapol_name(nsp->adv_extrapol));
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
-    const char algo_name[] = "Picard";
-    if (nsp->sles_param->nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.",
-                __func__);
+    if (nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL) {
 
-    cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
-                  navsto, algo_name);
-    cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
-                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                  navsto, nsp->sles_param->nl_algo_rtol,
-                  nsp->sles_param->nl_algo_atol, nsp->sles_param->nl_algo_dtol);
-    cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
-                  navsto, nsp->sles_param->n_max_nl_algo_iter);
+      const char algo_name[] = "Picard";
+      if (nsp->sles_param->nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.",
+                  __func__);
+
+      cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
+                    navsto, algo_name);
+      cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
+                    " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                    navsto, nsp->sles_param->nl_algo_rtol,
+                    nsp->sles_param->nl_algo_atol,
+                    nsp->sles_param->nl_algo_dtol);
+      cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
+                    navsto, nsp->sles_param->n_max_nl_algo_iter);
+
+    } /* A non-linear treatment is requested */
 
   } /* Navier-Stokes */
 
