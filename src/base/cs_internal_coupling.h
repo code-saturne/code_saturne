@@ -73,6 +73,9 @@ typedef struct {
   char  *cells_criteria;
   char  *faces_criteria;
 
+  char *interior_faces_group_name;
+  char *exterior_faces_group_name;
+
   /* Associated zone ids */
 
   int   n_volume_zones;
@@ -171,6 +174,29 @@ cs_internal_coupling_add_volume_zone(cs_mesh_t       *mesh,
 void
 cs_internal_coupling_add_volume_zones(int        n_zones,
                                       const int  zone_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define internal coupling volume boundary group names.
+ *
+ * This is used only for internal couplings based on a separation of volumes
+ * (cs_internal_coupling_add_volume, cs_internal_coupling_add_volume_zone,
+ * cs_internal_coupling_add_volume_zones).
+ *
+ * The interior name is used for faces adjacent to the main volume, and
+ * the exterio name for faces adjacent to the selected (exterior) volume.
+ *
+ * This allows filtering faces on each side of the boundary in a simpler manner.
+ *
+ * \param[in, out] cpl             pointer to mesh structure to modify
+ * \param[in]      criteria_cells  criteria for the first group of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_boundary_groups(cs_internal_coupling_t  *cpl,
+                                         const char              *interior_name,
+                                         const char              *exterior_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
