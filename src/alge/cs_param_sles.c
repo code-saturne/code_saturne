@@ -1206,35 +1206,37 @@ _set_saturne_sles(bool                 use_field_id,
     mg = cs_sles_pc_get_context(pc);
     cs_sles_it_transfer_pc(it, &pc);
 
-    /* Change the default settings for CDO/HHO when used as preconditioner */
-    cs_multigrid_set_solver_options
-      (mg,
-       CS_SLES_PCG,       /* descent smoother */
-       CS_SLES_PCG,       /* ascent smoother */
-       CS_SLES_PCG,       /* coarse solver */
-       slesp->n_max_iter, /* n_max_cycles */
-       4,                 /* n_max_iter_descent, */
-       4,                 /* n_max_iter_ascent */
-       200,               /* n_max_iter_coarse */
-       0,                 /* poly_degree_descent */
-       0,                 /* poly_degree_ascent */
-       0,                 /* poly_degree_coarse */
-       -1.0,              /* precision_mult_descent */
-       -1.0,              /* precision_mult_ascent */
-       1.0);              /* precision_mult_coarse */
+    /* If this is a K-cycle multigrid. Change the default settings when used as
+       preconditioner */
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K) {
 
-    /* If this is a K-cycle multigrid. Change the default aggregation
-       algorithm */
-    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
+      cs_multigrid_set_solver_options
+        (mg,
+         CS_SLES_PCG,       /* descent smoother */
+         CS_SLES_PCG,       /* ascent smoother */
+         CS_SLES_PCG,       /* coarse solver */
+         slesp->n_max_iter, /* n_max_cycles */
+         2,                 /* n_max_iter_descent, */
+         2,                 /* n_max_iter_ascent */
+         500,               /* n_max_iter_coarse */
+         0,                 /* poly_degree_descent */
+         0,                 /* poly_degree_ascent */
+         0,                 /* poly_degree_coarse */
+         -1.0,              /* precision_mult_descent */
+         -1.0,              /* precision_mult_ascent */
+         1.0);              /* precision_mult_coarse */
+
       cs_multigrid_set_coarsening_options(mg,
                                           8,   /* aggregation_limit*/
-                                          CS_GRID_COARSENING_SPD_MX,
+                                          CS_GRID_COARSENING_SPD_PW,
                                           10,  /* n_max_levels */
                                           50,  /* min_g_cells */
                                           0.,  /* P0P1 relaxation */
                                           0);  /* postprocess */
 
-  } /* AMG as preconditioner */
+    } /* AMG K-cycle as preconditioner */
+
+  } /* AMG preconditioner */
 
   /* Define the level of verbosity for SLES structure */
   if (slesp->verbosity > 3) {
