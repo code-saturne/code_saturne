@@ -76,23 +76,30 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 
 ! Local variables
 
-integer ::         inc, iccocg, f_id
-integer ::         ifac, iloc, ivar
-integer ::         iel
-integer ::         iflmab, iscacp
+integer ::         f_id
+integer ::         iloc, ivar
 
-double precision :: cpp   , srfbn , heq
-double precision :: flumab, diipbx, diipby, diipbz
+character(len=80) :: f_name
+integer(c_int), dimension(:), allocatable :: c_faces
 
-double precision, allocatable, dimension(:) :: theipb
-double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:), pointer :: cpro_cp
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: bmasfl, tscalp, hextp, hintp, dist_theipb
+!===============================================================================
+! Interfaces
+!===============================================================================
 
-type(var_cal_opt) :: vcopt
+interface
 
-logical(c_bool), dimension(:), pointer ::  cpl_faces
+  subroutine cs_post_boundary_flux(scalar_name, n_loc_b_faces, b_face_ids,   &
+                                   b_face_flux)                              &
+    bind(C, name='cs_post_boundary_flux')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
+    integer(c_int), value :: n_loc_b_faces
+    integer(c_int), dimension(*) :: b_face_ids
+    real(kind=c_double), dimension(*) :: b_face_flux
+  end subroutine cs_post_boundary_flux
+
+end interface
 
 !===============================================================================
 
@@ -103,120 +110,17 @@ if (iscalt.gt.0) then
   ivar = isca(iscalt)
   f_id = ivarfl(ivar)
 
-  ! Boundary condition pointers for gradients and advection
+  call field_get_name (f_id, f_name)
 
-  call field_get_coefa_s(f_id, coefap)
-  call field_get_coefb_s(f_id, coefbp)
-
-  ! Boundary condition pointers for diffusion
-
-  call field_get_coefaf_s(f_id, cofafp)
-  call field_get_coefbf_s(f_id, cofbfp)
-
-  ! Boundary condition pointers for diffusion with coupling
-
-  call field_get_hext(f_id, hextp)
-  call field_get_hint(f_id, hintp)
-
-  ! Pointers to fields and properties
-
-  call field_get_val_prev_s(ivarfl(ivar), tscalp)
-
-  call field_get_key_int(f_id, kscacp, iscacp)
-  if (iscacp.eq.1 .and. icp.ge.0) then
-    call field_get_val_s(icp, cpro_cp)
-  endif
-
-  call field_get_key_int(f_id, kbmasf, iflmab)
-  call field_get_val_s(iflmab, bmasfl)
-
-  ! Compute variable values at boundary faces
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-  allocate(theipb(nfabor))
-  theipb = 0.d0
+  allocate(c_faces(nfbrps))
 
   do iloc = 1, nfbrps
-    ifac = lstfbr(iloc)
-    iel = ifabor(ifac)
-    theipb(ifac) = tscalp(iel)
+    c_faces(iloc) = lstfbr(iloc) - 1
   enddo
 
-  ! Reconstructed fluxes
-  if (vcopt%ircflu .gt. 0 .and. itbrrb.eq.1) then
+  call cs_post_boundary_flux(trim(f_name)//c_null_char, nfbrps, c_faces, bflux)
 
-    ! Compute gradient of temperature / enthalpy
-
-    allocate(grad(3,ncelet))
-
-    inc = 1
-    iccocg = 1
-
-    call field_gradient_scalar(ivarfl(ivar), 0, 0, inc, iccocg, grad)
-
-    ! Compute reconstructed temperature
-
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      iel = ifabor(ifac)
-
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-
-      theipb(ifac) = theipb(ifac)       &
-                   + diipbx*grad(1,iel) &
-                   + diipby*grad(2,iel) &
-                   + diipbz*grad(3,iel)
-    enddo
-
-    deallocate(grad)
-  endif
-
-  if (vcopt%icoupl.gt.0) then
-    call field_get_coupled_faces(ivarfl(ivar), cpl_faces)
-    allocate(dist_theipb(nfabor))
-    call cs_ic_field_dist_data_by_face_id(ivarfl(ivar), 1, theipb, dist_theipb)
-  endif
-
-  do iloc = 1, nfbrps
-
-    ifac = lstfbr(iloc)
-    iel = ifabor(ifac)
-
-    if (iscacp.eq.1) then
-      if (icp.ge.0) then
-        cpp = cpro_cp(iel)
-      else
-        cpp = cp0
-      endif
-    else
-      cpp = 1.d0
-    endif
-
-    srfbn = max(surfbn(ifac), epzero**2)
-    flumab = bmasfl(ifac)
-
-    bflux(iloc) = (cofafp(ifac) + cofbfp(ifac)*theipb(ifac))   &
-                - flumab*cpp/srfbn*(coefap(ifac) + coefbp(ifac)*theipb(ifac))
-    ! here bflux = 0 if current face is coupled
-
-    if (vcopt%icoupl.gt.0.and.ntcabs.gt.1) then
-      ! FIXME exchange coefs not computed at start of calculation
-      if (cpl_faces(ifac)) then
-        heq = hextp(ifac) * hintp(ifac) / ((hextp(ifac) + hintp(ifac))*srfbn)
-        bflux(iloc) = heq*(theipb(ifac)-dist_theipb(ifac))
-      endif
-    endif
-
-  enddo
-
-  if (vcopt%icoupl.gt.0) then
-    deallocate(dist_theipb)
-  endif
-
-  deallocate(theipb)
+  deallocate(c_faces)
 
 else ! if thermal variable is not available
 
@@ -225,10 +129,6 @@ else ! if thermal variable is not available
   enddo
 
 endif
-
-!--------
-! Formats
-!--------
 
 !----
 ! End
@@ -415,7 +315,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     numer = (cofafp(ifac) + cofbfp(ifac)*theipb(ifac)) * distb(ifac)
     ! here numer = 0 if current face is coupled
 
-    if (vcopt%icoupl.gt.0.and.ntcabs.gt.1) then
+    if (vcopt%icoupl.gt.0.and.ntcabs.gt.0) then
       ! FIXME exchange coefs not computed at start of calculation
       if (cpl_faces(ifac)) then
         heq = hextp(ifac) * hintp(ifac) / ((hextp(ifac) + hintp(ifac))*srfbn)
