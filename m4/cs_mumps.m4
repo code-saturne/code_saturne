@@ -33,12 +33,12 @@ mumps_prefix=""
 cs_abs_srcdir=`cd $srcdir && pwd`
 
 AC_ARG_WITH(mumps,
-	    [AS_HELP_STRING([--with-mumps=PATH],
-			    [specify prefix directory for MUMPS])],
-	    [if test "x$withval" = "x"; then
-	       with_mumps=no
-	     fi],
-	    [with_mumps=no])
+            [AS_HELP_STRING([--with-mumps=PATH],
+                            [specify prefix directory for MUMPS])],
+            [if test "x$withval" = "x"; then
+               with_mumps=no
+             fi],
+            [with_mumps=no])
 
 if test "x$with_mumps" != "xno" ; then
 
@@ -79,14 +79,28 @@ if test "x$with_mumps" != "xno" ; then
 [[DMUMPS_STRUC_C id;id.job=-1;dmumps_c(&id);id.job=-2;dmumps_c(&id);]]
 [[id.job=-1;id.par=1;id.sym=0;dmumps_c(&id);]]
 [[id.job=-2;dmumps_c(&id);]])
-		   ],
-		   [ AC_DEFINE([HAVE_MUMPS], 1, [Mumps support])
-		     cs_have_mumps=yes
-		   ],
-		   [ AC_MSG_WARN([no Mumps support])
-		     cs_have_mumps=no
-		   ],
-		  )
+                   ],
+                   [ AC_DEFINE([HAVE_MUMPS], 1, [Mumps double-precision support])
+                     cs_have_mumps=yes
+                   ],
+                   [ AC_MSG_WARN([no double-precision Mumps support])
+                     cs_have_mumps=no
+                   ],
+                  )
+
+  AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <smumps_c.h>]],
+[[SMUMPS_STRUC_C id;id.job=-1;smumps_c(&id);id.job=-2;smumps_c(&id);]]
+[[id.job=-1;id.par=1;id.sym=0;smumps_c(&id);]]
+[[id.job=-2;smumps_c(&id);]])
+                   ],
+                   [ AC_DEFINE([HAVE_MUMPS], 1, [Mumps single-precision support])
+                     cs_have_mumps=yes
+                   ],
+                   [ AC_MSG_WARN([no single-precision Mumps support])
+                     cs_have_mumps=no
+                   ],
+                  )
 
   if test "x$cs_have_mumps" = "xno"; then
     MUMPS_CPPFLAGS=""
