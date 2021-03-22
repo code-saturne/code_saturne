@@ -4952,8 +4952,22 @@ cs_gui_internal_coupling(void)
         z_ids[j++] = z->id;
     }
 
+    int coupling_id = cs_internal_coupling_n_couplings();
+
     cs_internal_coupling_add_volume_zones(n_volume_zones, z_ids);
     BFT_FREE(z_ids);
+
+    {
+      cs_internal_coupling_t *cpl = cs_internal_coupling_by_id(coupling_id);
+
+      char i_name[64], e_name[64];
+      snprintf(i_name, 63, "auto:internal_coupling_%d_fluid", cpl->id);
+      i_name[63] = '\0';
+      snprintf(e_name, 63, "auto:internal_coupling_%d_solid", cpl->id);
+      e_name[63] = '\0';
+
+      cs_internal_coupling_add_boundary_groups(cpl, i_name, e_name);
+    }
 
     if (n_volume_zones > 0) {
       cs_tree_node_t *ns

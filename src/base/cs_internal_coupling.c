@@ -367,6 +367,8 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->coupled_faces);
   BFT_FREE(cpl->cells_criteria);
   BFT_FREE(cpl->faces_criteria);
+  BFT_FREE(cpl->interior_faces_group_name);
+  BFT_FREE(cpl->exterior_faces_group_name);
   BFT_FREE(cpl->volume_zone_ids);
   ple_locator_destroy(cpl->locator);
 }
@@ -625,6 +627,8 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->c_tag = NULL;
   cpl->cells_criteria = NULL;
   cpl->faces_criteria = NULL;
+  cpl->interior_faces_group_name = NULL;
+  cpl->exterior_faces_group_name = NULL;
 
   cpl->n_volume_zones = 0;
   cpl->volume_zone_ids = NULL;
@@ -832,21 +836,19 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
 
     BFT_FREE(cell_flag);
 
-    char group_name[64];
+    if (cpl->exterior_faces_group_name != NULL) {
+      cs_mesh_group_b_faces_add(m,
+                                cpl->exterior_faces_group_name,
+                                n_sel_ext,
+                                sel_faces_ext);
+    }
 
-    snprintf(group_name, 63, "%s_exterior", cpl->faces_criteria);
-    group_name[63] = '\0';
-    cs_mesh_group_b_faces_add(m,
-                              group_name,
-                              n_sel_ext,
-                              sel_faces_ext);
-
-    snprintf(group_name, 63, "%s_interior", cpl->faces_criteria);
-    group_name[63] = '\0';
-    cs_mesh_group_b_faces_add(m,
-                              group_name,
-                              n_sel_int,
-                              sel_faces_int);
+    if (cpl->interior_faces_group_name != NULL) {
+      cs_mesh_group_b_faces_add(m,
+                                cpl->interior_faces_group_name,
+                                n_sel_int,
+                                sel_faces_int);
+    }
 
     BFT_FREE(sel_faces_int);
     BFT_FREE(sel_faces_ext);
@@ -1130,6 +1132,40 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
     cpl->volume_zone_ids[i] = zone_ids[i];
 
   _n_internal_couplings++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define internal coupling volume boundary group names.
+ *
+ * This is used only for internal couplings based on a separation of volumes
+ * (cs_internal_coupling_add_volume, cs_internal_coupling_add_volume_zone,
+ * cs_internal_coupling_add_volume_zones).
+ *
+ * The interior name is used for faces adjacent to the main volume, and
+ * the exterio name for faces adjacent to the selected (exterior) volume.
+ *
+ * This allows filtering faces on each side of the boundary in a simpler manner.
+ *
+ * \param[in, out] cpl             pointer to mesh structure to modify
+ * \param[in]      criteria_cells  criteria for the first group of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_boundary_groups(cs_internal_coupling_t  *cpl,
+                                         const char              *interior_name,
+                                         const char              *exterior_name)
+{
+  if (cpl != NULL && interior_name != NULL) {
+    BFT_REALLOC(cpl->interior_faces_group_name, strlen(interior_name) + 1, char);
+    strcpy(cpl->interior_faces_group_name, interior_name);
+  }
+
+  if (cpl != NULL && exterior_name != NULL) {
+    BFT_REALLOC(cpl->exterior_faces_group_name, strlen(exterior_name) + 1, char);
+    strcpy(cpl->exterior_faces_group_name, exterior_name);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2888,6 +2924,14 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
   if (cpl->faces_criteria != NULL)
     bft_printf("   Face group selection criterion: %s\n",
                cpl->faces_criteria);
+
+  if (cpl->interior_faces_group_name != NULL)
+    bft_printf("   Assign interior faces group name: %s\n",
+               cpl->interior_faces_group_name);
+
+  if (cpl->exterior_faces_group_name != NULL)
+    bft_printf("   Assign interior faces group name: %s\n",
+               cpl->exterior_faces_group_name);
 
   if (cpl->n_volume_zones > 0) {
     bft_printf("   Volume zones:\n");
