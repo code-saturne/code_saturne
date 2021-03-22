@@ -612,7 +612,7 @@ cs_velocity_pressure_param_log_setup(void)
                  "----------------------------\n\n"));
 
   cs_log_printf(CS_LOG_SETUP,
-                ("    nterup:    %d (number of U-P sub iterations)\n"),
+                ("    nterup:        %d (number of U-P sub iterations)\n"),
                 vp_param->nterup);
 
   const char *iphydr_value_str[]
