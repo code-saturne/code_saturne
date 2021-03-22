@@ -528,6 +528,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
                 navsto, nslesp->il_algo_rtol, nslesp->il_algo_atol,
                 nslesp->il_algo_dtol, nslesp->il_algo_verbosity);
+  cs_log_printf(CS_LOG_SETUP, "%s Max of inner-linear iterations: %d\n",
+                navsto, nslesp->n_max_il_algo_iter);
 
   /* Additional settings for the Schur complement solver */
   if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG          ||
