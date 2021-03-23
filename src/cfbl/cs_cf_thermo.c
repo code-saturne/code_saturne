@@ -1818,5 +1818,53 @@ cs_cf_thermo(const int    iccfth,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute density at boundary based on pressure and temperature.
+ *
+ * This is needed when imposing a mass flow rate on a given inlet.
+ *
+ * \param[in]     face_id       face id
+ * \param[in] bc_pr         pressure value at boundary face
+ * \param[in] bc_tk         temperature value at boundary face
+ *
+ * \return density at boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cf_thermo_b_rho_from_pt(cs_lnum_t  face_id,
+                           cs_real_t  bc_pr,
+                           cs_real_t  bc_tk)
+{
+  /* Local variables */
+  int ieos = cs_glob_cf_model->ieos;
+  cs_real_t psginf = cs_glob_cf_model->psginf;
+
+  cs_real_t b_rho = 0;
+
+  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_STIFFENED_GAS) {
+    cs_real_t gamma0;
+    cs_real_t cp0 = cs_glob_fluid_properties->cp0;
+    cs_real_t cv0 = cs_glob_fluid_properties->cv0;
+    cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, 1);
+
+    b_rho = (bc_pr+psginf) / ((gamma0-1.)*bc_tk*cv0);
+  }
+  else if (ieos == CS_EOS_GAS_MIX) {
+    cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
+
+    cs_real_t cp = CS_F_(cp)->val[cell_id];
+    cs_real_t cv = CS_F_(cv)->val[cell_id];
+
+    cs_real_t gamma;
+    cs_cf_thermo_gamma(&cp, &cv, &gamma, 1);
+
+    b_rho = (bc_pr+psginf) / ((gamma-1.)*bc_tk*cv);
+  }
+
+  return b_rho;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -729,6 +729,25 @@ cs_cf_thermo(const int    iccfth,
              cs_real_3_t *bc_vel);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute density at boundary based on pressure and temperature.
+ *
+ * This is needed when imposing a mass flow rate on a given inlet.
+ *
+ * \param[in]     face_id       face id
+ * \param[in] bc_pr         pressure value at boundary face
+ * \param[in] bc_tk         temperature value at boundary face
+ *
+ * \return density at boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cf_thermo_b_rho_from_pt(cs_lnum_t  face_id,
+                           cs_real_t  bc_pr,
+                           cs_real_t  bc_tk);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -73,6 +73,7 @@ use optcal
 use cstphy
 use cstnum
 use dimens, only: nvar
+use ppincl, only: itempk
 use entsor
 use parall
 use mesh
@@ -99,8 +100,8 @@ double precision rcodcl(nfabor,nvar,3)
 
 integer          ifac, izone, ifvu, izonem
 integer          nozapm, nzfppp
-integer          icke, ii, iel, iok
-double precision qisqc, viscla, uref2, rhomoy, dhy, xiturb
+integer          icke, ii, iel, iok, itk
+double precision qisqc, viscla, uref2, rhomoy, dhy, xiturb, brom_loc
 double precision, dimension(:), pointer :: brom
 double precision, dimension(:), pointer :: viscl
 integer, allocatable, dimension(:) :: ilzfbr
@@ -111,6 +112,21 @@ data             ipass /0/
 save             ipass
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_cf_thermo_b_rho_from_pt(face_id, bc_pr, bc_tk) result(b_rho) &
+    bind(C, name='cs_cf_thermo_b_rho_from_pt')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), intent(in), value :: face_id
+    real(kind=c_double), intent(in), value :: bc_pr, bc_tk
+    real(kind=c_double) :: b_rho
+  end function cs_cf_thermo_b_rho_from_pt
+
+ end interface
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -225,10 +241,24 @@ do ifac = 1,nfabor
            rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
            rcodcl(ifac,iw,1)*surfbo(3,ifac) )
     else
-      qcalc(izone) = qcalc(izone) - brom(ifac) *           &
-         ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-           rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-           rcodcl(ifac,iw,1)*surfbo(3,ifac) )
+      if (brom(ifac) .gt. 0d0) then
+        qcalc(izone) = qcalc(izone) - brom(ifac) *           &
+           ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
+             rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
+             rcodcl(ifac,iw,1)*surfbo(3,ifac) )
+      else if (itypfb(ifac).eq.iesicf) then
+        itk = isca(itempk)
+        if (      rcodcl(ifac,ipr,1).le.rinfin*0.5d0                &
+            .and. rcodcl(ifac,itk,1).le.rinfin*0.5d0) then
+          brom_loc = cs_cf_thermo_b_rho_from_pt(ifac - 1,           &
+                                                rcodcl(ifac,ipr,1), &
+                                                rcodcl(ifac,itk,1))
+          qcalc(izone) = qcalc(izone) - brom_loc *                  &
+                         (rcodcl(ifac,iu,1)*surfbo(1,ifac) +        &
+                          rcodcl(ifac,iv,1)*surfbo(2,ifac) +        &
+                          rcodcl(ifac,iw,1)*surfbo(3,ifac))
+        endif
+      endif
     endif
   endif
 enddo
