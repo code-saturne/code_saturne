@@ -91,6 +91,8 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=icx
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
+  elif test -n "`echo $ple_ac_cc_version | grep Cray`" ; then
+    ple_gcc=cray
   else
     ple_gcc=gcc
   fi
@@ -401,7 +403,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
 fi
 
 
-if test -f $outfile ; then 
+if test -f $outfile ; then
   ple_ac_cc_version_full=`sed -e '11,$d' $outfile`
   rm -f $outfile
 fi
