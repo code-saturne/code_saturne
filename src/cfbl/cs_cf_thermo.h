@@ -718,9 +718,6 @@ cs_cf_thermo_eps_sup(const cs_real_t  *dens,
  *   bc_pr   <-- pressure values at boundary faces
  *   bc_tk   <-- temperature values at boundary faces
  *   bc_vel  <-- velocity values at boundary faces
- *   bc_fracv <--  volume fraction values at boundary faces
- *   bc_fracm <--  mass fraction values at boundary faces
- *   bc_frace <--  energy fraction values at boundary faces
  *----------------------------------------------------------------------------*/
 
 void
@@ -729,10 +726,7 @@ cs_cf_thermo(const int    iccfth,
              cs_real_t   *bc_en,
              cs_real_t   *bc_pr,
              cs_real_t   *bc_tk,
-             cs_real_3_t *bc_vel,
-             cs_real_t   *bc_fracv,
-             cs_real_t   *bc_fracm,
-             cs_real_t   *bc_frace);
+             cs_real_3_t *bc_vel);
 
 /*----------------------------------------------------------------------------*/
 

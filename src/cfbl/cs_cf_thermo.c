@@ -1686,9 +1686,6 @@ cs_cf_thermo_eps_sup(const cs_real_t  *dens,
  * \param[in,out] bc_pr         pressure values at boundary faces
  * \param[in,out] bc_tk         temperature values at boundary faces
  * \param[in,out] bc_vel        velocity values at boundary faces
- * \param[in,out] bc_fracv      volume fraction values at boundary faces
- * \param[in,out] bc_fracm      mass fraction values at boundary faces
- * \param[in,out] bc_frace      energy fraction values at boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1698,10 +1695,7 @@ cs_cf_thermo(const int    iccfth,
              cs_real_t   *bc_en,
              cs_real_t   *bc_pr,
              cs_real_t   *bc_tk,
-             cs_real_3_t *bc_vel,
-             cs_real_t   *bc_fracv,
-             cs_real_t   *bc_fracm,
-             cs_real_t   *bc_frace)
+             cs_real_3_t *bc_vel)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1709,7 +1703,7 @@ cs_cf_thermo(const int    iccfth,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   /* Local variables */
-  cs_lnum_t l_size, cell_id;
+  cs_lnum_t cell_id = -1;
 
   if (face_id >= 0)
     cell_id = b_face_cells[face_id];
@@ -1728,11 +1722,11 @@ cs_cf_thermo(const int    iccfth,
   cs_real_t cpb = 0.;
   cs_real_t cvb = 0.;
 
-  if (CS_F_(cp)) {
+  if (CS_F_(cp) != NULL) {
     cpro_cp = (cs_real_t *)CS_F_(cp)->val;
     if (face_id >= 0) cpb = cpro_cp[cell_id];
   }
-  if (CS_F_(cv)) {
+  if (CS_F_(cv) != NULL) {
     cpro_cv = (cs_real_t *)CS_F_(cv)->val;
     if (face_id >= 0) cvb = cpro_cv[cell_id];
   }
@@ -1752,81 +1746,74 @@ cs_cf_thermo(const int    iccfth,
 
   /*  Calculation of temperature and energy from pressure and density */
   if (iccfth == 60000) {
-    l_size = n_cells;
-    cs_cf_check_density(crom, l_size);
+    cs_cf_check_density(crom, n_cells);
     cs_cf_thermo_te_from_dp(cpro_cp, cpro_cv, cvar_pr, crom, cvar_tk, cvar_en,
-                            vel, l_size);
+                            vel, n_cells);
   }
   /*  Calculation of density and energy from pressure and temperature: */
   else if (iccfth == 100000) {
-    l_size = n_cells;
-    cs_cf_check_temperature(cvar_tk, l_size);
+    cs_cf_check_temperature(cvar_tk, n_cells);
     cs_cf_thermo_de_from_pt(cpro_cp, cpro_cv, cvar_pr, cvar_tk, crom, cvar_en,
-                            vel, l_size);
+                            vel, n_cells);
   }
   /*  Calculation of density and temperature from pressure and energy */
   else if (iccfth == 140000) {
-    l_size = n_cells;
     cs_cf_thermo_dt_from_pe(cpro_cp, cpro_cv, cvar_pr, cvar_en, crom, cvar_tk,
-                            vel, l_size);
+                            vel, n_cells);
   }
   /*  Calculation of pressure and energy from density and temperature */
   else if (iccfth == 150000) {
-    l_size = n_cells;
     cs_cf_thermo_pe_from_dt(cpro_cp, cpro_cv, crom, cvar_tk, cvar_pr, cvar_en,
-                            vel, l_size);
+                            vel, n_cells);
   }
   /*  Calculation of pressure and temperature from density and energy */
   else if (iccfth == 210000) {
-    l_size = n_cells;
     cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom,
                             cvar_en, cvar_pr, cvar_tk,
                             vel,
                             cvar_fracv,
                             cvar_fracm,
                             cvar_frace,
-                            l_size);
+                            n_cells);
   }
   /*  Calculation of temperature and energy from pressure and density
       (it is postulated that the pressure and density values are strictly
       positive) */
   else if (iccfth == 60900) {
-    l_size = 1;
     cs_cf_thermo_te_from_dp(&cpb, &cvb, &bc_pr[face_id], &brom[face_id],
                             &bc_tk[face_id], &bc_en[face_id], &bc_vel[face_id],
-                            l_size);
+                            1);
   }
   /*  Calculation of density and energy from pressure and temperature */
   else if (iccfth == 100900) {
-    l_size = 1;
     cs_cf_thermo_de_from_pt(&cpb, &cvb, &bc_pr[face_id], &bc_tk[face_id],
                             &brom[face_id], &bc_en[face_id], &bc_vel[face_id],
-                            l_size);
+                            1);
   }
   /*  Calculation of density and temperature from pressure and total energy */
   else if (iccfth == 140900) {
-    l_size = 1;
     cs_cf_thermo_dt_from_pe(&cpb, &cvb, &bc_pr[face_id], &bc_en[face_id],
                             &brom[face_id], &bc_tk[face_id], &bc_vel[face_id],
-                            l_size);
+                            1);
   }
   /*  Calculation of pressure and energy from density and temperature */
   else if (iccfth == 150900) {
-    l_size = 1;
     cs_cf_thermo_pe_from_dt(&cpb, &cvb, &brom[face_id], &bc_tk[face_id],
                             &bc_pr[face_id], &bc_en[face_id], &bc_vel[face_id],
-                            l_size);
+                            1);
   }
   /*  Calculation of pressure and temperature from density and energy */
   else if (iccfth == 210900) {
-    l_size = 1;
+    cs_real_t _fracv = cvar_fracv[cell_id];
+    cs_real_t _fracm = cvar_fracm[cell_id];
+    cs_real_t _frace = cvar_frace[cell_id];
     cs_cf_thermo_pt_from_de(&cpb, &cvb, &brom[face_id],
                             &bc_en[face_id], &bc_pr[face_id],
                             &bc_tk[face_id], &bc_vel[face_id],
-                            &bc_fracv[face_id],
-                            &bc_fracm[face_id],
-                            &bc_frace[face_id],
-                            l_size);
+                            &_fracv,
+                            &_fracm,
+                            &_frace,
+                            1);
   }
 }
 
