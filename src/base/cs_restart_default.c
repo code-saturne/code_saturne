@@ -66,6 +66,7 @@
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_physical_constants.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -114,6 +115,41 @@ const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Cancel array values in solid zone
+ *
+ * parameters:
+ *   stride <-- array stride
+ *   a      <-> array
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Define internal coupling through the GUI.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cancel_in_solid_zones(cs_lnum_t   stride,
+                       cs_real_t  *a)
+{
+  int n_zones = cs_volume_zone_n_zones();
+
+  for (int i = 0; i < n_zones; i++) {
+    const cs_zone_t  *z = cs_volume_zone_by_id(i);
+    if (z->type & CS_VOLUME_ZONE_SOLID) {
+      if (stride == 1) {
+        for (cs_lnum_t j = 0; j < z->n_elts; z++)
+          a[z->elt_ids[j]] = 0;
+      }
+      else {
+        for (cs_lnum_t j = 0; j < z->n_elts; z++) {
+          cs_real_t *_a = a + (stride * z->elt_ids[j]);
+          for (cs_lnum_t k = 0; k < stride; k++)
+            _a[k] = 0;
+        }
+      }
+    }
+  }
+}
 /*----------------------------------------------------------------------------
  * Read and rebuild partial field metadata from legacy checkpoint.
  *
@@ -1627,6 +1663,9 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
                                    v_eps,
                                    fluctuations);
       cs_les_rescale_fluctuations(n_cells, rst, fluctuations);
+
+      /* Cancel fluctuations in solid zones */
+      _cancel_in_solid_zones(3, (cs_real_t *)fluctuations);
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells ; cell_id++) {
         /* Final update of velocities components unew = urans + u' */
