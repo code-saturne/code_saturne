@@ -82,10 +82,14 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
 
         self.__Scalarmodel = ComboModel(self.comboBoxScalar, 1, 1)
 
+        self.comboBoxScalarChoice.activated[str].connect(self.slotScalarTypeChoice)
+        self.scalarChoiceModel = ComboModel(self.comboBoxScalarChoice, 1, 1)
+        self.scalarChoiceModel.addItem(self.tr("Value"), 'dirichlet')
+        self.scalarChoiceModel.addItem(self.tr("Flux"), 'flux')
+
         self.lineEditScalar.textChanged[str].connect(self.__slotScalar)
 
-        validatorScalar = DoubleValidator(self.lineEditScalar, min = 0.)
-        validatorScalar.setExclusiveMin(False)
+        validatorScalar = DoubleValidator(self.lineEditScalar)
 
         self.lineEditScalar.setValidator(validatorScalar)
 
@@ -105,18 +109,35 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         self.__boundary = boundary
 
-        ScalarList = SpeciesModel(self.case).getScalarByFieldId(self.__currentField)
+        # For walls, current field is set to -1, hence the need for the list
+        if int(self.__currentField) < 0:
+            fieldList = SpeciesModel(self.case).getFieldIdList()
+        else:
+            fieldList = [str(self.__currentField)]
 
-        if len(ScalarList) > 0 :
+        self.__scalarsList = []
+        for f_id in fieldList:
+            for species in SpeciesModel(self.case).getScalarByFieldId(f_id):
+                self.__scalarsList.append((f_id, species))
+
+        if len(self.__scalarsList) > 0 :
             for nb in range(len(self.__Scalarmodel.getItems())):
                 self.__Scalarmodel.delItem(0)
 
-            for var in ScalarList :
-                name = SpeciesModel(self.case).getScalarLabelByName(var)
-                self.__Scalarmodel.addItem(self.tr(name), var)
-            self.__currentScalar = ScalarList[0]
-            self.__Scalarmodel.setItem(str_model=self.__currentScalar)
-            val = self.__boundary.getScalarValue(self.__currentField, self.__currentScalar)
+            for var in self.__scalarsList :
+                name = SpeciesModel(self.case).getScalarLabelByName(var[1])
+                self.__Scalarmodel.addItem(self.tr(name), var[1])
+
+            self.__currentScalar = self.__scalarsList[0]
+
+            _f0, _s0 = self.__currentScalar
+
+            self.__Scalarmodel.setItem(str_model=_s0)
+
+            choice0 = self.__boundary.getScalarChoice(_f0, _s0)
+            self.scalarChoiceModel.setItem(str_model=choice0)
+
+            val = self.__boundary.getScalarValue(_f0, _s0)
             self.lineEditScalar.setText(str(val))
             self.show()
         else :
@@ -135,11 +156,32 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         INPUT choice of non condensable
         """
-        self.__currentScalar = self.__Scalarmodel.dicoV2M[str(text)]
+        for _s in self.__scalarsList:
+            if _s[1] == self.__Scalarmodel.dicoV2M[str(text)]:
+                self.__currentScalar = _s
+                break
 
-        val = self.__boundary.getScalarValue(self.__currentField, self.__currentScalar)
+        _f_id, _sname = self.__currentScalar
+
+        # Update condition type choice
+        scalarModel = self.__boundary.getScalarChoice(_f_id, _sname)
+        self.scalarChoiceModel.setItem(str_model=scalarModel)
+
+        # Update value
+        val = self.__boundary.getScalarValue(_f_id, _sname)
         self.lineEditScalar.setText(str(val))
 
+
+    @pyqtSlot(str)
+    def slotScalarTypeChoice(self, text):
+        """
+        INPUT Condition type choice for scalar
+        """
+        choice = self.scalarChoiceModel.dicoV2M[str(text)]
+
+        _f_id, _sname = self.__currentScalar
+
+        self.__boundary.setScalarChoice(_f_id, _sname, choice)
 
     @pyqtSlot(str)
     def __slotScalar(self, text):
@@ -148,7 +190,9 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         if self.lineEditScalar.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
-            self.__boundary.setScalarValue(self.__currentField, self.__currentScalar, value)
+
+            _f_id, _sname = self.__currentScalar
+            self.__boundary.setScalarValue(_f_id, _sname, value)
 
 
 #-------------------------------------------------------------------------------

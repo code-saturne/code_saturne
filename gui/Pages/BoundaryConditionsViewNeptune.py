@@ -299,7 +299,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.FractionWidget.hideWidget()
         self.NonCondensableWidget.hideWidget()
         self.InterfacialAreaWidget.hideWidget()
-        self.ScalarWidget.hideWidget()
+        self.ScalarWidget.setup(self.case, self.__currentField)
+        self.ScalarWidget.showWidget(boundary)
         if self.__currentField > 0 :
             self.WallWidget.setup(self.case, self.__currentField)
             self.WallWidget.showWidget(boundary)
