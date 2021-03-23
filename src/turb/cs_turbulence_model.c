@@ -1014,9 +1014,9 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
-                                       double  **xlesfl,
-                                       double  **ales  ,
-                                       double  **bles  ,
+                                       const double  **xlesfl,
+                                       const double  **ales,
+                                       const double  **bles,
                                        double  **cdries
                                        );
 
@@ -1181,9 +1181,9 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
-                                       double  **xlesfl,
-                                       double  **ales  ,
-                                       double  **bles  ,
+                                       const double  **xlesfl,
+                                       const double  **ales,
+                                       const double  **bles,
                                        double  **cdries)
 {
   *cmu    = &cs_turb_cmu;

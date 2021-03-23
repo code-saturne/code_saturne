@@ -891,11 +891,12 @@ cs_rad_transfer_bcs(int         nvar,
         || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_1D_T) {
       int t_bc_code = icodcl[ivart*n_b_faces + face_id];
       int sgn = (t_bc_code < 0) ? - 1 : 1;
-      if (sgn*t_bc_code != icodw)
+      if (sgn*t_bc_code != icodw) {
         if (icodcl[ivart*n_b_faces + face_id] == 15)
-            icodcl[ivart*n_b_faces + face_id] = 15*sgn;
+          icodcl[ivart*n_b_faces + face_id] = 15*sgn;
         else
-            icodcl[ivart*n_b_faces + face_id] = icodw*sgn;
+          icodcl[ivart*n_b_faces + face_id] = icodw*sgn;
+      }
       if (ivahg >= 0)
         icodcl[(ivahg - 1)*n_b_faces + face_id] = icodw;
     }

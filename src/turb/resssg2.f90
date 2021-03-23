@@ -45,7 +45,6 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
 !> \param[in]     icetsm        index of cells with mass source term
@@ -68,7 +67,7 @@
 !_______________________________________________________________________________
 
 subroutine resssg2 &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncesmp ,                                     &
    ivar   ,                                                       &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
@@ -108,7 +107,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          ncesmp
 integer          ivar
 
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)

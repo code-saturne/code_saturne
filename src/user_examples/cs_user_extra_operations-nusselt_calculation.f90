@@ -94,8 +94,6 @@ integer ifac, iel, npoint, iel1, irang1, ii, iun, impout, nlelt, neltg
 double precision diipbx, diipby, diipbz
 double precision xtbulk, xubulk, xyz(3), xtb, xub, tfac, lambda, xab
 
-character*19 namfil
-
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp
 double precision, allocatable, dimension(:,:) :: grad

@@ -48,7 +48,6 @@ subroutine cs_f_user_extra_operations &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use numvar
 use optcal
@@ -95,10 +94,9 @@ integer, allocatable, dimension(:) :: lstelt
 
 double precision, allocatable, dimension(:) :: viscf, viscb, scalar_diffusion
 
-double precision, dimension(:), pointer :: delay, saturation
 double precision, dimension(:), pointer :: cvar_scal_1
 double precision, dimension(:), pointer :: cvar_pr
-double precision, dimension(:,:), pointer :: cvar_vel, visten
+double precision, dimension(:,:), pointer :: cvar_vel
 double precision, dimension(:), pointer :: cpro_vscalt
 double precision, dimension(:), pointer :: imasfl, bmasfl
 

@@ -325,7 +325,6 @@ implicit none
 
 ! Local variables
 
-double precision, dimension(:), pointer :: kd, kplus, kminus
 type(gwf_soilwater_partition) :: sorption_sca1
 
 !----------

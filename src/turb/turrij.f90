@@ -657,7 +657,7 @@ if (irijco.eq.1) then
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
     call resssg2 &
-  ( nvar    , nscal  , ncepdp , ncesmp ,                            &
+  ( nvar    , nscal  , ncesmp ,                                     &
     ivar    ,                                                       &
     icetsm , itypsm ,                                               &
     dt      ,                                                       &
@@ -741,9 +741,9 @@ else
 endif
 
 if (irijco.eq.1) then
-  call clprij2(ncelet, ncel, iclip)
+  call clprij2(ncel)
 else
-  call clprij(ncelet, ncel, iclip)
+  call clprij(ncel, iclip)
 endif
 
 

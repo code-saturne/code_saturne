@@ -33,15 +33,12 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !> \param[in]     iclip         indicator = 0 if viscl0 is used
 !>                              otherwise viscl is used.
 !______________________________________________________________________________
 
-subroutine clprij &
- ( ncelet , ncel   ,                                              &
-   iclip  )
+subroutine clprij(ncel, iclip)
 
 !===============================================================================
 
@@ -63,7 +60,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
+integer          ncel
 integer          iclip
 
 ! Local variables
@@ -274,15 +271,11 @@ end subroutine clprij
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     iclip         indicator = 0 if viscl0 is used
-!>                              otherwise viscl is used.
 !______________________________________________________________________________
 
 subroutine clprij2 &
- ( ncelet , ncel   ,                                              &
-   iclip  )
+ (ncel)
 
 !===============================================================================
 
@@ -304,8 +297,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
-integer          iclip
+integer          ncel
 
 ! Local variables
 integer          iel, ivar, ivar1, ivar2, isou, icltot, iclpep(1)

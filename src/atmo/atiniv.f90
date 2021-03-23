@@ -577,9 +577,7 @@ implicit none
 
 ! Local variables
 
-integer          iel
 double precision d2s3
-double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
@@ -587,7 +585,6 @@ double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
 double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp
 double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
