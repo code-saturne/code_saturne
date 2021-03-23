@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>91</height>
+    <height>94</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QComboBox" name="comboBoxScalar"/>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxScalarChoice"/>
         </item>
         <item>
          <spacer name="horizontalSpacer">

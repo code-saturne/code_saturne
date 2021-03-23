@@ -175,6 +175,7 @@ class InletBoundary(Boundary):
         dico['diameter'] = 1.e-3
         dico['noncondensable'] = 0.
         dico['scalar'] = 0.
+        dico['scalarModel'] = 'dirichlet'
 
         turb_model =  TurbulenceModel(self.case).getTurbulenceModel(fieldId)
         if turb_model in TurbulenceModelsDescription.dispersedTurbulenceModels:
@@ -758,13 +759,47 @@ R12-23 = 5e-05;"""
 
 
     @Variables.noUndo
+    def getScalarChoice(self, fieldId, scalar):
+        """
+        Get the boundary condition used for the scalar.
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
+
+        choice = XMLScalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['scalarModel']
+            self.setScalarChoice(fieldId, scalar, choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setScalarChoice(self, fieldId, scalar, value):
+        """
+        Set boundary condition type for a scalar.
+        """
+
+        self.isInList(str(fieldId), self.getFieldIdList())
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+
+        XMLScalarNode = node.xmlInitNode('variable',
+                                         'choice',
+                                         name=scalar)
+
+        XMLScalarNode['choice'] = value
+
+
+    @Variables.noUndo
     def getScalarValue(self, fieldId, Scalar):
         """
         Get non condensable variable for field
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLScalarNode = node.xmlInitNode('variable', choice='dirichlet', name=Scalar)
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
         if Childnode == None :
@@ -781,9 +816,8 @@ R12-23 = 5e-05;"""
         Set non condensable variable for field
         """
         self.isInList(str(fieldId), self.getFieldIdList())
-        Model().isPositiveFloat(value)
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
-        XMLScalarNode = node.xmlInitNode('variable', choice='dirichlet', name=Scalar)
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
 
 
@@ -826,6 +860,7 @@ class OutletBoundary(Boundary) :
         dico['fraction']           = 0.
         dico['noncondensable']     = 0.
         dico['scalar']             = 0.
+        dico['scalarModel']        = 'dirichlet'
         return dico
 
 
@@ -1020,13 +1055,46 @@ class OutletBoundary(Boundary) :
 
 
     @Variables.noUndo
+    def getScalarChoice(self, fieldId, scalar):
+        """
+        Get the enthalpy choice for field
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
+
+        choice = XMLScalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['scalarModel']
+            self.setScalarChoice(fieldId, scalar, choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setScalarChoice(self, fieldId, scalar, value):
+        """
+        Set the enthalpy choice for field
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+
+        XMLScalarNode = node.xmlInitNode('variable',
+                                         'choice',
+                                         name=scalar)
+
+        XMLScalarNode['choice'] = value
+
+
+    @Variables.noUndo
     def getScalarValue(self, fieldId, Scalar):
         """
         Get non condensable variable for field
         """
         self.isInList(str(fieldId), self.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLScalarNode = node.xmlInitNode('variable', choice='dirichlet', name=Scalar)
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
         if Childnode == None :
@@ -1043,9 +1111,8 @@ class OutletBoundary(Boundary) :
         Set non condensable variable for field
         """
         self.isInList(str(fieldId), self.getFieldIdList())
-        Model().isPositiveFloat(value)
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
-        XMLScalarNode = node.xmlInitNode('variable', choice='dirichlet', name=Scalar)
+        XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
 
 
@@ -1102,7 +1169,9 @@ class WallBoundary(Boundary) :
         """
         dico = {}
         dico['EnthalpyModel'] = 'flux'
-        dico['flux']          = 0
+        dico['flux']          = 0.0
+        dico['scalarModel']   = 'flux'
+        dico['scalar']        = 0.0
         return dico
 
 
@@ -1162,6 +1231,73 @@ class WallBoundary(Boundary) :
 
         XMLEnergyNode = self.boundNode.xmlGetChildNode('variable', 'choice', name='enthalpy')
         XMLEnergyNode.xmlSetData('value', str(value))
+
+
+    @Variables.noUndo
+    def getScalarChoice(self, fieldId, scalar):
+        """
+        Get the boundary condition used for the scalar.
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        XMLScalarNode = self.boundNode.xmlInitNode('variable',
+                                                   'choice',
+                                                   name=scalar)
+
+        choice = XMLScalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['scalarModel']
+            self.setScalarChoice(fieldId, scalar, choice)
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setScalarChoice(self, fieldId, scalar, value):
+        """
+        Set boundary condition type for a scalar.
+        """
+
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        XMLScalarNode = self.boundNode.xmlInitNode('variable',
+                                                   'choice',
+                                                   name=scalar)
+
+        XMLScalarNode['choice'] = value
+
+
+    @Variables.noUndo
+    def getScalarValue(self, fieldId, Scalar):
+        """
+        Get non condensable variable for field
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        XMLScalarNode = self.boundNode.xmlInitNode('variable',
+                                                   'choice',
+                                                   name=Scalar)
+
+        ChildNode = XMLScalarNode.xmlGetChildNode('value')
+        if ChildNode == None:
+            value = self.__defaultValues()['scalar']
+            self.setScalarValue(fieldId, Scalar, value)
+
+        value = XMLScalarNode.xmlGetChildDouble('value')
+
+        return value
+
+
+    @Variables.undoLocal
+    def setScalarValue(self, fieldId, Scalar, value):
+        """
+        Set non condensable variable for field
+        """
+        self.isInList(str(fieldId), self.getFieldIdList())
+
+        XMLScalarNode = self.boundNode.xmlInitNode('variable', 'choice', name=Scalar)
+
+        XMLScalarNode.xmlSetData('value', str(value))
 
 
     @Variables.noUndo
