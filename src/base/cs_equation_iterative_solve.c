@@ -564,44 +564,69 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* --- Right hand side residual */
   residu = sqrt(cs_gdot(n_cells,smbrp,smbrp));
 
-  /* --- Normalization residual
-     (L2-norm of B.C. + source terms + non-orthogonality terms)
-
-     Caution, when calling matrix-vector product, here for a variable which is
-     not "by increments" and is assumed initialized, including for ghost values:
-     For Reynolds stresses components (iinvpe=2), the rotational periodicity
-     ghost values should not be cancelled, but rather left unchanged.
-     For other variables, iinvpe=1 will also be a standard exchange. */
-
-  /* Allocate a temporary array */
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-
-  if (iinvpe == 2)
-    rotation_mode = CS_HALO_ROTATION_IGNORE;
-
-  cs_matrix_vector_native_multiply(symmetric,
-                                   db_size,
-                                   eb_size,
-                                   rotation_mode,
-                                   f_id,
-                                   dam,
-                                   xam,
-                                   pvar,
-                                   w1);
-
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    w1[cell_id] += smbrp[cell_id];
-    /* Remove contributions from penalized cells */
-    if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-      w1[cell_id] = 0.;
-  }
-
-  rnorm2 = cs_gdot(n_cells,w1,w1);
   if (normp > 0.)
     rnorm = normp;
   else
+  {
+    /* --- Normalization residual
+       (L2-norm of B.C. + source terms + non-orthogonality terms)
+
+       Caution, when calling matrix-vector product, here for a variable which is
+       not "by increments" and is assumed initialized, including for ghost values:
+       For Reynolds stresses components (iinvpe=2), the rotational periodicity
+       ghost values should not be cancelled, but rather left unchanged.
+       For other variables, iinvpe=1 will also be a standard exchange. */
+
+    /* Allocate a temporary array */
+    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+    cs_real_t *w2;
+    BFT_MALLOC(w2, n_cells_ext, cs_real_t);
+
+    cs_real_t p_mean =
+      sqrt(cs_gres(n_cells, mq->cell_vol,
+                   pvar, pvar));
+
+    if (iwarnp >= 2)
+      bft_printf("L2 norm ||X^n|| = %f\n", p_mean);
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      w2[cell_id] = (pvar[cell_id]-p_mean);
+
+    /*  ---> Handle parallelism and periodicity
+        (periodicity of rotation is not ensured here) */
+    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
+      cs_mesh_sync_var_scal(w2);
+
+    if (iinvpe == 2)
+      rotation_mode = CS_HALO_ROTATION_IGNORE;
+
+    cs_matrix_vector_native_multiply(symmetric,
+                                     db_size,
+                                     eb_size,
+                                     rotation_mode,
+                                     f_id,
+                                     dam,
+                                     xam,
+                                     w2,
+                                     w1);
+
+    BFT_FREE(w2);
+
+    if (iwarnp >= 2) {
+      bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells,w1,w1)));
+      bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(n_cells,smbrp,smbrp)));
+    }
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      w1[cell_id] += smbrp[cell_id];
+      /* Remove contributions from penalized cells */
+      if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
+        w1[cell_id] = 0.;
+    }
+
+    rnorm2 = cs_gdot(n_cells,w1,w1);
     rnorm = sqrt(rnorm2);
+  }
 
   sinfo.rhs_norm = rnorm;
 
@@ -878,7 +903,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   if (iwarnp >= 1) {
     if (residu <= epsrsp*rnorm)
-      bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s: CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
                  var_name, isweep-1, residu, rnorm);
     /* Writing: non-convergence */
     else if (isweep > nswmod)
@@ -1231,7 +1256,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   cs_real_t    *xam;
   cs_real_33_t *dam;
-  cs_real_3_t  *dpvar, *smbini, *w1, *adxk, *adxkm1, *dpvarm1, *rhs0;
+  cs_real_3_t  *dpvar, *smbini, *w1, *w2, *adxk, *adxkm1, *dpvarm1, *rhs0;
 
   /*============================================================================
    * 0.  Initialization
@@ -1501,6 +1526,34 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_3_t);
+  BFT_MALLOC(w2, n_cells_ext, cs_real_3_t);
+
+  cs_real_t *pvar_i;
+  BFT_MALLOC(pvar_i, n_cells_ext, cs_real_t);
+
+  /* Compute the L2 norm of the variable */
+  for (cs_lnum_t i = 0; i < 3; i++) {
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      pvar_i[cell_id] = pvar[cell_id][i];
+
+    cs_real_t p_mean =
+      sqrt(cs_gres(n_cells, mq->cell_vol,
+            pvar_i, pvar_i));
+
+    if (iwarnp >= 2)
+      bft_printf("L2 norm ||X_%d^n|| = %f\n", i, p_mean);
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      w2[cell_id][i] = (pvar[cell_id][i] - p_mean);
+
+  }
+  BFT_FREE(pvar_i);
+
+  /* --> Handle parallelism and periodicity */
+
+  if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
+    cs_mesh_sync_var_vect((cs_real_t *)w2);
 
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
@@ -1509,8 +1562,15 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
-                                   (cs_real_t *)pvar,
+                                   (cs_real_t *)w2,
                                    (cs_real_t *)w1);
+
+  BFT_FREE(w2);
+
+  if (iwarnp >= 2) {
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells,w1,w1)));
+    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells,smbrp,smbrp)));
+  }
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -2062,7 +2122,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   cs_real_t    *xam;
   cs_real_66_t *dam;
-  cs_real_6_t  *dpvar, *smbini, *w1, *adxk, *adxkm1, *dpvarm1, *rhs0;
+  cs_real_6_t  *dpvar, *smbini, *w1, *w2, *adxk, *adxkm1, *dpvarm1, *rhs0;
 
   /*============================================================================
    * 0.  Initialization
@@ -2310,6 +2370,34 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+
+  cs_real_t *pvar_i;
+  BFT_MALLOC(pvar_i, n_cells_ext, cs_real_t);
+
+  /* Compute the L2 norm of the variable */
+  for (cs_lnum_t i = 0; i < 6; i++) {
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      pvar_i[cell_id] = pvar[cell_id][i];
+
+    cs_real_t p_mean =
+      sqrt(cs_gres(n_cells, mq->cell_vol,
+            pvar_i, pvar_i));
+
+    if (iwarnp >= 2)
+      bft_printf("L2 norm ||X_%d^n|| = %f\n", i, p_mean);
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      w2[cell_id][i] = (pvar[cell_id][i] - p_mean);
+
+  }
+  BFT_FREE(pvar_i);
+
+  /* --> Handle parallelism and periodicity */
+
+  if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
+    cs_mesh_sync_var_vect((cs_real_t *)w2);
 
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
@@ -2318,8 +2406,16 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
-                                   (cs_real_t *)pvar,
+                                   (cs_real_t *)w2,
                                    (cs_real_t *)w1);
+
+  BFT_FREE(w2);
+
+  if (iwarnp >= 2) {
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells,w1,w1)));
+    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells,smbrp,smbrp)));
+  }
+
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
