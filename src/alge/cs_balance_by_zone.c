@@ -2552,7 +2552,6 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Internal cuplin varibale initialization*/
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
-  cs_real_t hint, hext, heq;
   const cs_lnum_t *faces_local = NULL;
   cs_lnum_t n_local = 0;
   cs_lnum_t n_distant = 0;
@@ -2730,7 +2729,6 @@ cs_flux_through_surface(const char         *scalar_name,
                              a_F,
                              b_F,
                              i_mass_flux);
-
   }
 
   /* Pure SOLU scheme without using gradient_slope_test function
@@ -2939,9 +2937,11 @@ cs_flux_through_surface(const char         *scalar_name,
 
       pjp = pvar_local[ii];
 
-      hint = f->bc_coeffs->hint[f_id];
-      hext = f->bc_coeffs->hext[f_id];
-      heq = hint * hext / (hint + hext);
+      cs_real_t hint = f->bc_coeffs->hint[f_id];
+      cs_real_t hext = f->bc_coeffs->hext[f_id];
+      cs_real_t heq = 0;
+      if (fabs(hint + hext) > 0)
+        heq = hint * hext / (hint + hext);
 
       cs_b_diff_flux_coupling(idiffp,
                               pip,
