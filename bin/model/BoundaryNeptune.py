@@ -177,7 +177,7 @@ class InletBoundary(Boundary):
         dico['scalar'] = 0.
         dico['scalarModel'] = 'dirichlet'
 
-	# Check turbulence only if a real phase if provided
+        # Check turbulence only if a real phase if provided
         if fieldId == "none":
             turb_model = None
         else:

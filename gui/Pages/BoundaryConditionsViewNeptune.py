@@ -214,11 +214,11 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.tableViewFields.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
-        
+
         for fieldId in self.mdl.getFieldIdList():
             self.tableModelFields.newItem(fieldId)
 
-	need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
+        need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
         if need_none:
             self.tableModelFields.newItem("none")
 
@@ -231,8 +231,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         """
 
         self.__currentField = self.tableViewFields.currentIndex().row() + 1
-	# Set currentField to 'none' if we are dealing with the non-convected variables        
-	if self.__currentField > len(self.mdl.getFieldIdList()):
+        # Set currentField to 'none' if we are dealing with the non-convected variables
+        if self.__currentField > len(self.mdl.getFieldIdList()):
             self.__currentField = "none"
         log.debug("slotSelectField current field %s" %str(self.__currentField))
 
