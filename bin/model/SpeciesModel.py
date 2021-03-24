@@ -158,6 +158,11 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
                 name = node['name']
                 TimeAveragesModel(self.case).deleteTimeAverage(name)
 
+        #suppress Boundary conditions
+        bnd_node = self.case.xmlGetNode('boundary_conditions')
+        for node in bnd_node.xmlGetNodeList('variable', name=name):
+            node.xmlRemoveNode()
+
         # update name for other scalar in XML file
         index = 1
         for node in self.XMLScalar.xmlGetNodeList('variable'):
