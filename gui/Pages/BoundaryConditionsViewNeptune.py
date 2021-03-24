@@ -59,6 +59,7 @@ from code_saturne.model.BoundaryNeptune import *
 from code_saturne.model.BoundaryConditionsModelNeptune import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -139,9 +140,14 @@ class StandardItemModelMainFields(QStandardItemModel):
         """
         row = self.rowCount()
 
-        label        = self.mdl.getLabel(fieldId)
-        nature       = self.mdl.getFieldNature(fieldId)
-        criterion    = self.mdl.getCriterion(fieldId)
+        if fieldId == "none":
+            label     = "Non-convected scalars"
+            nature    = "none"
+            criterion = "none"
+        else:
+            label     = self.mdl.getLabel(fieldId)
+            nature    = self.mdl.getFieldNature(fieldId)
+            criterion = self.mdl.getCriterion(fieldId)
 
         field = [label, nature, criterion]
 
@@ -208,8 +214,14 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.tableViewFields.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
+
         for fieldId in self.mdl.getFieldIdList():
             self.tableModelFields.newItem(fieldId)
+
+        need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
+        if need_none:
+            self.tableModelFields.newItem("none")
+
         self.tableViewFields.clicked[QModelIndex].connect(self.__slotSelectField)
 
     @pyqtSlot("QModelIndex")
@@ -219,6 +231,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         """
 
         self.__currentField = self.tableViewFields.currentIndex().row() + 1
+        # Set currentField to 'none' if we are dealing with the non-convected variables
+        if self.__currentField > len(self.mdl.getFieldIdList()):
+            self.__currentField = "none"
         log.debug("slotSelectField current field %s" %str(self.__currentField))
 
         self.__hideAllWidgets()
@@ -270,20 +285,25 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         Shows widgets for inlet.
         """
         self.PressureWidget.hideWidget()
-        self.VelocityWidget.setup(self.case, self.__currentField)
-        self.VelocityWidget.showWidget(boundary)
-        self.TurbulenceWidget.setup(self.case, self.__currentField)
-        self.TurbulenceWidget.showWidget(boundary)
-        self.EnergyWidget.setup(self.case, self.__currentField)
-        self.EnergyWidget.showWidget(boundary)
-        self.FractionWidget.setup(self.case, self.__currentField)
-        self.FractionWidget.showWidget(boundary)
-        self.NonCondensableWidget.setup(self.case, self.__currentField)
-        self.NonCondensableWidget.showWidget(boundary)
-        self.InterfacialAreaWidget.setup(self.case, self.__currentField)
-        self.InterfacialAreaWidget.showWidget(boundary)
+
+        # Show this widgets only if we work with real phases
+        if self.__currentField != "none":
+            self.VelocityWidget.setup(self.case, self.__currentField)
+            self.VelocityWidget.showWidget(boundary)
+            self.TurbulenceWidget.setup(self.case, self.__currentField)
+            self.TurbulenceWidget.showWidget(boundary)
+            self.EnergyWidget.setup(self.case, self.__currentField)
+            self.EnergyWidget.showWidget(boundary)
+            self.FractionWidget.setup(self.case, self.__currentField)
+            self.FractionWidget.showWidget(boundary)
+            self.NonCondensableWidget.setup(self.case, self.__currentField)
+            self.NonCondensableWidget.showWidget(boundary)
+            self.InterfacialAreaWidget.setup(self.case, self.__currentField)
+            self.InterfacialAreaWidget.showWidget(boundary)
+
         self.ScalarWidget.setup(self.case, self.__currentField)
         self.ScalarWidget.showWidget(boundary)
+
         self.WallWidget.hideWidget()
 
 
@@ -314,15 +334,20 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.PressureWidget.showWidget(boundary)
         self.VelocityWidget.hideWidget()
         self.TurbulenceWidget.hideWidget()
-        self.EnergyWidget.setup(self.case, self.__currentField)
-        self.EnergyWidget.showWidget(boundary)
-        self.FractionWidget.setup(self.case, self.__currentField)
-        self.FractionWidget.showWidget(boundary)
-        self.NonCondensableWidget.setup(self.case, self.__currentField)
-        self.NonCondensableWidget.showWidget(boundary)
-        self.InterfacialAreaWidget.hideWidget()
+
+        # Show this widgets only if we work with real phases
+        if self.__currentField != "none":
+            self.EnergyWidget.setup(self.case, self.__currentField)
+            self.EnergyWidget.showWidget(boundary)
+            self.FractionWidget.setup(self.case, self.__currentField)
+            self.FractionWidget.showWidget(boundary)
+            self.NonCondensableWidget.setup(self.case, self.__currentField)
+            self.NonCondensableWidget.showWidget(boundary)
+            self.InterfacialAreaWidget.hideWidget()
+
         self.ScalarWidget.setup(self.case, self.__currentField)
         self.ScalarWidget.showWidget(boundary)
+
         self.WallWidget.hideWidget()
 
 
