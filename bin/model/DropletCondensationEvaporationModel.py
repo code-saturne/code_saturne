@@ -54,8 +54,8 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
 
     def defaultValues(self):
         default = {}
-        default['yplusmodel']               = "diameter"
-        default['yplusvalue']               = 250.
+        default['yplusmodel']               = "Yplus_value"
+        default['yplusvalue']               = 100.
 
         return default
 
