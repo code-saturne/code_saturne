@@ -140,6 +140,10 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
 
+        need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
+        if need_none:
+            self.modelField.addItem(self.tr('Non-convected scalars'), 'none')
+
         self.currentid = -1
         if len(self.mdl.getFieldIdList()) > 0:
             self.currentid = self.mdl.getFieldIdList()[0]
@@ -228,40 +232,57 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.currentid = self.modelField.dicoV2M[str(text)]
         self.initializeVariables(self.zone_id, self.currentid)
 
-        exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
-        if exp:
-            self.pushButtonVelocity.setStyleSheet("background-color: green")
-            self.pushButtonVelocity.setToolTip(exp)
-        else:
-            self.pushButtonVelocity.setStyleSheet("background-color: red")
+        if self.currentid != 'none':
+            # Velocity
+            exp = self.mdl.getFormula(self.zone_id,
+                                      self.currentid,
+                                      'velocity')
 
-        exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
-        if exp:
-            self.pushButtonFraction.setStyleSheet("background-color: green")
-            self.pushButtonFraction.setToolTip(exp)
-        else:
-            self.pushButtonFraction.setStyleSheet("background-color: red")
-
-        if self.mdl.getEnergyResolution(self.currentid) == "on":
-            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
             if exp:
-                self.pushButtonEnergy.setStyleSheet("background-color: green")
-                self.pushButtonEnergy.setToolTip(exp)
+                self.pushButtonVelocity.setStyleSheet("background-color: green")
+                self.pushButtonVelocity.setToolTip(exp)
             else:
-                self.pushButtonEnergy.setStyleSheet("background-color: red")
+                self.pushButtonVelocity.setStyleSheet("background-color: red")
 
-        lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
-        if len(lst) > 0 :
-            exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
+            # Volume Fraction
+            exp = self.mdl.getFormula(self.zone_id,
+                                      self.currentid,
+                                      'volume_fraction')
             if exp:
-                self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-                self.pushButtonNonCondensable.setToolTip(exp)
+                self.pushButtonFraction.setStyleSheet("background-color: green")
+                self.pushButtonFraction.setToolTip(exp)
             else:
-                self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+                self.pushButtonFraction.setStyleSheet("background-color: red")
 
+            # Energy
+            if self.mdl.getEnergyResolution(self.currentid) == "on":
+                exp = self.mdl.getFormula(self.zone_id,
+                                          self.currentid,
+                                          'enthalpy')
+                if exp:
+                    self.pushButtonEnergy.setStyleSheet("background-color: green")
+                    self.pushButtonEnergy.setToolTip(exp)
+                else:
+                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+
+            # Non condensable gases
+            lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
+            if len(lst) > 0 :
+                exp = self.mdl.getFormulaNonCondensable(self.zone_id,
+                                                        self.currentid,
+                                                        self.currentNonCond)
+                if exp:
+                    self.pushButtonNonCondensable.setStyleSheet("background-color: green")
+                    self.pushButtonNonCondensable.setToolTip(exp)
+                else:
+                    self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+
+        # Scalars (can exist for 'none')
         lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
         if len(lst) > 0 :
-            exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
+            exp = self.mdl.getFormulaScalar(self.zone_id,
+                                            self.currentid,
+                                            self.currentScalar)
             if exp:
                 self.pushButtonScalar.setStyleSheet("background-color: green")
                 self.pushButtonScalar.setToolTip(exp)
@@ -551,7 +572,12 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.comboBoxEnergy.hide()
         self.pushButtonEnergy.hide()
 
-        if self.mdl.getEnergyResolution(fieldId) == "on":
+        self.labelVelocity.setVisible(fieldId!='none')
+        self.pushButtonVelocity.setVisible(fieldId!='none')
+        self.labelFraction.setVisible(fieldId!='none')
+        self.pushButtonFraction.setVisible(fieldId!='none')
+
+        if fieldId != 'none' and self.mdl.getEnergyResolution(fieldId) == "on":
             self.labelEnergy.show()
             self.comboBoxEnergy.show()
             self.pushButtonEnergy.show()
@@ -573,27 +599,28 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                 self.modelEnergy.enableItem(2)
 
         # Non-condensable initialization
-        lst = self.NonCondensable.getNonCondensableByFieldId(fieldId)
-        if len(lst) > 0 :
-            self.labelNonCondensable.show()
-            self.comboBoxNonCondensable.show()
-            self.pushButtonNonCondensable.show()
+        if fieldId != 'none':
+            lst = self.NonCondensable.getNonCondensableByFieldId(fieldId)
+            if len(lst) > 0 :
+                self.labelNonCondensable.show()
+                self.comboBoxNonCondensable.show()
+                self.pushButtonNonCondensable.show()
 
-            if len(self.modelNonCondensable.getItems()) != 0 :
-                for nb in range(len(self.modelNonCondensable.getItems())):
-                    self.modelNonCondensable.delItem(0)
+                if len(self.modelNonCondensable.getItems()) != 0 :
+                    for nb in range(len(self.modelNonCondensable.getItems())):
+                        self.modelNonCondensable.delItem(0)
 
-            for var in lst :
-                label = self.NonCondensable.getNonCondLabel(var)
-                self.modelNonCondensable.addItem(self.tr(label), var)
+                for var in lst :
+                    label = self.NonCondensable.getNonCondLabel(var)
+                    self.modelNonCondensable.addItem(self.tr(label), var)
 
-            self.currentNonCond = lst[0]
-            self.currentNonCondLabel = self.modelNonCondensable.dicoM2V[lst[0]]
-            self.modelNonCondensable.setItem(str_model = self.currentNonCond)
-        else:
-            self.labelNonCondensable.hide()
-            self.comboBoxNonCondensable.hide()
-            self.pushButtonNonCondensable.hide()
+                self.currentNonCond = lst[0]
+                self.currentNonCondLabel = self.modelNonCondensable.dicoM2V[lst[0]]
+                self.modelNonCondensable.setItem(str_model = self.currentNonCond)
+            else:
+                self.labelNonCondensable.hide()
+                self.comboBoxNonCondensable.hide()
+                self.pushButtonNonCondensable.hide()
 
         # species initialization
         lst = self.SpeciesModel.getScalarByFieldId(fieldId)

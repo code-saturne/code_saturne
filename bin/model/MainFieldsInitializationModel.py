@@ -222,9 +222,11 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         Gives a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(fieldId, self.getFieldIdList())
+        self.isInList(fieldId, self.getFieldIdList(include_none=True))
 
-        node = self.XMLScalar.xmlGetNode('variable', field_id=fieldId, name=var_name)
+        node = self.XMLScalar.xmlGetNode('variable',
+                                         field_id=fieldId,
+                                         name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         n.xmlSetData('formula', str)
 
@@ -235,9 +237,11 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         Return a formula for initial values
         """
         self.__verifyZone(zone)
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.getFieldIdList(include_none=True))
 
-        node = self.XMLScalar.xmlGetNode('variable', field_id=fieldId, name=var_name)
+        node = self.XMLScalar.xmlGetNode('variable',
+                                         field_id=fieldId,
+                                         name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
 

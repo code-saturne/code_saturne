@@ -1968,7 +1968,9 @@ class meg_to_c_interpreter:
                                             ncm.getNonCondLabel(nc),
                                             exp, req, sym, [])
 
-                        # Species
+
+                    # Species are treated apart since they can be phase-independent
+                    for fId in mfm.getFieldIdList(include_none=True):
                         for s in spm.getScalarByFieldId(fId):
                             exp, req, sym = \
                                 mfi.getScalarFormulaComponents(z_id,
