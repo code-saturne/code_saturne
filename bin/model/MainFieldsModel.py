@@ -148,14 +148,18 @@ class MainFieldsModel(Variables, Model):
         return default
 
 
-    def getFieldIdList(self):
+    def getFieldIdList(self, include_none=False):
         """
         Return the id field list
         """
         list = []
 
+        if include_none:
+            list.append('none')
+
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             list.append(node['field_id'])
+
         return list
 
 
@@ -257,11 +261,15 @@ class MainFieldsModel(Variables, Model):
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
 
 
-    def getFieldLabelsList(self):
+    def getFieldLabelsList(self, include_none=False):
         """
         return list of label for field
         """
         list = []
+
+        if include_none:
+            list.append('none')
+
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             list.append(node['label'])
         return list
@@ -402,16 +410,19 @@ class MainFieldsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getLabel(self, fieldId):
+    def getLabel(self, fieldId, include_none=False):
         """
         get label
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.getFieldIdList(include_none=include_none))
 
         label = ""
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         if node:
             label = node['label']
+        elif fieldId == "none" and include_none:
+            label = "none"
+
         return label
 
 
@@ -1027,11 +1038,11 @@ class MainFieldsModel(Variables, Model):
         return node["status"]
 
     @Variables.noUndo
-    def getFieldId(self, label):
+    def getFieldId(self, label, include_none=False):
         """
         return field id  for a label
         """
-        self.isInList(label, self.getFieldLabelsList())
+        self.isInList(label, self.getFieldLabelsList(include_none=include_none))
 
         for node in self.__XMLNodefields.xmlGetNodeList('field'):
             if node['label'] == label :

@@ -177,7 +177,12 @@ class InletBoundary(Boundary):
         dico['scalar'] = 0.
         dico['scalarModel'] = 'dirichlet'
 
-        turb_model =  TurbulenceModel(self.case).getTurbulenceModel(fieldId)
+	# Check turbulence only if a real phase if provided
+        if fieldId == "none":
+            turb_model = None
+        else:
+            turb_model =  TurbulenceModel(self.case).getTurbulenceModel(fieldId)
+
         if turb_model in TurbulenceModelsDescription.dispersedTurbulenceModels:
             dico['turbulenceChoice'] = 'formula'
         return dico
@@ -763,14 +768,14 @@ R12-23 = 5e-05;"""
         """
         Get the boundary condition used for the scalar.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
 
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
 
         choice = XMLScalarNode['choice']
         if not choice:
-            choice = self.__defaultValues()['scalarModel']
+            choice = self.__defaultValues(fieldId)['scalarModel']
             self.setScalarChoice(fieldId, scalar, choice)
 
         return choice
@@ -782,8 +787,8 @@ R12-23 = 5e-05;"""
         Set boundary condition type for a scalar.
         """
 
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
 
         XMLScalarNode = node.xmlInitNode('variable',
                                          'choice',
@@ -797,8 +802,8 @@ R12-23 = 5e-05;"""
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
@@ -815,8 +820,8 @@ R12-23 = 5e-05;"""
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
 
@@ -1059,8 +1064,8 @@ class OutletBoundary(Boundary) :
         """
         Get the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
 
         choice = XMLScalarNode['choice']
@@ -1076,9 +1081,9 @@ class OutletBoundary(Boundary) :
         """
         Set the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
 
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
 
         XMLScalarNode = node.xmlInitNode('variable',
                                          'choice',
@@ -1092,8 +1097,8 @@ class OutletBoundary(Boundary) :
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
@@ -1110,8 +1115,8 @@ class OutletBoundary(Boundary) :
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
-        node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
 
@@ -1238,7 +1243,7 @@ class WallBoundary(Boundary) :
         """
         Get the boundary condition used for the scalar.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1258,7 +1263,7 @@ class WallBoundary(Boundary) :
         Set boundary condition type for a scalar.
         """
 
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1272,7 +1277,7 @@ class WallBoundary(Boundary) :
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1293,7 +1298,7 @@ class WallBoundary(Boundary) :
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable', 'choice', name=Scalar)
 

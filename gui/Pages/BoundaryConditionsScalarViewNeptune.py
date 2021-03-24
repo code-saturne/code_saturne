@@ -110,8 +110,8 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.__boundary = boundary
 
         # For walls, current field is set to -1, hence the need for the list
-        if int(self.__currentField) < 0:
-            fieldList = SpeciesModel(self.case).getFieldIdList()
+        if boundary.getNature() == 'wall':
+            fieldList = SpeciesModel(self.case).getFieldIdList(include_none=True)
         else:
             fieldList = [str(self.__currentField)]
 
