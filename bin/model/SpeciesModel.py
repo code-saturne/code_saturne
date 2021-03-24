@@ -238,7 +238,32 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name,self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         if node:
+            old_f_id = node['field_id']
             node['field_id'] = carrierfield
+
+            # Update boundary conditions to avoid unnecessary xml entries
+            if old_f_id != carrierfield:
+                bnd_node = self.case.xmlGetNode('boundary_conditions')
+                for bnd in bnd_node.xmlGetNodeList('boundary'):
+                    bcnode = bnd_node.xmlGetChildNode(bnd['nature'],
+                                                      field_id=old_f_id,
+                                                      label=bnd['label'])
+                    old_node = None
+                    if bcnode and bnd['nature'] != "wall":
+                        old_node = bcnode.xmlGetChildNode('variable',
+                                                          name=name)
+                    if old_node:
+                        old_dico = old_node.xmlGetAttributeDictionary()
+                        val = old_node.xmlGetDouble('value')
+                        newbcnode = bnd_node.xmlGetChildNode(bnd['nature'],
+                                                             field_id=carrierfield,
+                                                             label=bnd['label'])
+
+                        newnode = newbcnode.xmlInitNode('variable',
+                                                        name=old_dico['name'],
+                                                        choice=old_dico['choice'])
+                        newnode.xmlSetData('value', str(val))
+                        old_node.xmlRemoveNode()
 
 
     @Variables.noUndo
