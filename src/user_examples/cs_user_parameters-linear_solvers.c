@@ -402,7 +402,7 @@ cs_user_linear_solvers(void)
   {
     cs_sles_it_t *c = cs_sles_it_define(CS_F_(p)->id,
                                         NULL,
-                                        CS_SLES_PCG,
+                                        CS_SLES_FCG,
                                         -1,
                                         10000);
     cs_sles_pc_t *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
