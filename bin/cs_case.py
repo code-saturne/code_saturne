@@ -1119,7 +1119,7 @@ class case:
                                                    mpi_libdir)
         s.write('\n')
 
-        # HANDLE CATHARE COUPLING
+        # Handle cathare coupling
         wrote_cathare_path = False
         if self.domains:
             for d in self.domains:
@@ -1415,6 +1415,14 @@ class case:
 
         os.chdir(self.exec_dir)
 
+        # Set (read and possibly modify) script parameters
+
+        sys.stdout.write('Copying base setup data\n'
+                         '-----------------------\n\n')
+
+        for d in self.domains:
+            d.copy_data()
+
         # Compile user subroutines if necessary
         # (for some domain types, such as for Syrthes, this may be done later,
         # during the general prepare_data stage).
@@ -1428,9 +1436,8 @@ class case:
                 if need_compile == False: # Print banner on first pass
                     need_compile = True
                     msg = \
-                        " *********************************************\n" \
-                        "  Compiling and linking user-defined functions\n" \
-                        " *********************************************\n\n"
+                        "Compiling and linking user-defined functions\n" \
+                        "--------------------------------------------\n\n"
                     sys.stdout.write(msg)
                     sys.stdout.flush()
                 d.compile_and_link()
@@ -1446,10 +1453,8 @@ class case:
         # Setup data
         #===========
 
-        sys.stdout.write('\n'
-                         ' ****************************\n'
-                         '  Preparing calculation data\n'
-                         ' ****************************\n\n')
+        sys.stdout.write('Preparing calculation data\n'
+                         '--------------------------\n\n')
         sys.stdout.flush()
 
         for d in (self.domains + self.syr_domains + self.py_domains):
@@ -1578,10 +1583,8 @@ class case:
         # Preprocessing
         #==============
 
-        sys.stdout.write('\n'
-                         ' ***************************\n'
-                         '  Preprocessing calculation\n'
-                         ' ***************************\n\n')
+        sys.stdout.write('Preprocessing calculation\n'
+                         '-------------------------\n\n')
         sys.stdout.flush()
 
         self.summary_init(exec_env)
@@ -1633,10 +1636,8 @@ class case:
 
         self.update_scripts_tmp('ready', 'running')
 
-        sys.stdout.write('\n'
-                         ' **********************\n'
-                         '  Starting calculation\n'
-                         ' **********************\n\n')
+        sys.stdout.write('Starting calculation\n'
+                         '--------------------\n\n')
         sys.stdout.flush()
 
         # Maximum remaining time if defined through run configuration
@@ -1729,10 +1730,8 @@ class case:
 
         # Now save results
 
-        sys.stdout.write('\n'
-                         ' *****************************\n'
-                         '  Post-calculation operations\n'
-                         ' *****************************\n\n')
+        sys.stdout.write('Post-calculation operations\n'
+                         '---------------------------\n\n')
         sys.stdout.flush()
 
         self.summary_finalize()
@@ -1863,23 +1862,21 @@ class case:
         msg = \
             '\n' \
             + '                      ' + self.module_name + '\n' \
-            + '                      ************\n' \
+            + '                      ============\n' \
             + '\n' \
-            + ' Version:   ' + self.package.version + '\n' \
-            + ' Path:      ' + self.package.get_dir('exec_prefix') + '\n'
+            + 'Version:   ' + self.package.version + '\n' \
+            + 'Path:      ' + self.package.get_dir('exec_prefix') + '\n'
         if self.package_compute != self.package:
-            msg += '   compute: ' + self.package_compute.get_dir('exec_prefix') + '\n\n'
+            msg += '  compute: ' + self.package_compute.get_dir('exec_prefix') + '\n\n'
         else:
             msg += '\n'
-        msg += ' Result directory:\n' \
-               + '   ' +  str(self.result_dir) + '\n\n'
+        msg += 'Result directory:\n' \
+               + '  ' +  str(self.result_dir) + '\n\n'
 
         if self.exec_dir != self.result_dir:
-            msg += ' Working directory (to be periodically cleaned):\n' \
-                + '   ' +  str(self.exec_dir) + '\n'
+            msg += 'Working directory (to be periodically cleaned):\n' \
+                + '  ' +  str(self.exec_dir) + '\n\n'
             self.add_exec_dir_stamp()
-
-        msg += '\n'
 
         sys.stdout.write(msg)
         sys.stdout.flush()

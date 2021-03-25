@@ -46,7 +46,7 @@ def domain_prepare_data_add(domain):
 def domain_copy_results_add(domain):
     """
     Additional steps to copy results or cleanup execution directory
-    (called at beginning of data copy stage).
+    (called at beginning of results copy stage).
     """
 
     return
@@ -56,6 +56,8 @@ def domain_copy_results_add(domain):
 def define_domain_parameters(domain):
     """
     Define domain execution parameters.
+    (called in data preparation stage, just after copy of base setup files
+    in execution directory, and before compiling user-defined functions).
     """
 
     # Reusing output from previous runs

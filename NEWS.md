@@ -1,6 +1,13 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Run script: `define_domain_parameters` from `cs_user_scripts.py` is
+  now called after copying initial data to the case's execution directory,
+  so as to allow case and run id-specific modifcations to be done, avoiding
+  modification of the base data and user sources.
+
 Numerics:
 
 - Add GCR (Generalized Conjugate Residual) which enables a flexible
