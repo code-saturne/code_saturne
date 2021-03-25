@@ -220,6 +220,24 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def copy_data(self):
+        """
+        Copy base data to the execution directory.
+        """
+
+        return
+
+    #---------------------------------------------------------------------------
+
+    def init_staged_data(self):
+        """
+        Initialize staged data in the execution directory.
+        """
+
+        return
+
+    #---------------------------------------------------------------------------
+
     def copy_result(self, name, purge=False):
         """
         Copy a file or directory to the results directory,
@@ -446,6 +464,61 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
+    def __set_case_parameters__(self):
+
+        # We may now import user python script functions if present.
+
+        self.user_locals = None
+
+        user_scripts = os.path.join(self.exec_dir, 'cs_user_scripts.py')
+        if os.path.isfile(user_scripts):
+            try:
+                exec(compile(open(user_scripts).read(), user_scripts, 'exec'),
+                     locals(),
+                     locals())
+                self.user_locals = locals()
+            except Exception:
+                execfile(user_scripts, locals(), locals())
+                self.user_locals = locals()
+
+        # We may now parse the optional XML parameter file
+        # now that its path may be built and checked.
+
+        param = self.param
+        if param == None:
+            if os.path.isfile(os.path.join(self.exec_dir, 'setup.xml')):
+                param = 'setup.xml'
+
+        if param != None:
+            version_str = '2.0'
+            P = cs_xml_reader.Parser(os.path.join(self.exec_dir, param),
+                                     version_str = version_str)
+            params = P.getParams()
+            for k in list(params.keys()):
+                self.__dict__[k] = params[k]
+
+            self.param = param
+
+            if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
+                solver_dir = self.package_compute.get_dir("pkglibexecdir")
+                solver_name = "nc_solver" + self.package_compute.config.exeext
+                self.solver_path = os.path.join(solver_dir, solver_name)
+
+        # Now override or complete data from the XML file.
+
+        if self.user_locals:
+            m = 'define_domain_parameters'
+            if m in self.user_locals.keys():
+                eval(m + '(self)', globals(), self.user_locals)
+                del self.user_locals[m]
+
+        # Finally, ensure some fields are of the required types
+
+        if type(self.meshes) != list:
+            self.meshes = [self.meshes,]
+
+    #---------------------------------------------------------------------------
+
     def __set_auto_restart__(self):
         """
         Select latest valid checkpoint directory for restart, based on name
@@ -528,51 +601,61 @@ class domain(base_domain):
 
             self.param = param
 
-            if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
-                solver_dir = self.package_compute.get_dir("pkglibexecdir")
-                solver_name = "nc_solver" + self.package_compute.config.exeext
-                self.solver_path = os.path.join(solver_dir, solver_name)
+    #---------------------------------------------------------------------------
+
+    def copy_data(self):
+        """
+        Copy base data to the execution directory
+        """
+
+        err_str = ""
+
+        # Create the src folder if there are files to compile in source path
+
+        src_files = cs_compile.files_to_compile(self.src_dir)
+        if len(src_files) > 0:
+            exec_src = os.path.join(self.exec_dir, 'src')
+
+            make_clean_dir(exec_src)
+
+            # Add header files to list so as not to forget to copy them
+            dir_files = os.listdir(self.src_dir)
+            src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
+                                     + fnmatch.filter(dir_files, '*.hxx')
+                                     + fnmatch.filter(dir_files, '*.hpp'))
+
+            # Copy source files to execution directory
+            for f in src_files:
+                src_file = os.path.join(self.src_dir, f)
+                dest_file = os.path.join(exec_src, f)
+                shutil.copy2(src_file, dest_file)
+
+        # Copy data files
+
+        dir_files = os.listdir(self.data_dir)
+
+        if self.package.name in dir_files:
+            dir_files.remove(self.package.name)
+
+        for f in dir_files:
+            src = os.path.join(self.data_dir, f)
+            if os.path.isfile(src):
+                shutil.copy2(src, os.path.join(self.exec_dir, f))
+
+        # Now set parameters
+
+        self.__set_case_parameters__()
 
     #---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir, staging_dir = None):
+    def init_staged_data(self):
+        """
+        Initialize staged data in the execution directory.
+        """
 
-        # Names, directories, and files in case structure
+        # Now set parameters
 
-        base_domain.set_case_dir(self, case_dir, staging_dir)
-
-        # We may now import user python script functions if present.
-
-        self.user_locals = None
-
-        user_scripts = os.path.join(self.data_dir, 'cs_user_scripts.py')
-        if os.path.isfile(user_scripts):
-            try:
-                exec(compile(open(user_scripts).read(), user_scripts, 'exec'),
-                     locals(),
-                     locals())
-                self.user_locals = locals()
-            except Exception:
-                execfile(user_scripts, locals(), locals())
-                self.user_locals = locals()
-
-        # We may now parse the optional XML parameter file
-        # now that its path may be built and checked.
-
-        self.read_parameter_file(self.param)
-
-        # Now override or complete data from the XML file.
-
-        if self.user_locals:
-            m = 'define_domain_parameters'
-            if m in self.user_locals.keys():
-                eval(m + '(self)', globals(), self.user_locals)
-                del self.user_locals[m]
-
-        # Finally, ensure some fields are of the required types
-
-        if type(self.meshes) != list:
-            self.meshes = [self.meshes,]
+        self.__set_case_parameters__()
 
     #---------------------------------------------------------------------------
 
@@ -629,13 +712,14 @@ class domain(base_domain):
 
         needs_comp = False
 
-        src_files = cs_compile.files_to_compile(self.src_dir)
-
-        if self.exec_solver and len(src_files) > 0:
-            needs_comp = True
+        exec_src = os.path.join(self.exec_dir, 'src')
+        if os.path.isdir(exec_src):
+            src_files = cs_compile.files_to_compile(exec_src)
+            if self.exec_solver and len(src_files) > 0:
+                needs_comp = True
 
         if self.param != None:
-            fp = os.path.join(self.data_dir, self.param)
+            fp = os.path.join(self.exec_dir, self.param)
             case = self.__xml_case_initialize__(fp)
 
             # Do not call case.xmlSaveDocument() to avoid side effects in case
@@ -660,9 +744,14 @@ class domain(base_domain):
         """
         Compile and link user subroutines if necessary
         """
+
+        src_files = []
+
         # Check if there are files to compile in source path
         # or if MEG functions need to be generated
-        src_files = cs_compile.files_to_compile(self.src_dir)
+        exec_src = os.path.join(self.exec_dir, 'src')
+        if os.path.isdir(exec_src):
+            src_files = cs_compile.files_to_compile(exec_src)
 
         if len(src_files) > 0 or self.mci != None:
 
@@ -734,20 +823,6 @@ class domain(base_domain):
         """
 
         err_str = ""
-
-        # Copy data files
-
-        dir_files = os.listdir(self.data_dir)
-
-        if self.package.name in dir_files:
-            dir_files.remove(self.package.name)
-
-        for f in dir_files:
-            src = os.path.join(self.data_dir, f)
-            if os.path.isfile(src):
-                shutil.copy2(src, os.path.join(self.exec_dir, f))
-                if f == 'cs_user_scripts.py':  # Copy user script to results now
-                    shutil.copy2(src,  os.path.join(self.result_dir, f))
 
         if not self.exec_solver:
             return
@@ -1586,6 +1661,9 @@ class syrthes_domain(base_domain):
 # Cathare coupling
 
 class cathare_domain(domain):
+    """
+    Class specific to coupling with CATHARE.
+    """
 
     #---------------------------------------------------------------------------
 
@@ -1678,9 +1756,8 @@ class cathare_domain(domain):
         CATHARE2.
         """
 
-        msg = " ****************************************\n" \
-              "  Generating CATHARE2 .so file\n" \
-              " ****************************************\n\n"
+        msg = "Generating CATHARE2 .so file\n" \
+              "----------------------------\n\n"
         sys.stdout.write(msg)
         sys.stdout.flush()
 
@@ -1752,101 +1829,6 @@ class cathare_domain(domain):
 
         # Then compile NCFD source files if needed
         super(cathare_domain, self).compile_and_link()
-
-    #---------------------------------------------------------------------------
-
-    def prepare_data(self):
-        """
-        Copy data to the execution directory
-        """
-
-        # If we are using a previous preprocessing, simply link to it here
-        if self.mesh_input:
-            mesh_input = os.path.expanduser(self.mesh_input)
-            if not os.path.isabs(mesh_input):
-                mesh_input = os.path.join(self.case_dir, mesh_input)
-
-            # Differentiate between a folder and file, since we now
-            # have a file extension
-            if os.path.isdir(mesh_input):
-                link_path = os.path.join(self.exec_dir, 'mesh_input')
-            else:
-                link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
-
-            self.purge_result(link_path) # in case of previous run here
-            self.symlink(mesh_input, link_path)
-
-        # Copy data files
-
-        dir_files = os.listdir(self.data_dir)
-
-        if self.package.name in dir_files:
-            dir_files.remove(self.package.name)
-
-        for f in dir_files:
-            src = os.path.join(self.data_dir, f)
-            if os.path.isfile(src):
-                shutil.copy2(src, os.path.join(self.exec_dir, f))
-                if f == 'cs_user_scripts.py':  # Copy user script to results now
-                    shutil.copy2(src,  os.path.join(self.result_dir, f))
-
-        if not self.exec_solver:
-            return
-
-        # Fixed parameter name
-
-        setup_ref = "setup.xml"
-        if self.param != None and self.param != "setup.xml":
-            link_path = os.path.join(self.exec_dir, setup_ref)
-            self.purge_result(link_path) # in case of previous run here
-            try:
-                os.symlink(self.param, link_path)
-            except Exception:
-                src_path = os.path.join(self.exec_dir, self.param)
-                shutil.copy2(src_path, link_path)
-
-        # Call user script if necessary
-
-        if self.user_locals:
-            m = 'domain_prepare_data_add'
-            if m in self.user_locals.keys():
-                eval(m + '(self)', globals(), self.user_locals)
-                del self.user_locals[m]
-
-        # Restart files
-
-        if self.restart_input != None:
-
-            restart_input =  os.path.expanduser(self.restart_input)
-            if not os.path.isabs(restart_input):
-                restart_input = os.path.join(self.case_dir, restart_input)
-
-            if not os.path.exists(restart_input):
-                err_str = restart_input + ' does not exist.'
-                raise RunCaseError(err_str)
-            elif not os.path.isdir(restart_input):
-                err_str = restart_input + ' is not a directory.'
-                raise RunCaseError(err_str)
-            else:
-                self.symlink(restart_input,
-                             os.path.join(self.exec_dir, 'restart'))
-
-        # Partition input files
-
-        if self.partition_input != None:
-
-            partition_input = os.path.expanduser(self.partition_input)
-            if not os.path.isabs(partition_input):
-                partition_input = os.path.join(self.case_dir, partition_input)
-
-            if os.path.exists(partition_input):
-
-                if not os.path.isdir(partition_input):
-                    err_str = partition_input + ' is not a directory.'
-                    raise RunCaseError(err_str)
-                else:
-                    self.symlink(partition_input,
-                                 os.path.join(self.exec_dir, 'partition_input'))
 
     #---------------------------------------------------------------------------
 
@@ -1940,7 +1922,7 @@ class python_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def prepare_data(self):
+    def copy_data(self):
         """
         Copy data to run directory
         """
@@ -1968,7 +1950,7 @@ class python_domain(base_domain):
         Copy results dummy function: Does nothing for a standard python script
         """
         # Nothing to do
-        pass
+        return
 
     #---------------------------------------------------------------------------
 

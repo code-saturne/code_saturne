@@ -3,6 +3,11 @@ Release 7.0 (unreleased)
 
 User changes:
 
+- Run script: `define_domain_parameters` from `cs_user_scripts.py` is
+  now called after copying initial data to the case's execution directory,
+  so as to allow case and run id-specific modifcations to be done, avoiding
+  modification of the base data and user sources.
+
 - GUI: for gas combustion, allow creation of a thermochemistry data file
   based on user inputs.
 
