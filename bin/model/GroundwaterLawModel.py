@@ -347,6 +347,7 @@ permeability=1.;"""
                ('z', 'cell center coordinate')]
 
         sym.append(('volume', 'Zone volume'))
+        sym.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in NotebookModel(self.case).getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

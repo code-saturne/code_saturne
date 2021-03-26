@@ -966,6 +966,7 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
         symbols.append(('volume', 'Zone volume'))
+        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
@@ -997,6 +998,7 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('rho', 'Density'))
 
         symbols.append(('volume', 'Zone volume'))
+        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         from code_saturne.model.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() == 'on':
@@ -1028,6 +1030,7 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
         symbols.append(('volume', 'Zone volume'))
+        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
@@ -1055,6 +1058,7 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('T', 'Temperature'))
 
         symbols.append(('volume', 'Zone volume'))
+        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
@@ -1079,6 +1083,7 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
         symbols.append(('volume', 'Zone volume'))
+        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
@@ -1096,12 +1101,14 @@ class FluidCharacteristicsModel(Variables, Model):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
-               ('volume', 'Zone volume')]
+               ('volume', 'Zone volume'),
+               ('fluid_volume', 'Zone fluid volume (different if porous)')]
         sym.append((str(scalar),str(scalar)))
         diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
         sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))
 
         sym.append(('volume', 'Zone volume'))
+        sym.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
