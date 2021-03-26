@@ -197,7 +197,7 @@ _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 'volume':'const cs_real_t volume = zone->measure;',
                 'fluid_volume':'const cs_real_t fluid_volume = zone->f_measure;',
                 'surface':'const cs_real_t surface = zone->measure;',
-                'fluid_surface':'const cs_real_t fluid_surface = zone->f_measure;'
+                'fluid_surface':'const cs_real_t fluid_surface = zone->f_measure;',
                 'pi':'const cs_real_t pi = cs_math_pi;',
                 'uref':'const cs_real_t uref = cs_glob_turb_ref_values->uref;',
                 'almax':'const cs_real_t almax = cs_glob_turb_ref_values->almax;'}
