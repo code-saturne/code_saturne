@@ -229,7 +229,7 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  /* Space and tim reference of the run */
+  /* Space and time reference of the run */
   /*! Reference pressure (to compute potential temp: 1.0e+5) */
   cs_real_t ps;
 
