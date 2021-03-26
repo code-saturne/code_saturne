@@ -109,7 +109,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
-               ('volume', 'Source terms zone volume')]
+               ('volume', 'Source terms zone volume'),
+               ('fluid_volume', 'Source terms zone fluid volume')]
 
         sym.append( ("u", 'x velocity component'))
         sym.append( ("v", 'y velocity component'))
@@ -162,7 +163,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
-               ('volume', 'Source terms zone volume')]
+               ('volume', 'Source terms zone volume'),
+               ('fluid_volume', 'Source terms zone fluid volume')]
         name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
 
@@ -220,7 +222,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
-               ('volume', 'Source terms zone volume')]
+               ('volume', 'Source terms zone volume'),
+               ('fluid_volume', 'Source terms zone fluid volume')]
 
         name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
@@ -276,7 +279,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
-               ('volume', 'Source terms zone volume')]
+               ('volume', 'Source terms zone volume'),
+               ('fluid_volume', 'Source terms zone fluid volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -327,6 +331,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('z', 'cell center coordinate'),
                ('t', 'current time'),
                ('volume', 'Source terms zone volume'),
+               ('fluid_volume', 'Source terms zone fluid volume'),
                ('rho', 'density (kg/m^3)')]
 
         if self.case.module_name() == 'code_saturne':
