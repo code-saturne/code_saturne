@@ -149,8 +149,10 @@ if test "x$GCC" = "xyes"; then
 
   if test -n "`echo $cs_ac_cc_version | grep ICC`" ; then
     cs_gcc=icc
-  elif test -n "`echo $cs_ac_cc_version | grep -e ICX -e DPC++ -e oneAPI`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep ICX`" ; then
     cs_gcc=icx
+  elif test -n "`echo $cs_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
+    cs_gcc=oneapi
   elif test -n "`echo $cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
   elif test -n "`echo $cs_ac_cc_version | grep Cray`" ; then
@@ -302,10 +304,38 @@ elif test "x$cs_gcc" = "xicx" ; then
 
   # Default compiler flags
   cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_hot="-O3"
+  cflags_default_omp="-qopenmp"
+
+# Otherwise, are we using DPC (OneAPI) ?
+#----------------------------------------
+
+elif test "x$cs_gcc" = "xoneapi" ; then
+
+  cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
+  cs_cc_compiler_known=yes
+
+  # Some version numbers
+  cs_cc_vers_major=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cc_vers_minor=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cc_vers_patch=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cc_vers_major" || cs_cc_vers_major=0
+  test -n "$cs_cc_vers_minor" || cs_cc_vers_minor=0
+  test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
+
+  # Default compiler flags
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_omp="-fiopenmp"
+
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -475,8 +505,10 @@ if test "x$GXX" = "xyes"; then
 
   if test -n "`echo $cs_ac_cxx_version | grep ICC`" ; then
     cs_gxx=icpc
-  elif test -n "`echo $cs_ac_cc_version | grep -e ICX -e DPC++ -e oneAPI`" ; then
+  elif test -n "`echo $cs_ac_cxx_version | grep ICX`" ; then
     cs_gxx=icpx
+  elif test -n "`echo $cs_ac_cxx_version | grep -e DPC++ -e oneAPI`" ; then
+    cs_gxx=oneapi
   elif test -n "`echo $cs_ac_cxx_version | grep clang`" ; then
     cs_gxx=clang
   elif test -n "`echo $cs_ac_cxx_version | grep Cray`" ; then
@@ -628,11 +660,39 @@ elif test "x$cs_gxx" = "xicpx"; then
 
   # Default compiler flags
   cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0 -ftrapuv"
+  cxxflags_default_opt="-O2"
+  cxxflags_default_hot="-O3"
+  cxxflags_default_omp="-qopenmp"
+  cxxflags_default_std="-funsigned-char"
+
+# Otherwise, are we using DPCXX (OneAPI) ?
+#--------------------------------------
+
+elif test "x$cs_gxx" = "xoneapi"; then
+
+  cs_cxx_version=`echo $cs_ac_cxx_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CXX' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
+  cs_cxx_compiler_known=yes
+
+  cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
+  test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
+  test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
+
+  # Default compiler flags
+  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fiopenmp"
   cxxflags_default_std="-funsigned-char"
+
 
 # Otherwise, are we using clang ?
 #--------------------------------
