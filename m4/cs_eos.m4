@@ -72,6 +72,10 @@ if test "x$with_eos" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  # Common library dependencies for EOS
+  cs_eos_l0=""
+  cs_eos_l1=" -ltirpc"
+
   # Now check library
 
   EOS_LIBS="-leos"
@@ -91,18 +95,39 @@ if test "x$with_eos" != "xno" ; then
     EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
 
+  # check for pre-v1.8.0
+  # This test is necessary because starting from 1.8.0 definition of mixing
+  # in EOS changed.
+  AC_MSG_CHECKING([if EOS version >= 1.8.0])
+  AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
+  if test "${EOS_PRE_V1_8}" = "-1"; then
+    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_8"
+  fi
+
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
-  LIBS="${EOS_LIBS} ${LIBS}"
 
   # Check that EOS files exist
   AC_LANG_PUSH([C++])
 
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "EOS/API/EOS.hxx"]],
-                                  [[NEPTUNE::EOS *eos]])],
-                                  [ AC_DEFINE([HAVE_EOS], 1, [EOS support])
-                                    cs_have_eos=yes],
-                                   [cs_have_eos=no])
+  AC_MSG_CHECKING([for EOS library)])
+
+  cs_eos_lbase="${EOS_LIBS}"
+  
+  for cs_eos_ladd in "$cs_eos_l0" "$cs_eos_l1"
+  do
+    if test "x$cs_have_eos" = "xno" ; then
+      EOS_LIBS="${cs_eos_lbase}${cs_eos_ladd}"
+      LIBS="${EOS_LIBS} ${LIBS}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "EOS/API/EOS.hxx"]],
+                                      [[NEPTUNE::EOS *eos]])],
+                                      [ AC_DEFINE([HAVE_EOS], 1, [EOS support])
+                                       cs_have_eos=yes],
+                                      [cs_have_eos=no])
+    fi
+  done
+
+  AC_MSG_RESULT($cs_have_eos)
 
   if test "x$cs_have_eos" = "xno" ; then
     if test "x$with_eos" != "xcheck" ; then

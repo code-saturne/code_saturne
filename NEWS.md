@@ -3,6 +3,10 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Update EOS m4 file to handle the fact taht on newer linux
+  distributions, RPC library files are no longer available with
+  the glibc installation, but rather with libtirpc.
+
 - Compressible: fix imposed inlet/outlet boundary condition.
   Boundary mass flux was not computed using the Rusanov scheme,
   and was not consistant with momentum and energy convective fluxes on
