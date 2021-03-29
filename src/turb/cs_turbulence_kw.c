@@ -45,9 +45,9 @@
 
 #include "bft_mem.h"
 
+#include "cs_array.h"
 #include "cs_balance.h"
 #include "cs_blas.h"
-#include "cs_boundary_zone.h"
 #include "cs_halo.h"
 #include "cs_base.h"
 #include "cs_convection_diffusion.h"
@@ -172,11 +172,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   int ivar_p = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
-
-  int icvflb;
-  int ivisep;
-  int imasac;
-  int imucpp;
 
   /* Initialization
      ============== */
@@ -350,13 +345,11 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     cs_real_t thetak = vcopt_k->thetav;
     cs_real_t thetaw = vcopt_w->thetav;
-    cs_real_t tuexpk;
-    cs_real_t tuexpw;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Recover the value at time (n-1) */
-      tuexpk = c_st_k_p[c_id];
-      tuexpw = c_st_omg_p[c_id];
+      cs_real_t tuexpk = c_st_k_p[c_id];
+      cs_real_t tuexpw = c_st_omg_p[c_id];
       /* Save the values for the next time-step */
       c_st_k_p[c_id] = smbrk[c_id];
       c_st_omg_p[c_id] = smbrw[c_id];
@@ -386,25 +379,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   const double d2s3 = 2./3.;
   const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
-
-  cs_real_t ro = 0;
-  cs_real_t xnu;
-  cs_real_t xk;
-  cs_real_t xw;
-  cs_real_t xeps;
-  cs_real_t cdkw;
-  cs_real_t romvsd;
-  cs_real_t visct;
-  cs_real_t xxf1;
-  cs_real_t xgamma;
-  cs_real_t xbeta;
-  cs_real_t xdist;
-  cs_real_t xlt;
-  cs_real_t xdelta;
-  cs_real_t visclc;
-  cs_real_t visctc;
-  cs_real_t sigma;
-  cs_real_t hint;
 
   /* Compute dk/dxj.dw/dxj stored in gdkgdw
      ====================================== */
@@ -478,6 +452,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
     const cs_real_3_t *cvar_vela = (const cs_real_3_t *)CS_F_(vel)->val_pre;
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_real_t xgdk2sk =   cs_math_3_square_norm(gradk[c_id])
@@ -499,9 +474,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       viscf,
                       viscb);
 
-    icvflb = 0;
-    imasac = 0;
-    ivisep = 0;
+    int icvflb = 0;
+    int ivisep = 0;
 
     cs_var_cal_opt_t vcopt_u_loc;
     cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &vcopt_u_loc);
@@ -509,16 +483,11 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     cs_real_3_t *vel_laplacian;
     BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
-
-#   pragma omp parallel for if(n_cells_ext> CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        vel_laplacian[c_id][i] = 0;
-    }
+    cs_array_set_value_real(n_cells_ext, 3, 0, (cs_real_t *)vel_laplacian);
 
     cs_balance_vector(cs_glob_time_step_options->idtvar,
                       -1, /* f_id */
-                      imasac,
+                      0,  /* imasac */
                       1,  /* inc */
                       ivisep,
                       &vcopt_u_loc,
@@ -541,6 +510,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       NULL,
                       vel_laplacian);
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t v_lap[3];
       for (cs_lnum_t i = 0; i < 3; i++)
@@ -552,6 +522,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   }
 
+# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     gdkgdw[c_id] = cs_math_3_dot_product(gradk[c_id], grado[c_id]);
 
@@ -569,66 +540,72 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
      -> but the effect on "constants" is small
      -> to remember if we really use second-order in time in k-omega */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    ro = cromo[c_id];
-    xnu = cpro_pcvlo[c_id]/ro;
-    xk = cvara_k[c_id];
-    xw  = cvara_omg[c_id];
-    cdkw = 2*ro/cs_turb_ckwsw2/xw*gdkgdw[c_id];
-    cdkw = fmax(cdkw, 1.e-20);
-    cs_real_t distf = fmax(w_dist[c_id], cs_math_epzero);
-    cs_real_t xarg1 = fmax(sqrt(xk)/cs_turb_cmu/xw/distf,
-                           500.*xnu/xw/cs_math_pow2(distf));
-    xarg1 = fmin(xarg1,
-                 4.*ro*xk/cs_turb_ckwsw2/cdkw/cs_math_pow2(distf));
-    xf1[c_id] = tanh(cs_math_pow4(xarg1));
-  }
-
-  /* Unsteady terms (stored in tinstk and tinstw)
-     ============================================ */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
-    tinstk[c_id] += vcopt_k->istat*romvsd;
-    tinstw[c_id] += vcopt_w->istat*romvsd;
-  }
-
-  /* Compute production terms
-   * ========================
-   *
-   * stored in: prodk,prodw
-   * At the end of this step, we keep gdkgdw, xf1, prodk, tinstW */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    xk   = cvara_k[c_id];
-    xw   = cvara_omg[c_id];
-    xeps = cs_turb_cmu*xw*xk;
-    visct = cpro_pcvto[c_id];
-    /* k / (mu_T * omega) , clipped to 1 if mu_t is zero */
-
-    cs_real_t k_dmut_dom;
-    if (visct*xw <= cs_math_epzero*xk)
-      k_dmut_dom = 1.;
-    else
-      k_dmut_dom = xk / (visct*xw);
-
-    ro = cromo[c_id];
-    prodw[c_id] = visct*cpro_s2kw[c_id] - d2s3*ro*xk*cpro_divukw[c_id];
-
-    /* The negative part is implicit */
-    xxf1   = xf1[c_id];
-    xgamma = xxf1*cs_turb_ckwgm1 + (1.-xxf1)*cs_turb_ckwgm2;
-    tinstw[c_id] += fmax(  d2s3*ro*cell_f_vol[c_id]
-                         * (ro*xgamma*k_dmut_dom)*cpro_divukw[c_id], 0.);
-
-    /* Take the min between prodw and the low Reynolds one */
-    if (prodw[c_id] > cs_turb_ckwc1*ro*xeps) {
-      prodk[c_id] = cs_turb_ckwc1*ro*xeps;
+# pragma omp parallel if(n_cells_ext > CS_THR_MIN)
+  {
+#   pragma omp for nowait
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t ro = cromo[c_id];
+      cs_real_t xnu = cpro_pcvlo[c_id]/ro;
+      cs_real_t xk = cvara_k[c_id];
+      cs_real_t xw  = cvara_omg[c_id];
+      cs_real_t cdkw = 2*ro/cs_turb_ckwsw2/xw*gdkgdw[c_id];
+      cdkw = fmax(cdkw, 1.e-20);
+      cs_real_t distf = fmax(w_dist[c_id], cs_math_epzero);
+      cs_real_t xarg1 = fmax(sqrt(xk)/cs_turb_cmu/xw/distf,
+                             500.*xnu/xw/cs_math_pow2(distf));
+      xarg1 = fmin(xarg1,
+                   4.*ro*xk/cs_turb_ckwsw2/cdkw/cs_math_pow2(distf));
+      xf1[c_id] = tanh(cs_math_pow4(xarg1));
     }
-    else {
-      prodk[c_id] = prodw[c_id];
-      tinstk[c_id] += fmax(d2s3*cell_f_vol[c_id]*ro*cpro_divukw[c_id], 0.);
+
+    /* Unsteady terms (stored in tinstk and tinstw)
+       ============================================ */
+
+#   pragma omp for nowait
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
+      tinstk[c_id] += vcopt_k->istat*romvsd;
+      tinstw[c_id] += vcopt_w->istat*romvsd;
+    }
+
+    /* Compute production terms
+     * ========================
+     *
+     * stored in: prodk,prodw
+     * At the end of this step, we keep gdkgdw, xf1, prodk, tinstW */
+
+#   pragma omp for nowait
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t xk   = cvara_k[c_id];
+      cs_real_t xw   = cvara_omg[c_id];
+      cs_real_t xeps = cs_turb_cmu*xw*xk;
+      cs_real_t visct = cpro_pcvto[c_id];
+      /* k / (mu_T * omega) , clipped to 1 if mu_t is zero */
+
+      cs_real_t k_dmut_dom;
+      if (visct*xw <= cs_math_epzero*xk)
+        k_dmut_dom = 1.;
+      else
+        k_dmut_dom = xk / (visct*xw);
+
+      cs_real_t ro = cromo[c_id];
+      prodw[c_id] = visct*cpro_s2kw[c_id] - d2s3*ro*xk*cpro_divukw[c_id];
+
+      /* The negative part is implicit */
+      cs_real_t xxf1   = xf1[c_id];
+      cs_real_t xgamma = xxf1*cs_turb_ckwgm1 + (1.-xxf1)*cs_turb_ckwgm2;
+      tinstw[c_id] += fmax(  d2s3*ro*cell_f_vol[c_id]
+                           * (ro*xgamma*k_dmut_dom)*cpro_divukw[c_id], 0.);
+
+      /* Take the min between prodw and the low Reynolds one */
+      if (prodw[c_id] > cs_turb_ckwc1*ro*xeps) {
+        prodk[c_id] = cs_turb_ckwc1*ro*xeps;
+      }
+      else {
+        prodk[c_id] = prodw[c_id];
+        tinstk[c_id] += fmax(d2s3*cell_f_vol[c_id]*ro*cpro_divukw[c_id], 0.);
+      }
     }
   }
 
@@ -647,14 +624,14 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     /* Compute the rotation function (gdkgdw array not used) */
     cs_turbulence_rotation_correction(dt, rotfct, gdkgdw);
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      prodk[c_id] = prodk[c_id]*rotfct[c_id];
-      prodw[c_id] = prodw[c_id]*rotfct[c_id];
+      prodk[c_id] *= rotfct[c_id];
+      prodw[c_id] *= rotfct[c_id];
     }
 
     /* rotfct array is used later in case of renforced coupling (ikecou = 1).
        The array is deallocated at the end of the subroutine. */
-
   }
 
   /* Compute buoyancy terms
@@ -752,22 +729,22 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       }
     }
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      visct = cpro_pcvto[c_id];
+      cs_real_t visct = cpro_pcvto[c_id];
       prodw[c_id] += visct*CS_MAX(-grad_dot_g[c_id], 0.);
       prodk[c_id] -= visct*grad_dot_g[c_id];
 
       /* Implicit Buoyant terms when negative */
-      tinstk[c_id] +=
-        CS_MAX(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
+      tinstk[c_id]
+        += CS_MAX(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
     }
 
     /* Free memory */
     BFT_FREE(grad);
   }
   else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      grad_dot_g[c_id] = 0;
+    cs_array_set_value_real(n_cells, 1, 0, grad_dot_g);
   }
 
   /* Finalization of explicit and implicit source terms
@@ -778,170 +755,182 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   /* Standard k-w SST RANS model */
 
-  if (cs_glob_turb_model->hybrid_turb == 0) {
+# pragma omp parallel if(n_cells_ext > CS_THR_MIN)
+  {
+    if (cs_glob_turb_model->hybrid_turb == 0) {
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+#     pragma omp for nowait
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      visct  = cpro_pcvto[c_id];
-      ro     = cromo[c_id];
-      xk     = cvara_k[c_id];
-      xw     = cvara_omg[c_id];
-      xxf1   = xf1[c_id];
-      xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-      xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t visct  = cpro_pcvto[c_id];
+        cs_real_t ro     = cromo[c_id];
+        cs_real_t xk     = cvara_k[c_id];
+        cs_real_t xw     = cvara_omg[c_id];
+        cs_real_t xxf1   = xf1[c_id];
+        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
+        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
 
-      cs_real_t prodw_dmut;
-      if (visct <= cs_math_epzero*prodw[c_id])
-        prodw_dmut = 0.;
-      else
-        prodw_dmut = prodw[c_id]/visct;
+        cs_real_t prodw_dmut;
+        if (visct <= cs_math_epzero*prodw[c_id])
+          prodw_dmut = 0.;
+        else
+          prodw_dmut = prodw[c_id]/visct;
 
-      smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
 
+        smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
+                                         - xbeta*ro*cs_math_pow2(xw)
+                                         + 2.*ro/xw*(1.-xxf1)/cs_turb_ckwsw2
+                                           *gdkgdw[c_id]);
 
-      smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
-                                       - xbeta*ro*cs_math_pow2(xw)
-                                       + 2.*ro/xw*(1.-xxf1)/cs_turb_ckwsw2
-                                         *gdkgdw[c_id]);
-
-      tinstw[c_id] += cell_f_vol[c_id]*fmax(  -2.*ro/cs_math_pow2(xw)*(1. - xxf1)
-                                            / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
-    }
-  }
-
-  /* DES or DDES mode for k-w SST */
-
-  else if (   cs_glob_turb_model->hybrid_turb == 1
-           || cs_glob_turb_model->hybrid_turb == 2) {
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-      cs_real_t xfd = 0;
-
-      visct  = cpro_pcvto[c_id];
-      xnu    = cpro_pcvlo[c_id];
-      ro    = cromo[c_id];
-      xk     = cvara_k[c_id];
-      xw     = cvara_omg[c_id];
-      xxf1   = xf1[c_id];
-      xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-      xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
-      xdist  = CS_MAX(w_dist[c_id], cs_math_epzero);
-      xlt    = sqrt(xk) / (cs_turb_cmu*xw);
-      xdelta = pow(cell_f_vol[c_id], 1./3.);
-
-      if (cs_glob_turb_model->hybrid_turb == 1)
-        /* Detached Eddy Simulation - DES - mode */
-        xfd = 1.;
-      else if (cs_glob_turb_model->hybrid_turb == 2) {
-        /* Delayed Detached Eddy Simulation - DDES - mode */
-        cs_real_t xs2pw2 = fmax(sqrt(s2pw2[c_id]), cs_math_epzero);
-        cs_real_t xrd =   (visct + xnu)
-                        / (ro * xs2pw2 * cs_math_pow2(cs_turb_xkappa)
-                                       * cs_math_pow2(xdist));
-        xfd    = 1. - tanh(pow(8.*xrd, 3));
+        tinstw[c_id] +=   cell_f_vol[c_id]
+                        * fmax(  -2.*ro/cs_math_pow2(xw)*(1. - xxf1)
+                               / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
       }
+    }
 
-      cs_real_t xdiff  = CS_MAX(xlt - (cs_turb_cddes * xdelta),0.);
-      cs_real_t fhybr  = xlt/(xlt - xfd*xdiff);
-      /* fhybr is stored so that it can be used after */
-      w1[c_id]= fhybr;
-      hybrid_fd_coeff[c_id] = xfd;
+    /* DES or DDES mode for k-w SST */
 
-      /* Storage of the Fd coefficient and check loy if
+    else if (   cs_glob_turb_model->hybrid_turb == 1
+             || cs_glob_turb_model->hybrid_turb == 2) {
+
+#     pragma omp for nowait
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+        cs_real_t xfd = 0;
+
+        cs_real_t visct  = cpro_pcvto[c_id];
+        cs_real_t xnu    = cpro_pcvlo[c_id];
+        cs_real_t ro    = cromo[c_id];
+        cs_real_t xk     = cvara_k[c_id];
+        cs_real_t xw     = cvara_omg[c_id];
+        cs_real_t xxf1   = xf1[c_id];
+        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
+        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xdist  = CS_MAX(w_dist[c_id], cs_math_epzero);
+        cs_real_t xlt    = sqrt(xk) / (cs_turb_cmu*xw);
+        cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
+
+        if (cs_glob_turb_model->hybrid_turb == 1)
+          /* Detached Eddy Simulation - DES - mode */
+          xfd = 1.;
+        else if (cs_glob_turb_model->hybrid_turb == 2) {
+          /* Delayed Detached Eddy Simulation - DDES - mode */
+          cs_real_t xs2pw2 = fmax(sqrt(s2pw2[c_id]), cs_math_epzero);
+          cs_real_t xrd =   (visct + xnu)
+                          / (ro * xs2pw2 * cs_math_pow2(cs_turb_xkappa)
+                                         * cs_math_pow2(xdist));
+          xfd    = 1. - tanh(pow(8.*xrd, 3));
+        }
+
+        cs_real_t xdiff  = CS_MAX(xlt - (cs_turb_cddes * xdelta),0.);
+        cs_real_t fhybr  = xlt/(xlt - xfd*xdiff);
+        /* fhybr is stored so that it can be used after */
+        w1[c_id]= fhybr;
+        hybrid_fd_coeff[c_id] = xfd;
+
+        /* Storage of the Fd coefficient and check loy if
          DDES is activated for post-propcessing
          NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0 */
-      if (cs_turb_cddes*xdelta >= xlt)
-        hybrid_fd_coeff[c_id] = 0.;
+        if (cs_turb_cddes*xdelta >= xlt)
+          hybrid_fd_coeff[c_id] = 0.;
 
-      cs_real_t prodw_dmut;
-      if (visct <= cs_math_epzero*prodw[c_id])
-        prodw_dmut = 0.;
-      else
-        prodw_dmut = prodw[c_id]/visct;
+        cs_real_t prodw_dmut;
+        if (visct <= cs_math_epzero*prodw[c_id])
+          prodw_dmut = 0.;
+        else
+          prodw_dmut = prodw[c_id]/visct;
 
-      smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk*fhybr);
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk*fhybr);
 
-      smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
-                                       - xbeta*ro*cs_math_pow2(xw)
-                                       + 2.*ro/xw*(1. - xxf1)
-                                         /cs_turb_ckwsw2*gdkgdw[c_id]);
+        smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
+                                         - xbeta*ro*cs_math_pow2(xw)
+                                         + 2.*ro/xw*(1. - xxf1)
+                                           /cs_turb_ckwsw2*gdkgdw[c_id]);
 
-      tinstw[c_id] += cell_f_vol[c_id]*fmax(-2.*ro/cs_math_pow2(xw)*(1.-xxf1)
-                                            /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+        tinstw[c_id] +=   cell_f_vol[c_id]
+                        * fmax(-2.*ro/cs_math_pow2(xw)*(1.-xxf1)
+                               /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+      }
+
     }
 
-  }
+    /* Scale Adaptive mode for k-w SST */
+    else {
 
-  /* Scale Adaptive mode for k-w SST */
-  else {
+#     pragma omp for nowait
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t visct  = cpro_pcvto[c_id];
+        cs_real_t ro     = cromo[c_id];
+        cs_real_t xk     = cvara_k[c_id];
+        cs_real_t xw     = cvara_omg[c_id];
+        cs_real_t xxf1   = xf1[c_id];
+        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
+        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
 
-      visct  = cpro_pcvto[c_id];
-      ro     = cromo[c_id];
-      xk     = cvara_k[c_id];
-      xw     = cvara_omg[c_id];
-      xxf1   = xf1[c_id];
-      xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-      xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        /* Computation of the Scale Adaptive model source term xqsas
+           that is added to the omega equation */
+        cs_real_t xsij2 = cpro_s2kw[c_id];
+        cs_real_t lvkmin =   cs_turb_csas
+                           * sqrt(  cs_turb_csas_eta2 * cs_turb_xkappa
+                                  / ((xbeta/cs_turb_cmu)-xgamma))
+                           * pow(volume[c_id], 1./3.);
+        cs_real_t lvk = cs_turb_xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
+        cs_real_t lvksas = CS_MAX(lvkmin, lvk);
+        cs_real_t lmod = sqrt(xk)/(pow(cs_turb_cmu,0.25)*xw);
 
-      /* Computation of the Scale Adaptive model source term xqsas
-         that is added to the omega equation */
-      cs_real_t xsij2 = cpro_s2kw[c_id];
-      cs_real_t lvkmin =   cs_turb_csas
-                         * sqrt(  cs_turb_csas_eta2 * cs_turb_xkappa
-                                / ((xbeta/cs_turb_cmu)-xgamma))
-                         * pow(volume[c_id], 1./3.);
-      cs_real_t lvk = cs_turb_xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
-      cs_real_t lvksas = CS_MAX(lvkmin, lvk);
-      cs_real_t lmod = sqrt(xk)/(pow(cs_turb_cmu,0.25)*xw);
+        cs_real_t xqsas = fmax(  ro * cs_turb_csas_eta2 * cs_turb_xkappa * xsij2
+                               * cs_math_pow2(lmod/lvksas)
+                               - 6.*ro*xk*maxgdsv[c_id], 0.);
 
-      cs_real_t xqsas = fmax(  ro * cs_turb_csas_eta2 * cs_turb_xkappa * xsij2
-                             * cs_math_pow2(lmod/lvksas)
-                             - 6.*ro*xk*maxgdsv[c_id], 0.);
+        cs_real_t prodw_dmut;
+        if (visct <= cs_math_epzero*prodw[c_id])
+          prodw_dmut = 0.;
+        else
+          prodw_dmut = prodw[c_id]/visct;
 
-      cs_real_t prodw_dmut;
-      if (visct <= cs_math_epzero*prodw[c_id])
-        prodw_dmut = 0.;
-      else
-        prodw_dmut = prodw[c_id]/visct;
+        sas_source_term[c_id] = xqsas;
 
-      sas_source_term[c_id] = xqsas;
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
 
-      smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
+        smbrw[c_id] += cell_f_vol[c_id]*(ro*xgamma*prodw_dmut
+                                         - xbeta*ro*cs_math_pow2(xw)
+                                         + 2.*ro/xw*(1.-xxf1)
+                                                /cs_turb_ckwsw2*gdkgdw[c_id]
+                                         + xqsas);
 
-      smbrw[c_id] += cell_f_vol[c_id]*(ro*xgamma*prodw_dmut
-                                       - xbeta*ro*cs_math_pow2(xw)
-                                       + 2.*ro/xw*(1.-xxf1)
-                                              /cs_turb_ckwsw2*gdkgdw[c_id]
-                                       + xqsas);
+        tinstw[c_id] +=   cell_f_vol[c_id]
+                        * fmax(-2.*ro/cs_math_pow2(xw)*(1. - xxf1)
+                               /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+      }
+    } /* End of test on hybrid models */
 
-      tinstw[c_id] += cell_f_vol[c_id]*fmax(-2.*ro/cs_math_pow2(xw)*(1. - xxf1)
-                                            /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+    /* If the solving of k-omega is uncoupled,
+       negative source terms are implicited */
+
+    if (cs_glob_turb_rans_model->ikecou == 0) {
+
+#     pragma omp for nowait
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t xw    = cvara_omg[c_id];
+        cs_real_t xxf1  = xf1[c_id];
+        cs_real_t xbeta = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t ro = crom[c_id];
+
+        cs_real_t fhybr;
+        if (   cs_glob_turb_model->hybrid_turb == 1
+            || cs_glob_turb_model->hybrid_turb == 2)
+          fhybr = w1[c_id];
+        else
+          fhybr = 1.;
+
+        tinstk[c_id] += cell_f_vol[c_id]*cs_turb_cmu*ro*xw*fhybr;
+        tinstw[c_id] += 2.*cell_f_vol[c_id]*xbeta*ro*xw;
+      }
     }
-  } /* End of test on hybrid models */
 
-  /* If the solving of k-omega is uncoupled, negative source terms are implicited */
-
-  if (cs_glob_turb_rans_model->ikecou == 0) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      xw    = cvara_omg[c_id];
-      xxf1  = xf1[c_id];
-      xbeta = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
-      ro = crom[c_id];
-
-      cs_real_t fhybr;
-      if (   cs_glob_turb_model->hybrid_turb == 1
-          || cs_glob_turb_model->hybrid_turb == 2)
-        fhybr = w1[c_id];
-      else
-        fhybr = 1.;
-
-      tinstk[c_id] += cell_f_vol[c_id]*cs_turb_cmu*ro*xw*fhybr;
-      tinstw[c_id] += 2.*cell_f_vol[c_id]*xbeta*ro*xw;
-    }
-  }
+  } /* End of OpenMP section */
 
   /* Free memory */
   BFT_FREE(gdkgdw);
@@ -960,6 +949,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       cs_real_t *lag_st_k = lag_st->st_val + (lag_st->itske-1)*n_cells_ext;
       cs_real_t *lag_st_i = lag_st->st_val + (lag_st->itsli-1)*n_cells_ext;
 
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         /* Implicit and explicit source terms on k */
@@ -1062,14 +1052,14 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     cs_lnum_t c_id = b_face_cells[face_id];
 
     /* Physical Properties */
-    visclc = viscl[c_id];
-    visctc = cvisct[c_id];
+    cs_real_t visclc = viscl[c_id];
+    cs_real_t visctc = cvisct[c_id];
 
-    xxf1 = xf1[c_id];
+    cs_real_t xxf1 = xf1[c_id];
 
     /* k */
-    sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
-    hint = (visclc + visctc/sigma)/distb[face_id];
+    cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
+    cs_real_t hint = (visclc + visctc/sigma)/distb[face_id];
 
     /* Translate coefa into cofaf and coefb into cofbf */
     coefaf_k[face_id] = -hint*coefa_k[face_id];
@@ -1102,6 +1092,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     BFT_MALLOC(w6, n_cells_ext, cs_real_t);
     BFT_MALLOC(w7, n_cells_ext, cs_real_t);
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       w5[c_id] = 0.;
       w6[c_id] = 0.;
@@ -1111,9 +1102,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     if (vcopt_k->idiff >=  1) {
 
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        xxf1 = xf1[c_id];
-        sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
+        cs_real_t xxf1 = xf1[c_id];
+        cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
         w7[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
       }
 
@@ -1132,13 +1124,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         viscb[face_id] = 0.;
     }
 
-    imucpp = 0;
-    imasac = 1;
-
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
-                      imucpp,
-                      imasac,
+                      0,     /* imucpp */
+                      1,     /* imasac */
                       1,     /* inc */
                       true,  /* iccocg */
                       &vcopt_k_loc,
@@ -1170,9 +1159,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     /* Handle omega */
 
     if (vcopt_w->idiff >= 1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        xxf1 = xf1[c_id];
-        sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
+        cs_real_t xxf1 = xf1[c_id];
+        cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
         w7[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
       }
 
@@ -1191,13 +1181,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         viscb[face_id] = 0.;
     }
 
-    imucpp = 0;
-    imasac = 1;
-
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_omg->id,
-                      imucpp,
-                      imasac,
+                      0,     /* imucpp */
+                      1,     /* imasac */
                       1,     /* inc */
                       true,  /* iccocg */
                       &vcopt_w_loc,
@@ -1226,9 +1213,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                     sqrt(cs_gdot(n_cells, smbrw, smbrw)));
     }
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrk[c_id] = smbrk[c_id] + w5[c_id];
-      smbrw[c_id] = smbrw[c_id] + w6[c_id];
+      smbrk[c_id] += w5[c_id];
+      smbrw[c_id] += w6[c_id];
     }
   }
 
@@ -1250,22 +1238,23 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       }
     }
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      ro = crom[c_id];
+      cs_real_t ro = crom[c_id];
 
       /* Coupled solution */
 
-      romvsd     = 1./(ro*volume[c_id]);
+      cs_real_t romvsd     = 1./(ro*volume[c_id]);
       smbrk[c_id] = smbrk[c_id]*romvsd;
       smbrw[c_id] = smbrw[c_id]*romvsd;
       cs_real_t divp23 = d2s3*CS_MAX(cpro_divukw[c_id], 0.);
       cs_real_t produc = w1[c_id]*cpro_s2kw[c_id] + grad_dot_g[c_id];
-      xk         = cvara_k[c_id];
-      xw         = cvara_omg[c_id];
-      xxf1       = xf1[c_id];
-      xgamma     = xxf1*cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-      xbeta      = xxf1*cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+      cs_real_t xk = cvara_k[c_id];
+      cs_real_t xw = cvara_omg[c_id];
+      cs_real_t xxf1 = xf1[c_id];
+      cs_real_t xgamma = xxf1*cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
+      cs_real_t xbeta = xxf1*cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
 
       cs_real_t a11 =   1./dt[c_id] - 1./xw*fmin(produc, 0.)
                       + divp23+cs_turb_cmu*xw;
@@ -1306,9 +1295,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   /* Face viscosity */
   if (vcopt_k->idiff >= 1) {
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      xxf1 = xf1[c_id];
-      sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
+      cs_real_t xxf1 = xf1[c_id];
+      cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
       w1[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
     }
 
@@ -1368,9 +1358,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   /* Face viscosity */
   if (vcopt_w->idiff >=  1) {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      xxf1 = xf1[c_id];
-      sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
+      cs_real_t xxf1 = xf1[c_id];
+      cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
       w1[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
     }
 
@@ -1428,7 +1419,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   /* Compute Min/Max before clipping, for logging */
 
   cs_real_t *cvar_var = NULL;
-  cs_real_t var;
   cs_real_t vrmax[2];
   cs_real_t vrmin[2];
 
@@ -1442,9 +1432,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     vrmin[ii] =  l_threshold;
     vrmax[ii] = -l_threshold;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      var = cvar_var[c_id];
-      vrmin[ii] = CS_MIN(vrmin[ii],var);
-      vrmax[ii] = CS_MAX(vrmax[ii],var);
+      cs_real_t var = cvar_var[c_id];
+      vrmin[ii] = CS_MIN(vrmin[ii], var);
+      vrmax[ii] = CS_MAX(vrmax[ii], var);
     }
   }
 
@@ -1464,6 +1454,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
   }
 
+# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     if (clip_k_id >= 0)
       cpro_k_clipped[c_id] = 0.;
@@ -1474,8 +1465,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   cs_lnum_t iclipk[1] = {0};
   cs_lnum_t iclipw = 0;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    xk = cvar_k[c_id];
-    xw = cvar_omg[c_id];
+    cs_real_t xk = cvar_k[c_id];
+    cs_real_t xw = cvar_omg[c_id];
     if (fabs(xk) <= epz2) {
       iclipk[0] = iclipk[0] + 1;
       if (clip_k_id >= 0)
@@ -1545,21 +1536,15 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   /*TODO FIXME: why not just before? Are the BCs uncompatible? */
 
-  cs_real_t utaurf;
-  cs_real_t nu0;
-  cs_real_t ya;
-  cs_real_t ypa;
-  cs_real_t limiter;
-  cs_real_t ut2;
-
   if (   cs_glob_time_step->nt_cur == 1
       && cs_glob_turb_rans_model->reinit_turb == 1) {
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
-    utaurf = 0.05*uref;
-    nu0 = viscl0 / ro0;
+    cs_real_t utaurf = 0.05*uref;
+    cs_real_t nu0 = viscl0 / ro0;
 
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       /* In case of coupled fluid/solid simulation
@@ -1572,10 +1557,11 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       /* Compute the velocity magnitude */
       cs_real_t xunorm = cs_math_3_norm(vel[c_id]);
 
-      ya = w_dist[c_id];
-      ypa = ya*utaurf/nu0;
+      cs_real_t ya = w_dist[c_id];
+      cs_real_t ypa = ya*utaurf/nu0;
       /* Velocity magnitude is imposed (limited only),
          the direction is conserved */
+      cs_real_t limiter;
       if (xunorm <= 1.e-12*uref) {
         limiter = 1.;
       }
@@ -1590,10 +1576,10 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       vel[c_id][1] = limiter*vel[c_id][1];
       vel[c_id][2] = limiter*vel[c_id][2];
 
-      ut2 = 0.05 * uref;
-      xeps =   cs_math_pow3(utaurf)
-             * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
-                    1. / (cs_turb_xkappa * ya));
+      cs_real_t ut2 = 0.05 * uref;
+      cs_real_t xeps =   cs_math_pow3(utaurf)
+                       * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
+                              1. / (cs_turb_xkappa * ya));
       cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya)
                                     * cs_math_pow2(exp(-ypa/25.))
                     + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
