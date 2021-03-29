@@ -1506,12 +1506,15 @@ class case:
             solver = os.path.basename(d.solver_path)
             if os.path.isfile(os.path.join(d.exec_dir, solver)):
                 d.solver_path = os.path.join('.', solver)
+            d.init_staged_data()
 
         for d in self.syr_domains:
             d.solver_path = os.path.join('.', 'syrthes')
+            d.init_staged_data()
 
         for d in self.py_domains:
             d.solver_path = self.package.config.python
+            d.init_staged_data()
 
     #---------------------------------------------------------------------------
 

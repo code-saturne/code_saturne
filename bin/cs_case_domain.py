@@ -222,7 +222,16 @@ class base_domain:
 
     def copy_data(self):
         """
-        Copy base data to the execution directory
+        Copy base data to the execution directory.
+        """
+
+        return
+
+    #---------------------------------------------------------------------------
+
+    def init_staged_data(self):
+        """
+        Initialize staged data in the execution directory.
         """
 
         return
@@ -632,6 +641,17 @@ class domain(base_domain):
             src = os.path.join(self.data_dir, f)
             if os.path.isfile(src):
                 shutil.copy2(src, os.path.join(self.exec_dir, f))
+
+        # Now set parameters
+
+        self.__set_case_parameters__()
+
+    #---------------------------------------------------------------------------
+
+    def init_staged_data(self):
+        """
+        Initialize staged data in the execution directory.
+        """
 
         # Now set parameters
 
