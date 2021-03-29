@@ -136,7 +136,7 @@ cs_clip_ke(cs_lnum_t  n_cells,
 
   int iwarnk = vcopt.verbosity;
 
-  /* Une petite valeur pour eviter des valeurs exactement nulles. */
+  /* Small value to avoid exactly zero values */
 
   const double epz2 = cs_math_pow2(cs_math_epzero);
 
@@ -156,8 +156,8 @@ cs_clip_ke(cs_lnum_t  n_cells,
     cpro_e_clipped = cs_field_by_id(clip_e_id)->val;
   }
 
-  /* Stockage Min et Max pour log
-   * =============================*/
+  /* Save min and max for log
+   * ======================== */
 
   const cs_real_t l_threshold = 1.e12;
   cs_real_t *cvar_var = NULL;
@@ -189,10 +189,9 @@ cs_clip_ke(cs_lnum_t  n_cells,
       cpro_e_clipped[c_id] = 0.;
   }
 
-  /* Detection des valeurs hors norme "physiques"
-   * uniquement pour avertissement
-   * ou dans le cas ICLKEP = 1
-   * =============================================*/
+  /* Detect values ouside "physical" bounds,
+   * only for warning or when ICLKEP = 1
+   * ===================================== */
 
   cs_gnum_t iclpke = 0;
   cs_lnum_t iclpmn[2] = {0, 0};
@@ -272,13 +271,13 @@ cs_clip_ke(cs_lnum_t  n_cells,
   }
 
   /* "standard" clipping ICLKEP = 0
-   * ==============================*/
+   * ============================== */
 
   cs_lnum_t iclpk2 = 0, iclpe2 = 0;
 
   if (cs_glob_turb_rans_model->iclkep == 0) {
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++){
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       xk = cvar_k[c_id];
       xe = cvar_ep[c_id];
       if (fabs(xk) <= epz2) {

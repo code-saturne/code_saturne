@@ -421,9 +421,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **hyd_p_met,
                               int         dim_hyd_p_met[2])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
   if (_atmo_option.z_temp_met == NULL)
     BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
   if (_atmo_option.time_met == NULL)
@@ -542,7 +539,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     = (const cs_real_3_t *restrict)mq->b_face_cog;
   cs_field_t *f = cs_field_by_name(name);
   int f_id = f->id;
-  int inc, niterf, iccocg;
+  int niterf;
 
   cs_var_cal_opt_t vcopt;
   cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
@@ -891,9 +888,6 @@ cs_atmo_compute_meteo_profiles(void)
     (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
   cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
   cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
-  cs_real_t *cpro_met_p = cs_field_by_name("meteo_pressure")->val;
-  cs_real_t *cpro_met_rho = cs_field_by_name("meteo_density")->val;
-  cs_real_t *cpro_met_t = cs_field_by_name("meteo_temperature")->val;
 
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
@@ -1257,20 +1251,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
    /* Initialization
    *===============*/
 
-  cs_domain_t *domain = cs_glob_domain;
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
- cs_real_3_t *restrict i_face_normal =
-     (const cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal =
-     (const cs_real_3_t *restrict)mq->b_face_normal;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
-
-  const int *bc_type = cs_glob_bc_type;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
   cs_field_t *f = cs_field_by_name("meteo_pressure");
@@ -1305,7 +1292,6 @@ cs_atmo_hydrostatic_profiles_compute(void)
   /* p_ground is pressure at the lowest level */
 
   cs_real_t p_ground = aopt->meteo_psea;
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   /* Initialize temperature, pressure and density from neutral conditions
    *=====================================================================*/
