@@ -2097,7 +2097,7 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
 
     cs_real_t a11 = sqrt(r11);
     cs_real_t a21 = r12 / a11;
-    cs_real_t a22 = sqrt(r22 - a21*a21);
+    cs_real_t a22 = sqrt(fmax(r22 - a21*a21, 0));
     cs_real_t a31 = r13 / a11;
     cs_real_t a32 = (r23 - a21*a31) / a22;
     cs_real_t a33 = sqrt(fmax(r33 - a31*a31 - a32*a32, 0));
