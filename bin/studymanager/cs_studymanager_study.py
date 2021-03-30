@@ -263,7 +263,7 @@ class Case(object):
                     cs_solver_xml_init(case).initialize()
                 elif xml_type == 'neptune_cfd':
                     try:
-                        from code_saturne.model.XMLinitializeNeptune import XMLinit as nc_solver_xml_init
+                        from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune as nc_solver_xml_init
                         nc_solver_xml_init(case).initialize()
                     except ImportError:
                         # Avoid completely failing an update of cases with
