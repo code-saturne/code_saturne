@@ -2613,7 +2613,7 @@ _gcr(cs_sles_it_t              *c,
      void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, alpha, rk_rkm1, gk_zkm1, rk_rk, beta, residue;
+  double  ro_0, alpha, gk_zkm1, rk_rk, beta, residue;
   cs_real_t *_aux_vectors, *ro_1;
   cs_real_t *restrict rk, *restrict dk, *restrict zk;
   cs_real_t *restrict gk, *restrict sk;
@@ -2769,7 +2769,7 @@ _gcr(cs_sles_it_t              *c,
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         dk[(n_iter - 1) * wa_size + ii] = sk[ii];
 
-      for(cs_lnum_t jj = 0; jj < n_iter - 1; jj++) {
+      for(cs_lnum_t jj = 0; jj < (cs_lnum_t)n_iter - 1; jj++) {
 
         gk_zkm1 = _dot_product(c, gk, zk + jj * wa_size);
 
