@@ -2786,10 +2786,12 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
 
   }
 
-  for (int ii = 0; ii < f_n_rows; ii++)
-    assert(f_c_row[ii] > -2);
+  /* We might have remaining cells */
 
-  assert(n_remain == 0);
+  for (int ii = 0; ii < f_n_rows; ii++) {
+    if (f_c_row[ii] < -1)
+      f_c_row[ii] = c_n_rows++;
+  }
 
   /* Free working arrays */
 
