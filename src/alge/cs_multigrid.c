@@ -2934,7 +2934,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   /* map arrays for rhs and vx;
      for the finest level, simply point to input and output arrays */
 
-  mgd->rhs_vx[0] = NULL; /* Use _rhs_level when necessary to avoid const warning */
+  mgd->rhs_vx[0] = NULL; /* Use _rhs_level when necessary to avoid
+                            const warning */
   mgd->rhs_vx[1] = vx;
 
   /* Descent */
@@ -3236,6 +3237,9 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
   mgd->exit_cycle_id = cycle_id;
 
   /* Free memory */
+
+  if (wr != aux_vectors)
+    BFT_FREE(wr);
 
   return cvg;
 }
