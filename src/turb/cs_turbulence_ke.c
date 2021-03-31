@@ -165,7 +165,7 @@ _tsepls(cs_real_t w1[])
 
   for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
-    cs_array_set_value_real(n_cells, 3, 0, (cs_real_t *)w7);
+    cs_array_set_value_real(n_cells_ext, 9, 0, (cs_real_t *)w7);
 
 #   pragma omp parallel for if(n_i_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -211,6 +211,12 @@ _tsepls(cs_real_t w1[])
       }
 
     }
+
+    if (m->halo != NULL)
+      cs_halo_sync_var_strided(m->halo,
+                               CS_HALO_STANDARD,
+                               (cs_real_t *)w7,
+                               3*3);
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -562,8 +568,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
       cs_real_t ut2 = 0.05*uref;
 
-      cvar_ep[c_id] = cs_math_pow3(utaurf)*fmin(1./(cs_turb_xkappa*15.*nu0/utaurf),
-                                                1./(cs_turb_xkappa*ya));
+      cvar_ep[c_id] =   cs_math_pow3(utaurf)
+                      * fmin(1./(cs_turb_xkappa*15.*nu0/utaurf),
+                             1./(cs_turb_xkappa*ya));
       cvar_k[c_id] =     cvar_ep[c_id]/2./nu0*cs_math_pow2(ya)
                        * cs_math_pow2(exp(-ypa/25.))
                      +   cs_math_pow2(ut2)/sqrt(cs_turb_cmu)
@@ -1087,7 +1094,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                     *cs_math_pow3(1.-cvara_al[c_id]);
     }
 
-    /* Take into account the Cazalbou rotation/curvature correction if necessary */
+    /* Add the Cazalbou rotation/curvature correction if necessary */
     if (cs_glob_turb_rans_model->irccor == 1) {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1282,8 +1289,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       - d2s3*rho*ceps1*xk*divu[c_id] );
 
       /* We store the part with Pk in prdv2f which will be reused in resv2f */
-      prdv2f[c_id] = prdv2f[c_id]
-        - d2s3*rho*cvara_k[c_id]*divu[c_id];/*FIXME this term should be removed */
+      prdv2f[c_id] = prdv2f[c_id] - d2s3*rho*cvara_k[c_id]*divu[c_id];
+      /*FIXME this term should be removed */
 
       /* Implicit part */
       tinstk[c_id] += rho*cell_f_vol[c_id]/fmax(ttke, cs_math_epzero * ttmin);
@@ -1319,8 +1326,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        - d2s3*rho*cs_turb_cpale1*xk/tt*divu[c_id]);
 
       /* We store the part with Pk in prdv2f which will be reused in resv2f */
-      prdv2f[c_id] = prdv2f[c_id]
-        - d2s3*rho*cvara_k[c_id]*divu[c_id];/*FIXME this term should be removed */
+      prdv2f[c_id] = prdv2f[c_id] - d2s3*rho*cvara_k[c_id]*divu[c_id];
+      /*FIXME this term should be removed */
 
       /* Implicit part */
       tinstk[c_id] += rho*cell_f_vol[c_id]/fmax(ttke, cs_math_epzero * ttmin);
@@ -1347,7 +1354,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
    *    Going out of the step we keep              strain, divu,
    * ==========================================================================*/
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     usimpk[c_id] = 0.;
     usimpe[c_id] = 0.;
@@ -1400,28 +1407,30 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       smbrk[c_id] = - thets*tuexpk;
       smbre[c_id] = - thets*tuexpe;
       /* It is assumed that (-usimpk > 0) and though this term is implicit */
-      smbrk[c_id] = usimpk[c_id]*cvara_k[c_id] + smbrk[c_id];
-      smbre[c_id] = usimpe[c_id]*cvara_ep[c_id] + smbre[c_id];
+      smbrk[c_id] += usimpk[c_id]*cvara_k[c_id];
+      smbre[c_id] += usimpe[c_id]*cvara_ep[c_id];
 
       /* Implicit part */
-      tinstk[c_id] = tinstk[c_id] - usimpk[c_id]*thetak;
-      tinste[c_id] = tinste[c_id] - usimpe[c_id]*thetae;
+      tinstk[c_id] += - usimpk[c_id]*thetak;
+      tinste[c_id] += - usimpe[c_id]*thetae;
 
     }
 
     /* If no extrapolation over time */
   }
   else {
+
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Explicit part */
-      smbrk[c_id] = smbrk[c_id] + usimpk[c_id]*cvara_k[c_id] + w7[c_id];
-      smbre[c_id] = smbre[c_id] + usimpe[c_id]*cvara_ep[c_id] + w8[c_id];
+      smbrk[c_id] += usimpk[c_id]*cvara_k[c_id] + w7[c_id];
+      smbre[c_id] += usimpe[c_id]*cvara_ep[c_id] + w8[c_id];
 
       /* Implicit part */
-      tinstk[c_id] = tinstk[c_id] + fmax(-usimpk[c_id], 0.);
-      tinste[c_id] = tinste[c_id] + fmax(-usimpe[c_id], 0.);
+      tinstk[c_id] += fmax(-usimpk[c_id], 0.);
+      tinste[c_id] += fmax(-usimpe[c_id], 0.);
     }
+
   }
 
   /* Account for Lagrangian 2-way coupling source terms
@@ -1450,10 +1459,10 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                                     / cvara_k[c_id];
 
         /* Implicit source terms on k */
-        tinstk[c_id] += CS_MAX(-lag_st_i[c_id], 0.);
+        tinstk[c_id] += fmax(-lag_st_i[c_id], 0.);
 
         /* Implicit source terms on omega */
-        tinste[c_id] += CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
+        tinste[c_id] += fmax(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
 
       }
 
