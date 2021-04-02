@@ -58,7 +58,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="labelNonCondensableWarning">
         <property name="text">
-         <string>Warning : first two field properties are locked in the presence of non condensable gas.</string>
+         <string>Warning : phases with non condensable gas are locked.</string>
         </property>
        </widget>
       </item>

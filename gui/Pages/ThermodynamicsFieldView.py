@@ -246,14 +246,15 @@ class StandardItemModelProperty(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.NoItemFlags
+        # Lock fields with non condensable gas
+        field_id = index.row() + 1
+        if self.ncond.getNonCondensableByFieldId(field_id) != []:
+            return Qt.ItemIsSelectable
         if index.column() == 0 or index.column() == 3:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
-            if len(self.ncond.getNonCondensableLabelList()) > 0 and (index.row()==0 or index.row()==1):
-                return Qt.ItemIsSelectable
-            else :
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

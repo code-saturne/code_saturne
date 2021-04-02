@@ -127,9 +127,9 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         if self.getGasPhaseList() in [[], None]:
             return False
         for field_id in self.getGasPhaseList():
-            if self.getEnergyModel(field_id) == "off":
-                return False
-        return True
+            if self.getEnergyModel(field_id) != "off":
+                return True
+        return False
 
     def getNonCondensableLabelList(self):
         """
