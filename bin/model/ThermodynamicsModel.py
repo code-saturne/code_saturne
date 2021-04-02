@@ -85,7 +85,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.list_scalars.append(('pressure', label))
 
 
-    def defaultValues(self):
+    def defaultValues(self, field_id):
         default = {}
         default['density']              = 1.8
         default['molecular_viscosity']  = 0.0000456
@@ -101,7 +101,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         default['cathareClipping'] = "on"
         default['propertyChoice'] = "constant"
 
-        if self.checkEOSRequirements():
+        if self.checkEOSRequirements(field_id):
             default["material"] = "Water"
             default["method"] = "Cathare"
 
@@ -168,13 +168,13 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                'SaturationTemperature', 'd_Tsat_d_P', 'LatentHeat')
         return lst
 
-    def checkEOSRequirements(self):
+    def checkEOSRequirements(self, field_id):
         """
         Check if EOS material laws can be activated
+        :param field_id:
         """
-        for field_id in self.getFieldIdList():
-            if self.getEnergyModel(field_id) == "off" or self.getEnergyResolution(field_id) == "off":
-                return False
+        if self.getEnergyModel(field_id) == "off" or self.getEnergyResolution(field_id) == "off":
+            return False
         return {1: True, 0: False}[EOS]
 
     @Variables.undoLocal
@@ -183,14 +183,28 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         node = self.get_field_node(fieldId)
         field_name = self.getFieldLabelsList()[int(fieldId) - 1]
         childNode = node.xmlInitChildNode('material')
-        m = childNode.xmlGetNode('material')
-        oldMaterial = None
-        if m != None:
-            oldMaterial = m['choice']
-        if not (self.checkEOSRequirements()):
+        if not (self.checkEOSRequirements(fieldId)):
             material = "user_material"
             log.debug("Warning : EOS not available. Changing material to user...")
         childNode.xmlSetAttribute(choice=material)
+
+        # if predefine flow and heat transfer activated : same material for 2 phases
+        if self.checkIdenticalMaterialsRequirements():
+            if str(fieldId) == '1' or str(fieldId) == '2':
+                if str(fieldId) == '1':
+                    field2 = '2'
+                else:
+                    field2 = '1'
+                node2 = self.get_field_node(field2)
+                childNode2 = node2.xmlInitChildNode('material')
+                m2 = childNode2.xmlGetNode('material')
+                oldMaterial2 = None
+                if m2 != None:
+                    oldMaterial2 = m2['choice']
+                childNode2.xmlSetAttribute(choice=material)
+                # update method
+                self.updateMethod(field2, oldMaterial2)
+
         if material != "user_material":
             for prop in self.propertiesFormulaList():
                 node = self.get_property_node(fieldId, prop)
@@ -202,38 +216,11 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             if not node:
                 Variables(self.case).setNewVariableProperty("variable", "", XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name)
 
-            if self.getPredefinedFlow() == 'None' or self.getPredefinedFlow() == 'particles_flow':
-                if oldMaterial == "user_material" and (str(fieldId) == '1' or str(fieldId) == '2'):
-                    if str(fieldId) == '1':
-                        field2 = '2'
-                    else:
-                        field2 = '1'
-                    node2 = self.get_field_node(field2)
-                    childNode2 = node2.xmlInitChildNode('material')
-                    m2 = childNode2.xmlGetNode('material')
-                    oldMaterial2 = None
-                    if m2 != None:
-                        oldMaterial2 = m2['choice']
-                    childNode2.xmlSetAttribute(choice = material)
-                    # update method
-                    self.updateMethod(field2, oldMaterial2)
-        else:
-            # if predefine flow same material for 2 phases
-            if self.getPredefinedFlow() != 'None' and self.getPredefinedFlow() != 'particles_flow':
-                if str(fieldId) == '1' or str(fieldId) == '2':
-                    if str(fieldId) == '1':
-                        field2 = '2'
-                    else:
-                        field2 = '1'
-                    node2 = self.get_field_node(field2)
-                    childNode2 = node2.xmlInitChildNode('material')
-                    m2 = childNode2.xmlGetNode('material')
-                    oldMaterial2 = None
-                    if m2 != None:
-                        oldMaterial2 = m2['choice']
-                    childNode2.xmlSetAttribute(choice = material)
-                    # update method
-                    self.updateMethod(field2, oldMaterial2)
+    def checkIdenticalMaterialsRequirements(self):
+        force_identical_materials = (self.getPredefinedFlow() in ["free_surface", "boiling_flow", "droplet_flow",
+                                                                  "multiregime"]) \
+                                    and (self.getHeatMassTransferStatus() == "on")
+        return force_identical_materials
 
     @Variables.noUndo
     def getMaterials(self, fieldId):
@@ -245,7 +232,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('material')
         if nodem == None :
-            material = self.defaultValues()['material']
+            material = self.defaultValues(fieldId)['material']
             self.setMaterials(fieldId, material)
         material = node.xmlGetNode('material')['choice']
         return material
@@ -256,7 +243,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         set the nature of materials
         """
         self.check_field_id(fieldId)
-        if not (self.checkEOSRequirements()):
+        if not (self.checkEOSRequirements(fieldId)):
             method = "user_properties"
             log.debug("Warning : EOS not available. Changing method to user...")
         node = self.get_field_node(fieldId)
@@ -274,7 +261,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('method')
         if nodem == None :
-            method = self.defaultValues()['method']
+            method = self.defaultValues(fieldId)['method']
             self.setMethod(fieldId, method)
         method = node.xmlGetNode('method')['choice']
         return method
@@ -287,8 +274,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.check_field_id(fieldId)
         material = self.getMaterials(fieldId)
         if oldMaterial != material :
-            if material == self.defaultValues()['material'] :
-               self.setMethod(fieldId, self.defaultValues()['method'])
+            if material == self.defaultValues(fieldId)['material'] :
+               self.setMethod(fieldId, self.defaultValues(fieldId)['method'])
             elif EOS == 1 and material != "user_material":
                 self.ava = eosAva.EosAvailable()
                 self.ava.setMethods(material)
@@ -378,7 +365,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         node = self.get_property_node(fieldId, tag)
         pp = node.xmlGetDouble('initial_value')
         if pp == None:
-            pp = self.defaultValues()[tag]
+            pp = self.defaultValues(fieldId)[tag]
             self.setInitialValue(fieldId, tag, pp)
         return pp
 
@@ -524,7 +511,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         node = self.get_field_node(fieldId)
         nodeh = node.xmlGetNode('particles_radiative_transfer')
         if nodeh == None:
-            rad = self.defaultValues()['radiative']
+            rad = self.defaultValues(fieldId)['radiative']
             self.setRadiativeTransferStatus(fieldId, rad)
         rad = node.xmlGetNode('particles_radiative_transfer')['status']
         return rad
@@ -546,7 +533,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 self.isInList(c, ('constant', 'user_law', 'table_law'))
 
         if c == None:
-            c = self.defaultValues()['propertyChoice']
+            c = self.defaultValues(fieldId)['propertyChoice']
             if node:
                 self.setPropertyMode(fieldId, tag, c)
 
@@ -1081,7 +1068,12 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         self.available_modes = ["constant", "user_law", "eos"]
 
     def defaultValues(self):
-        default = super().defaultValues()
+        reference_id = None
+        for field_id in self.getFieldIdList():
+            reference_id = field_id
+            if not(super().checkEOSRequirements(field_id)):
+                break
+        default = super().defaultValues(reference_id)
         default["surface_tension"] = 0.075
         return default
 

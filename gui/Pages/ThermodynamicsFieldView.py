@@ -111,7 +111,7 @@ class MaterialsDelegate(QItemDelegate):
         fieldId= index.row() + 1
         # suppress perfect gas
         tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
-        if self.mdl.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements():
+        if self.mdl.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements(fieldId):
             fls = self.ava.whichFluids()
             for fli in fls:
                 if fli not in tmp:
@@ -329,12 +329,12 @@ class StandardItemModelProperty(QStandardItemModel):
         try:
             material = self.dicoM2V[self.mdl.getMaterials(fieldId)]
         except KeyError:
-            material = self.dicoM2V[self.mdl.defaultValues()["material"]]
+            material = self.dicoM2V[self.mdl.defaultValues(fieldId)["material"]]
             self.mdl.setMaterials(fieldId, material)
         try:
             method = self.dicoM2V[self.mdl.getMethod(fieldId)]
         except KeyError:
-            method = self.dicoM2V[self.mdl.defaultValues()["method"]]
+            method = self.dicoM2V[self.mdl.defaultValues(fieldId)["method"]]
             self.mdl.setMethod(fieldId, method)
         reference = self.mdl.updateReference(fieldId)
 
@@ -463,7 +463,13 @@ temperature = enthalpy / 1000;
 
         self.dicoV2M= {"user material" : 'user_material',
                        "user properties" : 'user_properties'}
-        if self.mdl.checkEOSRequirements():
+
+        eos_used = False
+        for field_id in self.mdl.getFieldIdList():
+            if self.mdl.checkEOSRequirements(field_id):
+                eos_used = True
+                break
+        if eos_used:
             self.ava = eosAva.EosAvailable()
             fls = self.ava.whichFluids()
             for fli in fls:
@@ -594,8 +600,11 @@ temperature = enthalpy / 1000;
             self.groupBoxEOS.hide()
 
         self.labelNonCondensableWarning.hide()
+        self.labelIdenticalMaterialWarning.hide()
         if len(self.ncond.getNonCondensableLabelList()) > 0:
             self.labelNonCondensableWarning.show()
+        if self.mdl.checkIdenticalMaterialsRequirements():
+            self.labelIdenticalMaterialWarning.show()
 
     def __changeChoice(self, text, sym, tag):
         """
@@ -672,8 +681,12 @@ temperature = enthalpy / 1000;
         """
         detect change selection to update constant properties
         """
-        row = self.tableViewProperties.currentIndex().row()
-        self.update(row)
+        if self.tableViewProperties.currentIndex().isValid():
+            row = self.tableViewProperties.currentIndex().row()
+            self.update(row)
+        else:
+            self.groupBoxConstantProperties.hide()
+            self.groupBoxEOS.hide()
 
 
     def dataChanged(self, topLeft, bottomRight):
@@ -698,6 +711,7 @@ temperature = enthalpy / 1000;
         fieldId = row + 1
         self.currentFluid = fieldId
         if method == "user properties" :
+            self.groupBoxEOS.hide()
             self.groupBoxConstantProperties.show()
 
             # Deactivate Thermal variable if no energy resolution
@@ -793,6 +807,7 @@ temperature = enthalpy / 1000;
                 else:
                     self.pushButtonTemperature.setStyleSheet("background-color: red")
         else :
+            self.groupBoxEOS.show()
             self.groupBoxConstantProperties.hide()
 
 
