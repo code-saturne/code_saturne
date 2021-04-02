@@ -47,7 +47,6 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         # XML file parameters
         MainFieldsModel.__init__(self, case)
         self.turb_m   = TurbulenceModel(case)
-        self.thermo_m = ThermodynamicsModel(case)
         self.notebook = NotebookModel(case)
 
         self.case = case
@@ -151,11 +150,14 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         return self.__availableLiftModelsLists
 
 
-    def defaultValues(self):
-        default = self.thermo_m.defaultValues()
+    def defaultValues(self, fieldaId, fieldbId):
+        default = {}
         predefined_flow = self.getPredefinedFlow()
 
         default['gasdisperseddragmodel'] = 'ishii'
+        default['liquidsoliddisperseddragmodel'] = 'inclusions'
+        # Drag model
+        default['gasdisperseddragmodel']         = 'ishii'
         default['liquidsoliddisperseddragmodel'] = 'inclusions'
         default['addedmassmodel'] = 'zuber'
         default['liftmodel'] = 'Tomiyama_SMD'
@@ -181,7 +183,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
 
     def defaultValuesContinuous(self):
-        default = self.thermo_m.defaultValues()
+        default = {}
         predefined_flow = self.getPredefinedFlow()
 
         default['continuousdragmodel']           = 'Large_Interface_Model'
