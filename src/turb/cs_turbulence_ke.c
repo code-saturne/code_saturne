@@ -212,12 +212,6 @@ _tsepls(cs_real_t w1[])
 
     }
 
-    if (m->halo != NULL)
-      cs_halo_sync_var_strided(m->halo,
-                               CS_HALO_STANDARD,
-                               (cs_real_t *)w7,
-                               3*3);
-
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t w_temp = 0.;

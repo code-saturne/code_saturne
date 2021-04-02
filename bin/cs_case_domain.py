@@ -265,7 +265,7 @@ class base_domain:
                 os.remove(src)
 
         # Copy single directory (possibly recursive)
-        # Unkike os.path.copytree, the destination directory
+        # Unlike os.path.copytree, the destination directory
         # may already exist.
 
         elif os.path.isdir(src):
