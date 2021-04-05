@@ -543,8 +543,10 @@ _gui_atmo_get_set_meteo_profile(void)
   int is_meteo_file = 0;
   int is_large_scale_meteo = 0;
 
-  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(is_meteo_file));
-  cs_gui_node_get_child_status_int(tn, "large_scale_meteo", &(is_large_scale_meteo));
+  cs_gui_node_get_child_status_int(tn, "read_meteo_data",
+                                   &is_meteo_file);
+  cs_gui_node_get_child_status_int(tn, "large_scale_meteo",
+                                   &is_large_scale_meteo);
 
   if (is_meteo_file && !is_large_scale_meteo) {
     cs_glob_atmo_option->meteo_profile = 1;
@@ -557,17 +559,27 @@ _gui_atmo_get_set_meteo_profile(void)
   }
   else if (is_large_scale_meteo && !is_meteo_file) {
     cs_glob_atmo_option->meteo_profile = 2;
-    const char *str_latitude = cs_tree_node_get_child_value_str(tn, "latitide");
-    const char *str_longitude = cs_tree_node_get_child_value_str(tn, "longitude");
-    const char *str_domain_orient = cs_tree_node_get_child_value_str(tn, "domain_orientation");
-    const char *str_wind_dir = cs_tree_node_get_child_value_str(tn, "wind_dir");
+    const char *str_latitude
+      = cs_tree_node_get_child_value_str(tn, "latitide");
+    const char *str_longitude
+      = cs_tree_node_get_child_value_str(tn, "longitude");
+    const char *str_domain_orient
+      = cs_tree_node_get_child_value_str(tn, "domain_orientation");
+    const char *str_wind_dir
+      = cs_tree_node_get_child_value_str(tn, "wind_dir");
 
-    const char *str_meteo_z0 = cs_tree_node_get_child_value_str(tn, "meteo_z0");
-    const char *str_meteo_uref = cs_tree_node_get_child_value_str(tn, "meteo_uref");
-    const char *str_meteo_ustar = cs_tree_node_get_child_value_str(tn, "meteo_ustar");
-    const char *str_meteo_dlmo = cs_tree_node_get_child_value_str(tn, "meteo_dlmo");
-    const char *str_meteo_zref = cs_tree_node_get_child_value_str(tn, "meteo_zref");
-    const char *str_meteo_psea = cs_tree_node_get_child_value_str(tn, "meteo_psea");
+    const char *str_meteo_z0
+      = cs_tree_node_get_child_value_str(tn, "meteo_z0");
+    const char *str_meteo_uref
+      = cs_tree_node_get_child_value_str(tn, "meteo_uref");
+    const char *str_meteo_ustar
+      = cs_tree_node_get_child_value_str(tn, "meteo_ustar");
+    const char *str_meteo_dlmo
+      = cs_tree_node_get_child_value_str(tn, "meteo_dlmo");
+    const char *str_meteo_zref
+      = cs_tree_node_get_child_value_str(tn, "meteo_zref");
+    const char *str_meteo_psea
+      = cs_tree_node_get_child_value_str(tn, "meteo_psea");
 
     const char *str_syear = cs_tree_node_get_child_value_str(tn, "start_year");
     const char *str_sday = cs_tree_node_get_child_value_str(tn, "start_day");
@@ -616,6 +628,7 @@ _gui_atmo_get_set_meteo_profile(void)
   bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
 #endif
 }
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
