@@ -3253,7 +3253,6 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
             i_poro_duq_1[is_porous*f_id]
           };
 
-          // TODO add porous contribution
           fexd[0] = 0.5 * (f_ext[c_id1][0] + f_ext[c_id2][0]);
           fexd[1] = 0.5 * (f_ext[c_id1][1] + f_ext[c_id2][1]);
           fexd[2] = 0.5 * (f_ext[c_id1][2] + f_ext[c_id2][2]);
@@ -3267,7 +3266,6 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                      \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
           */
 
-          /* Reconstruction part */
           cs_real_t pfaci
             =  ktpond
                  * (  (i_face_cog[f_id][0] - cell_cen[c_id1][0])*f_ext[c_id1][0]
@@ -3285,6 +3283,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           pfaci += (1.0-ktpond) * (c_var[c_id2] - c_var[c_id1]);
           pfacj -=      ktpond  * (c_var[c_id2] - c_var[c_id1]);
 
+          /* Reconstruction part */
           cs_real_t rfac =
                  weight[f_id]
                  * ( (cell_cen[c_id1][0]-i_face_cog[f_id][0])*fexd[0]
@@ -3329,7 +3328,6 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                      \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
            */
 
-          /* Reconstruction part */
           cs_real_t pfac
             = coefap[f_id] * inc
             + coefbp[f_id]
@@ -5094,7 +5092,6 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
             pfac -= pvar[c_id][i];
 
             /* Reconstruction part */
-
             cs_real_t rfac = 0.;
             for (cs_lnum_t k = 0; k < 3; k++) {
               cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
@@ -5298,13 +5295,12 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
               /* Reconstruction part */
               cs_real_t
-              pfaci = 0.5 * ( ( grad[c_id1][i][0] + grad[c_id2][i][0])
-                              * dofij[f_id][0]
-                            + ( grad[c_id1][i][1] + grad[c_id2][i][1])
-                              * dofij[f_id][1]
-                            + ( grad[c_id1][i][2] + grad[c_id2][i][2])
-                              * dofij[f_id][2]
-                            );
+                pfaci = 0.5 * (    (grad[c_id1][i][0] + grad[c_id2][i][0])
+                                 * dofij[f_id][0]
+                               +   (grad[c_id1][i][1] + grad[c_id2][i][1])
+                                 * dofij[f_id][1]
+                               +   (grad[c_id1][i][2] + grad[c_id2][i][2])
+                                 * dofij[f_id][2]);
               cs_real_t pfacj = pfaci;
 
               pfaci += (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
@@ -5574,13 +5570,12 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
               /* Reconstruction part */
               cs_real_t
-              pfaci = 0.5 * ( ( grad[c_id1][i][0] + grad[c_id2][i][0])
-                              * dofij[f_id][0]
-                            + ( grad[c_id1][i][1] + grad[c_id2][i][1])
-                              * dofij[f_id][1]
-                            + ( grad[c_id1][i][2] + grad[c_id2][i][2])
-                              * dofij[f_id][2]
-                            );
+                pfaci = 0.5 * (    (grad[c_id1][i][0] + grad[c_id2][i][0])
+                                 * dofij[f_id][0]
+                               +   (grad[c_id1][i][1] + grad[c_id2][i][1])
+                                 * dofij[f_id][1]
+                               +   (grad[c_id1][i][2] + grad[c_id2][i][2])
+                                 * dofij[f_id][2]);
               cs_real_t pfacj = pfaci;
 
               pfaci += (1.0-pond) * (pvar[c_id2][i] - pvar[c_id1][i]);
