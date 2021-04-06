@@ -924,6 +924,8 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
   BFT_MALLOC(inlet, 1, cs_inlet_t);
 
+  inlet->zone = zone;
+
   /* Mesh */
 
   cs_lnum_t n_elts = zone->n_elts;
