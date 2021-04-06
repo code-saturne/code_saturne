@@ -1036,7 +1036,7 @@ fvm_writer_filter_option(char        *format_options,
           strcpy(tmp_options + i0, tmp_options + i1 + 1);
         else {
           if (i0 > 1) {
-            assert(tmp_options[i0-1] = ' ');
+            assert(tmp_options[i0-1] == ' ');
             i0--;
           }
           tmp_options[i0] = '\0';
@@ -1141,7 +1141,7 @@ fvm_writer_init(const char             *name,
           strcpy(tmp_options + i0, tmp_options + i1 + 1);
         else {
           if (i0 > 1) {
-            assert(tmp_options[i0-1] = ' ');
+            assert(tmp_options[i0-1] == ' ');
             i0--;
           }
           tmp_options[i0] = '\0';
