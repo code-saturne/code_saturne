@@ -69,6 +69,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -200,6 +201,14 @@ do ilst = 1, nlst
   iel = ifabor(ifac)
 
   tbl = t_b(ifac)
+
+  ! For fluid/solid coupling, use user-defined function
+  ! for solid portion
+
+  if (cell_is_active(iel) .eq. 0) then
+    call usthht(mode, h_b(ifac), tbl)
+    cycle
+  endif
 
   ! Gas combustion: premix or diffusion flame
 

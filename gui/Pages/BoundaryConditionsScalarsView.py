@@ -87,6 +87,18 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.setupUi(self)
 
 
+    def __get_thermal_type__(self):
+        """
+        Return thermal type and conversion option
+        """
+        thermal_type_s = self.thermal_type.split(':')
+        thermal_type = thermal_type_s[0]
+        convert = None
+        if len(thermal_type_s) > 1:
+            convert = thermal_type_s[1]
+        return thermal_type, convert
+
+
     def setup(self, case):
         """
         Setup the widget
@@ -149,17 +161,29 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.comp = CompressibleModel(self.case)
         self.atm = AtmosphericFlowsModel(self.case)
 
+        self.model_th = self.therm.getThermalScalarModel()
+
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
         self.modelTypeMeteo = ComboModel(self.comboBoxTypeMeteo, 1, 1)
 
         self.modelTypeThermal.addItem(self.tr("Prescribed value"), 'dirichlet')
+        if self.model_th == "enthalpy":
+            self.modelTypeThermal.addItem(self.tr("Prescribed temperature value"),
+                                          'dirichlet:temperature')
+
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeMeteo.addItem(self.tr("Prescribed value"), 'dirichlet')
 
-        self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
-        self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
-        self.modelTypeMeteo.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
+        self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"),
+                                      'dirichlet_formula')
+        if self.model_th == "enthalpy":
+            self.modelTypeThermal.addItem(self.tr("Prescribed temperature value (user law)"),
+                                          'dirichlet_formula:temperature')
+        self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"),
+                                      'dirichlet_formula')
+        self.modelTypeMeteo.addItem(self.tr("Prescribed value (user law)"),
+                                    'dirichlet_formula')
 
         if self.nature == 'outlet':
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
@@ -171,15 +195,24 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
             self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
-            self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
-            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
-            self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
-            self.modelTypeThermal.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
-            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
-            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
-            self.modelTypeThermal.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
-            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
-            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
+            self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux (user law)"),
+                                          'neumann_formula')
+            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux (user law)"),
+                                          'neumann_formula')
+            self.modelTypeMeteo.addItem(self.tr("Prescribed (outgoing) flux (user law)"),
+                                        'neumann_formula')
+            self.modelTypeThermal.addItem(self.tr("Exchange coefficient"),
+                                          'exchange_coefficient')
+            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"),
+                                          'exchange_coefficient')
+            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient"),
+                                        'exchange_coefficient')
+            self.modelTypeThermal.addItem(self.tr("Exchange coefficient (user law)"),
+                                          'exchange_coefficient_formula')
+            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"),
+                                          'exchange_coefficient_formula')
+            self.modelTypeMeteo.addItem(self.tr("Exchange coefficient (user law)"),
+                                        'exchange_coefficient_formula')
             self.modelTypeThermal.addItem(self.tr("SYRTHES coupling"), "syrthes_coupling")
 
         elif self.nature == 'groundwater':
@@ -202,18 +235,19 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         else:
             self.groupBoxSpecies.hide()
 
-        self.model_th = self.therm.getThermalScalarModel()
         if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.groupBoxThermal.show()
             self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
             self.thermal = self.therm.getThermalScalarName()
             self.thermal_type = self.__boundary.getScalarChoice(self.thermal)
-            self.modelThermal.addItem(self.tr(self.thermal),self.thermal)
+            cnv = self.__boundary.getScalarConvert(self.thermal)
+            if cnv:
+                self.thermal_type += ':' + cnv
+            self.modelThermal.addItem(self.tr(self.thermal), self.thermal)
             self.modelThermal.setItem(str_model = self.thermal)
         else:
             self.groupBoxThermal.hide()
 
-        self.meteo_list = ""
         self.meteo_list = self.sca_mo.getMeteoScalarsNameList()
 
         self.groupBoxMeteo.hide()
@@ -282,11 +316,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.labelValueThermal.setText('Value')
             self.groupBoxThermal.setTitle('Thermal')
 
-            if self.thermal_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
+            thermal_type, convert = self.__get_thermal_type__()
+            if thermal_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
                 self.labelValueThermal.show()
                 self.lineEditValueThermal.show()
 
-                if self.thermal_type == 'exchange_coefficient':
+                if thermal_type == 'exchange_coefficient':
                     self.lineEditExThermal.show()
                     self.labelExThermal.show()
                     v = self.__boundary.getScalarValue(self.thermal, 'dirichlet')
@@ -294,17 +329,18 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     self.lineEditValueThermal.setText(str(v))
                     self.lineEditExThermal.setText(str(w))
                 else:
-                    v = self.__boundary.getScalarValue(self.thermal, self.thermal_type)
+                    v = self.__boundary.getScalarValue(self.thermal, thermal_type)
                     self.lineEditValueThermal.setText(str(v))
 
-                if self.thermal_type == 'neumann':
+                if thermal_type == 'neumann':
                     self.labelValueThermal.setText('Flux')
                     if self.nature == 'outlet':
                         self.groupBoxThermal.setTitle('Thermal for backflow')
 
-            elif self.thermal_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
+            elif thermal_type in ('exchange_coefficient_formula', 'dirichlet_formula',
+                                  'neumann_formula'):
                 self.pushButtonThermal.setEnabled(True)
-                exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type)
+                exp = self.__boundary.getScalarFormula(self.thermal, thermal_type)
                 if exp:
                     self.pushButtonThermal.setStyleSheet("background-color: green")
                     self.pushButtonThermal.setToolTip(exp)
@@ -353,7 +389,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     if self.nature == 'outlet':
                         self.groupBoxSpecies.setTitle('Species for backflow')
 
-            elif self.species_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
+            elif self.species_type in ('exchange_coefficient_formula',
+                                       'dirichlet_formula', 'neumann_formula'):
                 self.pushButtonSpecies.setEnabled(True)
                 exp = self.__boundary.getScalarFormula(self.species, self.species_type)
                 if exp:
@@ -405,7 +442,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     if self.nature == 'outlet':
                         self.groupBoxMeteo.setTitle('Meteo for backflow')
 
-                if self.meteo_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
+                if self.meteo_type in ('exchange_coefficient_formula',
+                                       'dirichlet_formula', 'neumann_formula'):
                     self.pushButtonMeteo.setEnabled(True)
                     exp = self.__boundary.getScalarFormula(self.meteo, self.meteo_type)
                     if exp:
@@ -450,7 +488,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         INPUT label for choice of zone
         """
         self.thermal_type = self.modelTypeThermal.dicoV2M[str(text)]
-        self.__boundary.setScalarChoice(self.thermal, self.thermal_type)
+        thermal_type, convert = self.__get_thermal_type__()
+        self.__boundary.setScalarChoice(self.thermal, thermal_type)
+        if not convert:
+            convert = None
+        self.__boundary.setScalarConvert(self.thermal, convert=convert)
+
         self.initializeVariables()
         return
 
@@ -497,13 +540,18 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         """
         name = self.thermal
-        exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type)
+        variable_name = name
+        thermal_type, convert = self.__get_thermal_type__()
+        if convert:
+            name = convert
+
+        exp = self.__boundary.getScalarFormula(self.thermal, thermal_type)
         exa = """#example: """
-        if self.thermal_type == 'dirichlet_formula':
+        if thermal_type == 'dirichlet_formula':
             req = [(name, str(name))]
-        elif self.thermal_type == 'neumann_formula':
+        elif thermal_type == 'neumann_formula':
             req = [("flux", "flux")]
-        elif self.thermal_type == 'exchange_coefficient_formula':
+        elif thermal_type == 'exchange_coefficient_formula':
             req = [(name, str(name)),("hc", "heat coefficient")]
 
         sym = [('x', "X face's gravity center"),
@@ -517,7 +565,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        c = self.__boundary.getScalarChoice(name)
+        c = self.__boundary.getScalarChoice(variable_name)
+
         dialog = QMegEditorView(parent      = self,
                                 function_type = 'bnd',
                                 zone_name     = self.__boundary._label,
@@ -531,7 +580,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
-            self.__boundary.setScalarFormula(self.thermal, self.thermal_type, str(result))
+            self.__boundary.setScalarFormula(self.thermal, thermal_type, str(result))
             self.pushButtonThermal.setStyleSheet("background-color: green")
             self.pushButtonThermal.setToolTip(exp)
 
@@ -628,9 +677,10 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         if self.lineEditValueThermal.validator().state == QValidator.Acceptable:
             value = from_qvariant(var, float)
-            if self.thermal_type in ('dirichlet', 'neumann'):
-                self.__boundary.setScalarValue(self.thermal, self.thermal_type, value)
-            elif self.thermal_type == 'exchange_coefficient':
+            thermal_type = self.thermal_type.split(':')[0]
+            if thermal_type in ('dirichlet', 'neumann'):
+                self.__boundary.setScalarValue(self.thermal, thermal_type, value)
+            elif thermal_type == 'exchange_coefficient':
                 self.__boundary.setScalarValue(self.thermal, 'dirichlet', value)
 
 

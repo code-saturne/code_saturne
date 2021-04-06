@@ -65,6 +65,7 @@ User changes:
 
 - When solving for enthalpy, multiplying a face's boundary condition
   code (icodcl) by -1 allows defining it by temperature instead.
+  This option is also available for prescribed values using the GUI.
 
 - Add a `code_saturne symbol2line` command.
   This command can be used with debug symbols from a stack trace in order

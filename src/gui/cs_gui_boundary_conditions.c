@@ -102,6 +102,7 @@ BEGIN_C_DECLS
 
 typedef enum {
   BY_XDEF = -1,           /* to mark usage of newer system */
+  DIRICHLET_CNV,
   DIRICHLET_FORMULA,
   DIRICHLET_IMPLICIT,
   EXCHANGE_COEFF,
@@ -159,6 +160,7 @@ typedef struct {
   double        *rough;    /* roughness size */
   double        *norm;     /* norm of velocity vector */
   cs_real_3_t   *dir;      /* directions inlet velocity */
+  bool          *t_to_h;   /* convert Enthalpy to temperature */
   bool          *velocity_e;  /* formula for norm or mass flow rate of velocity */
   bool          *direction_e; /* formula for direction of velocity */
   bool        **scalar_e;     /* formula for scalar (neumann, dirichlet or
@@ -432,6 +434,17 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   cs_equation_param_t *eqp = _get_equation_param(f->name);
   const char *z_name = boundaries->label[izone];
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
+  const char *cnv = cs_tree_node_get_tag(tn_s, "convert");
+
+  if (cnv != NULL) {
+    if (f == CS_F_(h) && strcmp(cnv, "temperature") == 0)
+      boundaries->t_to_h[izone] = true;
+    else
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: conversion for field %s from variable %s not handled."),
+         __func__, f->name, cnv);
+  }
 
   cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   assert(dim <= 9);
@@ -467,6 +480,12 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
         }
         else
           possibly_incomplete = true;
+
+        /* T to H conversion not handled using xdef yet. */
+        if (boundaries->t_to_h[izone]) {
+          boundaries->type_code[f_id][izone] = DIRICHLET_CNV;
+          boundaries->values[f_id][izone * dim + i].val1 = v[0];
+        }
       }
       else if (! strcmp(choice, "neumann")) {
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
@@ -528,7 +547,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
   /* Now define appropriate equation parameters */
 
-  if (choice != NULL) {
+  if (choice != NULL && cnv == NULL) {
 
     if (! strcmp(choice, "dirichlet")) {
 
@@ -974,6 +993,7 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->norm,      n_zones,    double);
   BFT_MALLOC(boundaries->dir,       n_zones,    cs_real_3_t);
 
+  BFT_MALLOC(boundaries->t_to_h,      n_zones,  bool);
   BFT_MALLOC(boundaries->velocity_e,  n_zones,  bool);
   BFT_MALLOC(boundaries->direction_e, n_zones,  bool);
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
@@ -1047,6 +1067,7 @@ _init_boundaries(void)
     boundaries->dh[izone]        = 0;
     boundaries->xintur[izone]    = 0;
     boundaries->rough[izone]     = -999;
+    boundaries->t_to_h[izone] = false;
     boundaries->velocity_e[izone]  = false;
     boundaries->direction_e[izone] = false;
     boundaries->head_loss_e[izone] = false;
@@ -1630,16 +1651,33 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (f->type & CS_FIELD_VARIABLE) {
 
-        int icodcl_m = 1;
-        if (f == CS_F_(h))
-          icodcl_m = -1;
-
         switch (boundaries->type_code[f->id][izone]) {
+
+          case DIRICHLET_CNV:
+            {
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                for (cs_lnum_t i = 0; i < f->dim; i++) {
+                  icodcl[(ivar + i) * n_b_faces + face_id] = -wall_type;
+                  rcodcl[(ivar + i) * n_b_faces + face_id]
+                    = boundaries->values[f->id][izone * f->dim + i].val1;
+                }
+              }
+            }
+            break;
 
           case DIRICHLET_FORMULA:
             {
-              cs_real_t *new_vals =
-                cs_meg_boundary_function(bz, f->name, "dirichlet_formula");
+              int icodcl_m = 1;
+              const char *f_name = f->name;
+
+              if (f == CS_F_(h) && boundaries->t_to_h[izone]) {
+                icodcl_m = -1;
+                f_name = "temperature";
+              }
+
+              cs_real_t *new_vals
+                = cs_meg_boundary_function(bz, f_name, "dirichlet_formula");
 
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -2994,6 +3032,7 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->rough);
     BFT_FREE(boundaries->norm);
     BFT_FREE(boundaries->dir);
+    BFT_FREE(boundaries->t_to_h);
     BFT_FREE(boundaries->velocity_e);
     BFT_FREE(boundaries->direction_e);
     BFT_FREE(boundaries->scalar_e);

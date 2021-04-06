@@ -302,8 +302,36 @@ class Boundary(object) :
                     if not formula:
                         formula = self.getDefaultScalarFormula(name, choice)
 
+                    if n['convert']:
+                        name = n['convert']
                     l.append((name, choice, formula))
         return l
+
+
+    @Variables.noUndo
+    def getScalarConvert(self, scalarName):
+        """
+        Get scalar conversion variable if matching scalar node exists
+        """
+        scalarNode = self.boundNode.xmlGetNode('scalar', name=scalarName)
+
+        if scalarNode:
+            return scalarNode['convert']
+        else:
+            return None
+
+
+    @Variables.undoGlobal
+    def setScalarConvert(self, scalarName, convert=None):
+        """
+        Set scalar conversion variable if matching scalar node exists
+        """
+        scalarNode = self.boundNode.xmlGetNode('scalar', name=scalarName)
+
+        if convert != None:
+            scalarNode['convert'] = convert
+        else:
+            del(scalarNode['convert'])
 
 
     def delete(self):
