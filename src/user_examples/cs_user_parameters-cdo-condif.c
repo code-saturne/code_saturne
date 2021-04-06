@@ -312,6 +312,8 @@ cs_user_model(void)
   {
     /* Add a user-defined advection field named "adv_field"  */
     cs_adv_field_t  *adv = cs_advection_field_add_user("adv_field");
+
+    CS_UNUSED(adv); /* adv can be used to set options */
   }
   /*! [param_cdo_add_user_adv_field] */
 
@@ -325,6 +327,8 @@ cs_user_model(void)
       CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;  /* = add boundary fluxes */
 
     cs_adv_field_t  *adv = cs_advection_field_add("adv_field", adv_status);
+
+    CS_UNUSED(adv); /* adv can be used to set options */
   }
   /*! [param_cdo_add_adv_field] */
 
@@ -566,6 +570,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                                         "cells",
                                                         &st_val);
 
+    CS_UNUSED(st); /* st can be used for advaced settings like quadrature
+                      rules */
   }
   /*! [param_cdo_add_terms] */
 

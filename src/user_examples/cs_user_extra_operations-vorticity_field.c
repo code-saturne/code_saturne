@@ -113,6 +113,8 @@ BEGIN_C_DECLS
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
+
   /* ! [vorticity_d] */
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;

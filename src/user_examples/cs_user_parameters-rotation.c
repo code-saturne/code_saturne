@@ -89,6 +89,8 @@ BEGIN_C_DECLS
 void
 cs_user_parameters(cs_domain_t *domain)
 {
+  CS_UNUSED(domain);
+
   /* Rotation of the reference frame (omega in rad/s)
    *
    * If the rotation is not nul, then
