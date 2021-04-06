@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle field interpolation with CDO schemes
+ * Functions to handle field interpolation with CDO schemes
  *============================================================================*/
 
 /*

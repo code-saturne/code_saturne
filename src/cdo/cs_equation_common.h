@@ -2,7 +2,7 @@
 #define __CS_EQUATION_COMMON_H__
 
 /*============================================================================
- * Routines to handle common equation features for building algebraic system
+ * Functions to handle common equation features for building algebraic system
  * in CDO schemes
  *============================================================================*/
 

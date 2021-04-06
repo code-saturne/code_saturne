@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines for solving equations with CDO discretizations
+ * Functions for solving equations with CDO discretizations
  *============================================================================*/
 
 /*

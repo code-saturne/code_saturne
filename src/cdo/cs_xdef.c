@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle extended definitions of quantities (cs_xdef_t structures)
+ * Functions to handle extended definitions of quantities
  *============================================================================*/
 
 /*

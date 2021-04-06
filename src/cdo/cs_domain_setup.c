@@ -1,6 +1,5 @@
 /* ===========================================================================
- * Routines to handle the setup of a computational domain
- * High level interface
+ * Functions to handle the setup of a computational domain
  *============================================================================*/
 
 /*

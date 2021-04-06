@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the definition and usage of material properties
+ * Functions to handle the definition and usage of material properties
  *============================================================================*/
 
 /*

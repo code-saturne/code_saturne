@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the reconstruction of fields
+ * Functions to handle the reconstruction of fields
  *============================================================================*/
 
 /*

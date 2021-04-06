@@ -2,7 +2,7 @@
 #define __CS_CDO_LOCAL_H__
 
 /*============================================================================
- * Routines to handle low-level routines related to CDO local quantities:
+ * Functions to handle low-level functions related to CDO local quantities:
  * - local matrices (stored in dense format),
  * - local quantities related to a cell.
  *============================================================================*/

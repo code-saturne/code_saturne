@@ -1,5 +1,5 @@
 /*============================================================================
- * Set of routines to handle the management of high-level iterative algorithms
+ * Set of functions to manage high-level iterative algorithms
  *============================================================================*/
 
 /*

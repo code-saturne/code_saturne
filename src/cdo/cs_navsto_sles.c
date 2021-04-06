@@ -1,5 +1,6 @@
 /*============================================================================
- * Routines to handle cs_navsto_param_t structure
+ * Functions to handle SLES structures used during the resolution of the
+ * Navier-Stokes system of equations
  *============================================================================*/
 
 /*

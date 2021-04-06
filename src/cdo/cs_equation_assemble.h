@@ -2,7 +2,7 @@
 #define __CS_EQUATION_ASSEMBLE_H__
 
 /*============================================================================
- * Routines to handle the assembly process of equatino discretized with CDO
+ * Functions to handle the assembly process of equatino discretized with CDO
  * schemes
  *============================================================================*/
 

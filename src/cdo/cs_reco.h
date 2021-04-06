@@ -2,7 +2,7 @@
 #define __CS_RECO_H__
 
 /*============================================================================
- * Routines to handle the reconstruction of fields
+ * Functions to handle the reconstruction of fields
  *============================================================================*/
 
 /*

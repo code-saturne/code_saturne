@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines shared among all face-based schemes for the discretization of the
+ * Functions shared among all face-based schemes for the discretization of the
  * Navier-Stokes system
  *============================================================================*/
 

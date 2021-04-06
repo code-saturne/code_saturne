@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle specific settings related to a cs_equation_t structure
+ * Functions to handle specific settings related to a cs_equation_t structure
  *============================================================================*/
 
 /*

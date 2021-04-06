@@ -2,7 +2,7 @@
 #define __CS_STATIC_CONDENSATION_H__
 
 /*============================================================================
- * Routines to handle manipulations related to the static condensation
+ * Functions to handle manipulations related to the static condensation
  *============================================================================*/
 
 /*

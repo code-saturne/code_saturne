@@ -2,7 +2,7 @@
 #define __CS_THERMAL_SYSTEM_H__
 
 /*============================================================================
- * Routines to handle cs_thermal_system_t structure
+ * Functions to handle cs_thermal_system_t structure
  *============================================================================*/
 
 /*

@@ -2,7 +2,7 @@
 #define __CS_CDO_TURBULENCE_H__
 
 /*============================================================================
- * Routines to handle the resolution of the turbulence modelling
+ * Functions to handle the resolution of the turbulence modelling
  *============================================================================*/
 
 /*

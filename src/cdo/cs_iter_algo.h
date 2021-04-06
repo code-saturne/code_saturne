@@ -2,8 +2,7 @@
 #define __CS_ITER_ALGO_H__
 
 /*============================================================================
- * Routines to handle iterative algorithm such augmented Lagrangian, Picard or
- * Anderson algorithms
+ * Set of functions to manage high-level iterative algorithms
  *============================================================================*/
 
 /*

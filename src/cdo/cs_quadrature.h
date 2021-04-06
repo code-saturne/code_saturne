@@ -2,7 +2,7 @@
 #define __CS_QUADRATURE_H__
 
 /*============================================================================
- * Routines to handle quadrature rules
+ * Functions to handle quadrature rules
  *============================================================================*/
 
 /*

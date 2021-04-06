@@ -2,7 +2,7 @@
 #define __CS_NAVSTO_PARAM_H__
 
 /*============================================================================
- * Routines to handle cs_navsto_param_t structure
+ * Functions to handle cs_navsto_param_t structure
  *============================================================================*/
 
 /*

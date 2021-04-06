@@ -2,7 +2,7 @@
 #define __CS_NAVSTO_SLES_H__
 
 /*============================================================================
- * Routines to handle SLES structure and PETSc interfaces for solving the
+ * Functions to handle SLES structures used during the resolution of the
  * Navier-Stokes system of equations
  *============================================================================*/
 

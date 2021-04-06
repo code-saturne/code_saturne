@@ -2,7 +2,7 @@
 #define __CS_NAVSTO_COUPLING_H__
 
 /*============================================================================
- * Routines to handle structures used as a context when solving the
+ * Functions to handle structures used as a context when solving the
  * Navier-Stokes equations. Structures are cast on-the-fly according to the
  * type of coupling.
  *============================================================================*/

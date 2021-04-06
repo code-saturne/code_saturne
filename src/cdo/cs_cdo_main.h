@@ -2,7 +2,7 @@
 #define __CS_CDO_MAIN_H__
 
 /*============================================================================
- * Routines for solving equations with CDO discretizations
+ * Functions for solving equations with CDO discretizations
  *============================================================================*/
 
 /*

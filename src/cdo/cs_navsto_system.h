@@ -2,7 +2,7 @@
 #define __CS_NAVSTO_SYSTEM_H__
 
 /*============================================================================
- * Routines to handle cs_navsto_system_t structure
+ * Functions to handle cs_navsto_system_t structure
  *============================================================================*/
 
 /*

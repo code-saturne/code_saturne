@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle common features for building algebraic system in CDO
+ * Functions to handle common features for building algebraic system in CDO
  * schemes
  *============================================================================*/
 

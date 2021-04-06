@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the settings of coupling algorithms
+ * Functions to handle the settings of coupling algorithms
  *  - Artificial Compressibility algorithm
  *  - Its variant VVP (Vector Projection Penalty) algorithm
  *  - Projection algorithm

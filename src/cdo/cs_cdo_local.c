@@ -1,5 +1,5 @@
 /* ===========================================================================
- * Routines to handle low-level routines related to CDO local quantities:
+ * Functions to handle low-level functions related to CDO local quantities:
  * - local matrices (stored in dense format),
  * - local mesh structure related to a cell or to a couple cell/face
  *============================================================================*/

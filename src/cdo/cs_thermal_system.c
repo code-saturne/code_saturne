@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the thermal module with CDO schemes
+ * Functions to handle the thermal module with CDO schemes
  *============================================================================*/
 
 /*

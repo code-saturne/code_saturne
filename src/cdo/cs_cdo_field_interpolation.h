@@ -2,7 +2,7 @@
 #define __CS_CDO_FIELD_INTERPOLATION_H__
 
 /*============================================================================
- * Routines to handle field interpolation with CDO schemes
+ * Functions to handle field interpolation with CDO schemes
  *============================================================================*/
 
 /*

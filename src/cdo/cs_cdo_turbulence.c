@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the resolution of the turbulence modelling
+ * Functions to handle the resolution of the turbulence modelling
  *============================================================================*/
 
 /*

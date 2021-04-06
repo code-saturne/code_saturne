@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle the evaluation of boundary conditions when building the
+ * Functions to handle the evaluation of boundary conditions when building the
  * algebraic system in CDO/HHO schemes
  *============================================================================*/
 
