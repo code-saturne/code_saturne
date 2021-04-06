@@ -46,6 +46,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 from code_saturne.Pages.AtmosphericFlowsForm   import Ui_AtmosphericFlowsForm
 from code_saturne.model.AtmosphericFlowsModel  import AtmosphericFlowsModel
 
@@ -82,34 +83,221 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.case.undoStopGlobal()
 
         # Define connection
-        self.checkBoxMeteoData.clicked[bool].connect(self.__slotCheckBoxMeteoData)
+        self.groupBoxMeteoData.clicked[bool].connect(self.__slotGroupBoxMeteoData)
         self.pushButtonMeteoData.pressed.connect(self.__slotSearchMeteoData)
 
-        # Initialize the widgets
+        self.groupBoxLargeScaleMeteo.clicked[bool].connect(self.__slotGroupBoxLargeScaleMeteo)
+        self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
+        self.comboBoxUstarOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUstarOrDlmo)
+        self.comboBoxUrefOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUrefOrDlmo)
+
+        # Initialize the widgets in groupBoxMeteoData
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
-        self.checkBoxMeteoData.setChecked(isMeteoDataChecked)
+        self.groupBoxMeteoData.setChecked(isMeteoDataChecked)
         self.labelMeteoFile.setText(str(self.__model.getMeteoDataFileName()))
-        self.labelMeteoData.setEnabled(isMeteoDataChecked)
-        self.labelMeteoFile.setEnabled(isMeteoDataChecked)
+
+        # Validate lineEdits in groupBoxLargeScaleMeteo
+        validatatorLongitude = DoubleValidator(self.lineEditLongCenter)
+        validatatorLatitude = DoubleValidator(self.lineEditLatCenter)
+        validatatorZ0 = DoubleValidator(self.lineEditLargeScaleRoughness)
+        validatatorPsea = DoubleValidator(self.lineEditPressureSeaLevel)
+        validatatorZref = DoubleValidator(self.lineEditZref)
+        validatatorUstarOrDlmo = DoubleValidator(self.lineEditUstarOrDlmo)
+        validatatorUrefOrDlmo = DoubleValidator(self.lineEditUrefOrDlmo)
+
+        self.lineEditLongCenter.setValidator(validatatorLongitude)
+        self.lineEditLatCenter.setValidator(validatatorLatitude)
+        self.lineEditLargeScaleRoughness.setValidator(validatatorZ0)
+        self.lineEditPressureSeaLevel.setValidator(validatatorPsea)
+        self.lineEditZref.setValidator(validatatorZref)
+        self.lineEditUstarOrDlmo.setValidator(validatatorUstarOrDlmo)
+        self.lineEditUrefOrDlmo.setValidator(validatatorUrefOrDlmo)
+
+        # Initialize the widgets in groupBoxLargeScaleMeteo
+        isLargeScaleMeteoChecked = model.getLargeScaleMeteoStatus() == 'on'
+        self.groupBoxLargeScaleMeteo.setChecked(isLargeScaleMeteoChecked)
+
+        tmpVar = model.getLongitude();
+        self.lineEditLongCenter.setText(str(tmpVar))
+        tmpVar = model.getLatitude();
+        self.lineEditLatCenter.setText(str(tmpVar))
+
+        tmpVar = model.getMeteoZ0();
+        self.lineEditLargeScaleRoughness.setText(str(tmpVar))
+
+        tmpVar = model.getMeteoPsea();
+        self.lineEditPressureSeaLevel.setText(str(tmpVar))
+
+        tmpVar = model.getMeteoZref();
+        self.lineEditZref.setText(str(tmpVar))
+
+        meteoUstar = float(model.getMeteoUstar());
+        meteoDlmo = float(model.getMeteoDlmo());
+        meteoUref = float(model.getMeteoUref());
+        if (meteoUstar>0.0) and (meteoUref>0.0):
+            self.lineEditUstarOrDlmo.setText(str(meteoUstar))
+            self.lineEditUrefOrDlmo.setText(str(meteoUref))
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+        elif (meteoUstar>0.0) and (meteoUref<=0.0):
+            self.lineEditUstarOrDlmo.setText(str(meteoUstar))
+            self.lineEditUrefOrDlmo.setText(str(meteoDlmo))
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+            self.comboBoxUstarOrdLMO.SelectedIndex = 1;
+        else:
+            self.lineEditUstarOrDlmo.setText(str(meteoDlmo))
+            self.lineEditUrefOrDlmo.setText(str(meteoUref))
+            self.comboBoxUstarOrdLMO.SelectedIndex = 1;
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+
+        tmpVar=model.getDomainOrientation()
+        self.spinBoxDomainOrientation.setValue(int(tmpVar))
+
+        tmpVar=model.getWindDir()
+        self.spinBoxWindDir.setValue(int(tmpVar))
+
+
+        startTime = model.getStartTime()
+        self.dateTimeEdit.setDateTime(startTime)
+
+        # Initialize the widgets in groupBoxActChemistry
+        isChemistryChecked = model.getChemistryStatus() == 'on'
+        self.groupBoxActChemistry.setChecked(isChemistryChecked)
+
 
         self.case.undoStartGlobal()
 
 
+    #--------------- Fuctions for the groupBox LargeScalaMeteData--------------
+
+    @pyqtSlot(int)
+    def __slotComboBoxUrefOrDlmo(self, indCurrent):
+        if indCurrent==0:
+            self.labelDimRefVel.setText("m/s")
+            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(True)
+            self.labelReferenceHeight.setEnabled(True)
+            self.lineEditZref.setEnabled(True)
+            self.labelDimZref.setEnabled(True)
+        elif indCurrent==1:
+            self.labelDimRefVel.setText("m<sup>-1</sup>")
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(False)
+            self.labelReferenceHeight.setEnabled(False)
+            self.lineEditZref.setEnabled(False)
+            self.labelDimZref.setEnabled(False)
+
+    @pyqtSlot(int)
+    def __slotComboBoxUstarOrDlmo(self, indCurrent):
+        if indCurrent==0:
+            self.labelDimZRef.setText("m/s")
+            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(True)
+        elif indCurrent==1:
+            self.labelDimZRef.setText("m<sup>-1</sup>")
+            self.comboBoxUrefOrdLMO.SelectedIndex = 0;
+            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(False)
+
     @pyqtSlot(bool)
-    def __slotCheckBoxMeteoData(self, checked):
+    def __slotGroupBoxLargeScaleMeteo(self, checked):
         """
-        Called when checkBox state changed
+        Called when groupBox state changed
         """
         status = 'off'
         if checked:
             status = 'on'
 
-        self.labelMeteoData.setEnabled(checked)
-        self.labelMeteoFile.setEnabled(checked)
-        self.__model.setMeteoDataStatus(status)
-
+        self.groupBoxLargeScaleMeteo.setChecked(checked)
+        self.__model.setLargeScaleMeteoStatus(status)
         if checked:
-            self.__slotSearchMeteoData()
+            self.__slotGroupBoxMeteoData(False)
+
+    @pyqtSlot(bool)
+    def __slotApplyLargeScaleMeteo(self, checked):
+        """
+        Called when groupBox state changed
+        """
+        status = 'off'
+        if checked:
+            status = 'on'
+
+        self.groupBoxLargeScaleMeteo.setChecked(checked)
+        self.__model.setLargeScaleMeteoStatus(status)
+        if checked:
+            self.__slotGroupBoxMeteoData(False)
+
+    @pyqtSlot(str)
+    def slotLatitude(self, text):
+        if self.lineEditLatCenter.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setLatitude(val)
+
+    @pyqtSlot(str)
+    def slotLongitude(self, text):
+        if self.lineEditLongCenter.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setLongitude(val)
+
+    @pyqtSlot(str)
+    def slotMeteZ0(self, text):
+        if self.lineEditLargeScaleRoughness.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setMeteoZ0(val)
+
+    @pyqtSlot(str)
+    def slotMeteoZref(self, text):
+        if self.lineEditZref.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setMeteoZref(val)
+
+
+    @pyqtSlot(str)
+    def slotMeteoUstarOrDlmo(self, text):
+        if self.lineEditLongitude.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            if self.comboBoxUstarOrdLMO.currentIndex() == 0:
+                self.__model.setMeteoUstar(val)
+                self.__model.setMeteoDlmo("0.0")
+            elif self.comboBoxUstarOrdLMO.currentIndex() == 1:
+                self.__model.setMeteoDlmo(val)
+                self.__model.setMeteoUstar("0.0")
+
+    @pyqtSlot(str)
+    def slotMeteoUrefOrDlmo(self, text):
+        if self.lineEditUrefOrDlmo.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            if self.comboBoxUrefOrdLMO.currentIndex() == 0:
+                self.__model.setMeteoUref(val)
+                self.__model.setMeteoDlmo("0.0")
+            elif self.comboBoxUrefOrdLMO.currentIndex() == 1:
+                self.__model.setMeteoDlmo(val)
+                self.__model.setMeteoUref("0.0")
+
+    #--------------- Fuctions for the groupBox Activate Chemistry--------------
+    @pyqtSlot(bool)
+    def __slotGroupBoxActChemistry(self, checked):
+        """
+        Called when groupBox state changed
+        """
+        status = 'off'
+        if checked:
+            status = 'on'
+
+        self.groupBoxActChemistry.setChecked(checked)
+
+    #--------------- Fuctions for the groupBox  MeteoDataFile-----------------
+
+    @pyqtSlot(bool)
+    def __slotGroupBoxMeteoData(self, checked):
+        """
+        Called when groupBox state changed
+        """
+        status = 'off'
+        if checked:
+            status = 'on'
+
+        self.groupBoxMeteoData.setChecked(checked)
+        self.__model.setMeteoDataStatus(status)
+        if checked:
+            self.__slotGroupBoxLargeScaleMeteo(False)
 
 
     @pyqtSlot()
@@ -134,7 +322,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         else:
             self.labelMeteoFile.setText(str(file))
             self.__model.setMeteoDataFileName(file)
-
 
 #-------------------------------------------------------------------------------
 # End
