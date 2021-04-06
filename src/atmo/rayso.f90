@@ -295,7 +295,6 @@ k1p1 = k1+1
 
 !initialisation Chuang calculations for  black carbon in droplets
 dm0=20.d0 !micrometres
-! Volume fraction of Black Carbon (module)
 nu0=1.d-8
 !Initialisation of data used for the calculation of SSA using Chuang 2002
 pioco3C=0.d0
