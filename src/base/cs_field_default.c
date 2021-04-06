@@ -223,14 +223,14 @@ cs_variable_field_create(const char  *name,
  * a variable field or is a CDO field (which is referenced by but does not
  * directly reference equations), NULL is returned.
  *
- * \param[in, out]  f  pointer to associated field
+ * \param[in]  f     pointer to associated field
  *
  * \return  pointer to field's equation parameters, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_field_get_equation_param(cs_field_t  *f)
+cs_field_get_equation_param(const cs_field_t  *f)
 {
   cs_equation_param_t *eqp = NULL;
 
