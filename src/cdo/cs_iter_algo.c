@@ -58,9 +58,10 @@ BEGIN_C_DECLS
 /*!
  * \file cs_iter_algo.c
  *
- * \brief Set of routines to handle the management of high-level iterative
- *        algorithms such as Uzawa, Golub-Kahan Bi-orthogonalization or
- *        Picard algorithms which incorporates inner solvers
+ * \brief Set of functions to handle the management of high-level iterative
+ *        algorithms such as Uzawa, Golub-Kahan Bi-orthogonalization, block
+ *        preconditioner or Picard algorithms which incorporates inner
+ *        iterative solvers
  */
 
 /*=============================================================================

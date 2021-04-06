@@ -58,12 +58,17 @@
 BEGIN_C_DECLS
 
 /*!
- *  \file cs_navsto_coupling.c
- *
- * \brief Routines to handle the settings of coupling algorithms
- *  - Artificial Compressibility algorithm
- *  - Its variant VVP (Vector Projection Penalty) algorithm
- *  - Projection algorithm
+  \file cs_navsto_coupling.c
+
+  \brief  Functions to handle structures used as a context when solving the
+          Navier-Stokes equations.
+          Structures are cast on-the-fly according to the type of coupling.
+
+          Functions to handle the settings of coupling algorithms are dedicated
+          to one of the following algorithm
+          - Artificial Compressibility algorithm
+          - Monolithic algorithm
+          - Projection algorithm
  */
 
 /*=============================================================================

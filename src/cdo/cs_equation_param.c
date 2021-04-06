@@ -64,6 +64,18 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_equation_param.c
+
+  \brief Structure and functions handling the specific settings related
+         to a cs_equation_t structure
+
+*/
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

@@ -40,13 +40,6 @@
 
 BEGIN_C_DECLS
 
-/*!
-  \file cs_solidification.h
-
-  \brief Structure and routines handling the solidification module
-
-*/
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

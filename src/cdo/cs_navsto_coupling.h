@@ -39,18 +39,6 @@
 
 BEGIN_C_DECLS
 
-/*!
-  \file cs_navsto_coupling.h
-
-  \brief  Routines to handle structures used as a context when solving the
-          Navier-Stokes equations.
-          Structures are cast on-the-fly according to the type of coupling.
-          Routines to handle the settings of coupling algorithms
-          - Artificial Compressibility algorithm
-          - Monolithic algorithm
-          - Projection algorithm
- */
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

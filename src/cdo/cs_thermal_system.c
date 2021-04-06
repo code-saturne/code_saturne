@@ -50,13 +50,23 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
 /*!
- *  \file cs_thermal_system.c
+ *  \file cs_thermal_system.h
  *
- *  \brief  Routines to handle the cs_thermal_system_t structure
- *          This module can be used stand alone or linked with other module
- *          such as Navier-Stokes (for a Boussinesq approximation for instance)
- *          the GroundWater Flow module or the Maxwell module...
+ *  \brief  Functions to handle the cs_thermal_system_t structure.
+ *          This module can be used stand alone or linked with another module
+ *          such as Navier-Stokes, groundwater flows or Maxwell...
+ *  The temperature field is automatically defined when this module is
+ *  activated.
+ *
+ *  Moreover, one considers according to the modelling
+ *  rho    the volumetric mass (mass density)
+ *  Cp     the heat capacity
+ *  lambda the heat conductivity
  */
 
 /*=============================================================================

@@ -40,14 +40,6 @@
 
 BEGIN_C_DECLS
 
-/*!
-  \file cs_equation_param.h
-
-  \brief Structure and routines handling the specific settings related
-         to a cs_equation_t structure
-
-*/
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

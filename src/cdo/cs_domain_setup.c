@@ -75,7 +75,7 @@ BEGIN_C_DECLS
 /*!
  *  \file cs_domain_setup.c
  *
- * \brief  Routines to handle the setup of a computational domain
+ * \brief  Functions to handle the setup of a computational domain
  *         High level interface for handling the computation.
  */
 

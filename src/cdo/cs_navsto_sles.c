@@ -55,6 +55,18 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+ /*!
+   \file cs_navsto_sles.c
+
+   \brief  Functions to handle SLES structures used during the resolution of
+           the Navier-Stokes system of equations
+
+ */
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

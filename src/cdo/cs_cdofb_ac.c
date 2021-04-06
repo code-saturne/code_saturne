@@ -182,7 +182,7 @@ typedef struct {
   /*!
    * @}
    * @name Boundary conditions (BC) management
-   * Routines and elements used for enforcing the BCs
+   * Functions and elements used for enforcing the BCs
    * @{
    *
    *  \var bf_type

@@ -57,6 +57,18 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_solidification.h
+
+  \brief Structure and functions handling the solidification module
+         (modified Navier-Stokes + thermal module + transport equations)
+
+*/
+
+/*=============================================================================
  * Local macro definitions
  *============================================================================*/
 

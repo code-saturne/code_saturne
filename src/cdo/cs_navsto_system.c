@@ -67,10 +67,16 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
 /*!
  *  \file cs_navsto_system.c
  *
- *  \brief  Routines to handle the cs_navsto_system_t structure
+ *  \brief  Functions to handle the cs_navsto_system_t structure which is
+ *          the high-level structure to manage the Navier-Stokes system of
+ *          equations.
  */
 
 /*=============================================================================

@@ -37,14 +37,6 @@
 
 BEGIN_C_DECLS
 
-/*!
-  \file cs_maxwell.h
-
-  \brief Structure and routines handling the Maxwell module dedicated to
-         the resolution of electro-magnetic equations
-
-*/
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

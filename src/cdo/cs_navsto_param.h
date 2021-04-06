@@ -723,7 +723,7 @@ typedef struct {
 
   /*! \var qtype
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
-   *  all routines involving quadratures
+   *  all functions involving quadratures
    */
   cs_quadrature_type_t           qtype;
 
@@ -974,8 +974,8 @@ typedef struct {
  * Level of verbosity related to the non-linear algorithm (Picar for instance)
  *
  * \var CS_NSKEY_QUADRATURE
- * Set the type to use in all routines involving quadrature (similar to \ref
- * CS_EQKEY_BC_QUADRATURE)
+ * Set the type to use in all functions involving quadrature (similar to
+ * \ref CS_EQKEY_BC_QUADRATURE)
  *
  * \var CS_NSKEY_SCHUR_STRATEGY
  * Set the way to define the Schur complement approximation

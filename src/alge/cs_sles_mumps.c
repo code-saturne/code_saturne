@@ -76,7 +76,8 @@ BEGIN_C_DECLS
 /*!
   \file cs_sles_mumps.c
 
-  \brief handling of MUMPS-based linear solvers
+  \brief Set of functions to handle the interface with the MUMPS library
+         to solve sparse linear system with a direct approach
 
   \page sles_mumps MUMPS-based linear solvers.
 

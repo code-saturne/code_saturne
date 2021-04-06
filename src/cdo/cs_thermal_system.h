@@ -42,19 +42,6 @@
 
 BEGIN_C_DECLS
 
-/*!
- *  \file cs_thermal_system.h
- *
- *  \brief  Routines to handle the cs_thermal_system_t structure.
- *  The temperature field is automatically defined when this module
- *  is activated.
- *
- *  Moreover, one considers according to the modelling
- *  rho    the volumetric mass (mass density)
- *  Cp     the heat capacity
- *  lambda the heat conductivity
- */
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

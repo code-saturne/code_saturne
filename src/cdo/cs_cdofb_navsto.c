@@ -80,8 +80,8 @@ BEGIN_C_DECLS
 /*!
  * \file cs_cdofb_navsto.c
  *
- * \brief Shared routines among all face-based schemes for building and solving
- *        Stokes and Navier-Stokes problem
+ * \brief Shared functions among all face-based schemes for building and
+ *        solving Stokes and Navier-Stokes problem
  *
  */
 

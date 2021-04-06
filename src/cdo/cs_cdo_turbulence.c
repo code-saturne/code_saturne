@@ -61,7 +61,7 @@ BEGIN_C_DECLS
 /*!
  *  \file cs_cdo_turbulence.c
  *
- *  \brief  Routines to handle the resolution of the turbulence modelling
+ *  \brief  Functions to handle the resolution of the turbulence modelling
  *          within the CDO framework
  */
 

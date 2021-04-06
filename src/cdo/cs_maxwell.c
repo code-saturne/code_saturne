@@ -53,6 +53,18 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_maxwell.h
+
+  \brief Structure and functions handling the Maxwell module dedicated to
+         the resolution of electro-magnetic equations
+
+*/
+
+/*=============================================================================
  * Local Macro definitions
  *============================================================================*/
 

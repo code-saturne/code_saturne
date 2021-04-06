@@ -46,12 +46,6 @@
 
 BEGIN_C_DECLS
 
-/*!
-  \file cs_navsto_system.h
-
-  \brief  Routines to handle the cs_navsto_system_t structure
-*/
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/

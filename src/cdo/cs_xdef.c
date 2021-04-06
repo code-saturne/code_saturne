@@ -55,6 +55,18 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+ /*!
+   \file cs_xdef.c
+
+   \brief Functions to handle extended definitions of quantities thanks to the
+          cs_xdef_t structures.
+
+ */
+
+/*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
