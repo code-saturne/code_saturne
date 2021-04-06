@@ -406,6 +406,33 @@ cs_equation_add_user(const char            *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a new user transport equation and set a first set of parameters
+ *         If time_pty is NULL, then no unsteady term is added.
+ *         If adv is NULL, then no advection term is added.
+ *         If diff_pty is NULL, then no diffusion term is added.
+ *
+ * \param[in] eqname       name of the equation
+ * \param[in] varname      name of the variable associated to this equation
+ * \param[in] dim          dimension of the unknow attached to this equation
+ * \param[in] default_bc   type of boundary condition set by default
+ * \param[in] time_pty     property related to the unsteady term
+ * \param[in] adv          advection field
+ * \param[in] diff_pty     property related to the diffusion term
+ *
+ * \return  a pointer to the new allocated cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_equation_add_user_tracer(const char            *eqname,
+                            const char            *varname,
+                            int                    dim,
+                            cs_param_bc_type_t     default_bc,
+                            cs_property_t         *time_pty,
+                            cs_adv_field_t        *adv,
+                            cs_property_t         *diff_pty);
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Destroy all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
