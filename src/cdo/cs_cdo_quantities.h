@@ -50,6 +50,28 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! \enum cs_cdo_quantities_cell_center_algo_t
+ *  \brief Type of algorithm used to compute the cell centers
+ *
+ * \var CS_CDO_QUANTITIES_MEANV_CENTER
+ * Center is computed as the mean of cell vertices
+ *
+ * \var CS_CDO_QUANTITIES_BARYC_CENTER
+ * Center is computed as the real cell barycenter (default choice)
+ *
+ * \var CS_CDO_QUANTITIES_SATURNE_CENTER
+ * Center is the one defined in cs_mesh_quantities_t (i.e. the one
+ * used in the legacy Finite Volume scheme).
+ */
+
+typedef enum {
+
+  CS_CDO_QUANTITIES_MEANV_CENTER,
+  CS_CDO_QUANTITIES_BARYC_CENTER,
+  CS_CDO_QUANTITIES_SATURNE_CENTER
+
+} cs_cdo_quantities_cell_center_algo_t;
+
 /*! \enum cs_cdo_quantities_bit_t
  *  \brief Bit values for setting which quantities to compute
  *
@@ -67,16 +89,6 @@ BEGIN_C_DECLS
  *
  * \var CS_CDO_QUANTITIES_VCB_SCHEME
  * Geometrical quantities related to vertex+cell-based schemes
- *
- * \var CS_CDO_QUANTITIES_MEANV_CENTER
- * Center is computed as the mean of cell vertices
- *
- * \var CS_CDO_QUANTITIES_BARYC_CENTER
- * Center is computed as the real cell barycenter
- *
- * \var CS_CDO_QUANTITIES_SATURNE_CENTER
- * Center is the one defined in cs_mesh_quantities_t (i.e. the one
- * used in the legacy Finite Volume scheme).
  */
 
 typedef enum {
@@ -88,13 +100,6 @@ typedef enum {
   CS_CDO_QUANTITIES_HHO_SCHEME                 = 1<<2,  /* =   4 */
   CS_CDO_QUANTITIES_VB_SCHEME                  = 1<<3,  /* =   8 */
   CS_CDO_QUANTITIES_VCB_SCHEME                 = 1<<4,  /* =  16 */
-
-  /* How to compute the cell center
-     ------------------------------ */
-
-  CS_CDO_QUANTITIES_MEANV_CENTER               = 1<<7,  /* = 128 */
-  CS_CDO_QUANTITIES_BARYC_CENTER               = 1<<8,  /* = 256 */
-  CS_CDO_QUANTITIES_SATURNE_CENTER             = 1<<9,  /* = 512 */
 
 } cs_cdo_quantities_bit_t;
 
@@ -268,14 +273,13 @@ cs_cdo_quantities_set(cs_flag_t   option_flag);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the type of algorithm to use for computing the cell center
- *         (deprecated)
  *
  * \param[in]  algo     type of algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_bit_t   algo);
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_cell_center_algo_t   algo);
 
 /*----------------------------------------------------------------------------*/
 /*!

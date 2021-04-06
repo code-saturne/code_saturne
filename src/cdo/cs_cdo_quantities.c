@@ -120,6 +120,10 @@ typedef struct { /* These quantities are the integral of q on the plane
 /* Store in a flag which quantities have to be computed */
 cs_flag_t  cs_cdo_quantities_flag = 0;
 
+/* Algorithm used to compute the cell center */
+cs_cdo_quantities_cell_center_algo_t
+cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_BARYC_CENTER;
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -935,16 +939,15 @@ cs_cdo_quantities_set(cs_flag_t   option_flag)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the type of algorithm to use for computing the cell center
- *         (deprecated)
  *
  * \param[in]  algo     type of algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_bit_t   algo)
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_cell_center_algo_t   algo)
 {
-  cs_cdo_quantities_flag |= algo;
+  cs_cdo_cell_center_algo = algo;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1019,33 +1022,23 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cdoq->cell_vol = mq->cell_vol;
 
   /* Compute the cell centers */
-  if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER) {
+  switch (cs_cdo_cell_center_algo) {
 
+  case CS_CDO_QUANTITIES_SATURNE_CENTER:
     cdoq->cell_centers = mq->cell_cen; /* shared */
+    break;
 
-  }
-  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_BARYC_CENTER) {
-
+  case CS_CDO_QUANTITIES_BARYC_CENTER:
     BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
-
-    /* Compute the (real) barycentric centers */
     _mirtich_algorithm(m, mq, topo, cdoq);
+    break;
 
-  }
-  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MEANV_CENTER) {
-
+  case CS_CDO_QUANTITIES_MEANV_CENTER:
     BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
     _vtx_algorithm(topo, cdoq);
+    break;
 
-  }
-  else { /* Use as default the cell center computed in the legacy approach */
-
-    cdoq->cell_centers = mq->cell_cen; /* shared */
-    /* The default behaviour is to use the cell center already computed in the
-       legacy part */
-    cs_cdo_quantities_flag |= CS_CDO_QUANTITIES_SATURNE_CENTER;
-
-  }
+  } /* Cell center algorithm */
 
   /* 2) Define quantities available for CDO schemes */
   /*    =========================================== */
@@ -1098,7 +1091,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
     return cdoq;
 
   /* Cell-related quantities */
-  if (!(cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER))
+  if (cs_cdo_cell_center_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
     BFT_FREE(cdoq->cell_centers);
 
   /* Face-related quantities */
@@ -1132,15 +1125,21 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
   cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
 
-  if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER)
-    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Original\n");
-  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_BARYC_CENTER)
-    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Mirtich\n");
-  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MEANV_CENTER)
-    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Vertices.MeanValue\n");
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid algorithm to set the cell center.\n", __func__);
+  switch (cs_cdo_cell_center_algo) {
+
+  case CS_CDO_QUANTITIES_SATURNE_CENTER:
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Shared with FV\n");
+    break;
+
+  case CS_CDO_QUANTITIES_BARYC_CENTER:
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Barycenter (Mirtich)\n");
+    break;
+
+  case CS_CDO_QUANTITIES_MEANV_CENTER:
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Mean-value of vertices\n");
+    break;
+
+  } /* Cell center algorithm */
 
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
