@@ -26,7 +26,7 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]   imode        0: reading for dimensions only
+!> \param[in]   imode        0: reading for dimensions and starting time only
 !>                           1: reading actual meteo data
 !-------------------------------------------------------------------------------
 subroutine atlecm ( imode )
@@ -87,7 +87,7 @@ endif
 ! 0. Initialization
 !===============================================================================
 
-CSAUTE = '/'
+csaute = '/'
 
 ! --> Opens the meteo file
 call atmo_get_meteo_file_name(ficmet)
@@ -134,41 +134,39 @@ backspace(impmet)
 ! --> year, quant-day, hour, minute, second  of the profile (UTC)
 ! NB: second is real, all others are integers
 
-if (imode.eq.0) then
-  read(impmet, *, err=999, end=906)
-else
-  second = -9999.d0
-  read(impmet, '(a80)', err=999, end=906) oneline
-  read(oneline, *, err=907, end=907) year, month, day,  &
-                                                  hour, minute, second
+second = -9999.d0
+read(impmet, '(a80)', err=999, end=906) oneline
+read(oneline, *, err=907, end=907) year, month, day,  &
+                                                hour, minute, second
 ! --> catch some read errors
-  if (month.gt.12.or.day.gt.31) then
-    write(nfecra,8005)
-    call csexit (1)
-  endif
-  call comp_quantile(day, month, year, quant)
-  goto 908
+if (month.gt.12.or.day.gt.31) then
+  write(nfecra,8005)
+  call csexit (1)
+endif
+call comp_quantile(day, month, year, quant)
+goto 908
 907  continue
-  read(oneline, *, err=999, end=906) year, quant, hour, minute, second
+read(oneline, *, err=999, end=906) year, quant, hour, minute, second
 908 continue
 ! --> catch some read errors
-  if (second.lt.0d0.or.quant.gt.366) then
-    write(nfecra,8005)
-    call csexit (1)
-  endif
+if (second.lt.0d0.or.quant.gt.366) then
+  write(nfecra,8005)
+  call csexit (1)
+endif
 
-  ! --> if the date and time are not completed in usppmo / cs_user_model
-  !     the date and time of the first meteo profile are taken as the
-  !     starting time of the simulation
+! --> if the date and time are not completed in usppmo / cs_user_model
+!     the date and time of the first meteo profile are taken as the
+!     starting time of the simulation
 
-  if (syear.lt.0) then
-    syear = year
-    squant = quant
-    shour = hour
-    smin = minute
-    ssec = second
-  endif
+if (syear.lt.0) then
+  syear = year
+  squant = quant
+  shour = hour
+  smin = minute
+  ssec = second
+endif
 
+if (imode.ne.0) then
   !--> Compute the relative time to the starting time of the simulation
 
   ! --> Compute the julian day for the starting day of the simulation
@@ -197,7 +195,6 @@ else
       !==========
     endif
   endif
-
 endif
 
 !===============================================================================
