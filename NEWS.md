@@ -3,6 +3,8 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Fix crash with LES inlet.
+
 - GUI: Fix crash encountered in GroundWaterLaw page
 
 - Compressible: fix imposed inlet/outlet boundary condition.
