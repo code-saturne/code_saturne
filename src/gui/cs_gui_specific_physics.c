@@ -531,7 +531,7 @@ _get_nox_reburning(cs_tree_node_t  *tn_nox,
  *----------------------------------------------------------------------------*/
 
 static void
-_gui_atmo_get_set_meteo_file(void)
+_gui_atmo_get_set_meteo_profile(void)
 {
   const char path_af[] = "thermophysical_models/atmospheric_flows";
 
@@ -540,15 +540,74 @@ _gui_atmo_get_set_meteo_file(void)
   if (tn == NULL)
     return;
 
-  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(cs_glob_atmo_option->meteo_profile));
+  int is_meteo_file = 0;
+  int is_large_scale_meteo = 0;
 
-  if (cs_glob_atmo_option->meteo_profile == 1) {
+  cs_gui_node_get_child_status_int(tn, "read_meteo_data", &(is_meteo_file));
+  cs_gui_node_get_child_status_int(tn, "large_scale_meteo", &(is_large_scale_meteo));
 
+  if (is_meteo_file && !is_large_scale_meteo) {
+    cs_glob_atmo_option->meteo_profile = 1;
     const char *cstr = cs_tree_node_get_child_value_str(tn, "meteo_data");
 
     /* Copy string */
     if (cstr != NULL)
       cs_atmo_set_meteo_file_name(cstr);
+
+  }
+  else if (is_large_scale_meteo && !is_meteo_file) {
+    cs_glob_atmo_option->meteo_profile = 2;
+    const char *str_latitude = cs_tree_node_get_child_value_str(tn, "latitide");
+    const char *str_longitude = cs_tree_node_get_child_value_str(tn, "longitude");
+    const char *str_domain_orient = cs_tree_node_get_child_value_str(tn, "domain_orientation");
+    const char *str_wind_dir = cs_tree_node_get_child_value_str(tn, "wind_dir");
+
+    const char *str_meteo_z0 = cs_tree_node_get_child_value_str(tn, "meteo_z0");
+    const char *str_meteo_uref = cs_tree_node_get_child_value_str(tn, "meteo_uref");
+    const char *str_meteo_ustar = cs_tree_node_get_child_value_str(tn, "meteo_ustar");
+    const char *str_meteo_dlmo = cs_tree_node_get_child_value_str(tn, "meteo_dlmo");
+    const char *str_meteo_zref = cs_tree_node_get_child_value_str(tn, "meteo_zref");
+    const char *str_meteo_psea = cs_tree_node_get_child_value_str(tn, "meteo_psea");
+
+    const char *str_syear = cs_tree_node_get_child_value_str(tn, "start_year");
+    const char *str_sday = cs_tree_node_get_child_value_str(tn, "start_day");
+    const char *str_shour = cs_tree_node_get_child_value_str(tn, "start_hour");
+    const char *str_smin = cs_tree_node_get_child_value_str(tn, "start_min");
+    const char *str_ssec = cs_tree_node_get_child_value_str(tn, "start_sec");
+
+    if (str_latitude != NULL)
+      cs_glob_atmo_option->latitude = atof(str_latitude);
+    if (str_longitude != NULL)
+      cs_glob_atmo_option->longitude = atof(str_longitude);
+    if (str_domain_orient != NULL)
+      cs_glob_atmo_option->domain_orientation = atof(str_domain_orient);
+    if (str_wind_dir != NULL)
+      cs_glob_atmo_option->meteo_angle = atof(str_wind_dir);
+
+    if (str_meteo_z0 != NULL)
+      cs_glob_atmo_option->meteo_z0  = atof(str_meteo_z0);
+    if (str_meteo_uref != NULL)
+      cs_glob_atmo_option->meteo_uref  = atof(str_meteo_uref);
+    if (str_meteo_ustar != NULL)
+      cs_glob_atmo_option->meteo_ustar0  = atof(str_meteo_ustar);
+    if (str_meteo_dlmo != NULL)
+      cs_glob_atmo_option->meteo_dlmo  = atof(str_meteo_dlmo);
+    if (str_meteo_zref != NULL)
+      cs_glob_atmo_option->meteo_zref  = atof(str_meteo_zref);
+    if (str_meteo_psea != NULL)
+      cs_glob_atmo_option->meteo_psea  = atof(str_meteo_psea);
+
+    if(str_syear != NULL)
+      cs_glob_atmo_option->syear = atoi(str_syear);
+    if(str_sday != NULL)
+      cs_glob_atmo_option->squant = atoi(str_sday);
+    if(str_shour != NULL)
+      cs_glob_atmo_option->shour = atoi(str_shour);
+    if(str_smin != NULL)
+      cs_glob_atmo_option->smin = atoi(str_smin);
+    if(str_ssec != NULL)
+      cs_glob_atmo_option->ssec = atof(str_ssec);
+    /*TODO how to split which way profile definition we are using ? */
 
   }
 
@@ -557,7 +616,6 @@ _gui_atmo_get_set_meteo_file(void)
   bft_printf("--meteo_profile  = %i\n", cs_glob_atmo_option->meteo_profile);
 #endif
 }
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1403,7 +1461,7 @@ cs_gui_physical_model_select(void)
                   model_value);
 
       /* Get and set meteo file if given */
-      _gui_atmo_get_set_meteo_file();
+      _gui_atmo_get_set_meteo_profile();
 
     }
     else if (cs_gui_strcmp(model_name, "joule_effect")) {

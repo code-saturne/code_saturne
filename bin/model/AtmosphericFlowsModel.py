@@ -44,6 +44,7 @@ from code_saturne.model.XMLmodel     import  ModelTest
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
+from datetime import datetime
 
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class
@@ -53,14 +54,15 @@ class AtmosphericFlowsModel(Model):
     """
     Model for atmospheric flows
     """
-    off             = 'off'
-    constant        = 'constant'
-    dry             = 'dry'
-    humid           = 'humid'
-    read_meteo_data = 'read_meteo_data'
-    model           = 'model'
-    status          = 'status'
-
+    off                 = 'off'
+    constant            = 'constant'
+    dry                 = 'dry'
+    humid               = 'humid'
+    read_meteo_data     = 'read_meteo_data'
+    large_scale_meteo   = 'large_scale_meteo'
+    act_chemistry       = 'activate_chemistry'
+    model               = 'model'
+    status              = 'status'
 
     def __init__(self, case):
         """
@@ -78,13 +80,25 @@ class AtmosphericFlowsModel(Model):
         self.__default = {}
         self.__default[self.model] = AtmosphericFlowsModel.off
         self.__default[self.read_meteo_data] = AtmosphericFlowsModel.off
+        self.__default[self.large_scale_meteo] = AtmosphericFlowsModel.off
+        self.__default[self.act_chemistry] = AtmosphericFlowsModel.off
         self.__default['meteo_data'] = "meteo"
-
+        self.__default['longitude'] = "45.44"
+        self.__default['latitude'] = "4.39"
+        self.__default['domain_orientation'] = "0"
+        self.__default['wind_direction'] = "0"
+        self.__default['meteo_z0'] = "0.1"
+        self.__default['meteo_psea'] = "101325.0"
+        self.__default['meteo_angle'] = "0."
+        self.__default['meteo_dlmo'] = "0."
+        self.__default['meteo_zref'] = "10."
+        self.__default['meteo_uref'] = "5."
+        self.__default['meteo_ustar'] = "1."
 
     @Variables.undoLocal
     def setAtmosphericFlowsModel(self, model):
         """
-        Update the atmospheric flows model markup from the XML document.
+        Update the atmospheric flows  markup from the XML document.
         """
         self.isInList(model, self.__atmosphericModel)
         self.__node_atmos[self.model] = model
@@ -111,7 +125,268 @@ class AtmosphericFlowsModel(Model):
             self.setAtmosphericFlowsModel(model)
         return model
 
+    #--------------------------------------------------------------------------
+    #-----------------Large scale meteo block----------------------------------
+    @Variables.noUndo
+    def getLargeScaleMeteoStatus(self):
+        """
+        Return if reading meteo data status is 'on' or 'off'.
+        """
+        node = self.__node_atmos.xmlInitChildNode(self.large_scale_meteo)
+        if not node[self.status]:
+            status = self.__default[self.large_scale_meteo]
+            self.setLargeScaleMeteoStatus(status)
+        return node[self.status]
+    @Variables.undoLocal
+    def setLargeScaleMeteoStatus(self, status):
+        """
+        Set meteo data status to 'on' / 'off'.
+        """
+        self.isOnOff(status)
+        self.__node_atmos.xmlInitChildNode(self.large_scale_meteo)[self.status] = status
 
+        if status == 'off':
+            for tag in ['large_scale_meteo']:
+                for node in self.case.xmlGetNodeList(tag):
+                    node['status'] = "off"
+        elif status == 'on':
+            self.setMeteoDataStatus('off');
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getLongitude(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('longitude')
+        if f == None:
+            f = self.__default['longitude']
+            self.setLongitude(f)
+        return f
+    @Variables.undoLocal
+    def setLongitude(self, tag):
+        self.__node_atmos.xmlSetData('longitude', tag)
+
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getLatitude(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('latitude')
+        if f == None:
+            f = self.__default['latitude']
+            self.setLatitude(f)
+        return f
+    @Variables.undoLocal
+    def setLatitude(self, tag):
+        self.__node_atmos.xmlSetData('latitude', tag)
+
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getDomainOrientation(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetInt('domain_orientation')
+        if f == None:
+            f = self.__default['domain_orientation']
+            self.setDomainOrientation(f)
+        return f
+    @Variables.undoLocal
+    def setDomainOrientation(self, tag):
+        """
+        Set the name of the meteo data file.
+        """
+        self.__node_atmos.xmlSetData('domain_orientation', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getWindDir(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetInt('wind_direction')
+        if f == None:
+            f = self.__default['wind_direction']
+            self.setWindDir(f)
+        return f
+    @Variables.undoLocal
+    def setWindDir(self, tag):
+        self.__node_atmos.xmlSetData('wind_direction', tag)
+
+
+
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoZ0(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_z0')
+        if f == None:
+            f = self.__default['meteo_z0']
+            self.setMeteoZ0(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoZ0(self, tag):
+        """
+        Set the name of the meteo data file.
+        """
+        self.__node_atmos.xmlSetData('meteo_z0', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoUref(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_uref')
+        if f == None:
+            f = self.__default['meteo_uref']
+            self.setMeteoUref(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoUref(self, tag):
+        """
+        Set the name of the meteo data file.
+        """
+        self.__node_atmos.xmlSetData('meteo_uref', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoZref(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_zref')
+        if f == None:
+            f = self.__default['meteo_zref']
+            self.setMeteoZref(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoZref(self, tag):
+        """
+        Set the name of the meteo data file.
+        """
+        self.__node_atmos.xmlSetData('meteo_zref', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoUstar(self):
+        """
+        Return the value of the friction velocity.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_ustar')
+        if f == None:
+            f = self.__default['meteo_ustar']
+            self.setMeteoUstar(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoUstar(self, tag):
+        """
+        Set the friction velocity.
+        """
+        self.__node_atmos.xmlSetData('meteo_ustar', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoDlmo(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_dlmo')
+        if f == None:
+            f = self.__default['meteo_dlmo']
+            self.setMeteoDlmo(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoDlmo(self, tag):
+        self.__node_atmos.xmlSetData('meteo_dlmo', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoPsea(self):
+        """
+        Return the name of the meteo data file.
+        """
+        f = self.__node_atmos.xmlGetDouble('meteo_psea')
+        if f == None:
+            f = self.__default['meteo_psea']
+            self.setMeteoPsea(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoPsea(self, tag):
+        self.__node_atmos.xmlSetData('meteo_psea', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getStartTime(self):
+        startYear = self.__node_atmos.xmlGetInt('start_year')
+        startDay = self.__node_atmos.xmlGetInt('start_day')
+        startHour = self.__node_atmos.xmlGetInt('start_hour')
+        startMin = self.__node_atmos.xmlGetInt('start_min')
+        startSec = self.__node_atmos.xmlGetInt('start_sec')
+        dateTime = datetime.now()
+        if (startYear == None) or (startDay == None) or (startHour == None) \
+            or (startMin == None) or (startSec == None):
+            dateTime = datetime.now()
+            self.setStartTime(dateTime)
+        else:
+
+            dateTimeStr = startYear+'-'+startDay.rjust(3,'0')+\
+                                    ' '+startHour+':' +startMin+':'+startSec;
+            formatDateTime = "%Y-%j %H:%M:%S";
+            datetime.strptime(dateTimeStr, formatDateTime)
+        #convert back to the string in order to read it by QDateTime
+        dateTimeStr = dateTime.strftime("%Y-%m-%d %H:%M:%S")
+        return dateTimeStr
+
+    @Variables.undoLocal
+    def setStartTime(self, dateTime):
+        startYear = dateTime.year
+        startDay = dateTime.timetuple().tm_yday
+        startHour = dateTime.hour
+        startMin = dateTime.minute
+        startSec = dateTime.second
+        self.__node_atmos.xmlSetData('start_year', startYear)
+        self.__node_atmos.xmlSetData('start_day', startDay)
+        self.__node_atmos.xmlSetData('start_hour', startHour)
+        self.__node_atmos.xmlSetData('start_mon', startMin)
+        self.__node_atmos.xmlSetData('start_sec', startSec)
+
+    #-------------------------------------------------------------------------
+    #-----------------Activate chemistry block--------------------------------
+    @Variables.noUndo
+    def getChemistryStatus(self):
+        """
+        Return if reading meteo data status is 'on' or 'off'.
+        """
+        node = self.__node_atmos.xmlInitChildNode(self.act_chemistry)
+        if not node[self.status]:
+            status = self.__default[self.act_chemistry]
+            self.setChemistryStatus(status)
+        return node[self.status]
+
+
+    @Variables.undoLocal
+    def setChemistryStatus(self, status):
+        """
+        Set meteo data status to 'on' / 'off'.
+        """
+        self.isOnOff(status)
+        self.__node_atmos.xmlInitChildNode(self.act_chemistry)[self.status] = status
+
+        if status == 'off':
+            for tag in ['activate_chemistry']:
+                for node in self.case.xmlGetNodeList(tag):
+                    node['status'] = "off"
+
+    #-------------------------------------------------------------------------
+    #-----------------Read meteo file------------------------------------------
     @Variables.noUndo
     def getMeteoDataStatus(self):
         """
@@ -122,7 +397,6 @@ class AtmosphericFlowsModel(Model):
             status = self.__default[self.read_meteo_data]
             self.setMeteoDataStatus(status)
         return node[self.status]
-
 
     @Variables.undoLocal
     def setMeteoDataStatus(self, status):
@@ -136,6 +410,8 @@ class AtmosphericFlowsModel(Model):
             for tag in ['read_meteo_data', 'meteo_automatic']:
                 for node in self.case.xmlGetNodeList(tag):
                     node['status'] = "off"
+        elif status == 'on':
+            self.setLargeScaleMeteoStatus('off');
 
 
     @Variables.noUndo
@@ -146,9 +422,8 @@ class AtmosphericFlowsModel(Model):
         f = self.__node_atmos.xmlGetString('meteo_data')
         if f == None:
             f = self.__default['meteo_data']
-            self.setMeteoDataFile(f)
+            self.setMeteoDataFileName(f)
         return f
-
 
     @Variables.undoLocal
     def setMeteoDataFileName(self, tag):
@@ -281,6 +556,36 @@ class AtmosphericFlowsTestCase(ModelTest):
             'Could not set meteo data status'
         assert mdl.getMeteoDataStatus() == 'on', \
             'Could not get meteo data status'
+
+    def checkGetandSetLargeScaleMeteoStatus(self):
+        """Check whether the AtmosphericFlowsModel class could be set and get the meteo data status"""
+        mdl = AtmosphericFlowsModel(self.case)
+        mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.constant)
+        mdl.setLargeScaleMeteoStatus('on')
+
+        doc = """<atmospheric_flows model="constant">
+                    <large_scale_meteo status="on"/>
+                 </atmospheric_flows>"""
+
+        assert mdl.atmosphericFlowsNode() == self.xmlNodeFromString(doc), \
+            'Could not set large scale meteo status'
+        assert mdl.getLargeScaleMeteoStatus() == 'on', \
+            'Could not get large scale meteo status'
+
+    def checkGetandSetChemistryStatus(self):
+        """Check whether the AtmosphericFlowsModel class could be set and get the meteo data status"""
+        mdl = AtmosphericFlowsModel(self.case)
+        mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.constant)
+        mdl.setChemistryStatus('on')
+
+        doc = """<atmospheric_flows model="constant">
+                    <activate_chemistry status="on"/>
+                 </atmospheric_flows>"""
+
+        assert mdl.atmosphericFlowsNode() == self.xmlNodeFromString(doc), \
+            'Could not set activate chemistry status'
+        assert mdl.getChemistryStatus() == 'on', \
+            'Could not get activate chemistry status'
 
 
     def checkDryModel(self):
