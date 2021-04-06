@@ -64,6 +64,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -84,48 +85,35 @@ double precision, dimension(:), pointer :: cpro_t
 
 mode = 1
 
-! Non-specific physics
+cpro_t => null()
 
-if (ippmod(iphpar).le.1) then
+! Gas combustion: premix or diffusion flame
+if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
+  call field_get_val_s(itemp, cpro_t)
 
-  do iel = 1,ncel
-    hl = h(iel)
-    call usthht(mode, hl, t(iel))
-  enddo
+! Pulverized coal or fuel combustion
+else if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  call field_get_val_s(itemp1, cpro_t)
 
-  return
+! Electric arcs
+else if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call field_get_val_s(itemp, cpro_t)
 
 endif
 
-! Gas combustion: premix or diffusion flame
-
-if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
-
-  call field_get_val_s(itemp, cpro_t)
+if (associated(cpro_t)) then
 
   do iel = 1, ncel
-    t(iel) = cpro_t(iel)
-  enddo
 
-! Pulverized coal or fuel combustion
+    if (cell_is_active(iel) .eq. 1) then
+      t(iel) = cpro_t(iel)
 
-else if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+    else
+      ! For fluid/solid coupling, user-defined function for solid portion
+      hl = h(iel)
+      call usthht(mode, hl, t(iel))
+    endif
 
-  call field_get_val_s(itemp1, cpro_t)
-
-  do iel = 1, ncel
-    t(iel) = cpro_t(iel)
-  enddo
-
-! Electric arcs
-
-else if (ippmod(ieljou).ge.1 .or.                              &
-         ippmod(ielarc).ge.1) then
-
-  call field_get_val_s(itemp, cpro_t)
-
-  do iel = 1, ncel
-    t(iel) = cpro_t(iel)
   enddo
 
 ! Other cases ?
@@ -133,11 +121,11 @@ else if (ippmod(ieljou).ge.1 .or.                              &
 else
 
   do iel = 1, ncel
-    hl = (iel)
-    call usthht(mode, h(iel), t(iel))
+    hl = h(iel)
+    call usthht(mode, hl, t(iel))
   enddo
 
 endif
 
 return
-end subroutine
+end subroutine c_h_to_t

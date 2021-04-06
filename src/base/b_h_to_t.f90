@@ -115,6 +115,13 @@ else if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     hbl = h_b(ifac)
+
+    ! For fluid/solid coupling, user-defined function for solid portion
+    if (cell_is_active(iel) .eq. 0) then
+      call usthht(mode, hbl, t_b(ifac))
+      cycle
+    endif
+
     do igg = 1, ngazgm
       coefg(igg) = zero
     enddo
@@ -130,10 +137,28 @@ else if (ippmod(iccoal).ge.0) then
   ! Use mixture temperature
   call cs_coal_thfieldconv1(MESH_LOCATION_BOUNDARY_FACES, h_b, t_b)
 
+  ! For fluid/solid coupling, user-defined function for solid portion
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    if (cell_is_active(iel) .eq. 0) then
+      hbl = h_b(ifac)
+      call usthht(mode, hbl, t_b(ifac))
+    endif
+  enddo
+
 else if (ippmod(icfuel).ge.0) then
 
   ! Use mixture temperature
   call cs_fuel_thfieldconv1(MESH_LOCATION_BOUNDARY_FACES, h_b, t_b)
+
+  ! For fluid/solid coupling, user-defined function for solid portion
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    if (cell_is_active(iel) .eq. 0) then
+      hbl = h_b(ifac)
+      call usthht(mode, hbl, t_b(ifac))
+    endif
+  enddo
 
 ! Electric arcs
 
@@ -156,8 +181,16 @@ else if (ippmod(ielarc).ge.1) then
   endif
 
   do ifac = 1, nfabor
+
     iel = ifabor(ifac)
     hbl = h_b(ifac)
+
+    ! For fluid/solid coupling, user-defined function for solid portion
+    if (cell_is_active(iel) .eq. 0) then
+      call usthht(mode, hbl, t_b(ifac))
+      cycle
+    endif
+
     if (ngazge .eq. 1) then
       ym(1) = 1.d0
       call elthht(mode, ym, hbl, t_b(ifac))
@@ -169,6 +202,7 @@ else if (ippmod(ielarc).ge.1) then
       enddo
       call elthht(mode, ym, hbl, t_b(ifac))
     endif
+
   enddo
 
   if (ngazge .gt. 1) then
