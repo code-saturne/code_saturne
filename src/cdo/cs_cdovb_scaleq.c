@@ -369,7 +369,7 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
-      cs_log_printf(CS_LOG_DEFAULT, ">> Celll mass matrix");
+      cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids,
                   mass_hodge->matrix);
     }

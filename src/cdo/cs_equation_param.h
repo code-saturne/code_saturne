@@ -2,7 +2,8 @@
 #define __CS_EQUATION_PARAM_H__
 
 /*============================================================================
- * Header to handle specific settings related to a cs_equation_t structure
+ * Functions related to the structure cs_equation_param_t storing the settings
+ * related to an equation.
  *============================================================================*/
 
 /*

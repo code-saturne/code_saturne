@@ -1,5 +1,5 @@
 /*============================================================================
- * Functions to handle cs_equation_t structure and its related structures
+ * Functions to handle the cs_equation_t structure and its related structures
  *============================================================================*/
 
 /*

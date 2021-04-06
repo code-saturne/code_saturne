@@ -570,7 +570,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                                         "cells",
                                                         &st_val);
 
-    CS_UNUSED(st); /* st can be used for advaced settings like quadrature
+    CS_UNUSED(st); /* st can be used for advanced settings like quadrature
                       rules */
   }
   /*! [param_cdo_add_terms] */
