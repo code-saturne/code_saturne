@@ -387,6 +387,7 @@ _lages1(cs_real_t           dtp,
           trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
           trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
         }
+        break;
 
       default:
         assert(0);
