@@ -296,7 +296,6 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         field_a, field_b, interaction_type = self.tableModelInteractions.data_table[index.row()]
         self.field_id_a = self.mdl.getFieldId(field_a)
         self.field_id_b = self.mdl.getFieldId(field_b)
-        self.mdl.setDefaultParameters(self.field_id_a, self.field_id_b)
 
         if interaction_type == "continuous":
             self._displayContinuousModels()
