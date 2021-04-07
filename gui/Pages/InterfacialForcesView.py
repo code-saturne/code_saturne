@@ -210,6 +210,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.modelWallForce.addItemList([[self.dicoM2V[model], model]
                                          for model in
                                          self.mdl.getAvailableWallForcesModelList(self.field_id_a, self.field_id_b)])
+
         # Read data from XML and update comboBoxes accordingly
         self.modelDispersedDrag.setItem(str_model=self.mdl.getDragModel(self.field_id_a, self.field_id_b))
         self.modelLift.setItem(str_model=self.mdl.getLiftModel(self.field_id_a, self.field_id_b))
@@ -220,10 +221,10 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
     def _displayContinuousModels(self):
         self.groupBoxContinuousMomentumTransfer.show()
         self.groupBoxDispersedMomentumTransfer.hide()
+
         model = self.mdl.getContinuousCouplingModel(self.field_id_a, self.field_id_b)
         self.comboBoxContinuousMomentumTransfer.setEnabled(True)
         self.modelContinuousMomentumTransfer.setItem(str_model=model)
-
         sharpening = self.mdl.getInterfaceSharpeningModel(self.field_id_a, self.field_id_b)
         self.modelInterfaceSharpening.setItem(str_model=sharpening)
         surface_tension = self.mdl.getSurfaceTensionModel(self.field_id_a, self.field_id_b)
@@ -247,16 +248,9 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
     def lockFreeSurfaceOptions(self):
         default_free_surface = "Large_Interface_Model"
-        self.modelContinuousMomentumTransfer.setItem(str_model=default_free_surface)
         self.comboBoxContinuousMomentumTransfer.setEnabled(False)
 
     def lockBubblyFlowOptions(self):
-        self.modelDispersedDrag.setItem(str_model="ishii")
-        self.modelLift.setItem(str_model="Tomiyama_SMD")
-        self.modelAddedMass.setItem(str_model="zuber")
-        self.modelTurbulenceDispersion.setItem(str_model="none")
-        self.modelWallForce.setItem(str_model="tomiyama")
-
         GTD_condition_1 = (TurbulenceModel(self.case).getTurbulenceModel("1") in
                            ["k-epsilon",
                             "k-epsilon_linear_production",
@@ -275,25 +269,18 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.comboBoxWallForce.setEnabled(False)
 
     def lockDropletFlowOptions(self):
-        self.modelDispersedDrag.setItem(str_model="Wen_Yu")
         self.comboBoxDispersedDrag.setEnabled(False)
 
         self.modelLift.disableItem(str_model="Tomiyama_SMD")
         self.modelLift.disableItem(str_model="coef_cst")
         self.comboBoxLift.setEnabled(True)
 
-        self.modelAddedMass.setItem(str_model="none")
         self.comboBoxAddedMass.setEnabled(False)
-
-        self.modelTurbulenceDispersion.setItem(str_model="none")
         self.comboBoxTurbulenceDispersion.setEnabled(False)
-
-        self.modelWallForce.setItem(str_model="none")
         self.comboBoxWallForce.setEnabled(False)
 
     def lockMultiregimeFlowOptions(self):
         default_free_surface = "G_Large_Interface_Model"
-        self.modelContinuousMomentumTransfer.setItem(str_model=default_free_surface)
         self.comboBoxContinuousMomentumTransfer.setEnabled(False)
 
     def dataChanged(self, topLeft, bottomRight):
@@ -309,6 +296,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         field_a, field_b, interaction_type = self.tableModelInteractions.data_table[index.row()]
         self.field_id_a = self.mdl.getFieldId(field_a)
         self.field_id_b = self.mdl.getFieldId(field_b)
+        self.mdl.setDefaultParameters(self.field_id_a, self.field_id_b)
 
         if interaction_type == "continuous":
             self._displayContinuousModels()
