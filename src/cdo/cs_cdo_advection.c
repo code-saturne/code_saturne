@@ -2587,6 +2587,16 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
   /* Reset local temporary RHS and diagonal contributions */
   for (short int v = 0; v < cm->n_vc; v++) mat_diag[v] = tmp_rhs[v] = 0;
 
+  cs_real_t  scaling = 1;       /* By default no scaling */
+  if (eqp->adv_scaling_property != NULL) {
+    if (cs_property_is_uniform(eqp->adv_scaling_property))
+      scaling = eqp->adv_scaling_property->ref_value;
+    else
+      scaling = cs_property_value_in_cell(cm,
+                                          eqp->adv_scaling_property,
+                                          cb->t_pty_eval);
+  }
+
   /* Add diagonal term for vertices attached to a boundary face where
      the advection field points inward. */
   for (short int i = 0; i < csys->n_bc_faces; i++) {  /* Loop on border faces */
@@ -2595,6 +2605,9 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
     const short int  f = csys->_f_ids[i];
 
     cs_advection_field_cw_boundary_f2v_flux(cm, adv, f, t_eval, v_nflx);
+
+    if (eqp->adv_scaling_property != NULL)
+      for (short int v = 0; v < cm->n_vc; v++) v_nflx[v] *= scaling;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
