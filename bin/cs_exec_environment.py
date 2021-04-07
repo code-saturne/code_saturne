@@ -836,7 +836,7 @@ def source_syrthes_env(pkg, verbose=True):
 
     for p in sys.path:
         if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
-            syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
+            syr_profile = os.path.join(p[:-14], 'bin', 'syrthes.profile')
             if os.path.isfile(syr_profile):
                 if verbose:
                     sys.stdout.write("Sourcing SYRTHES environment: " \
@@ -845,6 +845,8 @@ def source_syrthes_env(pkg, verbose=True):
                     source_shell_script(syr_profile)
                 except Exception:
                     sys.stderr.write("  Failed sourcing SYRTHES environment.\n")
+                # Ensure exit from the loop once syrthes is found
+                break
 
     env_syrthes_home = os.getenv('SYRTHES4_HOME')
 

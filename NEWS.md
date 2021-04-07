@@ -3,6 +3,8 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Fix launch of a code_saturne/syrthes coupling
+
 - Fix crash with LES inlet.
 
 - GUI: Fix crash encountered in GroundWaterLaw page
