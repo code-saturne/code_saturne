@@ -143,7 +143,7 @@ typedef struct {
                                       0: unactivated
                                       1: activated */
   int          *c_disable_flag;    /* Is the cell disabled?
-                                      used for fluid solid and porous modelling */
+                                      used for fluid solid and porous models */
   unsigned     *bad_cell_flag;     /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;

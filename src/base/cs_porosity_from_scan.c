@@ -156,7 +156,8 @@ _count_from_file(const cs_mesh_t *m,
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
   /* Open file */
-  bft_printf(_("\n\n  Compute the porosity from a scan points file:\n    %s\n\n"),
+  bft_printf(_("\n\n  Compute the porosity from a scan points file:\n"
+               "    %s\n\n"),
              _porosity_from_scan_opt.file_name);
 
   bft_printf(_("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
@@ -176,9 +177,10 @@ _count_from_file(const cs_mesh_t *m,
              _porosity_from_scan_opt.transformation_matrix[2][2],
              _porosity_from_scan_opt.transformation_matrix[2][3]);
 
-  FILE* file = fopen(_porosity_from_scan_opt.file_name, "rt");
+  FILE *file = fopen(_porosity_from_scan_opt.file_name, "rt");
   if (file == NULL)
-    bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not open file."));
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not open file."));
 
   int n_points = 0;
   int n_read_points = 0;
@@ -186,9 +188,11 @@ _count_from_file(const cs_mesh_t *m,
   cs_real_3_t max_vec_tot = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
   if (fscanf(file, "%d\n", &n_read_points) != 1)
-    bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not read the number of lines."));
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not read the number of lines."));
 
-  bft_printf(_("  Porosity from scan: %d points to be read.\n\n"), n_read_points);
+  bft_printf(_("  Porosity from scan: %d points to be read.\n\n"),
+             n_read_points);
 
   /* Pointer to field */
   cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
@@ -224,17 +228,23 @@ _count_from_file(const cs_mesh_t *m,
         point_coords[i][j] = 0.;
 
       if (fscanf(file, "%lf", &(xyz[0])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
+        bft_error
+          (__FILE__,__LINE__, 0,
+           _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
       if (fscanf(file, "%lf", &(xyz[1])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error
+          (__FILE__,__LINE__, 0,
+           _("Porosity from scan: Error while reading dataset."));
       if (fscanf(file, "%lf", &(xyz[2])) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
 
       /* Translation and rotation */
       xyz[3] = 1.;
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 4; k++)
-          point_coords[i][j] += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
+          point_coords[i][j]
+            += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
 
         /* Compute bounding box*/
         min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
@@ -243,17 +253,21 @@ _count_from_file(const cs_mesh_t *m,
 
       /* Intensities */
       if (fscanf(file, "%d", &num) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
 
       /* Red */
       if (fscanf(file, "%d", &red) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
       /* Green */
       if (fscanf(file, "%d", &green) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
       /* Blue */
       if (fscanf(file, "%d\n", &blue) != 1)
-        bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
 
       /* When colors are written as int, Paraview intreprates them in [0, 255]
        * when they are written as float, Paraview interprates them in [0., 1.]
@@ -326,12 +340,12 @@ _count_from_file(const cs_mesh_t *m,
       BFT_FREE(vtx_gnum);
 
       /* Create default writer */
-      fvm_writer_t *writer = fvm_writer_init(fvm_name,
-                                             "postprocessing",
-                                             cs_post_get_default_format(),
-                                             cs_post_get_default_format_options(),
-                                             FVM_WRITER_FIXED_MESH);
-
+      fvm_writer_t *writer
+        = fvm_writer_init(fvm_name,
+                          "postprocessing",
+                          cs_post_get_default_format(),
+                          cs_post_get_default_format_options(),
+                          FVM_WRITER_FIXED_MESH);
 
       fvm_writer_export_nodal(writer, pts_mesh);
 
@@ -427,7 +441,8 @@ _count_from_file(const cs_mesh_t *m,
       max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
 
   if (fclose(file) != 0)
-    bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not close the file."));
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not close the file."));
 
   /* Nodal mesh is not needed anymore */
   location_mesh = fvm_nodal_destroy(location_mesh);
@@ -490,8 +505,6 @@ _count_from_file(const cs_mesh_t *m,
       b_f_face_surf[face_id]      = b_face_surf[face_id]     ;
     }
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -636,23 +649,22 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 void
 cs_compute_porosity_from_scan(void)
 {
-  /* Initialization
-   *===============*/
+  /* Initialization */
 
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
-  const cs_real_3_t *restrict cell_cen =
-     (const cs_real_3_t *restrict)mq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal =
-     (const cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal =
-     (const cs_real_3_t *restrict)mq->b_face_normal;
-  const cs_real_3_t *restrict i_face_cog =
-     (const cs_real_3_t *restrict)mq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog =
-     (const cs_real_3_t *restrict)mq->b_face_cog;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)mq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)mq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity_w_field");
@@ -664,19 +676,18 @@ cs_compute_porosity_from_scan(void)
    * at least 3 (???) points */
   _count_from_file(m, mq);
 
-  cs_real_t *restrict i_massflux =
-    cs_field_by_id(
-        cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
-  cs_real_t *restrict b_massflux =
-    cs_field_by_id(
-        cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
+  cs_real_t *restrict i_massflux
+    = cs_field_by_id
+        (cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
+  cs_real_t *restrict b_massflux
+    = cs_field_by_id
+        (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
 
   cs_var_cal_opt_t vcopt;
   cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
   /* Local variables */
-  cs_real_t *rovsdt, *pvar, *dpvar;
-  cs_real_t *rhs;
+  cs_real_t *rovsdt, *pvar, *dpvar, *rhs;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(pvar, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
@@ -710,11 +721,12 @@ cs_compute_porosity_from_scan(void)
         i_face_cog[face_id][1] - source_cen[1],
         i_face_cog[face_id][2] - source_cen[2]
       };
-      cs_real_3_t normal;
+      cs_real_t normal[3];
       /* Normal direction is given by x-x0 */
       cs_math_3_normalise(x0xf, normal);
 
-      i_massflux[face_id] = cs_math_3_dot_product(normal, i_face_normal[face_id]);
+      i_massflux[face_id] = cs_math_3_dot_product(normal,
+                                                  i_face_normal[face_id]);
     }
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
@@ -727,7 +739,8 @@ cs_compute_porosity_from_scan(void)
       /* Normal direction is given by x-x0 */
       cs_math_3_normalise(x0xf, normal);
 
-      b_massflux[face_id] = cs_math_3_dot_product(normal, b_face_normal[face_id]);
+      b_massflux[face_id] = cs_math_3_dot_product(normal,
+                                                  b_face_normal[face_id]);
     }
 
     /* Boundary conditions
@@ -749,7 +762,8 @@ cs_compute_porosity_from_scan(void)
                                                    pimp,
                                                    hint,
                                                    cs_math_infinite_r);
-      } else {
+      }
+      else {
 
         cs_real_t hint = 1. / mq->b_dist[face_id];
         cs_real_t qimp = 0.;
