@@ -1,0 +1,88 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2021 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+  \page user_ht_convert Examples of enthalpy-temperature conversion law
+
+  \section ht_convert_intro Introduction
+
+  By default, when not using a specific physical model (which
+  will usually contain a more advanced conversion), a simple
+  \f[ H = C_p T \f] law is used.
+
+  This simple law will also be used by default in solid zones even
+  when using a specific fluid model.
+
+  When using variable Cp values, an appropriate temperaure to enthalpy
+  conversion should be defined by the user if solving the Enthalpy.
+
+  The \ref cs_user_physical_properties_h_to_t and
+  \ref cs_user_physical_properties_t_to_h functions (in
+  \ref cs_user_physical_properties.c) can be used to define an
+  enthalpy-temperature conversion law and its inverse.
+
+  If can be defined on a "per-zone" basis if needed in case different
+  zones (both solid and boundary) correspond to different fluids
+  or solid ones.
+
+  \section user_ht_convert_ex Example
+
+  The following code blocks show an example of enthalpy-temperature
+  conversion law.
+
+  \subsection user_ht_convert_tab Tabulation
+
+  The following block is added either outside
+  \ref cs_user_physical_properties_h_to_t and
+  \ref cs_user_physical_properties_t_to_h functions (before all function
+  definitions in \ref cs_user_physical_properties.c), or in both
+  of these functions:
+
+  \snippet cs_user_physical_properties.c tabulation
+
+  \subsection user_ht_convert_h_to_t Enthalpy to temperature
+
+  The following block is then used in \ref cs_user_physical_properties_h_to_t
+  to convert enthalpy to temperature:
+
+  \snippet cs_user_physical_properties.c z_h_to_t
+
+  Note that \c z->name or \c z->location_id can be used as a filter
+  if "per-zone" properties are needed (such as with solid zones).
+
+  \subsection user_ht_convert_h_to_t Temperature to Enthalpy
+
+  The following block must then be added in
+  \ref cs_user_physical_properties_t_to_h for the matching
+  temperature to Enthalpy conversion:
+
+  \snippet cs_user_physical_properties.c z_t_to_h
+
+  Note that temperature to enthalpy conversion is only needed
+  when solving the Enthalpy and using radiative tranfers or
+  temperature-based boundary conditions.
+
+*/

@@ -109,7 +109,7 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
-double precision s, s11, s22, s33, delta, c_k, c_epsilon
+double precision s, s11, s22, s33, delta, c_epsilon
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
@@ -1132,7 +1132,7 @@ if (f_id .ge. 0) then
     if (f_id .ge. 0) then
       call field_get_val_s(f_id, field_s_v)
       allocate(ttmp(ncelet))
-      call c_h_to_t(field_s_v, ttmp);
+      call cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
       do ifac = 1, nfabor
         if (field_s_b(ifac) .le. -grand) then
           iel = ifabor(ifac)

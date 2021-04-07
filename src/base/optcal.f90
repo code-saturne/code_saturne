@@ -451,12 +451,9 @@ module optcal
   !> solved thermal variable should be the temperature (\ref itherm = 1).
   !> More precisely, everything is designed in the code to allow for the
   !> running of a calculation coupled with SYRTHES with the enthalpy as
-  !> thermal variable (the correspondence and conversion is then specified
-  !> by the user in the subroutine \ref usthht). However this case has never
-  !> been used in practice and has therefore not been tested. With the
-  !> compressible model, it is possible to carry out calculations coupled with
-  !> SYRTHES, although the thermal scalar represents the total energy and not
-  !> the temperature.
+  !> thermal variable. With the compressible model, it is possible to
+  !> carry out calculations coupled with SYRTHES, although the thermal
+  !> scalar represents the total energy and not the temperature.
   integer(c_int), pointer, save :: itherm
 
   !> Temperature scale

@@ -41,6 +41,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
@@ -115,6 +116,7 @@ cs_gas_mix.h \
 cs_halo.h \
 cs_halo_perio.h \
 cs_head_losses.h \
+cs_ht_convert.h \
 cs_interface.h \
 cs_interpolate.h \
 cs_internal_coupling.h \
@@ -212,6 +214,7 @@ cs_crystal_router.c \
 cs_defs.c \
 cs_file.c \
 cs_fp_exception.c \
+cs_ht_convert.c \
 cs_interface.c \
 cs_io.c \
 cs_log.c \
@@ -231,9 +234,6 @@ libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 libcsbase_la_SOURCES = \
 addfld.f90 \
 altycl.f90 \
-b_t_to_h.f90 \
-b_h_to_t.f90 \
-c_h_to_t.f90 \
 calhyd.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \

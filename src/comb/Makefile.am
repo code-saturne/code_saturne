@@ -67,6 +67,7 @@ cpltsv.f90 \
 cplym1.f90 \
 cppdfr.f90 \
 cpteh1.f90 \
+cs_coal_bt2h.f90 \
 cs_coal_fp2st.f90 \
 cs_coal_htconvers1.f90 \
 cs_coal_htconvers2.f90 \
@@ -86,6 +87,7 @@ cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
 cs_coal_verify.f90 \
 cs_fuel_bcond.f90 \
+cs_fuel_bt2h.f90 \
 cs_fuel_fp2st.f90 \
 cs_fuel_htconvers1.f90 \
 cs_fuel_htconvers2.f90 \

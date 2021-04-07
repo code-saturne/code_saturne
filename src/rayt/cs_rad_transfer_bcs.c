@@ -53,6 +53,7 @@
 #include "cs_log.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_ht_convert.h"
 #include "cs_internal_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -107,13 +108,12 @@ int ipacli = 0;
 /*!
  * \brief Adjust radiative BC's for internal coupling.
  *
- * If emissivity has not bee defined on solid faces, it is set to 0
+ * If emissivity has not been defined on solid faces, it is set to 0
  * on those faces.
  *
  * \param[in, out]  cpl     internal coupling structure
  * \param[in, out]  isothm  internal coupling BC type
  * \param[in, out]  xlamp   conductivity (W/m/K)
- * \param[in, out]  epap    thickness (m)
  * \param[in, out]  beps    emissivity
  * \param[in, out]  textp   outside temperature (K)
  */
@@ -123,7 +123,6 @@ static void
 _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
                            int                      isothm[],
                            cs_real_t                xlamp[],
-                           cs_real_t                epap[],
                            cs_real_t                beps[],
                            cs_real_t                textp[])
 {
@@ -479,7 +478,6 @@ cs_rad_transfer_bcs(int         nvar,
       _set_internal_coupling_bcs(cpl,
                                  isothm,
                                  f_bxlam->val,
-                                 f_bepa->val,
                                  f_beps->val,
                                  text);
   }
@@ -933,8 +931,6 @@ cs_rad_transfer_bcs(int         nvar,
 
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
-    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
     cs_field_t *f_temp = CS_F_(t);
     if (f_temp == NULL)
       f_temp = CS_FI_(t, 0);
@@ -946,7 +942,7 @@ cs_rad_transfer_bcs(int         nvar,
     if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
       for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-        tempk[iel] = f_temp->vals[1][iel] + tkelvi;
+        tempk[iel] = cval_t[iel] + tkelvi;
 
     }
     else if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
@@ -963,8 +959,8 @@ cs_rad_transfer_bcs(int         nvar,
 
     cs_field_t *f_enthalpy = CS_F_(h);
 
-    /* Resultat : T en K */
-    CS_PROCF(c_h_to_t, C_H_TO_T)(f_enthalpy->val, tempk);
+    /* Results: T to K */
+    cs_ht_convert_h_to_t_cells(f_enthalpy->val, tempk);
 
   }
 
@@ -1057,47 +1053,38 @@ cs_rad_transfer_bcs(int         nvar,
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       hwall[face_id] = 0.;
 
-    int mode = 0;
+    cs_lnum_t nlst = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (   isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY
           || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
-          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX)
-        mode  =  -1;
-    }
-
-    if (mode ==  -1) {
-      cs_lnum_t nlst = 0;
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+          || isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
         if (   bc_type[face_id] == CS_SMOOTHWALL
             || bc_type[face_id] == CS_ROUGHWALL) {
-          lstfac[nlst] = face_id + 1; // for compatibility purpose with b_t_to_h
+          lstfac[nlst] = face_id;
           nlst++;
         }
       }
-      CS_PROCF(b_t_to_h, B_T_TO_H)(&nlst, lstfac, twall, hwall);
     }
+    if (nlst > 0)
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, twall, hwall);
 
-    mode = 0;
+    nlst = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
-        mode = -1;
+        if (   bc_type[face_id] == CS_SMOOTHWALL
+            || bc_type[face_id] == CS_ROUGHWALL) {
+          lstfac[nlst] = face_id;
+          nlst++;
+        }
       }
     }
 
-    if (mode == -1) {
+    if (nlst > 0) {
       BFT_MALLOC(hext, n_b_faces, cs_real_t);
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
         hext[face_id] = 0.;
 
-      cs_lnum_t nlst = 0;
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-        if (   bc_type[face_id] == CS_SMOOTHWALL
-            || bc_type[face_id] == CS_ROUGHWALL) {
-          lstfac[nlst] = face_id + 1; // for compatibility purpose with b_t_to_h
-          nlst++;
-        }
-      }
-      CS_PROCF(b_t_to_h, B_T_TO_H) (&nlst, lstfac, text, hext);
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, text, hext);
     }
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {

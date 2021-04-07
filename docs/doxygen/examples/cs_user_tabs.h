@@ -78,7 +78,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
 \section example_other Other Calculation control
    - \subpage cs_user_modules
    - \subpage user_solver
-   - \subpage us_thht
+   - \subpage user_ht_convert
    - \subpage us_vosy
    - \subpage us_pt1d
    - \subpage cs_user_lagr_sde

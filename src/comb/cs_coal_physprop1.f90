@@ -168,6 +168,23 @@ integer          ipass
 data ipass / 0 /
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_coal_thfieldconv1(location_id, eh, tp) &
+    bind(C, name='cs_coal_thfieldconv1')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: location_id
+    real(kind=c_double), dimension(*) :: eh, tp
+  end subroutine cs_coal_thfieldconv1
+
+end interface
+
+!===============================================================================
 ! 0. Memory allocation
 !===============================================================================
 
@@ -248,7 +265,6 @@ enddo
 allocate(tpdf(ncelet))
 
 call pppdfr &
-!==========
  ( ncelet , ncel  , intpdf ,                                      &
    tpdf   ,                                                       &
    ffuel  , fvp2m ,                                               &

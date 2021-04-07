@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cothht &
-!================
-
  ( mode   , nespec , nespem , xespec ,                            &
    npo    , npot   , th     , eh     ,                            &
    enthal , temper )
@@ -167,14 +165,12 @@ else
 
   write(nfecra,1000) mode
   call csexit (1)
-  !==========
 
 
 endif
 
-
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(                                                           &
@@ -192,10 +188,193 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-
 !----
-! FIN
+! End
 !----
 
 return
 end subroutine
+
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Convert enthalpy to temperature at boundary for gas combustion
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     h_b           enthalpy at boundary
+!> \param[in,out] t_b           temperature at boundary
+!_______________________________________________________________________________
+
+
+subroutine coh2tb(h_b, t_b)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum
+use pointe
+use ppppar
+use ppthch
+use coincl
+use ppincl
+use mesh
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision, dimension(nfabor), intent(in) :: h_b
+double precision, dimension(nfabor), intent(out), target :: t_b
+
+! Local variables
+
+integer          iel , ifac
+integer          igg
+integer          mode
+
+double precision coefg(ngazgm)
+double precision hbl
+
+double precision, dimension(:), pointer :: bym1, bym2, bym3
+
+!===============================================================================
+
+mode = 1
+
+! Non-specific physics
+
+if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
+
+  call field_get_val_s(ibym(1), bym1)
+  call field_get_val_s(ibym(2), bym2)
+  call field_get_val_s(ibym(3), bym3)
+
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    hbl = h_b(ifac)
+
+    do igg = 1, ngazgm
+      coefg(igg) = zero
+    enddo
+    coefg(1) = bym1(ifac)
+    coefg(2) = bym2(ifac)
+    coefg(3) = bym3(ifac)
+    call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg,   &
+                hbl, t_b(ifac))
+  enddo
+
+endif
+
+return
+end subroutine coh2tb
+
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Convert temperature to enthalpy at boundary for gas combustion.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     n_faces       number of faces in list
+!> \param[in]     face_ids      list of boundary faces at which conversion
+!>                              is requested (0-based numbering)
+!> \param[in]     t_b           temperature at boundary
+!> \param[out]    h_b           enthalpy at boundary
+!_______________________________________________________________________________
+
+
+subroutine cot2hb(n_faces, face_ids, t_b, h_b)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum
+use pointe
+use ppppar
+use ppthch
+use coincl
+use ppincl
+use radiat
+use mesh
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          n_faces
+integer          face_ids(n_faces)
+
+double precision, dimension(nfabor),intent(in) :: t_b
+double precision, dimension(nfabor), intent(out), target :: h_b
+
+! Local variables
+
+integer          iel , ilst, ifac, igg, mode
+
+double precision coefg(ngazgm)
+double precision tbl
+
+double precision, dimension(:), pointer :: bym1, bym2, bym3
+
+!===============================================================================
+
+mode = -1
+
+! Mappings for gas combustion
+call field_get_val_s(ibym(1), bym1)
+call field_get_val_s(ibym(2), bym2)
+call field_get_val_s(ibym(3), bym3)
+
+! Now loop on faces
+
+do ilst = 1, n_faces
+
+  ifac = face_ids(ilst) + 1
+  iel = ifabor(ifac)
+
+  tbl = t_b(ifac)
+
+  do igg = 1, ngazgm
+    coefg(igg) = zero
+  enddo
+  coefg(1) = bym1(ifac)
+  coefg(2) = bym2(ifac)
+  coefg(3) = bym3(ifac)
+  call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, h_b(ifac), tbl)
+
+enddo
+
+return
+end subroutine cot2hb

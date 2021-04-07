@@ -97,6 +97,7 @@ cs_user_gwf-example.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-base.c \
+cs_user_initialization-electric_arcs.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
 cs_user_initialization-time_step.c \
 cs_user_lagr_boundary_conditions.c \
@@ -173,7 +174,6 @@ cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
-cs_user_initialization-electric_arcs.f90 \
 cs_user_initialization-fuel.f90 \
 cs_user_initialization-gas_3ptchem.f90 \
 cs_user_initialization-gas_ebu.f90 \
@@ -187,8 +187,7 @@ cs_user_parameters.f90 \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
-cs_user_physical_properties-richards_unsat.f90 \
-usthht.f90
+cs_user_physical_properties-richards_unsat.f90
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)

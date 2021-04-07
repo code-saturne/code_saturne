@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * User definition of physical properties.
  *============================================================================*/
 
 /* VERS */
@@ -41,6 +41,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -71,9 +77,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_domain_t *domain)
+cs_user_physical_properties(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 
   /* Check fields exists */
   if (CS_F_(lambda) == NULL)
@@ -99,6 +105,156 @@ cs_user_physical_properties(cs_domain_t *domain)
       cpro_cp[cell_id] = 444.;
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of enthalpy to temperature conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        enthalpy values
+ * \param[in, out]  t        temperature values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   h[],
+                                   cs_real_t         t[])
+{
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(z);
+
+  /* Tabulated values */
+
+  /*! [tabulation] */
+  static const int n_tv = 5;
+  static const cs_real_t ht[5] = {100000.0, 200000.0, 300000.0,
+                                  400000.0, 00000.0};
+  static const cs_real_t th[5] = {100.0, 200.0, 300.0, 400.0, 500.0};
+  /*! [tabulation] */
+
+  /* Conversion:
+     Note that z->name or z->location_id can be used as a filter
+     if "per-zone" properties are needed (such as with solid zones) */
+
+  /*! [z_h_to_t] */
+  for (cs_lnum_t i_l = 0; i_l < z->n_elts; i_l++) {
+
+    cs_lnum_t i = (z_local) ? i_l : z->elt_ids[i_l];
+
+    cs_real_t temperature = 0;  /* Default initialization */
+
+    /* If H is outside the tabulated value range, use range
+       start or end value. */
+
+    if (h[i] < ht[0])
+      temperature = th[0];
+    else if (h[i] > ht[n_tv - 1])
+      temperature = th[n_tv - 1];
+
+    /* Otherwise, use piecewise linear interpolation */
+
+    else
+      for (int j = 1; j < n_tv; j++) {
+        if (h[j] < ht[j]) {
+          temperature = th[j-1] +   (h[i]-ht[j-1])*(th[j]-th[j-1])
+                                  / (ht[j]-ht[j-1]);
+          break;
+        }
+      }
+
+    t[i] = temperature;
+
+  }
+  /*! [z_h_to_t] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of temperature to enthalpy conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        temperature values
+ * \param[in, out]  t        enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   t[],
+                                   cs_real_t         h[])
+{
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(z);
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(z);
+
+  /* Tabulated values */
+
+  static const int n_tv = 5;
+  static const cs_real_t ht[5] = {100000.0, 200000.0, 300000.0,
+                                  400000.0, 00000.0};
+  static const cs_real_t th[5] = {100.0, 200.0, 300.0, 400.0, 500.0};
+
+  /* Conversion:
+     Note that z->name or z->location_id can be used as a filter
+     if "per-zone" properties are needed (such as with solid zones) */
+
+  /*! [z_t_to_h] */
+  for (cs_lnum_t i_l = 0; i_l < z->n_elts; i_l++) {
+
+    cs_lnum_t i = (z_local) ? i_l : z->elt_ids[i_l];
+
+    cs_real_t enthalpy = 0;  /* Default initialization */
+
+    /* If H is outside the tabulated value range, use range
+       start or end value. */
+
+    if (t[i] < th[0])
+      enthalpy = ht[0];
+    else if (t[i] > th[n_tv - 1])
+      enthalpy = ht[n_tv - 1];
+
+    /* Otherwise, use piecewise linear interpolation */
+
+    else
+      for (int j = 1; j < n_tv; j++) {
+        if (t[j] < th[j]) {
+          enthalpy = ht[j-1] +   (t[i]-th[j-1])*(ht[j]-ht[j-1])
+                               / (th[j]-th[j-1]);
+          break;
+        }
+      }
+
+    h[i] = enthalpy;
+
+  }
+  /*! [z_t_to_h] */
 }
 
 /*----------------------------------------------------------------------------*/

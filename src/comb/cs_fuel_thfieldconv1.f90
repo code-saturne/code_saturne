@@ -41,14 +41,14 @@
 !> \param[in,out] tp            gas temperature (in kelvin)
 !______________________________________________________________________________!
 
-subroutine cs_fuel_thfieldconv1 &
- ( location_id     ,                                              &
-   eh     ,                                                       &
-   tp     )
+subroutine cs_fuel_thfieldconv1(location_id, eh, tp)  &
+ bind(C, name='cs_fuel_thfieldconv1')
 
 !==============================================================================
 ! Module files
 !==============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -73,10 +73,8 @@ implicit none
 
 ! Arguments
 
-integer          location_id
-
-double precision eh(*)
-double precision tp(*)
+integer(c_int), value :: location_id
+real(kind=c_double), dimension(*) :: eh, tp
 
 ! Local variables
 

@@ -84,5 +84,69 @@ cs_user_physical_properties(cs_domain_t   *domain)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of enthalpy to temperature conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        enthalpy values
+ * \param[in, out]  t        temperature values
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_physical_properties_h_to_t
+void
+cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   h[],
+                                   cs_real_t         t[])
+{
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(z);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of temperature to enthalpy conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        temperature values
+ * \param[in, out]  t        enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_physical_properties_t_to_h
+void
+cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   t[],
+                                   cs_real_t         h[])
+{
+  CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(z);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
