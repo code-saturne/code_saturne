@@ -1824,9 +1824,10 @@ defined as (\texttt{iscalt}$>0$).
 
 {\em WARNING: The 1D thermal module is developed assuming the thermal scalar
  as a temperature. If the thermal scalar is an enthalpy, the code calls the
- subroutine \texttt{usthht} for each transfer of data between the fluid
- and the wall in order to convert the enthalpy to temperature and vice-versa.
- This function has not been tested and is firmly discouraged. If the thermal
+ enthalpy to temperature conversion as defined by the model defaults,
+ or by the user in \texttt{cs\_user\_physical\_properties} for each
+ transfer of data between the fluid and the wall in order to convert the
+ enthalpy to temperature and vice-versa. If the thermal
  variable is the total (compressible) energy, the thermal module will not work.}
 
 %==================================
@@ -1908,7 +1909,8 @@ When the continuous phase flow is unsteady, it is no longer possible to use stea
 Finally, when the so-called complete model is used for turbulent dispersion modelling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\
 
 When the thermal evolution of the particles is activated, the associated particulate scalars are always the inclusion temperature and the locally undisturbed fluid flow temperature expressed in degrees Celsius, whatever the thermal scalar associated with the continuous phase is ({\em i.e.} temperature or enthalpy). If the
-thermal scalar associated with the continuous phase is the temperature in Kelvin, the unit is converted automatically into Celsius. If the thermal scalar associated with the continuous phase is the enthalpy, the enthalpy-temperature conversion subroutine \texttt{usthht} must be completed for \texttt{mode}=1, and must express temperatures in degrees Celsius. In all cases, the thermal backward coupling of the dispersed phase on the continuous phase is adapted to the thermal scalar transported by the fluid.
+thermal scalar associated with the continuous phase is the temperature in Kelvin, the unit is converted automatically into Celsius. If the thermal scalar associated with the continuous phase is the enthalpy, a \texttt{temperature} property or postprocessing
+field must be defined. In all cases, the thermal backward coupling of the dispersed phase on the continuous phase is adapted to the thermal scalar transported by the fluid.
 
 
 %==================================
@@ -2204,14 +2206,13 @@ It should be noted that the enthalpy is relevant.
 
 \begin{list}{-}{}
 \item For the electric arcs module, the enthalpy value is taken from the temperature
- of reference \texttt{t0} (given in \texttt{cs\_user\_parameters.f90}) from the temperature-enthalpy
- tables
- supplied in the data file \texttt{dp\_ELE.} The user must not intervene here.
-\item For the Joule effect module, the value of enthalpy must be specified by the user
-. An example is given of how to obtain the enthalpy from the temperature of reference
- \texttt{t0}(given in \texttt{cs\_user\_parameters.f90}), the temperature-enthalpy law must be
-supplied. A code is suggested in the \texttt{usthht} subroutine (provided for
- the determination of physical properties).
+ of reference \texttt{t0} (given in \texttt{cs\_user\_parameters.c})
+ from the temperature-enthalpy tables supplied in the data file \texttt{dp\_ELE.}
+ The user must not intervene here.
+\item For the Joule effect module, the value of enthalpy must be specified by the user.
+ Examples of temperature to enthalpy conversion are given in
+ \texttt{cs\_user\_physical\_properties.c}). If not defined, a simple default
+ law is used ($H = C_p T$).
 \end{list}
 
 %==================================
@@ -2235,9 +2236,10 @@ variables. Particular care should be taken with non-linear laws (for example, a
 For the Joule effect, the user is required to supply the physical properties in the
 subroutine. Examples are given which are to be adapted by the user. If the temperature is
 to be determined to calculate the physical properties, the solved variable, enthalpy must
- be deduced. The preferred temperature-enthalpy law can be selected in the subroutine
- \texttt{usthht} (an example of the interpolation is given from the law table. This
-subroutine can be re-used for the initialisation of the variables(\texttt{cs\_user\_initialization}))
+ be deduced. The preferred temperature-enthalpy law should be defined
+ (a general example is provided in (\texttt{cs\_user\_physical\_properties}),
+ and can be used for the initialisation of the variables in
+ (\texttt{cs\_user\_initialization})).
  For the electric arcs module, the physical properties are interpolated from the data file
  \texttt{dp\_ELE} supplied by the user. Modifications are generally not necessary.
 

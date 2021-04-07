@@ -153,98 +153,6 @@ extern void CS_PROCF (initi1, INITI1)
 );
 
 /*----------------------------------------------------------------------------
- * User function for enthalpy <-> temperature conversion
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (usthht, USTHHT)
-(
- const int  *mode,      /* <-- -1 : t -> h ; 1 : h -> t */
- cs_real_t  *enthal,    /* <-- enthalpy */
- cs_real_t  *temper     /* <-- temperature */
-);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute GUI-defined head losses for a given volume zone.
- *
- * Head loss tensor coefficients for each cell are organized as follows:
- * cku11, cku22, cku33, cku12, cku13, cku23.
- *
- * \param[in]       zone  pointer to zone structure
- * \param[in, out]  cku   head loss coefficients
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_head_losses(const cs_zone_t  *zone,
-                    cs_real_t         cku[][6]);
-
-/*----------------------------------------------------------------------------
- * Absorption coefficient for radiative module
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_rad_transfer_absorption(const int  bc_type[],
-                                cs_real_t  ck[]);
-
-/*----------------------------------------------------------------------------
- * Compute the net radiation flux
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_rad_transfer_net_flux(const int        itypfb[],
-                              const cs_real_t  coefap[],
-                              const cs_real_t  coefbp[],
-                              const cs_real_t  cofafp[],
-                              const cs_real_t  cofbfp[],
-                              const cs_real_t  twall[],
-                              const cs_real_t  qincid[],
-                              const cs_real_t  xlam[],
-                              const cs_real_t  epa[],
-                              const cs_real_t  eps[],
-                              const cs_real_t  ck[],
-                              cs_real_t        net_flux[]);
-
-/*----------------------------------------------------------------------------
- * Convert temperature to enthalpy at boundary
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (b_t_to_h, B_T_TO_H)
-(
- const cs_lnum_t *nlst,          /* --> number of faces in list */
- const cs_lnum_t *lstfac,        /* --> list of boundary faces at which
-                                        conversion is requested */
- const cs_real_t *t_b,           /* --> temperature at boundary */
- cs_real_t       *h_b            /* --> enthalpy at boundary */
-);
-
-/*----------------------------------------------------------------------------
- * Convert enthalpy to temperature at cells
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (c_h_to_t, C_H_TO_T)
-(
- const cs_real_t *h,           /* --> enthalpy */
- cs_real_t       *t            /* --> temperature */
-);
-
-/*----------------------------------------------------------------------------
- * Convert enthalpy to temperature at boundary.
- *
- * If conversion is done in-place, h and t may point to the same arrays.
- *
- * parameters:
- *   h  <-- enthalpy
- *   t  --> temperature
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (b_h_to_t, B_H_TO_T)
-(
- const cs_real_t  *h,         /* --> enthalpy */
- cs_real_t        *t        /* --> temperature */
-);
-
-/*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,
  * with default options
  *
@@ -257,6 +165,76 @@ void CS_PROCF (b_h_to_t, B_H_TO_T)
 
 int
 cs_add_model_field_indexes(int  f_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at boundary for coal combustion.
+ *
+ * \param[in]   n_faces   number of faces in list
+ * \param[in]   face_ids  list of boundary faces at which conversion
+ *                        is requested (0-based numbering)
+ * \param[in]   t_b       temperature at boundary
+ * \param[out]  h_b       enthalpy at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_bt2h(cs_lnum_t        n_faces,
+             const cs_lnum_t  face_ids[],
+             const cs_real_t  t[],
+             cs_real_t        h[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas temperature
+ *        Function with the gas enthalpy and concentrations
+ *
+ * \param[in]      location_id   mesh location id (cells or boundary faces)
+ * \param[in]      eh            gas enthalpy
+ *                               (\f$ j . kg \f$ of gaseous mixture)
+ * \param[in, out] tp            gas temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_thfieldconv1(int              location_id,
+                     const cs_real_t  eh[],
+                     cs_real_t        tp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at boundary for fuel combustion.
+ *
+ * \param[in]   n_faces   number of faces in list
+ * \param[in]   face_ids  list of boundary faces at which conversion
+ *                        is requested (0-based numbering)
+ * \param[in]   t_b       temperature at boundary
+ * \param[out]  h_b       enthalpy at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_fuel_bt2h(cs_lnum_t        n_faces,
+             const cs_lnum_t  face_ids[],
+             const cs_real_t  t[],
+             cs_real_t        h[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the gas temperature
+ *        Function with the gas enthalpy and concentrations
+ *
+ * \param[in]      location_id   mesh location id (cells or boundary faces)
+ * \param[in]      eh            gas enthalpy
+ *                               (\f$ j . kg \f$ of gaseous mixture)
+ * \param[in, out] tp            gas temperature (in kelvin)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_fuel_thfieldconv1(int              location_id,
+                     const cs_real_t  eh[],
+                     cs_real_t        tp[]);
 
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.
@@ -341,6 +319,22 @@ cs_user_extra_operations_finalize(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute GUI-defined head losses for a given volume zone.
+ *
+ * Head loss tensor coefficients for each cell are organized as follows:
+ * cku11, cku22, cku33, cku12, cku13, cku23.
+ *
+ * \param[in]       zone  pointer to zone structure
+ * \param[in, out]  cku   head loss coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_head_losses(const cs_zone_t  *zone,
+                    cs_real_t         cku[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function is called one time step to initialize problem.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -399,6 +393,60 @@ cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh);
 
 void
 cs_user_physical_properties(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of enthalpy to temperature conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        enthalpy values
+ * \param[in, out]  t        temperature values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   h[restrict],
+                                   cs_real_t         t[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of temperature to enthalpy conversion.
+ *
+ * This allows overwriting the solver defaults if necessary.
+ *
+ * This function may be called on a per-zone basis, so as to allow different
+ * conversion relations in zones representing solids or different fluids.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       z        zone (volume or boundary) applying to current call
+ * \param[in]       z_local  if true, h and t arrays are defined in a compact
+ *                           (contiguous) manner for this zone only;
+ *                           if false, h and t are defined on the zone's parent
+ *                           location (usually all cells or boundary faces)
+ * \param[in]       h        temperature values
+ * \param[in, out]  t        enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
+                                   const cs_zone_t  *z,
+                                   bool              z_local,
+                                   const cs_real_t   t[restrict],
+                                   cs_real_t         h[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -694,6 +742,32 @@ void
 cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs);
+
+/*----------------------------------------------------------------------------
+ * Absorption coefficient for radiative module
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_rad_transfer_absorption(const int  bc_type[],
+                                cs_real_t  ck[]);
+
+/*----------------------------------------------------------------------------
+ * Compute the net radiation flux
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_rad_transfer_net_flux(const int        itypfb[],
+                              const cs_real_t  coefap[],
+                              const cs_real_t  coefbp[],
+                              const cs_real_t  cofafp[],
+                              const cs_real_t  cofbfp[],
+                              const cs_real_t  twall[],
+                              const cs_real_t  qincid[],
+                              const cs_real_t  xlam[],
+                              const cs_real_t  epa[],
+                              const cs_real_t  eps[],
+                              const cs_real_t  ck[],
+                              cs_real_t        net_flux[]);
 
 /*----------------------------------------------------------------------------
  * Set user solver.

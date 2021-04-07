@@ -3250,6 +3250,45 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function for enthalpy-temperature conversion at cells
+
+    subroutine cs_ht_convert_h_to_t_cells(h, t)                    &
+      bind(C, name='cs_ht_convert_h_to_t_cells')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: h
+      real(kind=c_double), dimension(*), intent(inout) :: t
+    end subroutine cs_ht_convert_h_to_t_cells
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for enthalpy-temperature conversion at faces
+
+    subroutine cs_ht_convert_h_to_t_faces(h, t)                    &
+      bind(C, name='cs_ht_convert_h_to_t_faces')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: h
+      real(kind=c_double), dimension(*), intent(inout) :: t
+    end subroutine cs_ht_convert_h_to_t_faces
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for temperature-enthalpy conversion at
+    ! selected faces
+
+    subroutine cs_ht_convert_t_to_h_faces_l(n_faces, face_ids, t, h)  &
+      bind(C, name='cs_ht_convert_t_to_h_faces_l')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: n_faces
+      integer(c_int), dimension(*), intent(in) :: face_ids
+      real(kind=c_double), dimension(*), intent(in) :: t
+      real(kind=c_double), dimension(*), intent(inout) :: h
+    end subroutine cs_ht_convert_t_to_h_faces_l
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function to get the bc type array pointer
 
     subroutine cs_f_mass_source_terms_get_pointers(ncesmp, icetsm) &

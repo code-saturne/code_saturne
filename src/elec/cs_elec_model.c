@@ -459,6 +459,102 @@ _field_pointer_properties_map_electric_arcs(void)
                        cs_field_by_name_try("electric_field"));
 }
 
+/*----------------------------------------------------------------------------
+ * convert temperature to enthalpy
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t
+_cs_elec_convert_t_to_h(const cs_real_t ym[],
+                        cs_real_t       temp)
+{
+  int ngaz = cs_glob_elec_properties->ngaz;
+  int it   = cs_glob_elec_properties->npoint;
+
+  cs_real_t enthal = 0.;
+
+  if (temp >= cs_glob_elec_properties->th[it - 1]) {
+    for (int iesp = 0; iesp < ngaz; iesp++)
+      enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + it-1];
+  }
+  else if (temp <= cs_glob_elec_properties->th[0]) {
+    for (int iesp = 0; iesp < ngaz; iesp++)
+      enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + 0];
+  }
+  else {
+    for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
+      if (   temp > cs_glob_elec_properties->th[itt]
+          && temp <= cs_glob_elec_properties->th[itt + 1]) {
+        cs_real_t eh0 = 0.;
+        cs_real_t eh1 = 0.;
+
+        for (int iesp = 0; iesp < ngaz; iesp++) {
+          eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt];
+          eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt+1];
+        }
+
+        enthal = eh0 + (eh1 - eh0) * (temp - cs_glob_elec_properties->th[itt]) /
+                       (  cs_glob_elec_properties->th[itt + 1]
+                        - cs_glob_elec_properties->th[itt]);
+
+        break;
+      }
+    }
+  }
+
+  return enthal;
+}
+
+/*----------------------------------------------------------------------------
+ * Convert enthalpy to temperature
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t
+_cs_elec_convert_h_to_t(const cs_real_t  ym[],
+                        cs_real_t        enthal)
+{
+  int ngaz = cs_glob_elec_properties->ngaz;
+  int it   = cs_glob_elec_properties->npoint;
+
+  cs_real_t eh1 = 0.;
+
+  for (int iesp = 0; iesp < ngaz; iesp++)
+    eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + it - 1];
+
+  if (enthal >= eh1) {
+    return cs_glob_elec_properties->th[it - 1];
+  }
+
+  eh1 = 0.;
+
+  for (int iesp = 0; iesp < ngaz; iesp++)
+    eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + 0];
+
+  if (enthal <= eh1) {
+    return cs_glob_elec_properties->th[0];
+  }
+
+  for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
+    cs_real_t eh0 = 0.;
+    eh1 = 0.;
+
+    for (int iesp = 0; iesp < ngaz; iesp++) {
+      eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt];
+      eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it-1) + itt+1];
+    }
+
+    if (enthal > eh0 && enthal <= eh1) {
+      cs_real_t temp = cs_glob_elec_properties->th[itt]
+                       + (enthal - eh0) * (  cs_glob_elec_properties->th[itt+1]
+                                           - cs_glob_elec_properties->th[itt])
+                                        / (eh1 - eh0);
+      return temp;
+    }
+  }
+
+  assert(0);  /* Should not arrive here */
+  return 0;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -486,7 +582,15 @@ CS_PROCF (elthht, ELTHHT) (int       *mode,
                            cs_real_t *enthal,
                            cs_real_t *temp)
 {
-  cs_elec_convert_h_t(*mode, ym, enthal, temp);
+  if (*mode == -1)
+    *enthal = _cs_elec_convert_t_to_h(ym, *temp);
+  else if (*mode == 1)
+    *temp = _cs_elec_convert_h_to_t(ym, *enthal);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("electric module:\n"
+                "bad value for mode (integer equal to -1 or 1 : %i here.\n"),
+              *mode);
 }
 
 void
@@ -928,102 +1032,6 @@ cs_electrical_properties_read(void)
 }
 
 /*----------------------------------------------------------------------------
- * convert enthalpy-temperature
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_convert_h_t(int        mode,
-                    cs_real_t *ym,
-                    cs_real_t *enthal,
-                    cs_real_t *temp)
-{
-  int ngaz = cs_glob_elec_properties->ngaz;
-  int it   = cs_glob_elec_properties->npoint;
-
-  /* convert temperature to enthalpy */
-  if (mode == -1) {
-    *enthal = 0.;
-
-    if (*temp >= cs_glob_elec_properties->th[it - 1]) {
-      for (int iesp = 0; iesp < ngaz; iesp++)
-        *enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + it - 1];
-    }
-    else if (*temp <= cs_glob_elec_properties->th[0]) {
-      for (int iesp = 0; iesp < ngaz; iesp++)
-        *enthal += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + 0];
-    }
-    else {
-      for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
-        if (*temp > cs_glob_elec_properties->th[itt] &&
-            *temp <= cs_glob_elec_properties->th[itt + 1]) {
-          cs_real_t eh0 = 0.;
-          cs_real_t eh1 = 0.;
-
-          for (int iesp = 0; iesp < ngaz; iesp++) {
-            eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + itt    ];
-            eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + itt + 1];
-          }
-
-          *enthal = eh0 + (eh1 - eh0) * (*temp - cs_glob_elec_properties->th[itt]) /
-                          (  cs_glob_elec_properties->th[itt + 1]
-                           - cs_glob_elec_properties->th[itt]);
-
-          break;
-        }
-      }
-    }
-    return;
-  }
-  /* convert enthalpy to temperature */
-  else if (mode == 1) {
-    cs_real_t eh1 = 0.;
-
-    for (int iesp = 0; iesp < ngaz; iesp++)
-      eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + it - 1];
-
-    if (*enthal >= eh1) {
-      *temp = cs_glob_elec_properties->th[it - 1];
-      return;
-    }
-
-    eh1 = 0.;
-
-    for (int iesp = 0; iesp < ngaz; iesp++)
-      eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + 0];
-
-    if (*enthal <= eh1) {
-      *temp = cs_glob_elec_properties->th[0];
-      return;
-    }
-
-    for (int itt = 0; itt < cs_glob_elec_properties->npoint - 1; itt++) {
-      cs_real_t eh0 = 0.;
-      eh1 = 0.;
-
-      for (int iesp = 0; iesp < ngaz; iesp++) {
-        eh0 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + itt    ];
-        eh1 += ym[iesp] * cs_glob_elec_properties->ehgaz[iesp * (it - 1) + itt + 1];
-      }
-
-      if (*enthal > eh0 && *enthal <= eh1) {
-        *temp = cs_glob_elec_properties->th[itt] +
-                  (*enthal - eh0) *
-                  (  cs_glob_elec_properties->th[itt + 1]
-                   - cs_glob_elec_properties->th[itt]) /
-                  (eh1 - eh0);
-        break;
-      }
-    }
-    return;
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("electric module:\n"
-                "bad value for mode (integer equal to -1 or 1 : %i here.\n"),
-              mode);
-}
-
-/*----------------------------------------------------------------------------
  * compute physical properties
  *----------------------------------------------------------------------------*/
 
@@ -1062,7 +1070,6 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       bft_printf("electric arc module: properties read on file.\n");
 
     /* compute temperature from enthalpy */
-    int mode = 1;
     int ngaz = e_props->ngaz;
     int npt  = e_props->npoint;
 
@@ -1084,9 +1091,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       ym[0] = 1.;
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        cs_elec_convert_h_t(mode, ym,
-                          &(CS_F_(h)->val[iel]),
-                          &(CS_F_(t)->val[iel]));
+        CS_F_(t)->val[iel] = _cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
     }
     else {
 
@@ -1098,9 +1103,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           ym[ngaz - 1] -= ym[ii];
         }
 
-        cs_elec_convert_h_t(mode, ym,
-                          &(CS_F_(h)->val[iel]),
-                          &(CS_F_(t)->val[iel]));
+        CS_F_(t)->val[iel] = _cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
       }
     }
 
@@ -1113,7 +1116,9 @@ cs_elec_physical_properties(cs_domain_t  *domain)
         cpro_absco = CS_FI_(rad_cak, 0)->val;
     }
 
-    /* interpolate properties */
+    /* Interpolate properties */
+
+#   pragma omp parallel for
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       // temperature
       cs_real_t tp = CS_F_(t)->val[iel];
@@ -1233,10 +1238,12 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       /* compute molecular viscosity : kg/(m s) */
       for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
         for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
-          coef[iesp1 * (ngaz - 1) + iesp2] = 1. + sqrt(visesp[iesp1] / visesp[iesp2]) *
-                                             sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
+          coef[iesp1 * (ngaz - 1) + iesp2]
+            = 1. +   sqrt(visesp[iesp1] / visesp[iesp2])
+                   * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
           coef[iesp1 * (ngaz - 1) + iesp2] *= coef[iesp1 * (ngaz - 1) + iesp2];
-          coef[iesp1 * (ngaz - 1) + iesp2] /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
+          coef[iesp1 * (ngaz - 1) + iesp2] /=    (sqrt(1. + roesp[iesp1]
+                                               / roesp[iesp2]) * sqrt(8.));
         }
 
       CS_F_(mu)->val[iel] = 0.;
@@ -1326,7 +1333,8 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       /* diffusivity for other properties
        * nothing to do
        * no other properties in this case */
-    }
+
+    } /* End of loop on cells */
 
     BFT_FREE(ym);
     BFT_FREE(yvol);
@@ -1968,7 +1976,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
           ym[i] = 0.;
 
       cs_real_t tinit = cs_glob_fluid_properties->t0;
-      cs_elec_convert_h_t(-1, ym, &hinit, &tinit);
+      hinit = _cs_elec_convert_t_to_h(ym, tinit);
       BFT_FREE(ym);
     }
 
@@ -2157,6 +2165,174 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
   }
 
   cs_user_scaling_elec(mesh, mesh_quantities, dt);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert enthalpy to temperature at all boundary faces.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   h   enthalpy values
+ * \param[out]  t   temperature values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
+                             cs_real_t        t[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_data_elec_t  *el_p = cs_glob_elec_properties;
+  const int n_gasses = el_p->ngaz;
+
+  if (n_gasses == 1) {
+
+    cs_real_t ym[1] = {1.};
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      t[i] = _cs_elec_convert_h_to_t(ym, h[i]);
+
+  }
+  else {
+
+    const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+    cs_real_t *ym;
+    BFT_MALLOC(ym, n_gasses, cs_real_t);
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+      cs_lnum_t c_id = b_face_cells[f_id];
+
+      ym[n_gasses - 1] = 1.;
+      for (int gas_id = 0; gas_id < n_gasses - 1; gas_id++) {
+        ym[gas_id] = CS_FI_(ycoel, gas_id)->val[c_id];
+        ym[n_gasses - 1] -= ym[gas_id];
+      }
+
+      t[f_id] = _cs_elec_convert_h_to_t(ym, h[f_id]);
+
+    }
+
+    BFT_FREE(ym);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at all cells.
+ *
+ * This handles both user and model temperature conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   t   temperature values
+ * \param[out]  h   enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
+                             cs_real_t        h[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_data_elec_t  *el_p = cs_glob_elec_properties;
+  const int n_gasses = el_p->ngaz;
+
+  if (n_gasses == 1) {
+
+    cs_real_t ym[1] = {1.};
+
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      h[i] = _cs_elec_convert_t_to_h(ym, t[i]);
+
+  }
+  else {
+
+    cs_real_t *ym;
+    BFT_MALLOC(ym, n_gasses, cs_real_t);
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      ym[n_gasses - 1] = 1.;
+      for (int gas_id = 0; gas_id < n_gasses - 1; gas_id++) {
+        ym[gas_id] = CS_FI_(ycoel, gas_id)->val[c_id];
+        ym[n_gasses - 1] -= ym[gas_id];
+      }
+
+      h[c_id] = _cs_elec_convert_t_to_h(ym, t[c_id]);
+
+    }
+
+    BFT_FREE(ym);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at selected boundary faces.
+ *
+ * This handles both user and model temperature conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   n_faces   number of selected faces
+ * \param[in]   face_ids  ids of selected faces
+ * \param[in]   t         temperature values (defined on all boundary faces)
+ * \param[out]  h         enthalpy values (defined on all boundary faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
+                             const cs_lnum_t  face_ids[],
+                             const cs_real_t  t[],
+                             cs_real_t        h[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  const cs_data_elec_t  *el_p = cs_glob_elec_properties;
+  const int n_gasses = el_p->ngaz;
+
+  if (n_gasses == 1) {
+
+    cs_real_t ym[1] = {1.};
+
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t f_id = face_ids[i];
+      h[f_id] = _cs_elec_convert_t_to_h(ym, t[f_id]);
+    }
+
+  }
+  else {
+
+    const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+    cs_real_t *ym;
+    BFT_MALLOC(ym, n_gasses, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      cs_lnum_t f_id = face_ids[i];
+      cs_lnum_t c_id = b_face_cells[c_id];
+      for (int gas_id = 0; gas_id < n_gasses - 1; gas_id++) {
+        ym[gas_id] = CS_FI_(ycoel, gas_id)->val[c_id];
+        ym[n_gasses - 1] -= ym[gas_id];
+      }
+
+      h[f_id] = _cs_elec_convert_t_to_h(ym, t[f_id]);
+
+    }
+
+    BFT_FREE(ym);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

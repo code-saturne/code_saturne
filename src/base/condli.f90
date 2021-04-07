@@ -285,28 +285,6 @@ type(var_cal_opt) :: vcopt
 
 interface
 
-  subroutine b_h_to_t(h_b, t_b)
-
-    use mesh, only: nfabor
-    implicit none
-
-    double precision, dimension(nfabor), intent(in) :: h_b
-    double precision, dimension(nfabor), intent(out), target :: t_b
-
-  end subroutine b_h_to_t
-
-  subroutine b_t_to_h(nlst, lstfac, t_b, h_b)
-
-    use mesh, only: nfabor
-    implicit none
-
-    integer :: nlst
-    integer, dimension(nlst) :: lstfac
-    double precision, dimension(nfabor), intent(in) :: t_b
-    double precision, dimension(nfabor), intent(out), target :: h_b
-
-  end subroutine b_t_to_h
-
   subroutine clptur(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
                     visvdr, hbord, theipb)
 
@@ -541,7 +519,7 @@ if (itherm.eq.2) then
   do ii = 1, nfabor
     if (icodcl(ii,ivar).lt.0) then
       nbt2h = nbt2h + 1
-      lbt2h(nbt2h) = ii
+      lbt2h(nbt2h) = ii - 1  ! 0-based numbering
       icodcl(ii,ivar) = -icodcl(ii,ivar)
       vbt2h(ii) = rcodcl(ii,ivar,1)
     else
@@ -549,7 +527,7 @@ if (itherm.eq.2) then
     endif
   enddo
 
-  call b_t_to_h(nbt2h, lbt2h, vbt2h, rcodcl(:,ivar,1))
+  call cs_ht_convert_t_to_h_faces_l(nbt2h, lbt2h, vbt2h, rcodcl(:,ivar,1))
 
 endif
 
@@ -3563,7 +3541,7 @@ if (itherm.eq.2) then
       enddo
     endif
 
-    call b_h_to_t(bvar_s, btemp_s)
+    call cs_ht_convert_h_to_t_faces(bvar_s, btemp_s)
 
     if (b_f_id .lt. 0) then
       deallocate(bvar_s)
@@ -3574,7 +3552,7 @@ if (itherm.eq.2) then
     ! enthalpy -> temperature conversion precision
     ! (T -> H -> T at the boundary does not preserve T)
     do ii = 1, nbt2h
-      ifac = lbt2h(ii)
+      ifac = lbt2h(ii) + 1
       btemp_s(ifac) = vbt2h(ifac)
     enddo
 

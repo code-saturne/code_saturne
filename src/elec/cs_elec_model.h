@@ -54,6 +54,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   int         ngaz;
   int         npoint;
   cs_real_t  *th;
@@ -64,8 +65,7 @@ typedef struct {
   cs_real_t  *visel;
   cs_real_t  *xlabel;
   cs_real_t  *xkabel;
-  // cs_real_t *qespel;  /* Charge massique des especes  C/kg                 */
-  // cs_real_t *suscep;  /* Susceptibilite (relation champ - mobilite) m2/s/V */
+
 } cs_data_elec_t;
 
 /*----------------------------------------------------------------------------
@@ -73,6 +73,7 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   int         nbelec;
   int        *ielecc;
   int        *ielect;
@@ -87,6 +88,7 @@ typedef struct {
   cs_real_t  *zi;
   cs_real_t  *uroff;
   cs_real_t  *uioff;
+
 } cs_data_joule_effect_t;
 
 /*----------------------------------------------------------------------------
@@ -94,6 +96,7 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   int         ixkabe;
   int         ntdcla;
   int         irestrike;
@@ -109,6 +112,7 @@ typedef struct {
   cs_real_t   coejou;
   cs_real_t   elcou;
   cs_real_t   srrom;
+
 } cs_elec_option_t;
 
 /*============================================================================
@@ -217,16 +221,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
                        int               call_id);
 
 /*----------------------------------------------------------------------------
- * convert enthalpy-temperature
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_convert_h_t(int         mode,
-                    cs_real_t  *ym,
-                    cs_real_t  *enthal,
-                    cs_real_t  *temp);
-
-/*----------------------------------------------------------------------------
  * compute physical properties
  *----------------------------------------------------------------------------*/
 
@@ -283,6 +277,58 @@ void
 cs_elec_scaling_function(const cs_mesh_t             *mesh,
                          const cs_mesh_quantities_t  *mesh_quantities,
                          cs_real_t                   *dt);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert enthalpy to temperature at all boundary faces.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   h   enthalpy values
+ * \param[out]  t   temperature values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
+                             cs_real_t        t[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at all cells
+ *
+ * This handles both user and model temperature conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   t   temperature values
+ * \param[out]  h   enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
+                             cs_real_t        h[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy at selected boundary faces.
+ *
+ * This handles both user and model temperature conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   n_faces   number of selected faces
+ * \param[in]   face_ids  ids of selected faces
+ * \param[in]   t         temperature values (defined on all boundary faces)
+ * \param[out]  h         enthalpy values (defined on all boundary faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
+                             const cs_lnum_t  face_ids[],
+                             const cs_real_t  t[],
+                             cs_real_t        h[]);
 
 /*----------------------------------------------------------------------------*/
 

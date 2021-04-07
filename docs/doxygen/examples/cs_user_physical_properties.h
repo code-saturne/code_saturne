@@ -100,12 +100,6 @@
   The values of the isobaric specific heat values are provided as a function
   of the temperature. All variables are evaluated at the cell centers.
 
-  \warning:
-  do not discard the call to the subroutine 'usthht' at the end of this
-  example: its purpose is to calculate the isochoric specific heat.
-  Indeed, this variable needs to be computed from the isobaric specific heat
-  using the thermodynamics laws.
-
   Here is the corresponding code:
 
   \snippet cs_user_physical_properties-compressible_flow.f90 example_3

@@ -1078,7 +1078,7 @@ if (f_id .ge. 0) then
     if (f_id .ge. 0) then
       call field_get_val_s(f_id, field_s_v)
       allocate(ttmp(ncelet))
-      call c_h_to_t(field_s_v, ttmp);
+      call cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
       do ifac = 1, nfabor
         if (field_s_b(ifac) .le. -grand) then
           iel = ifabor(ifac)

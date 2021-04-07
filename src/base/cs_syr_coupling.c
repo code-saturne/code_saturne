@@ -62,6 +62,7 @@
 #include "cs_cf_thermo.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_ht_convert.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_parall.h"
@@ -854,7 +855,7 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
   cs_real_t  *wa = NULL;
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
     BFT_MALLOC(wa, n_b_faces, cs_real_t);
-    CS_PROCF(b_h_to_t, B_H_TO_T)(v_fluid, wa);
+    cs_ht_convert_h_to_t_faces(v_fluid, wa);
   }
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY) {
     /* Epsilon sup for perfect gas at cells */

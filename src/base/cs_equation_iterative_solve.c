@@ -478,7 +478,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
-  int has_dc = mq->has_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
@@ -1383,7 +1383,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
-  int has_dc = mq->has_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
@@ -2203,7 +2203,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
-  int has_dc = mq->has_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag;
 # pragma omp parallel  if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait

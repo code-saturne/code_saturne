@@ -54,6 +54,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_volume_zone.h"
 
+#include "cs_ht_convert.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -639,6 +640,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   const cs_real_t *vela = extra->vel->vals[time_id];
   const cs_real_t *cval_h = NULL, *cval_t = NULL;
+  cs_real_t *_cval_t = NULL;
+
   cs_real_t tscl_shift = 0;
 
   /* Initialize pointers (used to simplify future tests) */
@@ -667,6 +670,19 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
   const int shape = cs_glob_lagr_model->shape;
+
+  /* Prepare  enthalpy to temperature conversion if needed */
+
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+      && cs_glob_lagr_specific_physics->itpvar == 1
+      && cval_t == NULL
+      && cval_h != NULL) {
+
+    BFT_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+    cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
+    cval_t = _cval_t;
+
+  }
 
   /* Loop on zone elements where particles are injected */
 
@@ -989,17 +1005,6 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                       CS_LAGR_FLUID_TEMPERATURE,
                                       cval_t[cell_id] + tscl_shift);
 
-          else if (cval_h != NULL) {
-
-            int mode = 1;
-            cs_real_t temp[1];
-            CS_PROCF(usthht, USTHHT)(&mode, &(cval_h[cell_id]), temp);
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_FLUID_TEMPERATURE,
-                                      temp[0]);
-
-          }
-
           /* constant temperature set, may be modified later by user function */
           if (zis->temperature_profile == 1)
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
@@ -1165,6 +1170,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   }
 
+  BFT_FREE(_cval_t);
 }
 
 /*----------------------------------------------------------------------------*/

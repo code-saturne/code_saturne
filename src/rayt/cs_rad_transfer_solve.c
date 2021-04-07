@@ -56,6 +56,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
+#include "cs_ht_convert.h"
 #include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -1342,7 +1343,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     const cs_real_t *cvara_scalt = CS_F_(h)->vals[1];
 
-    CS_PROCF(c_h_to_t, C_H_TO_T)(cvara_scalt, tempk);
+    cs_ht_convert_h_to_t_cells(cvara_scalt, tempk);
 
     /* Coal particles or fuel droplets temperature */
     for (int class_id = 0; class_id < n_classes; class_id++) {

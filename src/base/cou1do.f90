@@ -86,24 +86,6 @@ double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cpro_rho
 integer, dimension(:), pointer :: ifpt1d
 
 !===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine b_h_to_t(h_b, t_b)
-
-    use mesh, only: nfabor
-    implicit none
-
-    double precision, dimension(nfabor), intent(in) :: h_b
-    double precision, dimension(nfabor), intent(out), target :: t_b
-
-  end subroutine b_h_to_t
-
- end interface
-
-!===============================================================================
 
 ! Get the 1D wall thermal module arrays
 
@@ -125,7 +107,7 @@ if (itherm.eq.2) then
 
   ! Temperature near boundary faces
   allocate(wa(nfabor))
-  call b_h_to_t(tbord, wa)
+  call cs_ht_convert_h_to_t_faces(tbord, wa)
 
   do ii = 1, nfpt1d
     ifac = ifpt1d(ii)
