@@ -181,8 +181,7 @@ def coupling(package,
 
             except Exception:
                 err_str = 'Cannot create SYRTHES domain. Opt = ' + d.get('opt') + '\n'
-                err_str += ' domain = ' + domain_s
-                err_str += ' script = ' + d.get('script') + '\n'
+                err_str += ' domain = ' + domain_s + '\n'
                 err_str += ' n_procs_weight = ' + str(d.get('n_procs_weight')) + '\n'
                 raise RunCaseError(err_str)
 
