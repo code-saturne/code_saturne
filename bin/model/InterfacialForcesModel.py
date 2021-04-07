@@ -150,14 +150,11 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         return self.__availableLiftModelsLists
 
 
-    def defaultValues(self, fieldaId, fieldbId):
+    def defaultValues(self):
         default = {}
         predefined_flow = self.getPredefinedFlow()
 
         default['gasdisperseddragmodel'] = 'ishii'
-        default['liquidsoliddisperseddragmodel'] = 'inclusions'
-        # Drag model
-        default['gasdisperseddragmodel']         = 'ishii'
         default['liquidsoliddisperseddragmodel'] = 'inclusions'
         default['addedmassmodel'] = 'zuber'
         default['liftmodel'] = 'Tomiyama_SMD'
