@@ -289,7 +289,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     if (!cs_equation_needs_steady_state_solve()) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "# Iter: 0; >> Initial state");
+                    "# Iter: 0 >> Initial state");
       cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
 
       /* Extra operations and post-processing of the computed solutions */
@@ -314,7 +314,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   else if (do_output) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "# Iter: 0; >> Solve only requested steady-state equations");
+                  "# Iter: 0 >> Solve only requested steady-state equations");
     cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
   }
 
