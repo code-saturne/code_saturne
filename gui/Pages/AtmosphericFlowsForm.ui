@@ -92,7 +92,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 means x toward East and y toward North&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Domain orientation *</string>
+           <string>Domain orientation</string>
           </property>
          </widget>
         </item>
@@ -130,7 +130,7 @@
         <item row="6" column="0">
          <widget class="QLabel" name="labelWindDir">
           <property name="text">
-           <string>Wind direction in degrees *</string>
+           <string>Wind direction in degrees</string>
           </property>
          </widget>
         </item>
@@ -186,7 +186,7 @@
         <item row="4" column="0">
          <widget class="QLabel" name="labelLargeScaleRoughness">
           <property name="text">
-           <string>Large scale roughness z0 *</string>
+           <string>Large scale roughness z0</string>
           </property>
          </widget>
         </item>
