@@ -61,6 +61,7 @@ from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 from code_saturne.model.NeptuneWallTransferModel import NeptuneWallTransferModel
 from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 from code_saturne.model.HgnModel import HgnModel
@@ -740,6 +741,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                                           QMessageBox.Yes | QMessageBox.No)
             if choice == QMessageBox.Yes:
                 self.nept.setPredefinedFlow(model)
+                InterfacialForcesModel(self.case).setDefaultParameters("1", "2")
             else:
                 self.modelNeptuneCFD.setItem(str_model=model_p)
                 return
