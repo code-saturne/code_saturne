@@ -150,12 +150,13 @@ ippmod(icolwc) = -1
 ! =================
 
 !        if = -1   module not activated
-!        if =  0   constant fraction of soot
+!        if =  0   constant soot yield
 !        if =  1   2 equations model of Moss et al.
 
 isoot = 0
 
-xsoot  = 0.1d0 ! ( if isoot = 0 )
+xsoot  = 0.1d0 ! (if isoot = 0 and only if the soot yield is not
+               !  defined in the thermochemistry data file)
 rosoot = 2000.d0 ! kg/m3
 
 ! --- cfuel: Heavy fuel oil combustion
