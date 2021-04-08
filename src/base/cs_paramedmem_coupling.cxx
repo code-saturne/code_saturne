@@ -257,7 +257,7 @@ cs_paramedmem_coupling_by_id(int  cpl_id)
 
 #else
 
-  if (cpl_id < 0 || cpl_id > _paramed_couplers.size())
+  if (cpl_id < 0 || cpl_id > (int)_paramed_couplers.size())
     bft_error(__FILE__, __LINE__, 0,
               _("Error: coupling with id %d does not exist\n"), cpl_id);
 
@@ -294,7 +294,7 @@ cs_paramedmem_coupling_by_name(const char *name)
 
   cs_paramedmem_coupling_t *c = NULL;
 
-  for (int i = 0; i < _paramed_couplers.size(); i++) {
+  for (size_t i = 0; i < _paramed_couplers.size(); i++) {
     if (strcmp(_paramed_couplers[i]->name.c_str(), name) == 0) {
       c = _paramed_couplers[i];
       break;
@@ -725,6 +725,9 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   case CS_MEDCPL_FIELD_INT_MAXIMUM:
     nature = IntensiveMaximum;
     break;
+
+  default:
+    assert(0);
   }
 
   pf->getField()->setNature(nature);
@@ -779,7 +782,7 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
     sd = CS_MEDCPL_ON_NODES;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: Non-compatible field location for '%f'\n"), f->name);
+              _("Error: Non-compatible field location for '%s'\n"), f->name);
 
   f_id = cs_paramedmem_def_coupled_field(c,
                                          f->name,
@@ -820,7 +823,7 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
 #else
 
   MEDCouplingFieldDouble *f = NULL;
-  for (int i = 0; i < c->fields.size(); i++) {
+  for (size_t i = 0; i < c->fields.size(); i++) {
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
       break;
@@ -881,7 +884,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
 #else
 
   MEDCouplingFieldDouble *f = NULL;
-  for (int i = 0; i < c->fields.size(); i++) {
+  for (size_t i = 0; i < c->fields.size(); i++) {
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       f = c->fields[i]->getField();
       break;
@@ -1049,7 +1052,7 @@ cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
 
   ParaFIELD *pf = NULL;
 
-  for (int i = 0; i < c->fields.size(); i++) {
+  for (size_t i = 0; i < c->fields.size(); i++) {
     if (strcmp(name, c->fields[i]->getField()->getName().c_str()) == 0) {
       pf = c->fields[i];
       break;
