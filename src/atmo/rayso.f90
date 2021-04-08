@@ -942,8 +942,8 @@ if (muzero.gt.epzero) then
     ystar = m*qqvtot + 5.d0/3.d0*qqv(k)
     corp = (preray(k) / preray(k1))* preray(k1) / 101300.d0!FIXME /p0?
     rov = romray(k)*(qvray(k)*corp*sqrt(tkelvi/(temray(k) + tkelvi)))
-    ckup(k) = m*dzyama(ystar,rov(k))/(0.353d0-raysve(ystar))
-    ckdown_r(k) =m*dzyama(y,rov(k))/(0.353d0-raysve(y))
+    ckup(k) = m*dzyama(ystar,rov)/(0.353d0-raysve(ystar))
+    ckdown_r(k) =m*dzyama(y,rov)/(0.353d0-raysve(y))
     ckdown_f(k) = 0.d0
   enddo
 
