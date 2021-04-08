@@ -166,8 +166,6 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
 void
 cs_lagr_resuspension(void)
 {
-  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
@@ -201,7 +199,7 @@ cs_lagr_resuspension(void)
 
   cs_real_t xmtk = 0;
   if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
-    xmtk = tkelvi;
+    xmtk = cs_physical_constants_celsius_to_kelvin;
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
@@ -223,21 +221,11 @@ cs_lagr_resuspension(void)
 
     cs_real_t temp;
 
-    if (extra->scal_t != NULL) {
-
-      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
-        temp = extra->scal_t->val[iel] + xmtk;
-
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
-
-        int mode = 1;
-        CS_PROCF (usthht,USTHHT)(&mode, &(extra->scal_t->val[iel]), &temp);
-
-      }
-
+    if (extra->temperature != NULL) {
+      temp = extra->temperature->val[iel] + xmtk;
     }
     else
-      temp = cs_glob_fluid_properties->t0;
+      temp = cs_glob_fluid_properties->t0 + xmtk;
 
     cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_P_FLAG);
     cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;

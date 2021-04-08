@@ -48,11 +48,13 @@
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_lagr.h"
 #include "cs_lagr_extract.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
+#include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
 #include "cs_restart.h"
@@ -294,35 +296,14 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
   case CS_LAGR_TEMPERATURE:
   case CS_LAGR_FLUID_TEMPERATURE:
     {
-      /* Determine temperature or enthalpy */
+      cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
       double c_kelvin = 0;
       const double *t = NULL;
-      double *h = NULL;
-      if (t == NULL) {
-        const cs_field_t *f = cs_field_by_name_try("t_gas");
-        if (f != NULL) {
-          t = f->val;
-          c_kelvin = 273.15;
-        }
-      }
-      if (t == NULL) {
-        const cs_field_t *f = cs_field_by_name_try("t_celcius");
-        if (f != NULL)
-          t = f->val;
-      }
-      if (t == NULL) {
-        const cs_field_t *f = cs_field_by_name_try("temperature");
-        if (f != NULL) {
-          t = f->val;
-          if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
-            c_kelvin = 273.15;
-        }
-      }
-      if (t == NULL) {
-        const cs_field_t *f = cs_field_by_name_try("enthalpy");
-        if (f != NULL)
-          h = f->val;
-      }
+
+      if (extra->temperature != NULL)
+        t = extra->temperature->val;
+      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
+        c_kelvin = 273.15;
 
       assert(datatype == CS_REAL_TYPE);
 
@@ -338,26 +319,13 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
         }
       }
 
-      /* initialize particle temperature with enthalpy */
-      else if (h != NULL) {
-        int mode = 1;
-        for (cs_lnum_t i = 0; i < n_particles; i++) {
-          cs_lnum_t cell_id
-            = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID);
-          cs_real_t *part_val
-            = cs_lagr_particles_attr_n(particles, i, 0, attr);
-          for (cs_lnum_t j = 0; j < stride; j++)
-            CS_PROCF(usthht, USTHHT)(&mode, h + cell_id, part_val + j);
-        }
-      }
-
-      /* set to zero */
+      /* set to reference temperature */
       else {
         for (cs_lnum_t i = 0; i < n_particles; i++) {
           cs_real_t *part_val
             = cs_lagr_particles_attr_n(particles, i, 0, attr);
           for (cs_lnum_t j = 0; j < stride; j++)
-            part_val[j] = 0.0;
+            part_val[j] = cs_glob_fluid_properties->t0 - c_kelvin;
         }
       }
     }

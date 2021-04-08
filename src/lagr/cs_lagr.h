@@ -942,7 +942,6 @@ typedef struct {
   /* Fluid temparature */
   cs_field_t *scal_t;
   cs_field_t *temperature;
-  cs_field_t *t_gaz;
 
   /* Fluid velocity */
   cs_field_t *vel;

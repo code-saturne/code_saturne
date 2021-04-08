@@ -888,45 +888,25 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   /* Mean fluid temperature in degrees C
    * =================================== */
 
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
+  if (   extra->temperature != NULL
+      && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id]  = extra->t_gaz->val[cell_id] - _tkelvi;
+      tempf[cell_id] = extra->temperature->val[cell_id];
 
   }
-  else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-           || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-           || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-           || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0) {
-
-    for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id]  = extra->temperature->val[cell_id] - _tkelvi;
-
-  }
-  else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-           && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
-
-    for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id]  = extra->scal_t->val[cell_id];
-
-  }
-  else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+  else if (   extra->temperature != NULL
            && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id]  = extra->scal_t->val[cell_id] - _tkelvi;
+      tempf[cell_id] = extra->temperature->val[cell_id] - _tkelvi;
 
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  else {
 
-    int mode = 1;
-
-    for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      CS_PROCF(usthht,USTHHT)(&mode,
-                              &extra->scal_t->val[cell_id],
-                              &tempf[cell_id]);
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s (Lagrangian module):\n\n"
+                "Temperature field is not defined or mapped."), __func__);
 
   }
 
@@ -1300,7 +1280,8 @@ _lagich(const cs_real_t   tempct[],
 
       /* Constant 2.53e-7 is explained in tome 5 of report on Code_Saturne
          specific physics (HI-81/04/003/A) equation 80 */
-      aux3 = sherw * 2.53e-07 * (pow (extra->t_gaz->val[cell_id], 0.75)) / shrink_diam;
+      aux3 = sherw * 2.53e-07 * (pow (extra->temperature->val[cell_id], 0.75))
+                              / shrink_diam;
       skglob = (aux2 * aux3) / (aux2 + aux3);
 
     }
@@ -1315,7 +1296,7 @@ _lagich(const cs_real_t   tempct[],
      *     PO2 = RHO1*cs_physical_constants_r*T*YO2/MO2
      *                                                      */
     aux1 =   extra->cromf->val[cell_id] * cs_physical_constants_r
-           * extra->t_gaz->val[cell_id]
+           * extra->temperature->val[cell_id]
            * extra->x_oxyd->val[cell_id] / lag_cc->wmole[lag_cc->io2] / lag_cc->prefth;
 
     /* Compute working surface: SE */
