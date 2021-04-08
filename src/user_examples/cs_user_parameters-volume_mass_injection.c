@@ -122,8 +122,7 @@ _define_injection(cs_real_t           time,
     static bool _logged_mass_flux = false;
     if (_logged_mass_flux == false && cs_log_default_is_active()) {
 
-      const cs_equation_param_t *eqp
-        = cs_field_get_equation_param(f);
+      const cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
       if (eqp->verbosity >= 1 || _logged_mass_flux == false) {
         cs_real_t flucel = 0.;

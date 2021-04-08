@@ -748,9 +748,7 @@ cs_user_parameters(cs_domain_t *domain)
         may thus choose in this case:
 
         cs_field_t *f = cs_thermal_model_field();
-        cs_equation_param_t *eqp
-           =
-           = cs_field_get_equation_param(f);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         eqp->blencv = 1.;
 
       For non-user scalars relative to specific physics
@@ -766,8 +764,7 @@ cs_user_parameters(cs_domain_t *domain)
       cs_field_t *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_equation_param_t *eqp
-          = cs_field_get_equation_param(f);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         eqp->blencv = 1.;
       }
     }
@@ -794,7 +791,9 @@ cs_user_parameters(cs_domain_t *domain)
      and can be activated for any variable.
       - iswdyn = 0: no relaxation
       - iswdyn = 1: means that the last increment is relaxed
-      - iswdyn = 2: means that the last two increments are used to relax. (default) */
+      - iswdyn = 2: (default) means that the last two increments are used
+                    to relax.
+  */
   {
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
     eqp->iswdyn = 2;
