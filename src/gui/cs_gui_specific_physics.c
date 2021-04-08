@@ -1377,7 +1377,7 @@ cs_gui_physical_model_select(void)
                                                                   "model");
 
         if (model_soot != NULL && !cs_gui_strcmp(model_soot, "off")) {
-          if (cs_gui_strcmp(model_soot, "soot_product_fraction")) {
+          if (cs_gui_strcmp(model_soot, "constant_soot_yield")) {
             cm->isoot = 0;
             cs_gui_node_get_child_real(tn_soot, "soot_density",
                                        &(cm->gas.rosoot));

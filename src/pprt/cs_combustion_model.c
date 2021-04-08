@@ -171,7 +171,7 @@ cs_f_fuel_get_pointers(int     **nclafu);
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   isoot  --> pointer to issot in combustion model
+ *   isoot  --> pointer to isoot in combustion model
  *----------------------------------------------------------------------------*/
 
 void
@@ -340,10 +340,12 @@ cs_combustion_log_setup(void)
     case 0:
       /* constant fraction of product Xsoot */
       cs_log_printf(CS_LOG_SETUP,
-                    _("    isoot:     0 (Constant fraction of product)\n\n"));
+                    _("    isoot:     0 (Constant soot yield)\n\n"));
       cs_log_printf(CS_LOG_SETUP,
                     _("  Parameters for the soot model:\n"
-                      "    xsoot:  %14.5e (Fraction of product)\n"
+                      "    xsoot:  %14.5e (Fraction of product - Used only if\n"
+                      "            the soot yield is not defined in the\n"
+                      "            thermochemistry data file)\n"
                       "    rosoot: %14.5e (Soot density)\n\n"),
                     cs_glob_combustion_model->gas.xsoot,
                     cs_glob_combustion_model->gas.rosoot);
