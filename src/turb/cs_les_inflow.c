@@ -707,9 +707,9 @@ void CS_PROCF(synthe, SYNTHE)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t face_id = elt_ids[i];
 
-      rcodclu[face_id] = vel_m_l[face_id][0] + fluctuations[face_id][0];
-      rcodclv[face_id] = vel_m_l[face_id][1] + fluctuations[face_id][1];
-      rcodclw[face_id] = vel_m_l[face_id][2] + fluctuations[face_id][2];
+      rcodclu[face_id] = vel_m_l[i][0] + fluctuations[i][0];
+      rcodclv[face_id] = vel_m_l[i][1] + fluctuations[i][1];
+      rcodclw[face_id] = vel_m_l[i][2] + fluctuations[i][2];
     }
 
     BFT_FREE(vel_m_l);
