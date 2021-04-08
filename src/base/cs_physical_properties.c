@@ -995,12 +995,11 @@ cs_physical_property_get_zone_values(const char  *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create physical property
+ * \brief Create a physical property
  *
  * \param[in] name    property name
  * \param[in] dim     property dimension
  * \param[in] refval  reference value
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1009,7 +1008,7 @@ cs_physical_property_create(const char      *name,
                             const int        dim,
                             const cs_real_t  refval)
 {
-  cs_property_t *pty = _physical_property_create(name, dim, refval);
+  _physical_property_create(name, dim, refval);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -739,7 +739,7 @@ cs_navsto_system_init_setup(void)
   }
 
   /* Initialize the turbulence modelling */
-  const cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
+  cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
   cs_turbulence_init_setup(ns->turbulence, mom_eq);
 
 }

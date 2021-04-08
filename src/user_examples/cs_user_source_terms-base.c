@@ -132,7 +132,7 @@ cs_user_source_terms(cs_domain_t  *domain,
 
     /* logging */
 
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
     if (eqp->verbosity >= 1)
       bft_printf(" User source terms for variable %s\n",
@@ -179,7 +179,7 @@ cs_user_source_terms(cs_domain_t  *domain,
 
     /* logging */
 
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
     if (eqp->verbosity >= 1)
       bft_printf(" User source terms for variable %s\n",

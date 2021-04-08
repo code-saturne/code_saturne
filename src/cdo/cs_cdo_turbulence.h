@@ -353,7 +353,7 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct);
 
 void
 cs_turbulence_init_setup(cs_turbulence_t     *tbs,
-                         const cs_equation_t *mom_eq);
+                         cs_equation_t       *mom_eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

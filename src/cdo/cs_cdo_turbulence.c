@@ -373,7 +373,7 @@ cs_turbulence_free(cs_turbulence_t   **p_turb_struct)
 
 void
 cs_turbulence_init_setup(cs_turbulence_t     *tbs,
-                         const cs_equation_t *mom_eq)
+                         cs_equation_t       *mom_eq)
 {
   if (tbs == NULL)
     return;
@@ -462,6 +462,10 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                              const cs_time_step_t       *time_step,
                              cs_turbulence_t            *tbs)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(time_step);
+
   if (tbs == NULL)
     return;
 
@@ -731,6 +735,9 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_time_step_t         *time_step,
                      const cs_turbulence_t        *tbs)
 {
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
   if (tbs == NULL)
     return;
 
@@ -804,7 +811,6 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
   cs_equation_t *tke_eq = kec->tke;
   cs_equation_t *eps_eq = kec->eps;
   assert(kec != NULL);
-  const cs_turbulence_param_t  *tpb = tbs->param;
 
   /* Prepare source term and reaction term */
   cs_real_t *tke_source_term = NULL, *eps_source_term = NULL;
