@@ -1418,6 +1418,8 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 
     } /* Loop on definitions */
 
+    BFT_FREE(def2v_idx);
+
   } /* Initial values to set */
 
   /* Set the boundary values as initial values: Compute the values of the
