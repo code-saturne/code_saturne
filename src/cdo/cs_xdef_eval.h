@@ -65,7 +65,7 @@ BEGIN_C_DECLS
 typedef void
 (cs_xdef_eval_t) (cs_lnum_t                    n_elts,
                   const cs_lnum_t             *elt_ids,
-                  bool                         compact,
+                  bool                         dense_output,
                   const cs_mesh_t             *mesh,
                   const cs_cdo_connect_t      *connect,
                   const cs_cdo_quantities_t   *quant,
