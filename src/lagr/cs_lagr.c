@@ -353,7 +353,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .pressure = NULL,
      .scal_t = NULL,
      .temperature = NULL,
-     .t_gaz = NULL,
      .vel = NULL,
      .viscl = NULL,
      .cpro_viscls = NULL,
@@ -749,7 +748,6 @@ _lagr_map_fields_default(void)
                                        ("lagr_thermal_conductivity");
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
-    _lagr_extra_module.t_gaz       = NULL;
     _lagr_extra_module.x_oxyd      = NULL;
     _lagr_extra_module.x_eau       = NULL;
     _lagr_extra_module.x_m         = NULL;
@@ -773,29 +771,28 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.viscl       = cs_field_by_name_try("molecular_viscosity");
     _lagr_extra_module.cpro_viscls = NULL;
 
-    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
-        _lagr_extra_module.scal_t    = cs_field_by_name_try("temperature");
-    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
-        _lagr_extra_module.scal_t    = cs_field_by_name_try("enthalpy");
-    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY)
-        _lagr_extra_module.scal_t    = cs_field_by_name_try("total_energy");
-    else
-        _lagr_extra_module.scal_t    = NULL;
+    _lagr_extra_module.scal_t = cs_thermal_model_field();
 
     if (_lagr_extra_module.scal_t != NULL) {
-        _lagr_extra_module.visls0
-            = cs_field_get_key_double(_lagr_extra_module.scal_t,
-                    cs_field_key_id("diffusivity_ref"));
+      _lagr_extra_module.visls0
+        = cs_field_get_key_double(_lagr_extra_module.scal_t,
+                                  cs_field_key_id("diffusivity_ref"));
 
-        int l_id = cs_field_get_key_int(_lagr_extra_module.scal_t,
-                cs_field_key_id("diffusivity_id"));
-        if (l_id >= 0)
-            _lagr_extra_module.cpro_viscls = cs_field_by_id(l_id);
+      int l_id = cs_field_get_key_int(_lagr_extra_module.scal_t,
+                                      cs_field_key_id("diffusivity_id"));
+      if (l_id >= 0)
+        _lagr_extra_module.cpro_viscls = cs_field_by_id(l_id);
     }
 
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat");
-    _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
-    _lagr_extra_module.t_gaz       = cs_field_by_name_try("t_gas");
+
+    if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+        || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+        || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+      _lagr_extra_module.temperature = cs_field_by_name_try("t_gas");
+    else
+      _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
+
     _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
     _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
@@ -1949,33 +1946,32 @@ cs_lagr_solve_time_step(const int         itypfb[],
       || lagr_model->roughness == 1
       || lagr_model->clogging == 1) {
 
-    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+    if (extra->temperature != NULL) {
 
-      if (extra->scal_t != NULL) {
-
-        if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-            && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
-          tempp[iel] = extra->scal_t->val[iel]
-            + cs_physical_constants_celsius_to_kelvin;
-
-        else if (   cs_glob_thermal_model->itherm ==
-                            CS_THERMAL_MODEL_TEMPERATURE
-                 && cs_glob_thermal_model->itpscl ==
-                            CS_TEMPERATURE_SCALE_KELVIN)
-          tempp[iel] = extra->scal_t->val[iel];
-
-        else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
-
-          mode = 1;
-          CS_PROCF(usthht,USTHHT)(&mode, &extra->scal_t->val[iel], &tempp[iel]);
-
+      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+          tempp[iel] =    extra->temperature->val[iel]
+                        + cs_physical_constants_celsius_to_kelvin;
         }
-
+      }
+      else {
+        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
+          tempp[iel] =    extra->temperature->val[iel];
       }
 
-      else
-        tempp[iel] = cs_glob_fluid_properties->t0;
+    }
 
+    else {
+      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+          tempp[iel] =    cs_glob_fluid_properties->t0
+                        + cs_physical_constants_celsius_to_kelvin;
+        }
+      }
+      else {
+        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
+          tempp[iel] = cs_glob_fluid_properties->t0;
+      }
     }
 
   }

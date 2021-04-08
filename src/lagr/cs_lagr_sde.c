@@ -192,7 +192,6 @@ _lages1(cs_real_t           dtp,
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
 
   const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
-  const cs_thermal_model_variable_t t_var = cs_glob_thermal_model->itherm;
 
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
@@ -544,38 +543,20 @@ _lages1(cs_real_t           dtp,
       /* (2.3) Compute terms in the Brownian movement case */
       if (cs_glob_lagr_brownian->lamvbr == 1) {
 
-        /* Calcul de la temperature du fluide en fonction du type  */
-        /* d'ecoulement    */
+        /* Compute fluid temperature */
         cs_real_t tempf;
-        if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-            || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
-          tempf = extra->t_gaz->val[cell_id];
-
-        else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-                 || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-                 || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-                 || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
-          tempf = extra->temperature->val[cell_id];
-
-        else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
-                 && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
-          tempf = extra->scal_t->val[cell_id] + tkelvi;
-
-        else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
-                 && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
-          tempf = extra->scal_t->val[cell_id];
-
-        else if (t_var == CS_THERMAL_MODEL_ENTHALPY) {
-
-          int mode  = 1;
-          CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
-
-          tempf = tempf + tkelvi;
-
+        if (extra->temperature != NULL) {
+          if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
+            tempf = extra->temperature->val[cell_id];
+          else if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+            tempf = extra->temperature->val[cell_id] + tkelvi;
         }
 
-        else
+        else {
           tempf = cs_glob_fluid_properties->t0;
+          if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+            tempf += tkelvi;
+        }
 
         cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
@@ -2396,36 +2377,19 @@ _lagdep(cs_real_t           dtp,
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
 
-      if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-          || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-          || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
-        tempf = extra->t_gaz->val[cell_id];
+      if (   extra->temperature != NULL
+          && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+        tempf = extra->temperature->val[cell_id] + tkelvi;
 
-      else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-               || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-               || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-               || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
+      else if (   extra->temperature != NULL
+               && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->temperature->val[cell_id];
 
-      else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
-               && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
-        tempf = extra->scal_t->val[cell_id] + tkelvi;
-
-      else if (   t_var == CS_THERMAL_MODEL_TEMPERATURE
-               && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
-        tempf = extra->scal_t->val[cell_id];
-
-      else if (t_var == CS_THERMAL_MODEL_ENTHALPY) {
-
-        int mode  = 1;
-        CS_PROCF(usthht,USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
-
-        tempf += tkelvi;
-
-      }
-
-      else
+      else {
         tempf = cs_glob_fluid_properties->t0;
+        if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          tempf += tkelvi;
+      }
 
       /* If y^+ is greater than the interface location,
          the standard model is applied

@@ -605,7 +605,7 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
  * \brief Initialize particle values
  *
  * \param[in,out]  p_set             particle set
- * \param[in]      zis               injection data this zone and set
+ * \param[in]      zis               injection data for this zone and set
  * \param[in]      time_id           time step indicator for fields
  *                                     0: use fields at current time step
  *                                     1: use fields at previous time step
