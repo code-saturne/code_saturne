@@ -99,8 +99,6 @@ double precision zent,xuent,xvent,xkent,xeent,tpent
 
 double precision, dimension(:,:), pointer :: cvar_vel
 
-integer, allocatable, dimension(:) :: lstelt
-
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_fb
 double precision, dimension(:), pointer :: cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -118,8 +116,6 @@ double precision, dimension(:), pointer :: cvar_scalt
 !< [init]
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), cvar_vel)
-
-allocate(lstelt(ncel)) ! temporary array for cells selection
 
 d2s3 = 2.d0/3.d0
 
@@ -157,32 +153,21 @@ if (isuite.eq.0) then
 
     zent = xyzcen(3,iel)
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, umet , zent  , ttcabs, xuent )
+    call intprf(nbmetd, nbmetm, zdmet, tmmet, umet, zent, ttcabs, xuent)
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+    call intprf(nbmetd, nbmetm, zdmet, tmmet, vmet, zent, ttcabs, xvent)
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+    call intprf(nbmetd, nbmetm, zdmet, tmmet, ekmet, zent, ttcabs, xkent)
 
-    call intprf                                                   &
-    !==========
-   (nbmetd, nbmetm,                                               &
-    zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+    call intprf(nbmetd, nbmetm, zdmet, tmmet, epmet, zent, ttcabs, xeent)
 
     cvar_vel(1,iel) = xuent
     cvar_vel(2,iel) = xvent
     cvar_vel(3,iel) = 0.d0
 
-!     ITYTUR est un indicateur qui vaut ITURB/10
-    if    (itytur.eq.2) then
+    ! Initiliation of turbulence variables
+
+    if (itytur.eq.2) then
 
       cvar_k(iel)  = xkent
       cvar_ep(iel) = xeent
@@ -216,11 +201,9 @@ if (isuite.eq.0) then
     endif
 
     if (iscalt.ge.0) then
-! On suppose que le scalaire est la temperature potentielle :
-      call intprf                                                 &
-      !==========
-   (nbmett, nbmetm,                                               &
-    ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+      ! Assume the scalar is a potential temperature
+      call intprf(nbmett, nbmetm, ztmet, tmmet, tpmet, zent, ttcabs, tpent)
 
       call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
       cvar_scalt(iel) = tpent
@@ -231,16 +214,9 @@ if (isuite.eq.0) then
 endif
 !< [init]
 
-!--------
-! Formats
-!--------
-
 !----
 ! End
 !----
-
-! Deallocate the temporary array
-deallocate(lstelt)
 
 return
 end subroutine cs_user_f_initialization

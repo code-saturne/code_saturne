@@ -94,101 +94,84 @@ integer          iel, mode, igg, izone
 double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
-integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_ygfm, cvar_fm, cvar_scalt
 !< [loc_var_dec]
 
 !===============================================================================
 
-!---------------
-! Initialization
-!---------------
-
-call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
-call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
-call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-
 !< [init]
-allocate(lstelt(ncel)) ! temporary array for cells selection
+! Variables initialization:
+!   ONLY done if there is no restart computation
+
+if (isuite.gt.0) return
 
 ! Control output
 
 write(nfecra,9001)
 
+call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
 do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
 
-!===============================================================================
-! Variables initialization:
-!
-!   ONLY done if there is no restart computation
-!===============================================================================
-
-if ( isuite.eq.0 ) then
-
-
 ! a. Preliminary calculations
 
-  sommqf = zero
-  sommq  = zero
-  sommqt = zero
+sommqf = zero
+sommq  = zero
+sommqt = zero
 
-!    For multiple inlets
-  do izone = 1, nozapm
-    sommqf = sommqf + qimp(izone)*fment(izone)
-    sommqt = sommqt + qimp(izone)*tkent(izone)
-    sommq  = sommq  + qimp(izone)
-  enddo
+! For multiple inlets
+do izone = 1, nozapm
+  sommqf = sommqf + qimp(izone)*fment(izone)
+  sommqt = sommqt + qimp(izone)*tkent(izone)
+  sommq  = sommq  + qimp(izone)
+enddo
 
-  if (abs(sommq).gt.epzero) then
-    fmelm = sommqf / sommq
-    tentm = sommqt / sommq
-  else
-    fmelm = zero
-    tentm = t0
-  endif
+if (abs(sommq).gt.epzero) then
+  fmelm = sommqf / sommq
+  tentm = sommqt / sommq
+else
+  fmelm = zero
+  tentm = t0
+endif
 
-! ----- Calculation of the Enthalpy of the mean gas mixture
-!       (unburned - or fresh- gas at mean mixture fraction)
-  if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-    coefg(1) = fmelm
-    coefg(2) = (1.d0-fmelm)
-    coefg(3) = zero
-    mode     = -1
+! Calculation of the Enthalpy of the mean gas mixture
+! (unburned - or fresh- gas at mean mixture fraction)
+if (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3) then
+  coefg(1) = fmelm
+  coefg(2) = (1.d0-fmelm)
+  coefg(3) = zero
+  mode     = -1
 
-!       Converting the mean boundary conditions into
-!       enthalpy values
-    call cothht                                                   &
-    !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hinit  , tentm )
-  endif
+  ! Converting the mean boundary conditions into
+  ! enthalpy values
+  call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, hinit, tentm)
+endif
 
 ! b. Initialisation
 
-  do iel = 1, ncel
+do iel = 1, ncel
 
-! ----- Mass fraction of Unburned Gas
+  ! Mass fraction of Unburned Gas
 
-    cvar_ygfm(iel) = 5.d-1
+  cvar_ygfm(iel) = 5.d-1
 
-! ----- Mean Mixture Fraction
+  ! Mean Mixture Fraction
 
-    if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
-      cvar_fm(iel) = fmelm
-    endif
+  if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
+    cvar_fm(iel) = fmelm
+  endif
 
-! ----- Enthalpy
+  ! Enthalpy
 
-    if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-      cvar_scalt(iel) = hinit
-    endif
+  if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
+    cvar_scalt(iel) = hinit
+  endif
 
-  enddo
-
-endif
+enddo
 !< [init]
 
 !--------
@@ -198,12 +181,9 @@ endif
  9001 format(                                                   /,&
 '  Variables intialisation by user'                            ,/,&
                                                                 /)
-
 !----
 ! End
 !----
-
-deallocate(lstelt) ! temporary array for cells selection
 
 return
 end subroutine cs_user_f_initialization

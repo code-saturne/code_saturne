@@ -98,6 +98,7 @@ cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-base.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
+cs_user_initialization-time_step.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \
@@ -179,8 +180,6 @@ cs_user_initialization-gas_ebu.f90 \
 cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-richards.f90 \
-cs_user_initialization-time_step.f90 \
-cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \
