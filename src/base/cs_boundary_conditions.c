@@ -1448,7 +1448,7 @@ cs_boundary_conditions_complete(int     nvar,
 
         if (f == CS_F_(h)) {
           const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-          int  *_icodcl = rcodcl + var_id*n_b_faces;
+          int  *_icodcl = icodcl + var_id*n_b_faces;
 
           for (cs_lnum_t i = 0; i < n_faces; i++) {
             const cs_lnum_t j = (faces != NULL) ? faces[i] : i;
