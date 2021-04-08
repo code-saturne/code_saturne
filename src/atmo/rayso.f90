@@ -109,7 +109,7 @@ integer i,k,n,l,inua,k1p1,iaer,iaero_top
 integer itop,ibase,itopp1,itopp2,ibasem1
 integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision muzero,fo,rr1,m,mbar,rabar,rabar2,rbar
-double precision rabarc,rbarc, refx, trax
+double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,ym1,y,ystarm1,ystar
 double precision zqm1,zq,xm1,x,xstar,xstarm1,fabs
 double precision rrbar,rrbar2s,foo3,foo3c,foh2o
@@ -281,6 +281,8 @@ do k = 1, kmx+1
 enddo
 refx=0.d0
 trax=0.d0
+refx0=0.d0
+trax0=0.d0
 !initialisation variables for multiple diffusion
 drt=0.d0
 gas=0.d0
@@ -744,6 +746,16 @@ if (muzero.gt.epzero) then
 
         ref(l,n)=fneray(l)*refx
         tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*dexp(-5.d0*dqqv/3.d0)
+
+        if (iaer.eq.1) then
+          call reftra &
+            (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0 , tauah2o(l), &
+            refx0, trax0, epsc, dqqv)
+
+          ref(l,n) = fneray(l)*refx + (1.d0 - fneray(l))*refx0
+          tra(l,n) = fneray(l)*trax + (1.d0 - fneray(l))*trax0
+        endif
+
         refs(l,n) = ref(l,n)
         tras(l,n) = tra(l,n)
 
