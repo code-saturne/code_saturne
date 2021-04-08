@@ -50,6 +50,7 @@
 !> \param[in]   fneray      cloud fraction
 !> \param[in]   romray      air density
 !> \param[in]   preray      pressure
+!> \param[in]   temray      temperature
 !> \param[in]   aeroso      aerosol concentration in micro-g/m3
 !> \param[out]  fos         global downward solar flux at the ground
 !> \param[out]  rayst       flux divergence of solar radiation
@@ -59,7 +60,7 @@ subroutine rayso  &
  (ivertc, k1, kmray, heuray, imer1, albe,        &
   qqv, qqqv, qqvinf, zqq,                        &
   zray, qvray, qlray, fneray,                    &
-  romray, preray, aeroso, fos, rayst, ncray)
+  romray, preray, temray, aeroso, fos, rayst, ncray)
 
 !===============================================================================
 ! Module files
@@ -99,6 +100,7 @@ double precision qlray(kmx), fneray(kmx), zray(kmx)
 double precision qvray(kmx), preray(kmx)
 double precision aeroso(kmx)!TODO remove
 double precision rayst(kmx), romray(kmx)
+double precision temray(kmx)
 double precision ncray(kmx)
 
 ! Local variables
@@ -166,6 +168,7 @@ double precision beta2(12), beta3(12),beta4(12),copioc20(12)
 double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
+double precision corp, rov
 
 ! data for pkn and kn distribution
 data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
@@ -735,7 +738,7 @@ if (muzero.gt.epzero) then
       tau(l,n) = tauc(l) + dqqv + tauah2o(l)
 
       if(qlray(l).ge.epsc) then
-        call reftra  &
+        call reftra &
           (pioc, piaero_h2o, gasym, gaero_h2o, tauc(l) , tauah2o(l), &
           refx, trax, epsc, dqqv)
 
@@ -921,6 +924,18 @@ if (muzero.gt.epzero) then
   soil_direct_flux_o3=ddfso3(k1)
   soil_global_flux_o3=dfso3(k1)
 
+  ! For water vapor without clouds and aerosols downward is only direct,
+  ! upward is only diffuse
+  do k = k1, kmray
+    y = m*(qqvtot - qqv(k))
+    ystar = m*qqvtot + 5.d0/3.d0*qqv(k)
+    corp = (preray(k) / preray(k1))* preray(k1) / 101300.d0!FIXME /p0?
+    rov = romray(k)*(qvray(k)*corp*sqrt(tkelvi/(temray(k) + tkelvi)))
+    ckup(k) = m*dzyama(ystar,rov)/(0.353d0-raysve(ystar))
+    ckdown_r(k) =m*dzyama(y,rov)/(0.353d0-raysve(y))
+    ckdown_f(k) = 0.d0
+  enddo
+
 ! if muzero < 0, it is night
 else
 
@@ -933,6 +948,10 @@ else
 
     solu(k,ivertc) = 0.d0
     sold(k,ivertc) = 0.d0
+
+    ckup(k) = 0.d0
+    ckdown_r(k) = 0.d0
+    ckdown_f(k) = 0.d0
   enddo
   soil_direct_flux = 0.d0
   soil_global_flux = 0.d0
@@ -942,13 +961,7 @@ else
   soil_global_flux_o3=0.0
 endif
 
-
 ! TODO compute it
-do k = k1, kmray
-  ckup(k) = 0.d0
-  ckdown_r(k) = 0.d0
-  ckdown_f(k) = 0.d0
-enddo
 
 ! Compute Boundary conditions for the 3D (Director diFfuse) Solar radiance
 ! at the top of the CFD domain
