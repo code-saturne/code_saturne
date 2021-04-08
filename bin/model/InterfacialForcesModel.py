@@ -22,15 +22,13 @@
 
 # -------------------------------------------------------------------------------
 
-import sys, unittest
+import unittest
 from code_saturne.model.XMLvariables import Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
-from code_saturne.model.OutputFieldsModel import OutputFieldsModel
-from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.NotebookModel import NotebookModel
 
 
@@ -163,7 +161,15 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         default['nowallforcemodel'] = 'none'
 
         if predefined_flow == "boiling_flow":
-            pass
+            GTD_condition_1 = (self.turb_m.getTurbulenceModel("1") in
+                               ["k-epsilon",
+                                "k-epsilon_linear_production",
+                                "rij-epsilon_ssg'",
+                                "rij-epsilon_ebrsm"])
+
+            GTD_condition_2 = (self.turb_m.getTurbulenceModel("2") == "none")
+            if GTD_condition_1 and GTD_condition_2:
+                default['turbulent_dispersion_model'] = "GTD_model"
         elif predefined_flow == "droplet_flow":
             default['gasdisperseddragmodel'] = "Wen_Yu"
             default['liftmodel'] = "Zeng_Baalbaki"

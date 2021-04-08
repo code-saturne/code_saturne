@@ -261,7 +261,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
         if GTD_condition_1 and GTD_condition_2:
             self.modelTurbulenceDispersion.setItem(str_model="GTD_model")
-
+            self.comboBoxTurbulenceDispersion.activated[str].emit("GTD model")
         self.comboBoxDispersedDrag.setEnabled(False)
         self.comboBoxLift.setEnabled(False)
         self.comboBoxAddedMass.setEnabled(False)
