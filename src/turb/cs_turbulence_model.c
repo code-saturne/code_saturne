@@ -2056,8 +2056,9 @@ cs_clip_turbulent_fluxes(int  flux_id,
 {
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  const cs_real_6_t *cvar_rij = (const cs_real_6_t *) CS_F_(rij)->val;
-  const cs_real_t *cvar_tt = (const cs_real_t *) cs_field_by_id(variance_id)->val;
+  const cs_real_6_t *cvar_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+  const cs_real_t *cvar_tt
+    = (const cs_real_t *)cs_field_by_id(variance_id)->val;
   cs_real_3_t *cvar_rit = (cs_real_3_t *) cs_field_by_id(flux_id)->val;
   cs_real_3_t *cvar_clip_rit = NULL;
 

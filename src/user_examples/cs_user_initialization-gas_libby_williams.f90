@@ -100,7 +100,6 @@ character(len=80) :: chaine
 integer           :: iscal, ivar, ii
 double precision  :: valmax, valmin
 
-integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_yfm, cvar_fm, cvar_cyfp2m
 double precision, dimension(:), pointer :: cvar_fp2m, cvar_coyfp
 double precision, dimension(:), pointer :: cvar_scalt, cvar_scal
@@ -108,9 +107,14 @@ double precision, dimension(:), pointer :: cvar_scalt, cvar_scal
 
 !===============================================================================
 
-!---------------
-! Initialization
-!---------------
+!< [init]
+! Variables initialization:
+!   ONLY done if there is no restart computation
+
+if (isuite.gt.0) return
+
+! Control output
+write(nfecra,9001)
 
 call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
 call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
@@ -119,119 +123,98 @@ call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
 call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
-!< [init]
-allocate(lstelt(ncel)) ! temporary array for cells selection
-
-! Control output
-
-write(nfecra,9001)
-
 do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
 
-!===============================================================================
-! Variables initialization:
-!
-!   ONLY done if there is no restart computation
-!===============================================================================
+! a. Preliminary calculations
 
-if ( isuite.eq.0 ) then
+sommqf = zero
+sommq  = zero
+sommqt = zero
 
-  ! a. Preliminary calculations
+! Deal with multiple inlets
+do izone = 1, nozapm
+  sommqf = sommqf + qimp(izone)*fment(izone)
+  sommqt = sommqt + qimp(izone)*tkent(izone)
+  sommq  = sommq  + qimp(izone)
+enddo
 
-  sommqf = zero
-  sommq  = zero
-  sommqt = zero
-
-  !  Deals with multiple inlets
-  do izone = 1, nozapm
-    sommqf = sommqf + qimp(izone)*fment(izone)
-    sommqt = sommqt + qimp(izone)*tkent(izone)
-    sommq  = sommq  + qimp(izone)
-  enddo
-
-  if (abs(sommq).gt.epzero) then
-    fmelm = sommqf / sommq
-    tentm = sommqt / sommq
-  else
-    fmelm = zero
-    tentm = t0
-  endif
-
-  ! ----- Calculation of the Enthalpy of the gas mixture
-  !       (unburned mean gas)
-
-  if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3               &
-                           .or. ippmod(icolwc).eq.5 ) then
-    coefg(1) = fmelm
-    coefg(2) = (1.d0-fmelm)
-    coefg(3) = zero
-    mode     = -1
-
-    !   Converting the mean temperatur boundary conditions into
-    !   enthalpy values
-    call cothht                                                   &
-    !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                       &
-        npo    , npot   , th     , ehgazg ,                       &
-        hinit  , tentm )
-  endif
-
-  do iel = 1, ncel
-
-    ! b. Initialisation
-
-    ! Mass fraction of Unburned (fresh) Gas
-    cvar_yfm(iel)  = 0.0d0*fmelm
-    ! Mean Mixture Fraction
-    cvar_fm(iel)   = 0.d0*fmelm
-    ! Variance of fuel Mass fraction
-    cvar_cyfp2m(iel) = zero
-    ! Variance of Mixture Fraction
-    cvar_fp2m(iel)  = zero
-
-    ! Covariance for NDIRAC >= 3
-
-    if ( ippmod(icolwc).ge. 2 ) then
-      cvar_coyfp(iel)   = zero
-    endif
-
-    ! Enthalpy
-
-    if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
-                             .or. ippmod(icolwc).eq.5 ) then
-      cvar_scalt(iel) = hinit
-    endif
-
-  enddo
-
-  ! ---> Control Output of the user defined initialization values
-
-  write(nfecra,2000)
-
-  do ii  = 1, nscapp
-    iscal = iscapp(ii)
-    ivar  = isca(iscal)
-    call field_get_val_s(ivarfl(isca(ivar)), cvar_scal)
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax,cvar_scal(iel))
-      valmin = min(valmin,cvar_scal(iel))
-    enddo
-    if ( irangp.ge.0 ) then
-      call parmax(valmax)
-      call parmin(valmin)
-    endif
-
-    call field_get_label(ivarfl(ivar), chaine)
-    write(nfecra,2010)chaine(1:8),valmin,valmax
-  enddo
-  write(nfecra,2020)
-
+if (abs(sommq).gt.epzero) then
+  fmelm = sommqf / sommq
+  tentm = sommqt / sommq
+else
+  fmelm = zero
+  tentm = t0
 endif
-!< [init]
+
+! Calculation of the Enthalpy of the gas mixture
+! (unburned mean gas)
+
+if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3               &
+                        .or. ippmod(icolwc).eq.5) then
+  coefg(1) = fmelm
+  coefg(2) = (1.d0-fmelm)
+  coefg(3) = zero
+  mode     = -1
+
+  !   Converting the mean temperatur boundary conditions into
+  !   enthalpy values
+  call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, hinit, tentm)
+endif
+
+do iel = 1, ncel
+
+  ! b. Initialisation
+
+  ! Mass fraction of Unburned (fresh) Gas
+  cvar_yfm(iel)  = 0.0d0*fmelm
+  ! Mean Mixture Fraction
+  cvar_fm(iel)   = 0.d0*fmelm
+  ! Variance of fuel Mass fraction
+  cvar_cyfp2m(iel) = zero
+  ! Variance of Mixture Fraction
+  cvar_fp2m(iel)  = zero
+
+  ! Covariance for NDIRAC >= 3
+
+  if (ippmod(icolwc).ge. 2) then
+    cvar_coyfp(iel)   = zero
+  endif
+
+  ! Enthalpy
+
+  if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
+                          .or. ippmod(icolwc).eq.5) then
+    cvar_scalt(iel) = hinit
+  endif
+
+enddo
+
+! Control Output of the user defined initialization values
+
+write(nfecra,2000)
+
+do ii  = 1, nscapp
+  iscal = iscapp(ii)
+  ivar  = isca(iscal)
+  call field_get_val_s(ivarfl(isca(ivar)), cvar_scal)
+  valmax = -grand
+  valmin =  grand
+  do iel = 1, ncel
+    valmax = max(valmax,cvar_scal(iel))
+    valmin = min(valmin,cvar_scal(iel))
+  enddo
+  if ( irangp.ge.0 ) then
+    call parmax(valmax)
+    call parmin(valmin)
+  endif
+
+  call field_get_label(ivarfl(ivar), chaine)
+  write(nfecra,2010)chaine(1:8),valmin,valmax
+enddo
+
+write(nfecra,2020)
 
 !--------
 ! Formats
@@ -258,11 +241,11 @@ endif
  2020 format(                                                     &
 ' ---------------------------------'                           ,/)
 
+!< [init]
+
 !----
 ! End
 !----
-
-deallocate(lstelt) ! temporary array for cells selection
 
 return
 end subroutine cs_user_f_initialization

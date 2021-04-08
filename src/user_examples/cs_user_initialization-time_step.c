@@ -57,10 +57,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-base.c
+ * \file cs_user_initialization-time_step.c
  *
- * \brief Initialization prior to solving time steps.
- *        Basic examples
+ * \brief Time step example
  *
  * See \ref cs_user_initialization for examples.
  */
@@ -87,18 +86,25 @@ BEGIN_C_DECLS
 void
 cs_user_initialization(cs_domain_t     *domain)
 {
+  /*
+    Time step modification
+
+    We do a computation restart with an adaptive (variable in time and constant
+    in space) or local (variable in time and space) time step.
+    We want to modify the time step read from the restart file
+    (in order to overcome a too slow evolution for instance).
+  */
+
   /*! [init] */
-  const cs_mesh_t *m = domain->mesh;
+  if (! cs_restart_present())      /* Useful only for a restart */
+    return;
 
-  /* Initialize "scalar1" field to 25 only if it exists and if
-   * there is not restart computation */
-  if (!cs_restart_present()) {
-    cs_field_t *f = cs_field_by_name_try("scalar1");
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
 
-    if (f != NULL) {
-      for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-        f->val[cell_id] = 25.;
-    }
+  cs_field_t *f = cs_field_by_name("dt");
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    f->val[cell_id] *= 10.;
   }
   /*! [init] */
 }

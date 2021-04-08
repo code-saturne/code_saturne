@@ -45,7 +45,6 @@
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
-
 subroutine cs_user_f_initialization &
  ( nvar   , nscal  ,                                              &
    dt     )
@@ -91,196 +90,105 @@ double precision dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-integer          iel, ige, mode, icla
+integer          iel, ige, mode
 integer          ioxy
 
 double precision t1init, h1init, coefe(ngazem)
 double precision t2init, h2init
-double precision xkent, xeent, d2s3
-double precision dmas , wmco2 , wmh2o , wmn2 , wmo2
+double precision dmas, wmco2, wmh2o, wmn2, wmo2
 
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
-double precision, dimension(:), pointer :: cvar_fb, cvar_omg
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:), pointer :: cvar_yfol, cvar_ng, cvar_h2
-double precision, dimension(:), pointer :: cvar_scalt
-double precision, dimension(:), pointer :: cvar_fvap, cvar_f7m, cvar_fvp2m
-double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_yno
+double precision, dimension(:), pointer :: cvar_scalt, cvar_yco2
 double precision, dimension(:), pointer :: cvar_hox
-
 !< [loc_var_dec]
 
 !===============================================================================
 
-!---------------
-! Initialization
-!---------------
+!< [init]
+! Variables initialization:
+!   ONLY when this is not a restarted computation
+
+if (isuite.gt.0) return
+
+! Control Print
 
 write(nfecra,9001)
 
-!< [init]
-d2s3 = 2.d0/3.d0
+! All the domain is filled with air at TINITK
+! ===========================================
 
-!===============================================================================
-! Variables initialization:
-!
-!   ONLY done if there is no restart computation
-!===============================================================================
+! Computation of H1INIT and H2INIT
 
-if ( isuite.eq.0 ) then
+t1init = 1000.0
+t2init = 1000.0
 
-! --> Initialisation of k and epsilon (exemple)
+! Transported variables for droplets
 
-  xkent = 1.d-10
-  xeent = 1.d-10
+h2init = h02fol +  cp2fol*(t2init-trefth)
 
-! ---- TURBULENCE
+! Transported variables for the mix (droplets and carrying gases)
 
-  if (itytur.eq.2) then
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iep), cvar_ep)
+do ige = 1, ngazem
+  coefe(ige) = zero
+enddo
 
-    do iel = 1, ncel
-      cvar_k(iel)  = xkent
-      cvar_ep(iel) = xeent
-    enddo
-
-  elseif (itytur.eq.3) then
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_s(ivarfl(iep), cvar_ep)
-
-    do iel = 1, ncel
-      cvar_r11(iel) = d2s3*xkent
-      cvar_r22(iel) = d2s3*xkent
-      cvar_r33(iel) = d2s3*xkent
-      cvar_r12(iel) = 0.d0
-      cvar_r13(iel) = 0.d0
-      cvar_r23(iel) = 0.d0
-      cvar_ep(iel)  = xeent
-    enddo
-
-  elseif (iturb.eq.50) then
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iep), cvar_ep)
-    call field_get_val_s(ivarfl(iphi), cvar_phi)
-    call field_get_val_s(ivarfl(ifb), cvar_fb)
-
-    do iel = 1, ncel
-      cvar_k(iel)   = xkent
-      cvar_ep(iel)  = xeent
-      cvar_phi(iel) = d2s3
-      cvar_fb(iel)  = 0.d0
-    enddo
-
-  elseif (iturb.eq.60) then
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iomg), cvar_omg)
-
-    do iel = 1, ncel
-      cvar_k(iel)   = xkent
-      cvar_omg(iel) = xeent/cmu/xkent
-    enddo
-
-  endif
-
-! --> All the computation domain is initialized with air at TINITK
-!             ====================================================
-
-! ---- Computation of H1INIT and  H2INIT
-
-  t1init = 1000.d0
-  t2init = 1000.d0
-
-! ------ Transported variables for droplets
-
-  h2init = h02fol +  cp2fol*(t2init-trefth)
-
-  do icla = 1, nclafu
-    call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfol)
-    call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ng)
-    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2)
-    do iel = 1, ncel
-      cvar_yfol(iel) = zero
-      cvar_ng(iel)  = zero
-      cvar_h2(iel)  = zero
-    enddo
-  enddo
-
-! ------ Transported variables for the mix (droplets and carrying gases)
-
-  do ige = 1, ngazem
-    coefe(ige) = zero
-  enddo
-!  On considere l'oxydant 1
-  coefe(io2) = wmole(io2)*oxyo2(1)                                &
+! Consider oxydant 1
+coefe(io2) =   wmole(io2)*oxyo2(1)                                &
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
-  coefe(ih2o) = wmole(ih2o)*oxyh2o(1)                             &
+coefe(ih2o) =   wmole(ih2o)*oxyh2o(1)                             &
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
-  coefe(ico2) = wmole(ico2)*oxyco2(1)                             &
+coefe(ico2) =   wmole(ico2)*oxyco2(1)                             &
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
-  coefe(in2) = 1.d0-coefe(io2)-coefe(ih2o)-coefe(ico2)
+coefe(in2) = 1.d0-coefe(io2)-coefe(ih2o)-coefe(ico2)
 
-  mode = -1
-  call cs_fuel_htconvers1(mode,h1init,coefe,t1init)
- !============================
+mode = -1
+call cs_fuel_htconvers1(mode, h1init, coefe, t1init)
 
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-  do iel = 1, ncel
-    cvar_scalt(iel) = h1init
-  enddo
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
-! ------ Transported variables for gaseous mixture
-!        (passive scalars, variance, reactive species)
+do iel = 1, ncel
+  cvar_scalt(iel) = h1init
+enddo
 
-  call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
-  call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
-  call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
-  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
-  call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
-  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
-  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+! Transported variables for the mix (passive scalars, variance)
+! Variables not present here are initialized to 0.
+
+call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+
+if (ieqco2 .ge. 1) then
+
+  ioxy   = 1
+  wmo2   = wmole(io2)
+  wmco2  = wmole(ico2)
+  wmh2o  = wmole(ih2o)
+  wmn2   = wmole(in2)
+  dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
+          +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2)
 
   do iel = 1, ncel
-    cvar_fvap(iel) = 0.d0
-    cvar_f7m(iel) = zero
-    cvar_fvp2m(iel) = zero
-    if (ieqco2 .ge. 1) then
-      ioxy   =  1
-      wmo2   = wmole(io2)
-      wmco2  = wmole(ico2)
-      wmh2o  = wmole(ih2o)
-      wmn2   = wmole(in2)
-      dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
-              +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
-      cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
-    endif
-    if (ieqnox .eq. 1) then
-      cvar_yhcn(iel) = zero
-      cvar_yno(iel) = zero
-      cvar_hox(iel) = h1init
-    endif
+    cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
   enddo
 
 endif
-!< [init]
 
+if (ieqnox .eq. 1) then
 
-!--------
+  do iel = 1, ncel
+    cvar_hox(iel) = h1init
+  enddo
+
+endif
+
 ! Formats
 !--------
 
  9001 format(                                                   /,&
-'  Variables Initialisation for Fuel by the User'              ,/,&
+'  cs_user_initialization: settings for fuel',                  /,&
                                                                 /)
+!< [init]
 
 !----
 ! End

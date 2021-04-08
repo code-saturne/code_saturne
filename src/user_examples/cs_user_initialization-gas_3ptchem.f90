@@ -94,7 +94,6 @@ double precision dt(ncelet)
 integer          iel, igg
 double precision coefg(ngazgm)
 
-integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m, cvar_scalt
 !< [loc_var_dec]
 
@@ -109,8 +108,6 @@ call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 !< [init]
-allocate(lstelt(ncel)) ! temporary array for cells selection
-
 ! Control output
 
 write(nfecra,9001)
@@ -125,26 +122,23 @@ enddo
 !   ONLY done if there is no restart computation
 !===============================================================================
 
-if ( isuite.eq.0 ) then
+if (isuite.gt.0) return
 
-  do iel = 1, ncel
+do iel = 1, ncel
 
-! ----- Mean Mixture Fraction
-    cvar_fm(iel)   = fs(1)
+  !- Mean Mixture Fraction
+  cvar_fm(iel)   = fs(1)
 
-! ----- Variance of Mixture Fraction
-    cvar_fp2m(iel) = zero
+  ! Variance of Mixture Fraction
+  cvar_fp2m(iel) = zero
 
-! ----- Enthalpy
-    if ( ippmod(icod3p).eq.1 ) then
-      cvar_scalt(iel) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
-    endif
+  ! Enthalpy
+  if ( ippmod(icod3p).eq.1 ) then
+    cvar_scalt(iel) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
+  endif
 
-  enddo
-
-endif
+enddo
 !< [init]
-
 
 !--------
 ! Formats
@@ -153,13 +147,9 @@ endif
  9001 format(                                       /,&
 '  user defined initialization of variables'       ,/,&
                                                     /)
-
-
 !----
 ! End
 !----
-
-deallocate(lstelt) ! temporary array for cells selection
 
 return
 end subroutine cs_user_f_initialization

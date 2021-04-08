@@ -68,7 +68,6 @@
    - \subpage user_initialization_gas_libby_williams
    - \subpage user_initialization_pulverized_coal
    - \subpage user_initialization_time_step
-   - \subpage user_initialization_unified_combustion
    - \subpage user_initialization_remapper_3d
 
 */
@@ -202,21 +201,11 @@
 
   \snippet cs_user_initialization-fuel.f90 loc_var_dec
 
-  \subsection user_initialization_fuel_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
   \subsection user_initialization_fuel_s_init Initialization
 
   The following initialization block needs to be added for the following examples:
 
   \snippet cs_user_initialization-fuel.f90 init
-
-  \subsection user_initialization_fuel_finalize Finalization
-
-  There is no work array in this subroutine, thus nothing to do.
-
 */
 // __________________________________________________________________________________
 /*!
@@ -316,6 +305,10 @@
 
   \page user_initialization_pulverized_coal pulverized_coal example
 
+  As usual, one can access any field using the \ref field_get_val_s_by_name
+  function. \c cvar_*(iel) is the value of this variable in cell number \c iel.
+  ONLY done if there is no restart computation
+
   \section pulverized_coal pulverized_coal example
 
   \subsection user_initialization_coal_loc_var_dec Local variables to be added
@@ -325,21 +318,13 @@
 
   \snippet cs_user_initialization-pulverized_coal.f90 loc_var_dec
 
-  \subsection user_initialization_coal_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
   \subsection user_initialization_coal_s_init Initialization
 
-  The following initialization block needs to be added for the following examples:
+  The following initialization block allows setting some variable
+  values (variables not set here keep their GUI-defined or
+  default values):
 
   \snippet cs_user_initialization-pulverized_coal.f90 init
-
-  \subsection user_initialization_coal_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
 
 */
 // __________________________________________________________________________________
@@ -349,64 +334,17 @@
 
   \section time_step Time step modification
 
-  \subsection user_initialization_time_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-time_step.f90 loc_var_dec
-
-  \subsection user_initialization_time_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
+  We do a computation restart with an adaptive (variable in time and constant
+  in space) or local (variable in time and space) time step.
+  We want to modify the time step read from the restart file
+  (in order to overcome a too slow evolution for instance).
 
   \subsection user_initialization_time_s_init Initialization
 
-  The following initialization block needs to be added for the following examples:
+  The following block can be added to \ref cs_user_initialization.c
+  to do this:
 
-  \snippet cs_user_initialization-time_step.f90 init
-
-  \subsection user_initialization_time_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
-
-*/
-// __________________________________________________________________________________
-/*!
-
-  \page user_initialization_unified_combustion Unified combustion coal example
-
-  One can get any field using \ref field_get_val_s_by_name function.
-  \c cvar_*(iel) is the value of this variable in cell number \c iel.
-  ONLY done if there is no restart computation
-
-  \section unified_combustion Unified combustion coal example
-
-  \subsection user_initialization_comb_loc_var_dec Local variables to be added
-
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-unified_combustion_coal.f90 loc_var_dec
-
-  \subsection user_initialization_comb_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
-  \subsection user_initialization_comb_s_init Initialization
-
-  The following initialization block needs to be added for the following examples:
-
-  \snippet cs_user_initialization-unified_combustion_coal.f90 init
-
-  \subsection user_initialization_comb_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
-
+  \snippet cs_user_initialization-time_step.c init
 */
 // __________________________________________________________________________________
 /*!

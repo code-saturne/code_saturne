@@ -85,30 +85,25 @@ BEGIN_C_DECLS
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
-  //!< [example_1]
+  /*! [example_1] */
+  cs_balance_by_zone("all[]", "temperature");
+  /*! [example_1] */
 
-  cs_balance_by_zone("all[]",
-                     "temperature");
-
-  //!< [example_1]
-
-  //!< [example_2]
-
+  /*! [example_2] */
   cs_balance_by_zone("box[-0.5, 1.3, 0.0, 1.0, 1.9, 1.0]",
                      "scalar1");
+  /*! [example_2] */
 
-  //!< [example_2]
-
-  //!< [example_3]
+  /*! [example_3] */
   cs_real_t normal[3] = {0., 0., 1.,};
 
   cs_surface_balance("selection_criterion", "scalar1", normal);
-  //!< [example_3]
+  /*! [example_3] */
 
   /* More advanced usage for pressure drop */
 
   {
-    /* ! [example_4] */
+    /*! [example_4] */
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
@@ -136,18 +131,16 @@ cs_user_extra_operations(cs_domain_t     *domain)
                "outlet mass flow (scalar 1): %g\n",
                balance[mass_in_idx],
                balance[mass_out_idx]);
-    /* ! [example_4] */
+    /*! [example_4] */
   }
 
-  // !< [example_5]
-
+  /*! [example_5] */
   cs_pressure_drop_by_zone("zone_group");
-
-  // !< [example_5]
+  /*! [example_5] */
 
   /* More advanced usage for pressure drop */
 
-  // !< [example_6]
+  /*! [example_6] */
   {
     const char criteria[] = "zone_group";
 
@@ -176,7 +169,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
                balance[rhou_in_idx],
                balance[rhou_out_idx]);
   }
-  //!< [example_6]
+  /*! [example_6] */
 }
 
 /*----------------------------------------------------------------------------*/

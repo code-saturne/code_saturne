@@ -103,11 +103,12 @@ double precision, dimension(:), pointer :: cvar_temp, cpro_humid
 
 !===============================================================================
 
-!---------------
-! Initialization
-!---------------
-
 !< [init]
+! Variables initialization:
+!   ONLY done if there is no restart computation
+
+if (isuite.gt.0) return
+
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 d2s3 = 2.d0/3.d0
@@ -115,58 +116,45 @@ d2s3 = 2.d0/3.d0
 ! Map field arrays
 call field_get_val_v(ivarfl(iu), vel)
 
-!===============================================================================
-! Variables initialization:
-!
-!   ONLY done if there is no restart computation
-!===============================================================================
+! Initialize tmperature of humid air at 11 deg Celsius
+! and of humidity at 0.0063
 
-if (isuite.eq.0) then
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+call field_get_val_s(ihumid, cpro_humid)!FIXME
 
-!   --- Initialize tmperature of humid air at 11 deg Celsius
-!       and of humidity at 0.0063
+do iel = 1, ncel
 
-  call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
-  call field_get_val_s(ihumid, cpro_humid)!FIXME
+  cvar_temp(iel) = 11.d0
+  cpro_humid(iel) = 0.0063d0
 
-  do iel = 1, ncel
+enddo
 
-    cvar_temp(iel) = 11.d0
-    cpro_humid(iel) = 0.0063d0
+! Initialize tmperature of humid air at 20 deg Celsius
+! and of humidity at 0.012
+! and of velocity at 0.5 m/s
+! for cells of color 6
 
-  enddo
+call getcel('6', nlelt, lstelt)
 
-!   --- Initialize tmperature of humid air at 20 deg Celsius
-!       and of humidity at 0.012
-!       and of velocity at 0.5 m/s
-!       for cells of color 6
+do ilelt = 1, nlelt
 
-  call getcel('6', nlelt, lstelt)
+  iel = lstelt(ilelt)
 
-  do ilelt = 1, nlelt
+  vel(1,iel) = -0.5d0
 
-    iel = lstelt(ilelt)
+  cvar_temp(iel) = 20.d0
+  cpro_humid(iel) = 0.012d0
 
-    vel(1,iel) = -0.5d0
+enddo
 
-    cvar_temp(iel) = 20.d0
-    cpro_humid(iel) = 0.012d0
-
-  enddo
-
-endif
+! Deallocate the temporary array
+deallocate(lstelt)
 !< [init]
-
-!--------
-! Formats
-!--------
 
 !----
 ! End
 !----
 
-! Deallocate the temporary array
-deallocate(lstelt)
 
 return
 end subroutine cs_user_f_initialization
