@@ -115,8 +115,6 @@ contains
 !> \brief Allocate memory
 subroutine init_chemistry
 
-use mesh, only: ncel
-
 implicit none
 
 integer imode

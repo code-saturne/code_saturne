@@ -2872,7 +2872,6 @@ cs_internal_coupling_setup(void)
   /* Initialization of coupling entities */
 
   coupling_id = 0;
-  cs_internal_coupling_t *cpl = _internal_coupling;
   for (field_id = 0; field_id < n_fields; field_id++) {
     f = cs_field_by_id(field_id);
     if (f->type & CS_FIELD_VARIABLE) {
