@@ -816,9 +816,9 @@ cs_equation_create_param(const char            *name,
   eqp->space_poly_degree = 0;
 
   /* Default initialization for the legacy var_col_opt structure which is now
-   * shared inside the cs_equation_param_t structure
-   * The default value used here should be the same as the one considered in
-   * src/base/cs_parameters.c (static variable called _equation_param_default) */
+   * shared inside the cs_equation_param_t structure The default value used
+   * here should be the same as the one considered in src/base/cs_parameters.c
+   * (static variable called _equation_param_default) */
 
   eqp->iconv  = 1;
   eqp->istat  = 1;
