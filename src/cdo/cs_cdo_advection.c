@@ -1164,6 +1164,19 @@ cs_cdofb_advection_open_default(const cs_equation_param_t   *eqp,
   /* Compute the flux across the primal faces. Store in cb->adv_fluxes */
   cs_advection_field_cw_face_flux(cm, eqp->adv_field, cb->t_bc_eval,
                                   cb->adv_fluxes);
+
+  if (eqp->adv_scaling_property != NULL) {
+
+    cs_real_t scaling = eqp->adv_scaling_property->ref_value;
+    if (cs_property_is_uniform(eqp->adv_scaling_property) == false)
+      scaling = cs_property_value_in_cell(cm,
+                                          eqp->adv_scaling_property,
+                                          cb->t_pty_eval);
+
+    for (int f = 0; f < cm->n_fc; f++)
+      cb->adv_fluxes[f] *= scaling;
+
+  } /* Apply a scaling factor to the advective flux */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1188,26 +1201,11 @@ cs_cdofb_advection_close_default_scal(const cs_equation_param_t   *eqp,
                                       cs_cell_builder_t           *cb,
                                       cs_sdm_t                    *adv)
 {
+  CS_UNUSED(eqp);
+  CS_UNUSED(cm);
   CS_UNUSED(adv);
 
-  /* Multiply by a scaling property if needed before adding it to the local
-     system */
-  if (eqp->adv_scaling_property == NULL)
-    cs_sdm_add(csys->mat, cb->loc);
-
-  else {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_add_mult(csys->mat,
-                      eqp->adv_scaling_property->ref_value, cb->loc);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_add_mult(csys->mat, scaling, cb->loc);
-    }
-
-  } /* adv_scaling_property != NULL */
+  cs_sdm_add(csys->mat, cb->loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1232,19 +1230,8 @@ cs_cdofb_advection_close_default_vect(const cs_equation_param_t   *eqp,
                                       cs_cell_builder_t           *cb,
                                       cs_sdm_t                    *adv)
 {
-  /* Multiply by a scaling property if needed */
-  if (eqp->adv_scaling_property != NULL) {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_scale(scaling, adv);
-    }
-
-  }
+  CS_UNUSED(eqp);
+  CS_UNUSED(cb);
 
   /* Add the local scalar-valued advection operator to the local vector-valued
      system */
@@ -1288,24 +1275,7 @@ cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
                                        cs_cell_builder_t           *cb,
                                        cs_sdm_t                    *adv)
 {
-  /* Multiply by a scaling property if needed before adding it to the local
-     system */
-  if (eqp->adv_scaling_property == NULL)
-    cs_sdm_add(csys->mat, cb->loc);
-
-  else {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_add_mult(csys->mat,
-                      eqp->adv_scaling_property->ref_value, cb->loc);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_add_mult(csys->mat, scaling, cb->loc);
-    }
-
-  } /* adv_scaling_property != NULL */
+  CS_UNUSED(eqp);
 
   /* Update the RHS: u_n is the previous time step.
    * This is done before the static condensation. Thus, there is cell unknown
@@ -1341,21 +1311,8 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
                                        cs_cell_builder_t           *cb,
                                        cs_sdm_t                    *adv)
 {
+  CS_UNUSED(eqp);
   assert(eqp->dim == 3);
-
-  /* Multiply by a scaling property if needed */
-  if (eqp->adv_scaling_property != NULL) {
-
-    if (cs_property_is_uniform(eqp->adv_scaling_property))
-      cs_sdm_scale(eqp->adv_scaling_property->ref_value, adv);
-    else {
-      cs_real_t scaling = cs_property_value_in_cell(cm,
-                                                    eqp->adv_scaling_property,
-                                                    cb->t_pty_eval);
-      cs_sdm_scale(scaling, adv);
-    }
-
-  }
 
   /* Update the RHS component by component: u_n is the previous time step.
    * This is done before the static condensation. Thus, there is cell unknown

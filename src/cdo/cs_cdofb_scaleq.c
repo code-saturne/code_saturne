@@ -359,6 +359,7 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
   if (cs_equation_param_has_convection(eqp) &&
       ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
                                                        * ============== */
+
     /* Open hook: Compute the advection flux for the numerical scheme and store
        the advection fluxes across primal faces */
     eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
