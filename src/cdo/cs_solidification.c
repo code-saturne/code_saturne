@@ -2222,6 +2222,7 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_real_t  *cl_f = alloy->c_l_faces;
 
   /* Diffusion part of the source term to add */
+
   cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
                                  diff_hodge);
 
@@ -2239,6 +2240,11 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
 
   /* Define the local advection matrix */
+
+  /* Open hook: Compute the advection flux for the numerical scheme and store
+     the advection fluxes across primal faces */
+  eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
+
   eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
 
   /* Build the cellwise array: c - c_l
