@@ -853,9 +853,9 @@ cs_user_postprocess_values(const char            *mesh_name,
  *
  * This allows fine-grained control of activation or deactivation,
  *
- * \param  nt_max_abs  maximum time step number
- * \param  nt_cur_abs  current time step number
- * \param  t_cur_abs   absolute time at the current time step
+ * \param[in]  nt_max_abs  maximum time step number
+ * \param[in]  nt_cur_abs  current time step number
+ * \param[in]  t_cur_abs   absolute time at the current time step
  */
 /*----------------------------------------------------------------------------*/
 
