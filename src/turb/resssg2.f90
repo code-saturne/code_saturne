@@ -283,19 +283,6 @@ else
   call field_get_val_s(icrom, cromo)
 endif
 
-do isou = 1, 6
-  do iel = 1, ncel
-    smbr(isou,iel) = 0.d0
-  enddo
-enddo
-do iel = 1, ncel
-  do isou = 1, 6
-    do jsou = 1, 6
-      rovsdt(isou,jsou,iel) = 0.d0
-    enddo
-  enddo
-enddo
-
 if (icorio.eq.1 .or. iturbo.eq.1) then
 allocate(cvara_r(3,3))
 
@@ -314,10 +301,10 @@ endif
 ! 2. User source terms
 !===============================================================================
 
-do isou = 1, dimrij
-  ! If we extrapolate the source terms
-  if (st_prv_id.ge.0) then
-    do iel = 1, ncel
+! If we extrapolate the source terms
+if (st_prv_id.ge.0) then
+  do iel = 1, ncel
+    do isou = 1, dimrij
       ! Save for exchange
       tuexpr = c_st_prv(isou,iel)
       ! For continuation and the next time step
@@ -325,17 +312,23 @@ do isou = 1, dimrij
       ! Second member of the previous time step
       ! We suppose -rovsdt > 0: we implicite
       !    the user source term (the rest)
-      smbr(isou,iel) = rovsdt(isou,isou,iel)*cvara_var(isou,iel)  - thets*tuexpr
-      ! Diagonal
-      rovsdt(isou,isou,iel) = - thetv*rovsdt(isou,isou,iel)
+      do jsou = 1, dimrij
+        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
+        ! Diagonal
+        rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
+      enddo
     enddo
-  else
-    do iel = 1, ncel
-      smbr(isou,iel)   = rovsdt(isou,isou,iel)*cvara_var(isou,iel) + smbr(isou,iel)
-      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel),zero)
+  enddo
+else
+  do iel = 1, ncel
+    do isou = 1, dimrij
+      do jsou = 1, dimrij
+        smbr(isou,iel)   = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
+      enddo
+      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
     enddo
-  endif
-enddo
+  enddo
+endif
 
 !===============================================================================
 ! 3. Lagrangian source terms
