@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 ! Local variables
 
-integer          ifac  , iel   , ivar  , isou
+integer          ifac  , iel   , ivar  , isou, jsou
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          imrgrp, nswrgp, imligp
@@ -218,6 +218,18 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 !===============================================================================
 
 if (irijco.eq.1) then
+  do iel = 1, ncel
+    do isou = 1 ,6
+      smbrts(isou,iel) = 0.d0
+    enddo
+  enddo
+  do iel = 1, ncel
+    do isou = 1, 6
+      do jsou = 1, 6
+        rovsdtts(isou,jsou,iel) = 0.d0
+      enddo
+    enddo
+  enddo
 
   call cs_user_turbulence_source_terms2 &
    ( nvar   , nscal  , ncepdp , ncesmp ,                            &

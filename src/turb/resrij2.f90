@@ -255,19 +255,6 @@ else
   call field_get_val_s(icrom, cromo)
 endif
 
-do iel = 1, ncel
-  do isou = 1 ,6
-    smbr(isou,iel) = 0.d0
-  enddo
-enddo
-do iel = 1, ncel
-  do isou = 1, 6
-    do jsou = 1, 6
-      rovsdt(isou,jsou,iel) = 0.d0
-    enddo
-  enddo
-enddo
-
 ! Coefficient of the "Coriolis-type" term
 if (icorio.eq.1) then
   ! Relative velocity formulation
@@ -289,27 +276,31 @@ t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
 ! 2. User source terms
 !===============================================================================
 
-  !     If we extrapolate the source terms
+! If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel
     do isou = 1, dimrij
-      !       Save for exchange
+      ! Save for exchange
       tuexpr = c_st_prv(isou,iel)
-      !       For continuation and the next time step
+      ! For continuation and the next time step
       c_st_prv(isou,iel) = smbr(isou,iel)
-      !       Second member of the previous time step
-      !       We suppose -rovsdt > 0: we implicite
-      !          the user source term (the rest)
-      smbr(isou,iel) = rovsdt(isou,isou,iel)*cvara_var(isou,iel)  - thets*tuexpr
-      !       Diagonal
-      rovsdt(isou,isou,iel) = - thetv*rovsdt(isou,isou,iel)
+      ! Second member of the previous time step
+      ! We suppose -rovsdt > 0: we implicite
+      !    the user source term (the rest)
+      do jsou = 1, dimrij
+        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
+        ! Diagonal
+        rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
+      enddo
     enddo
   enddo
 else
   do iel = 1, ncel
     do isou = 1, dimrij
-      smbr(isou,iel)   = rovsdt(isou,isou,iel)*cvara_var(isou,iel) + smbr(isou,iel)
-      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel),zero)
+      do jsou = 1, dimrij
+        smbr(isou,iel)   = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
+      enddo
+      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
     enddo
   enddo
 endif
@@ -323,7 +314,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
   call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
   do iel = 1,ncel
     do isou = 1, dimrij
-      smbr(isou, iel)   = smbr(isou, iel) + lagr_st_rij(isou,iel)
+      smbr(isou, iel) = smbr(isou, iel) + lagr_st_rij(isou,iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
     enddo
   enddo
