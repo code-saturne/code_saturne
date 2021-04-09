@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 ! Local variables
 
-integer          ifac  , iel   , ivar  , isou
+integer          ifac  , iel   , ivar  , isou, jsou
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          imrgrp, nswrgp, imligp
