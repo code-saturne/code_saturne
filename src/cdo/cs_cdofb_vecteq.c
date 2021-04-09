@@ -593,7 +593,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
     eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
     /* Define the local advection matrix*/
-    eqc->advection_build(eqp, cm, csys, eqc->advection_scheme, cb);
+    eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
 
     /* Close hook: Modify if needed the computed advection matrix and update
        the local system */

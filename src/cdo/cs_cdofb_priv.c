@@ -100,10 +100,10 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   /* The open pointer function is set by default. If an extrapolation is
    * requested then the calling code has to set a new function pointer as well
    * as a pointer to an input structure if needed */
-  eqc->advection_open = cs_cdofb_advection_open_std;
-  eqc->advection_build = NULL;
-  eqc->advection_scheme = NULL;
+  eqc->advection_open = cs_cdofb_advection_open_default;
+  eqc->advection_main = NULL;
   eqc->advection_close = NULL;
+  eqc->advection_scheme = NULL;
   eqc->advection_input = NULL;
 
   if (cs_equation_param_has_convection(eqp) == false)
@@ -170,13 +170,13 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
 
   } /* Switch on the formulation */
 
-  /* Set the function pointer for advection_build */
+  /* Set the function pointer for advection_main */
   if (cs_equation_param_has_diffusion(eqp))
-    eqc->advection_build = cs_cdofb_advection_build;
+    eqc->advection_main = cs_cdofb_advection;
 
   else {
 
-    eqc->advection_build = cs_cdofb_advection_build_no_diffusion;
+    eqc->advection_main = cs_cdofb_advection_no_diffusion;
 
     if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED &&
         cs_equation_param_has_implicit_advection(eqp))
@@ -194,9 +194,9 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_implicit_advection(eqp)) {
 
     if (eqp->dim == 1) /* scalar-valued case */
-      eqc->advection_close = cs_cdofb_advection_close_std_scal;
+      eqc->advection_close = cs_cdofb_advection_close_default_scal;
     else
-      eqc->advection_close = cs_cdofb_advection_close_std_vect;
+      eqc->advection_close = cs_cdofb_advection_close_default_vect;
 
   }
   else { /* Explicit advection */

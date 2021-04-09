@@ -85,13 +85,13 @@ struct  _cs_cdofb_t {
   cs_cdo_enforce_bc_t       *enforce_sliding;
 
   /* Pointer of functions to define the advection term:
-   * advection_open is called first, then advection_build which calls
-   * advection_scheme and after the build step, advection is called last
+   * advection_open is called first, then advection_main which calls
+   * advection_scheme and after the build step, advection_close is called last
    */
   cs_cdofb_adv_open_hook_t   *advection_open;
-  cs_cdofb_adv_build_t       *advection_build;
-  cs_cdofb_adv_scheme_t      *advection_scheme;
+  cs_cdofb_adv_build_t       *advection_main;
   cs_cdofb_adv_close_hook_t  *advection_close;
+  cs_cdofb_adv_scheme_t      *advection_scheme;
 
   void                       *advection_input;
 

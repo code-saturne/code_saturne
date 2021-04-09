@@ -1138,7 +1138,7 @@ cs_cdo_advection_get_cip_coef(void)
 /*!
  * \brief  Perform preprocessing such as the computation of the advection flux
  *         at the expected location in order to be able to build the advection
- *         Follow the prototype given by cs_cdofb_adv_open_hook_t
+ *         matrix. Follow the prototype given by cs_cdofb_adv_open_hook_t
  *         Default case.
  *
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -1150,11 +1150,11 @@ cs_cdo_advection_get_cip_coef(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_open_std(const cs_equation_param_t   *eqp,
-                            const cs_cell_mesh_t        *cm,
-                            const cs_cell_sys_t         *csys,
-                            void                        *input,
-                            cs_cell_builder_t           *cb)
+cs_cdofb_advection_open_default(const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                const cs_cell_sys_t         *csys,
+                                void                        *input,
+                                cs_cell_builder_t           *cb)
 {
   CS_UNUSED(csys);
   CS_UNUSED(input);
@@ -1182,11 +1182,11 @@ cs_cdofb_advection_open_std(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_close_std_scal(const cs_equation_param_t   *eqp,
-                                  const cs_cell_mesh_t        *cm,
-                                  cs_cell_sys_t               *csys,
-                                  cs_cell_builder_t           *cb,
-                                  cs_sdm_t                    *adv)
+cs_cdofb_advection_close_default_scal(const cs_equation_param_t   *eqp,
+                                      const cs_cell_mesh_t        *cm,
+                                      cs_cell_sys_t               *csys,
+                                      cs_cell_builder_t           *cb,
+                                      cs_sdm_t                    *adv)
 {
   CS_UNUSED(adv);
 
@@ -1226,11 +1226,11 @@ cs_cdofb_advection_close_std_scal(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_close_std_vect(const cs_equation_param_t   *eqp,
-                                  const cs_cell_mesh_t        *cm,
-                                  cs_cell_sys_t               *csys,
-                                  cs_cell_builder_t           *cb,
-                                  cs_sdm_t                    *adv)
+cs_cdofb_advection_close_default_vect(const cs_equation_param_t   *eqp,
+                                      const cs_cell_mesh_t        *cm,
+                                      cs_cell_sys_t               *csys,
+                                      cs_cell_builder_t           *cb,
+                                      cs_sdm_t                    *adv)
 {
   /* Multiply by a scaling property if needed */
   if (eqp->adv_scaling_property != NULL) {
@@ -1365,7 +1365,8 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
 
   for (int k = 0; k < 3; k++) {
 
-    /* De-interlace the local variable in order to perform a matrix-vector product */
+    /* De-interlace the local variable in order to perform a matrix-vector
+       product */
     for (int i = 0; i < cm->n_fc + 1; i++)
       u_n[i] = csys->val_n[3*i+k];
 
@@ -1389,20 +1390,20 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
  *          face is such that there is no advective flux. A specil treatment
  *          is performed to tackle this issue.
  *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      csys        pointer to a cs_cell_sys_t structure
- * \param[in]      build_func  pointer to the function building the system
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      scheme_func  pointer to the function building the system
+ * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
-                                      const cs_cell_mesh_t        *cm,
-                                      const cs_cell_sys_t         *csys,
-                                      cs_cdofb_adv_scheme_t       *build_func,
-                                      cs_cell_builder_t           *cb)
+cs_cdofb_advection_no_diffusion(const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                const cs_cell_sys_t         *csys,
+                                cs_cdofb_adv_scheme_t       *scheme_func,
+                                cs_cell_builder_t           *cb)
 {
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
@@ -1417,7 +1418,7 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
 
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
-  build_func(eqp->dim, cm, csys, cb, adv);
+  scheme_func(eqp->dim, cm, csys, cb, adv);
 
   /* Handle the specific case when there is no diffusion and no advection
    * flux. In this case, a zero row may appear leading to the divergence of
@@ -1460,26 +1461,28 @@ cs_cdofb_advection_build_no_diffusion(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build the cellwise advection operator for CDO-Fb schemes
+ * \brief   Main function to build the cellwise advection operator for CDO
+ *          face-based schemes.
  *          The local matrix related to this operator is stored in cb->loc
  *
- *          A diffusion term is present so that there is no need to perform
- *          additional checkings.
+ *          One assumes that a diffusion term is present so that there is no
+ *          need to perform additional checkings on the well-posedness of the
+ *          operator.
  *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      csys        pointer to a cs_cell_sys_t structure
- * \param[in]      build_func  pointer to the function building the system
- * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in]      scheme_func  pointer to the function building the system
+ * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
-                         const cs_cell_mesh_t        *cm,
-                         const cs_cell_sys_t         *csys,
-                         cs_cdofb_adv_scheme_t       *build_func,
-                         cs_cell_builder_t           *cb)
+cs_cdofb_advection(const cs_equation_param_t   *eqp,
+                   const cs_cell_mesh_t        *cm,
+                   const cs_cell_sys_t         *csys,
+                   cs_cdofb_adv_scheme_t       *scheme_func,
+                   cs_cell_builder_t           *cb)
 {
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
@@ -1490,7 +1493,7 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
   cs_sdm_square_init(cm->n_fc + 1, adv);
 
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
-    return;         /* Nothing to do. No advection in the current cell volume */
+    return; /* Nothing to do. No advection in the current cell volume */
 
   /* Remark: The flux across the primal faces is stored in cb->adv_fluxes and
      should have been computed previously in a function compliant with the
@@ -1498,7 +1501,7 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
 
   /* Define the local operator for advection. Boundary conditions are also
      treated here since there are always weakly enforced */
-  build_func(eqp->dim, cm, csys, cb, adv);
+  scheme_func(eqp->dim, cm, csys, cb, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
