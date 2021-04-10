@@ -103,10 +103,12 @@ cs_user_initialization(cs_domain_t     *domain)
 
   int n_gasses = cs_glob_elec_properties->ngaz;
 
-  cs_array_set_value_real(n_cells, 1, 1.0, CS_FI_(ycoel, 0)->val);
+  if (n_gasses > 1) {
+    cs_array_set_value_real(n_cells, 1, 1.0, CS_FI_(ycoel, 0)->val);
 
-  for (int sp_id = 1; sp_id < n_gasses-1; sp_id++) {
-    cs_array_set_value_real(n_cells, 1, 0.0, CS_FI_(ycoel, sp_id)->val);
+    for (int sp_id = 1; sp_id < n_gasses-1; sp_id++) {
+      cs_array_set_value_real(n_cells, 1, 0.0, CS_FI_(ycoel, sp_id)->val);
+    }
   }
 
   /* Enthalpy = H(T0) or 0
