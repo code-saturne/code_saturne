@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2017 EDF
+# Copyright (C) 2005-2021 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
@@ -67,6 +67,9 @@ case "$host_os" in
     ;;
 esac
 
+# Default compiler flags
+#-----------------------
+
 cflags_default_prf="-g"
 ldflags_default_prf="-g"
 
@@ -89,10 +92,16 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=icc
   elif test -n "`echo $ple_ac_cc_version | grep ICX`" ; then
     ple_gcc=icx
+  elif test -n "`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
+    ple_gcc=oneapi
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
   elif test -n "`echo $ple_ac_cc_version | grep Cray`" ; then
     ple_gcc=cray
+  elif test -n "`echo $ple_ac_cc_version | grep FCC`" ; then
+    ple_gcc=fujitsu
+  elif test -n "`echo $ple_ac_cc_version | grep Arm`" ; then
+    ple_gcc=arm
   else
     ple_gcc=gcc
   fi
@@ -240,8 +249,34 @@ elif test "x$ple_gcc" = "xicc" -o "x$ple_gcc" = "xicx" ; then
   cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
   cflags_default_dbg="-g -O0 -ftrapuv"
   cflags_default_opt="-O2"
-  cflags_default_hot="-O3"
   cflags_default_omp="-qopenmp"
+
+# Otherwise, are we using DPC (OneAPI) ?
+#----------------------------------------
+
+elif test "x$ple_gcc" = "xoneapi" ; then
+
+  ple_cc_version=`echo $ple_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
+  ple_cc_compiler_known=yes
+
+  # Some version numbers
+  ple_cc_vers_major=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
+  ple_cc_vers_minor=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
+  ple_cc_vers_patch=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$ple_cc_vers_major" || ple_cc_vers_major=0
+  test -n "$ple_cc_vers_minor" || ple_cc_vers_minor=0
+  test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
+
+  # Default compiler flags
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0"
+  cflags_default_opt="-O2"
+  cflags_default_omp="-fiopenmp"
+
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -341,6 +376,64 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     cflags_default_opt="-O2"
     cflags_default_dbg="-g"
     cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+
+  fi
+fi
+
+# Otherwise, are we using the Fujitsu compiler ?
+#--------------------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Fujitsu C/C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Fujitsu C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    ple_ac_cc_version=`$CC -V 2>&1 | grep "Fujitsu C" | head -1`
+    ple_cc_compiler_known=yes
+    ple_linker_set=yes
+
+    # Default compiler flags
+    cflags_default="-x c11 -fPIC"
+    cflags_default_opt="-O2"
+    cflags_default_dbg="-g"
+    cflags_default_omp="-Kopenmp"
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+
+  fi
+fi
+
+# Otherwise, are we using the Arm compiler ?
+#--------------------------------------------
+
+if test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC -v 2>&1 | grep 'Arm C/C++/Fortran' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Arm C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    ple_ac_cc_version=`$CC -v 2>&1 | grep "Arm C/C++/Fortran" | head -1`
+    ple_cc_compiler_known=yes
+    ple_linker_set=yes
+
+    # Default compiler flags
+    cflags_default="-std=c11 -fPIC"
+    cflags_default_opt="-O2"
+    cflags_default_dbg="-g"
+    cflags_default_omp="-fopenmp"
 
     # Default  linker flags
     ldflags_default=""

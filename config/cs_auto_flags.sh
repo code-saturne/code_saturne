@@ -157,6 +157,10 @@ if test "x$GCC" = "xyes"; then
     cs_gcc=clang
   elif test -n "`echo $cs_ac_cc_version | grep Cray`" ; then
     cs_gcc=cray
+  elif test -n "`echo $cs_ac_cc_version | grep FCC`" ; then
+    cs_gcc=fujitsu
+  elif test -n "`echo $cs_ac_cc_version | grep Arm`" ; then
+    cs_gcc=arm
   else
     cs_gcc=gcc
   fi
@@ -336,7 +340,6 @@ elif test "x$cs_gcc" = "xoneapi" ; then
   cflags_default_hot="-O3"
   cflags_default_omp="-fiopenmp"
 
-
 # Otherwise, are we using clang ?
 #--------------------------------
 
@@ -448,6 +451,66 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
   fi
 fi
 
+# Otherwise, are we using the Fujitsu compiler ?
+#------------------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC -V 2>&1 | grep 'Fujitsu C/C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Fujitsu C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cc_version=`$CC -V 2>&1 | grep "Fujitsu C/C++" | head -1`
+    cs_cc_compiler_known=yes
+    cs_linker_set=yes
+
+    # Default compiler flags
+    cflags_default="-x c11 -fPIC"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_omp="-Kopenmp"
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+
+  fi
+fi
+
+# Otherwise, are we using the Arm compiler ?
+#------------------------------------------
+
+if test "x$cs_cc_compiler_known" != "xyes" ; then
+
+  $CC -v 2>&1 | grep 'Arm C/C++/Fortran' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Arm C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cc_version=`$CC -v 2>&1 | grep "Arm C/C++/Fortran" | head -1`
+    cs_cc_compiler_known=yes
+    cs_linker_set=yes
+
+    # Default compiler flags
+    cflags_default="-std=c11 -fPIC"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-O3"
+    cflags_default_dbg="-g"
+    cflags_default_omp="-fopenmp"
+
+    # Default  linker flags
+    ldflags_default=""
+    ldflags_default_opt="-O2"
+    ldflags_default_dbg="-g"
+
+  fi
+fi
+
 # Compiler still not identified
 #------------------------------
 
@@ -513,6 +576,10 @@ if test "x$GXX" = "xyes"; then
     cs_gxx=clang
   elif test -n "`echo $cs_ac_cxx_version | grep Cray`" ; then
     cs_gxx=cray
+  elif test -n "`echo $cs_ac_cxx_version | grep FCC`" ; then
+    cs_gxx=fujitsu
+  elif test -n "`echo $cs_ac_cxx_version | grep Arm`" ; then
+    cs_gxx=arm
   else
     cs_gxx=g++
   fi
@@ -794,6 +861,54 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
 fi
 
+# Otherwise, are we using the Fujitsu compiler ?
+#------------------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  $CXX -V 2>&1 | grep 'Fujitsu C/C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Fujitsu C++"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cxx_version=`$CXX -V 2>&1 | grep "Fujitsu C/C++" | head -1`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-x c++11 -fPIC"
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-O3"  # Bug observed when -O3 is used
+    cxxflags_default_dbg="-g"
+    cfxxlags_default_omp="-Kopenmp"
+    cxxflags_default_std=""
+  fi
+fi
+
+# Otherwise, are we using the Arm compiler ?
+#------------------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  $CXX -v 2>&1 | grep 'Arm C/C++/Fortran' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Arm C++"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cxx_version=`$CXX -v 2>&1 | grep "Arm C/C++/Fortran" | head -1`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-std=c++11 -fPIC"
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cfxxlags_default_omp="-fopenmp"
+    cxxflags_default_std=""
+  fi
+fi
+
 # Compiler still not identified
 #------------------------------
 
@@ -1054,6 +1169,52 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O2"
     fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using the Fujitsu compiler ?
+  #-------------------------------
+
+  $FC -V 2>&1 | grep 'Fujitsu Fortran' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Fujitsu Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_fc_version=`$FC -V 2>&1 | grep "Fujitsu Fortran" | head -1`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-cpp -fPIC"
+    fcflags_default_dbg="-g"
+    fcflags_default_opt="-O2"
+    fcflags_default_omp="-Kopenmp"
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using the Arm compiler ?
+  #--------------------------------
+
+  $FC -v 2>&1 | grep 'Arm C/C++/Fortran' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Arm Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_fc_version=`$FC -v 2>&1 | grep "Arm C/C++/Fortran" | head -1`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-cpp -fPIC"
+    fcflags_default_dbg="-g"
+    fcflags_default_opt="-O2"
+    fcflags_default_omp="-fopenmp"
 
   fi
 fi
