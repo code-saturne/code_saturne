@@ -684,6 +684,10 @@ class XMLinitNeptune(BaseXmlInit):
             interface_sharpening = force_node.xmlGetChildString("InterfaceSharpening")
             unsharpened_cells = force_node.xmlGetChildString("UnsharpenedCells")
 
+            # For previous cases, force a drag model
+            if force_model == "none":
+                force_model = forces_xml_model.defaultValuesContinuous()['continuousdragmodel']
+
             forces_xml_model.setContinuousCouplingModel("1", "2", force_model)
             model = "none"
             if surface_tension == "on":
