@@ -76,7 +76,7 @@ double precision , dimension ( : )     , allocatable :: eh0,eh1
 double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
 double precision, dimension(:), pointer :: cvar_xwtcl
 double precision, dimension(:), pointer :: cvar_h2cl
-double precision, dimension(:), pointer :: cpro_temp2, cpro_temp1
+double precision, dimension(:), pointer :: cpro_temp2, cpro_temp
 
 !===============================================================================
 ! Conversion method
@@ -103,13 +103,13 @@ endif
 eh0( : ) = zero
 eh1( : ) = zero
 
-! --- Initialization from T2 to T1
+! --- Initialization of T2 from gas mix T
 
-call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 do icla = 1, nclacp
-  call field_get_val_s(itemp2(icla),cpro_temp2)
+  call field_get_val_s(itemp2(icla), cpro_temp2)
   do iel = 1, ncel
-    cpro_temp2(iel) = cpro_temp1(iel)
+    cpro_temp2(iel) = cpro_temp(iel)
   enddo
 enddo
 

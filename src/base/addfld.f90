@@ -683,7 +683,6 @@ call field_get_id_try('boundary_temperature', itempb)
 
 if (itempb .ge. 0) then
   call field_get_id_try('temperature', f_id)
-  if (f_id .lt. 0) call field_get_id_try('t_gas', f_id)
   if (f_id .ge. 0) then
     call field_get_label(f_id, f_label)
     call field_set_key_str(itempb, keylbl, f_label)

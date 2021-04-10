@@ -88,7 +88,7 @@ call field_get_key_id("scalar_class", keyccl)
 ! ---> Definition of pointers related to state variables
 
 ! Continuous phase (gaseous mix)
-call add_property_field_1d('t_gas', 'T_Gas', itemp1)
+call add_property_field_1d('temperature', 'T_Gas', itemp)
 call add_property_field_1d('rho_gas', 'Rho_Gas', irom1)
 
 ! Gas mixture fractions

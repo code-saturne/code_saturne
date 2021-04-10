@@ -72,19 +72,19 @@ double precision xsolid(2), mkfini , diamgt
 double precision masgut  , mfgout , mkgout , rhofol
 
 double precision, dimension(:), pointer :: cvar_yfolcl, cvar_h2cl
-double precision, dimension(:), pointer :: cpro_temp2, cpro_temp1
+double precision, dimension(:), pointer :: cpro_temp2, cpro_temp
 double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
 
 !===============================================================================
 ! 1. Preliminary calculations
 !===============================================================================
-! --- Initialization of T2 as T1
+! --- Initialization of T2 from gas mix T1
 
-call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(itemp,cpro_temp)
 do icla = 1, nclafu
   call field_get_val_s(itemp2(icla),cpro_temp2)
   do iel = 1, ncel
-    cpro_temp2(iel) = cpro_temp1(iel)
+    cpro_temp2(iel) = cpro_temp(iel)
   enddo
 enddo
 

@@ -159,7 +159,7 @@ double precision, dimension(:), pointer :: cvar_xwtcl, cvara_xwtcl
 double precision, dimension(:), pointer :: cvar_yno, cvara_yno
 double precision, dimension(:), pointer :: cvara_yhcn, cvara_ynh3
 double precision, dimension(:), pointer :: cvara_var
-double precision, dimension(:), pointer :: cpro_temp1, cpro_temp2, cpro_rom2
+double precision, dimension(:), pointer :: cpro_temp, cpro_temp2, cpro_rom2
 double precision, dimension(:), pointer :: cpro_diam2, cpro_cgd1, cpro_cgd2
 double precision, dimension(:), pointer :: cpro_cght, cpro_yox, cpro_yco2
 double precision, dimension(:), pointer :: cpro_yco, cpro_yh2o, cpro_rom1
@@ -212,7 +212,7 @@ call field_get_label(ivarfl(ivar), chaine)
 call field_get_val_s(icrom, crom)
 if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
-call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(irom1, cpro_rom1)
 
 call field_get_val_s(iym1(io2), cpro_yox)
@@ -653,8 +653,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         / cpro_rom2(iel) * crom(iel)       &
         * cell_f_vol(iel)
 
-    smbrs(iel)  = smbrs(iel)-aux*(cpro_temp2(iel)-cpro_temp1(iel))*cpro_x2(iel)
-    smbrsh1(iel) = smbrsh1(iel)+aux*(cpro_temp2(iel)-cpro_temp1(iel))*cpro_x2(iel)
+    smbrs(iel)  = smbrs(iel)-aux*(cpro_temp2(iel)-cpro_temp(iel))*cpro_x2(iel)
+    smbrsh1(iel) = smbrsh1(iel)+aux*(cpro_temp2(iel)-cpro_temp(iel))*cpro_x2(iel)
 
     ! Store the implicite part of the exchange so that we can compute a
     ! conservative exhcange term when computing the gas enthalpy
@@ -770,7 +770,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
       f2mc(icha) = zero
     enddo
 
-    t1        = cpro_temp1(iel)
+    t1        = cpro_temp(iel)
     mode      = -1
     call cs_coal_htconvers1 &
     ( mode , xho2 , coefe , f1mc , f2mc , t1 )
@@ -827,7 +827,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         f2mc(icha) = zero
       enddo
 
-      t1        = cpro_temp1(iel)
+      t1        = cpro_temp(iel)
       mode      = -1
       call cs_coal_htconvers1 &
       !======================
@@ -902,7 +902,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         f2mc(icha) = zero
       enddo
 
-      t1        = cpro_temp1(iel)
+      t1        = cpro_temp(iel)
       mode      = -1
       call cs_coal_htconvers1 &
       ( mode , xhh2o , coefe , f1mc , f2mc , t1    )
@@ -1358,12 +1358,12 @@ if ( ieqco2 .eq. 1 ) then
      xxh2o = max(xxh2o,zero)
      sqh2o = sqrt(xxh2o)
 
-     xkp = exp(lnk0p-t0p/cpro_temp1(iel))
-     xkm = exp(lnk0m-t0m/cpro_temp1(iel))
+     xkp = exp(lnk0p-t0p/cpro_temp(iel))
+     xkm = exp(lnk0m-t0m/cpro_temp(iel))
 
-     xkpequ = 10.d0**(l10k0e-t0e/cpro_temp1(iel))
+     xkpequ = 10.d0**(l10k0e-t0e/cpro_temp(iel))
      xkcequ = xkpequ                                              &
-             /sqrt(8.32d0*cpro_temp1(iel)/1.015d5)
+             /sqrt(8.32d0*cpro_temp(iel)/1.015d5)
 
      !        initialization by the transported state
 
@@ -1371,7 +1371,7 @@ if ( ieqco2 .eq. 1 ) then
      xcom  = xxco + xxco2
      xo2m  = xxo2 + 0.5d0*xxco2
 
-     if ( cpro_temp1(iel) .gt. 1200.d0 ) then
+     if ( cpro_temp(iel) .gt. 1200.d0 ) then
 
       !        Search for the equilibrum state
       !        Iterative search without control of convergence
@@ -1622,7 +1622,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         tfuel(iel) = tfuel(iel)/xmx2
 
       else
-        tfuel(iel) = cpro_temp1(iel)
+        tfuel(iel) = cpro_temp(iel)
       endif
       tfuelmin = min(tfuel(iel),tfuelmin)
       tfuelmax = max(tfuel(iel),tfuelmax)
@@ -1664,7 +1664,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         f1mc(icha) = zero
         f2mc(icha) = zero
       enddo
-      t1        = cpro_temp1(iel)
+      t1        = cpro_temp(iel)
       mode      = -1
       call cs_coal_htconvers1 &
       ( mode  , xho2    , coefe  , f1mc   , f2mc   , t1    )
@@ -1720,7 +1720,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           f1mc(icha) = zero
           f2mc(icha) = zero
         enddo
-        t1        = cpro_temp1(iel)
+        t1        = cpro_temp(iel)
         mode      = -1
         call cs_coal_htconvers1 &
         ( mode  , xhco2    , coefe  , f1mc   , f2mc   , t1    )
@@ -1794,7 +1794,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           f1mc(icha) = zero
           f2mc(icha) = zero
         enddo
-        t1        = cpro_temp1(iel)
+        t1        = cpro_temp(iel)
         mode      = -1
         call cs_coal_htconvers1 &
       ( mode  , xhh2o    , coefe  , f1mc   , f2mc   , t1    )
@@ -2138,7 +2138,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               do ii = 1,7
 
                 !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
-                if(cpro_temp1(iel).ge.teno(ii).and.cpro_temp1(iel).lt.   &
+                if(cpro_temp(iel).ge.teno(ii).and.cpro_temp(iel).lt.   &
                    teno(ii+1)) then
 
                   !  JJ indicates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
@@ -2148,31 +2148,31 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     if(chx1(icha).ge.4.d0) then
 
                     core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                     core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                     para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     elseif(chx1(icha).le.1.d0) then
 
                     core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                     core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                     para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     elseif (chx1(icha).ge.jj.and.chx1(icha).lt.jj+1) then
 
                     core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel)      &
+                            (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel)      &
                             - teno(ii))
                     core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                            (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                             teno(ii))
                     para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1)-    &
-                            teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                            teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     endif
 
@@ -2210,7 +2210,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               do ii = 1,7
 
                 !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
-                if (cpro_temp1(iel).ge.teno(ii).and.cpro_temp1(iel).lt.   &
+                if (cpro_temp(iel).ge.teno(ii).and.cpro_temp(iel).lt.   &
                    teno(ii+1)) then
 
                   !  JJ indicates the quotient H/C of
@@ -2221,31 +2221,31 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     if(chx2(icha).ge.4.d0) then
 
                       core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     elseif(chx2(icha).le.1.d0) then
 
                       core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
 
                       core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     endif
 
@@ -2514,7 +2514,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               do ii = 1,7
 
                 !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
-                if(cpro_temp1(iel).ge.teno(ii).and.cpro_temp1(iel).lt.   &
+                if(cpro_temp(iel).ge.teno(ii).and.cpro_temp(iel).lt.   &
                    teno(ii+1)) then
 
                   !  JJ indicates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
@@ -2524,41 +2524,41 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     if(chx1(icha).ge.4.d0) then
 
                       core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
 
                     elseif(chx1(icha).le.1.d0) then
 
                       core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel)  -   &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel)  -   &
                               teno(ii))
                       core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) - teno(ii))
+                              teno(ii)) ) * (cpro_temp(iel) - teno(ii))
                       core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
-                              (teno(ii+1) - teno(ii)) ) * (cpro_temp1(iel) -  &
+                              (teno(ii+1) - teno(ii)) ) * (cpro_temp(iel) -  &
                               teno(ii))
 
                     elseif (chx1(icha).ge.jj.and.chx1(icha).lt.jj+1) then
 
                       core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                              (teno(ii+1) - teno(ii)) ) * (cpro_temp1(iel) -  &
+                              (teno(ii+1) - teno(ii)) ) * (cpro_temp(iel) -  &
                               teno(ii))
 
                     endif
@@ -2596,7 +2596,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               do ii = 1,7
 
                 !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
-                if(cpro_temp1(iel).ge.teno(ii).and.cpro_temp1(iel).lt.   &
+                if(cpro_temp(iel).ge.teno(ii).and.cpro_temp(iel).lt.   &
                    teno(ii+1)) then
 
                   !  JJ incates the quotient H/C of the fuel (4=CH4;3=CH3,etc.)
@@ -2606,45 +2606,45 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     if(chx2(icha).ge.4.d0) then
 
                       core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                              (teno(ii+1) - teno(ii)) ) * (cpro_temp1(iel) -  &
+                              (teno(ii+1) - teno(ii)) ) * (cpro_temp(iel) -  &
                               teno(ii))
 
                     elseif(chx2(icha).le.1.d0) then
 
                       core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
-                              teno(ii)) ) * (cpro_temp1(iel) -                &
+                              teno(ii)) ) * (cpro_temp(iel) -                &
                               teno(ii))
                       core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
-                              (teno(ii+1) - teno(ii)) ) * (cpro_temp1(iel) -  &
+                              (teno(ii+1) - teno(ii)) ) * (cpro_temp(iel) -  &
                               teno(ii))
                     elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
 
                       core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
-                              (teno(ii+1)-teno(ii)) ) * (cpro_temp1(iel) -    &
+                              (teno(ii+1)-teno(ii)) ) * (cpro_temp(iel) -    &
                               teno(ii))
                       para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                              (teno(ii+1) - teno(ii)) ) * (cpro_temp1(iel) -  &
+                              (teno(ii+1) - teno(ii)) ) * (cpro_temp(iel) -  &
                               teno(ii))
 
                     endif

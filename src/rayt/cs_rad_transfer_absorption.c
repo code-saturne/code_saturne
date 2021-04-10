@@ -218,10 +218,10 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
   else if (   pm_flag[CS_COMBUSTION_COAL] >= 0
            || pm_flag[CS_COMBUSTION_FUEL] >= 0) {
 
-    cs_real_t *cpro_temp1 = cs_field_by_name("t_gas")->val;
-    cs_real_t *cpro_yco2  = cs_field_by_name("ym_co2")->val;
-    cs_real_t *cpro_yh2o  = cs_field_by_name("ym_h2o")->val;
-    cs_real_t *cpro_mmel  = cs_field_by_name("xm")->val;
+    cs_real_t *cpro_temp = cs_field_by_name("temperature")->val;
+    cs_real_t *cpro_yco2 = cs_field_by_name("ym_co2")->val;
+    cs_real_t *cpro_yh2o = cs_field_by_name("ym_h2o")->val;
+    cs_real_t *cpro_mmel = cs_field_by_name("xm")->val;
 
     const double *restrict wmole = cm->wmole;
     const int ico2 = cm->ico2 - 1;
@@ -241,7 +241,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
       if (rt_params->imodak == 1)
-        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp1);
+        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
 
       else if (rt_params->imoadf == 1)
         cs_rad_transfer_adf08(w1, w2, tempk, kgas, agas, agasb);

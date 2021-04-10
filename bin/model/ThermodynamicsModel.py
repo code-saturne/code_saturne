@@ -1336,7 +1336,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl.setInitialValue('2','emissivity',15446.2)
         mdl.setInitialValue('2','elasticity',22.2)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1446,7 +1446,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueDensity('1',8.8)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1486,7 +1486,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueViscosity('1',7.7)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1526,7 +1526,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueHeat('1',118.712)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1566,7 +1566,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueCond('1',456.1)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1606,7 +1606,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueTens('none',0.075)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1651,7 +1651,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueEmissivity('2',0.008)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1728,7 +1728,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setInitialValueElastCoef('2',0.42)
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1804,7 +1804,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setFormula('1','density','2.123')
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1865,7 +1865,7 @@ class ThermodynamicsTestCase(ModelTest):
         mdl = ThermodynamicsModel(self.case)
         mdl.setPropertyMode('1','density','user_law')
         doc = '''<properties>
-                         <property choice="" field_id="1" label="temp1" name="temperature">
+                         <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>

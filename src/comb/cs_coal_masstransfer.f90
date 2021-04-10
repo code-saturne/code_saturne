@@ -100,7 +100,7 @@ double precision, dimension(:), pointer :: cvara_xchcl, cvara_xckcl, cvara_xnpcl
 double precision, dimension(:), pointer :: cvara_xwtcl
 double precision, dimension(:), pointer :: cpro_cgd1, cpro_cgd2, cpro_cgch
 double precision, dimension(:), pointer :: cpro_cght, cpro_rom2, cpro_temp2
-double precision, dimension(:), pointer :: cpro_diam2, cpro_temp1, cpro_mmel
+double precision, dimension(:), pointer :: cpro_diam2, cpro_temp, cpro_mmel
 double precision, dimension(:), pointer :: cpro_yox, cpro_yco2, cpro_yh2o
 double precision, dimension(:), pointer :: cpro_rom1, cpro_csec
 
@@ -257,9 +257,9 @@ enddo
 ! 4. Mass transfert by heterogeneous combustion with O2
 !===============================================================================
 
-call field_get_val_s(iym1(io2),cpro_yox)
-call field_get_val_s(itemp1,cpro_temp1)
-call field_get_val_s(irom1,cpro_rom1)
+call field_get_val_s(iym1(io2), cpro_yox)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(irom1, cpro_rom1)
 
 do icla = 1, nclacp
 
@@ -279,7 +279,7 @@ do icla = 1, nclacp
     !                                                 ---
     !       PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
 
-    pparo2 = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel) &
+    pparo2 = rho1(iel)*cs_physical_constants_r*cpro_temp(iel) &
             *cpro_yox(iel)/wmole(io2)
     pparo2 = pparo2 / prefth
 
@@ -356,7 +356,7 @@ if ( ihtco2 .eq. 1) then
       !                                                 ---
       !       PCO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YCO2/MCO2
 
-      pprco2 = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel)  &
+      pprco2 = rho1(iel)*cs_physical_constants_r*cpro_temp(iel)  &
                            *cpro_yco2(iel)/wmole(ico2)
       pprco2 = pprco2 / prefth
 
@@ -435,7 +435,7 @@ if ( ihth2o .eq. 1) then
       !                                                 ---
       !       PH2O = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YH2O/MH2O
 
-      pprh2o = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel) &
+      pprh2o = rho1(iel)*cs_physical_constants_r*cpro_temp(iel) &
               *cpro_yh2o(iel)/wmole(ih2o)
       pprh2o = pprh2o/ prefth
 

@@ -76,7 +76,7 @@ implicit none
 !===============================================================================
 
 ! Continuous phase (gas mixture)
-call add_property_field_1d('t_gas', 'T_Gas', itemp1)
+call add_property_field_1d('temperature', 'T_Gas', itemp)
 
 ! State variables
 

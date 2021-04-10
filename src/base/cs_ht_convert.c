@@ -149,7 +149,7 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
   /* Pulverized coal or fuel combustion */
   else if (   pm_flag[CS_COMBUSTION_COAL] >= 0
            || pm_flag[CS_COMBUSTION_FUEL] >= 0)
-    cpro_t = cs_field_by_name("t_gas")->val;
+    cpro_t = CS_F_(t)->val;
 
   /* Electric arcs */
   else if (   pm_flag[CS_JOULE_EFFECT] >= 1

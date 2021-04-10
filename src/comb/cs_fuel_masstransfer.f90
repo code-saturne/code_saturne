@@ -86,7 +86,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
 double precision, dimension(:), pointer :: cvara_yfolcl, cvara_ngcl
 double precision, dimension(:), pointer :: cpro_cgev, cpro_cght, cpro_chgl
-double precision, dimension(:), pointer :: cpro_yox, cpro_temp1
+double precision, dimension(:), pointer :: cpro_yox, cpro_temp
 double precision, dimension(:), pointer :: cpro_diam2, cpro_rom2, cpro_temp2
 double precision, dimension(:), pointer :: cpro_rom1
 
@@ -109,9 +109,9 @@ enddo
 ! --- Pointer
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iym1(io2),cpro_yox)
-call field_get_val_s(itemp1,cpro_temp1)
-call field_get_val_s(irom1,cpro_rom1)
+call field_get_val_s(iym1(io2), cpro_yox)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(irom1, cpro_rom1)
 !
 pref = 1.013d0
 
@@ -160,8 +160,8 @@ do icla = 1, nclafu
       endif
     endif
 
-    if ( cvara_yfolcl(iel) .gt. epsifl  .and.                              &
-         cpro_temp1(iel).gt. cpro_temp2(iel)        ) then
+    if (       cvara_yfolcl(iel) .gt. epsifl                        &
+        .and. cpro_temp(iel).gt. cpro_temp2(iel)) then
 
        cpro_chgl(iel) = 6.d0*lambda*xnuss/cpro_diam2(iel)**2        &
                            /cpro_rom2(iel)*cvara_yfolcl(iel)
@@ -206,15 +206,14 @@ do icla = 1, nclafu
              /(cvara_ngcl(iel)*rho0fl)
     deva2 =  (pi*(diniin(icla)**3)/6.d0)+(pi*(dinikf(icla)**3)/6.d0)
 
-      if ( cpro_temp2(iel)    .gt. tevap1               .and.           &
-           cpro_temp1(iel)    .gt. cpro_temp2(iel)   .and.           &
-           deva1.gt.deva2                                          ) then
+      if ( cpro_temp2(iel) .gt. tevap1            .and.                    &
+           cpro_temp(iel)  .gt. cpro_temp2(iel) .and. deva1.gt.deva2) then
 
-      ! The evaporated mass flux is determined evapore est determined according
-      !               to a supposed profil of dMeva/dTgoutte.
+        ! The evaporated mass flux is determined evapore est determined according
+        !               to a supposed profil of dMeva/dTgoutte.
 
-      cpro_cgev(iel) = cpro_chgl(iel)                              &
-                          /( hrfvap + cp2fol*(tevap2-cpro_temp2(iel)) )
+        cpro_cgev(iel) =   cpro_chgl(iel)                                  &
+                         / ( hrfvap + cp2fol*(tevap2-cpro_temp2(iel)))
 
       endif
 
@@ -243,15 +242,14 @@ do icla = 1, nclafu
       ! Calculation of the partial pressure of oxygene [atm]                                                 ---
       !   PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
 
-      pparo2 = cpro_rom1(iel)*cs_physical_constants_r  &
-              *cpro_temp1(iel)                                 &
-              *cpro_yox(iel)/wmole(io2)
+      pparo2 = cpro_rom1(iel)*cs_physical_constants_r                      &
+              *cpro_temp(iel)*cpro_yox(iel)/wmole(io2)
       pparo2 = pparo2 / prefth
 
       ! Chemical kinetic coefficient of CO forming
       !   in [kg.m-2.s-1.atm(-n)]
       xdffli = ahetfl*exp(-ehetfl*4185.d0                                  &
-              /(cs_physical_constants_r*cpro_temp1(iel)))
+              /(cs_physical_constants_r*cpro_temp(iel)))
 
       ! Coefficient of diffusion in kg/m2/s/[atm]: XDFEXT
       ! Global coefficient for n=0.5 in kg/m2/s: XDFTOT0
@@ -259,8 +257,7 @@ do icla = 1, nclafu
 
       diacka = dcoke/(dinikf(icla))
         if ( diacka .gt. epsifl ) then
-        xdfext = 2.53d-7*((cpro_temp1(iel))**0.75d0)                    &
-                / dcoke*2.d0
+        xdfext = 2.53d-7*((cpro_temp(iel))**0.75d0) / dcoke*2.d0
         xdftot1 = pparo2 / ( 1.d0/xdffli + 1.d0/xdfext )
         xdftot0 = -(xdffli**2)/(2.d0*xdfext**2)+(pparo2*xdffli**2          &
                 +(xdffli**4)/(2.d0*xdfext**2))**0.5d0

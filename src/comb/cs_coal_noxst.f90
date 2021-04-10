@@ -140,7 +140,7 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 type(pmapper_double_r1), dimension(:), allocatable :: cpro_temp2
 double precision, dimension(:), pointer :: cpro_exp1, cpro_exp2, cpro_exp3
 double precision, dimension(:), pointer :: cpro_exp4, cpro_exp5, cpro_exprb
-double precision, dimension(:), pointer :: cpro_temp1, cpro_yo2, cpro_mmel
+double precision, dimension(:), pointer :: cpro_temp, cpro_yo2, cpro_mmel
 
 logical(kind=c_bool) :: log_active
 
@@ -204,13 +204,13 @@ enddo
 ! 2. CALCUL SANS LES PDF
 !===============================================================================
 
-call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(iym1(io2), cpro_yo2)
 call field_get_val_s(immel, cpro_mmel)
 
 do iel = 1, ncel
 
-  tg  = cpro_temp1(iel)
+  tg  = cpro_temp(iel)
   yo2 = cpro_yo2(iel)
   xo2 = yo2*cpro_mmel(iel)/wmo2
 
@@ -426,7 +426,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
         tfuel = tfuel/xmx2
 
       else
-        tfuel = cpro_temp1(iel)
+        tfuel = cpro_temp(iel)
       endif
 
       ! On recupere la valeur de Toxyd a partir de hoxyd
@@ -494,8 +494,8 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
       toxmin = min(toxmin,toxyd)
       toxmax = max(toxmax,toxyd)
 
-      if (toxyd .gt. cpro_temp1(iel)) then
-        toxyd = cpro_temp1(iel)
+      if (toxyd .gt. cpro_temp(iel)) then
+        toxyd = cpro_temp(iel)
       endif
 
       ! On initialise par les temperatures Toxy et Tfuel aux extremites
@@ -504,7 +504,7 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
 
       ! On recupere la valeur de la temperature moyenne
 
-      tmpgaz = cpro_temp1(iel)
+      tmpgaz = cpro_temp(iel)
 
       bb1 = max(0.D0      ,pdfm1(iel))
       bb2 = min(fs4no(iel),pdfm2(iel))

@@ -99,7 +99,7 @@ double precision, dimension(:), allocatable :: x1,f1f2
 double precision, dimension(:), allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer ::  crom, cpro_rom1
-double precision, dimension(:), pointer ::  cpro_temp1, cpro_temp2, cpro_gmeva
+double precision, dimension(:), pointer ::  cpro_temp, cpro_temp2, cpro_gmeva
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -241,14 +241,14 @@ endif
 !==============================================================================
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 do icla=1,nclafu
 !
   call field_get_val_s(itemp2(icla),cpro_temp2)
   call field_get_val_s(igmeva(icla),cpro_gmeva)
   do iel = 1, ncel
 !
-    t2mt1  = cpro_temp2(iel)-cpro_temp1(iel)
+    t2mt1  = cpro_temp2(iel)-cpro_temp(iel)
     gvap = -cpro_gmeva(iel)*t2mt1*crom(iel)
 !
     aux  = gvap*(1.d0-f1f2(iel))**2.d0

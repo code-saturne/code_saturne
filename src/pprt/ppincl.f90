@@ -441,9 +441,6 @@ module ppincl
   !>  - iym1(7): mass fraction of \f$N_2\f$ in the gas mixture
   integer, save :: iym1(ngazem)
 
-  !> temperature of the gas mixture
-  integer, save :: itemp1
-
   ! TODO absent de la doc utilisateur
   !> State variables of continuous phase (gas mixture)
   integer, save :: irom1
