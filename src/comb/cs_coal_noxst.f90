@@ -309,9 +309,9 @@ if (     ipdf1.eq.1 .or. ipdf2.eq.1 .or. ipdf3.eq.1 &
 
   do iel=1, ncel
 
-    if ((indpdf(iel).eq.1).and.           &
-        (fs3no (iel).gt.fs4no(iel)).and.  &
-        (fs4no (iel).lt.1.d0)) then
+    if (indpdf(iel).ne.1) cycle
+
+    if ((fs3no (iel).gt.fs4no(iel)) .and. (fs4no (iel).lt.1.d0)) then
 
       ! Calcul de Yo2 dans l'oxydant
       !           Yo2 en fs4
