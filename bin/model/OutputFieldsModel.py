@@ -378,18 +378,6 @@ class OutputFieldsTestCase(ModelTest):
             'Could not get VariableLabelsList'
 
 
-#    def checkGetVariableProbeList(self):
-#        """Check whether the  NonCondensableModel class could get the VariableLabelsList"""
-#        MainFieldsModel(self.case).addField()
-#        mdl = OutputFieldsModel(self.case)
-#        mdl.setProbesList('1','U1','1')
-#        print(mdl.getProbesList('1','VelocityX'))
-#        print(mdl.getVariableProbeList())
-#        print(mdl.case)
-#        assert mdl.getVariableLabelsList() == ,\
-#            'Could not get VariableLabelsList'
-
-
     def checkGetandSetVariableLabel(self):
         """Check whether the OutputFieldsModel class could set and get VariableLabel"""
         MainFieldsModel(self.case).addField()

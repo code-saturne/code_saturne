@@ -1118,7 +1118,6 @@ call field_get_id_try('boundary_temperature', f_id)
 if (f_id .ge. 0) then
   call field_get_val_s(f_id, field_s_b)
   call field_get_id_try('temperature', f_id)
-  if (f_id .lt. 0) call field_get_id_try('t_gas', f_id)
   if (f_id .ge. 0) then
     call field_get_val_s(f_id, field_s_v)
     do ifac = 1, nfabor

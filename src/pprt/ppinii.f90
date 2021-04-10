@@ -149,7 +149,6 @@ do icla = 1, nclcpm
 enddo
 !
 !       Variables algebriques ou d'etat
-itemp1 = 0
 do ige = 1, ngazem
   iym1(ige) = 0
 enddo
@@ -195,7 +194,6 @@ itaire  = 0
 
 !       Variables algebriques ou d'etat
 
-itemp1 = 0
 do ige = 1, ngazem
   iym1(ige) = 0
 enddo

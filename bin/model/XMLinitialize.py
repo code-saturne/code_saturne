@@ -1848,7 +1848,7 @@ class XMLinit(BaseXmlInit):
         # Fix some Combustion names
 
         p_node = self.case.xmlGetNode('thermophysical_models')
-        if node:
+        if p_node:
             p_node = node.xmlGetNode('solid_fuels')
 
         if p_node:
@@ -1922,7 +1922,6 @@ class XMLinit(BaseXmlInit):
                 if node:
                     node.xmlRemoveNode()
 
-
         # Check that all zones have the 'physical_properties' flag
         XMLVolumicNode = self.case.xmlGetNode('volumic_conditions')
         for node in XMLVolumicNode.xmlGetChildNodeList('zone', 'label', 'id'):
@@ -1933,6 +1932,23 @@ class XMLinit(BaseXmlInit):
                     node['physical_properties'] = 'on'
                 else:
                     node['physical_properties'] = 'off'
+
+        # Rename some coal combustion fields
+        p_node = self.case.xmlGetNode('thermophysical_models')
+        if p_node:
+            p_node = p_node.xmlGetNode('solid_fuels')
+            if p_node:
+                rename = {"t_gas": "temperature"}
+                for attr in rename.keys():
+                    node = p_node.xmlGetNode('property', name=attr)
+                    if node:
+                        for n in self.case.xmlGetNodeList('var_prop'):
+                            name = n["name"]
+                            if name:
+                                for key in rename.keys():
+                                    if name == key:
+                                        n["name"] = rename[key]
+                        node['name'] = rename[attr]
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

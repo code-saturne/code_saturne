@@ -106,7 +106,7 @@ character*80     fname
 double precision, allocatable, dimension(:) :: visco
 
 double precision, dimension(:), pointer :: cpro_rom1, cpro_rom2, cpro_diam2
-double precision, dimension(:), pointer :: cpro_temp1, cpro_x2, cpro_x1
+double precision, dimension(:), pointer :: cpro_temp, cpro_x2, cpro_x1
 double precision, dimension(:), pointer :: cpro_ym1_3, cpro_ym1_5, cpro_ym1_7
 double precision, dimension(:), pointer :: cpro_ym1_8
 double precision, dimension(:), pointer :: cpro_ym1_9, cpro_ym1_11, cpro_ym1_12
@@ -156,7 +156,7 @@ call field_get_n_fields(nfld)
 !< [example_1]
 
 ! Temperature
-call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 
 ! Gas density
 call field_get_val_s(irom1, cpro_rom1)
@@ -224,7 +224,7 @@ dd7 = 2.9979d-15
 if (ntcabs.gt.1) then
   do iel = 1, ncel
 
-    xvart = cpro_temp1(iel)
+    xvart = cpro_temp(iel)
     visco_O2  = aa1 + xvart*bb1 + cc1*xvart**2 + dd1*xvart**3
     visco_CO  = aa2 + xvart*bb2 + cc2*xvart**2 + dd2*xvart**3
     visco_H2  = aa3 + xvart*bb3 + cc3*xvart**2 + dd3*xvart**3

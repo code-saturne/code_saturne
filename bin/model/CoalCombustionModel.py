@@ -300,7 +300,7 @@ class CoalCombustionModel(Variables, Model):
         """
         classesNumber = self.getClassesNumber()
 
-        lst = ["t_gas", "rho_gas", "ym_chx1m", "ym_chx2m",
+        lst = ["temperature", "rho_gas", "ym_chx1m", "ym_chx2m",
                "ym_co", "ym_o2", "ym_co2", "ym_h2o", "ym_n2",
                "ym_h2s", "ym_h2", "ym_hcn", "ym_nh3", "ym_so2",
                "xm"]
@@ -2028,7 +2028,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="Fr_HET" name="het_fraction" type="model">
                             <flux_reconstruction status="off"/>
                     </variable>
-                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="Temp_GAZ" name="temperature"/>
                     <property label="ROM_GAZ" name="rho_gas"/>
                     <property label="YM_CHx1m" name="ym_chx1m"/>
                     <property label="YM_CHx2m" name="ym_chx2m"/>
@@ -2073,7 +2073,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="Temp_GAZ" name="temperature"/>
                     <property label="ROM_GAZ" name="rho_gas"/>
                     <property label="YM_CHx1m" name="ym_chx1m"/>
                     <property label="YM_CHx2m" name="ym_chx2m"/>
@@ -2142,7 +2142,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="Temp_GAZ" name="temperature"/>
                     <property label="ROM_GAZ" name="rho_gas"/>
                     <property label="YM_CHx1m" name="ym_chx1m"/>
                     <property label="YM_CHx2m" name="ym_chx2m"/>
@@ -2250,7 +2250,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="Temp_GAZ" name="temperature"/>
                     <property label="ROM_GAZ" name="rho_gas"/>
                     <property label="YM_CHx1m" name="ym_chx1m"/>
                     <property label="YM_CHx2m" name="ym_chx2m"/>
@@ -2340,7 +2340,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <variable label="Fr_MV101" name="fr_mv1_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_MV201" name="fr_mv2_01" type="model"><flux_reconstruction status="off"/></variable>
                     <variable label="Fr_HET" name="het_fraction" type="model"><flux_reconstruction status="off"/></variable>
-                    <property label="Temp_GAZ" name="t_gas"/>
+                    <property label="Temp_GAZ" name="temperature"/>
                     <property label="ROM_GAZ" name="rho_gas"/>
                     <property label="YM_CHx1m" name="ym_chx1m"/>
                     <property label="YM_CHx2m" name="ym_chx2m"/>

@@ -160,7 +160,7 @@ double precision, allocatable, dimension(:,:) :: rtbcp, rtbmc, rtbwo
 
 double precision, dimension(:), pointer :: cpro_cyf1, cpro_cyf2, cpro_cyf3
 double precision, dimension(:), pointer :: cpro_cyox, cpro_cyp1, cpro_cyp2
-double precision, dimension(:), pointer :: cpro_cyin, cpro_temp1, cpro_mmel
+double precision, dimension(:), pointer :: cpro_cyin, cpro_temp, cpro_mmel
 type(pmapper_double_r1), dimension(:), pointer :: cpro_cyce
 
 !===============================================================================
@@ -298,20 +298,18 @@ enddo
 ! 4. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE
 !===============================================================================
 
-call field_get_val_s(itemp1,cpro_temp1)
-call field_get_val_s(immel,cpro_mmel)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(immel, cpro_mmel)
 
 !  CALCUL DE LA TEMPERATURE DU GAZ
 !     EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
 
   call cpteh1                                                     &
-  !==========
  ( ncelet , ncel   , nitbmc , nrtbmc ,                            &
    enth,                                                          &
    cpro_cyf1 , cpro_cyf2 , cpro_cyf3 ,                            &
    cpro_cyox , cpro_cyp1 , cpro_cyp2 ,                            &
-   cpro_cyin ,                                                    &
-   cpro_temp1 ,                                                   &
+   cpro_cyin , cpro_temp ,                                        &
    itbmc      , rtbmc      ,                                      &
 !          MACRO TABLEAU MULTI CHARBONS ENTIERS REELS
    rtbwo(1,1) , rtbwo(1,2) )
@@ -335,7 +333,7 @@ do iel = 1, ncel
 ! ---- On ne met pas la pression mecanique IPR
 !      mais P0
 
-  rom1(iel) = p0/(wmolme*cs_physical_constants_r*cpro_temp1(iel))
+  rom1(iel) = p0/(wmolme*cs_physical_constants_r*cpro_temp(iel))
 enddo
 
 ! Free memory

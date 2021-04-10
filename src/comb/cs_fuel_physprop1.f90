@@ -148,7 +148,7 @@ double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
-double precision, dimension(:), pointer :: cpro_x1, cpro_mmel, cpro_temp1
+double precision, dimension(:), pointer :: cpro_x1, cpro_mmel, cpro_temp
 double precision, dimension(:), pointer :: cvar_yfolcl
 double precision, dimension(:), pointer :: cpro_cyf1, cpro_cyf2, cpro_cyf3
 double precision, dimension(:), pointer :: cpro_cyf4, cpro_cyf5, cpro_cyf6
@@ -327,10 +327,10 @@ enddo
 ! 4. Calculation of temperature and density
 !===============================================================================
 
-call field_get_val_s(itemp1,cpro_temp1)
-call field_get_val_s(immel,cpro_mmel)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(immel, cpro_mmel)
 
-call cs_fuel_thfieldconv1(MESH_LOCATION_CELLS, enth, cpro_temp1)
+call cs_fuel_thfieldconv1(MESH_LOCATION_CELLS, enth, cpro_temp)
 
 do iel = 1, ncel
   wmolme = cpro_cyf1(iel)/wmole(ifo0)                         &
@@ -353,7 +353,7 @@ do iel = 1, ncel
   ! ---- We do not include the mecanical pressure IPR
   !      but P0
 
-  rom1(iel) = p0 / (wmolme*cs_physical_constants_r*cpro_temp1(iel))
+  rom1(iel) = p0 / (wmolme*cs_physical_constants_r*cpro_temp(iel))
 enddo
 
 !===============================================================================

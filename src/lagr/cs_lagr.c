@@ -785,13 +785,7 @@ _lagr_map_fields_default(void)
     }
 
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat");
-
-    if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-        || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-        || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
-      _lagr_extra_module.temperature = cs_field_by_name_try("t_gas");
-    else
-      _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
+    _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
 
     _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");

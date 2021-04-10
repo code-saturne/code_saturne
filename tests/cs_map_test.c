@@ -95,7 +95,7 @@ const char *f_base[] =
    "courant_number",
    "fourier_number",
    "total_pressure",
-   "t_gas",
+   "temperature",
    "rho_gas",
    "ym_chx1m",
    "ym_chx2m",

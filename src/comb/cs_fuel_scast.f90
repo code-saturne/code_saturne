@@ -142,7 +142,7 @@ double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: smbrsh1, rovsdth1
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer ::  vg_lim_pi
-double precision, dimension(:), pointer :: cpro_temp1, cpro_temp2, cpro_rom2
+double precision, dimension(:), pointer :: cpro_temp, cpro_temp2, cpro_rom2
 double precision, dimension(:), pointer :: cpro_diam2, cpro_cgev, cpro_cght
 double precision, dimension(:), pointer :: cpro_chgl, cpro_yox, cpro_yco2
 double precision, dimension(:), pointer :: cpro_yco, cpro_yh2o, cpro_rom1
@@ -169,7 +169,7 @@ call field_get_val_s(icrom, crom)
 
 ! --- Gas phase temperature
 
-call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(irom1, cpro_rom1)
 
 call field_get_val_prev_s(iym1(io2), cpro_yox)
@@ -255,13 +255,13 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
 
       xesp(ifov) = zero
       xesp(io2)  = 1.d0
-      call cs_fuel_htconvers1(imode,ho2 ,xesp,cpro_temp1(iel))
+      call cs_fuel_htconvers1(imode,ho2,xesp,cpro_temp(iel))
 
       xesp(io2)  = zero
       xesp(ico)  = 1.d0
       call cs_fuel_htconvers1(imode,hco,xesp,cpro_temp2(iel))
 
-      t2mt1 = cpro_temp2(iel)-cpro_temp1(iel)
+      t2mt1 = cpro_temp2(iel)-cpro_temp(iel)
 
       gmech = -cpro_chgl(iel)*t2mt1
       gmvap = cpro_cgev(iel)*hfov*t2mt1
@@ -301,7 +301,7 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
 
   do iel = 1, ncel
 
-    t2mt1 =  cpro_temp2(iel)-cpro_temp1(iel)
+    t2mt1 =  cpro_temp2(iel)-cpro_temp(iel)
     gmvap = -cpro_cgev(iel)*t2mt1
     gmhet = -cpro_cght(iel)
 
@@ -452,7 +452,7 @@ if ( ivar .eq. isca(ifvap) ) then
 
     do iel = 1, ncel
 
-      t2mt1 = cpro_temp2(iel)-cpro_temp1(iel)
+      t2mt1 = cpro_temp2(iel)-cpro_temp(iel)
       if ( cvara_yfolcl(iel) .gt. epsifl ) then
         gmvap = -cpro_cgev(iel)*t2mt1*cvar_yfolcl(iel)        &
                 / cvara_yfolcl(iel)
@@ -610,12 +610,12 @@ if ( ieqco2 .ge. 1 ) then
      xxh2o = max(xxh2o,zero)
      sqh2o = sqrt(xxh2o)
 
-     xkp = exp(lnk0p-t0p/cpro_temp1(iel))
-     xkm = exp(lnk0m-t0m/cpro_temp1(iel))
+     xkp = exp(lnk0p-t0p/cpro_temp(iel))
+     xkm = exp(lnk0m-t0m/cpro_temp(iel))
 
-     xkpequ = 10.d0**(l10k0e-t0e/cpro_temp1(iel))
+     xkpequ = 10.d0**(l10k0e-t0e/cpro_temp(iel))
      xkcequ = xkpequ                                              &
-             /sqrt(8.32d0*cpro_temp1(iel)/1.015d5)
+             /sqrt(8.32d0*cpro_temp(iel)/1.015d5)
 
      !        initialization per transported state
 
@@ -623,7 +623,7 @@ if ( ieqco2 .ge. 1 ) then
      xcom  = xxco + xxco2
      xo2m  = xxo2 + 0.5d0*xxco2
 
-     if ( cpro_temp1(iel) .gt. 1200.d0 ) then
+     if ( cpro_temp(iel) .gt. 1200.d0 ) then
 
      !           Search for the equilibrum state
      !           Iterative search with convergence control
@@ -815,8 +815,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           call field_get_val_s(igmhtf(icla),cpro_cght)
 
           gmvap = gmvap                                           &
-                 + crom(iel)*cpro_cgev(iel)                   &
-                  *(cpro_temp2(iel)-cpro_temp1(iel))
+                 + crom(iel)*cpro_cgev(iel)                       &
+                  *(cpro_temp2(iel)-cpro_temp(iel))
 
           gmhet = gmhet                                           &
                  +crom(iel)*cpro_cght(iel)
