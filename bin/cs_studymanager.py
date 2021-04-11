@@ -37,18 +37,11 @@ from datetime import datetime, date
 
 import smtplib
 
-try: # email version 3.0 (Python2 up to 2.6)
-    from email.Utils import COMMASPACE, formatdate
-    from email import Encoders
-    from email.MIMEMultipart import MIMEMultipart
-    from email.MIMEBase import MIMEBase
-    from email.MIMEText import MIMEText
-except Exception: # email version 4.0 (Python2 from Python 2.5)
-    from email.utils import COMMASPACE, formatdate
-    from email import encoders
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.base import MIMEBase
-    from email.mime.text import MIMEText
+from email.utils import COMMASPACE, formatdate
+from email import encoders
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -168,6 +161,9 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--filter-n-procs", dest="filter_n_procs",
                       type="int", help="filter on the dependency graph based on the number of procs used per cases")
+
+    parser.add_option("--with-resource", dest="resource_name", default=None,
+                      help="use resource settings based on given name")
 
     if len(argv)==0:
         parser.print_help(sys.stderr)

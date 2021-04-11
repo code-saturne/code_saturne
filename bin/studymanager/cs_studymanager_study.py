@@ -443,7 +443,7 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def run(self):
+    def run(self, resource_name=None):
         """
         Check if a run with same result subdirectory name exists
         and launch run if not.
@@ -480,6 +480,9 @@ class Case(object):
         n_procs = self.__data['n_procs']
         if n_procs:
             run_cmd += " -n " + n_procs
+
+        if resource_name:
+            run_cmd += " -with_resource=" + resource_name
 
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
@@ -1014,6 +1017,10 @@ class Studies(object):
         self.__filter_level   = options.filter_level
         self.__filter_n_procs = options.filter_n_procs
 
+        # Use the provided resource name if forced
+
+        self.__resource_name = options.resource_name
+
         # build the list of the studies
 
         doc = os.path.join(self.__dest, options.log_file)
@@ -1451,7 +1458,7 @@ class Studies(object):
                     self.reporting('    - running %s ...' % case.title,
                                    stdout=True, report=False, status=True)
 
-                    error = case.run()
+                    error = case.run(resource_name = self.__resource_name)
                     if case.is_time:
                         is_time = "%s s" % case.is_time
                     else:

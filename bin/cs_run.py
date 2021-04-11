@@ -30,15 +30,9 @@ This module describes the script used to run a study/case for Code_Saturne.
 # Import required Python modules
 #===============================================================================
 
-from __future__ import print_function
-
 import os, sys
 import types, string, re, fnmatch
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_case_domain
@@ -176,6 +170,10 @@ def arg_parser(argv, pkg):
                         action="store_true",
                         help="run the results copy/cleanup stage")
 
+    parser.add_argument("--with-resource", dest="resource_name",
+                        action="store_true",
+                        help="use resource settings based on given name")
+
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
     parser.set_defaults(stage=None)
@@ -187,6 +185,7 @@ def arg_parser(argv, pkg):
     parser.set_defaults(id=None)
     parser.set_defaults(nprocs=None)
     parser.set_defaults(nthreads=None)
+    parser.set_defaults(resource=None)
 
     return parser
 
@@ -538,6 +537,9 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         options = run_args
 
     i_c = cs_run_conf.get_install_config_info(pkg)
+
+    if options.resource_name != None:
+        if c['resource_name'] = options.resource_name.lower()
 
     r_c, s_c, run_conf = process_options(options, pkg)
 
