@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -79,39 +80,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute array index bounds for a local thread.
- *
- * When called inside an OpenMP parallel section, this will return the
- * start an past-the-end indexes for the array range assigned to that thread.
- * In other cases, the start index is 1, and the past-the-end index is n;
- *
- * parameters:
- *   n    <-- size of array
- *   s_id --> start index for the current thread
- *   e_id --> past-the-end index for the current thread
- *----------------------------------------------------------------------------*/
-
-static void
-_thread_range(cs_lnum_t   n,
-              cs_lnum_t  *s_id,
-              cs_lnum_t  *e_id)
-{
-#if defined(HAVE_OPENMP)
-  int t_id = omp_get_thread_num();
-  int n_t = omp_get_num_threads();
-  cs_lnum_t t_n = (n + n_t - 1) / n_t;
-  *s_id =  t_id    * t_n;
-  *e_id = (t_id+1) * t_n;
-  *s_id = cs_align(*s_id, CS_CL);
-  *e_id = cs_align(*e_id, CS_CL);
-  if (*e_id > n) *e_id = n;
-#else
-  *s_id = 0;
-  *e_id = n;
-#endif
-}
 
 /*----------------------------------------------------------------------------
  * Compute blocks sizes for superblock algorithm.
@@ -158,7 +126,7 @@ _cs_real_sum_1d(cs_lnum_t        n,
 # pragma omp parallel reduction(+:v_sum) if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_t *_v = v + s_id;
@@ -216,7 +184,7 @@ _cs_real_minmax_1d(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_t *_v = v + s_id;
@@ -270,7 +238,7 @@ _cs_real_sstats_1d(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_t *_v = v + s_id;
@@ -352,7 +320,7 @@ _cs_real_sstats_1d_iv(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -438,7 +406,7 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_t *_v = v + s_id;
@@ -530,7 +498,7 @@ _cs_real_sstats_1d_w_iw(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
@@ -622,7 +590,7 @@ _cs_real_sstats_1d_w_iv(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -721,7 +689,7 @@ _cs_real_norms_1d(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_t *_v = v + s_id;
@@ -838,7 +806,7 @@ _cs_real_norms_1d_iw(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
@@ -955,7 +923,7 @@ _cs_real_norms_1d_iv(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -1061,7 +1029,7 @@ _cs_real_scatter_norms_1d(cs_lnum_t          n_src_elts,
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n_src_elts, &s_id, &e_id);
+    cs_parall_thread_range(n_src_elts, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
 
@@ -1159,7 +1127,7 @@ _cs_real_scatter_norms_1d_filtered(cs_lnum_t          n_src_elts,
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n_src_elts, &s_id, &e_id);
+    cs_parall_thread_range(n_src_elts, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = filter_list + s_id;
@@ -1247,7 +1215,7 @@ _cs_real_minmax_3d(cs_lnum_t           n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_3_t *_v = v + s_id;
@@ -1324,7 +1292,7 @@ _cs_real_sstats_3d(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_3_t *_v = v + s_id;
@@ -1428,7 +1396,7 @@ _cs_real_sstats_3d_iv(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -1536,7 +1504,7 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_3_t *_v = v + s_id;
@@ -1650,7 +1618,7 @@ _cs_real_sstats_3d_w_iw(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
@@ -1764,7 +1732,7 @@ _cs_real_sstats_3d_w_iv(cs_lnum_t          n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -1884,7 +1852,7 @@ _cs_real_norms_3d(cs_lnum_t           n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_real_3_t *_v = v + s_id;
@@ -2024,7 +1992,7 @@ _cs_real_norms_3d_iw(cs_lnum_t           n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_wl = wl + s_id;
@@ -2165,7 +2133,7 @@ _cs_real_norms_3d_iv(cs_lnum_t           n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = vl + s_id;
@@ -2291,7 +2259,7 @@ _cs_real_scatter_norms_3d(cs_lnum_t           n_src_elts,
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n_src_elts, &s_id, &e_id);
+    cs_parall_thread_range(n_src_elts, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
 
@@ -2399,7 +2367,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n_src_elts, &s_id, &e_id);
+    cs_parall_thread_range(n_src_elts, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
     const cs_lnum_t *_vl = filter_list + s_id;
@@ -2513,7 +2481,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
 
@@ -2658,7 +2626,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 # pragma omp parallel if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
-    _thread_range(n, &s_id, &e_id);
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
 

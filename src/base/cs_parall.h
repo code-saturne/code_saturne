@@ -450,6 +450,44 @@ void
 cs_parall_set_min_coll_buf_size(size_t buffer_size);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a local thread.
+ *        When called inside an OpenMP parallel section, this will return the
+ *        start an past-the-end indexes for the array range assigned to that
+ *        thread. In other cases, the start index is 1, and the past-the-end
+ *        index is n;
+ *
+ * \param[in]       n          size of array
+ * \param[in]       type_size  element type size (or multiple)
+ * \param[in, out]  s_id       start index for the current thread
+ * \param[in, out]  e_id       past-the-end index for the current thread
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_parall_thread_range(cs_lnum_t    n,
+                       size_t       type_size,
+                       cs_lnum_t   *s_id,
+                       cs_lnum_t   *e_id)
+{
+#if defined(HAVE_OPENMP)
+  const int t_id = omp_get_thread_num();
+  const int n_t = omp_get_num_threads();
+  const cs_lnum_t t_n = (n + n_t - 1) / n_t;
+  const cs_lnum_t cl_m = CS_CL_SIZE / type_size;  /* Cache line multiple */
+
+  *s_id =  t_id    * t_n;
+  *e_id = (t_id+1) * t_n;
+  *s_id = cs_align(*s_id, cl_m);
+  *e_id = cs_align(*e_id, cl_m);
+  if (*e_id > n) *e_id = n;
+#else
+  *s_id = 0;
+  *e_id = n;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -63,6 +63,7 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -290,40 +291,6 @@ _gradient_quantities_destroy(void)
 
   BFT_FREE(_gradient_quantities);
   _n_gradient_quantities = 0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute array index bounds for a local thread.
- *
- * When called inside an OpenMP parallel section, this will return the
- * start and past-the-end indexes for the array range assigned to that thread.
- * In other cases, the start index is 1, and the past-the-end index is n;
- *
- * \param[in]   n     size of array
- * \param[out]  s_id  start index for the current thread
- * \param[out]  e_id  past-the-end index for the current thread
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_thread_range(cs_lnum_t   n,
-              cs_lnum_t  *s_id,
-              cs_lnum_t  *e_id)
-{
-#if defined(HAVE_OPENMP)
-  int t_id = omp_get_thread_num();
-  int n_t = omp_get_num_threads();
-  cs_lnum_t t_n = (n + n_t - 1) / n_t;
-  *s_id =  t_id    * t_n;
-  *e_id = (t_id+1) * t_n;
-  *s_id = cs_align(*s_id, CS_CL);
-  *e_id = cs_align(*e_id, CS_CL);
-  if (*e_id > n) *e_id = n;
-#else
-  *s_id = 0;
-  *e_id = n;
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -6374,7 +6341,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   #pragma omp parallel
   {
     cs_lnum_t t_s_id, t_e_id;
-    _thread_range(m->n_b_cells, &t_s_id, &t_e_id);
+    cs_parall_thread_range(m->n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
     /* Build indices bijection between [1-9] and [1-3]*[1-3] */
 
@@ -7003,7 +6970,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   #pragma omp parallel
   {
     cs_lnum_t t_s_id, t_e_id;
-    _thread_range(m->n_b_cells, &t_s_id, &t_e_id);
+    cs_parall_thread_range(m->n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
     /* Build indices bijection between [1-18] and [1-6]*[1-3] */
 

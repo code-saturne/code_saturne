@@ -57,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
@@ -163,40 +164,6 @@ static bool                       _full_nb_boundary = false;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute array index bounds for a local thread.
- *
- * When called inside an OpenMP parallel section, this will return the
- * start an past-the-end indexes for the array range assigned to that thread.
- * In other cases, the start index is 1, and the past-the-end index is n;
- *
- * \param[in]   n     size of array
- * \param[out]  s_id  start index for the current thread
- * \param[out]  e_id  past-the-end index for the current thread
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_thread_range(cs_lnum_t   n,
-              cs_lnum_t  *s_id,
-              cs_lnum_t  *e_id)
-{
-#if defined(HAVE_OPENMP)
-  int t_id = omp_get_thread_num();
-  int n_t = omp_get_num_threads();
-  cs_lnum_t t_n = (n + n_t - 1) / n_t;
-  *s_id =  t_id    * t_n;
-  *e_id = (t_id+1) * t_n;
-  *s_id = cs_align(*s_id, CS_CL);
-  *e_id = cs_align(*e_id, CS_CL);
-  if (*e_id > n) *e_id = n;
-#else
-  *s_id = 0;
-  *e_id = n;
-#endif
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1310,7 +1277,7 @@ _neighborhood_reduce_cell_center_opposite(cs_mesh_t             *mesh,
 # pragma omp parallel if (n_cells > CS_THR_MIN)
   {
     cs_lnum_t t_s_id, t_e_id;
-    _thread_range(n_cells, &t_s_id, &t_e_id);
+    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
     cs_real_3_t  *n_c_s = NULL;
 
@@ -1532,7 +1499,7 @@ _neighborhood_reduce_full_boundary(cs_mesh_t             *mesh,
 # pragma omp parallel if (n_b_cells > CS_THR_MIN)
   {
     cs_lnum_t t_s_id, t_e_id;
-    _thread_range(n_b_cells, &t_s_id, &t_e_id);
+    cs_parall_thread_range(n_b_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
     /* Loop on boundary cells */
 
