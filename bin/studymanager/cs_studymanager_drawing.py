@@ -415,7 +415,7 @@ class Figure(object):
             elif k == "dpi":
                 self.dpi = int(v)
 
-        # Store te list of subplot objects associated to the current figure
+        # Store the list of subplot objects associated to the current figure
         self.subplots = []
         for id in [int(s) for s in node.attributes["idlist"].value.split()]:
             for p in subplots:
@@ -787,12 +787,14 @@ class Plotter(object):
         log.debug("plot_figure --> layout: nbcol: %s nbrow: %s " % (nbcol, nbrow))
         plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le, bottom=0.2)
 
+        subplots = {}
+
         # draw curves in the right subplot
         for p in figure.subplots:
             idx = figure.subplots.index(p)
             log.debug("plot_figure --> plot draw: id = %s" % p.id)
             ax = plt.subplot(nbrow, nbcol, idx + 1)
-
+            subplots[idx] = ax
             for curve in p.curves:
                 self.__draw_curve(ax, curve, p)
 
@@ -801,7 +803,7 @@ class Plotter(object):
 
         for p in figure.subplots:
             idx = figure.subplots.index(p)
-            ax = plt.subplot(nbrow, nbcol, idx + 1)
+            ax = subplots[idx]
 
             if p.title:
                 ax.set_title(p.title)
@@ -818,7 +820,7 @@ class Plotter(object):
         # additional matplotlib raw commands for subplot
         for p in figure.subplots:
             idx = figure.subplots.index(p)
-            ax = plt.subplot(nbrow, nbcol, idx + 1)
+            ax = subplots[idx]
             for cmd in p.cmd:
                 try:
                     exec(cmd)
