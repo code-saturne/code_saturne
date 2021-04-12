@@ -57,6 +57,7 @@ from code_saturne.Pages.InterfacialEnthalpy import Ui_InterfacialEnthalpy
 from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 from code_saturne.model.NonCondensableModel import NonCondensableModel
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
+from code_saturne.model.NucleateBoilingModel import NucleateBoilingModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -398,5 +399,11 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         """
         Activate or deactivate the pool boiling model
         """
-        self.mdl.setPoolBoiling(state = self.checkBoxActivatePool.isChecked() )
-
+        pool_boiling_state = self.checkBoxActivatePool.isChecked()
+        self.mdl.setPoolBoiling(state = pool_boiling_state)
+        wall_model = NucleateBoilingModel(self.case)
+        if pool_boiling_state:
+            wall_model.setWallFunctionModel("standard")
+        else:
+            if self.mdl.getPredefinedFlow() != "None":
+                wall_model.setWallFunctionModel(wall_model.defaultValues()["wallfunction"])

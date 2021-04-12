@@ -52,6 +52,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.Pages.NucleateBoiling import Ui_NucleateBoiling
 from code_saturne.model.NucleateBoilingModel import NucleateBoilingModel
+from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -94,6 +95,9 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
         self.modelWallFunctionModel.addItem(self.tr("standard (single phase wall function)"), "standard")
         self.modelWallFunctionModel.addItem(self.tr("Koncar Tiselj-NED 2008"), "koncar")
         self.modelWallFunctionModel.addItem(self.tr("Mimouni et al-NED 2008"), "mimouni")
+        if InterfacialEnthalpyModel(self.case).getPoolBoiling() == "on":
+            self.modelWallFunctionModel.disableItem(str_model="koncar")
+            self.modelWallFunctionModel.disableItem(str_model="mimouni")
 
         self.modelYPlus = ComboModel(self.comboBoxYPlus, 3, 1)
         self.modelYPlus.addItem(self.tr("Boundary cell center"), "center")
