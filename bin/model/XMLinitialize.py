@@ -1849,7 +1849,7 @@ class XMLinit(BaseXmlInit):
 
         p_node = self.case.xmlGetNode('thermophysical_models')
         if p_node:
-            p_node = node.xmlGetNode('solid_fuels')
+            p_node = p_node.xmlGetNode('solid_fuels')
 
         if p_node:
             rename = {"x_carbone": "x_carbon"}
