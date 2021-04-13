@@ -170,8 +170,8 @@ def arg_parser(argv, pkg):
                         action="store_true",
                         help="run the results copy/cleanup stage")
 
-    parser.add_argument("--with-resource", dest="resource_name",
-                        action="store_true",
+    parser.add_argument("--with-resource", dest="resource_name", type=str,
+                        metavar="<resource>",
                         help="use resource settings based on given name")
 
     parser.set_defaults(compute_build=False)
