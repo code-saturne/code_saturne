@@ -1080,7 +1080,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* A mass matrix can be requested either for the reaction term, the unsteady
      term or for the source term */
-  cs_hodge_algo_t  mass_matrix_algo = CS_HODGE_ALGO_VORONOI;
 
   /* Reaction term */
   if (cs_equation_param_has_reaction(eqp)) {
@@ -1095,7 +1094,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
-        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1122,7 +1120,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
-        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1158,13 +1155,8 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Pre-defined a cs_hodge_builder_t struct. */
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_VC;
-  eqc->mass_hodgep.algo = mass_matrix_algo;
+  eqc->mass_hodgep.algo = CS_HODGE_ALGO_WBS;
   eqc->mass_hodgep.coef = 1.0; /* not useful in this case */
-
-  if (eqp->do_lumping ||
-      eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
-      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG)
-    eqc->mass_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
   /* Array of hodge structure for the mass matrix */
   eqc->mass_hodge = cs_hodge_init_context(connect,
