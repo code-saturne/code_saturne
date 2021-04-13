@@ -1153,6 +1153,10 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->source_terms = NULL;
 
   if (cs_equation_param_has_sourceterm(eqp)) {
+
+    /* This is a mandatory choice for this kind of scheme */
+    srct_hodge_algo = CS_HODGE_ALGO_WBS;
+
     if (cs_equation_param_has_time(eqp)) {
 
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
