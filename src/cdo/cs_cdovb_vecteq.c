@@ -958,23 +958,30 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* A mass matrix can be requested either for the reaction term, the unsteady
      term or for the source term */
-  cs_hodge_algo_t  mass_matrix_algo = CS_HODGE_ALGO_VORONOI;
+  cs_hodge_algo_t  reac_hodge_algo = CS_HODGE_N_ALGOS;
+  cs_hodge_algo_t  time_hodge_algo = CS_HODGE_N_ALGOS;
+  cs_hodge_algo_t  srct_hodge_algo = CS_HODGE_N_ALGOS;
 
   /* Reaction term */
   if (cs_equation_param_has_reaction(eqp)) {
 
-    if (eqp->do_lumping)
+    if (eqp->do_lumping) {
+
       eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+      reac_hodge_algo = CS_HODGE_ALGO_VORONOI;
+
+    }
     else {
 
       switch (eqp->reaction_hodgep.algo) {
 
       case CS_HODGE_ALGO_VORONOI:
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+        reac_hodge_algo = CS_HODGE_ALGO_VORONOI;
         break;
       case CS_HODGE_ALGO_WBS:
-        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        reac_hodge_algo = CS_HODGE_ALGO_WBS;
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -990,18 +997,23 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Unsteady term */
   if (cs_equation_param_has_time(eqp)) {
 
-    if (eqp->do_lumping)
+    if (eqp->do_lumping) {
+
       eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
+      time_hodge_algo = CS_HODGE_ALGO_VORONOI;
+
+    }
     else {
 
       switch (eqp->time_hodgep.algo) {
 
       case CS_HODGE_ALGO_VORONOI:
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
+        time_hodge_algo = CS_HODGE_ALGO_VORONOI;
         break;
       case CS_HODGE_ALGO_WBS:
-        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        time_hodge_algo = CS_HODGE_ALGO_WBS;
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1031,26 +1043,32 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* Need a mass matrix */
     for (int st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+
       cs_xdef_t  *st = eqp->source_terms[st_id];
       if (st->meta & CS_FLAG_PRIMAL) {
-        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        srct_hodge_algo = CS_HODGE_ALGO_WBS;
       }
+
     }
 
   } /* There is at least one source term */
 
   /* Pre-defined a cs_hodge_builder_t structure */
   eqc->mass_hodgep.inv_pty  = false;
-  eqc->mass_hodgep.type = CS_HODGE_TYPE_VPCD;
-  eqc->mass_hodgep.algo = mass_matrix_algo;
   eqc->mass_hodgep.coef = 1.0;  /* not useful in this case */
+  eqc->mass_hodgep.type = CS_HODGE_TYPE_VPCD;
 
-  if (mass_matrix_algo == CS_HODGE_ALGO_WBS)
+  eqc->mass_hodgep.algo = cs_hodge_set_mass_algo(eqp->name,
+                                                 reac_hodge_algo,
+                                                 time_hodge_algo,
+                                                 srct_hodge_algo);
+
+  if (eqc->mass_hodgep.algo == CS_HODGE_ALGO_WBS)
     eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
       | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
 
-  /* Array of hodge structure for the mass matrix */
+  /* Initialize the hodge structure for the mass matrix */
   eqc->mass_hodge = cs_hodge_init_context(connect,
                                           NULL,
                                           &(eqc->mass_hodgep),

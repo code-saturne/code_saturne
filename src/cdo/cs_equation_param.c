@@ -916,7 +916,7 @@ cs_equation_create_param(const char            *name,
   eqp->reaction_properties = NULL;
   eqp->reaction_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_HODGE_ALGO_WBS,
+    .algo = CS_HODGE_ALGO_VORONOI,
     .type = CS_HODGE_TYPE_VPCD,
   };
 

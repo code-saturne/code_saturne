@@ -336,6 +336,28 @@ cs_hodge_get_func(const char               *calling_func,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check the consistency of the settings between terms related to a
+ *         mass matrix and define the common algorithm to use.
+ *         If a term should not be considered, set the algorithm to
+ *         CS_HODGE_N_ALGOS
+ *
+ * \param[in] eqname     name of the equation to check
+ * \param[in] reac_algo  optional algo. used for the reaction term
+ * \param[in] time_algo  optional algo. used for the unsteady term
+ * \param[in] srct_algo  optional algo. used for the source term
+ *
+ * \return the common algorithm to use
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_algo_t
+cs_hodge_set_mass_algo(const char         *eqname,
+                       cs_hodge_algo_t     reac_algo,
+                       cs_hodge_algo_t     time_algo,
+                       cs_hodge_algo_t     srct_algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Output the settings related to a cs_hodge_param_t structure
  *
  * \param[in] prefix    optional string
