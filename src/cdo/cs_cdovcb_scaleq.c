@@ -1061,9 +1061,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_advection_matrix = cs_cdo_advection_vcb_cw_cst;
       break;
 
-    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-    case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
-    case CS_PARAM_ADVECTION_SCHEME_SG:
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " Invalid advection scheme for vertex-based discretization");

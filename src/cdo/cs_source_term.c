@@ -1761,6 +1761,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
            ac->input,
            eval);
 
+  /* Retrieve the value at the cell center */
   ac->func(time_eval, 1, NULL, cm->xc,
            true,  /* compacted output ? */
            ac->input,

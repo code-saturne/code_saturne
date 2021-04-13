@@ -96,33 +96,40 @@ typedef enum {
  *  \brief Type of algorithm to build a discrete Hodge operator
  *
  * \var CS_HODGE_ALGO_VORONOI
- * Assume that an orthogonality condition holds between geometrical entities
- * This leads to a diagonal discrete Hodge operator (and is related to a
- * two-point flux approximation)
+ * This algorithm assumes that an orthogonality condition holds between
+ * geometrical entities (e.g. the face normal/dual edge or the primal edge/dual
+ * face normal). This algorithm leads to a diagonal discrete Hodge operator
+ * (and is related to a two-point flux approximation). Be aware that using this
+ * technique on a non-orthogonal mesh leads to a consistency error which does
+ * not decrease when refining the mesh.
  *
  * \var CS_HODGE_ALGO_WBS
- * WBS: Whitney Barycentric Subdivision
- * Rely on a subdivision into tetrahedra of a polyhedral cell and then apply
- * algorithms close to what exists in the FE litterature
+ * WBS means "Whitney Barycentric Subdivision".
+ * This algorithm relies on a subdivision into tetrahedra of each polyhedral
+ * cell and then applies algorithms on this subdivision shape functions close
+ * to what exists in the Finite Element litterature
  *
  * \var CS_HODGE_ALGO_COST
  * Orthogonal decomposition between the consistency (CO) and the stabilization
  * (ST) parts. Several discretizations share this way to build discrete Hodge
- * operators like SUSHI, DGA and GCR (these discretizations only differ from the
- * scaling coefficient in front of the stabilization term)
+ * operators like SUSHI, DGA and GCR (these discretizations only differ from
+ * the scaling coefficient in front of the stabilization term)
  *
  * \var CS_HODGE_ALGO_OCS2
- * This algorithm is close to \ref CS_HODGE_ALGO_COST but rely on subdivision of
- * each polyhedral cell which is a refinement of what is considered in
- * \ref CS_HODGE_ALGO_COST for the building the stabilization
+ * This algorithm is close to \ref CS_HODGE_ALGO_COST but relies on a
+ * subdivision of each polyhedral cell corresponding to the refinement
+ * considered in \ref CS_HODGE_ALGO_COST for the building of the stabilization
+ * term
  *
  * \var CS_HODGE_ALGO_BUBBLE
  * This algorithm also relies on an orthogonal decomposition between the
  * consistency (CO) and the stabilization (ST) parts but the stabilization part
- * relies on a bubble (similar to what can be found in the FE literature)
+ * relies on a bubble function (similar to what can be found in the Finite
+ * Element literature)
  *
  * \var CS_HODGE_ALGO_AUTO
- * Automatic switch between the above-mentioned algorithms.
+ * Automatic switch between the above-mentioned algorithms (not used for the
+ * moment).
  */
 
 typedef enum {
