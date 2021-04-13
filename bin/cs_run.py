@@ -539,7 +539,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
     i_c = cs_run_conf.get_install_config_info(pkg)
 
     if options.resource_name != None:
-        if c['resource_name'] = options.resource_name.lower()
+        c['resource_name'] = options.resource_name.lower()
 
     r_c, s_c, run_conf = process_options(options, pkg)
 
