@@ -38,6 +38,9 @@ Release 7.0.0 (unreleased)
 
 User changes:
 
+- GUI: for gas combustion, allow creation of a thermochemistry data file
+  based on user inputs.
+
 - GUI: Remove legacy definitions of syrthes coupling when opening old XML file:
   * Starting from v7.0 a syrthes coupling is defined as a boundary
     condition and no longer as an independent model.
