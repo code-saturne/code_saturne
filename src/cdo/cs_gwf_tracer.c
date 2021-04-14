@@ -582,6 +582,12 @@ cs_gwf_tracer_init(int                      tracer_id,
   cs_equation_add_advection(tr_eqp, adv_field);
 
   cs_equation_set_param(tr_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+
+  /* Space discretization */
+  cs_equation_set_param(tr_eqp, CS_EQKEY_HODGE_TIME_ALGO, "wbs");
+  cs_equation_set_param(tr_eqp, CS_EQKEY_HODGE_REAC_ALGO, "wbs");
+
+  /* Linear algebra */
   cs_equation_set_param(tr_eqp, CS_EQKEY_ITSOL, "gcr");
   cs_equation_set_param(tr_eqp, CS_EQKEY_PRECOND, "poly1");
   cs_equation_set_param(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
