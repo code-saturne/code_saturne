@@ -1060,8 +1060,8 @@ cs_gwf_tracer_setup(const cs_cdo_connect_t      *connect,
 
     } /* space scheme with DoFs at vertices */
 
-    /* Parallel synchronization */
-    if (cs_glob_n_ranks > 1)
+    /* Interface synchronization */
+    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
       cs_interface_set_min(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                            quant->n_vertices,
                            1,             /* stride */
