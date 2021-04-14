@@ -59,6 +59,7 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_numbering.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -814,7 +815,9 @@ _matrix_time_test(double                       t_measure,
           run_id++;
         }
         wt1 = cs_timer_wtime();
-        if (wt1 - wt0 < t_measure)
+        double wt_r0 = wt1 - wt0;
+        cs_parall_max(1, CS_DOUBLE, &wt_r0);
+        if (wt_r0 < t_measure)
           n_runs *= 2;
       }
       v->matrix_create_cost = (wt1 - wt0) / n_runs;
@@ -869,7 +872,9 @@ _matrix_time_test(double                       t_measure,
           run_id++;
         }
         wt1 = cs_timer_wtime();
-        if (wt1 - wt0 < t_measure_assign)
+        double wt_r0 = wt1 - wt0;
+        cs_parall_max(1, CS_DOUBLE, &wt_r0);
+        if (wt_r0 < t_measure_assign)
           n_runs *= 2;
       }
       if (n_runs > 1)
@@ -948,17 +953,7 @@ _matrix_time_test(double                       t_measure,
               }
               wt1 = cs_timer_wtime();
               double wt_r0 = wt1 - wt0;
-
-#if defined(HAVE_MPI)
-
-              if (cs_glob_n_ranks > 1 && mpi_flag > 0) {
-                double _wt_r0 = wt_r0;
-                MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
-                              cs_glob_mpi_comm);
-              }
-
-#endif
-
+              cs_parall_max(1, CS_DOUBLE, &wt_r0);
               if (wt_r0 < t_measure)
                 n_runs *= 2;
             }
