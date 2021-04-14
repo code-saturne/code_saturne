@@ -1409,10 +1409,34 @@ cs_equation_param_has_name(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_create_param(const char            *name,
+cs_equation_param_create(const char            *name,
                          cs_equation_type_t     type,
                          int                    dim,
                          cs_param_bc_type_t     default_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a \ref cs_equation_param_t structure
+ *
+ * \deprecated Renamed to\ref cs_equation_param_create.
+ *
+ * \param[in] name          name of the equation
+ * \param[in] type          type of equation
+ * \param[in] dim           dim of the variable associated to this equation
+ * \param[in] default_bc    type of boundary condition set by default
+ *
+ * \return a pointer to a new allocated \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_equation_param_t *
+cs_equation_create_param(const char            *name,
+                         cs_equation_type_t     type,
+                         int                    dim,
+                         cs_param_bc_type_t     default_bc)
+{
+  return cs_equation_param_create(name, type, dim, default_bc);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1426,9 +1450,30 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_copy_param_from(const cs_equation_param_t   *ref,
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
                             cs_equation_param_t         *dst,
                             bool                         copy_fid);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Copy the settings from one \ref cs_equation_param_t structure to
+ *         another one. The name is not copied.
+ *
+ * \deprecated Renamed to\ref cs_equation_param_copy_from.
+ *
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ * \param[in]      copy_fid  copy also the field id or not
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_equation_copy_param_from(const cs_equation_param_t   *ref,
+                            cs_equation_param_t         *dst,
+                            bool                         copy_fid)
+{
+  cs_equation_param_copy_from(ref, dst, copy_fid);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1445,7 +1490,29 @@ cs_equation_copy_param_from(const cs_equation_param_t   *ref,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_clear_param(cs_equation_param_t   *eqp);
+cs_equation_param_clear(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the contents of a \ref cs_equation_param_t
+ *
+ * \deprecated Renamed to\ref cs_equation_param_clear.
+ *
+ * The cs_equation_param_t structure itself is not freed, but all its
+ * sub-structures are freed.
+ *
+ * This is useful for equation parameters which are accessed through
+ * field keywords.
+ *
+ * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_equation_clear_param(cs_equation_param_t   *eqp)
+{
+  cs_equation_param_clear(eqp);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1458,7 +1525,25 @@ cs_equation_clear_param(cs_equation_param_t   *eqp);
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_free_param(cs_equation_param_t     *eqp);
+cs_equation_param_free(cs_equation_param_t     *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a \ref cs_equation_param_t
+ *
+ * \deprecated Renamed to\ref cs_equation_param_free.
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_equation_param_t *
+cs_equation_free_param(cs_equation_param_t     *eqp)
+{
+  return cs_equation_param_free(eqp);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1472,9 +1557,30 @@ cs_equation_free_param(cs_equation_param_t     *eqp);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_param(cs_equation_param_t   *eqp,
+cs_equation_param_set(cs_equation_param_t   *eqp,
                       cs_equation_key_t      key,
                       const char            *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
+ *         structure
+ *
+ * \deprecated Renamed to\ref cs_equation_param_set.
+ *
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_equation_set_param(cs_equation_param_t   *eqp,
+                      cs_equation_key_t      key,
+                      const char            *keyval)
+{
+  cs_equation_param_set(eqp, key, keyval);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

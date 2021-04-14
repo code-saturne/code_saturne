@@ -785,7 +785,7 @@ _set_key(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_create_param(const char            *name,
+cs_equation_param_create(const char            *name,
                          cs_equation_type_t     type,
                          int                    dim,
                          cs_param_bc_type_t     default_bc)
@@ -965,7 +965,7 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_copy_param_from(const cs_equation_param_t   *ref,
+cs_equation_param_copy_from(const cs_equation_param_t   *ref,
                             cs_equation_param_t         *dst,
                             bool                         copy_fid)
 {
@@ -1150,7 +1150,7 @@ cs_equation_copy_param_from(const cs_equation_param_t   *ref,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_clear_param(cs_equation_param_t   *eqp)
+cs_equation_param_clear(cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
     return;
@@ -1233,7 +1233,7 @@ cs_equation_clear_param(cs_equation_param_t   *eqp)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_free_param(cs_equation_param_t     *eqp)
+cs_equation_param_free(cs_equation_param_t     *eqp)
 {
   if (eqp == NULL)
     return NULL;
@@ -1257,7 +1257,7 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_param(cs_equation_param_t   *eqp,
+cs_equation_param_set(cs_equation_param_t   *eqp,
                       cs_equation_key_t      key,
                       const char            *keyval)
 {
