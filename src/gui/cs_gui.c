@@ -1720,8 +1720,8 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
 
 void CS_PROCF (cstime, CSTIME) (void)
 {
-  /* Default values for time step factor */
-  double cdtmin = 0.1, cdtmax = 1000.;
+  /* Default, forbidden values for time step factor */
+  double cdtmin = -1., cdtmax = -1.;
 
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "analysis_control/time_parameters");
@@ -1737,8 +1737,10 @@ void CS_PROCF (cstime, CSTIME) (void)
   cs_gui_node_get_child_real(tn, "time_step_var", &(time_opt->varrdt));
   cs_gui_node_get_child_real(tn, "relaxation_coefficient", &(time_opt->relxst));
 
-  time_opt->dtmin = cdtmin * time_stp->dt_ref;
-  time_opt->dtmax = cdtmax * time_stp->dt_ref;
+  if (cdtmin > 0)
+    time_opt->dtmin = cdtmin * time_stp->dt_ref;
+  if (cdtmax > 0)
+    time_opt->dtmax = cdtmax * time_stp->dt_ref;
 
   /* We keep these two lines in case we read an old XML file... */
   cs_gui_node_get_child_real(tn, "time_step_min", &(time_opt->dtmin));
