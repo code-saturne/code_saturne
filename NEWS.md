@@ -3,6 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Fix parallel numbering of probe sets built using the
+  `cs_probe_set_create_from_local` fonction.
+
 - Fix launch of a code_saturne/syrthes coupling
 
 - Fix crash with LES inlet.

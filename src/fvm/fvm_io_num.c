@@ -2482,7 +2482,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
     double scale;
     if (v_max > v_min)
-      scale = (1.0 - 1.e12) / (v_max - v_min);
+      scale = (1.0 - 1.e-12) / (v_max - v_min);
     else
       scale = 0;
 
