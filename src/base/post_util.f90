@@ -315,7 +315,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     numer = (cofafp(ifac) + cofbfp(ifac)*theipb(ifac)) * distb(ifac)
     ! here numer = 0 if current face is coupled
 
-    if (vcopt%icoupl.gt.0.and.ntcabs.gt.0) then
+    if (vcopt%icoupl.gt.0.and.ntcabs.gt.ntpabs) then
       ! FIXME exchange coefs not computed at start of calculation
       if (cpl_faces(ifac)) then
         heq = hextp(ifac) * hintp(ifac) / ((hextp(ifac) + hintp(ifac))*srfbn)
