@@ -90,6 +90,7 @@ integer          itt
 integer          f_id, f_id0, f_id_al
 integer          ifcvsl
 integer          kturt, turb_flux_model, turb_flux_model_type
+integer          kclipp, clprit
 
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
@@ -537,7 +538,11 @@ else
 
   ! Clipping of the turbulence flux vector
   if ((itt.gt.0).and.(ntcabs.gt.1)) then
-    call cs_clip_turbulent_fluxes(f_id, ivarfl(isca(itt)))
+    call field_get_key_id("is_clipped", kclipp)
+    call field_get_key_int(f_id, kclipp, clprit)
+    if (clprit > 0) then
+      call cs_clip_turbulent_fluxes(f_id, ivarfl(isca(itt)))
+    endif
   endif
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
