@@ -3,7 +3,10 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
-- Update EOS m4 file to handle the fact taht on newer linux
+- Fix parallel numbering of profiles built using the
+  `cs_probe_set_create_from_local` fonction.
+
+- Update EOS m4 file to handle the fact that on newer linux
   distributions, RPC library files are no longer available with
   the glibc installation, but rather with libtirpc.
 
