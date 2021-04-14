@@ -58,7 +58,8 @@ def process_cmd_line(argv):
 
     parser.add_option("--notebook", "--nb", dest="notebook", type="string",
                       action="append",
-                      help="Notebook parameters. Format is <var>:<val>")
+                      metavar="<var>:<val>",
+                      help="Notebook parameters.")
 
     parser.add_option("-m", "--mesh", dest="mesh", type="string",
                       action="append",
@@ -90,6 +91,11 @@ def process_cmd_line(argv):
 
     parser.add_option("--blencv", dest="blencv", type="float",
                       help="Blencv")
+
+    parser.add_option("--update-bc-criteria", dest="bc_criteria",
+                      type="string", action="append",
+                      metavar="<bc_label>:<selection_criteria>",
+                      help="Update boundary zone selection criteria.")
 
     (options, args) = parser.parse_args(argv)
 
@@ -700,6 +706,14 @@ def update_xml_file(pkg, filepath, options):
 
     if options.rotationAngle:
         xml_controller.rotateMesh(options.rotationAngle)
+    # --------------------
+
+    # --------------------
+    # Boundary conditions parameters
+    if options.bc_criteria:
+        for bc in options.bc_criteria:
+            bc_label, bc_criteria = bc.split(':')
+            xml_controller.setBcLocalization(bc_label, bc_criteria)
     # --------------------
 
     # --------------------
