@@ -137,6 +137,8 @@ Bug fixes:
 
 Numerics and physical modeling:
 
+- Allow LES with Lagrangian module.
+
 - Allow combination of radiative transfer and internal coupling.
 
 - Change default precision for linear solvers
