@@ -365,7 +365,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 
   else {
 
-    const cs_field_t *f_cp = cs_field_by_name("specific_heat");
+    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
     if (f_cp != NULL) {
       const cs_real_t *cpro_cp = f_cp->val;
       for (cs_lnum_t i = 0; i < n_faces; i++) {
