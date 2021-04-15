@@ -111,7 +111,7 @@ double precision, dimension(:,:), pointer :: phmet
 !> total water content (for humid atmosphere)
 integer, save :: iymw
 !> intdrp---> total number of droplets (for humid atmosphere)
-integer, save :: intdrp
+integer, save :: intdrp = -1
 
 ! 1.3 Pointers for the positions of the properties for the specific phys.
 !------------------------------------------------------------------------

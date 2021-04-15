@@ -974,7 +974,7 @@ cs_atmo_compute_meteo_profiles(void)
   }
 
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
-  if (z_min < cs_math_big_r) { // Clipping only if there are cells to be clipped
+  if (z_min < 0.5*cs_math_big_r) { // Clipping only if there are cells to be clipped
     bft_printf("Switching to very stable clipping for meteo profile.\n");
     bft_printf("All altitudes above %f have been modified by clipping.\n",z_min);
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {

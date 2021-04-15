@@ -32,7 +32,7 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]   iscal           scalar number
-!> \param[in]   crvexp          explicit part of the second term
+!> \param[in]   crvexp          explicit part of the right hand side
 !_______________________________________________________________________________
 
 subroutine attssc ( iscal, crvexp )
@@ -80,13 +80,12 @@ logical, save :: r3_is_defined = .false.
 integer, save :: treated_scalars = 0
 
 double precision, dimension(:), allocatable :: pphy
-double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_ntdrp
 double precision, dimension(:), pointer :: cvar_pottemp
 double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cpro_liqwt
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_met_p
 
 !===============================================================================
@@ -98,9 +97,6 @@ ivar = isca(iscal)
 
 ! variable name
 call field_get_name(ivarfl(ivar), chaine)
-
-! map field arrays
-call field_get_val_v(ivarfl(iu), vel)
 
 ! density
 call field_get_val_s(icrom, crom)
@@ -138,16 +134,12 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
     call mscrss(idrayst, 1, ray3Dst)
 
     ! Store radiative fluxes for droplet nucleation model
-    ! FIXME if temperature not the first specific physics scalar
-    if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
-      if (.not.r3_is_defined) then
-        if (modnuc.gt.0)then
-          allocate(refrad(ncel))
-          do iel = 1, ncel
-            refrad(iel) = (-ray3Di(iel)  + ray3Dst(iel))
-          enddo
-        endif
-      endif
+    ! for humid atmosphere
+    if (ippmod(iatmos).eq.2.and.modsedi.eq.1.and.modnuc.gt.0) then
+      call field_get_val_s_by_name('radiative_cooling', cpro_rad_cool)
+      do iel = 1, ncel
+        cpro_rad_cool(iel) = (ray3Dst(iel)-ray3Di(iel) )
+      enddo
     endif
 
     ! Explicit source term for the thermal scalar equation:
@@ -190,46 +182,8 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
 
       call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
 
-      ! First : diagnose the droplet number
-
-      if (modnuc.gt.0)then
-        ! nucleation : when liquid water present calculate the
-        ! number of condensation nucleii (ncc) and if the droplet number (nc)
-        ! is smaller than ncc set it to ncc.
-        allocate(pphy(ncelet))
-
-        if (imeteo.eq.0) then
-            ! calculate pressure from standard atm
-          do iel = 1, ncel
-            call atmstd(xyzcen(3,iel),pphy(iel),dum,dum)
-          enddo
-        else if (imeteo.eq.1) then
-          ! calculate pressure from meteo file
-          do iel = 1, ncel
-            call intprf                                                 &
-                 ( nbmett, nbmetm,                                      &
-                 ztmet , tmmet , phmet , xyzcen(3,iel), ttcabs,         &
-                 pphy(iel) )
-          enddo
-        else
-          do iel = 1, ncel
-            pphy(iel) = cpro_met_p(iel)
-          enddo
-        endif
-
-        call nuclea (                                                 &
-             cvar_ntdrp,                                              &
-             vel,                                                     &
-             crom,                                                    &
-             cpro_tempc,                                              &
-             cpro_liqwt,                                              &
-             pphy, refrad)
-
-        deallocate(pphy)
-        deallocate(refrad)
-      endif ! (modnuc.gt.0)
-
       allocate(r3(ncelet))
+      ! Compute the mean value: (<r^3>)**1/3
       call define_r3
       r3_is_defined = .true.
 
@@ -254,14 +208,14 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
         endif
 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
-                    *(cell_f_vol(iel)*grad1(3,iel)/crom(iel))
+                    *cell_f_vol(iel)*grad1(3,iel)
       enddo
       treated_scalars = treated_scalars + 1
 
     elseif (ivar.eq.isca(iymw)) then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel) / crom(iel)
+        crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel)
       enddo
 
       treated_scalars = treated_scalars + 1
@@ -331,7 +285,7 @@ contains
       rho = crom(iel)
       qliq = cpro_liqwt(iel)
       nc = cvar_ntdrp(iel)
-      if(qliq.ge.1d-8)then
+      if (qliq.ge.1d-8) then!FIXME useless
         nc = max(nc,1.d0)
         r3(iel) = (0.75d0/pi*(rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
       else
@@ -342,29 +296,6 @@ contains
 
     if (irangp.ge.0) call parmax (r3max)
   end subroutine define_r3
-
-  !-----------------------------------------------------------------------------
-
-  !> \brief Compute the sedimentation velocity based on the radius of water
-  !> droplet
-
-  !> \param[in]       r        radius
-
-  double precision function sedimentation_vel(r)
-
-    !===========================================================================
-
-    implicit none
-
-    ! Arguments
-
-    double precision r
-
-    !===========================================================================
-
-    sedimentation_vel = 1.19d+8 * r**2
-
-  end function sedimentation_vel
 
   !-----------------------------------------------------------------------------
 
@@ -402,10 +333,11 @@ contains
     integer    iccocg, ii, iifld, imligp, inc, iwarnp, imrgrp, nswrgp, ifac, iel
     double precision, dimension(:), allocatable :: local_coefa, local_coefb
     double precision, dimension(:), allocatable :: local_field, sed_vel
-    double precision, dimension(:), allocatable :: pres, temp
+    double precision, dimension(:), allocatable :: pres
 
     double precision, dimension(:), pointer :: rugd
-    double precision, dimension(:), pointer :: bcfnns, ustar, cvar_temp, rugt
+    double precision, dimension(:), pointer :: bcfnns, ustar, rugt
+    double precision, dimension(:), pointer :: cpro_tempc
 
     type(var_cal_opt) :: vcopt
 
@@ -428,14 +360,14 @@ contains
 
     allocate(sed_vel(ncel))
     do iel = 1, ncel
-      sed_vel(iel) = sedimentation_vel(r3(iel))
+      sed_vel(iel) = 1.19d+8 * (r3(iel))**2  ! taup g, with taup = cuning * d^2 * rhop / (18 * mu) ...
     enddo
 
     ! take into account deposition if enabled
 
     if (moddep.gt.0) then
-      allocate(pres(ncel), temp(ncel))
-      call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+      allocate(pres(ncel))
+      call field_get_val_s(itempc, cpro_tempc)
 
       do iel = 1, ncel
         if (imeteo.eq.0) then
@@ -447,10 +379,6 @@ contains
         else
           pres(iel) = cpro_met_p(iel)
         endif
-
-        ! FIXME compute real temperature in humid atmosphere in atphyv
-        temp(iel) = cvar_temp(iel)*((ps/pres(iel))**(-rair/cp0)) &
-                   +(clatev/cp0)*cpro_liqwt(iel)
       enddo
 
       call field_get_val_s_by_name('non_neutral_scalar_correction', bcfnns)
@@ -463,7 +391,7 @@ contains
           iel  = ifabor(ifac)
           if (r3(iel).gt.0.d0) then
             if (rugd(ifac).gt.0.d0) then
-              call deposition_vel(temp(iel), crom(iel), pres(iel),         &
+              call deposition_vel(cpro_tempc(iel), crom(iel), pres(iel),         &
                                   bcfnns(ifac), ustar(ifac), rugt(ifac),   &
                                   r3(iel), sed_vel(iel), depo)
 
@@ -473,7 +401,7 @@ contains
         endif ! itypfb.eq.iparug
       enddo
 
-      deallocate(pres, temp)
+      deallocate(pres)
     endif ! moddep.gt.0
 
     ! options for gradient calculation
@@ -501,8 +429,9 @@ contains
     allocate(local_field(ncelet))
 
     ! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc^2)
+    ! it corresponds to div(qliq* exp() rho vel_d)
     do iel = 1, ncel
-      local_field(iel) = crom(iel)        & ! volumic mass of the air kg/m3
+      local_field(iel) = crom(iel)        & ! mass density of the air kg/m3
                         *cpro_liqwt(iel)  & ! total liquid water content kg/kg
                         *sed_vel(iel)     & ! deposition velocity m/s
                         *exp(5.d0*sigc**2)  ! coefficient coming from log-norm
@@ -518,7 +447,8 @@ contains
     ! Computation of the gradient of Nc*V(r3)*exp(-sc^2)
 
     do iel = 1, ncel
-      local_field(iel) = cvar_ntdrp(iel)  & ! number of droplets 1/cm**3
+      local_field(iel) = crom(iel)        & ! mass density of the air kg/m3
+                        *cvar_ntdrp(iel)  & ! number of droplets 1/cm**3
                         *sed_vel(iel)     & ! deposition velocity m/s
                         *exp(-sigc**2)      ! coefficient coming from log-normal
                                             ! law of the droplet spectrum
@@ -542,7 +472,7 @@ contains
 
   !> \brief Compute deposition velocity
 
-  !> \param[in]       temp
+  !> \param[in]       tempc       in Celsius
   !> \param[in]       rom
   !> \param[in]       pres
   !> \param[in]       cfnns       non neutral correction coefficient for scalars
@@ -552,7 +482,7 @@ contains
   !> \param[in]       wg
   !> \param[in]       depo
 
-  subroutine deposition_vel(temp, rom , pres,          &
+  subroutine deposition_vel(tempc, rom , pres,          &
                             cfnns, ustar, rugt,        &
                             rcloudvolmoy, wg, depo)
 
@@ -566,12 +496,13 @@ contains
 
     ! Arguments
 
-    double precision temp, rom, pres
+    double precision tempc, rom, pres
     double precision cfnns, ustar, rugt
     double precision rcloudvolmoy, depo
 
     ! Local variables
 
+    double precision temp
     double precision ckarm, eps0, cbolz, gamma, alpha, arecep
     double precision dp
     double precision muair, nuair, dbrow, cebro, lpm, ccunning
@@ -592,6 +523,7 @@ contains
     dzmin  = 4.d0
 
     dp = dzmin/2.d0
+    temp = tempc + tkelvi
 
     muair = 1.83d-5*(416.16d0/(temp+120.d0))                    &
            *((temp/296.16d0)**1.5d0)

@@ -91,6 +91,11 @@ if (ippmod(iatmos).eq.2) then
     call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
 
   endif
+
+  ! Radiative cooling
+  if (modsedi.eq.1) then
+    call add_property_field_1d('radiative_cooling', 'Radiative cooling', f_id)
+  endif
   !> fractional nebulosity
   call add_property_field_1d('nebulosity_frac', 'Nebulo frac', f_id)
   !> Diagnosed nebulosity

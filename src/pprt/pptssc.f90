@@ -163,7 +163,6 @@ if (ippmod(iatmos).ge.0) then
   call attssc(iscal,smbrs)
 endif
 
-
 ! ---> Version aerorefrigerant :
 
 if (ippmod(iaeros).ge.0) then

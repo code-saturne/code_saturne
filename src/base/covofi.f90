@@ -117,7 +117,7 @@ use atchem
 use darcy_module
 use cs_c_bindings
 use pointe, only: itypfb, pmapper_double_r1
-use atincl, only: kopint
+use atincl
 
 !===============================================================================
 
@@ -179,6 +179,8 @@ double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork
+double precision dum
+double precision qliqmax
 
 double precision rvoid(1)
 
@@ -216,6 +218,13 @@ double precision, dimension(:), pointer :: cvark_var
 double precision, allocatable, dimension(:), target :: wcvark_var
 double precision, allocatable, dimension(:) :: errork
 double precision, allocatable, dimension(:) :: divflu
+double precision, dimension(:), allocatable :: pphy
+double precision, dimension(:), pointer :: cpro_rad_cool
+double precision, dimension(:), pointer :: cpro_liqwt
+double precision, dimension(:), pointer :: cpro_tempc
+double precision, dimension(:), pointer :: cvar_ntdrp
+double precision, dimension(:), pointer :: cvar_pottemp
+double precision, dimension(:), pointer :: cpro_met_p
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
@@ -1384,11 +1393,71 @@ call cs_equation_iterative_solve_scalar          &
    xcpp   , rvoid  )
 
 !===============================================================================
-! 4. clipping and log
+! 4. clipping, finalization of the computation of some terms and log
 !===============================================================================
 
 call clpsca(iscal)
 
+! Atmospheric module:
+! finalize number of droplets due to nucleation for humid atmosphere
+if (ippmod(iatmos).eq.2.and.modsedi.eq.1.and.iscal.eq.intdrp &
+  .and.modnuc.gt.0) then
+
+  call field_get_val_s(iliqwt, cpro_liqwt)
+  call field_get_val_s(itempc, cpro_tempc)
+
+  ! Test minimum liquid water to carry out nucleation
+  qliqmax = 0.d0
+  do iel = 1, ncel
+    qliqmax = max(cpro_liqwt(iel),qliqmax)
+  enddo
+  if (irangp.ge.0) call parmax(qliqmax)
+
+  if (qliqmax.gt.1d-8) then
+
+    call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
+
+    ! First : diagnose the droplet number
+    ! nucleation : when liquid water present calculate the
+    ! number of condensation nucleii (ncc) and if the droplet number (nc)
+    ! is smaller than ncc set it to ncc.
+    allocate(pphy(ncelet))
+
+    if (imeteo.eq.0) then
+        ! calculate pressure from standard atm
+      do iel = 1, ncel
+        call atmstd(xyzcen(3,iel),pphy(iel),dum,dum)
+      enddo
+    else if (imeteo.eq.1) then
+      ! calculate pressure from meteo file
+      do iel = 1, ncel
+        call intprf                                                 &
+             ( nbmett, nbmetm,                                      &
+             ztmet , tmmet , phmet , xyzcen(3,iel), ttcabs,         &
+             pphy(iel) )
+      enddo
+    else
+      call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
+      do iel = 1, ncel
+        pphy(iel) = cpro_met_p(iel)
+      enddo
+    endif
+
+    call field_get_val_s_by_name('radiative_cooling', cpro_rad_cool)
+
+    call nuclea (                                                 &
+         cvar_ntdrp,                                              &
+         crom,                                                    &
+         cpro_tempc,                                              &
+         cpro_liqwt,                                              &
+         pphy, cpro_rad_cool)
+
+    deallocate(pphy)
+
+  endif ! qliqmax.gt.1.d-8
+endif ! for humid atmosphere physics only
+
+! Ground water flow
 ! Update solid phase concentration for kinetic or precipitation models
 if (ippmod(idarcy).eq.1) then
   ! Update of sorbed concentration
