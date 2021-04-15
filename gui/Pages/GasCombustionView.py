@@ -225,9 +225,9 @@ class StandardItemModelSpecies(QStandardItemModel):
 
         self.headers = [self.tr("Species"),
                         self.tr("Chemical Formula"),
-                        self.tr("Nb of moles (Fuel)"), 
-                        self.tr("Nb of moles (Oxidiser)"), 
-                        self.tr("Nb of moles (Product)"), 
+                        self.tr("Nb of moles (Fuel)"),
+                        self.tr("Nb of moles (Oxidiser)"),
+                        self.tr("Nb of moles (Product)"),
                         self.tr("Absorption Coeff")]
 
         self.setColumnCount(len(self.headers))
@@ -276,7 +276,7 @@ class StandardItemModelSpecies(QStandardItemModel):
         # Label (nothing to do for the species label)
         if col == 0:
             pass
-            
+
         # Chemical formula
         elif col == 1:
             ChemicalFormula = str(from_qvariant(value, to_text_string))
@@ -334,7 +334,7 @@ class StandardItemModelSpecies(QStandardItemModel):
         CompOxi = self.mdl.getCompOxi(label)
         CompProd = self.mdl.getCompProd(label)
         CoeffAbsorp = self.mdl.getCoeffAbsorp(label)
-        
+
         species = [label, ChemicalFormula, CompFuel, CompOxi, CompProd, CoeffAbsorp]
 
         self.setRowCount(row+1)
