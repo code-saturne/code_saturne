@@ -293,6 +293,11 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
     @pyqtSlot("QModelIndex")
     def slotSelectInteraction(self, index):
+        if not(index.isValid()):
+            self.groupBoxContinuousMomentumTransfer.hide()
+            self.groupBoxDispersedMomentumTransfer.hide()
+            return
+
         field_a, field_b, interaction_type = self.tableModelInteractions.data_table[index.row()]
         self.field_id_a = self.mdl.getFieldId(field_a)
         self.field_id_b = self.mdl.getFieldId(field_b)
