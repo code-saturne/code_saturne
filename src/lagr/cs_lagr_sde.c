@@ -386,6 +386,7 @@ _lages1(cs_real_t           dtp,
           trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
           trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
         }
+        break;
 
       default:
         assert(0);
@@ -1155,17 +1156,17 @@ _lagesd(cs_real_t             dtp,
   /* Retrieve of the turbulent kinetic energy */
   cs_real_t  enertur;
   if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60)
-    enertur  = extra->cvar_k->vals[1][cell_id];
+    enertur  = extra->cvar_k->vals[_prev_id][cell_id];
 
   else if (extra->itytur == 3) {
     if (extra->cvar_rij == NULL) {
-      enertur  = 0.5 * (  extra->cvar_r11->vals[1][cell_id]
-                        + extra->cvar_r22->vals[1][cell_id]
-                        + extra->cvar_r33->vals[1][cell_id]);
+      enertur  = 0.5 * (  extra->cvar_r11->vals[_prev_id][cell_id]
+                        + extra->cvar_r22->vals[_prev_id][cell_id]
+                        + extra->cvar_r33->vals[_prev_id][cell_id]);
     } else {
-      enertur  = 0.5 * (  extra->cvar_rij->vals[1][6*cell_id    ]
-                        + extra->cvar_rij->vals[1][6*cell_id + 1]
-                        + extra->cvar_rij->vals[1][6*cell_id + 2]);
+      enertur  = 0.5 * (  extra->cvar_rij->vals[_prev_id][6*cell_id    ]
+                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 1]
+                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 2]);
     }
   }
 
