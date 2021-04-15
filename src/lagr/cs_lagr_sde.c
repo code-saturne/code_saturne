@@ -1157,17 +1157,17 @@ _lagesd(cs_real_t             dtp,
   cs_real_t  enertur;
   if (extra->itytur == 2 || extra->itytur == 4 ||
       extra->iturb == 50 || extra->iturb == 60)
-    enertur  = extra->cvar_k->vals[1][cell_id];
+    enertur  = extra->cvar_k->vals[_prev_id][cell_id];
 
   else if (extra->itytur == 3) {
     if (extra->cvar_rij == NULL) {
-      enertur  = 0.5 * (  extra->cvar_r11->vals[1][cell_id]
-                        + extra->cvar_r22->vals[1][cell_id]
-                        + extra->cvar_r33->vals[1][cell_id]);
+      enertur  = 0.5 * (  extra->cvar_r11->vals[_prev_id][cell_id]
+                        + extra->cvar_r22->vals[_prev_id][cell_id]
+                        + extra->cvar_r33->vals[_prev_id][cell_id]);
     } else {
-      enertur  = 0.5 * (  extra->cvar_rij->vals[1][6*cell_id    ]
-                        + extra->cvar_rij->vals[1][6*cell_id + 1]
-                        + extra->cvar_rij->vals[1][6*cell_id + 2]);
+      enertur  = 0.5 * (  extra->cvar_rij->vals[_prev_id][6*cell_id    ]
+                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 1]
+                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 2]);
     }
   }
 
