@@ -621,9 +621,11 @@ class ComboModel:
                 index = self.items.index(str_model)
                 self.combo.setCurrentIndex(index)
             except Exception:
-                print(str_model, " is not in list: ", str(self.items))
-                print("Value reset to ", str(self.items[0]),
-                      " but should be checked.")
+                self._displayWarning(str_model)
+                # Throw signals to ensure XML is updated (not very elegant)
+                self.combo.activated[str].emit(self.dicoM2V[self.items[0]])
+                self.combo.currentTextChanged[str].emit(self.dicoM2V[self.items[0]])
+                self.combo.currentIndexChanged[int].emit(0)
                 index = 0
 
         elif str_view:
@@ -632,11 +634,18 @@ class ComboModel:
                 index = self.items.index(str_model)
                 self.combo.setCurrentIndex(index)
             except Exception:
-                print(str_model, " is not in list: ", str(self.items))
-                print("Value reset to ", str(self.items[0]),
-                      " but should be checked.")
+                self._displayWarning(str_model)
                 index = 0
 
+    def _displayWarning(self, str_model):
+        if self.combo.accessibleName() != "":
+            name = self.combo.accessibleName()
+        else:
+            name = self.combo.objectName()
+        title = "Warning in " + name
+        msg = str_model + " is not in list: " + str(self.items) + "\n"
+        msg += "Value reset to " + str(self.items[0]) + " but should be checked.\n"
+        QMessageBox.warning(self.combo, title, msg)
 
     def enableItem(self, index=None, str_model="", str_view=""):
         """
