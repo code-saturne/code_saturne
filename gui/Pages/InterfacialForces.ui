@@ -107,7 +107,11 @@
        </spacer>
       </item>
       <item row="6" column="1">
-       <widget class="QComboBox" name="comboBoxTurbulenceDispersion"/>
+       <widget class="QComboBox" name="comboBoxTurbulenceDispersion">
+        <property name="accessibleName">
+         <string>turbulent dispersion model</string>
+        </property>
+       </widget>
       </item>
       <item row="4" column="0">
        <widget class="QLabel" name="labelAddedMass">
@@ -124,22 +128,44 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBoxDispersedDrag"/>
+       <widget class="QComboBox" name="comboBoxDispersedDrag">
+        <property name="accessibleName">
+         <string>dispersed drag model</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>List of available dispersed drag models</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QComboBox" name="comboBoxLift"/>
+       <widget class="QComboBox" name="comboBoxLift">
+        <property name="accessibleName">
+         <string>lift model</string>
+        </property>
+       </widget>
       </item>
       <item row="7" column="1">
-       <widget class="QComboBox" name="comboBoxWallForce"/>
+       <widget class="QComboBox" name="comboBoxWallForce">
+        <property name="accessibleName">
+         <string>wall forces model</string>
+        </property>
+       </widget>
       </item>
       <item row="4" column="1">
-       <widget class="QComboBox" name="comboBoxAddedMass"/>
+       <widget class="QComboBox" name="comboBoxAddedMass">
+        <property name="accessibleName">
+         <string>added mass model</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="4" column="0">
     <widget class="QGroupBox" name="groupBoxContinuousMomentumTransfer">
+     <property name="accessibleName">
+      <string>surface tension model combo box</string>
+     </property>
      <property name="title">
       <string>Continuous momentum transfer model</string>
      </property>
@@ -165,10 +191,18 @@
        </spacer>
       </item>
       <item row="1" column="1">
-       <widget class="QComboBox" name="comboBoxInterfaceSharpening"/>
+       <widget class="QComboBox" name="comboBoxInterfaceSharpening">
+        <property name="accessibleName">
+         <string>interface sharpening model</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBoxContinuousMomentumTransfer"/>
+       <widget class="QComboBox" name="comboBoxContinuousMomentumTransfer">
+        <property name="accessibleName">
+         <string>continuous drag model</string>
+        </property>
+       </widget>
       </item>
       <item row="2" column="2">
        <spacer name="horizontalSpacer_8">
@@ -217,7 +251,11 @@
        </spacer>
       </item>
       <item row="2" column="1">
-       <widget class="QComboBox" name="comboBoxSurfaceTension"/>
+       <widget class="QComboBox" name="comboBoxSurfaceTension">
+        <property name="accessibleName">
+         <string>surface tension model</string>
+        </property>
+       </widget>
       </item>
      </layout>
      <zorder>labelContinuousMomentumTransfer</zorder>
