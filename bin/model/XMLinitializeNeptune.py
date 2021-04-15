@@ -673,7 +673,8 @@ class XMLinitNeptune(BaseXmlInit):
                     if (force_node.xmlGetAttribute("model") == "Large_Interface_Model") and (
                             force_node.xmlGetChildString("BubblesForLIM") == "on"):
                         flow_choice = "multiregime"
-            main_xml_model.setPredefinedFlow(flow_choice)
+            main_xml_model.setPredefinedFlow(flow_choice,
+                                             overwriteEnergy=False)
 
         # Continuous interfacial forces
         force_node = self.case.xmlGetNode('closure_modeling').xmlGetNode('interfacial_forces').xmlGetNode(

@@ -809,7 +809,7 @@ class MainFieldsModel(Variables, Model):
         return list
 
     @Variables.undoGlobal
-    def setPredefinedFlow(self, flow_choice):  # <=> setPredefinedFlow
+    def setPredefinedFlow(self, flow_choice, overwriteEnergy=True):
         """
         """
 
@@ -838,6 +838,10 @@ class MainFieldsModel(Variables, Model):
                 carrierField = "2"
             else:
                 carrierField = "off"
+
+            if not overwriteEnergy:
+                energyModel = self.getEnergyModel(fieldId)
+
             compressible = "off"
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
@@ -851,6 +855,10 @@ class MainFieldsModel(Variables, Model):
                 carrierField = "1"
             else:
                 carrierField = "off"
+
+            if not overwriteEnergy:
+                energyModel = self.getEnergyModel(fieldId)
+
             compressible = "off"
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
@@ -890,6 +898,8 @@ class MainFieldsModel(Variables, Model):
             typeChoice   = "continuous"
             phase        = "liquid"
             carrierField = "off"
+            if not overwriteEnergy:
+                energyModel  = self.getEnergyModel(fieldId)
             compressible = "off"
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
@@ -899,6 +909,8 @@ class MainFieldsModel(Variables, Model):
             typeChoice = "continuous"
             phase = "gas"
             carrierField = "off"
+            if not overwriteEnergy:
+                energyModel  = self.getEnergyModel(fieldId)
             compressible = "off"
             self.case.undoStop()
             self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
