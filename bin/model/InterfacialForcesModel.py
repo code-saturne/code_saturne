@@ -59,6 +59,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                    "Large_Bubble_Model"]
         self.__availableGasDispersedDragModelList = ["ishii", "Wen_Yu"]
         self.__availableSolidLiquidDispersedDragModelList = ["inclusions"]
+
         self.__availableAddedMassModelsLists = ["none", "standard", "zuber"]
         self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"]
 
@@ -131,7 +132,13 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         if (self.getFieldNature(fieldaId) == "liquid") and (self.getFieldNature(fieldbId) == "solid") :
             return self.__availableSolidLiquidDispersedDragModelList
         else :
-            return self.__availableGasDispersedDragModelList
+            predefined_flow = self.getPredefinedFlow()
+            if predefined_flow == "boiling_flow":
+                return ["ishii"]
+            elif predefined_flow == "droplet_flow":
+                return ["Wen_Yu"]
+            else:
+                return self.__availableGasDispersedDragModelList
 
 
     def getAvailableAddedMassModels(self) :
