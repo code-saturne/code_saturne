@@ -111,10 +111,9 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .file_name = NULL,
   .output_name = NULL,
   .postprocess_points = true,
-  .transformation_matrix =
-  {{1., 0., 0., 0.},
-    {0., 1., 0., 0.},
-    {0., 0., 1., 0.}},
+  .transformation_matrix = {{1., 0., 0., 0.},
+                            {0., 1., 0., 0.},
+                            {0., 0., 1., 0.}},
   .nb_sources = 0,
   .sources = NULL,
   .source_c_ids = NULL
@@ -182,21 +181,20 @@ _count_from_file(const cs_mesh_t *m,
     bft_error(__FILE__,__LINE__, 0,
               _("Porosity from scan: Could not open file."));
 
-  int n_points = 0;
-  int n_read_points = 0;
-  cs_real_3_t min_vec_tot = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
-  cs_real_3_t max_vec_tot = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+  long int n_read_points = 0;
+  long int n_points = 0;
+  cs_real_t min_vec_tot[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
+  cs_real_t max_vec_tot[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
-  if (fscanf(file, "%d\n", &n_read_points) != 1)
+  if (fscanf(file, "%ld\n", &n_read_points) != 1)
     bft_error(__FILE__,__LINE__, 0,
               _("Porosity from scan: Could not read the number of lines."));
 
-  bft_printf(_("  Porosity from scan: %d points to be read.\n\n"),
+  bft_printf(_("  Porosity from scan: %ld points to be read.\n\n"),
              n_read_points);
 
   /* Pointer to field */
   cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
-
 
   /* Location mesh where points will be localized */
   fvm_nodal_t *location_mesh =
@@ -210,7 +208,8 @@ _count_from_file(const cs_mesh_t *m,
 
   /* Read multiple scan file
    * ----------------------- */
-  for (int n_scan = 0; n_read_points != 0; n_scan++) {
+
+  for (int n_scan = 0; n_read_points > 0; n_scan++) {
     n_points = n_read_points;
     cs_real_3_t *point_coords;
     float *colors;
@@ -296,8 +295,9 @@ _count_from_file(const cs_mesh_t *m,
 
 
     if (n_read_points > 0)
-      bft_printf(_("  Porosity from scan: %d additional points to be read.\n\n"),
-                 n_read_points);
+      bft_printf
+        (_("  Porosity from scan: %ld additional points to be read.\n\n"),
+         n_read_points);
 
     /* FVM meshes for writers */
     if (_porosity_from_scan_opt.postprocess_points) {
