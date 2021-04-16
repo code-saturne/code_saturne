@@ -235,6 +235,9 @@ integer, save:: kvert
 !> (automatically computed)
 integer, save:: kmx
 
+!> Height of the boundary layer
+real(c_double), pointer, save :: meteo_zi
+
 ! 2.5 Data specific to the 1d atmospheric radiative module:
 !-------------------------------------------------------------------------------
 !> flag for the use of the 1d atmo radiative model
@@ -427,7 +430,8 @@ double precision, save:: zaero
         ichemistry, nespg, nrg, chem_with_photo,                        &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
-        nbmetd, nbmett, nbmetm, nbmaxt)                                 &
+        nbmetd, nbmett, nbmetm, nbmaxt,                                 &
+        meteo_zi)                                                       &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -444,6 +448,7 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
+      type(c_ptr), intent(out) :: meteo_zi
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -645,6 +650,7 @@ contains
     type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
     type(c_ptr) :: c_imeteo
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt
+    type(c_ptr) :: c_meteo_zi
 
     call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
@@ -658,7 +664,8 @@ contains
       c_init_gas_with_lib,                        &
       c_init_aero_with_lib, c_nlayer,             &
       c_nsize, c_imeteo,                          &
-      c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt)
+      c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt,     &
+      c_meteo_zi)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -694,6 +701,7 @@ contains
     call c_f_pointer(c_nbmett, nbmett)
     call c_f_pointer(c_nbmetm, nbmetm)
     call c_f_pointer(c_nbmaxt, nbmaxt)
+    call c_f_pointer(c_meteo_zi, meteo_zi)
 
     return
 

@@ -273,7 +273,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
-                       int                    **nbmaxt);
+                       int                    **nbmaxt,
+                       cs_real_t              **meteo_zi);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
@@ -362,7 +363,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
-                       int                    **nbmaxt)
+                       int                    **nbmaxt,
+                       cs_real_t              **meteo_zi)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -384,6 +386,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nbmett     = &(_atmo_option.nbmett);
   *nbmetm     = &(_atmo_option.nbmetm);
   *nbmaxt     = &(_atmo_option.nbmaxt);
+  *meteo_zi   = &(_atmo_option.meteo_zi);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
