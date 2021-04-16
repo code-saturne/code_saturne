@@ -1830,8 +1830,14 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
 
   box_volume = box_length[0]*box_length[1]*box_length[2];
 
+  if (box_volume <= -HUGE_VAL) {
+    bft_printf(_("%s: empty virtual box\n"), __func__);
+    BFT_FREE(length_scale);
+    return;
+  }
+
   if (verbosity > 0)
-    bft_printf(_("Dimensions of the virtual box: \n"
+    bft_printf(_("LES SEM: dimensions of the virtual box: \n"
                  "   Lx = %f, coo_min : %f, coo_max : %f\n"
                  "   Ly = %f, coo_min : %f, coo_max : %f\n"
                  "   Lz = %f, coo_min : %f, coo_max : %f\n\n"),
