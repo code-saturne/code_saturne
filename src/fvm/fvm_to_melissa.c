@@ -41,11 +41,16 @@
  * Statistics library header
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MELISSA_MPI)
-#include "melissa_api.h"
+#if defined(HAVE_MELISSA_MPI_05)
+  #include "melissa_api.h"
+  #define HAVE_MELISSA_MPI 1
+#elif defined(HAVE_MELISSA_MPI)
+  #include "melissa/api.h"
 #endif
 
-#include "melissa_api_no_mpi.h"
+#if defined(HAVE_MELISSA_NO_MPI)
+  #include "melissa_api_no_mpi.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -190,7 +195,12 @@ _field_c_output(void           *context,
 
   /* Check which API we use */
 
+#if defined(HAVE_MELISSA_NO_MPI)
   bool use_melissa_mpi = false;
+#else
+  bool use_melissa_mpi = true;
+#endif
+
 #if defined(HAVE_MELISSA_MPI)
   if (w->block_comm != MPI_COMM_NULL)
     use_melissa_mpi = true;
@@ -209,8 +219,10 @@ _field_c_output(void           *context,
       if (use_melissa_mpi == true)
         melissa_init(c_name, n_values, w->block_comm);
 #endif
+#if defined(HAVE_MELISSA_NO_MPI)
       if (use_melissa_mpi == false)
         melissa_init_no_mpi(c_name, n_values);
+#endif
     }
 
   }
@@ -226,8 +238,10 @@ _field_c_output(void           *context,
     if (use_melissa_mpi == true)
       melissa_send(c_name, values);
 #endif
+#if defined(HAVE_MELISSA_NO_MPI)
     if (use_melissa_mpi == false)
       melissa_send_no_mpi(c_name, values);
+#endif
   }
 
   /* Local cleanup */
