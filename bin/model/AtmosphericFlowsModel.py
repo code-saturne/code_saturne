@@ -44,7 +44,8 @@ from code_saturne.model.XMLmodel     import  ModelTest
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
-from PyQt5.QtCore import QDateTime
+from datetime import datetime
+
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class
 #-------------------------------------------------------------------------------
@@ -329,24 +330,28 @@ class AtmosphericFlowsModel(Model):
         startHour = self.__node_atmos.xmlGetInt('start_hour')
         startMin = self.__node_atmos.xmlGetInt('start_min')
         startSec = self.__node_atmos.xmlGetInt('start_sec')
-        dateTime = QDateTime();
+        dateTime = datetime.now()
         if (startYear == None) or (startDay == None) or (startHour == None) \
             or (startMin == None) or (startSec == None):
-            dateTime = QDateTime.currentDateTime()
+            dateTime = datetime.now()
             self.setStartTime(dateTime)
         else:
-            dateTime.addYears(int(startYear))
-            dateTime.addDays(int(startDay))
-            dateTime.setTime(QTime(int(startHour), int(startMin), int(startSec)))
-        return dateTime
+
+            dateTimeStr = startYear+'-'+startDay.rjust(3,'0')+\
+                                    ' '+startHour+':' +startMin+':'+startSec;
+            formatDateTime = "%Y-%j %H:%M:%S";
+            datetime.strptime(dateTimeStr, formatDateTime)
+        #convert back to the string in order to read it by QDateTime
+        dateTimeStr = dateTime.strftime("%Y-%m-%d %H:%M:%S")
+        return dateTimeStr
 
     @Variables.undoLocal
     def setStartTime(self, dateTime):
-        startYear = dateTime.date().year()
-        startDay = dateTime.date().dayOfYear()
-        startHour = dateTime.time().hour()
-        startMin = dateTime.time().minute()
-        startSec = dateTime.time().second()
+        startYear = dateTime.year
+        startDay = dateTime.timetuple().tm_yday
+        startHour = dateTime.hour
+        startMin = dateTime.minute
+        startSec = dateTime.second
         self.__node_atmos.xmlSetData('start_year', startYear)
         self.__node_atmos.xmlSetData('start_day', startDay)
         self.__node_atmos.xmlSetData('start_hour', startHour)

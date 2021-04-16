@@ -90,6 +90,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
         self.comboBoxUstarOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUstarOrDlmo)
         self.comboBoxUrefOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUrefOrDlmo)
+        self.dateTimeEdit.dateTimeChanged[QDateTime].connect(self.__slotDateTime)
 
         # Initialize the widgets in groupBoxMeteoData
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
@@ -157,7 +158,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.spinBoxWindDir.setValue(int(tmpVar))
 
 
-        startTime = model.getStartTime()
+        startTimeStr = model.getStartTime()
+        startTime = QDateTime.fromString(startTimeStr, "yyyy-MM-dd HH:mm:ss")
         self.dateTimeEdit.setDateTime(startTime)
 
         # Initialize the widgets in groupBoxActChemistry
@@ -169,6 +171,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
 
     #--------------- Fuctions for the groupBox LargeScalaMeteData--------------
+    @pyqtSlot(QDateTime)
+    def __slotDateTime(self, startTime):
+            self.__model.setStartTime(startTime.toPyDateTime())
 
     @pyqtSlot(int)
     def __slotComboBoxUrefOrDlmo(self, indCurrent):
