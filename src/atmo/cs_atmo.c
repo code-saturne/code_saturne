@@ -927,8 +927,8 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t ri_max = cs_math_big_r;
   cs_real_t *dlmo_var = NULL;
   cs_real_t z_min = cs_math_big_r;
-  cs_real_t u_met_min;
-  cs_real_t theta_met_min;
+  cs_real_t u_met_min= cs_math_big_r;
+  cs_real_t theta_met_min= cs_math_big_r;
 
   if (aopt->compute_z_ground == true)
     cs_atmo_z_ground_compute();
@@ -983,6 +983,10 @@ cs_atmo_compute_meteo_profiles(void)
       }
     }
   }
+
+  cs_parall_min(1,CS_REAL_TYPE, &z_min);
+  cs_parall_min(1,CS_REAL_TYPE, &u_met_min);
+  cs_parall_min(1,CS_REAL_TYPE, &theta_met_min);
 
   /* Very stable cases, corresponding to mode 0 in the Python prepro */
   if (z_min < cs_math_big_r) { // Clipping only if there are cells to be clipped
