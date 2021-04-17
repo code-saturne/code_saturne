@@ -96,7 +96,7 @@ cs_user_initialization(cs_domain_t     *domain)
 
   /*! [init2] */
   /* Apply only at the true computation start, not on restarts */
-  if (cs_restart_present())
+  if (domain->time_step->nt_prev > 0)
     return;
 
   /* Mass fraction = 1 for first gas, 0 for others */

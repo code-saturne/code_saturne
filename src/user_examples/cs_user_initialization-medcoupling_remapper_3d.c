@@ -89,6 +89,9 @@ cs_user_initialization(cs_domain_t     *domain)
   CS_UNUSED(domain);
 
   /*! [remapper_init] */
+  /* Apply only on computation start, not on restarts */
+  if (domain->time_step->nt_prev > 0)
+    return;
 
 #if defined(HAVE_MEDCOUPLING_LOADER)
 
