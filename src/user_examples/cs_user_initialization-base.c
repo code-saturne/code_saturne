@@ -90,15 +90,16 @@ cs_user_initialization(cs_domain_t     *domain)
   /*! [init] */
   const cs_mesh_t *m = domain->mesh;
 
-  /* Initialize "scalar1" field to 25 only if it exists and if
-   * there is not restart computation */
-  if (!cs_restart_present()) {
-    cs_field_t *f = cs_field_by_name_try("scalar1");
+  /* If this is restarted computation, do not reinitialize values */
+  if (domain->time_step->nt_prev > 0)
+    return;
 
-    if (f != NULL) {
-      for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-        f->val[cell_id] = 25.;
-    }
+  /* Initialize "scalar1" field to 25 only if it exists  */
+  cs_field_t *f = cs_field_by_name_try("scalar1");
+
+  if (f != NULL) {
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+      f->val[cell_id] = 25.;
   }
   /*! [init] */
 }
