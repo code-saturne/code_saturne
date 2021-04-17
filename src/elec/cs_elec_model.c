@@ -1236,7 +1236,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       }
 
       /* compute molecular viscosity : kg/(m s) */
-      for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+      for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
         for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
           coef[iesp1 * (ngaz - 1) + iesp2]
             = 1. +   sqrt(visesp[iesp1] / visesp[iesp2])
@@ -1245,17 +1245,21 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           coef[iesp1 * (ngaz - 1) + iesp2] /=    (sqrt(1. + roesp[iesp1]
                                                / roesp[iesp2]) * sqrt(8.));
         }
+      }
 
       CS_F_(mu)->val[iel] = 0.;
 
       for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
-        double somphi = 0.;
-        for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
-          if (iesp1 != iesp2)
-            somphi += coef[iesp1 * (ngaz - 1) + iesp2] * yvol[iesp2] / yvol[iesp1];
-        }
+        if (yvol[iesp1] > 1e-30) {
+          double somphi = 0.;
+          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
+            if (iesp1 != iesp2)
+              somphi +=   coef[iesp1 * (ngaz - 1) + iesp2]
+                        * yvol[iesp2] / yvol[iesp1];
+          }
 
-        CS_F_(mu)->val[iel] += visesp[iesp1] / (1. + somphi);
+          CS_F_(mu)->val[iel] += visesp[iesp1] / (1. + somphi);
+        }
       }
 
       /* compute specific heat : J/(kg degres) */
@@ -1283,14 +1287,16 @@ cs_elec_physical_properties(cs_domain_t  *domain)
         diff_th->val[iel] = 0.;
 
         for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
-          double somphi = 0.;
-          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
-            if (iesp1 != iesp2)
-              somphi += coef[  iesp1 * (ngaz - 1) + iesp2]
-                             * yvol[iesp2] / yvol[iesp1];
-          }
+          if (yvol[iesp1] > 1e-30) {
+            double somphi = 0.;
+            for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
+              if (iesp1 != iesp2)
+                somphi +=   coef[iesp1 * (ngaz - 1) + iesp2]
+                          * yvol[iesp2] / yvol[iesp1];
+            }
 
-          diff_th->val[iel] += xlabes[iesp1] / (1. + 1.065 * somphi);
+            diff_th->val[iel] += xlabes[iesp1] / (1. + 1.065 * somphi);
+          }
         }
 
         /* Lambda/Cp */
@@ -1300,7 +1306,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           diff_th->val[iel] /= CS_F_(cp)->val[iel];
       }
 
-      /* compute electric conductivity : S/m */
+      /* compute electric conductivity: S/m */
       if (ifcsig >= 0) {
         c_prop->val[iel] = 0.;
         double val = 0.;
@@ -1722,7 +1728,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
     if (var_cal_opt.verbosity > 0)
-      bft_printf("compute source terms for variable : %s\n", f->name);
+      bft_printf("compute source terms for variable: %s\n", f->name);
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       for (int isou = 0; isou < 3; isou++)
@@ -2030,7 +2036,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       if (coepot < 0.75)
         coepot = 0.75;
 
-      bft_printf("imposed current / current %14.5E, scaling coef. %14.5E\n",
+      bft_printf("imposed current / current %14.5e, scaling coef. %14.5e\n",
                  coepoa, coepot);
     }
     else if (cs_glob_elec_option->modrec == 2) {
@@ -2038,6 +2044,8 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       cs_gui_elec_model_rec();
       double elcou = 0.;
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+      if (mesh->halo != NULL)
+        cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, cpro_curre, 3);
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
         if (cs_glob_elec_option->izreca[ifac] > 0) {
           bool ok = true;
