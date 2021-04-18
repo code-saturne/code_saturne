@@ -753,7 +753,6 @@ def update_xml_file(pkg, filepath, options):
     # --------------------
     # Restart parameters
     if options.RestartRun:
-        r = StartRestartModel(case)
         restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
 
         xml_controller.setRestartPath(restart_path)
