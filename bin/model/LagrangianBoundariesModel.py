@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2021 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -211,7 +211,7 @@ class LagrangianBoundariesModel(Model):
             for i in range(value-nnodes):
                 self.newSetNode()
         else:
-            for i in range(nnodes-value):
+            for i in range(nnodes - value):
                 node_list[-1].xmlRemoveNode()
             # redefine self.node_set
             self.setCurrentSetNode(labelbc, value)
@@ -349,12 +349,12 @@ class LagrangianBoundariesModel(Model):
         """
         Return the condition on statistical weight.
         """
-        node = self.node_set.xmlInitChildNode('statistical_weight', 'choice')
+        val = None
+        node = self.node_set.xmlGetChildNode('statistical_weight', 'choice')
         if node:
             val = node['choice']
-            if val == None or val == "":
-                val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
-                self.setStatisticalWeightChoice(label, iset, val)
+        if val == None or val == "":
+            val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
         return val
 
 
@@ -520,12 +520,12 @@ class LagrangianBoundariesModel(Model):
         """
         Return the condition on temperature.
         """
-        node = self.node_set.xmlInitChildNode('temperature', 'choice')
+        val = None
+        node = self.node_set.xmlGetChildNode('temperature', 'choice')
         if node:
             val = node['choice']
-            if val == None:
-                val = self.defaultParticlesBoundaryValues()['temperature_choice']
-                self.setTemperatureChoice(label, iset, val)
+        if val == None:
+            val = self.defaultParticlesBoundaryValues()['temperature_choice']
         return val
 
 

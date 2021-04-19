@@ -3,6 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Lagangian module: fix crashes (GUI and code) defining some inlet
+  temperature profile options.
+
 - Fix parallel numbering of profiles built using the
   `cs_probe_set_create_from_local` fonction.
 

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2021 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -365,7 +365,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
       && (   cs_glob_lagr_specific_physics->itpvar == 1
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_specific_physics->impvar == 1)) {
-    if (zis->temperature_profile < 1 || zis->temperature_profile > 1)
+    if (zis->temperature_profile < 0 || zis->temperature_profile > 1)
       bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_i,
                 z_type_name, z_id, set_id,
                 _("temperature"), (int)zis->temperature_profile);
@@ -430,13 +430,16 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   if (   cs_glob_lagr_model->physical_model == 1
       && cs_glob_lagr_specific_physics->itpvar == 1) {
     cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
-    if (zis->cp < 0.0 || zis->temperature < tkelvn)
+    if (zis->cp < 0.0)
       bft_error(__FILE__, __LINE__, 0,
                 _("Lagrangian %s zone %d, set %d:\n"
-                  "  specific heat capacity (%g) is negative\n"
-                  "  or temperature (%g) is lower than %g."),
+                  "  specific heat capacity (%g) is negative."),
+                z_type_name, z_id, set_id, (double)zis->cp);
+    if (zis->temperature_profile > 0 && zis->temperature < tkelvn)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  temperature (%g) is lower than %g."),
                 z_type_name, z_id, set_id,
-                (double)zis->cp,
                 (double)zis->temperature,
                 (double)tkelvn);
   }
@@ -456,7 +459,6 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* Coal */
-
   if (cs_glob_lagr_model->physical_model == 2) {
 
     cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
@@ -574,7 +576,7 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
  * \brief Initialize particle values
  *
  * \param[in,out]  p_set             particle set
- * \param[in]      zis               injection data this zone and set
+ * \param[in]      zis               injection data for this zone and set
  * \param[in]      time_id           time step indicator for fields
  *                                     0: use fields at current time step
  *                                     1: use fields at previous time step
@@ -777,24 +779,24 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         if (   cs_glob_lagr_model->physical_model == 1
             && cs_glob_lagr_specific_physics->itpvar == 1) {
 
-          if (cval_t != NULL)
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_FLUID_TEMPERATURE,
-                                      cval_t[cell_id] + tscl_shift);
+          if (zis->temperature_profile < 1) {
+            if (cval_t != NULL)
+              cs_lagr_particle_set_real(particle, p_am,
+                                        CS_LAGR_FLUID_TEMPERATURE,
+                                        cval_t[cell_id] + tscl_shift);
 
-          else if (cval_h != NULL) {
-
-            int mode = 1;
-            cs_real_t temp[1];
-            CS_PROCF(usthht, USTHHT)(&mode, &(cval_h[cell_id]), temp);
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_FLUID_TEMPERATURE,
-                                      temp[0]);
-
+            else if (cval_h != NULL) {
+              int mode = 1;
+              cs_real_t temp[1];
+              CS_PROCF(usthht, USTHHT)(&mode, &(cval_h[cell_id]), temp);
+              cs_lagr_particle_set_real(particle, p_am,
+                                        CS_LAGR_FLUID_TEMPERATURE,
+                                        temp[0]);
+            }
           }
 
           /* constant temperature set, may be modified later by user function */
-          if (zis->temperature_profile == 1)
+          else if (zis->temperature_profile == 1)
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
                                       zis->temperature);
 
