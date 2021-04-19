@@ -627,7 +627,7 @@ cs_gui_particles_bcs(void)
 
           choice = cs_tree_node_get_tag(tn_c, "choice");
 
-          if (cs_gui_strcmp(choice, "fluid"))
+          if (choice == NULL || cs_gui_strcmp(choice, "fluid"))
             zis->velocity_profile = CS_LAGR_IN_IMPOSED_FLUID_VALUE;
 
           else if (cs_gui_strcmp(choice, "norm")) {
@@ -673,7 +673,7 @@ cs_gui_particles_bcs(void)
             zis->stat_weight = 0;
             if (v_r != NULL) zis->flow_rate = v_r[0];
           }
-          else if (cs_gui_strcmp(choice, "prescribed")) {
+          else if (cs_gui_strcmp(choice, "prescribed") || choice == NULL) {
             v_r = cs_tree_node_get_values_real(tn_c);
             if (v_r != NULL) zis->stat_weight = v_r[0];
             zis->flow_rate = 0;
@@ -734,7 +734,7 @@ cs_gui_particles_bcs(void)
               v_r = cs_tree_node_get_values_real(tn_c);
               if (v_r != NULL) zis->temperature = v_r[0];
             }
-            else if (cs_gui_strcmp(choice, "fluid")) {
+            else if (cs_gui_strcmp(choice, "fluid") || choice == NULL) {
               zis->temperature_profile = 0;
               zis->temperature = 0;
             }
