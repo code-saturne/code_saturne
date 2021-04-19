@@ -249,7 +249,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         self.slotSetParticleBoundary(
             self.dicoM2V[interaction])  # this is needed because setItem does not trigger comboBox activation
         if interaction == "inlet":
-            nb_sets = self.model.getNumberOfSetsValue(label)
+            nb_sets = self.model.getNumberOfSetsValue()
             self.updateInletDisplay(nb_sets)
 
     def hideWidget(self):
@@ -278,11 +278,10 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         try:
             nb_sets = int(nb_sets)
         except Exception:
-            label = self.zone.getLabel()
-            nb_sets = self.model.getNumberOfSetsValue(label)
+            nb_sets = self.model.getNumberOfSetsValue()
             self.lineEditNbSets.setText(str(nb_sets))
             return
-        self.model.setNumberOfSetsValue(self.zone.getLabel(), nb_sets)
+        self.model.setNumberOfSetsValue(nb_sets)
         self.updateInletDisplay(nb_sets)
 
         return
@@ -306,7 +305,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         label = self.zone.getLabel()
         interaction = self.dicoV2M[str(self.comboBoxBoundary.currentText())]
         if interaction == "inlet":
-            self.model.setCurrentSetNode(label, iset)
+            self.model.setCurrentSetNode(iset)
 
         # Main variables
         self.groupBoxMain.show()

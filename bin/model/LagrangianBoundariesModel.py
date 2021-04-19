@@ -139,6 +139,7 @@ class LagrangianBoundariesModel(Model):
         self.node_particles['choice'] = value
         self.setCurrentBoundaryNode(nature, labelbc)
 
+
     @Variables.noUndo
     def getBoundaryChoice(self, nature, labelbc):
         """
@@ -198,7 +199,7 @@ class LagrangianBoundariesModel(Model):
 
 
     @Variables.undoGlobal
-    def setNumberOfSetsValue(self, labelbc, value):
+    def setNumberOfSetsValue(self, value):
         """
         Update the number of sets. Create or delete nodes if necessary.
         """
@@ -215,8 +216,9 @@ class LagrangianBoundariesModel(Model):
                 node_to_delete.xmlRemoveNode()
             # redefine self.node_set
 
+
     @Variables.noUndo
-    def getNumberOfSetsValue(self, labelbc):
+    def getNumberOfSetsValue(self):
         """
         Return the number of injection sets.
         """
@@ -224,12 +226,12 @@ class LagrangianBoundariesModel(Model):
         value = len(node_list)
         if value == None:
             value = self.defaultParticlesBoundaryValues()['n_is']
-            self.setNumberOfSetsValue(labelbc, value)
+            self.setNumberOfSetsValue(value)
         return value
 
 
     @Variables.undoLocal
-    def setCurrentSetNode(self, labelbc, iset):
+    def setCurrentSetNode(self, iset):
         """
         Update the current set node.
         """
@@ -347,12 +349,12 @@ class LagrangianBoundariesModel(Model):
         """
         Return the condition on statistical weight.
         """
-        node = self.node_set.xmlInitChildNode('statistical_weight', 'choice')
+        val = None
+        node = self.node_set.xmlGetChildNode('statistical_weight', 'choice')
         if node:
             val = node['choice']
-            if val == None or val == "":
-                val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
-                self.setStatisticalWeightChoice(label, iset, val)
+        if val == None or val == "":
+            val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
         return val
 
 
@@ -518,12 +520,12 @@ class LagrangianBoundariesModel(Model):
         """
         Return the condition on temperature.
         """
-        node = self.node_set.xmlInitChildNode('temperature', 'choice')
+        val = None
+        node = self.node_set.xmlGetChildNode('temperature', 'choice')
         if node:
             val = node['choice']
-            if val == None:
-                val = self.defaultParticlesBoundaryValues()['temperature_choice']
-                self.setTemperatureChoice(label, iset, val)
+        if val == None:
+            val = self.defaultParticlesBoundaryValues()['temperature_choice']
         return val
 
 
