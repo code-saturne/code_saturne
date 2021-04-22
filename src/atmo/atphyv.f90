@@ -175,6 +175,8 @@ do iel = 1, ncel
     ! "delta rho = - beta rho0 delta theta" gives
     ! "beta = 1 / theta"
     cpro_beta(iel) = 1.d0 / xvart
+    ! Compute T in Celisus
+    cpro_tempc(iel) = tliq - tkelvi
   else
 
     call cs_rho_humidair(qwt, tliq, pp, yw_liq, cpro_tempc(iel), crom(iel))
