@@ -135,11 +135,6 @@ if (icdo.lt.2) then
   call addfld
 endif
 
-! Time moments
-
-call cs_gui_time_moments
-call cs_user_time_moments
-
 ! Postprocessing and logging
 
 call cs_gui_output
@@ -162,6 +157,14 @@ if (icdo.lt.2) then
   call modini
   call fldini
 endif
+
+!===============================================================================
+! Time moments called after additionnal creation
+!===============================================================================
+! Time moments
+
+call cs_gui_time_moments
+call cs_user_time_moments
 
 !===============================================================================
 ! GUI-based boundary condition definitions
