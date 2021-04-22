@@ -547,7 +547,7 @@ if (imeteo.ge.2) then
   call field_set_key_struct_var_cal_opt(iflid, vcopt)
 
   f_name  = 'meteo_density'
-  f_label = 'Meteo rho'
+  f_label = 'Meteo density'
   ! Now create matching property
   call add_property_field(f_name, f_label, 1, .false., iflid)
   call field_set_key_int(iflid, keylog, 1)
