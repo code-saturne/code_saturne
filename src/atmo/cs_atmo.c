@@ -851,7 +851,7 @@ cs_atmo_init_meteo_profiles(void)
                    aopt->meteo_dlmo);
 
   /* Compute uref from ground friction velocity and dlmo */
-  if (aopt->meteo_uref < 0.)
+  if (aopt->meteo_uref < 0. && zref > 0.)
     aopt->meteo_uref =
       aopt->meteo_ustar0 / kappa
       * cs_mo_psim(zref + z0,
@@ -890,6 +890,10 @@ cs_atmo_compute_meteo_profiles(void)
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
+
+  /* In the log */
+  bft_printf(" Computing meteo profiles from CS\n\n");
+
   /* Get fields */
   cs_real_t *cpro_met_potemp = cs_field_by_name("meteo_pot_temperature")->val;
   cs_real_3_t *cpro_met_vel =
@@ -1415,12 +1419,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(abs(f->val[cell_id]-f->val_pre[cell_id])/pref, inf_norm);
+      inf_norm = fmax(abs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
 
       /* f_ext = rho^k * g */
       temp->val[cell_id] = potemp->val[cell_id]
                          * pow((f->val[cell_id]/pref), rscp);
       cs_real_t rho_k = f->val[cell_id] / (rair * temp->val[cell_id]);
+      density->val[cell_id] = rho_k;
 
       f_ext[cell_id][0] = rho_k * phys_cst->gravity[0];
       f_ext[cell_id][1] = rho_k * phys_cst->gravity[1];
@@ -1430,15 +1435,6 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
     bft_printf("Atmo meteo profiles: iterative process to compute hydrostatic pressure\n"
                "  sweep %d, L infinity norm (delta p) / ps =%e\n", sweep, inf_norm);
-  }
-
-  /* Once the pressure computed, finalize the computation of
-   * density and temperature */
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    temp->val[cell_id] = potemp->val[cell_id]
-                        * pow((f->val[cell_id]/pref), rscp);
-    density->val[cell_id] = f->val[cell_id]
-                            / ( rair * temp->val[cell_id] );
   }
 
   /* Free memory */
