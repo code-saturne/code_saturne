@@ -728,7 +728,6 @@ cs_gui_output(void)
 
 #if _XML_DEBUG_
   bft_printf("==>CSENSO\n");
-  bft_printf("--iecaux = %i\n", *iecaux);
   bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
 #endif
 }

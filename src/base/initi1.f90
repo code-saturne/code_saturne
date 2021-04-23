@@ -135,10 +135,6 @@ if (icdo.lt.2) then
   call addfld
 endif
 
-! Postprocessing and logging
-
-call cs_gui_output
-
 ! Restart
 
 ttsuit = -1.d0
@@ -175,6 +171,10 @@ call cs_gui_boundary_conditions_define(c_null_ptr)
 !===============================================================================
 ! Some final settings
 !===============================================================================
+
+! Postprocessing and logging
+
+call cs_gui_output
 
 ! Do not call this routine if CDO mode only (default variables and properties
 ! are not defined anymore)
