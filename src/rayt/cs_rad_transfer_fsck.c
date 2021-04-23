@@ -1242,7 +1242,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                       kfsk);
     /* [m^-1] */
     for (int i = 0; i < ng; i++)
-      kfsk[i] /= 100.0;
+      kfsk[i] *= 100.0;
+
     _simple_interpg(ng,
                     gfsk,
                     kfsk,
@@ -1251,7 +1252,6 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     kloctmp);
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       kloc[i * cs_glob_mesh->n_cells + iel] = kloctmp[i];
-
 
     /* Determination of the local weights */
     for (int i = 0; i < ng; i++) {
@@ -1268,6 +1268,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     /* [m^-1] */
     for (int i = 0; i < ng; i++)
       kg1[i] *= 100.0;
+
     _simple_interpg(ng,
                     kg1,
                     gg1,
@@ -1299,6 +1300,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                      kg1);
     for (int i = 0; i < ng; i++)
       kg1[i] *= 100.0;
+
     _simple_interpg(ng,
                     kg1,
                     gg1,
