@@ -1134,7 +1134,6 @@ if test x$cs_have_neptune_cfd = xyes; then
   NEPTUNE_CFD_LIBS="-lneptune"
 fi
 
-AC_SUBST(HAVE_NEPTUNE_CFD)
 AC_SUBST(NEPTUNE_CFD)
 
 #------------------------------------------------------------------------------
