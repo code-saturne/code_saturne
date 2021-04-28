@@ -1226,7 +1226,15 @@ class QFileEditor(QMainWindow):
         if not self.opened:
             return
 
-        self.filename = QFileDialog.getSaveFileName(self, 'Save File')
+        ret = QFileDialog.getSaveFileName(self, 'Save File')
+
+        if type(ret) == str:
+            self.filename = ret
+        elif type(ret) == tuple:
+            self.filename = ret[0]
+        else:
+            raise Exception("Uknown return type for 'QFileDialog.getSaveFileName'")
+
         self.last_dir = os.path.split(self.filename)[0]
 
         if self.filename != None and self.filename != '':
