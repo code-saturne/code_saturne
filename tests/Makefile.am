@@ -137,12 +137,17 @@ fvm_selector_postfix_test \
 cs_sizes_test \
 cs_tree_test
 
+if HAVE_CUDA
+check_PROGRAMS += cs_gpu_test
+endif
+
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
-	$(PLE_LDFLAGS) $(MPI_LDFLAGS)
+	$(PLE_LDFLAGS) $(MPI_LDFLAGS) $(CUDA_LDFLAGS)
+
 LDADD_CS_TESTS = \
 	$(top_builddir)/src/base/libcscore.la \
 	$(top_builddir)/src/bft/libbft.la \
-	$(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
+	$(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
 
 cs_all_to_all_test_SOURCES  = cs_all_to_all_test.c
 cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
@@ -185,6 +190,17 @@ cs_core_test_LDADD    = $(LDADD_CS_TESTS)
 cs_file_test_SOURCES  = cs_file_test.c
 cs_file_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_file_test_LDADD    = $(LDADD_CS_TESTS)
+
+if HAVE_CUDA
+
+cs_gpu_test$(EXEEXT): $(top_srcdir)/tests/cs_gpu_test.c $(top_srcdir)/tests/cs_gpu_cuda_test.cu
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_gpu_test \
+	$(top_srcdir)/tests/cs_gpu_test.c
+	$(top_srcdir)/tests/cs_gpu_cuda_test.cu
+
+endif
 
 cs_interface_test_SOURCES  = cs_interface_test.c
 cs_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

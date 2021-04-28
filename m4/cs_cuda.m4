@@ -65,19 +65,19 @@ if test "x$cs_have_cuda" != "xno" ; then
     CUDA_ARCH_NUM="35 37 60 70"
   fi
 
-  NVCC_FLAGS="-ccbin $CXX -DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
+  NVCCFLAGS="-ccbin $CXX -DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
   touch conftest.cu
   for cu_arch in "$CUDA_ARCH_NUM"; do
     $NVCC --dryrun -c conftest.cu -o conftest.o -gencode arch=compute_${cu_arch},code=sm_${cu_arch} >/dev/null 2>&1
     if test $? -eq 0; then
-      NVCC_FLAGS="${NVCC_FLAGS} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
+      NVCCFLAGS="${NVCCFLAGS} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
     fi
   done
   rm -f conftest.cu conftest.o
 
-  NVCC_FLAGS="${NVCC_FLAGS} --maxrregcount=64 -Xptxas -v"
+  NVCCFLAGS="${NVCCFLAGS} --maxrregcount=64 -Xptxas -v"
   if test "x$enable_shared" = "xyes" ; then
-    NVCC_FLAGS="${NVCC_FLAGS} --compiler-options -fPIC"
+    NVCCFLAGS="${NVCCFLAGS} --compiler-options -fPIC"
   fi
 
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
@@ -87,7 +87,7 @@ if test "x$cs_have_cuda" != "xno" ; then
   AC_SUBST(CUDA_LDFLAGS)
   AC_SUBST(CUDA_LIBS)
   AC_SUBST(NVCC)
-  AC_SUBST(NVCC_FLAGS)
+  AC_SUBST(NVCCFLAGS)
 
 fi
 

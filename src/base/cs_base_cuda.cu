@@ -76,6 +76,121 @@ int  cs_glob_cuda_device_id = -1;
  * Private function definitions
  *============================================================================*/
 
+/*============================================================================
+ * Semi-private function prototypes
+ *
+ * The following functions are intended to be used by the common
+ * host-device memory management functions from cs_base_accel.c, and
+ * not directly by the user.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of CUDA device memory.
+ *
+ * This function simply wraps cudaMallocManaged, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_mem_malloc_device(size_t        n,
+                          const char   *var_name,
+                          const char   *file_name,
+                          int           line_num)
+{
+  void *ptr = NULL;
+
+  CS_CUDA_CHECK_CALL(cudaMalloc(&ptr, n), file_name, line_num);
+
+  return ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of CUDA managed memory.
+ *
+ * This function simply wraps cudaMallocManaged, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_mem_malloc_managed(size_t        n,
+                           const char   *var_name,
+                           const char   *file_name,
+                           int           line_num)
+{
+  void *ptr = NULL;
+
+  CS_CUDA_CHECK_CALL(cudaMallocManaged(&ptr, n), file_name, line_num);
+
+#if 0
+  CS_CUDA_CHECK_CALL(cudaMemPrefetchAsync (*pointer, size, cudaCpuDeviceId, 0),
+                     file_name, line_num);
+  CS_CUDA_CHECK_CALL(cudaDeviceSynchronize(), file_name, line_num);
+#endif
+
+  return ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free CUDA memory associated with a given pointer.
+ *
+ * This function simply wraps cudaFree, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  p          pointer to device memory
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_free(void         *p,
+                 const char   *var_name,
+                 const char   *file_name,
+                 int           line_num)
+{
+  void *ptr = NULL;
+
+  CS_CUDA_CHECK_CALL(cudaFree(p), file_name, line_num);
+
+#if 0
+  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
+#endif
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================

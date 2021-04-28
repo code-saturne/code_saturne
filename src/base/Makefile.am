@@ -91,6 +91,7 @@ cs_array_reduce.h \
 cs_assert.h \
 cs_ast_coupling.h \
 cs_base.h \
+cs_base_accel.h \
 cs_base_fortran.h \
 cs_block_dist.h \
 cs_block_to_part.h \
@@ -228,6 +229,14 @@ cs_timer.c \
 cs_tree.c
 libcscore_la_LDFLAGS = -no-undefined
 libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
+
+if HAVE_ACCEL
+libcscore_la_SOURCES += cs_base_accel.cxx
+endif
+
+if HAVE_CUDA
+libcscore_la_SOURCES += cs_base_cuda.cu
+endif
 
 ###
 
@@ -401,10 +410,6 @@ visecv.f90
 libcsbase_la_LDFLAGS = -no-undefined
 libcsbase_la_LIBADD =
 
-if HAVE_CUDA
-libcsbase_la_SOURCES += cs_base_cuda.cu
-endif
-
 # Renumbering (may require extra headers)
 
 libcsrenumber_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -538,4 +543,4 @@ clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
 
 .cu.lo:
-	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCC_FLAGS) -c -o $@ $<
+	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) -c -o $@ $<

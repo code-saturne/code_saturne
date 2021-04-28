@@ -37,6 +37,7 @@
 #include "cs_array_reduce.h"
 #include "cs_assert.h"
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_block_dist.h"
 #include "cs_block_to_part.h"
 #include "cs_boundary.h"

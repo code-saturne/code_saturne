@@ -91,6 +91,13 @@ def process_cmd_line(argv, pkg):
                       metavar="<fcflags>",
                       help="additional Fortran compiler flags")
 
+    if pkg:
+        if pkg.config.features['cuda'] == 'yes':
+            parser.add_option("--nvccflags", dest="nvccflags", type="string",
+                              metavar="<nvccflags>",
+                              help="additional CUDA compiler flags")
+            parser.set_defaults(nvccflags=None)
+
     parser.add_option("--libs", dest="libs", type="string",
                       metavar="<libs>",
                       help="additional libraries")
@@ -143,7 +150,8 @@ def files_to_compile(src_dir):
     src_files = (fnmatch.filter(dir_files, '*.c')
                  + fnmatch.filter(dir_files, '*.cxx')
                  + fnmatch.filter(dir_files, '*.cpp')
-                 + fnmatch.filter(dir_files, '*.[fF]90'))
+                 + fnmatch.filter(dir_files, '*.[fF]90')
+                 + fnmatch.filter(dir_files, '*.cu'))
 
     return src_files
 
@@ -345,6 +353,7 @@ class cs_compile(object):
         c_files = fnmatch.filter(src_list, '*.c')
         h_files = fnmatch.filter(src_list, '*.h')
         cxx_files = fnmatch.filter(src_list, '*.cxx') + fnmatch.filter(src_list, '*.cpp')
+        cu_files = fnmatch.filter(src_list, '*.cu')
         hxx_files = fnmatch.filter(src_list, '*.hxx') + fnmatch.filter(src_list, '*.hpp')
         f_files = fnmatch.filter(src_list, '*.[fF]90')
         o_files = fnmatch.filter(src_list, '*.o')
@@ -401,6 +410,25 @@ class cs_compile(object):
             cmd.append('-DHAVE_CONFIG_H')
             cmd += self.get_flags('cppflags', base_name=base_name)
             cmd += separate_args(pkg.config.flags['cxxflags'])
+            cmd += ["-c", f]
+            if run_command(cmd, pkg=pkg, echo=True,
+                           stdout=stdout, stderr=stderr) != 0:
+                retval = 1
+            o_files.append(self.obj_name(f))
+
+        for f in cu_files:
+            if (retval != 0 and not keep_going):
+                break
+            cmd = [self.get_compiler('nvcc')]
+            if opt_nvccflags != None:
+                cmd += separate_args(opt_nvccflags)
+            for d in cxx_include_dirs:
+                cmd += ["-I", d]
+            for d in c_include_dirs:
+                cmd += ["-I", d]
+            cmd.append('-DHAVE_CONFIG_H')
+            cmd += self.get_flags('nvccflags', base_name=base_name)
+            cmd += separate_args(pkg.config.flags['nvccflags'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,
                            stdout=stdout, stderr=stderr) != 0:

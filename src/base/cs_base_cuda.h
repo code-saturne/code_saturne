@@ -45,6 +45,14 @@
  * Macro definitions
  *============================================================================*/
 
+#define CS_CUDA_CHECK_CALL(a, file_name, line_num) { \
+    cudaError_t ret_code = a; \
+    if (cudaSuccess != ret_code) { \
+      bft_error(file_name, line_num, 0, "[CUDA errror] %d: %s\n  running: %s", \
+                ret_code, ::cudaGetErrorString(ret_code), #a); \
+    } \
+  }
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -60,6 +68,96 @@ BEGIN_C_DECLS
 #if defined(HAVE_CUDA)
 
 extern int  cs_glob_cuda_device_id;
+
+#endif
+
+/*============================================================================
+ * Semi-private function prototypes
+ *
+ * The following functions are intended to be used by the common
+ * host-device memory management functions from cs_base_accel.c, and
+ * not directly by the user.
+ *============================================================================*/
+
+#if defined(HAVE_CUDA)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of CUDA device memory.
+ *
+ * This function simply wraps cudaMallocManaged, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_mem_malloc_device(size_t        n,
+                          const char   *var_name,
+                          const char   *file_name,
+                          int           line_num);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of CUDA managed memory.
+ *
+ * This function simply wraps cudaMallocManaged, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_mem_malloc_managed(size_t        n,
+                           const char   *var_name,
+                           const char   *file_name,
+                           int           line_num);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free CUDA memory associated with a given pointer.
+ *
+ * This function simply wraps cudaFree, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  p          pointer to device memory
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_free(void         *p,
+                 const char   *var_name,
+                 const char   *file_name,
+                 int           line_num);
 
 #endif
 

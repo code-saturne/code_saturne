@@ -104,12 +104,13 @@ class config:
         self.compilers = {'cc': "@CC@",
                           'cxx': "@CXX@",
                           'fc': "@FC@",
-                          'ld': "@CS_LD@",
-                          'version': "@CC_VERSION@"}
+                          'nvcc': "@NVCC@",
+                          'ld': "@CS_LD@"}
 
         self.flags = {'cflags': "@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@",
                       'cxxflags': "@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@",
-                      'fcflags': "@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"}
+                      'fcflags': "@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@",
+                      'nvccflags': "@NVCCFLAGS@ @NVCCFLAGS_DBG@ @NVCCFLAGS_OPT@"}
 
         self.fcmodinclude = "@FCMODINCLUDE@"
         self.rpath = "@LDRPATH@"

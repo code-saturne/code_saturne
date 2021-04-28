@@ -538,13 +538,16 @@ if test "x$cs_have_openmp_f" = "xyes" ; then
 fi
 
 #------------------------------------------------------------------------------
-# Determine CUDA support
+# Determine Accelerator support
 #------------------------------------------------------------------------------
+
+cs_have_accel=no
 
 CS_AC_TEST_CUDA
 
 if test "x$auto_flags" = "xyes" ; then
   if test "$cs_have_cuda" = "yes"; then
+    cs_have_accel=yes
     $NVCCFLAGS="$NVCCFLAGS $nvccflags_default"
     if test "x$debug" = xyes; then
       $NVCCFLAGS_DBG="$nvccflags_default_dbg"
@@ -559,6 +562,8 @@ if test "x$auto_flags" = "xyes" ; then
     AC_SUBST(NVCCCFLAGS_HOT)
   fi
 fi
+
+AM_CONDITIONAL([HAVE_ACCEL], [test "$cs_have_accel" = "yes"])
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -705,6 +710,8 @@ fi
 # Check if we need to force link with C++
 cs_have_link_cxx=no
 if test x$cs_have_neptune_cfd = xyes ; then
+  cs_have_link_cxx=yes
+elif test x$cs_have_accel = xyes; then
   cs_have_link_cxx=yes
 elif test x$cs_have_med_link_cxx = xyes ; then
   cs_have_link_cxx=yes
