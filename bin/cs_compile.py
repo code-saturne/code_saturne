@@ -587,6 +587,8 @@ class cs_compile(object):
 
         src_list = []
         for f in dir_files:
+            if f[0] == '#':   # Filter temporary files left by some editors.
+                continue
             src_list.append(os.path.join(srcdir, f))
 
         retval, obj_list = self.compile_src(base_name, src_list,
