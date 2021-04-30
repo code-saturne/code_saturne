@@ -3,9 +3,12 @@ Release 7.0 (unreleased)
 
 User changes:
 
+- GUI: add the possibility to specify meteo profiles input directly in
+  code_saturne rather than with a meteo file.
+
 - Run script: `define_domain_parameters` from `cs_user_scripts.py` is
   now called after copying initial data to the case's execution directory,
-  so as to allow case and run id-specific modifcations to be done, avoiding
+  so as to allow case and run id-specific modifications to be done, avoiding
   modification of the base data and user sources.
 
 - GUI: for gas combustion, allow creation of a thermochemistry data file
@@ -36,7 +39,7 @@ User changes:
 - GUI: User formulae for physical properties can now be defined
   over multiple zones.
   * This changes the handling of physical properties.
-  * Physical properties are now defined as a volumic condition, with
+  * Physical properties are now defined as a volume condition, with
     the zone "all_cells" as the default one.
   * User-laws for physical properties can now be defined over multiple
     zones using the MEG mechanism. This requires the definition of a
@@ -63,7 +66,7 @@ User changes:
     `idtvar` = -1, is now only available if it is activated in the
     opened xml file. It is then named "Deprecated: Steady ..."
     to indicate its new status.
-  * Previous "pseduo steady" option, `idtvar` = 2, is renamed as
+  * Previous "pseudo steady" option, `idtvar` = 2, is renamed as
     "Steady (local time step)" and is now the de-facto steady algorithm.
 
 - Rename and reorganize `cs_stokes_model_t` and `cs_piso_t` structures.
@@ -88,10 +91,10 @@ Bug fixes:
 
 - Compressible: fix imposed inlet/outlet boundary condition.
   Boundary mass flux was not computed using the Rusanov scheme,
-  and was not consistant with momentum and energy convective fluxes on
+  and was not consistent with momentum and energy convective fluxes on
   the boundary faces with imposed inlet/outlet boundary condition.
 
-- Fix overwite of user-defined function settings for probe writer
+- Fix overwrite of user-defined function settings for probe writer
   by GUI or default settings.
 
 - GUI: fix incomplete handling of compressible boundary conditions
