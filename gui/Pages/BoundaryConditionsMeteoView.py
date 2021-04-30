@@ -68,7 +68,7 @@ log.setLevel(GuiParam.DEBUG)
 
 class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
     """
-    Boundary condifition for the velocity part
+    Boundary condition for the velocity part
     """
     def __init__(self, parent):
         """
@@ -108,35 +108,37 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         Show the widget.
         """
         self.__b = b
-        if self.__model.getAtmosphericFlowsModel() != "off" \
-            and self.__model.getMeteoDataStatus() == "on":
-            self.show()
+        if self.__model.getAtmosphericFlowsModel() != "off":
+            isMeteoChecked = self.__model.getMeteoDataStatus() == "on" \
+                    or self.__model.getLargeScaleMeteoStatus() == 'on'
+            if isMeteoChecked:
+                self.show()
 
-            label = b.getLabel()
-            nature = "meteo_" + b.getNature()
-            self.__boundary = Boundary(nature, label, self.case)
+                label = b.getLabel()
+                nature = "meteo_" + b.getNature()
+                self.__boundary = Boundary(nature, label, self.case)
 
-            if self.__boundary.getMeteoDataStatus() == 'on':
-                self.checkBoxReadData.setChecked(True)
-                self.checkBoxAutoNature.setEnabled(True)
-                self.velocityWidget.hideWidget()
-                self.turbulenceWidget.hideWidget()
-            else:
-                self.checkBoxReadData.setChecked(False)
-                self.checkBoxAutoNature.setEnabled(False)
-                if nature == "meteo_inlet":
-                    self.velocityWidget.showWidget(b)
-                    self.turbulenceWidget.showWidget(b)
-                else:
+                if self.__boundary.getMeteoDataStatus() == 'on':
+                    self.checkBoxReadData.setChecked(True)
+                    self.checkBoxAutoNature.setEnabled(True)
                     self.velocityWidget.hideWidget()
                     self.turbulenceWidget.hideWidget()
+                else:
+                    self.checkBoxReadData.setChecked(False)
+                    self.checkBoxAutoNature.setEnabled(False)
+                    if nature == "meteo_inlet":
+                        self.velocityWidget.showWidget(b)
+                        self.turbulenceWidget.showWidget(b)
+                    else:
+                        self.velocityWidget.hideWidget()
+                        self.turbulenceWidget.hideWidget()
 
-            if self.__boundary.getAutomaticNatureStatus() == 'on':
-                self.checkBoxAutoNature.setChecked(True)
-            else:
-                self.checkBoxAutoNature.setChecked(False)
+                if self.__boundary.getAutomaticNatureStatus() == 'on':
+                    self.checkBoxAutoNature.setChecked(True)
+                else:
+                    self.checkBoxAutoNature.setChecked(False)
 
-            self.scalarsWidget.showWidget(self.__b)
+                self.scalarsWidget.showWidget(self.__b)
 
         else:
             self.hideWidget()
