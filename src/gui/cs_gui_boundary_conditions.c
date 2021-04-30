@@ -1289,7 +1289,7 @@ _init_boundaries(void)
         }
       }
 
-      /* Inlet: data for darcy */
+      /* Inlet: data for Darcy */
       if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
         _boundary_darcy(tn, izone);
 

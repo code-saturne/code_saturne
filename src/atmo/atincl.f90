@@ -833,8 +833,6 @@ use atsoil
 
 implicit none
 
-call cs_f_atmo_finalize()
-
 if (imeteo.gt.0) then
 
   deallocate(zdmet)
