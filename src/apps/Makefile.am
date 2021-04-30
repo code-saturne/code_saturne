@@ -101,6 +101,7 @@ endif
 if HAVE_BACKEND
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \

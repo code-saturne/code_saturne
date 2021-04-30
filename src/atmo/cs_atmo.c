@@ -274,9 +274,6 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
 void
 cs_f_atmo_chem_finalize(void);
 
-void
-cs_f_atmo_finalize(void);
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -450,16 +447,6 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.chempoint);
   BFT_FREE(_atmo_chem.spack_file_name);
   BFT_FREE(_atmo_chem.aero_file_name);
-}
-
-
-void
-cs_f_atmo_finalize(void)
-{
-  BFT_FREE(_atmo_option.meteo_file_name);
-  BFT_FREE(_atmo_option.z_temp_met);
-  BFT_FREE(_atmo_option.time_met);
-  BFT_FREE(_atmo_option.hyd_p_met);
 }
 
 /*============================================================================
@@ -2101,6 +2088,21 @@ cs_atmo_aerosol_log_setup(void)
        cs_glob_atmo_chemistry->init_aero_with_lib ? "Yes": "No",
        cs_glob_atmo_chemistry->aero_file_name);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Deallocate arrays for atmo module
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_finalize(void)
+{
+  BFT_FREE(_atmo_option.meteo_file_name);
+  BFT_FREE(_atmo_option.z_temp_met);
+  BFT_FREE(_atmo_option.time_met);
+  BFT_FREE(_atmo_option.hyd_p_met);
 }
 
 /*----------------------------------------------------------------------------*/

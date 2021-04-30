@@ -2660,16 +2660,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Deallocate arrays for atmo module
-
-    subroutine cs_f_atmo_finalize() &
-         bind(C, name='cs_f_atmo_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_atmo_finalize
-
-    !---------------------------------------------------------------------------
-
     !> \brief Sets the meteo file name
 
     subroutine cs_atmo_set_meteo_file_name(name) &

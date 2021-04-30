@@ -44,6 +44,7 @@
 #include "bft_printf.h"
 
 #include "cs_ale.h"
+#include "cs_atmo.h"
 #include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
@@ -515,6 +516,7 @@ _run(void)
 
   /* Finalizations related to some models */
 
+  cs_atmo_finalize();
   cs_ctwr_all_destroy();
   cs_fan_destroy_all();
 
