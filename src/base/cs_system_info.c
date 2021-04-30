@@ -301,7 +301,6 @@ _system_info(bool  log)
 {
   time_t          date;
   size_t          ram;
-  int             log_id;
   int             n_logs = (log) ? 2 : 1;
 
   cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
@@ -343,12 +342,12 @@ _system_info(bool  log)
   /*---------------------------*/
 
   if (log) {
-    for (log_id = 0; log_id < n_logs; log_id++)
+    for (int log_id = 0; log_id < n_logs; log_id++)
       cs_log_printf(logs[log_id],
                     "\n%s\n", _("Local case configuration:\n"));
   }
 
-  for (log_id = 0; log_id < n_logs; log_id++)
+  for (int log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Date:                "), str_date);
 
@@ -359,7 +358,7 @@ _system_info(bool  log)
 #if defined(HAVE_UNAME)
 
   if (uname(&sys_config) != -1) {
-    for (log_id = 0; log_id < n_logs; log_id++) {
+    for (int log_id = 0; log_id < n_logs; log_id++) {
       cs_log_printf(logs[log_id],
                     "  %s%s %s%s\n", _("System:              "),
                     sys_config.sysname, sys_config.release,
@@ -373,7 +372,7 @@ _system_info(bool  log)
 
   _sys_info_cpu(str_cpu, 81);
 
-  for (log_id = 0; log_id < n_logs; log_id++)
+  for (int log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Processor:           "), str_cpu);
 
@@ -391,7 +390,7 @@ _system_info(bool  log)
 #endif
 
   if (ram > 0) {
-    for (log_id = 0; log_id < n_logs; log_id++)
+    for (int log_id = 0; log_id < n_logs; log_id++)
       cs_log_printf(logs[log_id],
                     "  %s%llu %s\n", _("Memory:              "),
                     (unsigned long long)ram, _("MB"));
@@ -435,7 +434,7 @@ _system_info(bool  log)
 
   /* Directory info */
 
-  for (log_id = 0; log_id < n_logs; log_id++)
+  for (int log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Directory:           "), str_directory);
 
@@ -466,7 +465,7 @@ _system_info(bool  log)
         appnum = *(int *)attp;
 #     endif
 
-      for (log_id = 0; log_id < n_logs; log_id++) {
+      for (int log_id = 0; log_id < n_logs; log_id++) {
         if (appnum > -1 && log_id == 0)
           cs_log_printf(logs[log_id],
                         "  %s%d (%s %d)\n",
@@ -501,7 +500,7 @@ _system_info(bool  log)
   {
     int t_id = omp_get_thread_num();
     if (t_id == 0) {
-      for (log_id = 0; log_id < n_logs; log_id++) {
+      for (int log_id = 0; log_id < n_logs; log_id++) {
         cs_log_printf(logs[log_id],
                       "  %s%d\n", _("OpenMP threads:      "),
                       omp_get_max_threads());
@@ -517,13 +516,13 @@ _system_info(bool  log)
 #endif
 
 #if defined(HAVE_CUDA)
-  for (log_id = 0; log_id < n_logs; log_id++)
+  for (int log_id = 0; log_id < n_logs; log_id++)
     cs_base_cuda_device_info(log_id);
 #endif
 
 #if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \
     || defined(CS_FC_VERSION_STRING) || defined(CS_NVCC_VERSION_STRING)
-  for (log_id = 0; log_id < n_logs; log_id++) {
+  for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_log_printf(logs[log_id], "\n  Compilers used for build:\n");
 #   if defined(CS_CC_VERSION_STRING)
     cs_log_printf(logs[log_id],
@@ -544,6 +543,119 @@ _system_info(bool  log)
   }
 #endif
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available MPI library information.
+ *
+ * \param[in]  log   if true, standard logging; otherwise, single output
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+static void
+_mpi_version_info(bool  log)
+{
+#if defined(MPI_SUBVERSION)
+
+  char mpi_vendor_lib[32] = "";
+  char mpi_lib[32] = "";
+
+  /* Base MPI library information */
+
+#if defined(MPI_VENDOR_NAME)
+
+#if defined(OMPI_MAJOR_VERSION)
+  snprintf(mpi_lib, 31, "%s %d.%d.%d",
+           MPI_VENDOR_NAME,
+           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+#elif defined(MPICH2_VERSION)
+  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH2_VERSION);
+#elif defined(MPICH_VERSION)
+  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH_VERSION);
+#else
+  snprintf(mpi_lib, 31, "%s", MPI_VENDOR_NAME);
+#endif
+
+#elif defined(OPEN_MPI)
+#if defined(OMPI_MAJOR_VERSION)
+  snprintf(mpi_lib, 31, "Open MPI %d.%d.%d",
+           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+#else
+  snprintf(mpi_lib, 31, "Open MPI");
+#endif
+
+#elif defined(MPICH2)
+#if defined(MPICH2_VERSION)
+  snprintf(mpi_lib, 31, "MPICH2 %s", MPICH2_VERSION);
+#else
+  snprintf(mpi_lib, 31, "MPICH2");
+#endif
+#elif defined(MPICH_NAME)
+#if defined(MPICH_VERSION)
+  snprintf(mpi_lib, 31, "MPICH %s", MPICH_VERSION);
+#else
+  snprintf(mpi_lib, 31, "MPICH");
+#endif
+#endif
+
+  mpi_lib[31] = '\0';
+
+  /* Possible additional MPI vendor information */
+
+#if defined(MVAPICH2_VERSION)
+  snprintf(mpi_vendor_lib, 31, "MVAPICH2 %s", MVAPICH2_VERSION);
+#elif defined(MSMPI_VER)
+  snprintf(mpi_vendor_lib, 31, "MS-MPI");
+#elif defined(PLATFORM_MPI)
+  {
+    int v, v0, v1, v2, v3;
+    v0 =  PLATFORM_MPI>>24;
+    v =  (PLATFORM_MPI - (v0<<24));
+    v1 =  v>>16;
+    v =  (v - (v1<<16));
+    v2 =  v>>8;
+    v3 =  (v - (v2<<8));
+    snprintf(mpi_vendor_lib, 31, "Platform MPI %x.%x.%x.%x\n",
+             v0, v1, v2, v3);
+  }
+#endif
+
+  mpi_vendor_lib[31] = '\0';
+
+  int  n_logs = (log) ? 2 : 1;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+
+    if (mpi_vendor_lib[0] != '\0') {
+      if (mpi_lib[0] != '\0')
+        cs_log_printf(logs[log_id],
+                      _("\n  MPI version %d.%d (%s, based on %s)\n"),
+                      MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib, mpi_lib);
+      else
+        cs_log_printf(logs[log_id],
+                      _("\n  MPI version %d.%d (%s)\n"),
+                      MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib);
+    }
+    else {
+      if (mpi_lib[0] != '\0')
+        cs_log_printf(logs[log_id],
+                      _("\n  MPI version %d.%d (%s)\n"),
+                      MPI_VERSION, MPI_SUBVERSION, mpi_lib);
+      else
+        cs_log_printf(logs[log_id],
+                      _("\n  MPI version %d.%d\n"),
+                      MPI_VERSION, MPI_SUBVERSION);
+    }
+
+  }
+
+#endif /* defined(MPI_SUBVERSION) */
+}
+
+#endif /* (HAVE_MPI) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -577,6 +689,8 @@ cs_system_info(void)
 #else
   _system_info(true);
 #endif
+
+  _mpi_version_info(false);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -605,6 +719,8 @@ cs_system_info_no_log(void)
 #else
   _system_info(false);
 #endif
+
+  _mpi_version_info(false);
 }
 
 /*-----------------------------------------------------------------------------*/

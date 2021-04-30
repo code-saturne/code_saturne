@@ -1130,77 +1130,6 @@ cs_base_logfile_head(int    argc,
        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
   struct tm time_cnv;
 
-  /* Define MPI Information */
-
-#if defined(MPI_SUBVERSION)
-
-  char mpi_vendor_lib[32] = "";
-  char mpi_lib[32] = "";
-
-  /* Base MPI library information */
-
-#if defined(MPI_VENDOR_NAME)
-
-#if defined(OMPI_MAJOR_VERSION)
-  snprintf(mpi_lib, 31, "%s %d.%d.%d",
-           MPI_VENDOR_NAME,
-           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
-#elif defined(MPICH2_VERSION)
-  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH2_VERSION);
-#elif defined(MPICH_VERSION)
-  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH_VERSION);
-#else
-  snprintf(mpi_lib, 31, "%s", MPI_VENDOR_NAME);
-#endif
-
-#elif defined(OPEN_MPI)
-#if defined(OMPI_MAJOR_VERSION)
-  snprintf(mpi_lib, 31, "Open MPI %d.%d.%d",
-           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
-#else
-  snprintf(mpi_lib, 31, "Open MPI");
-#endif
-
-#elif defined(MPICH2)
-#if defined(MPICH2_VERSION)
-  snprintf(mpi_lib, 31, "MPICH2 %s", MPICH2_VERSION);
-#else
-  snprintf(mpi_lib, 31, "MPICH2");
-#endif
-#elif defined(MPICH_NAME)
-#if defined(MPICH_VERSION)
-  snprintf(mpi_lib, 31, "MPICH %s", MPICH_VERSION);
-#else
-  snprintf(mpi_lib, 31, "MPICH");
-#endif
-#endif
-
-  mpi_lib[31] = '\0';
-
-  /* Possible additional MPI vendor information */
-
-#if defined(MVAPICH2_VERSION)
-  snprintf(mpi_vendor_lib, 31, "MVAPICH2 %s", MVAPICH2_VERSION);
-#elif defined(MSMPI_VER)
-  snprintf(mpi_vendor_lib, 31, "MS-MPI");
-#elif defined(PLATFORM_MPI)
-  {
-    int v, v0, v1, v2, v3;
-    v0 =  PLATFORM_MPI>>24;
-    v =  (PLATFORM_MPI - (v0<<24));
-    v1 =  v>>16;
-    v =  (v - (v1<<16));
-    v2 =  v>>8;
-    v3 =  (v - (v2<<8));
-    snprintf(mpi_vendor_lib, 31, "Platform MPI %x.%x.%x.%x\n",
-             v0, v1, v2, v3);
-  }
-#endif
-
-  mpi_vendor_lib[31] = '\0';
-
-#endif /* defined(MPI_SUBVERSION) */
-
   /* Determine compilation date */
 
   for (ii = 0; ii < 12; ii++) {
@@ -1251,22 +1180,6 @@ cs_base_logfile_head(int    argc,
   bft_printf(_("  build %s\n"), str);
 
 #if defined(MPI_SUBVERSION)
-  if (mpi_vendor_lib[0] != '\0') {
-    if (mpi_lib[0] != '\0')
-      bft_printf(_("  MPI version %d.%d (%s, based on %s)\n\n"),
-                 MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib, mpi_lib);
-    else
-      bft_printf(_("  MPI version %d.%d (%s)\n\n"),
-                 MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib);
-  }
-  else {
-    if (mpi_lib[0] != '\0')
-      bft_printf(_("  MPI version %d.%d (%s)\n\n"),
-                 MPI_VERSION, MPI_SUBVERSION, mpi_lib);
-    else
-      bft_printf(_("  MPI version %d.%d\n\n"),
-                 MPI_VERSION, MPI_SUBVERSION);
-  }
 #endif
 
   bft_printf("\n");
