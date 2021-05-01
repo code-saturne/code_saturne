@@ -839,7 +839,75 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Recompute LMO inverse */
   if (aopt->meteo_ustar0 >= 0. && aopt->meteo_uref >= 0.) {
-    //TODO iterative process
+
+    /* U+ */
+    cs_real_t up = aopt->meteo_uref / aopt->meteo_ustar0;
+
+    /* U+ if neutral, dlmo = 0 */
+    cs_real_t up_l = cs_mo_psim(zref + z0,
+                                z0,
+                                0.) / kappa;
+
+    cs_real_t dlmo = 0.;
+    cs_real_t error = up_l - up;
+
+    /* Dichotomy */
+    cs_real_t dl_min = -1.e6;
+    cs_real_t dl_max =  1.e6;
+    cs_real_t tol = 1e-6;
+    int it;
+    int it_max = 1000;
+    for (it = 0;
+         it < it_max && CS_ABS(error) > tol && 0.5*(dl_max - dl_min) > tol;
+         it++) {
+      cs_real_t dl_mid = 0.5 * (dl_min + dl_max);
+
+      cs_real_t error_min = cs_mo_psim(zref + z0,
+                                       z0,
+                                       dl_min) / kappa - up;
+      cs_real_t error_mid = cs_mo_psim(zref + z0,
+                                       z0,
+                                       dl_mid) / kappa - up;
+
+      /* The solution is between min and mid */
+      if (error_min * error_mid < 0) {
+        dl_max = dl_mid;
+        if (CS_ABS(error_min) < CS_ABS(error_mid)) {
+          dlmo = dl_min;
+          error = error_min;
+        }
+        else {
+          dlmo = dl_mid;
+          error = error_mid;
+        }
+      }
+      /* The solution is between mid and max */
+      else {
+        cs_real_t error_max = cs_mo_psim(zref + z0,
+                                         z0,
+                                         dl_max) / kappa - up;
+        dl_min = dl_mid;
+        if (CS_ABS(error_mid) < CS_ABS(error_max)) {
+          dlmo = dl_mid;
+          error = error_mid;
+        }
+        else {
+          dlmo = dl_max;
+          error = error_max;
+        }
+      }
+#if 0
+      bft_printf("IT %d: dlmo = %f, error = %f\n",it, dlmo, error);
+#endif
+    }
+
+    if (it == it_max)
+      bft_printf("Warning: meteo preprocessor did not converged to find inverse\n"
+                 " of LMO length, current value is %f.\n"
+                 "Please, check reference velocity, reference altitude and ustar\n",
+                 dlmo);
+
+    aopt->meteo_dlmo = dlmo;
   }
 
   /* Compute ground friction velocity from dlmo and uref */
