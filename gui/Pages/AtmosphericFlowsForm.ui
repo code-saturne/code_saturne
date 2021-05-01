@@ -62,7 +62,7 @@
         <item row="5" column="0">
          <widget class="QLabel" name="labelPressureSeaLevel">
           <property name="text">
-           <string>Pressure at see level</string>
+           <string>Pressure at ground level</string>
           </property>
          </widget>
         </item>
@@ -215,7 +215,7 @@
          <widget class="QComboBox" name="comboBoxUstarOrdLMO">
           <item>
            <property name="text">
-            <string>Friction verlocity u*</string>
+            <string>Friction velocity u*</string>
            </property>
           </item>
           <item>
@@ -431,17 +431,17 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>dateTimeEdit</tabstop>
+  <tabstop>pushButtonMeteoData</tabstop>
+  <tabstop>lineEditLongCenter</tabstop>
   <tabstop>lineEditLatCenter</tabstop>
+  <tabstop>spinBoxDomainOrientation</tabstop>
+  <tabstop>dateTimeEdit</tabstop>
   <tabstop>lineEditLargeScaleRoughness</tabstop>
   <tabstop>lineEditPressureSeaLevel</tabstop>
   <tabstop>spinBoxWindDir</tabstop>
   <tabstop>lineEditUstarOrDlmo</tabstop>
   <tabstop>lineEditUrefOrDlmo</tabstop>
   <tabstop>lineEditZref</tabstop>
-  <tabstop>spinBoxDomainOrientation</tabstop>
-  <tabstop>lineEditLongCenter</tabstop>
-  <tabstop>pushButtonMeteoData</tabstop>
  </tabstops>
  <resources>
   <include location="resources_pages.qrc"/>
