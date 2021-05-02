@@ -87,7 +87,11 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.pushButtonMeteoData.pressed.connect(self.__slotSearchMeteoData)
 
         self.groupBoxLargeScaleMeteo.clicked[bool].connect(self.__slotGroupBoxLargeScaleMeteo)
-        self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
+        #TODO not yet connected
+        #self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
+        self.__slotGroupBoxActChemistry(False)
+        self.groupBoxActChemistry.setEnabled(False)
+
         self.comboBoxUstarOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUstarOrDlmo)
         self.comboBoxUrefOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUrefOrDlmo)
 
@@ -176,7 +180,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.case.undoStartGlobal()
 
 
-    #--------------- Fuctions for the groupBox LargeScalaMeteData--------------
+    #--------------- Functions for the groupBox LargeScalaMeteData--------------
     @pyqtSlot(QDateTime)
     def __slotDateTime(self, startTime):
             self.__model.setStartTime(startTime.toPyDateTime())
@@ -305,7 +309,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUref("-1.")
 
-    #--------------- Fuctions for the groupBox Activate Chemistry--------------
+    #--------------- Functions for the groupBox Activate Chemistry--------------
     @pyqtSlot(bool)
     def __slotGroupBoxActChemistry(self, checked):
         """
@@ -315,7 +319,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if checked:
             status = 'on'
 
+        #TODO not yet activated
+        self.groupBoxActChemistry.setEnabled(False)
         self.groupBoxActChemistry.setChecked(checked)
+        self.__model.setChemistryStatus(status)
 
     #--------------- Functions for the groupBox  MeteoDataFile-----------------
 

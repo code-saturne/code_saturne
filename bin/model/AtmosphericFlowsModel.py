@@ -360,7 +360,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getChemistryStatus(self):
         """
-        Return if reading meteo data status is 'on' or 'off'.
+        Return if Chemistry status is 'on' or 'off'.
         """
         node = self.__node_atmos.xmlInitChildNode(self.act_chemistry)
         if not node[self.status]:
@@ -372,7 +372,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.undoLocal
     def setChemistryStatus(self, status):
         """
-        Set meteo data status to 'on' / 'off'.
+        Set Chemistry status to 'on' / 'off'.
         """
         self.isOnOff(status)
         self.__node_atmos.xmlInitChildNode(self.act_chemistry)[self.status] = status
