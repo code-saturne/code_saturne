@@ -1568,8 +1568,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   BFT_FREE(w2);
 
   if (iwarnp >= 2) {
-    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells,w1,w1)));
-    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells,smbrp,smbrp)));
+    const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _w1, _w1)));
+    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
   }
 
 # pragma omp parallel for
@@ -2412,8 +2413,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   BFT_FREE(w2);
 
   if (iwarnp >= 2) {
-    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells,w1,w1)));
-    bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(3*n_cells,smbrp,smbrp)));
+    const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _w1, _w1)));
+    bft_printf("L2 norm ||B^n|| = %f\n",
+               sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
   }
 
 
