@@ -490,16 +490,6 @@ if test "x$cs_have_openmp" = "xyes" ; then
 		 [cs_have_openmp=no])
   AC_MSG_RESULT($cs_have_openmp)
   if test "x$cs_have_openmp" = "xyes" ; then
-    AC_MSG_CHECKING([for OpenMP simd])
-    # Note that as the m4 language does not allow escaping [ and ],
-    # we use quadrigraphs @<:@ and @>:@ instead here.
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
-		     [[double a@<:@128@:>@;
-		      #pragma omp for simd safelen(4)
-		      for (int i = 0; i < 128; i++) a@<:@i@:>@ = i;]])],
-		     [cs_have_openmp_simd=yes],
-		     [cs_have_openmp_simd=no])
-    AC_MSG_RESULT($cs_have_openmp_simd)
     AC_LANG_PUSH([Fortran])
     AC_MSG_CHECKING([for OpenMP (Fortran)])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([],
@@ -514,9 +504,6 @@ if test "x$cs_have_openmp" = "xyes" ; then
   fi
   if test "x$cs_have_openmp" = "xyes" ; then
     AC_DEFINE([HAVE_OPENMP], 1, [openmp support])
-    if test "x$cs_have_openmp_simd" = "xyes" ; then
-      AC_DEFINE([HAVE_OPENMP_SIMD], 1, [openmp simd support])
-    fi
     if test "x$cs_have_openmp_f" = "xno" ; then
       FCFLAGS="$saved_FCFLAGS"
     fi

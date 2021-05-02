@@ -97,7 +97,14 @@ extern "C" {
 #endif
 
 #if defined(HAVE_OPENMP)
+
 #  include <omp.h>
+
+#if _OPENMP >= 201307     /* simd construct available from OpenMP 4.0 */
+#undef HAVE_OPENMP_SIMD
+#define HAVE_OPENMP_SIMD 1
+#endif
+
 #endif
 
 /*============================================================================

@@ -496,7 +496,7 @@ _system_info(bool  log)
 
 #endif /* defined(HAVE_MPI) */
 
-#if defined(HAVE_OPENMP)
+#if defined(_OPENMP)
   {
     int t_id = omp_get_thread_num();
     if (t_id == 0) {
@@ -552,12 +552,13 @@ _system_info(bool  log)
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-
 static void
 _mpi_version_info(bool  log)
 {
-#if defined(MPI_SUBVERSION)
+  int  n_logs = (log) ? 2 : 1;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
+#if defined(HAVE_MPI)
 
   char mpi_vendor_lib[32] = "";
   char mpi_lib[32] = "";
@@ -624,38 +625,95 @@ _mpi_version_info(bool  log)
 
   mpi_vendor_lib[31] = '\0';
 
-  int  n_logs = (log) ? 2 : 1;
-  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
-
   for (int log_id = 0; log_id < n_logs; log_id++) {
 
     if (mpi_vendor_lib[0] != '\0') {
       if (mpi_lib[0] != '\0')
         cs_log_printf(logs[log_id],
-                      _("\n  MPI version %d.%d (%s, based on %s)\n"),
+                      _("\n  MPI version: %d.%d (%s, based on %s)\n"),
                       MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib, mpi_lib);
       else
         cs_log_printf(logs[log_id],
-                      _("\n  MPI version %d.%d (%s)\n"),
+                      _("\n  MPI version: %d.%d (%s)\n"),
                       MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib);
     }
     else {
       if (mpi_lib[0] != '\0')
         cs_log_printf(logs[log_id],
-                      _("\n  MPI version %d.%d (%s)\n"),
+                      _("\n  MPI version: %d.%d (%s)\n"),
                       MPI_VERSION, MPI_SUBVERSION, mpi_lib);
       else
         cs_log_printf(logs[log_id],
-                      _("\n  MPI version %d.%d\n"),
+                      _("\n  MPI version: %d.%d\n"),
                       MPI_VERSION, MPI_SUBVERSION);
     }
 
   }
 
-#endif /* defined(MPI_SUBVERSION) */
-}
+#else  /* (HAVE_MPI) */
+
+  for (int log_id = 0; log_id < n_logs; log_id++)
+    cs_log_printf(logs[log_id],
+                  _("\n  MPI version: none\n"));
 
 #endif /* (HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available OpenMP library information.
+ *
+ * \param[in]  log   if true, standard logging; otherwise, single output
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_omp_version_info(bool  log)
+{
+#if defined(_OPENMP)
+  char omp_version[8];
+  switch(_OPENMP) {
+  case 200505:
+    strncpy(omp_version, "2.5", 8);
+    break;
+  case 200805:
+    strncpy(omp_version, "3.0", 8);
+    break;
+  case 201107:
+    strncpy(omp_version, "3.1", 8);
+    break;
+  case 201307:
+    strncpy(omp_version, "4.0", 8);
+    break;
+  case 201511:
+    strncpy(omp_version, "4.5", 8);
+    break;
+  case 201811:
+    strncpy(omp_version, "5.0", 8);
+    break;
+  case 202011:
+    strncpy(omp_version, "5.1", 8);
+    break;
+  default:
+    snprintf(omp_version, 8, "%d", _OPENMP);
+  }
+  omp_version[7] = '\0';
+
+  int  n_logs = (log) ? 2 : 1;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+    cs_log_printf(logs[log_id],
+                  "  %s%s\n", _("OpenMP version: "), omp_version);
+  }
+#else
+
+  for (int log_id = 0; log_id < n_logs; log_id++)
+    cs_log_printf(logs[log_id],
+                  _("\n  OpenMP version: none\n"));
+
+#endif
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -721,6 +779,7 @@ cs_system_info_no_log(void)
 #endif
 
   _mpi_version_info(false);
+  _omp_version_info(false);
 }
 
 /*-----------------------------------------------------------------------------*/
