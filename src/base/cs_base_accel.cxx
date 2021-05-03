@@ -314,7 +314,7 @@ cs_dissassociate_device_ptr(void  *host_ptr)
   if (_hd_alloc_map.count(host_ptr) > 0)
     return;
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[me.host_ptr];
+  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
 
   if (me.device_ptr != NULL) {
 
