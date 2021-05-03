@@ -265,7 +265,7 @@ class base_domain:
                 os.remove(src)
 
         # Copy single directory (possibly recursive)
-        # Unkike os.path.copytree, the destination directory
+        # Unlike os.path.copytree, the destination directory
         # may already exist.
 
         elif os.path.isdir(src):
@@ -656,6 +656,14 @@ class domain(base_domain):
         # Now set parameters
 
         self.__set_case_parameters__()
+
+        # Ensure correct executable is used.
+
+        exec_src = os.path.join(self.exec_dir, 'src')
+        if os.path.isdir(exec_src):
+            if len(cs_compile.files_to_compile(exec_src)) > 0:
+                solver_name = os.path.basename(self.solver_path)
+                self.solver_path = os.path.join('.', solver_name)
 
     #---------------------------------------------------------------------------
 
