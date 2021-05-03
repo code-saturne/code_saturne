@@ -22,10 +22,11 @@
 
 #include "cs_defs.h"
 
-#include <stdio.h>
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <sys/time.h>
@@ -44,6 +45,43 @@
 
 #include "cs_base_accel.h"
 
+/*----------------------------------------------------------------------------
+ * OpenMP offload test.
+ *----------------------------------------------------------------------------*/
+
+static void
+_omp_target_test(void)
+{
+  int m = 10, n = 500;
+  double a[n][m], b[n][m], c[n][m];
+
+#if defined(_OPENMP)
+
+  int n_devices = omp_get_num_devices();
+  printf("Number of OpenMP target devices %d\n", n_devices);
+
+#endif
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+       a[i][j] = 1;
+       b[i][j] = 2;
+    }
+  }
+
+  #pragma omp target data map(to: a, b) map(from: c)
+  {
+    #pragma omp target teams distribute
+    for (int i = 0; i < n; i++) {
+      #pragma omp parallel for
+      for (int j = 0; j < m; j++)
+        c[i][j] = a[i][j] + b[i][j];
+    }
+  }
+
+  printf("OpenMP target test result: %g\n", c[n-1][m-1]);
+}
+
 /*----------------------------------------------------------------------------*/
 
 int
@@ -52,10 +90,17 @@ main (int argc, char *argv[])
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
-  double t_measure = 1.0;
-  double test_sum = 0.0;
-
   /* Initialization and environment */
+
+  if (getenv("CS_MEM_LOG") != NULL) {
+    char mem_log_file_name[128];
+    int r_id = CS_MAX(cs_glob_rank_id, 0);
+    snprintf(mem_log_file_name, 127, "%s.%d",
+             getenv("CS_MEM_LOG"), r_id);
+    bft_mem_init(mem_log_file_name);
+  }
+  else
+    bft_mem_init(NULL);
 
   (void)cs_timer_wtime();
 
@@ -83,7 +128,13 @@ main (int argc, char *argv[])
 
   bft_printf("Number of current allocations: %d\n", cs_get_n_allocations_hd());
 
+  /* OpenMP tests */
+
+  _omp_target_test();
+
   /* Finalize */
+
+  bft_mem_end();
 
   exit (EXIT_SUCCESS);
 }

@@ -670,6 +670,9 @@ _mpi_version_info(bool  log)
 static void
 _omp_version_info(bool  log)
 {
+  int  n_logs = (log) ? 2 : 1;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
 #if defined(_OPENMP)
   char omp_version[8];
   switch(_OPENMP) {
@@ -698,9 +701,6 @@ _omp_version_info(bool  log)
     snprintf(omp_version, 8, "%d", _OPENMP);
   }
   omp_version[7] = '\0';
-
-  int  n_logs = (log) ? 2 : 1;
-  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
 
   for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_log_printf(logs[log_id],
