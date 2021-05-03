@@ -301,6 +301,67 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Universal function phim for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_phim(cs_real_t              z,
+           cs_real_t              dlmo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function phih for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_phih(cs_real_t              z,
+           cs_real_t              dlmo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function psim for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            roughness
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_psim(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function psih for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            roughness
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_psih(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function computes hydrostatic profiles of density and pressure
  *
  *  This function solves the following transport equation on \f$ \varia \f$:
