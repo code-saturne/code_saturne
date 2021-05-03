@@ -352,34 +352,34 @@ do ifac = 1, nfabor
       if (iscalt.ne.-1) then
 
         if (rcodcl(ifac,isca(iscalt),1).gt.rinfin*0.5d0) &
-             rcodcl(ifac,isca(iscalt),1) = tpent
+          rcodcl(ifac,isca(iscalt),1) = tpent
 
-          !  Humid Atmosphere
-          if ( ippmod(iatmos).eq.2 ) then
-            if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
-              if (imbrication_flag .and. cressman_qw)then
-                qvent = qw_bord(ifac)
-              else if (imeteo.eq.1) then
-                call intprf &
+        !  Humid Atmosphere
+        if ( ippmod(iatmos).eq.2 ) then
+          if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
+            if (imbrication_flag .and. cressman_qw)then
+              qvent = qw_bord(ifac)
+            else if (imeteo.eq.1) then
+              call intprf &
                 (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
-              else
-                qvent = cpro_met_qv(iel)
-              endif
-              rcodcl(ifac,isca(iymw),1) = qvent
+            else
+              qvent = cpro_met_qv(iel)
             endif
-
-            if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
-              if (imbrication_flag .and. cressman_nc)then
-                ncent = nc_bord(ifac)
-              else if (imeteo.eq.1) then
-                call intprf &
-                (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
-              else
-                ncent = cpro_met_nc(iel)
-              endif
-              rcodcl(ifac,isca(intdrp),1) = ncent
-            endif
+            rcodcl(ifac,isca(iymw),1) = qvent
           endif
+
+          if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
+            if (imbrication_flag .and. cressman_nc)then
+              ncent = nc_bord(ifac)
+            else if (imeteo.eq.1) then
+              call intprf &
+                (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+            else
+              ncent = cpro_met_nc(iel)
+            endif
+            rcodcl(ifac,isca(intdrp),1) = ncent
+          endif
+        endif
 
       endif
 
@@ -530,9 +530,9 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
        ! which can be treated in usatcl of with the file chemistry)
        ! zero dirichlet conditions are imposed
        do ii = 1, nespg
-        isc = isca_chem(ii)
-        if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
-            rcodcl(ifac,isca(isc),1) = 0.0d0
+         isc = isca_chem(ii)
+         if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+           rcodcl(ifac,isca(isc),1) = 0.0d0
        enddo
 
     endif
