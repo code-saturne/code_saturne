@@ -214,24 +214,6 @@ static const char *cs_atmo_aerosol_type_name[]
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-cs_real_t
-cs_mo_phim(cs_real_t              z,
-           cs_real_t              dlmo);
-
-cs_real_t
-cs_mo_phih(cs_real_t              z,
-           cs_real_t              dlmo);
-
-cs_real_t
-cs_mo_psim(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo);
-
-cs_real_t
-cs_mo_psih(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo);
-
 void
 cs_atmo_init_meteo_profiles(void);
 
