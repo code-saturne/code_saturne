@@ -657,6 +657,14 @@ class domain(base_domain):
 
         self.__set_case_parameters__()
 
+        # Ensure correct executable is used.
+
+        exec_src = os.path.join(self.exec_dir, 'src')
+        if os.path.isdir(exec_src):
+            if len(cs_compile.files_to_compile(exec_src)) > 0:
+                solver_name = os.path.basename(self.solver_path)
+                self.solver_path = os.path.join('.', solver_name)
+
     #---------------------------------------------------------------------------
 
     def symlink(self, target, link=None, check_type=None):
