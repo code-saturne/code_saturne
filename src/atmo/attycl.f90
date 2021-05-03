@@ -102,16 +102,19 @@ double precision rcodcl(nfabor,nvar,3)
 
 integer          ifac, iel, izone
 integer          ii
-integer jsp, isc
+integer          jsp, isc, ivar
 double precision d2s3, zent, vs, xuent, xvent, xwent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
 double precision viscla, uref2, rhomoy, dhy, xiturb
+double precision rscp, pp, dum
 double precision, dimension(:), pointer :: brom, coefap, viscl
 double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp
 double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
 double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
+double precision, dimension(:), pointer :: cpro_met_p
+double precision, dimension(:), pointer :: cpro_met_rho
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -134,6 +137,8 @@ xkent = 0.d0
 xeent = 0.d0
 tpent = 0.d0
 
+rscp = rair/cp0
+
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 
@@ -142,6 +147,9 @@ if (imeteo.ge.2) then
   call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
   call field_get_val_s_by_name('meteo_tke', cpro_met_k)
   call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
+  call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
+  call field_get_val_s_by_name('meteo_density', cpro_met_rho)
+
   if (ippmod(iatmos).eq.2) then
     call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
     call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
@@ -455,6 +463,41 @@ do ifac = 1, nfabor
 
   endif
 
+  ! Conversion Temperature to potential temperature for Dirichlet and
+  ! wall boundary conditions
+  !
+  ! if icodcl < 0 it is directly expressed in term of potential temperature
+  ! so no need of conversion.
+  if (iscalt.ne.-1) then
+
+    ivar = isca(iscalt)
+    if (icodcl(ifac,ivar).eq.-1) then
+      icodcl(ifac,ivar) = 1
+    else if (icodcl(ifac,ivar).eq.-5) then
+      icodcl(ifac,ivar) = 5
+    else if (icodcl(ifac,ivar).eq.-6) then
+      icodcl(ifac,ivar) = 6
+    else if ((icodcl(ifac,ivar).eq.1 &
+      .or.icodcl(ifac,ivar).eq.5     &
+      .or.icodcl(ifac,ivar).eq.6)    &
+      .and.rcodcl(ifac,ivar,1).lt.rinfin*0.5d0)  then
+
+      zent = cdgfbo(3,ifac)
+      if (imeteo.eq.0) then
+        call atmstd(zent, pp, dum, dum)
+      else if (imeteo.eq.1) then
+        ! Pressure profile from meteo file:
+        call intprf(nbmett, nbmetm, ztmet , tmmet , phmet , zent, ttcabs, pp)
+      else
+        pp = cpro_met_p(iel) - cpro_met_rho(iel) * gz * (xyzcen(3, iel) - cdgfbo(3,ifac))
+      endif
+
+      ! Convert from temperature in Kelvin to potential temperature
+      rcodcl(ifac,ivar,1) = rcodcl(ifac,ivar,1) * (ps/pp)**rscp
+
+    endif
+
+  endif
 enddo
 
 ! Atmospheric gaseous chemistry
