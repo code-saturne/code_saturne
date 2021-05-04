@@ -89,6 +89,8 @@ User changes:
 
 Bug fixes:
 
+- Fix halo construction deadlock for some rare partitioning cases.
+
 - Compressible: fix imposed inlet/outlet boundary condition.
   Boundary mass flux was not computed using the Rusanov scheme,
   and was not consistent with momentum and energy convective fluxes on

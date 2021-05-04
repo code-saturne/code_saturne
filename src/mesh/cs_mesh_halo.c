@@ -1902,9 +1902,6 @@ _create_send_gcell_vtx_connect(cs_mesh_t           *mesh,
   const cs_lnum_t n_c_domains = halo->n_c_domains;
   const cs_lnum_t tr_index_size = mesh->n_transforms + 1;
 
-  if (n_ghost_cells == 0)
-    return;
-
   /* Allocate and initialize buffers */
 
   BFT_MALLOC(gcell_dist_vtx_idx, n_ghost_cells + 1, cs_lnum_t);
