@@ -1526,7 +1526,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   assert(mb != NULL);
 
   /* In case of periodicity, we also need to renumber periodic couples in the
-     builder; in parallel,we transform info into an interface, which will be
+     builder; in parallel, we transform info into an interface, which will be
      used at the end of the mesh update; in serial, the update is immediate */
 
   if (mb->n_perio > 0) {

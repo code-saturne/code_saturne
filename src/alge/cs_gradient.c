@@ -2168,13 +2168,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   if (extended) {
 
-    /* Not compatible with internal coupling */
-    if (ce != NULL) {
-      bft_error(__FILE__, __LINE__, 0,
-                "Extended least-square gradient reconstruction \
-                 is not supported with internal coupling");
-    }
-
 #   pragma omp parallel for
     for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
       for (cs_lnum_t cidx = cell_cells_idx[ii];
