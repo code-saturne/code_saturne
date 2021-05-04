@@ -3,6 +3,9 @@ Release 6.0.7 (unreleased)
 
 Bug fixes:
 
+- Internal coupling: fix incorrect loop size (whose chances of causing
+  issues incresed with partitioning complexity).
+
 - FSCK radiative model: fix unit conversion bug (introduced in version 4.3).
 
 - Lagangian module: fix crashes (GUI and code) defining some inlet

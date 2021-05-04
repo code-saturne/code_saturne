@@ -2438,6 +2438,8 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
     = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
+
+  const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t n_local = cpl->n_local;
 
   const cs_lnum_t block_size = 800;
@@ -2445,12 +2447,12 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
   cs_gnum_t g_col_id[800];
 
   cs_gnum_t *g_id_l, *g_id_d;
-  BFT_MALLOC(g_id_l, n_local, cs_gnum_t);
+  BFT_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
   BFT_MALLOC(g_id_d, n_local, cs_gnum_t);
 
   /* local to global preparation and exchange */
 
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = cpl->faces_distant[ii];
     cs_lnum_t cell_id = b_face_cells[face_id]; /* boundary to cell */
     g_id_l[ii] = r_g_id[cell_id];
@@ -2514,6 +2516,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
+  const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t n_local = cpl->n_local;
 
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -2535,10 +2538,10 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   /* local to global preparation and exchange */
 
   cs_gnum_t *g_id_l, *g_id_d;
-  BFT_MALLOC(g_id_l, n_local, cs_gnum_t);
+  BFT_MALLOC(g_id_l, CS_MAX(n_local, n_distant), cs_gnum_t);
   BFT_MALLOC(g_id_d, n_local, cs_gnum_t);
 
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = cpl->faces_distant[ii];
     cs_lnum_t cell_id = b_face_cells[face_id]; /* boundary to cell */
     g_id_l[ii] = r_g_id[cell_id];
