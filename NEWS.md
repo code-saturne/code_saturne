@@ -3,6 +3,9 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Internal coupling: fix incorrect loop size (whose chances of causing
+  issues incresed with partitioning complexity).
+
 - Fix Electric arcs without Joule effect; broken in v6.3.0.
 
 - Fix parallel numbering of probe sets built using the
