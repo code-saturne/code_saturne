@@ -60,7 +60,6 @@
 #include "cs_mesh_refine.h"
 #include "cs_mesh_remove.h"
 #include "cs_mesh_save.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_mesh_to_builder.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_smoother.h"

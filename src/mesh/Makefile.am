@@ -80,7 +80,6 @@ cs_mesh_quantities.h \
 cs_mesh_refine.h \
 cs_mesh_remove.h \
 cs_mesh_save.h \
-cs_mesh_thinwall.h \
 cs_mesh_to_builder.h \
 cs_mesh_warping.h \
 cs_mesh_smoother.h \
@@ -124,7 +123,6 @@ cs_mesh_quantities.c \
 cs_mesh_refine.c \
 cs_mesh_remove.c \
 cs_mesh_save.c \
-cs_mesh_thinwall.c \
 cs_mesh_to_builder.c \
 cs_mesh_warping.c \
 cs_mesh_smoother.c \
