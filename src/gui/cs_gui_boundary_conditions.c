@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2020 EDF S.A.
+  Copyright (C) 1998-2021 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1359,7 +1359,7 @@ _init_boundaries(void)
       }
 
       /* Electric arc scalars only if required */
-      if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] < 0)
+      if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] < 0)
         scalar_sections[1] = NULL;
 
       /* Loop on possible specific model scalar sections */
@@ -1615,7 +1615,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
     if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       if (boundaries->rough[izone] >= 0.0)
-        wall_type = 6;//TODO remove and use all roughness wall function
+        wall_type = 6; //TODO remove and use all roughness wall function
       else
         wall_type = 5;
     }

@@ -3,6 +3,8 @@ Release 6.3.1 (Unreleased)
 
 Bug fixes:
 
+- Fix Electric arcs without Joule effect; broken in v6.3.0.
+
 - Fix parallel numbering of probe sets built using the
   `cs_probe_set_create_from_local` fonction.
 
