@@ -265,8 +265,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_field_t *f = NULL;
   int coupling_id = -1;
 
-  cs_real_t *dam, *xam, *smbini, *w1, *adxk, *adxkm1, *dpvarm1, *rhs0;
-  cs_real_t *dam_conv, *xam_conv, *dam_diff, *xam_diff;
+  cs_real_t *dam, *xam, *smbini;
+  cs_real_t *dam_conv = NULL, *xam_conv = NULL;
+  cs_real_t *dam_diff = NULL, *xam_diff = NULL;
+
+  cs_real_t *w1 = NULL;
 
   bool conv_diff_mg = false;
 
@@ -303,6 +306,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
   BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
 
+  cs_real_t *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
+
   if (iswdyp >= 1) {
     BFT_MALLOC(adxk, n_cells_ext, cs_real_t);
     BFT_MALLOC(adxkm1, n_cells_ext, cs_real_t);
@@ -316,7 +321,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   bool symmetric = (isym == 1) ? true : false;
 
-  BFT_MALLOC(xam,isym*n_i_faces,cs_real_t);
+  BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
   if (conv_diff_mg) {
     BFT_MALLOC(xam_conv, 2*n_i_faces, cs_real_t);
     BFT_MALLOC(xam_diff,   n_i_faces, cs_real_t);
@@ -338,7 +343,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Periodicity has to be taken into account */
 
-  /* Initialisation for test before matrix vector product
+  /* Initialization for test before matrix vector product
      for computation of initial residual */
 
   itenso = 0;
@@ -562,17 +567,18 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
 
   /* --- Right hand side residual */
-  residu = sqrt(cs_gdot(n_cells,smbrp,smbrp));
+  residu = sqrt(cs_gdot(n_cells, smbrp, smbrp));
 
   if (normp > 0.)
     rnorm = normp;
-  else
-  {
+
+  else {
     /* --- Normalization residual
        (L2-norm of B.C. + source terms + non-orthogonality terms)
 
-       Caution, when calling matrix-vector product, here for a variable which is
-       not "by increments" and is assumed initialized, including for ghost values:
+       Caution: when calling a matrix-vector product, here for a variable
+       which is not "by increments" and is assumed initialized, including
+       for ghost values:
        For Reynolds stresses components (iinvpe=2), the rotational periodicity
        ghost values should not be cancelled, but rather left unchanged.
        For other variables, iinvpe=1 will also be a standard exchange. */
@@ -583,17 +589,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_t *w2;
     BFT_MALLOC(w2, n_cells_ext, cs_real_t);
 
-    cs_real_t p_mean =
-      sqrt(cs_gres(n_cells, mq->cell_vol,
-                   pvar, pvar));
+    cs_real_t p_mean = sqrt(cs_gres(n_cells, mq->cell_vol, pvar, pvar));
 
     if (iwarnp >= 2)
       bft_printf("L2 norm ||X^n|| = %f\n", p_mean);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id] = (pvar[cell_id]-p_mean);
 
-    /*  ---> Handle parallelism and periodicity
-        (periodicity of rotation is not ensured here) */
+    /* Handle parallelism and periodicity
+       (periodicity of rotation is not ensured here) */
     if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
       cs_mesh_sync_var_scal(w2);
 
@@ -613,8 +617,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     BFT_FREE(w2);
 
     if (iwarnp >= 2) {
-      bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells,w1,w1)));
-      bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(n_cells,smbrp,smbrp)));
+      bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(n_cells, w1, w1)));
+      bft_printf("L2 norm ||B^n|| = %f\n", sqrt(cs_gdot(n_cells, smbrp, smbrp)));
     }
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -624,7 +628,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         w1[cell_id] = 0.;
     }
 
-    rnorm2 = cs_gdot(n_cells,w1,w1);
+    rnorm2 = cs_gdot(n_cells, w1, w1);
     rnorm = sqrt(rnorm2);
   }
 
