@@ -27,6 +27,15 @@
 
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+#include "fvm_writer.h"
+
+/*----------------------------------------------------------------------------*/
+
 BEGIN_C_DECLS
 
 /*============================================================================
@@ -150,6 +159,20 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Transform a mesh, but takes as input the initial position of the mesh  
+ *
+ * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] matrix     transformation matrix
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi,
+                                               cs_real_t            matrix[3][4]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief translate the mesh using a given vector
  *
  * \param[in] mi      pointer to the cs_medcoupling_intersector_t struct
@@ -160,6 +183,37 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 void
 cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
                                      const char                    *prefix);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new writer that will contains the boundary MED mesh added 
+ * \brief by the user. The writer_id is stored locally..
+ *
+ * \param[in]  time_dep > 1 if the writer is transient, else writer is fixed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mi_post_init_writer(const char             *case_name,
+                       const char             *dir_name,
+                       const char             *fmt_name,
+                       const char             *fmt_opts,
+                       fvm_writer_time_dep_t   time_dep,
+                       bool                    output_at_start,
+                       bool                    output_at_end,
+                       int                     frequency_n,
+                       double                  frequency_t);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate a Medcoupling mesh to the default writer
+ *
+ * \param[in]  mi  pointer to the associated MedCoupling intersector structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi);
 
 END_C_DECLS
 

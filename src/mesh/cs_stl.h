@@ -51,14 +51,17 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  char           name[10];         /*!< Name identifier of the STL file*/
+  char           name[20];         /*!< Name identifier of the STL file*/
 
   char           header[80];       /*!< Header of the STL file */
 
   cs_lnum_t      n_faces;          /*!< Number of triangles */
 
   cs_real_3_t   *coords;           /*!< Array of face vertex coordinates
-                                   *  vtx_coord[n_vertices][3] */
+                                   *  coord[n_vertices][3] */
+
+  cs_real_3_t   *coords_ini;       /*!< Array of face vertex coordinates
+                                   *  at init coord_ini[n_vertices][3] */
 
   int            n_seeds;          /*!< Number of prescribed points
                                    *  outside the STL */
@@ -154,6 +157,19 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
 void
 cs_stl_mesh_transform(cs_stl_mesh_t  *stl_mesh,
                       double          matrix[3][4]);
+
+/*----------------------------------------------------------------------------
+ * Apply a transformation matrix to a STL mesh structure, but use
+ * the initial coordinates as inputs
+ *
+ * parameters:
+ *   stl_mesh        <-- pointer to the associated STL mesh structure
+ *   matrix          <-- transformation matrix
+ *----------------------------------------------------------------------------*/
+
+void
+cs_stl_mesh_transform_from_init(cs_stl_mesh_t  *stl_mesh,
+                                double          matrix[3][4]);
 
 /*----------------------------------------------------------------------------
  * Apply a translation to a STL mesh structure.
