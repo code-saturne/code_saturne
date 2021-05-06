@@ -1007,6 +1007,27 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
   return vol;
 
 }
+/*----------------------------------------------------------------------------
+ * Function to update the copy of the mesh at initialization
+ * (necessary is the STL mesh needs to move with time)
+ *
+ * parameters:
+ *   stl_mesh      <-- a STL mesh structure
+  ----------------------------------------------------------------------------*/
+
+static void
+_update_init_mesh(cs_stl_mesh_t *stl_mesh)
+{
+  cs_lnum_t n_tria = stl_mesh->n_faces;
+  cs_lnum_t n_points = n_tria*3;
+
+  for (cs_lnum_t i = 0; i < n_points; i++) {
+    for (int j = 0; j < 3; j++) {
+      stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
+    }
+  }
+
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1044,8 +1065,8 @@ cs_stl_mesh_add(const char  *name)
     BFT_MALLOC(stl_mesh, 1, cs_stl_mesh_t);
 
     if (name != NULL) {
-      strncpy(stl_mesh->name, name, 9);
-      stl_mesh->name[9] = '\0';
+      strncpy(stl_mesh->name, name, 19);
+      stl_mesh->name[19] = '\0';
     }
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -1165,7 +1186,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     stl_mesh->n_faces = n_tria;
 
     /* Allocation*/
-    BFT_MALLOC(stl_mesh->coords , 3*n_tria, cs_real_3_t);
+    BFT_MALLOC(stl_mesh->coords     , 3*n_tria, cs_real_3_t);
     BFT_MALLOC(loc_coords , 9, float);
 
     /* Loop on triangle faces
@@ -1227,7 +1248,14 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     stl_mesh->n_faces = n_tria;
 
     /* Re-allocation*/
-    BFT_REALLOC(stl_mesh->coords , 3*n_tria, cs_real_3_t);
+    BFT_REALLOC(stl_mesh->coords    , 3*n_tria, cs_real_3_t);
+    
+    /* Copy coordinates to a work aray that
+     * will contain all the init coordinates */
+    BFT_MALLOC(stl_mesh->coords_ini , 3*n_tria, cs_real_3_t);
+    for (int i = 0; i < 3*n_tria; i++)
+      for (int j = 0; j < 3; j++)
+        stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j]; 
 
     BFT_FREE(loc_coords);
     fclose(fp);
@@ -1241,13 +1269,21 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
                   CS_LNUM_TYPE,
                   &(stl_mesh->n_faces));
 
-  if (cs_glob_rank_id > 0)
-    BFT_MALLOC(stl_mesh->coords, stl_mesh->n_faces*3, cs_real_3_t);
+  if (cs_glob_rank_id > 0) {
+    BFT_MALLOC(stl_mesh->coords    , stl_mesh->n_faces*3, cs_real_3_t);
+    BFT_MALLOC(stl_mesh->coords_ini, stl_mesh->n_faces*3, cs_real_3_t);
+  }
 
   cs_parall_bcast(0, /* root_rank */
                   stl_mesh->n_faces*9,
                   CS_REAL_TYPE,
                   stl_mesh->coords);
+
+  cs_parall_bcast(0, /* root_rank */
+                  stl_mesh->n_faces*9,
+                  CS_REAL_TYPE,
+                  stl_mesh->coords_ini);
+
 
   /* Merge identical vertices
      ------------------------ */
@@ -1384,6 +1420,44 @@ cs_stl_mesh_transform(cs_stl_mesh_t  *stl_mesh,
       c[j] = c_b[j];
 
   }
+
+  _update_init_mesh(stl_mesh);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply a transformation matrix to a STL mesh structure, but use
+ * \brief the initial coordinates as inputs
+ *
+ * \param[in]  stl_mesh        pointer to the associated STL mesh structure
+ * \param[in]  matrix          transformation matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_stl_mesh_transform_from_init(cs_stl_mesh_t  *stl_mesh,
+                                double          matrix[3][4])
+{
+  cs_lnum_t n_tria = stl_mesh->n_faces;
+  cs_lnum_t n_points = n_tria*3;
+
+  for (cs_lnum_t i = 0; i < n_points; i++) {
+
+    cs_real_t *c = stl_mesh->coords[i];
+    cs_real_t *ci = stl_mesh->coords_ini[i];
+
+    double  c_a[4] = {ci[0], ci[1], ci[2], 1.}; /* homogeneous coords */
+    double  c_b[3] = {0, 0, 0};
+
+    for (cs_lnum_t j = 0; j < 3; j++)
+      for (int k = 0; k < 4; k++)
+        c_b[j] += matrix[j][k]*c_a[k];
+
+    for (cs_lnum_t j = 0; j < 3; j++)
+      c[j] = c_b[j];
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1407,6 +1481,9 @@ cs_stl_mesh_translate(cs_stl_mesh_t  *stl_mesh,
       stl_mesh->coords[i][j] += vector[j];
     }
   }
+
+  _update_init_mesh(stl_mesh);
+
 }
 
 /*----------------------------------------------------------------------------*/

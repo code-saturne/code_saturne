@@ -52,9 +52,15 @@
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
+
+#include "fvm_writer.h"
+#include "fvm_nodal.h"
+#include "fvm_nodal_append.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -108,6 +114,17 @@ struct _cs_medcoupling_intersector_t {
   void                           *source_mesh;
 #endif
 
+  cs_coord_3_t                   *init_coords;      // Array of coordiates
+                                                    // of the MED object
+
+  cs_coord_3_t                   *boundary_coords;  // Array of boundary nodes
+                                                    // of the med objects
+  cs_coord_3_t                   *init_boundary_coords;  
+
+  cs_lnum_t                      n_b_vertices;
+  
+  fvm_nodal_t                    *ext_mesh;         // Associated external mesh
+
   int                             matrix_needs_update;
   cs_real_t                      *vol_intersect;
 
@@ -118,6 +135,7 @@ struct _cs_medcoupling_intersector_t {
  *============================================================================*/
 
 static int                             _n_intersects = 0;
+static int                             _writer_id    = 0;
 static cs_medcoupling_intersector_t  **_intersects   = NULL;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
@@ -142,6 +160,10 @@ _create_intersector(void)
   mi->interp_method       = NULL;
   mi->local_mesh          = NULL;
   mi->source_mesh         = NULL;
+  mi->boundary_coords     = NULL;
+  mi->n_b_vertices        = -1;
+  mi->init_coords         = NULL;
+  mi->ext_mesh            = NULL;
   mi->vol_intersect       = NULL;
   mi->matrix_needs_update = 1;
 
@@ -186,11 +208,208 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   MEDCoupling::MEDFileUMesh *mesh = MEDCoupling::MEDFileUMesh::New(medfile_path);
   mi->source_mesh = mesh->getMeshAtLevel(0);
 
+  /* Copy med mesh coordinates at init */
+  cs_lnum_t n_vtx = mesh->getNumberOfNodes();
+  const cs_lnum_t dim = mesh->getMeshDimension();
+  BFT_MALLOC(mi->init_coords, n_vtx, cs_coord_3_t);
+
+  DataArrayDouble *med_coords = DataArrayDouble::New();
+  med_coords = mi->source_mesh->getCoordinatesAndOwner();
+
+  for (cs_lnum_t i = 0; i < n_vtx; i++) 
+    for (cs_lnum_t j = 0; j < dim; j++) 
+      mi->init_coords[i][j] = med_coords->getIJ(i,j);
+
+  /* Copy med mesh boundary coordinates */
+  MEDCouplingUMesh   *b_mesh;
+  b_mesh = mi->source_mesh->buildBoundaryMesh(false);
+  b_mesh->convertAllToPoly();
+
+  DataArrayDouble *b_coords = DataArrayDouble::New();
+
+  b_coords= b_mesh->getCoordinatesAndOwner();
+
+  cs_lnum_t n_b_vtx = b_mesh->getNumberOfNodes();
+  
+  mi->n_b_vertices = n_b_vtx;
+  BFT_MALLOC(mi->boundary_coords, n_b_vtx, cs_coord_3_t);
+  BFT_MALLOC(mi->init_boundary_coords, n_b_vtx, cs_coord_3_t);
+
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++){
+    for (cs_lnum_t j = 0; j < dim; j++){ 
+      mi->boundary_coords[i][j] = b_coords->getIJ(i,j);
+      mi->init_boundary_coords[i][j] = b_coords->getIJ(i,j);
+    }
+  }
+
+  /* Generate FVM structure */
+  DataArrayInt *vtx_lst = DataArrayInt::New();
+  DataArrayInt *vtx_idx = DataArrayInt::New();
+
+  vtx_lst = b_mesh->getNodalConnectivity();
+  vtx_idx = b_mesh->getNodalConnectivityIndex();
+  cs_lnum_t n_b_faces = vtx_idx->getNbOfElems()-1;
+  cs_lnum_t n_elt_lst = vtx_lst->getNbOfElems()- n_b_faces;
+  
+  cs_lnum_t  *vertex_num   = NULL;
+  cs_lnum_t  *vertex_idx   = NULL;
+  cs_gnum_t  *vertex_gnum  = NULL;
+  cs_gnum_t  *faces_gnum   = NULL;
+  cs_lnum_t  elem = 0;
+  cs_lnum_t _n_b_faces = 0;
+
+  if (cs_glob_rank_id < 1) 
+    _n_b_faces = n_b_faces;
+
+  BFT_MALLOC(vertex_idx  , _n_b_faces +1, cs_lnum_t);
+  vertex_idx[0] = 0;
+
+  if (cs_glob_rank_id < 1) {
+    BFT_MALLOC(faces_gnum  , _n_b_faces   ,  cs_gnum_t);
+    BFT_MALLOC(vertex_num  , n_elt_lst , cs_lnum_t);
+    BFT_MALLOC(vertex_gnum , n_b_vtx , cs_gnum_t);
+
+    for (cs_lnum_t i = 0; i < _n_b_faces ; i++){
+      vertex_idx[i] = vtx_idx->getIJ(i,0) - i;
+      cs_lnum_t s_id = vtx_idx->getIJ(i,0);
+      cs_lnum_t e_id = vtx_idx->getIJ(i+1,0);
+      for(cs_lnum_t v_id = s_id +1 ; v_id < e_id; v_id ++){
+        vertex_num[elem]  = vtx_lst->getIJ(v_id,0) + 1;
+        elem ++;
+      }
+    }
+    vertex_idx[_n_b_faces] = vtx_idx->getIJ(_n_b_faces,0) - _n_b_faces;
+    
+    for (cs_lnum_t i = 0; i < n_b_vtx; i++)
+      vertex_gnum[i] = i + 1;
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      faces_gnum[i] = i + 1;
+  }
+
+  fvm_nodal_t *ext_mesh = fvm_nodal_create(mi->name, 3);
+
+  fvm_nodal_append_by_transfer(ext_mesh,
+                               _n_b_faces,
+                               FVM_FACE_POLY,
+                               NULL,
+                               NULL,
+                               vertex_idx,
+                               vertex_num,
+                               NULL);
+
+  if (cs_glob_rank_id < 1) {
+    fvm_nodal_set_shared_vertices(ext_mesh, (const cs_coord_t *)mi->boundary_coords);
+  } else {
+    fvm_nodal_set_shared_vertices(ext_mesh, NULL);
+  }
+
+  fvm_nodal_init_io_num(ext_mesh, faces_gnum , 2);
+  fvm_nodal_init_io_num(ext_mesh, vertex_gnum, 0);
+
+  fvm_nodal_dump(ext_mesh);
+
+  mi->ext_mesh = ext_mesh;
+
+  if (cs_glob_rank_id < 1) {
+    BFT_FREE(vertex_gnum);
+    BFT_FREE(faces_gnum);
+  }
+
+  /* Allocate volume intersection array */
   BFT_MALLOC(mi->vol_intersect, cs_glob_mesh->n_cells, cs_real_t);
   for (cs_lnum_t e_id = 0; e_id < cs_glob_mesh->n_cells; e_id++)
     mi->vol_intersect[e_id] = 0.;
+}
 
-  return;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a matrix/vector product to apply a transformation to a vector
+ * \brief Results is stored in an output array.
+ *
+ * \param[in]  matrix matrix
+ * \param[in]  vector vector 
+ * \param[out] res    resulting vector
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_transform_coord_from_init(cs_real_t matrix[3][4],
+                           cs_real_t vector[3],
+                           cs_real_t res[3])
+{
+  int  i, j;
+
+  cs_real_t  c_a[4] = {vector[0], vector[1], vector[2], 1.}; /* homogeneous coords */
+  cs_real_t  c_b[3] = {0, 0, 0};
+
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 4; j++)
+      c_b[i] += matrix[i][j]*c_a[j];
+
+  for (i = 0; i < 3; i++)
+    res[i] = c_b[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a matrix/vector product to apply a transformation to a vector.
+ *
+ * \param[in]  matrix matrix
+ * \param[in]  vector vector 
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_transform_coord(cs_real_t matrix[3][4],
+                 cs_real_t vector[3])
+{
+  int  i, j;
+
+  double  c_a[4] = {vector[0], vector[1], vector[2], 1.}; /* homogeneous coords */
+  double  c_b[3] = {0, 0, 0};
+
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 4; j++)
+      c_b[i] += matrix[i][j]*c_a[j];
+
+  for (i = 0; i < 3; i++)
+    vector[i] = c_b[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   assign vertex coordinates to a medcoupling mesh structure
+ *
+ * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the
+ *                      coordinates
+ * \param[in] coords    pointer to the coordinates to assign to the 
+ *                      MEDCouplingUMesh
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_vertex_coords(MEDCouplingUMesh   *med_mesh,
+                      cs_coord_3_t       *coords   )
+{
+  const cs_lnum_t  dim  = med_mesh->getMeshDimension();
+  const cs_lnum_t n_vtx = med_mesh->getNumberOfNodes();
+
+  /* assign all coordinates */
+  /*------------------------*/
+
+  DataArrayDouble *med_coords = DataArrayDouble::New();
+  med_coords->alloc(n_vtx, dim);
+
+  for (cs_lnum_t i = 0; i < n_vtx; i++) {
+      for (cs_lnum_t j = 0; j < dim; j++)
+        med_coords->setIJ(i, j, coords[i][j]);
+  }
+
+  med_mesh->setCoords(med_coords);
+  med_coords->decrRef();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -209,6 +428,10 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   BFT_FREE(mi->medfile_path);
   BFT_FREE(mi->interp_method);
   BFT_FREE(mi->source_mesh);
+  BFT_FREE(mi->init_coords);
+  BFT_FREE(mi->boundary_coords);
+  BFT_FREE(mi->init_boundary_coords);
+  BFT_FREE(mi->ext_mesh);
   BFT_FREE(mi->vol_intersect);
   cs_medcoupling_mesh_destroy(mi->local_mesh);
 
@@ -560,9 +783,36 @@ cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t  *mi,
 #else
   mi->source_mesh->translate(translation);
   mi->matrix_needs_update = 1;
-#endif
 
-  return;
+  cs_real_t matrix[3][4];
+
+  /* Translation matrix
+   *       [1   0   0   Dx]
+   *  M =  [0   1   0   Dy]
+   *       [0   0   1   Dz]
+   */
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 4; j++)
+      matrix[i][j] = 0.0;
+
+  for (int i = 0; i < 3; i++) {
+    matrix[i][i] = 1.0;
+    matrix[i][3] = translation[i];
+  }
+
+  /* Update the copy of the mesh coordinates */
+  const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    _transform_coord(matrix, mi->init_coords[i]);
+
+  /* Update of the boundary mesh coordinates 
+   * and of the initial boundary mesh copy coordinates */
+  const cs_lnum_t n_b_vtx = mi->n_b_vertices;
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
+    _transform_coord(matrix, mi->boundary_coords[i]);
+    _transform_coord(matrix, mi->init_boundary_coords[i]);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -594,14 +844,78 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 #else
   mi->source_mesh->rotate(invariant, axis, angle);
   mi->matrix_needs_update = 1;
-#endif
+  
+  cs_real_t matrix[3][4];
+  cs_rotation_matrix(angle, axis, invariant, matrix);
 
-  return;
+  /* Update the copy of the mesh coordinates */
+  const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    _transform_coord(matrix, mi->init_coords[i]);
+
+  /* Update of the boundary mesh coordinates 
+   * and of the initial boundary mesh copy coordinates */
+  const cs_lnum_t n_b_vtx = mi->n_b_vertices;
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++){
+    _transform_coord(matrix, mi->boundary_coords[i]);
+    _transform_coord(matrix, mi->init_boundary_coords[i]);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief translate the mesh using a given vector
+ * \brief Transform a mesh, but takes as input the initial position of the mesh
+ * \brief Transformation is thus applied on the initial coordiantes and the 
+ * \brief mesh is modified accordingly.
+ *
+ * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] matrix     transformation matrix
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi,
+                                               cs_real_t            matrix[3][4])
+{
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(matrix);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
+  cs_coord_3_t *_new_coords = NULL ;
+  const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
+  const cs_lnum_t n_b_vtx = mi->n_b_vertices;
+
+  BFT_MALLOC(_new_coords, n_vtx, cs_coord_3_t);
+
+  /* Compute the new coordinates according 
+   * to a given transformation matrix */
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    _transform_coord_from_init(matrix, mi->init_coords[i], _new_coords[i]);
+  
+  /* Update the boundary mesh also */
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++) 
+    _transform_coord_from_init(matrix, 
+                               mi->init_boundary_coords[i], 
+                               mi->boundary_coords[i]);
+
+  /* Assign the new set of coordinates to the MED mesh */
+  _assign_vertex_coords(mi->source_mesh, _new_coords);
+
+  mi->matrix_needs_update = 1;
+
+  BFT_FREE(_new_coords);
+#endif
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief dump the mesh of a cs_medcoupling_intersector_t structure
  *
  * \param[in] mi      pointer to the cs_medcoupling_intersector_t struct
  * \param[in] prefix  subdir prefix
@@ -623,8 +937,80 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
   _dump_medcoupling_mesh(mi->source_mesh, prefix, mi->name);
 #endif
 
-  return;
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new writer that will contains the boundary MED mesh added 
+ * \brief by the user. The writer_id is stored locally..
+ *
+ * \param[in]  time_dep > 1 if the writer is transient, else writer is fixed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mi_post_init_writer(const char             *case_name,
+                       const char             *dir_name,
+                       const char             *fmt_name,
+                       const char             *fmt_opts,
+                       fvm_writer_time_dep_t   time_dep,
+                       bool                    output_at_start,
+                       bool                    output_at_end,
+                       int                     frequency_n,
+                       double                  frequency_t)
+{
+  /* We check if a writer_id has already been defined.*/
+  bool writer_exists = false;
+  if ( _writer_id != 0)
+    writer_exists = true;
+
+  /* If a writer do no already exist, create it */
+  if (!writer_exists) {
+    int writer_id = cs_post_get_free_writer_id();
+    _writer_id = writer_id;
+
+    /* Add writer  */
+    cs_post_define_writer(writer_id,       /* writer_id */
+                          case_name,       /* writer name */
+                          dir_name,        /* directory name */
+                          fmt_name,        /* format_name */
+                          fmt_opts,        /* format_options */
+                          time_dep,
+                          output_at_start, /* output_at_start */
+                          output_at_end,   /* output_at_end */
+                          frequency_n,     /* frequency_n */
+                          frequency_t);    /* frequency_t */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate a Medcoupling mesh to the default writer
+ *
+ * \param[in]  mi  pointer to the associated MedCoupling intersector structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi)
+{
+  if (_writer_id == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("No writer was defined for MEDCoupling mesh output\n"
+                "cs_medcoupling_intersector_post_init_writer should"
+                "be called first.\n"));
+
+  int writer_ids[] = {_writer_id};
+  int mi_mesh_id = cs_post_get_free_mesh_id();
+  cs_post_define_existing_mesh(mi_mesh_id,
+                               mi->ext_mesh,
+                               0,
+                               true,
+                               false,
+                               1,
+                               writer_ids);
+
+  cs_post_write_meshes(NULL);
 }
 
 /*----------------------------------------------------------------------------*/
