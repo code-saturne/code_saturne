@@ -39,7 +39,6 @@
 #include <mpi.h>
 #endif
 
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -119,10 +118,10 @@ struct _cs_medcoupling_intersector_t {
 
   cs_coord_3_t                   *boundary_coords;  // Array of boundary nodes
                                                     // of the med objects
-  cs_coord_3_t                   *init_boundary_coords;  
+  cs_coord_3_t                   *init_boundary_coords;
 
   cs_lnum_t                      n_b_vertices;
-  
+
   fvm_nodal_t                    *ext_mesh;         // Associated external mesh
 
   int                             matrix_needs_update;
@@ -190,7 +189,6 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
                       const char                   *interp_method,
                       const char                   *select_criteria)
 {
-
   BFT_MALLOC(mi->name, strlen(name)+1, char);
   strcpy(mi->name, name);
 
@@ -216,13 +214,12 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   DataArrayDouble *med_coords = DataArrayDouble::New();
   med_coords = mi->source_mesh->getCoordinatesAndOwner();
 
-  for (cs_lnum_t i = 0; i < n_vtx; i++) 
-    for (cs_lnum_t j = 0; j < dim; j++) 
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    for (cs_lnum_t j = 0; j < dim; j++)
       mi->init_coords[i][j] = med_coords->getIJ(i,j);
 
   /* Copy med mesh boundary coordinates */
-  MEDCouplingUMesh   *b_mesh;
-  b_mesh = mi->source_mesh->buildBoundaryMesh(false);
+  MEDCouplingUMesh  *b_mesh = mi->source_mesh->buildBoundaryMesh(false);
   b_mesh->convertAllToPoly();
 
   DataArrayDouble *b_coords = DataArrayDouble::New();
@@ -230,27 +227,27 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   b_coords= b_mesh->getCoordinatesAndOwner();
 
   cs_lnum_t n_b_vtx = b_mesh->getNumberOfNodes();
-  
+
   mi->n_b_vertices = n_b_vtx;
   BFT_MALLOC(mi->boundary_coords, n_b_vtx, cs_coord_3_t);
   BFT_MALLOC(mi->init_boundary_coords, n_b_vtx, cs_coord_3_t);
 
   for (cs_lnum_t i = 0; i < n_b_vtx; i++){
-    for (cs_lnum_t j = 0; j < dim; j++){ 
+    for (cs_lnum_t j = 0; j < dim; j++){
       mi->boundary_coords[i][j] = b_coords->getIJ(i,j);
       mi->init_boundary_coords[i][j] = b_coords->getIJ(i,j);
     }
   }
 
   /* Generate FVM structure */
-  DataArrayInt *vtx_lst = DataArrayInt::New();
-  DataArrayInt *vtx_idx = DataArrayInt::New();
+  DataArrayIdType *vtx_lst = DataArrayIdType::New();
+  DataArrayIdType *vtx_idx = DataArrayIdType::New();
 
   vtx_lst = b_mesh->getNodalConnectivity();
   vtx_idx = b_mesh->getNodalConnectivityIndex();
   cs_lnum_t n_b_faces = vtx_idx->getNbOfElems()-1;
   cs_lnum_t n_elt_lst = vtx_lst->getNbOfElems()- n_b_faces;
-  
+
   cs_lnum_t  *vertex_num   = NULL;
   cs_lnum_t  *vertex_idx   = NULL;
   cs_gnum_t  *vertex_gnum  = NULL;
@@ -258,7 +255,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   cs_lnum_t  elem = 0;
   cs_lnum_t _n_b_faces = 0;
 
-  if (cs_glob_rank_id < 1) 
+  if (cs_glob_rank_id < 1)
     _n_b_faces = n_b_faces;
 
   BFT_MALLOC(vertex_idx  , _n_b_faces +1, cs_lnum_t);
@@ -279,7 +276,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
       }
     }
     vertex_idx[_n_b_faces] = vtx_idx->getIJ(_n_b_faces,0) - _n_b_faces;
-    
+
     for (cs_lnum_t i = 0; i < n_b_vtx; i++)
       vertex_gnum[i] = i + 1;
 
@@ -299,8 +296,10 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
                                NULL);
 
   if (cs_glob_rank_id < 1) {
-    fvm_nodal_set_shared_vertices(ext_mesh, (const cs_coord_t *)mi->boundary_coords);
-  } else {
+    fvm_nodal_set_shared_vertices(ext_mesh,
+                                  (const cs_coord_t *)mi->boundary_coords);
+  }
+  else {
     fvm_nodal_set_shared_vertices(ext_mesh, NULL);
   }
 
@@ -328,7 +327,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
  * \brief Results is stored in an output array.
  *
  * \param[in]  matrix matrix
- * \param[in]  vector vector 
+ * \param[in]  vector vector
  * \param[out] res    resulting vector
  *
  */
@@ -339,16 +338,16 @@ _transform_coord_from_init(cs_real_t matrix[3][4],
                            cs_real_t vector[3],
                            cs_real_t res[3])
 {
-  int  i, j;
-
-  cs_real_t  c_a[4] = {vector[0], vector[1], vector[2], 1.}; /* homogeneous coords */
+ /* homogeneous coords */
+  cs_real_t  c_a[4] = {vector[0], vector[1], vector[2], 1.};
   cs_real_t  c_b[3] = {0, 0, 0};
 
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 4; j++)
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 4; j++)
       c_b[i] += matrix[i][j]*c_a[j];
+  }
 
-  for (i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++)
     res[i] = c_b[i];
 }
 
@@ -357,7 +356,7 @@ _transform_coord_from_init(cs_real_t matrix[3][4],
  * \brief Compute a matrix/vector product to apply a transformation to a vector.
  *
  * \param[in]  matrix matrix
- * \param[in]  vector vector 
+ * \param[in]  vector vector
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -366,16 +365,16 @@ inline static void
 _transform_coord(cs_real_t matrix[3][4],
                  cs_real_t vector[3])
 {
-  int  i, j;
-
-  double  c_a[4] = {vector[0], vector[1], vector[2], 1.}; /* homogeneous coords */
+  /* homogeneous coords */
+  double  c_a[4] = {vector[0], vector[1], vector[2], 1.};
   double  c_b[3] = {0, 0, 0};
 
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 4; j++)
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 4; j++)
       c_b[i] += matrix[i][j]*c_a[j];
+  }
 
-  for (i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++)
     vector[i] = c_b[i];
 }
 
@@ -385,7 +384,7 @@ _transform_coord(cs_real_t matrix[3][4],
  *
  * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the
  *                      coordinates
- * \param[in] coords    pointer to the coordinates to assign to the 
+ * \param[in] coords    pointer to the coordinates to assign to the
  *                      MEDCouplingUMesh
  */
 /*----------------------------------------------------------------------------*/
@@ -423,7 +422,6 @@ _assign_vertex_coords(MEDCouplingUMesh   *med_mesh,
 void
 _destroy_intersector(cs_medcoupling_intersector_t *mi)
 {
-
   BFT_FREE(mi->name);
   BFT_FREE(mi->medfile_path);
   BFT_FREE(mi->interp_method);
@@ -433,9 +431,8 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   BFT_FREE(mi->init_boundary_coords);
   BFT_FREE(mi->ext_mesh);
   BFT_FREE(mi->vol_intersect);
-  cs_medcoupling_mesh_destroy(mi->local_mesh);
 
-  return;
+  cs_medcoupling_mesh_destroy(mi->local_mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -449,9 +446,9 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
 void
 _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
 {
-
   /* If local mesh is empty, nothing to do... */
   cs_lnum_t n_elts = mi->local_mesh->n_elts;
+
   if (n_elts > 0 && mi->matrix_needs_update) {
 
     /* initialize the pointer */
@@ -499,9 +496,6 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     }
 
   }
-
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -519,7 +513,6 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
                        const char       *prefix,
                        const char       *filename)
 {
-
 #if defined(WIN32) || defined(_WIN32)
   static const char _dir_separator = '\\';
 #else
@@ -563,17 +556,15 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
 
     WriteUMesh(fname, m, true);
   }
-
-  return;
 }
 
 #endif
 
-/* ========================================================================== */
+/*===========================================================================*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -595,7 +586,6 @@ cs_medcoupling_intersector_add(const char  *name,
                                const char  *interp_method,
                                const char  *select_criteria)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(medfile_path);
@@ -611,7 +601,6 @@ cs_medcoupling_intersector_add(const char  *name,
   else
     BFT_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
 
-
   cs_medcoupling_intersector_t *mi = _create_intersector();
   _allocate_intersector(mi,
                         name,
@@ -623,8 +612,6 @@ cs_medcoupling_intersector_add(const char  *name,
 
   _n_intersects++;
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -638,7 +625,6 @@ cs_medcoupling_intersector_add(const char  *name,
 void
 cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(mi);
   bft_error(__FILE__, __LINE__, 0,
@@ -649,7 +635,6 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 
   BFT_FREE(mi);
 #endif
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -661,7 +646,6 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 void
 cs_medcoupling_intersector_destroy_all(void)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
@@ -672,10 +656,7 @@ cs_medcoupling_intersector_destroy_all(void)
 
   BFT_FREE(_intersects);
 #endif
-
-  return;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -690,7 +671,6 @@ cs_medcoupling_intersector_destroy_all(void)
 cs_medcoupling_intersector_t *
 cs_medcoupling_intersector_by_id(int id)
 {
-
   cs_medcoupling_intersector_t *mi = NULL;
 
   if (id > -1 && id < _n_intersects)
@@ -805,7 +785,7 @@ cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t  *mi,
   for (cs_lnum_t i = 0; i < n_vtx; i++)
     _transform_coord(matrix, mi->init_coords[i]);
 
-  /* Update of the boundary mesh coordinates 
+  /* Update of the boundary mesh coordinates
    * and of the initial boundary mesh copy coordinates */
   const cs_lnum_t n_b_vtx = mi->n_b_vertices;
   for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
@@ -844,7 +824,7 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 #else
   mi->source_mesh->rotate(invariant, axis, angle);
   mi->matrix_needs_update = 1;
-  
+
   cs_real_t matrix[3][4];
   cs_rotation_matrix(angle, axis, invariant, matrix);
 
@@ -853,7 +833,7 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
   for (cs_lnum_t i = 0; i < n_vtx; i++)
     _transform_coord(matrix, mi->init_coords[i]);
 
-  /* Update of the boundary mesh coordinates 
+  /* Update of the boundary mesh coordinates
    * and of the initial boundary mesh copy coordinates */
   const cs_lnum_t n_b_vtx = mi->n_b_vertices;
   for (cs_lnum_t i = 0; i < n_b_vtx; i++){
@@ -866,7 +846,7 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Transform a mesh, but takes as input the initial position of the mesh
- * \brief Transformation is thus applied on the initial coordiantes and the 
+ * \brief Transformation is thus applied on the initial coordiantes and the
  * \brief mesh is modified accordingly.
  *
  * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
@@ -892,15 +872,15 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
 
   BFT_MALLOC(_new_coords, n_vtx, cs_coord_3_t);
 
-  /* Compute the new coordinates according 
+  /* Compute the new coordinates according
    * to a given transformation matrix */
   for (cs_lnum_t i = 0; i < n_vtx; i++)
     _transform_coord_from_init(matrix, mi->init_coords[i], _new_coords[i]);
-  
+
   /* Update the boundary mesh also */
-  for (cs_lnum_t i = 0; i < n_b_vtx; i++) 
-    _transform_coord_from_init(matrix, 
-                               mi->init_boundary_coords[i], 
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++)
+    _transform_coord_from_init(matrix,
+                               mi->init_boundary_coords[i],
                                mi->boundary_coords[i]);
 
   /* Assign the new set of coordinates to the MED mesh */
@@ -910,7 +890,6 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
 
   BFT_FREE(_new_coords);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -926,7 +905,6 @@ void
 cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
                                      const char                    *prefix)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(mi);
   CS_NO_WARN_IF_UNUSED(prefix);
@@ -936,12 +914,11 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 #else
   _dump_medcoupling_mesh(mi->source_mesh, prefix, mi->name);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a new writer that will contains the boundary MED mesh added 
+ * \brief Create a new writer that will contains the boundary MED mesh added
  * \brief by the user. The writer_id is stored locally..
  *
  * \param[in]  time_dep > 1 if the writer is transient, else writer is fixed
@@ -1016,4 +993,3 @@ cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi)
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
