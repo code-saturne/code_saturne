@@ -1125,7 +1125,8 @@ cs_stl_mesh_destroy_all(void)
   for (int s_id = 0; s_id < _stl_meshes.n_meshes; s_id ++) {
     cs_stl_mesh_t *ptr = _stl_meshes.mesh_list[s_id];
     BFT_FREE(ptr->coords);
-    BFT_FREE(ptr->ext_mesh);
+    BFT_FREE(ptr->coords_ini);
+    BFT_FREE(ptr->seed_coords);
   }
 
   BFT_FREE(_stl_meshes.mesh_list);
@@ -1920,6 +1921,9 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
   fvm_neighborhood_destroy(&cell_neighborhood);
 
+  BFT_FREE(elt_num);
+  BFT_FREE(neighbor_index);
+  BFT_FREE(neighbor_num);
   BFT_FREE(box_gnum);
   BFT_FREE(extents);
 }

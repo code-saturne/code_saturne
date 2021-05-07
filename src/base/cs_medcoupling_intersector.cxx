@@ -429,7 +429,6 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   BFT_FREE(mi->init_coords);
   BFT_FREE(mi->boundary_coords);
   BFT_FREE(mi->init_boundary_coords);
-  BFT_FREE(mi->ext_mesh);
   BFT_FREE(mi->vol_intersect);
 
   cs_medcoupling_mesh_destroy(mi->local_mesh);
