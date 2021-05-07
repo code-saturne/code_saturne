@@ -66,7 +66,7 @@ implicit none
 integer          iel, inc
 integer          iprev
 
-double precision s11, s22, s33
+double precision s11, s22, s33, f1, ft1, ft2
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xk, xe, xrom, xnu
 double precision ttke, ttmin, ttlim, tt
@@ -126,7 +126,7 @@ do iel = 1, ncel
 
   s2(iel) = 2.d0*(s11**2 + s22**2 + s33**2)                   &
        + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2
-  s2(iel) = sqrt(max(s2(iel),1.d-10))
+  s2(iel) = sqrt(max(s2(iel), 1.d-10))
 
 enddo
 
@@ -137,6 +137,8 @@ deallocate(gradv)
 ! 3.  Calculation of viscosity
 !===============================================================================
 
+f1 = 0.6d0 / sqrt(3.d0) / cmu
+
 do iel = 1, ncel
 
   xk = cvar_k(iel)
@@ -146,10 +148,20 @@ do iel = 1, ncel
 
   ttke = xk / xe
   ttmin = cpalct*sqrt(xnu/xe)
-  ttlim = 0.6d0/cvar_phi(iel)/sqrt(3.d0)/cmu/s2(iel)
-  tt = min(ttlim,sqrt(ttke**2 + ttmin**2))
 
-  visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+  ! We initially have:
+  ! ttlim = 0.6/cvar_phi(iel)/sqrt(3)/cmu/s2(iel)
+  ! tt = min(ttlim, sqrt(ttke**2 + ttmin**2))
+  ! visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+
+  ! When tt = ttlim, tt in
+  !   visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+  ! cvar_phi appears in both numerator and denominator, and can be eliminated.
+
+  ft1 = f1/s2(iel)
+  ft2 = sqrt(ttke**2 + ttmin**2)*cvar_phi(iel)
+
+  visct(iel) = cmu*xrom*cvar_k(iel)*min(ft1, ft2)
 
 enddo
 
