@@ -60,7 +60,7 @@ typedef enum {
   CS_BALANCE_BOUNDARY_IN,         /*!< inflow through boundary faces */
   CS_BALANCE_BOUNDARY_OUT,        /*!< outflow through boundary faces */
   CS_BALANCE_BOUNDARY_SYM,        /*!< symmetry faces */
-  CS_BALANCE_BOUNDARY_WALL,       /*!< wall faces (rough + smoothe) */
+  CS_BALANCE_BOUNDARY_WALL,       /*!< wall faces (rough + smooth) */
   CS_BALANCE_BOUNDARY_WALL_S,     /*!< smooth wall faces */
   CS_BALANCE_BOUNDARY_WALL_R,     /*!< rough wall faces */
   CS_BALANCE_BOUNDARY_COUPLED,    /*!< coupled boundary faces (all) */
