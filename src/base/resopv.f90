@@ -1065,9 +1065,6 @@ if (arak.gt.0.d0) then
      weighftp   , weighbtp ,             &
      ipro_visc  , bpro_visc)
 
-    deallocate(weighftp)
-    deallocate(weighbtp)
-
     ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
     ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
     ! de pression et le filtre sont annules.
@@ -1098,7 +1095,7 @@ if (arak.gt.0.d0) then
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                               &
    ipro_visc        , bpro_visc ,                                          &
    cpro_vitenp      ,                                                      &
-   weighf , weighb ,                                                       &
+   weighftp, weighbtp,                                                     &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1118,12 +1115,14 @@ if (arak.gt.0.d0) then
      coefbf_p,                                                      &
      ipro_visc  , bpro_visc ,                                       &
      cpro_vitenp ,                                                  &
-     weighf ,                                                       &
+     weighftp,                                                      &
      imasfl, bmasfl )
 
     endif
 
     deallocate(cpro_vitenp)
+    deallocate(weighftp)
+    deallocate(weighbtp)
 
   endif
 
