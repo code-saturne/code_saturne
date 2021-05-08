@@ -904,6 +904,10 @@ cs_atmo_init_meteo_profiles(void)
     * sin(aopt->latitude * cs_math_pi / 180.);
   aopt->meteo_zi = zi_coef * ustar0 / fabs(corio_f);
 
+
+  /* Force the computation of z_ground */
+  aopt->compute_z_ground = true;
+
 }
 
 /*----------------------------------------------------------------------------*/
