@@ -963,10 +963,11 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t u_met_min= cs_math_big_r;
   cs_real_t theta_met_min= cs_math_big_r;
 
-  if (aopt->compute_z_ground == true)
+  cs_real_t *z_ground = NULL;
+  if (aopt->compute_z_ground == true) {
     cs_atmo_z_ground_compute();
-
-  cs_real_t *z_ground = cs_field_by_name_try("z_ground")->val;
+    z_ground = cs_field_by_name_try("z_ground")->val;
+  }
 
   BFT_MALLOC(dlmo_var, m->n_cells, cs_real_t);
 
@@ -980,8 +981,12 @@ cs_atmo_compute_meteo_profiles(void)
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
+    cs_real_t z_grd = 0.;
+    if (z_ground != NULL)
+      z_grd = z_ground[cell_id];
+
     /* Local elevation */
-    cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
+    cs_real_t z = cell_cen[cell_id][2] - z_grd;
 
     /* Velocity profile */
     cs_real_t u_norm = ustar0 / kappa * cs_mo_psim(z+z0, z0, dlmo);
@@ -1026,7 +1031,12 @@ cs_atmo_compute_meteo_profiles(void)
     bft_printf("Switching to very stable clipping for meteo profile.\n");
     bft_printf("All altitudes above %f have been modified by clipping.\n",z_min);
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      cs_real_t z = cell_cen[cell_id][2] - z_ground[cell_id];
+
+      cs_real_t z_grd = 0.;
+      if (z_ground != NULL)
+        z_grd = z_ground[cell_id];
+
+      cs_real_t z = cell_cen[cell_id][2] - z_grd;
       if (z >= z_min) {
          /* mode = 0 is ustar=cst */
         dlmo_var[cell_id] = dlmo * (z_min + z0) / (z + z0);
