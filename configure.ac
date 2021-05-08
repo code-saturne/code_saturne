@@ -384,7 +384,6 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T
 
-AC_HEADER_TIME
 AC_HEADER_STDBOOL
 
 AC_CHECK_TYPES([long long, unsigned long long])
@@ -945,7 +944,6 @@ AC_SUBST(cs_have_gui_qt5)
 # Checks for header files.
 #------------------------------------------------------------------------------
 
-AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h dirent.h stddef.h])
 AC_CHECK_HEADERS([unistd.h fcntl.h sys/types.h sys/signal.h])
 AC_CHECK_HEADERS([sys/procfs.h sys/sysinfo.h sys/resource.h])

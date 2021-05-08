@@ -318,8 +318,7 @@ fi
 # Checks for header files.
 #------------------------------------------------------------------------------
 
-AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h stddef.h])
+AC_CHECK_HEADERS([sys/time.h sys/types.h stddef.h])
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
@@ -330,7 +329,6 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T
 
-AC_HEADER_TIME
 AC_HEADER_STDBOOL
 
 AC_CHECK_TYPES([long long, unsigned long long])
