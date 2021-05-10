@@ -201,7 +201,7 @@ AC_ARG_ENABLE(python,
 
 if test "${python_bindings}" = "yes" ; then
   AM_PATH_PYTHON(3.4)
-  AX_PYTHON_DEVEL([>='3.4'])
+  PLE_AC_PYTHON_DEV
   PLE_AC_TEST_MPI4PY
 fi
 
