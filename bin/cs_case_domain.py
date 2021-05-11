@@ -763,10 +763,11 @@ class domain(base_domain):
 
         if len(src_files) > 0 or self.mci != None:
 
-            # Create the src folder
             exec_src = os.path.join(self.exec_dir, 'src')
 
-            make_clean_dir(exec_src)
+            # Create the src folder if not done yet
+            if not os.path.isdir(exec_src):
+                os.mkdir(exec_src)
 
             if len(src_files) > 0:
                 # Add header files to list so as not to forget to copy them
@@ -774,12 +775,6 @@ class domain(base_domain):
                 src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
                                          + fnmatch.filter(dir_files, '*.hxx')
                                          + fnmatch.filter(dir_files, '*.hpp'))
-
-                # Copy source files to execution directory
-                for f in src_files:
-                    src_file = os.path.join(self.src_dir, f)
-                    dest_file = os.path.join(exec_src, f)
-                    shutil.copy2(src_file, dest_file)
 
             if self.mci != None:
                 mci_state = self.mci.save_all_functions()
