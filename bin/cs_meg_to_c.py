@@ -2319,7 +2319,7 @@ class meg_to_c_interpreter:
                     empty_exps[-1]['func'] = _func_short_to_long[func_type] + ' formula'
 
         if is_empty == 1:
-            state = -1
+            save_status = -1
 
         ret = {'state':save_status,
                'exps':empty_exps,
