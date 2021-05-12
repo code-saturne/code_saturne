@@ -210,9 +210,6 @@ class TreeModel(QAbstractItemModel):
                 elif page_name == self.tr('Calculation features'):
                     img_path = ":/icons/22x22/calculation_features.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-#                elif page_name == self.tr('Fluid properties'):
-#                    img_path = ":/icons/22x22/physical_properties.png"
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -472,7 +469,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
     def _getSectionList(self):
 
-#              'Closure modeling', 'Fluid properties',
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
               'Closure modeling',
               'Particles and droplets tracking', 'Volume conditions',
@@ -500,8 +496,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
                     'Interfacial enthalpy transfer',
                     'Wall transfer parameters',
                     'Particles interactions']
-#        elif section == 'Fluid properties':
-#            return []
         elif section == 'Particles and droplets tracking':
             return ['Statistics']
         elif section == 'Volume conditions':
@@ -545,10 +539,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         for item_info in item_info_list:
             row = item_info[0]
             parent = item_info[2]
-            if string == 'Fluid properties':
-                self.model.rootItem.childWithName(string).remove()
-            else:
-                self.treeView.setRowHidden(row, parent, True)
+            self.treeView.setRowHidden(row, parent, True)
 
     def setRowOpen(self, string):
         log.debug("setRowOpen(): %s" % string)
@@ -780,9 +771,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Particles interactions'))
         """
 
-#        self.setRowClose(self.tr('Fluid properties'))
 #        """
-#        self.setRowClose(self.tr('Fluid properties'))
 #        self.setRowClose(self.tr('Body forces'))
 #        """
 
@@ -1002,10 +991,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Interfacial area'), m_ncfd['itf_area'])
         self.setRowShow(self.tr('Wall transfer parameters'), m_ncfd['wall_transfer'])
         self.setRowShow(self.tr('Particles interactions'), m_ncfd['particles_interactions'])
-
-        # Fluid properties
-
-#        self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
 
         # Particles and droplets tracking
 
