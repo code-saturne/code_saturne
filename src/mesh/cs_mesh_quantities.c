@@ -1123,7 +1123,7 @@ _compute_cell_quantities(const cs_mesh_t    *mesh,
   /* Mesh connectivity */
 
   const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = mesh->n_b_faces_all;
+  const  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const  cs_lnum_2_t  *i_face_cells
@@ -1253,7 +1253,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
                          cs_real_3_t         cell_cen[])
 {
   const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = mesh->n_b_faces_all;
+  const  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
 
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
@@ -1525,6 +1525,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
                      const cs_real_3_t  cell_cen[],
                      cs_real_t          cell_vol[])
 {
+  const cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
   const cs_real_t  a_third = 1.0/3.0;
 
   /* Initialization */
@@ -1549,7 +1550,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
 
   /* Loop on border faces */
 
-  for (cs_lnum_t fac_id = 0; fac_id < mesh->n_b_faces_all; fac_id++) {
+  for (cs_lnum_t fac_id = 0; fac_id < n_b_faces; fac_id++) {
 
     cs_lnum_t cell_id1 = mesh->b_face_cells[fac_id];
 
