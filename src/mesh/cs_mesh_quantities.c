@@ -1546,6 +1546,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
     cell_vol[cell_id2] -= cs_math_3_distance_dot_product(cell_cen[cell_id2],
                                                          i_face_cog[fac_id],
                                                          i_face_norm[fac_id]);
+
   }
 
   /* Loop on border faces */
@@ -1559,7 +1560,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
                                                          b_face_norm[fac_id]);
   }
 
-  /* First Computation of the volume */
+  /* First computation of the volume */
 
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
     cell_vol[cell_id] *= a_third;

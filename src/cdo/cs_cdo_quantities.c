@@ -186,26 +186,39 @@ _create_cdo_quantities(void)
   return cdoq;
 }
 
-/*----------------------------------------------------------------------------
- * Function related to the Mirtich algorithm
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function related to the Mirtich algorithm
+ *         - Define an unitary normal to the current face
+ *         - Compute omega = - <n, P> where P belongs to the face
+ *         - Choose projection axis in order to maximize the projected area
+ *         - Define a direct basis (alpha, beta, gamma) with this choice
  *
- * Define an unitary normal to the current face
- * Compute omega = - <n, P> where P belongs to the face
- * Choose projection axis in order to maximize the projected area
- * Define a direct basis (alpha, beta, gamma) with this choice
- * ---------------------------------------------------------------------------*/
+ * \param[in]  f_id      id of the face to treat
+ * \param[in]  m         pointer to a cs_mesh_t structure
+ * \param[in]  mq        pointer to a cs_mesh_quantities_t structure
+ *
+ * \return a _cdo_fspec_t structure storing the computed quantities
+ */
+/*----------------------------------------------------------------------------*/
 
 static _cdo_fspec_t
 _get_fspec(cs_lnum_t                    f_id,
            const cs_mesh_t             *m,
            const cs_mesh_quantities_t  *mq)
 {
+  const int X = 0, Y = 1, Z = 2;
+
   cs_lnum_t  f, j, k, v, e, s;
   double  inv_n, nx, ny, nz;
   double  P[3]; /* Point belonging to the current face */
-  _cdo_fspec_t  fspec;
 
-  const int X = 0, Y = 1, Z = 2;
+  _cdo_fspec_t  fspec =
+    { .XYZ = {X, Y, Z},
+      .omega = 0.,
+      .q.meas = 0.,
+      .q.unitv[0] = 0, .q.unitv[1] = 0, .q.unitv[2] = 0,
+    };
 
   /* Treatment according to the kind of face (interior or border) */
 
@@ -282,11 +295,19 @@ _get_fspec(cs_lnum_t                    f_id,
   return fspec;
 }
 
-/* ---------------------------------------------------------------------------*
- * Function related to the Mirtich algorithm
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function related to the Mirtich algorithm
+ *         Compute projected integrals and quantities
  *
- * Compute projected integrals and quantities
- * ---------------------------------------------------------------------------*/
+ * \param[in]  f_id      id of the face to treat
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  coords    coordinates of the mesh vertices
+ * \param[in]  axis      local basis to the given face
+ *
+ * \return a _cdo_projq_t structure storing the computed quantities
+ */
+/*----------------------------------------------------------------------------*/
 
 static _cdo_projq_t
 _get_proj_quantities(cs_lnum_t                f_id,
@@ -360,27 +381,33 @@ _get_proj_quantities(cs_lnum_t                f_id,
   return  projq;
 }
 
-/* --------------------------------------------------------------------------
- * Function related to the Mirtich algorithm
- * -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function related to the Mirtich algorithm
+ *         Compute quantities related to the sub-faces of a given face
+ *
+ * \param[in]  f_id      id of the face to treat
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  coord     coordinates of the mesh vertices
+ *
+ *
+ * \return a _cdo_fsubq_t structure storing the computed quantities
+ */
+/*----------------------------------------------------------------------------*/
 
 static _cdo_fsubq_t
 _get_fsub_quantities(cs_lnum_t                 f_id,
                      const cs_cdo_connect_t   *connect,
                      const cs_real_t          *coord,
-                     _cdo_fspec_t              fspec)
+                     const _cdo_fspec_t        fspec)
 {
-  _cdo_fsubq_t  fsubq;
-
-  double  na = fspec.q.unitv[fspec.XYZ[0]];
-  double  nb = fspec.q.unitv[fspec.XYZ[1]];
-  double  nc = fspec.q.unitv[fspec.XYZ[2]];
-  double  k1 = 1./nc;
-  double  k2 = k1 * k1;
-  double  k3 = k2 * k1;
+  const double  na = fspec.q.unitv[fspec.XYZ[0]];
+  const double  nb = fspec.q.unitv[fspec.XYZ[1]];
+  const double  nc = fspec.q.unitv[fspec.XYZ[2]];
+  const double  k1 = 1./nc, k2 = k1 * k1, k3 = k2 * k1;
 
   /* Compute projected quantities */
-  _cdo_projq_t  projq = _get_proj_quantities(f_id, connect, coord, fspec.XYZ);
+  const _cdo_projq_t  projq = _get_proj_quantities(f_id, connect, coord, fspec.XYZ);
 
 #if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
   printf(" F: %d >> p1: %.4e, pa: %.4e, pb: %.4e, pc: %.4e,"
@@ -388,6 +415,8 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
          f_id, projq.p1, projq.pa, projq.pb, projq.pc,
          projq.pab, projq.pa2, projq.pb2);
 #endif
+
+  _cdo_fsubq_t  fsubq;
 
   /* Compute face sub-quantities */
   fsubq.F1 = k1*projq.p1;
@@ -848,19 +877,24 @@ _vtx_algorithm(const cs_cdo_connect_t      *connect,
 
 }
 
-/*----------------------------------------------------------------------------
- * Algorithm for computing cell barycenters inspired from the article
- * "Fast and accurate computation of polyhedral mass properties"
- * Journal of Graphics, 1997 by Brian Mirtich
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Algorithm for computing the real cell barycenters inspired from the
+ *        article "Fast and accurate computation of polyhedral mass properties"
+ *        Journal of Graphics, 1997 by Brian Mirtich
  *
- * Compute also : cell volumes.
- * ---------------------------------------------------------------------------*/
+ * \param[in]     m         pointer to a cs_mesh_t structure
+ * \param[in]     mq        pointer to a cs_mesh_quantities_t structure
+ * \param[in]     connect   pointer to a cs_cdo_connect_t structure
+ * \param[in,out] quant     pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_mesh_quantities_t  *mq,
                    const cs_cdo_connect_t      *connect,
-                   cs_cdo_quantities_t         *quant) /* In/out */
+                   cs_cdo_quantities_t         *quant)
 {
   const int X = 0, Y = 1, Z = 2;
   const cs_lnum_t n_cells = quant->n_cells;
