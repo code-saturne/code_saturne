@@ -375,7 +375,10 @@ cs_cell_sys_reset(int              n_fbyc,
 
   memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
-#if defined(DEBUG) && !defined(NDEBUG)
+  csys->n_bc_faces = 0;
+  csys->has_dirichlet = csys->has_nhmg_neumann = false;
+  csys->has_robin = csys->has_sliding = false;
+
   memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
   memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
   memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
@@ -384,25 +387,6 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->neu_values, 0, s);
   memset(csys->rob_values, 0,
          CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
-#else
-  if (csys->n_bc_faces > 0 || csys->has_dirichlet ||
-      csys->has_sliding || csys->has_nhmg_neumann || csys->has_robin) {
-
-    memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
-    memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
-    memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
-
-    memset(csys->dir_values, 0, s);
-    memset(csys->neu_values, 0, s);
-    memset(csys->rob_values, 0,
-           CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
-
-  } /* Boundary cell -> reset BC-related members */
-#endif
-
-  csys->n_bc_faces = 0;
-  csys->has_dirichlet = csys->has_nhmg_neumann = false;
-  csys->has_robin = csys->has_sliding = false;
 }
 
 /*----------------------------------------------------------------------------*/
