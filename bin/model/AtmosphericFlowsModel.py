@@ -93,7 +93,7 @@ class AtmosphericFlowsModel(Model):
         self.__default['meteo_dlmo'] = "0."
         self.__default['meteo_zref'] = "10."
         self.__default['meteo_uref'] = "5."
-        self.__default['meteo_ustar'] = "1."
+        self.__default['meteo_ustar'] = "-1."
 
     @Variables.undoLocal
     def setAtmosphericFlowsModel(self, model):
@@ -330,14 +330,13 @@ class AtmosphericFlowsModel(Model):
         dateTime = datetime.now()
         if (startYear == None) or (startDay == None) or (startHour == None) \
             or (startMin == None) or (startSec == None):
-            dateTime = datetime.now()
             self.setStartTime(dateTime)
         else:
-
-            dateTimeStr = startYear+'-'+startDay.rjust(3,'0')+\
-                                    ' '+startHour+':' +startMin+':'+startSec;
+            #FIXME after startDay.rjust(3,'0')
+            dateTimeStr = str(startYear)+'-'+str(startDay)+\
+                                    ' '+str(startHour)+':' +str(startMin)+':'+str(startSec);
             formatDateTime = "%Y-%j %H:%M:%S";
-            datetime.strptime(dateTimeStr, formatDateTime)
+            dateTime = datetime.strptime(dateTimeStr, formatDateTime)
         #convert back to the string in order to read it by QDateTime
         dateTimeStr = dateTime.strftime("%Y-%m-%d %H:%M:%S")
         return dateTimeStr
@@ -352,7 +351,7 @@ class AtmosphericFlowsModel(Model):
         self.__node_atmos.xmlSetData('start_year', startYear)
         self.__node_atmos.xmlSetData('start_day', startDay)
         self.__node_atmos.xmlSetData('start_hour', startHour)
-        self.__node_atmos.xmlSetData('start_mon', startMin)
+        self.__node_atmos.xmlSetData('start_min', startMin)
         self.__node_atmos.xmlSetData('start_sec', startSec)
 
     #-------------------------------------------------------------------------
