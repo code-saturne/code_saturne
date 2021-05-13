@@ -151,16 +151,22 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         tmpVar = model.getMeteoZref();
         self.lineEditZref.setText(str(tmpVar))
 
-        if self.comboBoxUstarOrdLMO.currentIndex() == 0:
-            tmpVar = model.getMeteoUstar()
+        tmpVar = model.getMeteoUstar()
+        if tmpVar >= 0:
+            self.comboBoxUstarOrdLMO.setCurrentIndex(0)
         else:
+            self.comboBoxUstarOrdLMO.setCurrentIndex(1)
             tmpVar = model.getMeteoDlmo()
+
         self.lineEditUstarOrDlmo.setText(str(tmpVar))
 
-        if self.comboBoxUrefOrdLMO.currentIndex() == 0:
-            tmpVar = model.getMeteoUref()
+        tmpVar = model.getMeteoUref()
+        if tmpVar >= 0:
+            self.comboBoxUrefOrdLMO.setCurrentIndex(0)
         else:
+            self.comboBoxUrefOrdLMO.setCurrentIndex(1)
             tmpVar = model.getMeteoDlmo()
+
         self.lineEditUrefOrDlmo.setText(str(tmpVar))
 
         tmpVar=model.getDomainOrientation()
