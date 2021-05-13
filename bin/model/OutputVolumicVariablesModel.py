@@ -56,6 +56,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.node_models    = self.case.xmlGetNode('thermophysical_models')
         self.analysis_ctrl  = self.case.xmlGetNode('analysis_control')
         self.fluid_prop     = self.case.xmlGetNode('physical_properties')
+        self.have_multizone_phys_prop = self.__has_multiple_phys_prop_nodes__()
 
         if self.node_models:
             self.node_model_vp  = self.node_models.xmlGetNode('velocity_pressure')
@@ -88,6 +89,27 @@ class OutputVolumicVariablesModel(Variables, Model):
 
     # Following private methods: (to see for gathering eventually)
 
+
+    def __has_multiple_phys_prop_nodes__(self):
+        """
+        Determine if we have mutiple physical properties nodes
+        """
+        # We do not use the LocalizationModel here, as it would lead to
+        # circular dependencies, so directly use XML definitions.
+        m_pp_zones = 0
+        n = self.case.xmlGetNode('solution_domain')
+        if n:
+            n = n.xmlGetNode('volumic_conditions')
+            if n:
+                nl = n.xmlGetChildNodeList('zone', 'label', 'id')
+                for n in nl:
+                    if n['physical_properties'] == 'on':
+                        m_pp_zones += 1
+                        if m_pp_zones > 1:
+                            return True
+        return False
+
+
     def _defaultValues(self):
         """
         Return in a dictionnary which contains default values
@@ -116,7 +138,7 @@ class OutputVolumicVariablesModel(Variables, Model):
                     if node['support'] == 'boundary':
                         continue
                 if tag == 'property':
-                    if not constant:
+                    if not (self.have_multizone_phys_prop or constant):
                         choice = node['choice']
                         if choice and choice == 'constant':
                             continue
@@ -334,7 +356,10 @@ class OutputVolumicVariablesModel(Variables, Model):
             # (could also be based on dictionary)
 
             category = node.xmlGetParentName()
-            category = category.replace('_', ' ').capitalize()
+            if category == 'fluid_properties':
+                category = 'Physical properties'
+            else:
+                category = category.replace('_', ' ').capitalize()
 
             # For NCFD multiphase, use the field_id as a parent category
             if node['field_id']:
@@ -601,12 +626,23 @@ class OutputVolumicVariablesModel(Variables, Model):
 
         if self.fluid_prop:
             node = self.fluid_prop.xmlGetNode('fluid_properties')
+
             if node:
                 for prop in ('density',
-                             'molecular_viscosity',
                              'specific_heat',
                              'thermal_conductivity'):
                     L = node.xmlGetNode('property', name=prop, choice='variable')
+                    if not L:
+                        L = node.xmlGetNode('property', name=prop, choice='user_law')
+                    if self.have_multizone_phys_prop and not L:
+                        L = node.xmlGetNode('property', name=prop, choice='constant')
+                    if L:
+                        nodeList.append(L)
+                for prop in ('molecular_viscosity',
+                             'dynamic_diffusion'):
+                    L = node.xmlGetNode('property', name=prop, choice='variable')
+                    if not L:
+                        L = node.xmlGetNode('property', name=prop, choice='user_law')
                     if L:
                         nodeList.append(L)
 

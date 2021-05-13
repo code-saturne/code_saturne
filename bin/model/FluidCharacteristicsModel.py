@@ -823,10 +823,11 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getFormula(self, tag, zone="1"):
+    def getFormulaTry(self, tag, zone="1"):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
         'specific_heat' or 'thermal_conductivity'
+        only if actually defined, None otherwise.
         """
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
@@ -838,6 +839,16 @@ class FluidCharacteristicsModel(Variables, Model):
             else:
                 node = node.xmlInitChildNode("zone", zone_id=zone)
         formula = node.xmlGetChildString('formula')
+        return formula
+
+
+    @Variables.noUndo
+    def getFormula(self, tag, zone="1"):
+        """
+        Return a formula for I{tag} 'density', 'molecular_viscosity',
+        'specific_heat' or 'thermal_conductivity'
+        """
+        formula = self.getFormulaTry(tag, zone)
         if not formula:
             formula = self.getDefaultFormula(tag)
             self.setFormula(tag, formula, zone)

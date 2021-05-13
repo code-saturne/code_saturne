@@ -192,6 +192,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.zone     = None
         self.zone_name = None
         self.zone_id   = None
+        self.is_main_zone = False
+        self.is_solid  = False
 
 
     def setup(self, case, zone_name):
@@ -203,6 +205,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.zone = zone
                 self.zone_name = zone.getLabel()
                 self.zone_id   = str(zone.getCodeNumber())
+                if self.zone_name == "all_cells":
+                    self.is_main_zone = True
+                elif not zone.isNatureActivated("physical_properties"):
+                    return
+                if zone.isNatureActivated("solid"):
+                    self.is_solid = True
 
         self.case.undoStopGlobal()
 
@@ -396,9 +404,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         mdls = self.mdl.getThermoPhysicalModel()
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn = mdls
 
+        if self.is_solid:
+            mdl_atmo = "off"
+            mdl_joule = "off"
+            mdl_gas = "off"
+            mdl_coal = "off"
+            mdl_comp = "off"
+            mdl_hgn = "off"
 
-
-        is_main_zone = (self.zone_name == "all_cells")
+        is_main_zone = self.is_main_zone
 
         self.groupBoxPressure.setVisible(is_main_zone)
         self.groupBoxTemperature.setVisible(is_main_zone)
@@ -506,6 +520,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.labelUnitDiff.setVisible(is_main_zone)
             self.comboBoxDiff.setEnabled(is_main_zone)
 
+        # Solid zone
+
+        if self.is_solid:
+            self.groupBoxTempd3p.hide()
+            self.groupBoxMu.hide()
+            self.groupBoxDiftl0.hide()
+            self.groupBoxDiff.hide()
 
         # Standard Widget initialization
         for tag, symbol in self.mdl.lst:
@@ -527,6 +548,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 if c not in __model.getItems():
                     c = 'constant'
                     self.mdl.setPropertyMode(tag, c)
+                if self.is_solid:
+                    c = "user_law"
 
                 __model.setItem(str_model=c)
                 if c == 'user_law':
@@ -967,7 +990,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             __labelu.show()
             __labelv.show()
 
-        self.mdl.setPropertyMode(tag, choice)
+        if self.is_main_zone:
+            self.mdl.setPropertyMode(tag, choice)
 
 
     @pyqtSlot(str)
@@ -1083,7 +1107,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for density
         """
         exp, req, sca, symbols_rho = \
-                self.mdl.getFormulaRhoComponents(self.zone_id)
+            self.mdl.getFormulaRhoComponents(self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
