@@ -1263,18 +1263,19 @@ class meg_to_c_interpreter:
                 import FluidCharacteristicsModel
 
             fcm = FluidCharacteristicsModel(self.case)
-            for (fk,sym) in fcm.lst:
+            for (fk, sym) in fcm.lst:
                 if fcm.getPropertyMode(fk) == 'user_law':
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_block('vol', 'all_cells', fk,
                                     exp, req, sym, sca)
-                    for zone in vlm.getZones():
-                        zname = zone.getLabel()
-                        z_id  = str(zone.getCodeNumber())
-                        if zname != "all_cells" and \
-                                zone.isNatureActivated('physical_properties'):
+                for zone in vlm.getZones():
+                    zname = zone.getLabel()
+                    z_id  = str(zone.getCodeNumber())
+                    if zname != "all_cells" and \
+                            zone.isNatureActivated('physical_properties'):
+                        if fcm.getFormulaTry(fk, zone=z_id):
                             exp, req, sca, sym = \
-                            fcm.getFormulaComponents(fk, zone=z_id)
+                                fcm.getFormulaComponents(fk, zone=z_id)
                             self.init_block('vol', zname, fk,
                                             exp, req, sym, sca)
 

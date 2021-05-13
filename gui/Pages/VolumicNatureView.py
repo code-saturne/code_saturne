@@ -166,14 +166,7 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         if col == 0:
             return base_flags  # lock first column
         else:
-            h = self._headers[col]
-            zname = self._data[row][0]
-            # FIXME: For v7.0 'all_cells' is always used for physical properties.
-            # Will be changed for v7.1
-            if zname == "all_cells" and h in ("Physical properties", "Solid"):
-                return Qt.NoItemFlags
-            else:
-                return base_flags | Qt.ItemIsUserCheckable
+            return base_flags | Qt.ItemIsUserCheckable
 
 
 # Helper functions

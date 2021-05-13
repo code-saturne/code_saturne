@@ -335,6 +335,138 @@ _thermal_table_needed(const char *name)
 }
 
 /*-----------------------------------------------------------------------------
+ * Compute a physical property based on a thermal law.
+ *----------------------------------------------------------------------------*/
+
+static void
+_physical_property_thermal_law(cs_field_t           *c_prop,
+                               const cs_zone_t      *z,
+                               cs_phys_prop_type_t   property)
+{
+  /* For incompressible flows, the thermodynamic pressure is constant over
+   * time and is the reference pressure. */
+
+  cs_lnum_t thermodynamic_pressure_stride = 0;
+  cs_lnum_t thermal_f_val_stride = 1;
+  cs_real_t _p0 = cs_glob_fluid_properties->p0;
+  cs_real_t _t0 = cs_glob_fluid_properties->t0;
+
+  const cs_real_t *thermodynamic_pressure = &_p0;
+  const cs_real_t *_thermal_f_val = NULL;
+
+  if (CS_F_(t) != NULL) {
+    if (CS_F_(t)->type & CS_FIELD_VARIABLE)
+      _thermal_f_val = CS_F_(t)->val;
+  }
+  else if (CS_F_(h) != NULL) {
+    if (CS_F_(h)->type & CS_FIELD_VARIABLE)
+      _thermal_f_val = CS_F_(h)->val;
+  }
+  else if (CS_F_(e_tot) != NULL) {
+    if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
+      _thermal_f_val = CS_F_(e_tot)->val;
+      thermodynamic_pressure = CS_F_(p)->val;
+      thermodynamic_pressure_stride = 1;
+    }
+  }
+  else {
+    thermal_f_val_stride = 0;
+    _thermal_f_val = &_t0;
+  }
+
+  cs_phys_prop_compute(property,
+                       z->n_elts,
+                       thermodynamic_pressure_stride,
+                       thermal_f_val_stride,
+                       thermodynamic_pressure,
+                       _thermal_f_val,
+                       c_prop->val);
+}
+
+/*-----------------------------------------------------------------------------
+ * use MEI for thermal diffusivity
+ *
+ * This is a special case of _physical_property_, where the thermal
+ * diffusivity computation is based on that of the thermal conductivity.
+ *----------------------------------------------------------------------------*/
+
+static void
+_physical_property_th_diffusivity(cs_field_t          *c_prop,
+                                  const cs_zone_t     *z)
+{
+  const char prop_name[] = "thermal_conductivity";
+
+  const cs_lnum_t n_cells = z->n_elts;
+  const cs_lnum_t *cell_ids = z->elt_ids;
+
+  int user_law = 0;
+  const char *prop_choice = _properties_choice(prop_name, NULL);
+
+  if (cs_gui_strcmp(prop_choice, "user_law"))
+    user_law = 1;
+  else if (z->id > 1 && z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+    const char *law = _property_formula(prop_name, z->name);
+    if (law != NULL)
+      user_law = 1;
+  }
+
+  if (user_law) {
+
+    const char *law = _property_formula(prop_name, z->name);
+
+    if (law != NULL) {
+      /* Pass "field overlay": shallow copy of field with modified name
+       so as to be handled by the MEG volume function. */
+      cs_field_t _c_prop = *c_prop;
+      _c_prop.name = prop_name;
+      cs_field_t *fmeg[1] = {&_c_prop};
+      cs_meg_volume_function(z, fmeg);
+    }
+
+  }
+  else if (cs_gui_strcmp(prop_choice, "thermal_law") &&
+           cs_gui_strcmp(z->name, "all_cells")) {
+
+    _physical_property_thermal_law(c_prop,
+                                   z,
+                                   CS_PHYS_PROP_THERMAL_CONDUCTIVITY);
+
+  }
+
+  /* If property is globaly variable but defined as a constant
+     for this zone, set from constant */
+
+  else if (z->id <= 1 && cs_gui_strcmp(prop_choice, "constant")) {
+
+    const cs_fluid_properties_t *phys_pp = cs_glob_fluid_properties;
+    const cs_real_t p_val = phys_pp->lambda0;
+
+    for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+      cs_lnum_t c_id = cell_ids[e_id];
+      c_prop->val[c_id] = p_val;
+    }
+
+  }
+
+  /* Finalize special case for conduction to diffusion conversion */
+
+  if (CS_F_(cp) == NULL) {
+    const cs_real_t cp0 = cs_glob_fluid_properties->cp0;
+    for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+      cs_lnum_t c_id = cell_ids[e_id];
+        c_prop->val[c_id] /= cp0;
+    }
+  }
+  else {
+    const cs_real_t *cp = CS_F_(cp)->val;
+    for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+      cs_lnum_t c_id = cell_ids[e_id];
+      c_prop->val[c_id] /= cp[c_id];
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
 
@@ -345,8 +477,25 @@ _physical_property(cs_field_t          *c_prop,
   int user_law = 0;
   const char *prop_choice = _properties_choice(c_prop->name, NULL);
 
+  /* Special case: "thermal_conductivity" is defined by GUI, but
+     in case of Enthalpy thermal model, the matching field is
+     "thermal_diffusivity". */
+
+  if (prop_choice == NULL) {
+    if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY
+        && cs_gui_strcmp(c_prop->name, "thermal_diffusivity")) {
+      _physical_property_th_diffusivity(c_prop, z);
+      return;
+    }
+  }
+
   if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
+  else if (z->id > 1 && z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+    const char *law = _property_formula(c_prop->name, z->name);
+    if (law != NULL)
+      user_law = 1;
+  }
 
   if (user_law) {
 
@@ -379,46 +528,32 @@ _physical_property(cs_field_t          *c_prop,
                 _("Error: can not evaluate property: %s using a thermal law\n"),
                 c_prop->name);
 
-    /* For incompressible flows, the thermodynamic pressure is constant over
-     * time and is the reference pressure. */
+    _physical_property_thermal_law(c_prop, z, property);
+  }
 
-    cs_lnum_t thermodynamic_pressure_stride = 0;
-    cs_lnum_t thermal_f_val_stride = 1;
-    cs_real_t _p0 = cs_glob_fluid_properties->p0;
-    cs_real_t _t0 = cs_glob_fluid_properties->t0;
+  /* If property is globaly variable but defined as a constant
+     for this zone, set from constant */
 
-    const cs_real_t *thermodynamic_pressure = &_p0;
-    const cs_real_t *_thermal_f_val = NULL;
+  else if (z->id <= 1 && cs_gui_strcmp(prop_choice, "constant")) {
+    cs_real_t p_val = -1;
+    const cs_fluid_properties_t *phys_pp = cs_glob_fluid_properties;
 
-    if (CS_F_(t) != NULL) {
-      if (CS_F_(t)->type & CS_FIELD_VARIABLE)
-        _thermal_f_val = CS_F_(t)->val;
-    }
-    else if (CS_F_(h) != NULL) {
-      if (CS_F_(h)->type & CS_FIELD_VARIABLE)
-        _thermal_f_val = CS_F_(h)->val;
-    }
-    else if (CS_F_(e_tot) != NULL) {
-      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-        _thermal_f_val = CS_F_(e_tot)->val;
-        thermodynamic_pressure = CS_F_(p)->val;
-        thermodynamic_pressure_stride = 1;
-      }
-    }
-    else {
-      thermal_f_val_stride = 0;
-      _thermal_f_val = &_t0;
+    if (cs_gui_strcmp(c_prop->name, "density"))
+      p_val = phys_pp->ro0;
+    else if (cs_gui_strcmp(c_prop->name, "molecular_viscosity"))
+      p_val = phys_pp->viscl0;
+    else if (cs_gui_strcmp(c_prop->name, "specific_heat"))
+      p_val = phys_pp->cp0;
+    else if (cs_gui_strcmp(c_prop->name, "thermal_conductivity")) {
+      p_val = phys_pp->lambda0;
     }
 
-    const cs_lnum_t ncel = z->n_elts;
-
-    cs_phys_prop_compute(property,
-                         ncel,
-                         thermodynamic_pressure_stride,
-                         thermal_f_val_stride,
-                         thermodynamic_pressure,
-                         _thermal_f_val,
-                         c_prop->val);
+    const cs_lnum_t n_cells = z->n_elts;
+    const cs_lnum_t *cell_ids = z->elt_ids;
+    for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+      cs_lnum_t c_id = cell_ids[e_id];
+      c_prop->val[c_id] = p_val;
+    }
   }
 }
 
@@ -2092,6 +2227,13 @@ cs_gui_physical_properties(void)
                             visls_0);
   }
 
+  int n_zones_pp
+    = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
+  if (n_zones_pp > 1) {
+    phys_pp->irovar = 1;
+    phys_pp->icp = 1;
+  }
+
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--gx = %f \n", phys_cst->gravity[0]);
@@ -3080,8 +3222,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv)
 {
   double time0 = cs_timer_wtime();
 
-  int n_zones_pp =
-    cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
+  int n_zones_pp
+    = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
   int n_zones = cs_volume_zone_n_zones();
   /* law for density (built-in for all current integrated physical models) */
   if (cs_glob_fluid_properties->irovar == 1) {
@@ -4929,14 +5071,14 @@ cs_gui_internal_coupling(void)
 {
   int n_zones = cs_volume_zone_n_zones();
 
-  int n_volume_zones = 0;
+  int n_solid_zones = 0;
   for (int i = 0; i < n_zones; i++) {
     const cs_zone_t  *z = cs_volume_zone_by_id(i);
     if (z->type & CS_VOLUME_ZONE_SOLID)
-      n_volume_zones += 1;
+      n_solid_zones += 1;
   }
 
-  if (n_volume_zones < 1)
+  if (n_solid_zones < 1)
     return;
 
   cs_tree_node_t *node_int_cpl
@@ -4946,7 +5088,7 @@ cs_gui_internal_coupling(void)
 
     int j = 0;
     int *z_ids;
-    BFT_MALLOC(z_ids, n_volume_zones, int);
+    BFT_MALLOC(z_ids, n_solid_zones, int);
 
     for (int i = 0; i < n_zones; i++) {
       const cs_zone_t  *z = cs_volume_zone_by_id(i);
@@ -4956,7 +5098,7 @@ cs_gui_internal_coupling(void)
 
     int coupling_id = cs_internal_coupling_n_couplings();
 
-    cs_internal_coupling_add_volume_zones(n_volume_zones, z_ids);
+    cs_internal_coupling_add_volume_zones(n_solid_zones, z_ids);
     BFT_FREE(z_ids);
 
     {
@@ -4971,7 +5113,7 @@ cs_gui_internal_coupling(void)
       cs_internal_coupling_add_boundary_groups(cpl, i_name, e_name);
     }
 
-    if (n_volume_zones > 0) {
+    if (n_solid_zones > 0) {
       cs_tree_node_t *ns
         = cs_tree_node_get_child(node_int_cpl, "coupled_scalars");
       /* Add the coupled scalars defined in the GUI */
