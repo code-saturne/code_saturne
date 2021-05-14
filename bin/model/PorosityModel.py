@@ -106,7 +106,13 @@ class PorosityModel(Variables, Model):
         Set name and label zone for porosity markups.
         """
         self.node_porosit.xmlInitChildNode('porosity', zone_id=zoneid)
-        mdl = self.__defaultValues()['choice']
+
+        # Use existing model or default if none is defined
+        try:
+            n = self.node_porosit.xmlGetNode('porosity', zone_id=zoneid)
+            mdl = n['model']
+        except:
+            mdl = self.__defaultValues()['choice']
         self.setPorosityModel(zoneid, mdl)
 
 
