@@ -431,12 +431,28 @@ cs_rad_transfer_log_setup(void)
          cs_glob_rad_transfer_params->atmo_dr_id);
 
     if (  cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Direct solar O3 atmospheric 3D model on\n"
+           "      band id = %d\n"),
+         cs_glob_rad_transfer_params->atmo_dr_o3_id);
+
+    if (  cs_glob_rad_transfer_params->atmo_model
         & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
       cs_log_printf
         (CS_LOG_SETUP,
          _("    Diffuse solar atmospheric 3D model on\n"
            "      band id = %d\n"),
          cs_glob_rad_transfer_params->atmo_df_id);
+
+   if (  cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Diffuse solar O3 atmospheric 3D model on\n"
+           "      band id = %d\n"),
+         cs_glob_rad_transfer_params->atmo_df_o3_id);
 
     if (  cs_glob_rad_transfer_params->atmo_model
         & CS_RAD_ATMO_3D_INFRARED)

@@ -243,6 +243,7 @@ cs_rad_transfer_params_t _rt_params = {
   .ifinfe = 5,
   .atmo_model = CS_RAD_ATMO_3D_NONE,
   .atmo_dr_id = -1,
+  .atmo_dr_o3_id = -1,
   .atmo_df_id = -1,
   .atmo_ir_id = -1,
   .dispersion = false,

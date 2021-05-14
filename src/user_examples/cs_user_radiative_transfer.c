@@ -156,14 +156,18 @@ cs_user_radiative_transfer_parameters(void)
   cs_glob_rad_transfer_params->imfsck = 1;
 
   /* Activate  3D radiative models for  atmospheric flows
-       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
        atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND: direct solar
        atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND: diffuse solar
+       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
        */
 
-  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
   cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND;
   cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
 
   /*! [cs_user_radiative_transfer_parameters] */
 }

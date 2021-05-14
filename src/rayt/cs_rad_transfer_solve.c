@@ -448,42 +448,41 @@ _cs_rad_transfer_sol(int                        gg_id,
   cs_real_t domegat = 0;
   bool one_dir = false;
   /* Compute the Angular direction for direct solar radiation */
-  if (gg_id == 0) {
-    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
-      one_dir = true;
-      domegat = cs_math_pi;
+  if ((gg_id == rt_params->atmo_dr_id)
+    || (gg_id == rt_params->atmo_dr_o3_id)) {
+    one_dir = true;
+    domegat = cs_math_pi;
 
-      /* Computes universal time coordinate */
-      cs_real_t utc = (cs_real_t)cs_glob_atmo_option->shour
-        + (cs_real_t)cs_glob_atmo_option->smin / 60.
-        + (cs_real_t)cs_glob_atmo_option->ssec / 3600.;
+    /* Computes universal time coordinate */
+    cs_real_t utc = (cs_real_t)cs_glob_atmo_option->shour
+      + (cs_real_t)cs_glob_atmo_option->smin / 60.
+      + (cs_real_t)cs_glob_atmo_option->ssec / 3600.;
 
-      if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
-          || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
-        utc += cs_glob_time_step->t_cur / 3600.;
+    if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
+        || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
+      utc += cs_glob_time_step->t_cur / 3600.;
 
-      cs_real_t albedo, muzero, omega, fo;
-      cs_atmo_compute_solar_angles(cs_glob_atmo_option->latitude,
-                                   cs_glob_atmo_option->longitude,
-                                   (cs_real_t)cs_glob_atmo_option->squant,
-                                   utc,
-                                   0, /* no Sea */
-                                   &albedo,
-                                   &muzero,
-                                   &omega,
-                                   &fo);
+    cs_real_t albedo, muzero, omega, fo;
+    cs_atmo_compute_solar_angles(cs_glob_atmo_option->latitude,
+                                 cs_glob_atmo_option->longitude,
+                                 (cs_real_t)cs_glob_atmo_option->squant,
+                                 utc,
+                                 0, /* no Sea */
+                                 &albedo,
+                                 &muzero,
+                                 &omega,
+                                 &fo);
 
-      /* Zenital angle */
-      cs_real_t za = acos(muzero);
-      vect_s[0] = - sin(za) * sin(omega);
-      vect_s[1] = - sin(za) * cos(omega);
-      vect_s[2] = - muzero; /* cos(za) */
+    /* Zenital angle */
+    cs_real_t za = acos(muzero);
+    vect_s[0] = - sin(za) * sin(omega);
+    vect_s[1] = - sin(za) * cos(omega);
+    vect_s[2] = - muzero; /* cos(za) */
 
-      if (verbosity > 0)
-        bft_printf("     Solar direction [%f, %f, %f] \n",
-                   vect_s[0], vect_s[1], vect_s[2]);
+    if (verbosity > 0)
+      bft_printf("     Solar direction [%f, %f, %f] \n",
+          vect_s[0], vect_s[1], vect_s[2]);
 
-    }
   }
 
   /* Initialization */
@@ -623,8 +622,8 @@ _cs_rad_transfer_sol(int                        gg_id,
            * Note: In Atmo, emissivity is usefull only for InfraRed
            * */
           cs_real_t *bpro_eps = NULL;
-          if (   gg_id != rt_params->atmo_dr_id
-              && gg_id != rt_params->atmo_df_id)
+          if ( rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
+              ||  gg_id == rt_params->atmo_ir_id)
             bpro_eps = cs_field_by_name("emissivity")->val;
 
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
@@ -648,9 +647,9 @@ _cs_rad_transfer_sol(int                        gg_id,
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
               if (cs_math_3_dot_product(grav, vect_s) < 0.0)
-                ck_u_d[cell_id] = ck_u[gg_id + cell_id * stride] * 3./5.;
+                ck_u_d[cell_id] = ck_u[gg_id + cell_id * stride];
               else
-                ck_u_d[cell_id] = ck_d[gg_id + cell_id * stride] * 3./5.;
+                ck_u_d[cell_id] = ck_d[gg_id + cell_id * stride];
 
               rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
 
@@ -753,14 +752,18 @@ _cs_rad_transfer_sol(int                        gg_id,
               int_rad_domega[cell_id]  += aa;
               /* Absorption */
               int_abso[cell_id] += ck_u_d[cell_id] * aa;
-              /* Emmission */
-              int_emi[cell_id] -=   ck_u_d[cell_id]
-                                  * c_stefan * domegat * onedpi
-                                  * cs_math_pow4(tempk[cell_id]);
+              /* No emission in solar bands
+               * TODO: transfer from direct to diffuse solar? */
+              if (gg_id == rt_params->atmo_ir_id) {
+                /* Emmission */
+                int_emi[cell_id] -=   ck_u_d[cell_id]
+                                    * c_stefan * domegat * onedpi
+                                    * cs_math_pow4(tempk[cell_id]);
 
-              int_rad_ist[cell_id] -= 4.0 * dcp[cell_id] * ck_u_d[cell_id]
-                                          * c_stefan * domegat * onedpi
-                                          * cs_math_pow3(tempk[cell_id]);//FIXME solar....
+                int_rad_ist[cell_id] -= 4.0 * dcp[cell_id] * ck_u_d[cell_id]
+                                            * c_stefan * domegat * onedpi
+                                            * cs_math_pow3(tempk[cell_id]);
+              }
 
               q[cell_id][0] += aa * vect_s[0];
               q[cell_id][1] += aa * vect_s[1];
@@ -816,12 +819,19 @@ _cs_rad_transfer_sol(int                        gg_id,
     /* For atmospheric radiation, albedo times the incident
      * direct solar radiation is given to the diffuse solar */
     cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
-    if (gg_id == 0
+    if (gg_id == rt_params->atmo_dr_id
         && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        f_qinspe->val[gg_id+1 + face_id * stride] =
+        f_qinspe->val[rt_params->atmo_df_id + face_id * stride] +=
           f_albedo->val[face_id] * f_qincid->val[face_id];
     }
+    if (gg_id == rt_params->atmo_dr_o3_id
+        && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        f_qinspe->val[rt_params->atmo_df_o3_id + face_id * stride] +=
+          f_albedo->val[face_id] * f_qincid->val[face_id];
+    }
+
   }
 
   /* Absorption and emission if not atmo */

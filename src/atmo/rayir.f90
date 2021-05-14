@@ -93,6 +93,7 @@ use atincl, only: kmx, sigc, irdu, iru, ird
 use ctincl, only: cp_a, cp_v
 use cstnum, only: epzero, pi
 use radiat
+use pointe, only: itypfb
 
 !===============================================================================
 
@@ -814,30 +815,44 @@ if (f_id.ge.0) then
 
   ! First count if solar is activated
   c_id = 0
-  ! Direct solar radiation incident
+  ! Direct solar radiation incident (for H2O band)
   if (iand(rad_atmo_model, 1).eq.1) then
     c_id = c_id + 1
   endif
 
-  ! Diffuse solar radiation incident
+  ! Direct solar radiation incident (for O3 band)
   if (iand(rad_atmo_model, 2).eq.2) then
     c_id = c_id + 1
   endif
 
-  ! Infra Red radiation incident
+  ! Diffuse solar radiation incident
   if (iand(rad_atmo_model, 4).eq.4) then
+    c_id = c_id + 1
+  endif
+
+  ! Diffuse solar radiation incident (for SUV O3 band)
+  if (iand(rad_atmo_model, 8).eq.8) then
+    c_id = c_id + 1
+  endif
+
+  ! Infra Red radiation incident
+  if (iand(rad_atmo_model, 16).eq.16) then
 
     c_id = c_id + 1
     do ifac = 1, nfabor
 
-      ! Interpolate at zent
-      zent = cdgfbo(3, ifac)
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
 
-      call intprz &
+        call intprz &
           (kmray, zqq,                                               &
           dfir, zent, iz1, iz2, var )
 
-      bpro_rad_inc(c_id, ifac) = pi * var
+        bpro_rad_inc(c_id, ifac) = pi * var
+      endif
     enddo
 
     ! Store the (downward and upward) absorption coefficient of the 1D model
@@ -850,13 +865,13 @@ if (f_id.ge.0) then
         (kmray, zqq,                                               &
         ckdown, zent, iz1, iz2, var )
 
-      cpro_ck_down(c_id, iel) = var! FIXME factor 3/5 ?
+      cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
 
       call intprz &
         (kmray, zqq,                                               &
         ckup, zent, iz1, iz2, var )
 
-      cpro_ck_up(c_id, iel) = var! FIXME factor 3/5 ?
+      cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
 
     enddo
 

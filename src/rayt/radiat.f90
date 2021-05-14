@@ -52,9 +52,11 @@ module radiat
   integer(c_int), pointer, save :: nt_rad_prp
 
   !> Atmospheric radiation model:
-  !> - Direct Solar the first bit
-  !> - diFfuse Solar for the second bit
-  !> - InfraRed for the third bitPeriod of the radiation module.
+  !> - Direct Solar the first bit (H2O band)
+  !> - Direct Solar O3 band for the second bit
+  !> - diFfuse Solar for the third bit (SIR H2O band)
+  !> - diFfuse Solar O3 for the fourth bit (SUV O3 band)
+  !> - InfraRed for the fifth bitPeriod of the radiation module.
   integer(c_int), pointer, save :: rad_atmo_model
 
   !> \}

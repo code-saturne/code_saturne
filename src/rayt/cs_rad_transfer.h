@@ -109,9 +109,13 @@ enum {
 enum {
 
   CS_RAD_ATMO_3D_NONE = 0,
-  CS_RAD_ATMO_3D_DIRECT_SOLAR = 1 << 0,
-  CS_RAD_ATMO_3D_DIFFUSE_SOLAR = 1 << 1,
-  CS_RAD_ATMO_3D_INFRARED = 1 << 2
+  CS_RAD_ATMO_3D_DIRECT_SOLAR = 1 << 0,/* Solar IR band (SIR) absobed by H2O */
+  CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND = 1 << 1, /* UV-visible band (SUV)
+                                                  absobed by H2O */
+  CS_RAD_ATMO_3D_DIFFUSE_SOLAR = 1 << 2,/* Solar IR band (SIR) absobed by H2O */
+  CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND = 1 << 3, /* UV-visible band (SUV)
+                                                   absobed by H2O */
+  CS_RAD_ATMO_3D_INFRARED = 1 << 4
 
 };
 
@@ -163,8 +167,16 @@ typedef struct {
                                           id of the Direct Solar band
                                           or -1 if not activated
                                           (automatically computed) */
+  int           atmo_dr_o3_id;       /*!< Atmospheric radiation model:
+                                          id of the Direct Solar O3 band
+                                          or -1 if not activated
+                                          (automatically computed) */
   int           atmo_df_id;          /*!< Atmospheric radiation model:
                                           id of the Diffuse Solar band
+                                          or -1 if not activated
+                                          (automatically computed) */
+  int           atmo_df_o3_id;       /*!< Atmospheric radiation model:
+                                          id of the Diffuse Solar O3 band (SUV)
                                           or -1 if not activated
                                           (automatically computed) */
   int           atmo_ir_id;          /*!< Atmospheric radiation model:

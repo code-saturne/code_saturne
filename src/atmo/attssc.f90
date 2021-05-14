@@ -67,7 +67,7 @@ double precision crvexp(ncelet)
 ! Local variables
 
 character(len=80) :: chaine
-integer          ivar,  iel
+integer          ivar,  iel, f_id
 
 double precision pp, dum
 
@@ -106,7 +106,7 @@ if (imeteo.ge.2) then
 endif
 
 !===============================================================================
-! 2. Taking into account radiative forcing for the 1d radiative module
+! 2. Taking into account radiative forcing for the 1D radiative module
 !    (if the 3D module is not activated)
 !===============================================================================
 
@@ -135,8 +135,10 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
 
     ! Store radiative fluxes for droplet nucleation model
     ! for humid atmosphere
-    if (ippmod(iatmos).eq.2.and.modsedi.eq.1.and.modnuc.gt.0) then
-      call field_get_val_s_by_name('radiative_cooling', cpro_rad_cool)
+    call field_get_id_try('radiative_cooling', f_id)
+    if (f_id.ge.0) then
+      call field_get_val_s(f_id, cpro_rad_cool)
+
       do iel = 1, ncel
         cpro_rad_cool(iel) = (ray3Dst(iel)-ray3Di(iel) )
       enddo

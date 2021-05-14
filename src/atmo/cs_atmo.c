@@ -3036,6 +3036,12 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     =   1.000110 + 0.034221*cos(t00) + 0.001280*sin(t00)
       + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
   *fo *= corfo;
+
+  /* Correction for very low zenithal angle */
+  cs_real_t rr1 = 0.1255e-2;
+  if (*muzero > 0)
+    *muzero = rr1/(sqrt( *muzero * *muzero + rr1*(rr1 + 2.0)) - *muzero);
+
 }
 
 /*----------------------------------------------------------------------------*/

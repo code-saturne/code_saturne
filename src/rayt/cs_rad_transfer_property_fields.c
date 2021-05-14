@@ -245,23 +245,44 @@ cs_rad_transfer_prp(void)
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
     }
 
+    // TODO LEA HERE for O3 and H20
     /* Add a band for Direct Solar, diFUse solar and InfraRed
+     * and for solir: make the distinction between UV-visible (absorbed by O3)
+     * and Solar IR (SIR) absobed by H2O
      * if activated */
     if (rt_params->atmo_model
         != CS_RAD_ATMO_3D_NONE)
       rt_params->nwsgg = 0;
 
-    /* Fields for atmospheric Direct Solar (DR) model */
+    /* Fields for atmospheric Direct Solar (DR) model
+     * (SIR only if SUV is not activated) */
     if (rt_params->atmo_model
         & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
       rt_params->atmo_dr_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
 
-    /* Fields for atmospheric diFfuse Solar (DF) model */
+    /* Fields for atmospheric Direct Solar (DR) model
+     * (SUV band) */
+    if (rt_params->atmo_model
+        & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
+      rt_params->atmo_dr_o3_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric diFfuse Solar (DF) model
+     * (SIR only if SUV is activated) */
     if (rt_params->atmo_model
         & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       rt_params->atmo_df_id = rt_params->nwsgg;
+      rt_params->nwsgg++;
+    }
+
+    /* Fields for atmospheric diFfuse Solar (DF) model
+     * (SUV band) */
+    if (rt_params->atmo_model
+        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
+      rt_params->atmo_df_o3_id = rt_params->nwsgg;
       rt_params->nwsgg++;
     }
 

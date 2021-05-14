@@ -93,7 +93,7 @@ if (ippmod(iatmos).eq.2) then
   endif
 
   ! Radiative cooling
-  if (modsedi.eq.1) then
+  if (modsedi.eq.1.or.iatra1.ge.1) then
     call add_property_field_1d('radiative_cooling', 'Radiative cooling', f_id)
   endif
   !> fractional nebulosity

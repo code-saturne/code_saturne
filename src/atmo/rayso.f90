@@ -172,6 +172,7 @@ use atincl, only: kmx, nbmett, sigc, squant, xlat, xlon, sold, &
                   aod_h2o_tot, aod_o3_tot
 use ctincl, only: cp_a, cp_v
 use cstnum, only: epzero, pi
+use pointe, only: itypfb
 use radiat
 
 !===============================================================================
@@ -192,7 +193,7 @@ double precision ncray(kmx)
 
 ! Local variables
 
-integer i,k,n,l,inua,k1p1,iaer,iaero_top
+integer i,k,n,l,k1p1,iaer,iaero_top,iaero_topr
 integer itop,ibase,itopp1,itopp2,ibasem1
 integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision muzero,fo,rr1,m,mbar,rabar,rabar2,rbar
@@ -211,6 +212,8 @@ double precision tauca(kmx+1,8)
 double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
 double precision cpvcpa
+double precision dzxstar, dzx, dy, dystar
+double precision ck_aero_h2o, ck_aero_o3, ck_cloud
 ! For postprecessing
 double precision soil_direct_flux , soil_global_flux
 double precision soil_direct_flux_h2o,  soil_global_flux_h2o
@@ -223,7 +226,8 @@ double precision, allocatable:: refs(:,:),tras(:,:),trats(:,:)
 double precision, allocatable:: refb(:,:),trab(:,:),upw(:,:)
 double precision, allocatable:: refbs(:,:),fabso3c(:,:),tra(:,:)
 double precision, allocatable:: dow(:,:),atln(:,:),absn(:,:)
-double precision, allocatable :: ckup(:), ckdown_r(:), ckdown_f(:)
+double precision, allocatable :: ckup_sir_f(:), ckdown_sir_r(:), ckdown_sir_f(:)
+double precision, allocatable :: ckup_suv_f(:), ckdown_suv_r(:), ckdown_suv_f(:)
 double precision, allocatable:: fnebmax(:),fneba(:)
 
 double precision, allocatable, dimension(:,:) :: dowd, trad, trard, ddfso3c
@@ -253,7 +257,7 @@ double precision beta2(12), beta3(12),beta4(12),copioc20(12)
 double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
-double precision corp, rov
+double precision corp, rov, cp_cloud
 
 ! data for pkn and kn distribution
 data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
@@ -293,7 +297,8 @@ allocate(dowd(kmx+1,8), trad(kmx+1,8), trard(kmx+1,8))
 allocate(dfsh2o(kmx+1), ufsh2o(kmx+1))
 allocate(dfso3(kmx+1), ufso3(kmx+1))
 allocate(dfs(kmx+1), ufs(kmx+1))
-allocate(ckup(kmx), ckdown_r(kmx), ckdown_f(kmx))
+allocate(ckup_sir_f(kmx), ckdown_sir_r(kmx), ckdown_sir_f(kmx))
+allocate(ckup_suv_f(kmx), ckdown_suv_r(kmx), ckdown_suv_f(kmx))
 
 allocate(dffsh2o(kmx+1), dffso3(kmx+1))
 allocate(ddfsh2o(kmx+1), ddfso3(kmx+1))
@@ -304,12 +309,11 @@ allocate(drfs(kmx+1), dffs(kmx+1), ddfs(kmx+1), dddsh2o(kmx+1), dddso3(kmx+1))
 
 cpvcpa = cp_v / cp_a
 
-inua = 0! TODO test 1 tout le temps
 iaer = 1 ! has aerosols, always, remove
 ibase = 0
 epsc=1.d-8
+
 do k = 1,kmray
-  if(qlray(k).gt.epsc) inua = 1
 
   ! TODO usefull ?
   if (qlray(k).lt.epsc) then
@@ -381,10 +385,13 @@ tln=0.d0
 
 ! id of the top of the aerosol layer
 iaero_top=0
+! remaining aerosol quantities above this level
+iaero_topr=0
 k1p1 = k1+1
 
 !initialisation Chuang calculations for  black carbon in droplets
 dm0=20.d0 !micrometres
+! Volume fraction of Black Carbon (module)
 nu0=1.d-8
 !Initialisation of data used for the calculation of SSA using Chuang 2002
 pioco3C=0.d0
@@ -405,16 +412,12 @@ enddo
 !  ---------
 
 qureel = float(squant)
+! Note: correction for very low zenith angles is taken into account
 call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, omega, fo)
 ! if muzero is negative, it is night and solar radiation is not
 ! computed
 
 if (muzero.gt.epzero) then
-
-  ! Correction for very low zenith angles
-
-  rr1 = 0.1255d-2
-  muzero = rr1/(sqrt(muzero**2 + rr1*(rr1 + 2.d0)) - muzero)
 
   ! Optical air mass
   ! cf. Kasten, F., Young, A.T., 1989. Revised optical air mass tables and approximation formula.
@@ -687,6 +690,14 @@ if (muzero.gt.epzero) then
     dfso3(i) = fnebmax(k1p1)*dfso3c(i,1)+ (1.d0-fnebmax(k1p1))*dfso3c(i,2)
     ddfso3(i) = fnebmax(k1p1)*ddfso3c(i,1)+ (1.d0-fnebmax(k1p1))*ddfso3c(i,2)
     ufso3(i) = fnebmax(k1p1)*ufso3c(i,1)+ (1.d0-fnebmax(k1p1))*ufso3c(i,2)
+    ! Calculation of absorption coefficient ckup and ckdown
+    ! useful for 3D simulation
+    dzx = m*drayuoz(zq)
+    dzxstar = -mbar*drayuoz(zq)
+
+    ckdown_suv_r(i)=-dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckdown_suv_f(i)= -dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
 
   enddo
 
@@ -787,27 +798,35 @@ if (muzero.gt.epzero) then
     !flux coming from the top
     fabso3(l)=fo*muzero*(0.647d0- raysoz(m*rayuoz(zray(itop))))*absn(l,n)
   enddo
+  ! If the is no cloud
+  if (itop .gt. 1) then
+    do i = k1, itop
+      ! addition of ozone absorption for heating in the layers when adding method is used
+      zqm1 = zqq(i)
+      zq = zqq(i+1)
+      if(i.eq.k1p1) zqm1 = zray(k1)
+      xm1 = m*rayuoz(zqm1)
+      x = m*rayuoz(zq)
+      zbas = zray(k1)
+      xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
+      xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
+      !taking into account ozone absorption in the layers with clouds or aerosols
+      fabso3(i) =fabso3(i)+ muzero*fo*(raysoz(xm1) - raysoz(x) + rbar                  &
+        *(raysoz(xstar) - raysoz(xstarm1)))
+      ! fluxes calculation taking into account ozone absorption
+      dfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dow(i+1,n)
+      ddfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dowd(i+1,n)
+      ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(i+1,n)
 
-  do i = k1, itop
-    ! addition of ozone absorption for heating in the layers when adding method is used
-    zqm1 = zqq(i)
-    zq = zqq(i+1)
-    if(i.eq.k1p1) zqm1 = zray(k1)
-    xm1 = m*rayuoz(zqm1)
-    x = m*rayuoz(zq)
-    zbas = zray(k1)
-    xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
-    xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
-    !taking into account ozone absorption in the layers with clouds or aerosols
-    fabso3(i) =fabso3(i)+ muzero*fo*(raysoz(xm1) - raysoz(x) + rbar                  &
-      *(raysoz(xstar) - raysoz(xstarm1)))
-    ! fluxes calculation taking into account ozone absorption
-    dfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dow(i+1,n)
-    ddfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dowd(i+1,n)
-    ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(i+1,n)
+      dzx = m*drayuoz(zq)
+      dzxstar = -mbar*drayuoz(zq)
+      ! calculation of absorption coefficient ckup and ckdown useful for 3D simulation
+      ckdown_suv_r(i)=-dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ckdown_suv_f(i)= -dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ckup_suv_f(i)=dzxaoz(xstar,dzxstar)/(0.647d0-rrbar-raysoz(xstar))
 
-  enddo
-
+    enddo
+  endif
   ! Calculation of upward flux above cloud or aerosol layers taking into account the upward flux transmitted by cloud or aerosol layers
   do i = itop+1, kmray
     zq = zray(i)
@@ -993,6 +1012,22 @@ if (muzero.gt.epzero) then
     dfsh2o(i) = fo*muzero*dfsh2o(i)
     ufsh2o(i) = fo*muzero*ufsh2o(i)
     ddfsh2o(i) = fo*muzero*ddfsh2o(i)
+
+    ym1 = m*(qqvtot - qqv(i))
+    if (i.eq.k1p1) ym1 = m*qqvtot
+    y = m*(qqvtot - qqv(i+1))!FIXME LUC: this value was used,
+    ystarm1 = m*qqvtot + 5.d0/3.d0*qqv(i)
+    if(i.eq.k1p1) ystarm1 = m*qqvtot
+    ystar = m*qqvtot + 5.d0/3.d0*qqv(i+1)! FIXME LUC, which level should be taken?
+
+    corp = (preray(i) / preray(k1))* preray(k1) / 101300.d0!FIXME /p0?
+    rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
+    dy = rov
+    dystar=(5.d0/3.d0)*rov
+    ! calculation of absorption coefficient ckup and ckdown useful for 3D calculations
+    ckdown_sir_r(i) = dzyama(ym1,dy)/(0.353d0-raysve(ym1)) !FIXME should be ym1 ?
+    ckup_sir_f(i) = dzyama(ystarm1,dystar)/(0.353d0-raysve(ystarm1))
+    ckdown_sir_f(i) = dzyama(ym1,dy)/(0.353d0-raysve(ym1))
   enddo
 
   ! 6. Calculation of solar fluxes For the whole spectrum
@@ -1027,18 +1062,63 @@ if (muzero.gt.epzero) then
   soil_direct_flux_o3=ddfso3(k1)
   soil_global_flux_o3=dfso3(k1)
 
+  ! Calculation of absorption coefficient ckup and ckdown useful
+  ! for 3D simulation
   ! For water vapor without clouds and aerosols downward is only direct,
   ! upward is only diffuse
+  cp_cloud=0.001d0 !FIXME LEA was ist das? is it a conversio factor?
+  ! SIR band
+  ! The other coefficients are calculated before
   do k = k1, kmray
-    y = m*(qqvtot - qqv(k))
-    ystar = m*qqvtot + 5.d0/3.d0*qqv(k)
-    corp = (preray(k) / preray(k1))* preray(k1) / 101300.d0!FIXME /p0?
-    rov = romray(k)*(qvray(k)*corp*sqrt(tkelvi/(temray(k) + tkelvi)))
-    ckup(k) = m*dzyama(ystar,rov)/(0.353d0-raysve(ystar))
-    ckdown_r(k) =m*dzyama(y,rov)/(0.353d0-raysve(y))
-    ckdown_f(k) = 0.d0
+
+    ! liquid water density in g/m3 in the layers
+    wh2ol = 1.d3*(romray(k)*qlray(k))
+    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0 !FIXME LUC was is das? 3.d0 is the radius TODO replace by re
+
+    ck_aero_h2o=m*tauah2o(k)/500.d0 ! FIXME LUC 500 is zaero? TODO replace by zaero
+
+    !SIR band
+    ckup_sir_f(k) = (ckup_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
+          (ckup_sir_f(k) +  ck_aero_h2o + ck_cloud)*(fneray(k))
+    ckdown_sir_r(k) = (ckdown_sir_r(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
+        (ckdown_sir_r(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
+    ckdown_sir_f(k) = (ckdown_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
+        (ckdown_sir_f(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
   enddo
 
+  ! Above cloud layer
+  do k = itop, kmray
+
+    wh2ol = 1.d3*(romray(k)*qlray(k))
+    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0
+
+    ck_aero_o3=m*tauao3(k)/500.d0 ! FIXME LEA 500 est l'epaisseur de la couche limite?
+
+    !SUV band
+    ckup_suv_f(k)= (ckup_suv_f(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
+         (ckup_suv_f(k)+ ck_aero_o3 -ck_cloud)*( fnebmax(k1p1))
+    ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
+         (ckdown_suv_f(k) + ck_cloud +ck_aero_o3 )*(fnebmax(k1p1))
+
+    ckdown_suv_r(k)=(ckdown_suv_r(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
+         (ckdown_suv_r(k) + ck_cloud +ck_aero_o3)*(fnebmax(k1p1))
+  enddo
+
+  do k = k1p1,itopp1
+    wh2ol = 1.d3*(romray(k)*qlray(k))
+    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0
+
+    ck_aero_o3=m*tauao3(k)/500.d0
+
+    !SUV band
+    ckup_suv_f(k)=(ckup_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
+      (ckup_suv_f(k)+ ck_aero_o3-ck_cloud)*(fneray(k))
+    ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
+         (ckdown_suv_f(k)+  ck_cloud +ck_aero_o3 )*(fneray(k))
+
+    ckdown_suv_r(k)=(ckdown_suv_r(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
+         (ckdown_suv_r(k)+  ck_cloud +ck_aero_o3)*(fneray(k))
+  enddo
 ! if muzero < 0, it is night
 else
 
@@ -1052,9 +1132,13 @@ else
     solu(k,ivertc) = 0.d0
     sold(k,ivertc) = 0.d0
 
-    ckup(k) = 0.d0
-    ckdown_r(k) = 0.d0
-    ckdown_f(k) = 0.d0
+    ckup_sir_f(k) = 0.d0
+    ckdown_sir_r(k) = 0.d0
+    ckdown_sir_f(k) = 0.d0
+    ckup_suv_f(k)=0.d0
+    ckdown_suv_r(k)=0.d0
+    ckdown_suv_f(k)=0.d0
+
   enddo
   fos = 0.d0
   soil_direct_flux = 0.d0
@@ -1064,8 +1148,6 @@ else
   soil_direct_flux_o3=0.0
   soil_global_flux_o3=0.0
 endif
-
-! TODO compute it
 
 ! Compute Boundary conditions for the 3D (Director diFfuse) Solar radiance
 ! at the top of the CFD domain
@@ -1079,26 +1161,72 @@ if (f_id.ge.0) then
   call field_get_val_v_by_name("rad_absorption_coeff_down", cpro_ck_down)
 
   c_id = 0
-  ! Direct Solar (denoted by _r)
+  ! Direct Solar (denoted by _r) (for Solar IR band absobed by H20)
   if (iand(rad_atmo_model, 1).eq.1) then
 
     c_id = c_id + 1
 
     ! Store the incident radiation of the 1D model
     do ifac = 1, nfabor
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          ddfsh2o, zent, iz1, iz2, var )
+
+        ! TODO do not multiply and divide by cos(zenital) = muzero
+        if (muzero.gt.epzero) then
+          bpro_rad_inc(c_id, ifac) = var / muzero
+        else
+          bpro_rad_inc(c_id, ifac) = 0.d0
+        endif
+      endif
+    enddo
+
+    ! Store the (downward) absorption coefficient of the 1D model
+    do iel = 1, ncel
 
       ! Interpolate at zent
-      zent = cdgfbo(3, ifac)
+      zent = xyzcen(3, iel)
 
       call intprz &
-          (kmray, zqq,                                               &
-          drfs, zent, iz1, iz2, var )
+        (kmray, zqq,                                               &
+        ckdown_sir_r, zent, iz1, iz2, var )
 
-      ! TODO do not multiply and divide by cos(zenital) = muzero
-      if (muzero.gt.epzero) then
-        bpro_rad_inc(c_id, ifac) = pi * var / muzero
-      else
+      cpro_ck_down(c_id, iel) = var
+    enddo
+
+  endif
+
+  ! Direct Solar (denoted by _r) (for visble UV (SUV) band absobed by O3)
+  if (iand(rad_atmo_model, 2).eq.2) then
+
+    c_id = c_id + 1
+
+    ! Store the incident radiation of the 1D model
+    do ifac = 1, nfabor
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
         bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          ddfso3, zent, iz1, iz2, var )
+
+        ! TODO do not multiply and divide by cos(zenital) = muzero
+        if (muzero.gt.epzero) then
+          bpro_rad_inc(c_id, ifac) = var / muzero
+        else
+          bpro_rad_inc(c_id, ifac) = 0.d0
+        endif
       endif
     enddo
 
@@ -1110,27 +1238,75 @@ if (f_id.ge.0) then
 
       call intprz &
         (kmray, zqq,                                               &
-        ckdown_r, zent, iz1, iz2, var )
+        ckdown_suv_r, zent, iz1, iz2, var )
 
-      cpro_ck_down(c_id, iel) = var! FIXME factor 3/5 ?
+      cpro_ck_down(c_id, iel) = var
     enddo
 
   endif
 
-  ! Diffuse solar radiation incident
-  if (iand(rad_atmo_model, 2).eq.2) then
+  ! Diffuse solar radiation incident up and down (SIR band)
+  if (iand(rad_atmo_model, 4).eq.4) then
 
     c_id = c_id + 1
     do ifac = 1, nfabor
 
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          dddsh2o, zent, iz1, iz2, var )
+
+        bpro_rad_inc(c_id, ifac) = var
+      endif
+
+    enddo
+
+    ! Store the (downward and upward) absortion coefficient of the 1D model
+    do iel = 1, ncel
+
       ! Interpolate at zent
-      zent = cdgfbo(3, ifac)
+      zent = xyzcen(3, iel)
+
+      ! Note: it is zero
+      call intprz &
+        (kmray, zqq,                                               &
+        ckdown_sir_f, zent, iz1, iz2, var )
+
+      cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
 
       call intprz &
-          (kmray, zqq,                                               &
-          ddfs, zent, iz1, iz2, var )
+        (kmray, zqq,                                               &
+        ckup_sir_f, zent, iz1, iz2, var )
 
-      bpro_rad_inc(c_id, ifac) = pi * var
+      cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
+
+    enddo
+
+  endif
+
+  ! Diffuse solar radiation incident up and down (SUV - O3 band)
+  if (iand(rad_atmo_model, 8).eq.8) then
+
+    c_id = c_id + 1
+    do ifac = 1, nfabor
+
+      if(itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
+        bpro_rad_inc(c_id, ifac) = 0.d0
+      else
+        ! Interpolate at zent
+        zent = cdgfbo(3, ifac)
+
+        call intprz &
+          (kmray, zqq,                                               &
+          dddso3, zent, iz1, iz2, var )
+
+        bpro_rad_inc(c_id, ifac) = var
+      endif
 
     enddo
 
@@ -1142,19 +1318,20 @@ if (f_id.ge.0) then
 
       call intprz &
         (kmray, zqq,                                               &
-        ckdown_f, zent, iz1, iz2, var )
+        ckdown_suv_f, zent, iz1, iz2, var )
 
-      cpro_ck_down(c_id, iel) = var! FIXME factor 3/5 ?
+      cpro_ck_down(c_id, iel) = var * 3.d0 / 5.d0
 
       call intprz &
         (kmray, zqq,                                               &
-        ckup, zent, iz1, iz2, var )
+        ckup_suv_f, zent, iz1, iz2, var )
 
-      cpro_ck_up(c_id, iel) = var! FIXME factor 3/5 ?
+      cpro_ck_up(c_id, iel) = var * 3.d0 / 5.d0
 
     enddo
 
   endif
+
 endif
 
 deallocate(fabsh2o,fabso3,tauc)
@@ -1173,7 +1350,8 @@ deallocate(dfsh2o, ufsh2o, dfso3, ufso3, dfs, ufs)
 deallocate(dffsh2o, dffso3)
 deallocate(ddfsh2o, ddfso3)
 deallocate(drfs, dffs, ddfs, dddsh2o, dddso3)
-deallocate(ckup, ckdown_r, ckdown_f)
+deallocate(ckup_sir_f, ckdown_sir_r, ckdown_sir_f)
+deallocate(ckup_suv_f, ckdown_suv_r, ckdown_suv_f)
 
 return
 
@@ -1280,18 +1458,72 @@ contains
 
     ! Local
 
-    double precision :: raysoz
+    double precision :: raysoz, a, b, c, d, e, f, g, h
     double precision :: ao3vis, ao3uv
 
     !===========================================================================
 
-    ao3vis = 0.02118d0*x/(1.d0 + (0.042d0 + 0.000323d0*x)*x)
-    ao3uv =  1.082d0*x/(1.d0 + 138.6d0*x)**0.805d0                     &
-           + 0.0658d0*x/(1.d0 + (103.6d0*x)**3)
+    a = 0.02118d0
+    b = 0.042d0
+    c = 0.000323d0
+    d = 1.082d0
+    e = 138.6d0
+    f = 0.805d0
+    g = 0.0658d0
+    h = 103.6d0
+    ao3vis = a*x/(1.d0 + (b + c*x)*x)
+    ao3uv =  d*x/(1.d0 + e*x)**f                     &
+           + g*x/(1.d0 + (h*x)**3)
     raysoz = ao3vis + ao3uv
 
   end function raysoz
 
   !-----------------------------------------------------------------------------
+
+  !> \brief Aborption derivative-function of the solar radiation by ozone
+
+  !> \param[in]       x
+  !> \param[in]       dx
+
+  function dzxaoz(x, dx)
+
+    implicit none
+
+    ! Arguments
+
+    double precision, intent(in):: x, dx
+
+    double precision:: num,denum
+    double precision:: num1,denum1,num2,denum2,num3,denum3
+    double precision:: dzxaoz
+
+    num1=0.02118d0*(1.d0-0.000323d0*x**2.d0)
+    denum1=(1.d0+0.042d0*x+0.000323d0*x**2.d0)**2.d0
+    num2=0.0658d0*(1.d0-2.d0*(103.6d0*x)**3.d0)
+    denum2=(1.d0+(103.6d0*x)**3.d0)**2.d0
+    num3=1.082d0*((1.d0+138.6d0*x)**(0.805d0)-x*(0.805d0*138.6d0 &
+         *(1.d0+138.6d0*x)**(0.805d0-1.d0)))
+    denum3=(1.d0+138.6d0*x)**(2.d0*0.805d0)
+
+    dzxaoz= dx*(num1/denum1+num2/denum2+num3/denum3)
+
+  end function dzxaoz
+
+function drayuoz(zh)
+
+  implicit none
+  double precision, intent(in) :: zh  ! absolute altitude
+  double precision ::  drayuoz
+  double precision ::  a, b, c
+
+  a = 0.4d0
+  b = 20000.d0
+  c = 5000.d0
+
+  drayuoz = -a / c *(1.d0 + dexp(-b/c))              &
+             * dexp((zh-b)/c)                        &
+             / ((1.d0 + dexp((zh-b)/c))**(2.0d0))
+
+end function drayuoz
 
 end subroutine rayso
