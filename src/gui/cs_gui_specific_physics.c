@@ -560,13 +560,13 @@ _gui_atmo_get_set_meteo_profile(void)
   else if (is_large_scale_meteo && !is_meteo_file) {
     cs_glob_atmo_option->meteo_profile = 2;
     const char *str_latitude
-      = cs_tree_node_get_child_value_str(tn, "latitide");
+      = cs_tree_node_get_child_value_str(tn, "latitude");
     const char *str_longitude
       = cs_tree_node_get_child_value_str(tn, "longitude");
     const char *str_domain_orient
       = cs_tree_node_get_child_value_str(tn, "domain_orientation");
     const char *str_wind_dir
-      = cs_tree_node_get_child_value_str(tn, "wind_dir");
+      = cs_tree_node_get_child_value_str(tn, "wind_direction");
 
     const char *str_meteo_z0
       = cs_tree_node_get_child_value_str(tn, "meteo_z0");
