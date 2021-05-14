@@ -184,10 +184,11 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         """
         What to do when user clicks on 'OK'.
         """
-        if self.checkBoxReadAuxFile.isChecked():
-            self.result['restart_with_auxiliary'] = 'on'
-        else:
-            self.result['restart_with_auxiliary'] = 'off'
+        if self.default['restart']:
+            if self.checkBoxReadAuxFile.isChecked():
+                self.result['restart_with_auxiliary'] = 'on'
+            else:
+                self.result['restart_with_auxiliary'] = 'off'
 
         self.result['restart_rescue'] = self.nsuit
         self.result['period_rescue']  = self.freq
