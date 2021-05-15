@@ -400,7 +400,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
     if (cs_glob_atmo_option->meteo_profile == 0) {
       cs_atmo_profile_std(cell_cen[c_id][2], &pphy, &dum, &dum);
     }
-    else {
+    else if (cs_glob_atmo_option->meteo_profile == 1) {
       int nbmett = cs_glob_atmo_option->nbmett;
       int nbmetm = cs_glob_atmo_option->nbmetm;
       pphy = cs_intprf(nbmett,
@@ -410,6 +410,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
                        cs_glob_atmo_option->hyd_p_met,
                        cell_cen[c_id][2],
                        cs_glob_time_step->t_cur);
+    }
+    else {
+      pphy = cs_field_by_name("meteo_pressure")->val[c_id];
     }
 
     _etheq(pphy,
