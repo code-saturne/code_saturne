@@ -420,14 +420,18 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.groupBoxMassMolar.hide()
 
-        if mdl_atmo != "off":
-            self.labelInfoT0.hide()
+        isLargeScaleMeteoChecked = AtmosphericFlowsModel(self.case).getLargeScaleMeteoStatus() == 'on'
+        if mdl_atmo != "off" and isLargeScaleMeteoChecked:
+            self.groupBoxTemperature.setEnabled(False)
+            t = AtmosphericFlowsModel(self.case).getMeteoT0()
+            self.lineEditT0.setText(str(t))
+
         elif mdl_comp != "off" or mdl_coal != "off":
             m = self.mdl.getMassemol()
             self.lineEditMassMolar.setText(str(m))
             self.groupBoxMassMolar.setVisible(is_main_zone)
 
-        if mdl_thermal != "off" or mdl_gas == 'd3p':
+        elif mdl_thermal != "off" or mdl_gas == 'd3p':
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(str(t))
             if mdl_thermal == "temperature_celsius":
@@ -448,13 +452,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxTempd3p.hide()
 
         darc = GroundwaterModel(self.case).getGroundwaterModel()
-        isLargeScaleMeteoChecked = AtmosphericFlowsModel(self.case).getLargeScaleMeteoStatus() == 'on'
         if darc != 'off':
             self.groupBoxPressure.hide()
-        elif isLargeScaleMeteoChecked:
+        elif mdl_atmo != 'off' and isLargeScaleMeteoChecked:
             self.groupBoxPressure.setEnabled(False)
             p = AtmosphericFlowsModel(self.case).getMeteoPsea()
             self.lineEditP0.setText(str(p))
+            self.groupBoxPressure.setEnabled(False)
+
         else:
             p = self.mdl.getPressure()
             self.lineEditP0.setText(str(p))
@@ -485,6 +490,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.widgetVofRho.setVisible(is_main_zone)
             self.widgetRefMu.hide()
             self.widgetVofMu.setVisible(is_main_zone)
+        elif mdl_atmo != 'off' and isLargeScaleMeteoChecked:
+            self.widgetRefRho.hide()
+            self.widgetVofRho.hide()
+            self.widgetRefMu.setVisible(is_main_zone)
+            self.widgetVofMu.hide()
         else:
             self.widgetRefRho.setVisible(is_main_zone)
             self.widgetVofRho.hide()
