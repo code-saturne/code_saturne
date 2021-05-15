@@ -84,10 +84,8 @@
                                          <string/>
                                      </property>
                                      <property name="icon">
-                                         <iconset>
-                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                             :/new/prefix1/icons/22x22/edit-find-replace.png
-                                         </iconset>
+                                         <iconset resource="resources_pages.qrc">
+                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                                      </property>
                                      <property name="iconSize">
                                          <size>
