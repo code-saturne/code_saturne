@@ -51,6 +51,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
+from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
@@ -447,8 +448,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxTempd3p.hide()
 
         darc = GroundwaterModel(self.case).getGroundwaterModel()
+        isLargeScaleMeteoChecked = AtmosphericFlowsModel(self.case).getLargeScaleMeteoStatus() == 'on'
         if darc != 'off':
             self.groupBoxPressure.hide()
+        elif isLargeScaleMeteoChecked:
+            self.groupBoxPressure.setEnabled(False)
+            p = AtmosphericFlowsModel(self.case).getMeteoPsea()
+            self.lineEditP0.setText(str(p))
         else:
             p = self.mdl.getPressure()
             self.lineEditP0.setText(str(p))
