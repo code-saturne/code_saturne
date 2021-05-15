@@ -193,11 +193,12 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(int)
     def __slotComboBoxUrefOrDlmo(self, indCurrent):
-        tmpVar = self.lineEditUrefOrDlmo.text()
+        text = self.lineEditUstarOrDlmo.text()
+        val = from_qvariant(text, float)
         if indCurrent==0:
             self.labelDimRefVel.setText("m/s")
             self.comboBoxUstarOrdLMO.model().item(1).setEnabled(True)
-            self.__model.setMeteoUref(tmpVar)
+            self.__model.setMeteoUref(val)
             self.labelReferenceHeight.setEnabled(True)
             self.lineEditZref.setEnabled(True)
             self.labelDimZref.setEnabled(True)
@@ -205,25 +206,26 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.labelDimRefVel.setText("m<sup>-1</sup>")
             self.comboBoxUstarOrdLMO.SelectedIndex = 0;
             self.comboBoxUstarOrdLMO.model().item(1).setEnabled(False)
-            self.__model.setMeteoUref("-1.")
-            self.__model.setMeteoDlmo(tmpVar)
+            self.__model.setMeteoUref(-1.)
+            self.__model.setMeteoDlmo(val)
             self.labelReferenceHeight.setEnabled(False)
             self.lineEditZref.setEnabled(False)
             self.labelDimZref.setEnabled(False)
 
     @pyqtSlot(int)
     def __slotComboBoxUstarOrDlmo(self, indCurrent):
-        tmpVar = self.lineEditUstarOrDlmo.text()
+        text = self.lineEditUstarOrDlmo.text()
+        val = from_qvariant(text, float)
         if indCurrent==0:
             self.labelDimZRef.setText("m/s")
             self.comboBoxUrefOrdLMO.model().item(1).setEnabled(True)
-            self.__model.setMeteoUstar(tmpVar)
+            self.__model.setMeteoUstar(val)
         elif indCurrent==1:
             self.labelDimZRef.setText("m<sup>-1</sup>")
             self.comboBoxUrefOrdLMO.SelectedIndex = 0;
             self.comboBoxUrefOrdLMO.model().item(1).setEnabled(False)
-            self.__model.setMeteoDlmo(tmpVar)
-            self.__model.setMeteoUstar("-1.")
+            self.__model.setMeteoDlmo(val)
+            self.__model.setMeteoUstar(-1.)
 
     @pyqtSlot(bool)
     def __slotGroupBoxLargeScaleMeteo(self, checked):
@@ -233,11 +235,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         status = 'off'
         if checked:
             status = 'on'
+            self.__slotGroupBoxMeteoData(False)
 
         self.groupBoxLargeScaleMeteo.setChecked(checked)
         self.__model.setLargeScaleMeteoStatus(status)
-        if checked:
-            self.__slotGroupBoxMeteoData(False)
 
     @pyqtSlot(bool)
     def __slotApplyLargeScaleMeteo(self, checked):
@@ -247,11 +248,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         status = 'off'
         if checked:
             status = 'on'
+            self.__slotGroupBoxMeteoData(False)
 
         self.groupBoxLargeScaleMeteo.setChecked(checked)
         self.__model.setLargeScaleMeteoStatus(status)
-        if checked:
-            self.__slotGroupBoxMeteoData(False)
 
     @pyqtSlot(str)
     def slotLongitude(self, text):
@@ -299,10 +299,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             val = from_qvariant(text, float)
             if self.comboBoxUstarOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUstar(val)
-                self.__model.setMeteoDlmo("0.0")
+                self.__model.setMeteoDlmo(0.)
             elif self.comboBoxUstarOrdLMO.currentIndex() == 1:
                 self.__model.setMeteoDlmo(val)
-                self.__model.setMeteoUstar("-1.")
+                self.__model.setMeteoUstar(-1.)
 
     @pyqtSlot(str)
     def slotMeteoUrefOrDlmo(self, text):
@@ -310,10 +310,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             val = from_qvariant(text, float)
             if self.comboBoxUrefOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUref(val)
-                self.__model.setMeteoDlmo("0.0")
+                self.__model.setMeteoDlmo(0.)
             elif self.comboBoxUrefOrdLMO.currentIndex() == 1:
                 self.__model.setMeteoDlmo(val)
-                self.__model.setMeteoUref("-1.")
+                self.__model.setMeteoUref(-1.)
 
     #--------------- Functions for the groupBox Activate Chemistry--------------
     @pyqtSlot(bool)
