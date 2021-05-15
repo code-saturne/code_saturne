@@ -157,7 +157,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exp = self.getSpeciesFormula(zone, species)
         if not exp:
             exp = """S = 0;\ndS = 0;\n"""
-        req = [('S', 'Explcit species source term ([species]*kg/m^3/s)'),
+        req = [('S', 'Explicit species source term ([species]*kg/m^3/s)'),
                 ('dS', 'Species source term derivative (kg/m^3/s)')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
@@ -165,13 +165,19 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('t', 'current time'),
                ('volume', 'Source terms zone volume'),
                ('fluid_volume', 'Source terms zone fluid volume')]
+
+        sym.append( ("rho", 'local density (kg/m^3)'))
+
         name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        # Known fields
+        knf = [(str(name), str(name)), ('rho', 'density')]
+
+        return exp, req, sym, knf
 
 
     @Variables.undoGlobal
@@ -231,8 +237,10 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        # Known fields
+        knf = [(str(name), str(name))]
 
+        return exp, req, sym, knf
 
     @Variables.undoGlobal
     def setGroundWaterSpeciesFormula(self, zone, species, formula):
@@ -324,6 +332,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exp = self.getThermalFormula(zone, scalar)
         if not exp:
             exp = self.getDefaultThermalFormula(scalar)
+
         req = [('S', 'Explicit thermal source term (W/m^3)'),
                ('dS', 'Thermal source term derivative (W/m^3/[thermal scalar])')]
         sym = [('x', 'cell center coordinate'),
@@ -334,21 +343,28 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('fluid_volume', 'Source terms zone fluid volume'),
                ('rho', 'density (kg/m^3)')]
 
+        name = 'temperature'
         if self.case.module_name() == 'code_saturne':
             if self.therm.getThermalScalarModel() == 'enthalpy':
+                name = 'enthalpy'
                 sym.append(('enthalpy', 'thermal scalar'))
             if self.therm.getThermalScalarModel() == 'total_energy':
+                name = 'total_energy'
                 sym.append(('total_energy', 'thermal scalar'))
             else:
                 sym.append(('temperature', 'thermal scalar'))
 
         elif self.case.module_name() == 'neptune_cfd':
+            name = 'enthalpy'
             sym.append(('enthalpy', 'Enthalpy'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        # Known fields
+        knf = [(str(name), str(name)), ('rho', 'density')]
+
+        return exp, req, sym, knf
 
 
     @Variables.undoGlobal

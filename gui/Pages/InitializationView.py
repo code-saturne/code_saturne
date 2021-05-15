@@ -441,7 +441,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
 
         zone_id = str(self.zone.getCodeNumber())
-        exp, req, sym = self.init.getThermalFormulaComponents(zone_id)
+        exp, req, sym, knf = self.init.getThermalFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
@@ -450,6 +450,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 expression=exp,
                                 required=req,
                                 symbols=sym,
+                                known_fields=knf,
                                 examples=exa)
 
         if dialog.exec_():
@@ -465,7 +466,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         Input the initial formula of species
         """
         zone_id = str(self.zone.getCodeNumber())
-        exp, req, sym = self.init.getSpeciesFormulaComponents(zone_id, self.scalar)
+        exp, req, sym, knf = self.init.getSpeciesFormulaComponents(zone_id, self.scalar)
 
         name = DefineUserScalarsModel(self.case).getScalarName(self.scalar)
         exa = """#example: \n""" + str(name) + """ = 0;\n"""
@@ -477,6 +478,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 expression=exp,
                                 required=req,
                                 symbols=sym,
+                                known_fields=knf,
                                 examples=exa)
 
         if dialog.exec_():

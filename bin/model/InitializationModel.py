@@ -359,7 +359,10 @@ omega = k^0.5/almax;"""
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        # Known fields
+        knf = []
+
+        return exp, req, sym, knf
 
 
     @Variables.undoLocal
@@ -787,8 +790,10 @@ pressure = p0 + g * ro * z;\n"""
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        # Known fields
+        knf = [(str(name), str(name)), ('rho', 'density')]
 
+        return exp, req, sym, knf
 
     @Variables.undoLocal
     def setSpeciesFormula(self, zone, species, formula):

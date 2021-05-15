@@ -102,7 +102,9 @@ class MainFieldsSourceTermsModel(Model):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, sym
+        knf = self.getKnownFields(fieldId)
+
+        return exp, req, sym, knf
 
 
     @Variables.undoGlobal
