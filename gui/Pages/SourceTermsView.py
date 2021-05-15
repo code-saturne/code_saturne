@@ -291,10 +291,9 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotSpeciesFormula(self):
         """
         """
-        exa = """#example: """
+        exa = """#example:\nS = rho / volume;\ndS = 0.;"""
 
-        exp, req, sym = self.mdl.getSpeciesFormulaComponents(self.zone_id, self.scalar)
-        knf = [(self.scalar, self.scalar), ('rho', 'density')]
+        exp, req, sym, knf = self.mdl.getSpeciesFormulaComponents(self.zone_id, self.scalar)
 
         zone_name = self.zone.getLabel()
 
@@ -322,9 +321,8 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         """
         exa = """#example: """
 
-        exp, req, sym = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone_id,
-                                                                        self.scalar)
-        knf = [(self.scalar, self.scalar), ('rho', 'density')]
+        exp, req, sym, knf = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone_id,
+                                                                             self.scalar)
         zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent=self,
@@ -379,11 +377,8 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         """
         exa = """#example: """
 
-        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone_id,
-                                                             self.th_sca_name)
-        knf = [(self.th_sca_name, self.th_sca_name),
-               ('rho', 'density')]
-
+        exp, req, sym, knf = self.mdl.getThermalFormulaComponents(self.zone_id,
+                                                                  self.th_sca_name)
         zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent=self,

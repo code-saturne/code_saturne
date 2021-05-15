@@ -479,7 +479,7 @@ class meg_to_c_interpreter:
 
         ntabs += 1
 
-        # Parse the user expresion
+        # Parse the user expression
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
@@ -626,7 +626,7 @@ class meg_to_c_interpreter:
         if need_for_loop:
             ntabs += 1
 
-        # Parse the user expresion
+        # Parse the user expression
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
@@ -745,7 +745,7 @@ class meg_to_c_interpreter:
         for r in required:
             known_symbols.append(r)
 
-        # Parse the user expresion
+        # Parse the user expression
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
@@ -1755,19 +1755,15 @@ class meg_to_c_interpreter:
                         sca_list = DefineUserScalarsModel(self.case).getUserScalarNameList()
                         if gwm.getGroundwaterModel() == 'off':
                             for sca in sca_list:
-                                exp, req, sym = stm.getSpeciesFormulaComponents(z_id, sca)
-
-                                knf = [(sca, sca)]
+                                exp, req, sym, knf = stm.getSpeciesFormulaComponents(z_id, sca)
 
                                 self.init_block('src', zone_name, sca,
                                                 exp, req, sym, knf,
                                                 source_type="scalar_source_term")
                         else:
                             for sca in sca_list:
-                                exp, req, sym = \
+                                exp, req, sym, knf = \
                                 stm.getGroundWaterSpeciesFormulaComponents(z_id, sca)
-
-                                knf = [(sca, sca)]
 
                                 self.init_block('src', zone_name, sca,
                                                 exp, req, sym, knf,
@@ -1776,10 +1772,8 @@ class meg_to_c_interpreter:
                 if 'thermal_source_term' in nature_list:
                     if zone.getNature()['thermal_source_term'] == 'on':
                         th_sca_name = stm.therm.getThermalScalarName()
-                        exp, req, sym = stm.getThermalFormulaComponents(z_id,
-                                                                        th_sca_name)
-
-                        knf = [(th_sca_name, th_sca_name)]
+                        exp, req, sym, knf = stm.getThermalFormulaComponents(z_id,
+                                                                             th_sca_name)
 
                         self.init_block('src', zone_name, th_sca_name,
                                         exp, req, sym, knf,
@@ -1799,13 +1793,12 @@ class meg_to_c_interpreter:
                 if 'thermal_source_term' in nature_list:
                     if zone.getNature()['thermal_source_term'] == 'on':
                         for fId in stm.mfm.getFieldIdList():
-                            exp, req, sym = stm.getThermalFormulaComponents(z_id,
-                                                                            fId,
-                                                                            'enthalpy')
-                            known_fields = stm.getKnownFields(fId)
+                            exp, req, sym, knf = stm.getThermalFormulaComponents(z_id,
+                                                                                 fId,
+                                                                                 'enthalpy')
                             self.init_block('src', zone_name,
                                             'enthalpy_'+str(fId),
-                                            exp, req, sym, known_fields,
+                                            exp, req, sym, knf,
                                             source_type='thermal_source_term')
 
     #---------------------------------------------------------------------------
@@ -1846,9 +1839,9 @@ class meg_to_c_interpreter:
                     if node_t:
                         th_formula = im.getThermalFormula(z_id)
                         if th_formula:
-                            exp, req, sym = im.getThermalFormulaComponents(z_id)
+                            exp, req, sym, knf = im.getThermalFormulaComponents(z_id)
                             self.init_block('ini', zone_name, 'thermal',
-                                            exp, req, sym, [])
+                                            exp, req, sym, knf)
 
                     # HydraulicHead
                     if im.node_veloce.xmlGetNode('variable', name = 'hydraulic_head'):
@@ -1886,9 +1879,9 @@ class meg_to_c_interpreter:
                     usm = DefineUserScalarsModel(self.case)
                     for scalar in usm.getUserScalarNameList():
                         if im.getSpeciesFormula(z_id, scalar):
-                            exp, req, sym = im.getSpeciesFormulaComponents(z_id, scalar)
+                            exp, req, sym, knf = im.getSpeciesFormulaComponents(z_id, scalar)
                             self.init_block('ini', zone_name, scalar,
-                                            exp, req, sym, [])
+                                            exp, req, sym, knf)
 
                     # Meteo
                     node_atmo = im.models.xmlGetNode('atmospheric_flows')

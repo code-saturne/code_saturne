@@ -147,14 +147,12 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         """
         exa = """#example: """
 
-        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone_id,
-                                                             self.currentId,
-                                                             self.th_sca_name)
+        exp, req, sym, knf = self.mdl.getThermalFormulaComponents(self.zone_id,
+                                                                  self.currentId,
+                                                                  self.th_sca_name)
 
         name = 'enthalpy_%s' % (str(self.currentId))
         zone_name = self.zone.getLabel()
-
-        knf = self.mdl.getKnownFields(self.currentId)
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'src',
