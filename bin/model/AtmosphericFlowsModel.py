@@ -89,6 +89,7 @@ class AtmosphericFlowsModel(Model):
         self.__default['wind_direction'] = 0
         self.__default['meteo_z0'] = 0.1
         self.__default['meteo_psea'] = 101325.0
+        self.__default['meteo_t0'] = 284.15
         self.__default['meteo_angle'] = 0.
         self.__default['meteo_dlmo'] = 0.
         self.__default['meteo_zref'] = 10.
@@ -214,17 +215,11 @@ class AtmosphericFlowsModel(Model):
         return f
     @Variables.undoLocal
     def setMeteoZ0(self, tag):
-        """
-        Set the name of the meteo data file.
-        """
         self.__node_atmos.xmlSetData('meteo_z0', tag)
 
     #-------------------------------------------------------------------------
     @Variables.noUndo
     def getMeteoPsea(self):
-        """
-        Return the name of the meteo data file.
-        """
         f = self.__node_atmos.xmlGetDouble('meteo_psea')
         if f == None:
             f = self.__default['meteo_psea']
@@ -236,10 +231,19 @@ class AtmosphericFlowsModel(Model):
 
     #-------------------------------------------------------------------------
     @Variables.noUndo
+    def getMeteoT0(self):
+        f = self.__node_atmos.xmlGetDouble('meteo_t0')
+        if f == None:
+            f = self.__default['meteo_t0']
+            self.setMeteoT0(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoT0(self, tag):
+        self.__node_atmos.xmlSetData('meteo_t0', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
     def getWindDir(self):
-        """
-        Return the name of the meteo data file.
-        """
         f = self.__node_atmos.xmlGetInt('wind_direction')
         if f == None:
             f = self.__default['wind_direction']
@@ -252,9 +256,6 @@ class AtmosphericFlowsModel(Model):
     #-------------------------------------------------------------------------
     @Variables.noUndo
     def getMeteoUref(self):
-        """
-        Return the name of the meteo data file.
-        """
         f = self.__node_atmos.xmlGetDouble('meteo_uref')
         if f == None:
             f = self.__default['meteo_uref']
@@ -262,17 +263,11 @@ class AtmosphericFlowsModel(Model):
         return f
     @Variables.undoLocal
     def setMeteoUref(self, tag):
-        """
-        Set the name of the meteo data file.
-        """
         self.__node_atmos.xmlSetData('meteo_uref', tag)
 
     #-------------------------------------------------------------------------
     @Variables.noUndo
     def getMeteoUstar(self):
-        """
-        Return the value of the friction velocity.
-        """
         f = self.__node_atmos.xmlGetDouble('meteo_ustar')
         if f == None:
             f = self.__default['meteo_ustar']
@@ -280,17 +275,11 @@ class AtmosphericFlowsModel(Model):
         return f
     @Variables.undoLocal
     def setMeteoUstar(self, tag):
-        """
-        Set the friction velocity.
-        """
         self.__node_atmos.xmlSetData('meteo_ustar', tag)
 
     #-------------------------------------------------------------------------
     @Variables.noUndo
     def getMeteoDlmo(self):
-        """
-        Return the name of the meteo data file.
-        """
         f = self.__node_atmos.xmlGetDouble('meteo_dlmo')
         if f == None:
             f = self.__default['meteo_dlmo']
@@ -303,9 +292,6 @@ class AtmosphericFlowsModel(Model):
     #-------------------------------------------------------------------------
     @Variables.noUndo
     def getMeteoZref(self):
-        """
-        Return the name of the meteo data file.
-        """
         f = self.__node_atmos.xmlGetDouble('meteo_zref')
         if f == None:
             f = self.__default['meteo_zref']
@@ -313,9 +299,6 @@ class AtmosphericFlowsModel(Model):
         return f
     @Variables.undoLocal
     def setMeteoZref(self, tag):
-        """
-        Set the name of the meteo data file.
-        """
         self.__node_atmos.xmlSetData('meteo_zref', tag)
 
 

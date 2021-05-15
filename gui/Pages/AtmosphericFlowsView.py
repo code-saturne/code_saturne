@@ -101,6 +101,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.dateTimeEdit.dateTimeChanged[QDateTime].connect(self.__slotDateTime)
         self.lineEditLargeScaleRoughness.textChanged[str].connect(self.slotMeteoZ0)
         self.lineEditPressureSeaLevel.textChanged[str].connect(self.slotMeteoPsea)
+        self.lineEditTemperatureSeaLevel.textChanged[str].connect(self.slotMeteoT0)
         self.spinBoxWindDir.valueChanged[int].connect(self.slotWindDir)
         self.lineEditUstarOrDlmo.textChanged[str].connect(self.slotMeteoUstarOrDlmo)
         self.lineEditUrefOrDlmo.textChanged[str].connect(self.slotMeteoUrefOrDlmo)
@@ -118,6 +119,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         validatorZ0 = DoubleValidator(self.lineEditLargeScaleRoughness)
         validatorPsea = DoubleValidator(self.lineEditPressureSeaLevel)
+        validatorT0 = DoubleValidator(self.lineEditTemperatureSeaLevel)
 
         validatorZref = DoubleValidator(self.lineEditZref)
         validatorUstarOrDlmo = DoubleValidator(self.lineEditUstarOrDlmo)
@@ -128,6 +130,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         self.lineEditLargeScaleRoughness.setValidator(validatorZ0)
         self.lineEditPressureSeaLevel.setValidator(validatorPsea)
+        self.lineEditTemperatureSeaLevel.setValidator(validatorT0)
 
         self.lineEditZref.setValidator(validatorZref)
         self.lineEditUstarOrDlmo.setValidator(validatorUstarOrDlmo)
@@ -147,6 +150,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         tmpVar = model.getMeteoPsea();
         self.lineEditPressureSeaLevel.setText(str(tmpVar))
+
+        tmpVar = model.getMeteoT0();
+        self.lineEditTemperatureSeaLevel.setText(str(tmpVar))
 
         tmpVar = model.getMeteoZref();
         self.lineEditZref.setText(str(tmpVar))
@@ -281,6 +287,12 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if self.lineEditPressureSeaLevel.validator().state == QValidator.Acceptable:
             val = from_qvariant(text, float)
             self.__model.setMeteoPsea(val)
+
+    @pyqtSlot(str)
+    def slotMeteoT0(self, text):
+        if self.lineEditTemperatureSeaLevel.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setMeteoT0(val)
 
     @pyqtSlot(int)
     def slotWindDir(self, text):

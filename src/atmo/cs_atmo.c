@@ -794,6 +794,7 @@ cs_atmo_init_meteo_profiles(void)
   /* Reference fluid properties set from meteo values */
   phys_pro->p0 = aopt->meteo_psea;
   phys_pro->t0 = aopt->meteo_t0; /* ref temp T0 */
+  phys_pro->ro0 = phys_pro->p0/(rair * aopt->meteo_t0); /* ref density T0 */
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
