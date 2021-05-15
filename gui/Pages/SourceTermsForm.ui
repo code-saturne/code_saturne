@@ -90,12 +90,15 @@
                                              </property>
                                              <property name="icon">
                                                  <iconset resource="resources_pages.qrc">
-                                                     <normaloff>
-                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
-                                                 </iconset>
+                                                     <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                                              </property>
-                                         </widget>
+                                             <property name="iconSize">
+                                               <size>
+                                                 <width>22</width>
+                                                 <height>22</height>
+                                               </size>
+                                             </property>
+                                           </widget>
                                      </item>
                                  </layout>
                              </item>
@@ -146,10 +149,13 @@
                                              </property>
                                              <property name="icon">
                                                  <iconset resource="resources_pages.qrc">
-                                                     <normaloff>
-                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
-                                                 </iconset>
+                                                     <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                                             </property>
+                                             <property name="iconSize">
+                                               <size>
+                                                 <width>22</width>
+                                                 <height>22</height>
+                                               </size>
                                              </property>
                                          </widget>
                                      </item>
@@ -224,10 +230,13 @@
                                              </property>
                                              <property name="icon">
                                                  <iconset resource="resources_pages.qrc">
-                                                     <normaloff>
-                                                         :/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                                     :/new/prefix1/icons/22x22/edit-find-replace.png
-                                                 </iconset>
+                                                     <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                                             </property>
+                                             <property name="iconSize">
+                                                 <size>
+                                                     <width>22</width>
+                                                     <height>22</height>
+                                                 </size>
                                              </property>
                                          </widget>
                                      </item>
@@ -296,10 +305,14 @@
                                      </property>
                                      <property name="icon">
                                          <iconset resource="resources_pages.qrc">
-                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                             :/new/prefix1/icons/22x22/edit-find-replace.png
-                                         </iconset>
-                                     </property>
+                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                                       </property>
+                                       <property name="iconSize">
+                                         <size>
+                                           <width>22</width>
+                                           <height>22</height>
+                                         </size>
+                                       </property>
                                  </widget>
                              </item>
                          </layout>
@@ -372,9 +385,13 @@
                                      </property>
                                      <property name="icon">
                                          <iconset resource="resources_pages.qrc">
-                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                                             :/new/prefix1/icons/22x22/edit-find-replace.png
-                                         </iconset>
+                                             <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                                     </property>
+                                     <property name="iconSize">
+                                       <size>
+                                         <width>22</width>
+                                         <height>22</height>
+                                       </size>
                                      </property>
                                  </widget>
                              </item>
