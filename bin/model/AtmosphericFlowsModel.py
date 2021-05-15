@@ -83,17 +83,17 @@ class AtmosphericFlowsModel(Model):
         self.__default[self.large_scale_meteo] = AtmosphericFlowsModel.off
         self.__default[self.act_chemistry] = AtmosphericFlowsModel.off
         self.__default['meteo_data'] = "meteo"
-        self.__default['longitude'] = "45.44"
-        self.__default['latitude'] = "4.39"
-        self.__default['domain_orientation'] = "0"
-        self.__default['wind_direction'] = "0"
-        self.__default['meteo_z0'] = "0.1"
-        self.__default['meteo_psea'] = "101325.0"
-        self.__default['meteo_angle'] = "0."
-        self.__default['meteo_dlmo'] = "0."
-        self.__default['meteo_zref'] = "10."
-        self.__default['meteo_uref'] = "5."
-        self.__default['meteo_ustar'] = "-1."
+        self.__default['longitude'] = 45.44
+        self.__default['latitude'] = 4.39
+        self.__default['domain_orientation'] = 0
+        self.__default['wind_direction'] = 0
+        self.__default['meteo_z0'] = 0.1
+        self.__default['meteo_psea'] = 101325.0
+        self.__default['meteo_angle'] = 0.
+        self.__default['meteo_dlmo'] = 0.
+        self.__default['meteo_zref'] = 10.
+        self.__default['meteo_uref'] = 5.
+        self.__default['meteo_ustar'] = -1.
 
     @Variables.undoLocal
     def setAtmosphericFlowsModel(self, model):
