@@ -4292,7 +4292,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
                           (const cs_lnum_t  *)(mesh->i_face_cells));
 
   cs_lnum_t l_s = 0, l_e = 0;
-  bool   boot = false;
+  bool boot = false, over_constrained = false;
 
   if (_cells_adjacent_to_halo_last) {
 
@@ -4380,13 +4380,14 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
         nn_min = nn;
       }
     }
-    assert(id_min < mesh->n_cells);
 
-    cell_class[id_min] = 2;
-    keys[l_e*3  ] = a->idx[id_min+1]- a->idx[id_min];
-    keys[l_e*3+1] = id_min;
-    keys[l_e*3+2] = id_min;
-    l_e += 1;
+    if (id_min < mesh->n_cells) {
+      cell_class[id_min] = 2;
+      keys[l_e*3  ] = a->idx[id_min+1]- a->idx[id_min];
+      keys[l_e*3+1] = id_min;
+      keys[l_e*3+2] = id_min;
+      l_e += 1;
+    }
 
   }
 
@@ -4429,7 +4430,10 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
           nn_min = nn;
         }
       }
-      assert(id_min < mesh->n_cells);
+      if (id_min >= mesh->n_cells) { /* no cell with class 0 */
+        over_constrained = true;
+        break;
+      }
       cell_class[id_min] = level;
       keys[l_e*3  ] = a->idx[id_min+1]- a->idx[id_min];
       keys[l_e*3+1] = id_min;
@@ -4470,17 +4474,22 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
 #if defined(DEBUG) && !defined(NDEBUG)
   for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     new_to_old[i] = -1;
-
 #endif
 
-  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
-    new_to_old[mesh->n_cells - 1 - i] = rl[i];
+  if (over_constrained == false) {
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      new_to_old[mesh->n_cells - 1 - i] = rl[i];
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
-    assert(new_to_old[i] != -1);
-  }
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      assert(new_to_old[i] != -1);
+    }
 #endif
+  }
+  else { /* if overconstrained, do not renumber */
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      new_to_old[i] = i;
+  }
 
   BFT_FREE(rl);
 }
