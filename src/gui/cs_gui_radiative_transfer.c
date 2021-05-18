@@ -142,7 +142,7 @@ _radiative_transfer_char_post(cs_tree_node_t  *tn_rt,
   cs_gui_node_get_child_status_int(tn, "listing_printing", f_log);
   cs_gui_node_get_child_status_int(tn, "postprocessing_recording", f_post_vis);
 
-  if (*f_post_vis == -1) /* align with defaults in GUI */
+  if (tn != NULL && *f_post_vis == -1) /* align with defaults in GUI */
     *f_post_vis = 1;
 
   return label;
