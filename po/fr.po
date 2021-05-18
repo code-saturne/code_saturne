@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2020-12-22 04:02+0100\n"
+"POT-Creation-Date: 2021-05-18 17:08+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10975,14 +10975,15 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "\n"
 "File \"%s\"\n"
 "does not seem to contain a Catalyst Python pipeline.\n"
 msgstr ""
-"Le fichier \"%s\" ne semble pas être un fichier\n"
-"case EnSight 6 ou Gold valide"
+"\n"
+"Le fichier \"%s\"\n"
+"ne semble pas contenir un pipeline Python Catalyst.\n"
 
 #, c-format
 msgid ""
@@ -10995,11 +10996,9 @@ msgid ""
 "to earlier V1 pipelines.\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error initializing pipeline from \"%s\""
-msgstr ""
-"Erreur à l'initialisation du pipeline depuis \"%s\" :\n"
-"\n"
+msgstr "Erreur à l'initialisation du pipeline depuis \"%s\"."
 
 msgid "All Catalyst writers must use the same MPI communicator"
 msgstr ""
@@ -12139,8 +12138,13 @@ msgstr ""
 #, c-format
 msgid ""
 "Lagrangian %s zone %d, set %d:\n"
-"  specific heat capacity (%g) is negative\n"
-"  or temperature (%g) is lower than %g."
+"  specific heat capacity (%g) is negative."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian %s zone %d, set %d:\n"
+"  temperature (%g) is lower than %g."
 msgstr ""
 
 #, c-format
