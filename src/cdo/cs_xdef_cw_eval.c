@@ -990,11 +990,11 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
     /* Loop on face edges */
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  e = cm->f2e_ids[i];
       const double  _flx = 0.5 * cm->tef[i] * _dp3(flux, cm->face[f].unitv);
+      const short int  ee = 2*cm->f2e_ids[i];
 
-      eval[cm->e2v_ids[2*e  ]] += _flx;
-      eval[cm->e2v_ids[2*e+1]] += _flx;
+      eval[cm->e2v_ids[ee  ]] += _flx;
+      eval[cm->e2v_ids[ee+1]] += _flx;
 
     }
 
