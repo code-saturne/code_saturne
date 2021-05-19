@@ -1697,19 +1697,19 @@ cs_quant_set_edge_nvec(cs_lnum_t                    e_id,
 /*!
  * \brief  Get the two normalized vector associated to a dual edge
  *
- * \param[in]  f_shift    position in c2f_idx
- * \param[in]  cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  shift    position in c2f_idx
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return  a pointer to the dual edge normalized vector
  */
 /*----------------------------------------------------------------------------*/
 
 cs_nvec3_t
-cs_quant_set_dedge_nvec(cs_lnum_t                     f_shift,
+cs_quant_set_dedge_nvec(cs_lnum_t                     shift,
                         const cs_cdo_quantities_t    *cdoq)
 {
   cs_nvec3_t  nv;
-  cs_nvec3(cdoq->dedge_vector + 3*f_shift, &nv);
+  cs_nvec3(cdoq->dedge_vector + 3*shift, &nv);
 
   return nv;
 }

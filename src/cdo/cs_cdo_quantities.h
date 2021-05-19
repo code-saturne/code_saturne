@@ -149,29 +149,39 @@ typedef struct { /* Specific mesh quantities */
   /* ===================== */
 
   cs_lnum_t         n_faces;        /* n_i_faces + n_b_faces */
+  cs_lnum_t         n_i_faces;      /* Local number of interior faces */
+  cs_lnum_t         n_b_faces;      /* Local number of border faces */
   cs_gnum_t         n_g_faces;      /* Global number of faces */
 
-  /* cs_quant_t structure attached to a face (interior or border) can be built
-     on-the-fly: cs_quant_get(flag, f_id, quant). In order to reduce the memory
-     consumption one shares face quantities with the ones defined in the legacy
-     part and stored in the cs_mesh_quantities_t structure */
+  /* Remark: cs_quant_t structure attached to a face (interior or border) can
+     be built on-the-fly calling the function cs_quant_set_face(f_id, cdoq).
+     See \ref cs_quant_set_face for more details.
 
-  cs_lnum_t         n_i_faces;      /* Local number of interior faces */
+     In order to reduce the memory consumption one shares face quantities with
+     the ones defined in the legacy part and stored in the cs_mesh_quantities_t
+     structure that's why a distinction is made between interior and border
+     faces.
+
+     cs_nvec3_t structure associated to a face can also be built on-the-fly
+     using cs_quant_set_face_nvec(f_id, cdoq).
+     See \ref cs_quant_set_face_nvec for more details.
+  */
+
   const cs_real_t  *i_face_normal;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *i_face_center;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *i_face_surf;    /* Shared with cs_mesh_quantities_t */
 
-  cs_lnum_t         n_b_faces;      /* Local number of border faces */
   const cs_real_t  *b_face_normal;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *b_face_center;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *b_face_surf;    /* Shared with cs_mesh_quantities_t */
 
-  /* cs_nvec3_t structure attached to a dual edge can be built on-the-fly to
-     access to its length and its unit tangential vector. One
-     recalls that a dual edge is associated to a primal face and is shared with
-     two cells if the face lies inside the domain and shared with one cell if
-     the face lies on the domain boundary.
-     Scan this quantity with the c2f connectivity
+  /* Remark: cs_nvec3_t structure attached to a dual edge can be built
+     on-the-fly to access to its length and its unit tangential vector using
+     the function cs_quant_set_dedge_nvec(shift, cdoq)
+
+     One recalls that a dual edge is associated to a primal face and is shared
+     with two cells for an interior face and shared with one cell for a
+     boundary face.  Scan this quantity with the c2f connectivity.
   */
 
   cs_real_t        *dedge_vector;   /* Allocation to 3*c2f->idx[n_faces] */
@@ -562,15 +572,15 @@ cs_quant_set_edge_nvec(cs_lnum_t                    e_id,
 /*!
  * \brief  Get the two normalized vector associated to a dual edge
  *
- * \param[in]  f_shift    position in c2f_idx
- * \param[in]  cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  shift    position in c2f_idx
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return  a pointer to the dual edge normalized vector
  */
 /*----------------------------------------------------------------------------*/
 
 cs_nvec3_t
-cs_quant_set_dedge_nvec(cs_lnum_t                     f_shift,
+cs_quant_set_dedge_nvec(cs_lnum_t                     shift,
                         const cs_cdo_quantities_t    *cdoq);
 
 /*----------------------------------------------------------------------------*/

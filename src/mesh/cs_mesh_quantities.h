@@ -96,9 +96,9 @@ typedef struct {
                                     (L2 norm equals area of the face) */
   cs_real_t     *b_face_normal;  /* Surface normal of border faces.
                                     (L2 norm equals area of the face) */
-  cs_real_t     *i_f_face_normal;/* Fluid Surface normal of interior faces.
+  cs_real_t     *i_f_face_normal;/* Fluid surface normal of interior faces.
                                     (L2 norm equals area of the face) */
-  cs_real_t     *b_f_face_normal;/* Fluid Surface normal of border faces.
+  cs_real_t     *b_f_face_normal;/* Fluid surface normal of border faces.
                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
@@ -129,22 +129,22 @@ typedef struct {
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
 
-  cs_real_t      min_f_vol;        /* Minimum cell volume */
-  cs_real_t      max_f_vol;        /* Maximum cell volume */
-  cs_real_t      tot_f_vol;        /* Total volume */
+  cs_real_t      min_f_vol;      /* Minimum cell volume */
+  cs_real_t      max_f_vol;      /* Maximum cell volume */
+  cs_real_t      tot_f_vol;      /* Total volume */
 
-  cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix
-                                        linear gradient correction */
-  cs_real_33_t  *corr_grad_lin;    /* Geometrical matrix
-                                        linear gradient correction */
+  cs_real_t     *corr_grad_lin_det; /* Determinant of geometrical matrix
+                                       linear gradient correction */
+  cs_real_33_t  *corr_grad_lin;     /* Geometrical matrix
+                                       linear gradient correction */
 
-  int          *b_sym_flag;        /* Symmetry flag for boundary faces */
-  int           has_disable_flag;  /* Is the cell disabled?
-                                      0: unactivated
-                                      1: activated */
-  int          *c_disable_flag;    /* Is the cell disabled?
-                                      used for fluid solid and porous models */
-  unsigned     *bad_cell_flag;     /* Flag (mask) for bad cells detected */
+  int          *b_sym_flag;         /* Symmetry flag for boundary faces */
+  int           has_disable_flag;   /* Is the cell disabled?
+                                       0: unactivated
+                                       1: activated */
+  int          *c_disable_flag;     /* Is the cell disabled?
+                                       used for fluid solid and porous models */
+  unsigned     *bad_cell_flag;      /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;
 
