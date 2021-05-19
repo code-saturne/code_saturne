@@ -22,8 +22,9 @@ How to use code_saturne as a FMU
 Building a code_saturne FMU
 ---------------------------
 
-A FMU Builder tool has been developed allowing to use code_saturne as a FMU.
-Access to this tool should be requested to saturne-support@edf.fr
+A FMU Builder tool developed by Monentia and available at
+https://bitbucket.org/simulage/c-fmu-builder/wiki/Home
+can be used to generate an FMU based on code_saturne.
 
 The main steps are the following:
 * Open the FMU Builder;
