@@ -11782,8 +11782,7 @@ cs_diffusion_potential(const int                 f_id,
   }
 
   /*==========================================================================
-    3. Update mass flux with reconstruction technics if the mesh is non
-       orthogonal
+    3. Update mass flux with reconstruction if the mesh is non-orthogonal
     ==========================================================================*/
 
   if (nswrgp > 1) {
@@ -11817,7 +11816,7 @@ cs_diffusion_potential(const int                 f_id,
       }
     }
 
-    cs_real_t *_pvar = NULL;
+    cs_real_t *_pvar = pvar;
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
       BFT_MALLOC(_pvar, n_cells_ext, cs_real_t);
@@ -11826,8 +11825,6 @@ cs_diffusion_potential(const int                 f_id,
         _pvar[cell_id] = pvar[cell_id];
 
       cs_bad_cells_regularisation_scalar(_pvar);
-    } else {
-      _pvar = pvar;
     }
 
     cs_gradient_scalar_synced_input(var_name,
@@ -11851,7 +11848,7 @@ cs_diffusion_potential(const int                 f_id,
                                     NULL, /* internal coupling */
                                     grad);
 
-    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+    if (_pvar != pvar)
       BFT_FREE(_pvar);
 
     /* Handle parallelism and periodicity */
