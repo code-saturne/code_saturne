@@ -163,7 +163,7 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
     cs_have_melissa=yes
   elif test "x$cs_have_melissa_mpi_05" = "xyes"; then
     cs_have_melissa=yes
-    cs_have_melissa_no_mpi = yes
+    cs_have_melissa_no_mpi=yes
   fi
 
   if test "x$cs_have_melissa_no_mpi" = "xno"; then
