@@ -99,7 +99,9 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+#if defined(HAVE_PLUGIN_CATALYST)
 static void * _catalyst_plugin = NULL;
+#endif
 
 static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = NULL;
 
