@@ -689,7 +689,7 @@ cs_log_timer_array(cs_log_t                   log,
   /* Data lines */
 
   for (i = 0; i < n_lines; i++) {
-    double wtime = (time_count[i]).wall_nsec * 1.e-9;
+    double wtime = (time_count[i]).nsec * 1.e-9;
     if (line_titles != NULL)
       cs_log_strpad(tmp_s[0], _(line_titles[i]), title_width, 64);
     else

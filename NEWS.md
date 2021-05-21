@@ -26,6 +26,10 @@ Numerics:
   another solver to solve saddle-point problem arising from the monolithic
   coupling of CDO face-based schemes for the (Navier-)Stokes equations.
 
+Architectural changes:
+
+- Simplify handling of timers, focusing on wall-time.
+
 Release 7.0.0 (unreleased)
 --------------------------
 

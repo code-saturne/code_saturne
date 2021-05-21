@@ -958,7 +958,7 @@ cs_sles_log(cs_log_t  log_type)
       (log_type,
        _("\n"
          "Total elapsed time for linear equation system solvers:  %.3f s\n"),
-       _sles_t_tot.wall_nsec*1e-9);
+       _sles_t_tot.nsec*1e-9);
 
   const char *option_category[]
     = {N_("Linear solver options modified during run (previous values)"),

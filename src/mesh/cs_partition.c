@@ -1002,7 +1002,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("  precompute cell centers:    %.3g s\n"),
-                (double)(dt.wall_nsec)/1.e9);
+                (double)(dt.nsec)/1.e9);
 
   cell_io_num = fvm_io_num_create_from_sfc(cell_center,
                                            3,
@@ -1064,11 +1064,11 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   if (sfc_type < FVM_IO_NUM_SFC_HILBERT_BOX)
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  Morton (Z) curve:           %.3g s\n"),
-                  (double)(dt.wall_nsec)/1.e9);
+                  (double)(dt.nsec)/1.e9);
   else
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  Peano-Hilbert curve:        %.3g s\n"),
-                  (double)(dt.wall_nsec)/1.e9);
+                  (double)(dt.nsec)/1.e9);
 }
 
 #if defined(HAVE_MPI)
@@ -3200,7 +3200,7 @@ cs_partition(cs_mesh_t             *mesh,
 
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  preparing graph:            %.3g s\n"),
-                  (double)(dt.wall_nsec)/1.e9);
+                  (double)(dt.nsec)/1.e9);
 
 #if defined(HAVE_PARMETIS)
 
@@ -3327,7 +3327,7 @@ cs_partition(cs_mesh_t             *mesh,
 
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  preparing graph:            %.3g s\n"),
-                  (double)(dt.wall_nsec)/1.e9);
+                  (double)(dt.nsec)/1.e9);
 
 #if defined(HAVE_PTSCOTCH)
 
@@ -3508,12 +3508,12 @@ cs_partition(cs_mesh_t             *mesh,
 
   bft_printf(_("\n"
                " Partitioning finished (%.3g s)\n"),
-             (double)(dt.wall_nsec)/1.e9);
+             (double)(dt.nsec)/1.e9);
   bft_printf_flush();
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("  wall clock time:            %.3g s\n\n"),
-                (double)(dt.wall_nsec)/1.e9);
+                (double)(dt.nsec)/1.e9);
 
   cs_log_separator(CS_LOG_PERFORMANCE);
 }

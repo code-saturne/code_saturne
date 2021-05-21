@@ -1103,7 +1103,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Quantities> Runtime", time_count.wall_nsec*1e-9);
+                "<CDO/Quantities> Runtime", time_count.nsec*1e-9);
 
   return cdoq;
 }

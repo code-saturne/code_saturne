@@ -1536,7 +1536,7 @@ cs_benchmark_matrix(double                 t_measure,
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
                 "Elapsed timing time: %12.3f s.\n",
-                t_tune.wall_nsec*1e-9);
+                t_tune.nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -4649,14 +4649,14 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
          "  Update face connectivity:                     %.3g\n"
          "  Subdivide cells                               %.3g\n\n"
          "  Total:                                        %.3g\n"),
-       (double)(timers[1].wall_nsec*1.e-9),
-       (double)(timers[2].wall_nsec*1.e-9),
-       (double)(timers[3].wall_nsec*1.e-9),
-       (double)(timers[4].wall_nsec*1.e-9),
-       (double)(timers[5].wall_nsec*1.e-9),
-       (double)(timers[6].wall_nsec*1.e-9),
-       (double)(timers[7].wall_nsec*1.e-9),
-       (double)(timers[0].wall_nsec*1.e-9));
+       (double)(timers[1].nsec*1.e-9),
+       (double)(timers[2].nsec*1.e-9),
+       (double)(timers[3].nsec*1.e-9),
+       (double)(timers[4].nsec*1.e-9),
+       (double)(timers[5].nsec*1.e-9),
+       (double)(timers[6].nsec*1.e-9),
+       (double)(timers[7].nsec*1.e-9),
+       (double)(timers[0].nsec*1.e-9));
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
 

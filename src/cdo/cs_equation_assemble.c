@@ -1248,7 +1248,7 @@ cs_equation_assemble_finalize(void)
 {
   /* Display profiling/performance information */
   cs_log_printf(CS_LOG_PERFORMANCE, " <CDO/Assembly> structure: %5.3e\n",
-                cs_equation_ms_time.wall_nsec*1e-9);
+                cs_equation_ms_time.nsec*1e-9);
 
   /* Free common assemble buffers */
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */

@@ -1602,8 +1602,8 @@ cs_sles_amgx_log(const void  *context,
                     "  Total solution time:           %12.3f\n"),
                   m_type,
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->t_setup.wall_nsec*1e-9,
-                  c->t_solve.wall_nsec*1e-9);
+                  c->t_setup.nsec*1e-9,
+                  c->t_solve.nsec*1e-9);
 
   }
 }

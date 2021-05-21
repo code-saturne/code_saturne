@@ -903,7 +903,7 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 0;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -925,7 +925,7 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 1;
@@ -991,7 +991,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
         n_r_recv += 1;
     }
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 2;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -1021,7 +1021,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
         n_r_recv += 1;
     }
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 0;
@@ -1150,7 +1150,7 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
         n_r_recv += 1;
     }
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 2;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -1180,7 +1180,7 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
         n_r_recv += 1;
     }
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 0;
@@ -1773,7 +1773,7 @@ _hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 0;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -1806,7 +1806,7 @@ _hybrid_pex_exchange_meta(_hybrid_pex_t  *hc,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 1;
@@ -1922,7 +1922,7 @@ _hybrid_pex_exchange_s(cs_all_to_all_t  *d,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 2;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -1943,7 +1943,7 @@ _hybrid_pex_exchange_s(cs_all_to_all_t  *d,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 0;
@@ -2065,7 +2065,7 @@ _hybrid_pex_exchange_i(cs_all_to_all_t    *d,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t0.wall_sec*1e5 + t0.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t0.sec*1e5 + t0.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] = 0;
     _all_to_all_trace[_n_trace*9+2] = 2;
     _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -2086,7 +2086,7 @@ _hybrid_pex_exchange_i(cs_all_to_all_t    *d,
 
   if (_n_trace < _n_trace_max) {
     /* Time to 1-5 s */
-    _all_to_all_trace[_n_trace*9] = t1.wall_sec*1e5 + t1.wall_nsec/1e4;
+    _all_to_all_trace[_n_trace*9] = t1.sec*1e5 + t1.nsec/1e4;
     _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                       - _all_to_all_trace[(_n_trace-1)*9];
     _all_to_all_trace[_n_trace*9+2] = 0;
@@ -2695,7 +2695,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr0.sec*1e5 + tcr0.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] = 0;
           _all_to_all_trace[_n_trace*9+2] = 0;
           _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -2716,7 +2716,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr1.sec*1e5 + tcr1.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                             - _all_to_all_trace[(_n_trace-1)*9];
           _all_to_all_trace[_n_trace*9+2] = 1;
@@ -2914,7 +2914,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr0.sec*1e5 + tcr0.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] = 0;
           _all_to_all_trace[_n_trace*9+2] = 0;
           _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -2934,7 +2934,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
           cs_crystal_router_get_max_sizes(cr, max_sizes);
 
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr1.sec*1e5 + tcr1.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                             - _all_to_all_trace[(_n_trace-1)*9];
           _all_to_all_trace[_n_trace*9+2] = 1;
@@ -2978,7 +2978,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr0.sec*1e5 + tcr0.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] = 0;
           _all_to_all_trace[_n_trace*9+2] = 0;
           _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -2998,7 +2998,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
           cs_crystal_router_get_max_sizes(cr, max_sizes);
 
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr1.sec*1e5 + tcr1.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                             - _all_to_all_trace[(_n_trace-1)*9];
           _all_to_all_trace[_n_trace*9+2] = 1;
@@ -3292,7 +3292,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr0.sec*1e5 + tcr0.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] = 0;
           _all_to_all_trace[_n_trace*9+2] = 0;
           _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -3312,7 +3312,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
           cs_crystal_router_get_max_sizes(cr, max_sizes);
 
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr1.sec*1e5 + tcr1.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                             - _all_to_all_trace[(_n_trace-1)*9];
           _all_to_all_trace[_n_trace*9+2] = 1;
@@ -3353,7 +3353,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
 
         if (_n_trace < _n_trace_max) {
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr0.wall_sec*1e5 + tcr0.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr0.sec*1e5 + tcr0.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] = 0;
           _all_to_all_trace[_n_trace*9+2] = 0;
           _all_to_all_trace[_n_trace*9+3] = bft_mem_usage_pr_size();
@@ -3373,7 +3373,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
           cs_crystal_router_get_max_sizes(cr, max_sizes);
 
           /* Time to 1-5 s */
-          _all_to_all_trace[_n_trace*9] = tcr1.wall_sec*1e5 + tcr1.wall_nsec/1e4;
+          _all_to_all_trace[_n_trace*9] = tcr1.sec*1e5 + tcr1.nsec/1e4;
           _all_to_all_trace[_n_trace*9+1] =   _all_to_all_trace[_n_trace*9]
                                             - _all_to_all_trace[(_n_trace-1)*9];
           _all_to_all_trace[_n_trace*9+2] = 1;
@@ -3598,7 +3598,7 @@ cs_all_to_all_log_finalize(void)
   double wtimes_mean[3], wtimes_max[3], wtimes_min[3];
   for (int i = 0; i < 3; i++) {
     if (_all_to_all_calls[i] > 0)
-      wtimes[i] = (_all_to_all_timers[i]).wall_nsec*1e-9;
+      wtimes[i] = (_all_to_all_timers[i]).nsec*1e-9;
     wtimes_mean[i] = wtimes[i];
     wtimes_max[i] = wtimes[i];
     wtimes_min[i] = wtimes[i];

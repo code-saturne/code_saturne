@@ -481,13 +481,11 @@ _writer_info(void)
 {
   if (cs_glob_rank_id < 1) {
 
-    int i;
-
     bft_printf(_("\n"
                  "Postprocessing output writers:\n"
                  "------------------------------\n\n"));
 
-    for (i = 0; i < _cs_post_n_writers; i++) {
+    for (int i = 0; i < _cs_post_n_writers; i++) {
 
       int fmt_id = 0, n_fmt_str = 0;
       fvm_writer_time_dep_t   time_dep = FVM_WRITER_FIXED_MESH;
@@ -7007,21 +7005,14 @@ cs_post_finalize(void)
                     _("\n"
                       "Writing of \"%s\" (%s) summary:\n"
                       "\n"
-                      "  CPU time for meshes:              %12.3f\n"
-                      "  CPU time for variables:           %12.3f\n"
-                      "  CPU time forcing output:          %12.3f\n"
-                      "\n"
                       "  Elapsed time for meshes:          %12.3f\n"
                       "  Elapsed time for variables:       %12.3f\n"
                       "  Elapsed time forcing output:      %12.3f\n"),
                     fvm_writer_get_name(writer),
                     fvm_writer_get_format(writer),
-                    m_time.cpu_nsec*1e-9,
-                    f_time.cpu_nsec*1e-9,
-                    a_time.cpu_nsec*1e-9,
-                    m_time.wall_nsec*1e-9,
-                    f_time.wall_nsec*1e-9,
-                    a_time.wall_nsec*1e-9);
+                    m_time.nsec*1e-9,
+                    f_time.nsec*1e-9,
+                    a_time.nsec*1e-9);
     }
   }
 

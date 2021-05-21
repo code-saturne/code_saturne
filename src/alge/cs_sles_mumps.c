@@ -2455,7 +2455,7 @@ cs_sles_mumps_log(const void  *context,
                     "  Total setup time:              %12.3f\n"
                     "  Total solution time:           %12.3f\n"),
                   MUMPS_VERSION, c->n_setups, c->n_solves,
-                  c->t_setup.wall_nsec*1e-9, c->t_solve.wall_nsec*1e-9);
+                  c->t_setup.nsec*1e-9, c->t_solve.nsec*1e-9);
 
   }
 }

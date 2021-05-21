@@ -467,7 +467,7 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
                   this_info->n_iter_max);
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("  Total elapsed time:    %.3f\n"),
-                this_info->t_tot.wall_nsec*1e-9);
+                this_info->t_tot.nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------
@@ -8802,7 +8802,7 @@ cs_gradient_finalize(void)
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
                   "Total elapsed time for all gradient computations:  %.3f s\n"),
-                _gradient_t_tot.wall_nsec*1e-9);
+                _gradient_t_tot.nsec*1e-9);
 
   /* Free system info */
 

@@ -724,7 +724,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   CS_TIMER_COUNTER_ADD(domain->tcs, domain->tcs, time_count);
 
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Setup> Runtime", domain->tcs.wall_nsec*1e-9);
+                "<CDO/Setup> Runtime", domain->tcs.nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -894,14 +894,14 @@ cs_cdo_main(cs_domain_t   *domain)
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Post> Runtime", domain->tcp.wall_nsec*1e-9);
+                "<CDO/Post> Runtime", domain->tcp.nsec*1e-9);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
   CS_TIMER_COUNTER_ADD(time_count, cs_glob_domain->tcs, time_count);
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO> Total runtime", time_count.wall_nsec*1e-9);
+                "<CDO> Total runtime", time_count.nsec*1e-9);
 
   cs_timer_stats_stop(cs_cdo_ts_id);
   if (cs_glob_rank_id <= 0) {

@@ -714,7 +714,7 @@ void
 cs_equation_write_monitoring(const char                    *eqname,
                              const cs_equation_builder_t   *eqb)
 {
-  double t[3] = {eqb->tcb.wall_nsec, eqb->tcs.wall_nsec, eqb->tce.wall_nsec};
+  double t[3] = {eqb->tcb.nsec, eqb->tcs.nsec, eqb->tce.nsec};
   for (int i = 0; i < 3; i++) t[i] *= 1e-9;
 
   if (eqname == NULL)

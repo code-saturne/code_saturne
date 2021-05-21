@@ -2223,8 +2223,8 @@ cs_crystal_router_log_finalize(void)
                 (unsigned long long) _cr_calls, _("calls"));
 
 #if defined(HAVE_MPI)
-  double wtimes[2] = {_cr_timers[0].wall_nsec*1e-9,
-                      _cr_timers[1].wall_nsec*1e-9};
+  double wtimes[2] = {_cr_timers[0].nsec*1e-9,
+                      _cr_timers[1].nsec*1e-9};
 
   double mntimes[2], mxtimes[2], stimes[2];
 

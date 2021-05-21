@@ -199,7 +199,8 @@ static clock_t _cs_timer_clock_start;
 
 /* Reference times */
 
-static cs_timer_t  _cs_timer_start;
+static cs_timer_t  _cs_timer_start = {.sec = 0, .nsec = 0};
+static cs_timer_t  _cs_timer_cpu_start = {.sec = 0, .nsec = 0};
 
 /*============================================================================
  * Private function definitions
@@ -232,8 +233,8 @@ _cs_timer_wall_clock_gettime(cs_timer_t  *timer)
 {
   struct timespec w_time;
   (void)clock_gettime(CLOCK_REALTIME, &w_time);
-  timer->wall_sec = w_time.tv_sec;
-  timer->wall_nsec = w_time.tv_nsec;
+  timer->sec = w_time.tv_sec;
+  timer->nsec = w_time.tv_nsec;
 }
 
 #endif /* defined (HAVE_CLOCK_GETTIME) */
@@ -252,8 +253,8 @@ _cs_timer_wall_gettimeofday(cs_timer_t  *timer)
 {
   struct timeval  tv_time;
   (void)gettimeofday(&tv_time, NULL);
-  timer->wall_sec = tv_time.tv_sec;
-  timer->wall_nsec = tv_time.tv_usec*1000;
+  timer->sec = tv_time.tv_sec;
+  timer->nsec = tv_time.tv_usec*1000;
 }
 
 #endif /* defined (HAVE_GETTIMEOFDAY) */
@@ -272,8 +273,8 @@ _cs_timer_wall_stdc_time(cs_timer_t  *timer)
   double dt;
   time(&wtime_current);
   dt = difftime(wtime_current, _cs_timer_stdc_time_start);
-  timer->wall_sec = floor(dt);
-  timer->wall_nsec = (dt - timer->wall_sec) * 1.0e-9;
+  timer->sec = floor(dt);
+  timer->nsec = (dt - timer->sec) * 1.0e-9;
 }
 
 /*----------------------------------------------------------------------------
@@ -303,8 +304,8 @@ _cs_timer_cpu_clock_gettime(cs_timer_t  *timer)
 {
   struct timespec cpu_time;
   (void)clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpu_time);
-  timer->cpu_sec = cpu_time.tv_sec;
-  timer->cpu_nsec = cpu_time.tv_nsec;
+  timer->sec = cpu_time.tv_sec;
+  timer->nsec = cpu_time.tv_nsec;
 }
 
 #endif /* defined (HAVE_CLOCK_GETTIME) */
@@ -323,8 +324,8 @@ _cs_timer_cpu_getrusage(cs_timer_t  *timer)
 {
   struct rusage  usage;
   getrusage(RUSAGE_SELF, &usage);
-  timer->cpu_sec = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
-  timer->cpu_nsec = (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec)*1000;
+  timer->sec = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec;
+  timer->nsec = (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec)*1000;
 }
 
 #endif /* defined (HAVE_GETRUSAGE) */
@@ -347,7 +348,7 @@ _cs_timer_cpu_times(cs_timer_t  *timer)
   ticks = ptimer.tms_utime + ptimer.tms_stime;
   timer->cpu_sec = ticks / _cs_timer_unit;
   timer->cpu_nsec = (double)(ticks % _cs_timer_unit)*1.e+9 / _cs_timer_unit;
- }
+}
 
 #endif /* defined(_POSIX_SOURCE) */
 
@@ -362,8 +363,8 @@ void
 _cs_timer_cpu_stdc_clock(cs_timer_t  *timer)
 {
   clock_t clock_current = clock() - _cs_timer_clock_start;
-  timer->cpu_sec = clock_current / CLOCKS_PER_SEC;
-  timer->cpu_nsec = (clock_current % CLOCKS_PER_SEC)*1.e+9/CLOCKS_PER_SEC;
+  timer->sec = clock_current / CLOCKS_PER_SEC;
+  timer->nsec = (clock_current % CLOCKS_PER_SEC)*1.e+9/CLOCKS_PER_SEC;
 }
 
 /*----------------------------------------------------------------------------
@@ -373,10 +374,11 @@ _cs_timer_cpu_stdc_clock(cs_timer_t  *timer)
 static void
 _cs_timer_initialize(void)
 {
-  _cs_timer_start.wall_sec = 0;
-  _cs_timer_start.wall_nsec = 0;
-  _cs_timer_start.cpu_sec = 0;
-  _cs_timer_start.cpu_nsec = 0;
+  _cs_timer_start.sec = 0;
+  _cs_timer_start.nsec = 0;
+
+  _cs_timer_cpu_start.sec = 0;
+  _cs_timer_cpu_start.nsec = 0;
 
   /* Select timing methods, trying highest resolution first */
 
@@ -386,8 +388,8 @@ _cs_timer_initialize(void)
 
   if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
     if (clock_gettime(CLOCK_REALTIME, &ts_time) == 0) {
-      _cs_timer_start.wall_sec = ts_time.tv_sec;
-      _cs_timer_start.wall_nsec = ts_time.tv_nsec;
+      _cs_timer_start.sec = ts_time.tv_sec;
+      _cs_timer_start.nsec = ts_time.tv_nsec;
       _cs_timer_wall_method = CS_TIMER_CLOCK_GETTIME;
       _cs_timer_wall = _cs_timer_wall_clock_gettime;
     }
@@ -414,8 +416,8 @@ _cs_timer_initialize(void)
   if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
     static struct timeval  tv_time;
     if (gettimeofday(&tv_time, NULL) == 0) {
-      _cs_timer_start.wall_sec = tv_time.tv_sec;
-      _cs_timer_start.wall_nsec = tv_time.tv_usec*1000;
+      _cs_timer_start.sec = tv_time.tv_sec;
+      _cs_timer_start.nsec = tv_time.tv_usec*1000;
       _cs_timer_wall_method = CS_TIMER_GETTIMEOFDAY;
       _cs_timer_wall = _cs_timer_wall_gettimeofday;
     }
@@ -500,8 +502,8 @@ cs_timer_wtime(void)
   _cs_timer_wall(&t1);
 
   long long wall_nsec
-    =  (t1.wall_sec - _cs_timer_start.wall_sec) * (long long)1000000000
-      + t1.wall_nsec - _cs_timer_start.wall_nsec;
+    =  (t1.sec - _cs_timer_start.sec) * (long long)1000000000
+      + t1.nsec - _cs_timer_start.nsec;
 
   return wall_nsec*1.e-9;
 }
@@ -536,8 +538,8 @@ cs_timer_cpu_time(void)
   _cs_timer_cpu(&t1);
 
   long long cpu_nsec
-    =  (t1.cpu_sec - _cs_timer_start.cpu_sec) * (long long)1000000000
-       + t1.cpu_nsec - _cs_timer_start.cpu_nsec;
+    =  (t1.sec - _cs_timer_start.sec) * (long long)1000000000
+       + t1.nsec - _cs_timer_start.nsec;
 
   return cpu_nsec*1.e-9;
 }
@@ -616,7 +618,6 @@ cs_timer_time(void)
   /* Compute elapsed time */
 
   _cs_timer_wall(&time_current);
-  _cs_timer_cpu(&time_current);
 
   return time_current;
 }
@@ -638,10 +639,8 @@ cs_timer_diff(const cs_timer_t  *t0,
 {
   cs_timer_counter_t retval;
 
-  retval.wall_nsec =  (t1->wall_sec - t0->wall_sec) * (long long)1000000000
-                     + t1->wall_nsec - t0->wall_nsec;
-  retval.cpu_nsec =  (t1->cpu_sec - t0->cpu_sec) * (long long)1000000000
-                    + t1->cpu_nsec - t0->cpu_nsec;
+  retval.nsec =  (t1->sec - t0->sec) * (long long)1000000000
+                + t1->nsec - t0->nsec;
 
   return retval;
 }

@@ -2192,10 +2192,8 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
 
   cs_timer_counter_t  build_time, query_time;
 
-  build_time.wall_nsec = build_wtime*1e9;
-  build_time.cpu_nsec = build_cpu_time*1e9;
-  query_time.wall_nsec = query_wtime*1e9;
-  query_time.cpu_nsec = query_cpu_time*1e9;
+  build_time.nsec = build_wtime*1e9;
+  query_time.nsec = query_wtime*1e9;
 
   for (i = 0; i < 3; i++) {
     _mem_final[i] /= 1024;

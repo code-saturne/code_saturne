@@ -1518,43 +1518,43 @@ _join_performance_log(const cs_join_t  *this_join)
      _("  Associated times:\n"
        "    Face bounding boxes tree construction:          %10.3g\n"
        "    Face bounding boxes neighborhood query:         %10.3g\n"),
-     stats->t_box_build.wall_nsec*1.e-9,
-     stats->t_box_query.wall_nsec*1.e-9);
+     stats->t_box_build.nsec*1.e-9,
+     stats->t_box_query.nsec*1.e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Sorting possible intersections between faces:   %10.3g\n"),
-     stats->t_inter_sort.wall_nsec*1e-9);
+     stats->t_inter_sort.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Definition of local joining mesh:               %10.3g\n"),
-     stats->t_l_join_mesh.wall_nsec*1e-9);
+     stats->t_l_join_mesh.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Edge intersections:                             %10.3g\n"),
-     stats->t_edge_inter.wall_nsec*1e-9);
+     stats->t_edge_inter.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Creation of new vertices:                       %10.3g\n"),
-     stats->t_new_vtx.wall_nsec*1e-9);
+     stats->t_new_vtx.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Merging vertices:                               %10.3g\n"),
-     stats->t_merge_vtx.wall_nsec*1e-9);
+     stats->t_merge_vtx.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Updating structures with vertex merging:        %10.3g\n"),
-     stats->t_u_merge_vtx.wall_nsec*1e-9);
+     stats->t_u_merge_vtx.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
      _("    Split old faces and reconstruct new faces:      %10.3g\n"),
-     stats->t_split_faces.wall_nsec*1e-9);
+     stats->t_split_faces.nsec*1e-9);
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
@@ -1562,7 +1562,7 @@ _join_performance_log(const cs_join_t  *this_join)
        "  Complete treatment for joining %2d:\n"
        "    wall clock time:                                %10.3g\n"),
      this_join->param.num,
-     stats->t_total.wall_nsec*1e-9);
+     stats->t_total.nsec*1e-9);
 
   cs_log_printf_flush(CS_LOG_PERFORMANCE);
 }
@@ -1968,7 +1968,7 @@ cs_join_all(bool  preprocess)
       bft_printf(_("\n"
                    "  Joining %2d completed (%.3g s).\n"),
                  join_param.num,
-                 this_join->stats.t_total.wall_nsec*1e-9);
+                 this_join->stats.t_total.nsec*1e-9);
       bft_printf_flush();
     }
 

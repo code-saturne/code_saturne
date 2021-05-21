@@ -1310,8 +1310,8 @@ _test_cdofb_source(FILE                     *out,
   fprintf(out, " %12s %12s %12s %12s\n",
           "BARY", "BARY.SUB", "HIGHER", "HIGHEST");
   fprintf(out, " %10.6e %10.6e %10.6e %10.6e\n",
-          tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9, tc2.wall_nsec*1e-9,
-          tc3.wall_nsec*1e-9);
+          tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9,
+          tc3.nsec*1e-9);
 
   BFT_FREE(st0);
   BFT_FREE(st1);
@@ -1492,8 +1492,8 @@ _test_cdovb_source(FILE                     *out,
   fprintf(out, " %12s %12s %12s %12s\n",
           "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
   fprintf(out, " %10.6e %10.6e %10.6e %10.6e\n",
-          tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9,
-          tc2.wall_nsec*1e-9, tc3.wall_nsec*1e-9);
+          tc0.nsec*1e-9, tc1.nsec*1e-9,
+          tc2.nsec*1e-9, tc3.nsec*1e-9);
 
 }
 
@@ -1593,7 +1593,7 @@ _test_quadratures_misc(FILE                     *out,
           _get_ftype_name(ftype), dim);
   fprintf(out, " %12s %12s %12s\n", "LOWEST", "HIGHER", "HIGHEST");
   fprintf(out, " %10.6e %10.6e %10.6e\n",
-          tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9, tc2.wall_nsec*1e-9);
+          tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9);
 
   BFT_FREE(st0);
   BFT_FREE(st1);
@@ -1710,7 +1710,7 @@ _test_quadratures_xdef(FILE                     *out,
           _get_ftype_name(ftype), dim);
   fprintf(out, " %12s %12s %12s\n", "LOWEST", "HIGHER", "HIGHEST");
   fprintf(out, " %10.6e %10.6e %10.6e\n",
-          tc0.wall_nsec*1e-9, tc1.wall_nsec*1e-9, tc2.wall_nsec*1e-9);
+          tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9);
 
   BFT_FREE(st0);
   BFT_FREE(st1);

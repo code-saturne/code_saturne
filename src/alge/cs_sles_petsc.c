@@ -1625,8 +1625,8 @@ cs_sles_petsc_log(const void  *context,
                     "  Total solution time:           %12.3f\n"),
                   s_type, p_type, norm_type_name, m_type,
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->t_setup.wall_nsec*1e-9,
-                  c->t_solve.wall_nsec*1e-9);
+                  c->t_setup.nsec*1e-9,
+                  c->t_solve.nsec*1e-9);
 
   }
 }

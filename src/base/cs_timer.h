@@ -45,10 +45,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  long long    wall_sec;       /* wall-time seconds */
-  long long    wall_nsec;      /* wall-time nanoseconds */
-  long long    cpu_sec;        /* CPU time seconds */
-  long long    cpu_nsec;       /* CPU time nanoseconds */
+  long long    sec;       /* seconds */
+  long long    nsec;      /* nanoseconds */
 
 } cs_timer_t;
 
@@ -56,8 +54,7 @@ typedef struct {
 
 typedef struct {
 
-  long long    wall_nsec;      /* wall-time nanoseconds */
-  long long    cpu_nsec;       /* CPU time nanoseconds */
+  long long    nsec;      /* wall-time nanoseconds */
 
 } cs_timer_counter_t;
 
@@ -72,9 +69,8 @@ typedef struct {
  *   _t --> resulting counter.
  *----------------------------------------------------------------------------*/
 
-#define CS_TIMER_COUNTER_INIT(_t)       \
-  (_t.wall_nsec = 0,  \
-   _t.cpu_nsec  = 0)
+#define CS_TIMER_COUNTER_INIT(_t)  \
+  (_t.nsec = 0)
 
 /*----------------------------------------------------------------------------
  * Add timer counter.
@@ -87,9 +83,8 @@ typedef struct {
  *   _c1  <-- counter to add.
  *----------------------------------------------------------------------------*/
 
-#define CS_TIMER_COUNTER_ADD(_res, _c0, _c1)       \
-  (_res.wall_nsec = _c0.wall_nsec + _c1.wall_nsec,  \
-   _res.cpu_nsec  = _c0.cpu_nsec + _c1.cpu_nsec)
+#define CS_TIMER_COUNTER_ADD(_res, _c0, _c1)  \
+  (_res.nsec = _c0.nsec + _c1.nsec)
 
 /*============================================================================
  * Public function prototypes
@@ -177,10 +172,8 @@ cs_timer_counter_add_diff(cs_timer_counter_t  *tc,
                           const cs_timer_t    *t0,
                           const cs_timer_t    *t1)
 {
-  tc->wall_nsec +=  (t1->wall_sec - t0->wall_sec) * (long long)1000000000
-                   + t1->wall_nsec - t0->wall_nsec;
-  tc->cpu_nsec +=   (t1->cpu_sec - t0->cpu_sec) * (long long)1000000000
-                   + t1->cpu_nsec - t0->cpu_nsec;
+  tc->nsec +=  (t1->sec - t0->sec) * (long long)1000000000
+                + t1->nsec - t0->nsec;
 }
 
 /*----------------------------------------------------------------------------

@@ -795,7 +795,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
       (CS_LOG_PERFORMANCE,
        _("\nMesh coarsening:\n\n"
          "  Total:                                        %.3g\n"),
-       (double)(timers[0].wall_nsec*1.e-9));
+       (double)(timers[0].nsec*1.e-9));
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
 

@@ -2697,7 +2697,7 @@ _gcr(cs_sles_it_t              *c,
 
       cs_matrix_vector_multiply(rotation_mode, a, zk_n, ck_n);
 
-      for(cs_lnum_t jj = 0; jj < n_iter; jj++) {
+      for(cs_lnum_t jj = 0; jj < (int)n_iter; jj++) {
         cs_real_t *ck_j = ck + jj * wa_size;
 
         gkj[(n_iter + 1) * n_iter / 2 + jj] = _dot_product(c, ck_j, ck_n);
@@ -2741,7 +2741,7 @@ _gcr(cs_sles_it_t              *c,
          jj++)
       gkj_inv[jj] = 0.0;
 
-    for (cs_lnum_t kk = 0; kk < n_iter; kk++) {
+    for (cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
       for(cs_lnum_t ii = 0; ii < kk; ii++) {
         for (cs_lnum_t jj = 0; jj < kk; jj++)
           gkj_inv[(kk + 1) * kk / 2 + ii]
@@ -2762,7 +2762,7 @@ _gcr(cs_sles_it_t              *c,
       cs_lnum_t s_id, e_id;
       cs_parall_thread_range(n_rows, sizeof(cs_real_t), &s_id, &e_id);
 
-      for(cs_lnum_t kk = 0; kk < n_iter; kk++) {
+      for(cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
         for(cs_lnum_t jj = 0; jj <= kk; jj++) {
           const cs_real_t *zk_j = zk + jj*wa_size;
           for (cs_lnum_t ii = s_id; ii < e_id; ii++)
@@ -4127,8 +4127,8 @@ cs_sles_it_log(const void  *context,
                     "  Total setup time:              %12.3f\n"
                     "  Total solution time:           %12.3f\n"),
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->t_setup.wall_nsec*1e-9,
-                  c->t_solve.wall_nsec*1e-9);
+                  c->t_setup.nsec*1e-9,
+                  c->t_solve.nsec*1e-9);
 
     if (c->fallback != NULL) {
 
@@ -4156,7 +4156,7 @@ cs_sles_it_log(const void  *context,
                     "  Mean number of iterations:     %12d\n"
                     "  Total solution time:           %12.3f\n"),
                   n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->fallback->t_solve.wall_nsec*1e-9);
+                  c->fallback->t_solve.nsec*1e-9);
 
     }
 
@@ -4357,7 +4357,7 @@ cs_sles_it_solve(void                *context,
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  cs_timer_t t0 = {0, 0, 0, 0}, t1;
+  cs_timer_t t0 = {0, 0}, t1;
 
   unsigned _n_iter = 0;
   cs_sles_it_convergence_t  convergence;

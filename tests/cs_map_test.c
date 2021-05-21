@@ -238,8 +238,8 @@ main (int argc, char *argv[])
 
   }
 
-  cs_real_t k_query = (k_time.wall_nsec / n_passes / n_keys) * 1.e-9;
-  cs_real_t f_query = (f_time.wall_nsec / n_passes / n_fields) * 1.e-9;
+  cs_real_t k_query = (k_time.nsec / n_passes / n_keys) * 1.e-9;
+  cs_real_t f_query = (f_time.nsec / n_passes / n_fields) * 1.e-9;
 
   bft_printf("mean key   id query time: %g\n", k_query);
   bft_printf("mean field id query time: %g\n", f_query);

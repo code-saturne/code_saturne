@@ -262,7 +262,7 @@ _output_time_plot(void)
 
     cs_timer_stats_t  *s = _stats + stats_id;
     if (s->plot) {
-      vals[stats_count] = s->t_cur.wall_nsec*1e-9;
+      vals[stats_count] = s->t_cur.nsec*1e-9;
       stats_count++;
     }
 
