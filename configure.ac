@@ -656,6 +656,11 @@ AC_ARG_ENABLE(dlopen-rtld-global,
   [ enable_dlopen_rtld_global=no ]
 )
 
+# Cleanup Fortran library flags
+
+FCLIBS=`$PYTHON ${srcdir}/build-aux/cs_build_tools.py clean-lib-flags $FCLIBS`
+AC_SUBST(FCLIBS)
+
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
