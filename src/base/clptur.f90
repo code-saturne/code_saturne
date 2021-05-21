@@ -2725,6 +2725,12 @@ do ifac = 1, nfabor
 
     if (abs(hext).gt.rinfin*0.5d0.or.icodcl(ifac,ivar).eq.15) then
       heq = hflui
+      if (vcopt%icoupl.gt.0) then
+        ! ensure correct saving of flux in case of rad coupling
+        if (cpl_faces(ifac)) then
+          heq = hflui*hext/(hflui+hext)
+        endif
+      endif
     else
       heq = hflui*hext/(hflui+hext)
     endif
@@ -2769,6 +2775,16 @@ do ifac = 1, nfabor
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
 
+      ! Set coef for coupled face just to ensure relevant saving
+      ! of bfconv if rad transfer activated
+      if (vcopt%icoupl.gt.0) then
+        if (cpl_faces(ifac)) then
+          ! Flux BCs
+          cofafp(ifac) = -heq*dist_theipb(ifac)
+          cofbfp(ifac) =  heq
+        endif
+      endif
+
       ! Storage of the thermal exchange coefficient
       ! (conversion in case of energy or enthalpy)
       ! the exchange coefficient is in W/(m2 K)
@@ -2812,7 +2828,7 @@ do ifac = 1, nfabor
 
       ! For the coupled faces with h_user (ie icodcl(ifac,ivar)=15)
       ! reset to zero af/bf coeff.
-      ! By default icodcl(ifac,ivar)=0) for coupled faces
+      ! By default icodcl(ifac,ivar)=3) for coupled faces
       if (vcopt%icoupl.gt.0) then
         if (cpl_faces(ifac)) then
           ! Flux BCs
