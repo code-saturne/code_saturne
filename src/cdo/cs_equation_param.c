@@ -45,6 +45,7 @@
 #include <bft_printf.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_fp_exception.h"
 #include "cs_hodge.h"
@@ -1551,9 +1552,16 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme: %s\n",
                   eqname,
                   cs_param_get_advection_scheme_name(eqp->adv_scheme));
+
+    /* Piece of information specific to a scheme */
     if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Upwind.Portion: %3.2f %%\n",
                     eqname, 100*eqp->upwind_portion);
+    else if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
+             eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | CIP.coef: %f\n",
+                    eqname, cs_cdo_advection_get_cip_coef());
+
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
                   eqname,
                   cs_param_get_advection_strategy_name(eqp->adv_strategy));
