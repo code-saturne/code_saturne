@@ -47,7 +47,6 @@
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_rotation.h"

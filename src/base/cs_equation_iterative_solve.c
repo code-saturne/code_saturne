@@ -251,7 +251,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf, iccocg, nswmod, itenso, iinvpe;
+  int isym, inc, isweep, niterf, iccocg, nswmod;
   int lvar, ibsize, iesize, imasac, key_sinfo_id;
   double residu, rnorm, ressol, rnorm2;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
@@ -345,30 +345,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Initialization for test before matrix vector product
      for computation of initial residual */
-
-  itenso = 0;
-  iinvpe = 0;
-
-  if (cs_glob_mesh->n_init_perio > 0) {
-
-    iinvpe = 1; /* By default, all periodicity types are handled */
-
-    if (f_id > -1) {
-      f = cs_field_by_id(f_id);
-
-      /* For Reynolds stress component solved separately, only translation
-         periodicity information is exchanged.
-         When solving by increments, the increment will be cancelled for
-         faces with rotation periodicity. */
-
-      if (   f == CS_F_(r11) || f == CS_F_(r12)
-          || f == CS_F_(r13) || f == CS_F_(r22)
-          || f == CS_F_(r23) || f == CS_F_(r33)) {
-        itenso = 1;
-        iinvpe = 2;
-      }
-    }
-  }
 
   /*============================================================================
    * 1.  Building of the "simplified" matrix
@@ -578,10 +554,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
        Caution: when calling a matrix-vector product, here for a variable
        which is not "by increments" and is assumed initialized, including
-       for ghost values:
-       For Reynolds stresses components (iinvpe=2), the rotational periodicity
-       ghost values should not be cancelled, but rather left unchanged.
-       For other variables, iinvpe=1 will also be a standard exchange. */
+       for ghost values. */
 
     /* Allocate a temporary array */
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
@@ -600,9 +573,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        (periodicity of rotation is not ensured here) */
     if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
       cs_mesh_sync_var_scal(w2);
-
-    if (iinvpe == 2)
-      rotation_mode = CS_HALO_ROTATION_IGNORE;
 
     cs_matrix_vector_native_multiply(symmetric,
                                      db_size,
@@ -664,9 +634,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Solver residual */
     ressol = residu;
-
-    if (iinvpe == 2)
-      rotation_mode = CS_HALO_ROTATION_ZERO;
 
     if (conv_diff_mg)
       cs_sles_setup_native_conv_diff(f_id,
@@ -803,10 +770,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /*  ---> Handle parallelism and periodicity
         (periodicity of rotation is not ensured here) */
     if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
-      if (itenso == 0)
-        cs_mesh_sync_var_scal(pvar);
-      else if (itenso == 1)
-        cs_mesh_sync_var_component(pvar);
+      cs_mesh_sync_var_scal(pvar);
     }
 
     /* --- Update the right hand side And compute the new residual */

@@ -1157,42 +1157,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function initializing gradient rotational periodicity
-    ! computation API.
-
-    subroutine cs_gradient_perio_initialize()  &
-      bind(C, name='cs_gradient_perio_initialize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gradient_perio_initialize
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function finalizing gradient rotational periodicity
-    ! computation API.
-
-    subroutine cs_gradient_perio_finalize()  &
-      bind(C, name='cs_gradient_perio_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gradient_perio_finalize
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function initializing ghost cell values
-    ! for Reynolds stress tensor gradient.
-
-    subroutine cs_gradient_perio_init_rij(f, idimtr, grad) &
-      bind(C, name='cs_gradient_perio_init_rij')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value                                  :: f
-      integer(c_int), intent(out)                         :: idimtr
-      real(kind=c_double), dimension(3, *), intent(inout) :: grad
-    end subroutine cs_gradient_perio_init_rij
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function
 
     subroutine cs_bad_cells_regularisation_scalar(var) &
@@ -3152,14 +3116,13 @@ module cs_c_bindings
     ! Interface to C function for scalar gradient
 
     subroutine cs_f_gradient_s(f_id, imrgra, inc, iccocg, n_r_sweeps,          &
-                               idimtr, iwarnp, imligp,                         &
-                               epsrgp, climgp,                                 &
+                               iwarnp, imligp, epsrgp, climgp,                 &
                                coefap, coefbp, pvar, grad)                     &
       bind(C, name='cs_f_gradient_s')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
-      integer(c_int), value :: idimtr, iwarnp, imligp
+      integer(c_int), value :: iwarnp, imligp
       real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
       real(kind=c_double), dimension(*), intent(inout) :: pvar
@@ -4061,40 +4024,10 @@ contains
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
-    ! Local variables
-
-    integer        :: idimtr
-    type(c_ptr)    :: f
-
-    ! Preparation for periodicity of rotation
-
-    ! By default, the gradient will be treated as a vector ...
-    !   (i.e. we assume it is the gradient of a scalar field)
-
-    ! If rotational periodicities are present,
-    !   we determine if the variable is a tensor (Reynolds stresses)
-    !   so as to apply the necessary treatment.
-    !   We set idimtr and we retrieve the matching gradient.
-    ! Note that if halo gradients have not been saved before, they cannot be
-    !   retrieved here (...)
-    !   So this subroutine is called by phyvar (in perinr)
-    !   to compute gradients at the beginning of the time step and save them
-    !   in dudxyz et drdxyz
-
-    ! It is necessary for idimtr to always be initialized, even with no
-    !   periodicity of rotation, so it's default value is set.
-
-    idimtr = 0
-
-    if (iperot.eq.1 .and. f_id.gt.-1) then
-      f = cs_field_by_id(f_id)
-      call cs_gradient_perio_init_rij(f, idimtr, grad)
-    endif
-
     ! The gradient of a potential (pressure, ...) is a vector
 
     call cs_f_gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,            &
-                         idimtr, iwarnp, imligp,                               &
+                         iwarnp, imligp,                                       &
                          epsrgp, climgp, coefap, coefbp, pvar, grad)
 
   end subroutine gradient_s

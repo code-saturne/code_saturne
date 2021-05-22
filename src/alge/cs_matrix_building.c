@@ -55,7 +55,6 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"

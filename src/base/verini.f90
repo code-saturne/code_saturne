@@ -86,7 +86,7 @@ integer          iviext, iscacp
 integer          iroext
 integer          ivisext
 integer          kturt, turb_flux_model
-double precision scmaxp, scminp
+double precision scmaxp
 double precision turb_schmidt, visls_0
 
 character(len=3), dimension(3) :: nomext3
@@ -696,11 +696,11 @@ if (iperot.gt.0.and.iirayo.gt.0) then
   endif
 endif
 
-! --- periodicite de rotation douteuse avec rij
-!      (et donc a fortiori avec ordre 2 sur Rij)
+! Periodicite of rotation incompatible with RSM using separate components.
 if (iperot.gt.0) then
-  if (itytur.eq.3) then
+  if (itytur.eq.3 .and. irijco.eq.0) then
     write(nfecra,5009)iperio,iturb
+    iok = iok + 1
   endif
 endif
 
@@ -1589,8 +1589,7 @@ endif
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@  At least one rotational periodicity has been defined',      /,&
-'@  Flag IIRAYO is equal to', i10,                              /,&
-'@    in usray1.',                                              /,&
+'@  Flag IIRAYO is equal to', i10, '.',                         /,&
 '@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1601,18 +1600,12 @@ endif
 '@',                                                            /,&
 '@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    DEFECTS CAN APPEAR WHEN USING A COMBINATION OF',/,          &
-'@     ANGULAR PERIODICITY (ROTATION) AND RSTM RIJ-EPSILON.',   /,&
+'@    ROTATION PERIODICITY IS NOT COMPATIBLE WITH RIJ-EPSILON', /,&
+'@    WITH SEPARATELY SOLVED COMPONENTS (IRIJCO = 0).',         /,&
 '@',                                                            /,&
-'@  At least one rotational periodicity has been defined',      /,&
-'@  Flag for turb ITURB is = ', i10,                            /,&
+'@  The calculation could NOT run.',                            /,&
 '@',                                                            /,&
-'@  Job can run.',                                              /,&
-'@',                                                            /,&
-'@  The defects are related to the turbulent transport terms',  /,&
-'@  in the Re stress equations (equivalent to an anisotropic',  /,&
-'@  diffusion tensor), but these terms are generaly small',     /,&
-'@',                                                            /,&
+'@  At least one rotational periodicity has been defined.',     /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

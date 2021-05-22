@@ -864,17 +864,11 @@ cs_vof_drift_term(int                        imrgra,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
 
-  /* Local variables */
-
-  int tr_dim = 0;
-
-  /* Initialization */
-
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, pvar);
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 

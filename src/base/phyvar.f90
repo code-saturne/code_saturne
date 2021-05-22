@@ -136,22 +136,13 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 !===============================================================================
-! 1. Initializations
+! Initializations
 !===============================================================================
 
 ipass = ipass + 1
 
 !===============================================================================
-! 2. Preparing periodicity of rotation
-!===============================================================================
-
-if (iperot.gt.0 .and. itytur.eq.3) then
-  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
-  call perinr(vcopt%imrgra, vcopt%iwarni, vcopt%epsrgr)
-endif
-
-!===============================================================================
-! 3. User settings
+! User settings
 !===============================================================================
 
 mbrom = 0
@@ -280,13 +271,13 @@ if (ntcabs.eq.ntpabs+1) then
 endif
 
 !===============================================================================
-! 4. Compute the eddy viscosity
+! Compute the eddy viscosity
 !===============================================================================
 
 if     (iturb.eq. 0) then
 
-! 4.1 Laminar
-! ===========
+! Laminar
+! =======
 
   call field_get_val_s(ivisct, visct)
 
@@ -296,15 +287,15 @@ if     (iturb.eq. 0) then
 
 elseif (iturb.eq.10) then
 
-! 4.2 Mixing length model
-! =======================
+! Mixing length model
+! ===================
 
   call vislmg
 
 elseif (itytur.eq.2) then
 
-! 4.3 k-epsilon
-! =============
+! k-epsilon
+! =========
 
   call field_get_val_s(ivisct, visct)
   call field_get_val_s(iviscl, viscl)
@@ -314,8 +305,8 @@ elseif (itytur.eq.2) then
 
   if (iturb.eq.22) then
 
-    ! 4.3.1 Launder-Sharma
-    ! --------------------
+    ! Launder-Sharma
+    ! --------------
 
     do iel = 1, ncel
       xk   = cvar_k(iel)
@@ -329,15 +320,15 @@ elseif (itytur.eq.2) then
 
   else if (iturb.eq.23) then
 
-    ! 4.3.2 Non-linear quadratic Baglietto
-    ! ------------------------------------
+    ! Non-linear quadratic Baglietto
+    ! ------------------------------
 
     call visqke
 
   else
 
-    ! 4.3.3 Standard and Linear Production
-    ! ------------------------------------
+    ! Standard and Linear Production
+    ! ------------------------------
 
     do iel = 1, ncel
       xk = cvar_k(iel)
@@ -349,8 +340,8 @@ elseif (itytur.eq.2) then
 
 elseif (itytur.eq.3) then
 
-! 4.4 Rij-epsilon
-! ===============
+! Rij-epsilon
+! ===========
 
   call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
@@ -446,16 +437,16 @@ elseif (itytur.eq.3) then
 
 elseif (iturb.eq.40) then
 
-! 4.5 LES Smagorinsky
-! ===================
+! LES Smagorinsky
+! ===============
 
   allocate(gradv(3, 3, ncelet))
   call vissma (gradv)
 
 elseif (iturb.eq.41) then
 
-! 4.6 LES dynamic
-! ===============
+! LES dynamic
+! ===========
 
   allocate(gradv(3, 3, ncelet))
 
@@ -468,16 +459,16 @@ elseif (iturb.eq.41) then
 
 elseif (iturb.eq.42) then
 
-! 4.7 LES WALE
-! ============
+! LES WALE
+! ========
 
   allocate(gradv(3, 3, ncelet))
   call viswal (gradv)
 
 elseif (itytur.eq.5) then
 
-! 4.8 v2f (phi-model and BL-v2/k)
-! ===============================
+! v2f (phi-model and BL-v2/k)
+! ===========================
 
   if (iturb.eq.50) then
 
@@ -507,15 +498,15 @@ elseif (itytur.eq.5) then
 
 elseif (iturb.eq.60) then
 
-! 4.9 k-omega SST
-! ===============
+! k-omega SST
+! ===========
 
   call vissst
 
 elseif (iturb.eq.70) then
 
-! 4.10 Spalart-Allmaras
-! =====================
+! Spalart-Allmaras
+! ================
 
   cv13 = csav1**3
 
@@ -535,7 +526,7 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 5. Anisotropic turbulent viscosity (symmetric)
+! Anisotropic turbulent viscosity (symmetric)
 !===============================================================================
 idfm = 0
 iggafm = 0
@@ -722,7 +713,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 endif
 
 !===============================================================================
-! 6. Eddy viscosity correction for cavitating flows
+! Eddy viscosity correction for cavitating flows
 !===============================================================================
 
 if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0.and.icvevm.eq.1) then
@@ -738,7 +729,7 @@ if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0.and.icvevm.eq.1) then
 endif
 
 !===============================================================================
-! 7. Compute subgrid turbulence values for LES if required
+! Compute subgrid turbulence values for LES if required
 !===============================================================================
 
 if (itytur.eq.4 .and. iilagr.gt.0) then
@@ -779,8 +770,7 @@ endif
 if (allocated(gradv)) deallocate (gradv)
 
 !===============================================================================
-! 8. User modification of the turbulent viscosity and symmetric tensor
-!    diffusivity
+! User modification of the turbulent viscosity and symmetric tensor diffusivity
 !===============================================================================
 
 call usvist &
@@ -791,7 +781,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 9. Clipping of the turbulent viscosity in dynamic LES
+! Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -821,8 +811,8 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 10. Checking of the user values and put turbulent viscosity to 0 in
-!     disabled cells
+! Checking of the user values and put turbulent viscosity to 0 in
+! disabled cells
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions

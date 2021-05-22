@@ -185,7 +185,6 @@ cs_f_gradient_s(int               f_id,
                 int               inc,
                 int               iccocg,
                 int               n_r_sweeps,
-                int               idimtr,
                 int               iwarnp,
                 int               imligp,
                 cs_real_t         epsrgp,
@@ -679,9 +678,6 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   halo_type      <-- halo type (extended or not)
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
@@ -689,23 +685,14 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
 static void
 _sync_scalar_gradient_halo(const cs_mesh_t  *m,
                            cs_halo_type_t    halo_type,
-                           int               idimtr,
                            cs_real_3_t       grad[])
 {
   if (m->halo != NULL) {
-    if (idimtr == 0) {
-      cs_halo_sync_var_strided
+    cs_halo_sync_var_strided
+      (m->halo, halo_type, (cs_real_t *)grad, 3);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect
         (m->halo, halo_type, (cs_real_t *)grad, 3);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_vect
-          (m->halo, halo_type, (cs_real_t *)grad, 3);
-    }
-    else
-      cs_halo_sync_components_strided(m->halo,
-                                      halo_type,
-                                      CS_HALO_ROTATION_IGNORE,
-                                      (cs_real_t *)grad,
-                                      3);
   }
 }
 
@@ -717,9 +704,6 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
  *   halo_type      <-- halo type (extended or not)
  *   clip_mode      <-- type of clipping for the computation of the gradient
  *   iwarnp         <-- output level
- *   idimtr         <-- 0 for scalars or without rotational periodicity,
- *                      1 or 2 for vectors or tensors in case of rotational
- *                      periodicity
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   var            <-- variable
  *   grad           --> components of the pressure gradient
@@ -729,7 +713,6 @@ static void
 _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           cs_gradient_limit_t    clip_mode,
                           int                    verbosity,
-                          int                    idimtr,
                           cs_real_t              climgp,
                           const char            *var_name,
                           const cs_real_t        var[],
@@ -768,24 +751,15 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
-      if (idimtr > 0)
-        cs_halo_sync_components_strided(halo,
-                                        halo_type,
-                                        CS_HALO_ROTATION_IGNORE,
-                                        (cs_real_t *restrict)grad,
-                                        3);
-      else {
-        cs_halo_sync_var_strided(halo,
-                                 halo_type,
-                                 (cs_real_t *restrict)grad,
-                                 3);
-        cs_halo_perio_sync_var_vect(halo,
-                                    halo_type,
-                                    (cs_real_t *restrict)grad,
-                                    3);
-      }
-
-    } /* End if clip_mode == 1 */
+      cs_halo_sync_var_strided(halo,
+                               halo_type,
+                               (cs_real_t *restrict)grad,
+                               3);
+      cs_halo_perio_sync_var_vect(halo,
+                                  halo_type,
+                                  (cs_real_t *restrict)grad,
+                                  3);
+    }
 
   } /* End if halo */
 
@@ -995,14 +969,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
     /* Synchronize variable */
 
     if (halo != NULL) {
-      if (idimtr > 0) {
-        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denom);
-        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, denum);
-      }
-      else {
-        cs_halo_sync_var(halo, halo_type, denom);
-        cs_halo_sync_var(halo, halo_type, denum);
-      }
+      cs_halo_sync_var(halo, halo_type, denom);
+      cs_halo_sync_var(halo, halo_type, denum);
     }
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
@@ -1139,30 +1107,15 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
   if (halo != NULL) {
 
-    if (idimtr > 0) {
+    cs_halo_sync_var_strided(halo,
+                             halo_type,
+                             (cs_real_t *restrict)grad,
+                             3);
 
-      /* If the gradient is not treated as a "true" vector */
-
-      cs_halo_sync_components_strided(halo,
-                                      halo_type,
-                                      CS_HALO_ROTATION_IGNORE,
-                                      (cs_real_t *restrict)grad,
-                                      3);
-
-    }
-    else {
-
-      cs_halo_sync_var_strided(halo,
-                               halo_type,
-                               (cs_real_t *restrict)grad,
-                               3);
-
-      cs_halo_perio_sync_var_vect(halo,
-                                  halo_type,
-                                  (cs_real_t *restrict)grad,
-                                  3);
-
-    }
+    cs_halo_perio_sync_var_vect(halo,
+                                halo_type,
+                                (cs_real_t *restrict)grad,
+                                3);
 
   }
 
@@ -1181,9 +1134,6 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -1199,7 +1149,6 @@ static void
 _initialize_scalar_gradient(const cs_mesh_t                *m,
                             const cs_mesh_quantities_t     *fvq,
                             const cs_internal_coupling_t   *cpl,
-                            int                             idimtr,
                             int                             hyd_p_flag,
                             cs_real_t                       inc,
                             const cs_real_3_t               f_ext[],
@@ -1486,7 +1435,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, idimtr, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -1597,9 +1546,6 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
  *   var_name        <-- variable name
  *   gradient_info   <-- pointer to performance logging structure, or NULL
  *   nswrgp          <-- number of sweeps for gradient reconstruction
- *   idimtr          <-- 0 if ivar does not match a vector or tensor
- *                         or there is no periodicity of rotation
- *                       1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag      <-- flag for hydrostatic pressure
  *   verbosity       <-- verbosity level
  *   inc             <-- if 0, solve on increment; 1 otherwise
@@ -1620,7 +1566,6 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            const char                     *var_name,
                            cs_gradient_info_t             *gradient_info,
                            int                             nswrgp,
-                           int                             idimtr,
                            int                             hyd_p_flag,
                            int                             verbosity,
                            cs_real_t                       inc,
@@ -2006,7 +1951,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
     /* Synchronize halos */
 
-    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
+    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, grad);
 
     /* Convergence test */
 
@@ -2313,9 +2258,6 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *   cpl            <-- structure associated with internal coupling, or NULL
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   fext           <-- exterior force generating pressure
@@ -2334,7 +2276,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      const cs_internal_coupling_t   *cpl,
                      cs_halo_type_t                  halo_type,
                      bool                            recompute_cocg,
-                     int                             idimtr,
                      int                             hyd_p_flag,
                      cs_real_t                       inc,
                      const cs_real_3_t               f_ext[],
@@ -2831,7 +2772,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, grad);
 
   BFT_FREE(rhsv);
 }
@@ -2846,9 +2787,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   w_stride       <-- stride for weighting coefficient
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefap         <-- B.C. coefficients for boundary face normals
@@ -2864,7 +2802,6 @@ static void
 _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          const cs_mesh_quantities_t    *fvq,
                          const cs_internal_coupling_t  *cpl,
-                         int                            idimtr,
                          cs_real_t                      inc,
                          const cs_real_t                coefap[],
                          const cs_real_t                coefbp[],
@@ -3069,7 +3006,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, grad);
 
   BFT_FREE(cocg);
   BFT_FREE(rhsv);
@@ -3086,9 +3023,6 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-> structure associated with internal coupling, or NULL
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -3105,7 +3039,6 @@ static void
 _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                              const cs_mesh_quantities_t      *fvq,
                              const cs_internal_coupling_t    *cpl,
-                             int                              idimtr,
                              int                              hyd_p_flag,
                              cs_real_t                        inc,
                              const cs_real_t                  f_ext[][3],
@@ -3456,7 +3389,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, idimtr, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3470,9 +3403,6 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
  *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
@@ -3562,9 +3492,6 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
  *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
@@ -3827,9 +3754,6 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
  *   halo_type      <-- halo type (extended or not)
- *   tr_dim         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -3845,7 +3769,6 @@ static void
 _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_mesh_quantities_t     *fvq,
                               const cs_internal_coupling_t   *cpl,
-                              int                             tr_dim,
                               int                             hyd_p_flag,
                               cs_real_t                       inc,
                               const cs_real_3_t               f_ext[],
@@ -3955,7 +3878,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0, /* verbosity */
                     1, /* var_dim */
-                    tr_dim,
+                    0, /* tr_dim */
                     c_weight,
                     c_var,
                     b_f_var,
@@ -4210,7 +4133,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, tr_dim, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, grad);
 }
 
 
@@ -7212,8 +7135,6 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- * \param[in]       tr_dim          2 for tensor with periodicity of rotation,
- *                                  0 otherwise
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
  * \param[in]       w_stride        stride for weighting coefficient
  * \param[in]       verbosity       verbosity level
@@ -7241,7 +7162,6 @@ _gradient_scalar(const char                    *var_name,
                  int                            inc,
                  bool                           recompute_cocg,
                  int                            n_r_sweeps,
-                 int                            tr_dim,
                  int                            hyd_p_flag,
                  int                            w_stride,
                  int                            verbosity,
@@ -7299,8 +7219,7 @@ _gradient_scalar(const char                    *var_name,
 
     _initialize_scalar_gradient(mesh,
                                 fvq,
-                                  cpl,
-                                tr_dim,
+                                cpl,
                                 hyd_p_flag,
                                 inc,
                                 (const cs_real_3_t *)f_ext,
@@ -7316,7 +7235,6 @@ _gradient_scalar(const char                    *var_name,
                                var_name,
                                gradient_info,
                                n_r_sweeps,
-                               tr_dim,
                                hyd_p_flag,
                                verbosity,
                                inc,
@@ -7335,7 +7253,6 @@ _gradient_scalar(const char                    *var_name,
       _lsq_scalar_gradient_ani(mesh,
                                fvq,
                                cpl,
-                               tr_dim,
                                inc,
                                bc_coeff_a,
                                bc_coeff_b,
@@ -7348,7 +7265,6 @@ _gradient_scalar(const char                    *var_name,
                            cpl,
                            halo_type,
                            recompute_cocg,
-                           tr_dim,
                            hyd_p_flag,
                            inc,
                            (const cs_real_3_t *)f_ext,
@@ -7361,7 +7277,6 @@ _gradient_scalar(const char                    *var_name,
     _scalar_gradient_clipping(halo_type,
                               clip_mode,
                               verbosity,
-                              tr_dim,
                               clip_coeff,
                               var_name,
                               var, grad);
@@ -7376,7 +7291,6 @@ _gradient_scalar(const char                    *var_name,
         _lsq_scalar_gradient_ani(mesh,
                                  fvq,
                                  cpl,
-                                 tr_dim,
                                  inc,
                                  bc_coeff_a,
                                  bc_coeff_b,
@@ -7389,7 +7303,6 @@ _gradient_scalar(const char                    *var_name,
                              cpl,
                              halo_type,
                              recompute_cocg,
-                             tr_dim,
                              hyd_p_flag,
                              inc,
                              (const cs_real_3_t *)f_ext,
@@ -7402,7 +7315,6 @@ _gradient_scalar(const char                    *var_name,
       _scalar_gradient_clipping(halo_type,
                                 clip_mode,
                                 verbosity,
-                                tr_dim,
                                 clip_coeff,
                                 var_name,
                                 var, r_grad);
@@ -7410,7 +7322,6 @@ _gradient_scalar(const char                    *var_name,
       _reconstruct_scalar_gradient(mesh,
                                    fvq,
                                    cpl,
-                                   tr_dim,
                                    hyd_p_flag,
                                    inc,
                                    (const cs_real_3_t *)f_ext,
@@ -7429,7 +7340,6 @@ _gradient_scalar(const char                    *var_name,
     _fv_vtx_based_scalar_gradient(mesh,
                                   fvq,
                                   cpl,
-                                  tr_dim,
                                   hyd_p_flag,
                                   inc,
                                   (const cs_real_3_t *)f_ext,
@@ -8287,7 +8197,6 @@ cs_f_gradient_s(int               f_id,
                 int               inc,
                 int               iccocg,
                 int               n_r_sweeps,
-                int               idimtr,
                 int               iwarnp,
                 int               imligp,
                 cs_real_t         epsrgp,
@@ -8337,7 +8246,7 @@ cs_f_gradient_s(int               f_id,
                      inc,
                      recompute_cocg,
                      n_r_sweeps,
-                     idimtr,
+                     0,             /* ignored */
                      0,             /* iphydp */
                      1,             /* w_stride */
                      iwarnp,
@@ -8414,7 +8323,7 @@ cs_f_gradient_potential(int               f_id,
                      inc,
                      recompute_cocg,
                      n_r_sweeps,
-                     0,             /* idimtr */
+                     0,             /* ignored */
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
@@ -8492,7 +8401,7 @@ cs_f_gradient_weighted_s(int               f_id,
                      inc,
                      recompute_cocg,
                      n_r_sweeps,
-                     0,             /* idimtr */
+                     0,             /* ignored */
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
@@ -8857,8 +8766,7 @@ cs_gradient_free_quantities(void)
  * \param[in]       recompute_cocg should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
  *                                 (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]       tr_dim         2 for tensor with periodicity of rotation,
- *                                 0 otherwise
+ * \param[in]       tr_dim         ignored
  * \param[in]       hyd_p_flag     flag for hydrostatic pressure
  * \param[in]       w_stride       stride for weighting coefficient
  * \param[in]       verbosity      verbosity level
@@ -8898,6 +8806,8 @@ cs_gradient_scalar(const char                    *var_name,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t                      grad[restrict][3])
 {
+  CS_UNUSED(tr_dim);
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
@@ -8913,11 +8823,7 @@ cs_gradient_scalar(const char                    *var_name,
 
   if (mesh->halo != NULL) {
 
-    if (tr_dim > 0)
-      cs_halo_sync_component(mesh->halo, halo_type,
-                             CS_HALO_ROTATION_IGNORE, var);
-    else
-      cs_halo_sync_var(mesh->halo, halo_type, var);
+    cs_halo_sync_var(mesh->halo, halo_type, var);
 
     if (c_weight != NULL) {
       if (w_stride == 6) {
@@ -8942,7 +8848,6 @@ cs_gradient_scalar(const char                    *var_name,
                    inc,
                    recompute_cocg,
                    n_r_sweeps,
-                   tr_dim,
                    hyd_p_flag,
                    w_stride,
                    verbosity,
@@ -9179,8 +9084,6 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
  *                              (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]   tr_dim          2 for tensor with periodicity of rotation,
- *                              0 otherwise
  * \param[in]   hyd_p_flag      flag for hydrostatic pressure
  * \param[in]   w_stride        stride for weighting coefficient
  * \param[in]   verbosity       verbosity level
@@ -9205,7 +9108,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 int                         inc,
                                 bool                        recompute_cocg,
                                 int                         n_r_sweeps,
-                                int                         tr_dim,
                                 int                         hyd_p_flag,
                                 int                         w_stride,
                                 int                         verbosity,
@@ -9247,7 +9149,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                    inc,
                    recompute_cocg,
                    n_r_sweeps,
-                   tr_dim,
                    hyd_p_flag,
                    w_stride,
                    verbosity,

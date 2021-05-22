@@ -52,7 +52,6 @@
 #include "cs_geom.h"
 #include "cs_gradient.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_join.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"

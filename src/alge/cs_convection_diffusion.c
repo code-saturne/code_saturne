@@ -62,7 +62,6 @@
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -641,6 +640,8 @@ void CS_PROCF (itrmas, ITRMAS)
  cs_real_t                b_massflux[]
 )
 {
+  CS_UNUSED(extrap);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -706,6 +707,8 @@ void CS_PROCF (itrmav, ITRMAV)
  cs_real_t                b_massflux[]
 )
 {
+  CS_UNUSED(extrap);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -770,6 +773,8 @@ void CS_PROCF (itrgrp, ITRGRP)
  cs_real_t                diverg[]
 )
 {
+  CS_UNUSED(extrap);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -833,6 +838,8 @@ void CS_PROCF (itrgrv, ITRGRV)
  cs_real_t                diverg[]
 )
 {
+  CS_UNUSED(extrap);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -901,6 +908,8 @@ cs_slope_test_gradient(int                     f_id,
                        const cs_real_t        *coefbp,
                        const cs_real_t        *i_massflux)
 {
+  CS_UNUSED(f_id);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -1007,10 +1016,6 @@ cs_slope_test_gradient(int                     f_id,
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD, (cs_real_t *)grdpa, 3);
-
-    /* Gradient periodicity of rotation for Reynolds stress components */
-    if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
-      cs_gradient_perio_process_rij(f_id, grdpa);
   }
 
 }
@@ -1045,6 +1050,8 @@ cs_upwind_gradient(const int                     f_id,
                    const cs_real_t     *restrict pvar,
                    cs_real_3_t         *restrict grdpa)
 {
+  CS_UNUSED(f_id);
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -1139,10 +1146,6 @@ cs_upwind_gradient(const int                     f_id,
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
-
-    /* Gradient periodicity of rotation for Reynolds stress components */
-    if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
-      cs_gradient_perio_process_rij(f_id, grdpa);
   }
 }
 
@@ -1697,7 +1700,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
   char var_name[64];
 
   int iupwin = 0;
-  int tr_dim = 0;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -1750,7 +1752,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -1760,7 +1762,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    cs_gradient_perio_init_rij(f, &tr_dim, grad);
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
@@ -1864,7 +1865,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     iwarnp,
@@ -3129,7 +3129,6 @@ cs_face_convection_scalar(int                       idtvar,
   char var_name[64];
 
   int iupwin = 0;
-  int tr_dim = 0;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -3177,7 +3176,7 @@ cs_face_convection_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -3187,7 +3186,6 @@ cs_face_convection_scalar(int                       idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    cs_gradient_perio_init_rij(f, &tr_dim, grad);
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
@@ -3284,7 +3282,6 @@ cs_face_convection_scalar(int                       idtvar,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     iwarnp,
@@ -5932,8 +5929,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   char var_name[64];
 
-  int tr_dim = 0;
-
   cs_gnum_t n_upwind;
   int iupwin;
 
@@ -5985,7 +5980,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    cs_gradient_perio_init_rij_tensor(&tr_dim, grad);
     snprintf(var_name, 63, "%s", f->name);
   }
   else
@@ -6901,7 +6895,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   cs_gnum_t n_upwind;
   int iupwin;
-  int tr_dim = 0;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -6950,7 +6943,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -7057,7 +7050,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     iwarnp,
@@ -8222,7 +8214,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   char var_name[64];
 
-  int tr_dim = 0;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -8266,7 +8257,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    cs_sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, pvar);
   if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -8376,7 +8367,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     iwarnp,
@@ -10839,7 +10829,6 @@ cs_face_diffusion_potential(const int                 f_id,
   /* Local variables */
 
   char var_name[64];
-  int tr_dim = 0;
   int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -10982,7 +10971,6 @@ cs_face_diffusion_potential(const int                 f_id,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
@@ -11200,7 +11188,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
   cs_real_t *df_limiter = NULL;
 
   char var_name[64];
-  int tr_dim = 0;
   int w_stride = 6;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -11402,7 +11389,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
@@ -11678,7 +11664,6 @@ cs_diffusion_potential(const int                 f_id,
   /* Local variables */
 
   char var_name[64];
-  int tr_dim = 0;
   int mass_flux_rec_type = cs_glob_velocity_pressure_param->irecmf;
   int w_stride = 1;
 
@@ -11833,7 +11818,6 @@ cs_diffusion_potential(const int                 f_id,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     iphydp,
                                     w_stride,
                                     iwarnp,
@@ -12065,7 +12049,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
   cs_real_t *df_limiter = NULL;
 
   char var_name[64];
-  int tr_dim = 0;
   int w_stride = 6;
 
   bool recompute_cocg = (iccocg) ? true : false;
@@ -12273,7 +12256,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                     inc,
                                     recompute_cocg,
                                     nswrgp,
-                                    tr_dim,
                                     iphydp,
                                     w_stride,
                                     iwarnp,

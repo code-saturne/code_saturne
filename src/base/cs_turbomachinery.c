@@ -54,7 +54,6 @@
 #include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_join.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -841,8 +840,6 @@ _update_mesh_coupling(double   t_cur_mob,
 
   /* Update linear algebra APIs relative to mesh */
 
-  cs_gradient_perio_update_mesh();
-
   t_end = cs_timer_wtime();
 
   *t_elapsed = t_end - t_start;
@@ -1130,7 +1127,6 @@ _update_mesh(bool     restart_mode,
 
   /* Update linear algebra APIs relative to mesh */
 
-  cs_gradient_perio_update_mesh();
   cs_matrix_update_mesh();
 
   t_end = cs_timer_wtime();

@@ -67,7 +67,6 @@
 #include "cs_post.h"
 
 #include "cs_face_viscosity.h"
-#include "cs_gradient_perio.h"
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
 #include "cs_convection_diffusion.h"

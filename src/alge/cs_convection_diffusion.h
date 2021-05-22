@@ -88,24 +88,15 @@ typedef enum {
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
- *   tr_dim         <-- 0 if pvar does not match a tensor
- *                        or there is no periodicity of rotation
- *                      2 for Reynolds stress
  *   pvar           <-> variable
  *----------------------------------------------------------------------------*/
 
 inline static void
 cs_sync_scalar_halo(const cs_mesh_t  *m,
-                  int               tr_dim,
-                  cs_real_t         pvar[])
+                    cs_real_t         pvar[])
 {
-  if (m->halo != NULL) {
-    if (tr_dim > 0)
-      cs_halo_sync_component(m->halo, CS_HALO_STANDARD, CS_HALO_ROTATION_IGNORE,
-                             pvar);
-    else
-      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
-  }
+  if (m->halo != NULL)
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 }
 
 /*----------------------------------------------------------------------------

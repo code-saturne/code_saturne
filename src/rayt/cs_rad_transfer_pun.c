@@ -278,7 +278,6 @@ cs_rad_transfer_pun(int              iband,
                              &gradient_type,
                              &halo_type);
 
-  int idimtr = 0;
   int hyd_p_flag = 0;
 
   cs_gradient_scalar("radiative_flux",
@@ -287,7 +286,7 @@ cs_rad_transfer_pun(int              iband,
                      inc,
                      iccocg,
                      nswrgp,
-                     idimtr,
+                     0,             /* ignored */
                      hyd_p_flag,
                      1,             /* w_stride */
                      iwarnp,

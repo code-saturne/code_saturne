@@ -49,7 +49,6 @@
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_mesh.h"
@@ -578,7 +577,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                              &gradient_type,
                              &halo_type);
 
-  int tr_dim = 0;
   int w_stride = 1;
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
@@ -614,8 +612,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  cs_gradient_perio_init_rij(f, &tr_dim, grad);
-
   const cs_real_t *bc_coeff_a = NULL, *bc_coeff_b = NULL;
   if (f->bc_coeffs != NULL) {
     bc_coeff_a = f->bc_coeffs->a;
@@ -628,7 +624,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      inc,
                      recompute_cocg,
                      eqp->nswrgr,
-                     tr_dim,
+                     0, /* ignored */
                      0, /* hyd_p_flag */
                      w_stride,
                      eqp->verbosity,

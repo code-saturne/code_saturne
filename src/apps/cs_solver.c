@@ -63,7 +63,6 @@
 #include "cs_file.h"
 #include "cs_fp_exception.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_conjugate_heat_transfer.h"
@@ -379,7 +378,6 @@ _run(void)
     /* Initialize gradient computation */
 
     cs_gradient_initialize();
-    cs_gradient_perio_initialize();
 
     if (opts.verif == false) {
 
@@ -467,7 +465,6 @@ _run(void)
 
     /* Finalize gradient computation */
 
-    cs_gradient_perio_finalize();
     cs_gradient_finalize();
 
     /* Finalize synthetic inlet condition generation */
