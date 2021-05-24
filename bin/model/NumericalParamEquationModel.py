@@ -150,17 +150,14 @@ class NumericalParamEquationModel(Model):
                     elif mdl =='temperature_kelvin':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif mdl =='enthalpy':
-                        self.default['min_value'] = -1e+12
-                        self.default['max_value'] = 1e+12
                     elif mdl =='potential_temperature':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
                     elif mdl =='liquid_potential_temperature':
                         self.default['min_value'] = 0
                         self.default['max_value'] = 1e+12
-                    elif mdl =='total_energy':
-                        self.default['min_value'] = 0
+                    else:
+                        self.default['min_value'] = -1e+12
                         self.default['max_value'] = 1e+12
         else:
             self.default['min_value'] = -1e+12
