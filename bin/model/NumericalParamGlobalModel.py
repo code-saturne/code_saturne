@@ -114,8 +114,10 @@ class NumericalParamGlobalModel(Model):
         """
         Return status of ICFGRP value (for hydrostatic equilibrium) is activated or not
         """
+        status = None
         node = self.node_np.xmlGetNode('hydrostatic_equilibrium')
-        status = node['status']
+        if node:
+            status = node['status']
         if not status:
             status = self._defaultValues()['hydrostatic_equilibrium']
         return status
