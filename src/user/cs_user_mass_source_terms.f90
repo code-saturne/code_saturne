@@ -57,7 +57,6 @@
 !>                              (usable only for iappel > 1)
 !> \param[in,out] icetsm        index number of cells with mass source terms
 !> \param[in,out] itypsm        type of mass source term for each variable
-!>                               (see uttsma.f90)
 !> \param[in]     izctsm        cells zone for mass source terms definition
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient

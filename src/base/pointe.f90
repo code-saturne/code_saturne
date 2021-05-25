@@ -181,7 +181,7 @@ module pointe
   !> \anchor icetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
   !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms}}
-  integer, allocatable, dimension(:) :: icetsm
+  integer, allocatable, dimension(:), target :: icetsm
 
   !> zone where a mass source term is imposed.
   integer, allocatable, dimension(:) :: izctsm
@@ -191,13 +191,13 @@ module pointe
   !> - 0 for an injection at ambient value,
   !> - 1 for an injection at imposed value.
   !> See the user subroutine \ref cs_user_mass_source_terms
-  integer, allocatable, dimension(:,:) :: itypsm
+  integer, allocatable, dimension(:,:), target :: itypsm
 
   !> \anchor smacel
   !> value of the mass source term for pressure.
   !> For the other variables, eventual imposed injection value.
   !> See the user subroutine \ref cs_user_mass_source_terms
-  double precision, allocatable, dimension(:,:) :: smacel
+  double precision, allocatable, dimension(:,:), target :: smacel
 
   !> liquid-vapor mass transfer term for cavitating flows
   !> and its derivative with respect to pressure
@@ -502,6 +502,7 @@ contains
     deallocate(flthr, dflthr)
 
   end subroutine finalize_pcond
+
   !=============================================================================
 
   subroutine init_vcond ( nvar , ncelet)
@@ -658,6 +659,48 @@ contains
     call c_f_pointer(c_tppt1d, tppt1d, [nfpt1d])
 
   end subroutine cs_1d_wall_thermal_get_temp
+
+  !=============================================================================
+
+  !> \brief Return pointers to the mass source term arrays
+
+  !> \param[in]   var_id   id of associated variables
+  !> \param[out]  ncesmp   number of cells with mass source terms
+  !> \param[out]  icetsm   cell numbers with mass source terms (1 to n)
+  !> \param[out]  itpsmp   mass source types (0: ambient value, 1: smacel value)
+  !> \param[out]  smacel     mass source values
+
+  subroutine cs_f_volume_mass_injection_get_arrays        &
+    (var_id, ncesmp, icetsm_p, itypsm_p, smacel_p)        &
+    bind(C, name='cs_f_volume_mass_injection_get_arrays')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer(c_int), value :: var_id
+    integer(c_int) :: ncesmp
+    type(c_ptr) :: icetsm_p, itypsm_p, smacel_p
+
+    ! Local variables
+
+    integer ivar
+
+    ! Get pointer values
+
+    ivar= var_id
+
+    ncesmp = ncetsm
+    if (ncetsm.gt.0) then
+      icetsm_p = c_loc(icetsm(1))
+      itypsm_p = c_loc(itypsm(1, var_id))
+      smacel_p = c_loc(smacel(1, var_id))
+    else
+      icetsm_p = c_null_ptr
+      itypsm_p = c_null_ptr
+      smacel_p = c_null_ptr
+    endif
+
+  end subroutine cs_f_volume_mass_injection_get_arrays
 
   !=============================================================================
 
