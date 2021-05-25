@@ -168,25 +168,33 @@ _cdofb_normal_flux_reco(short int                  fb,
   const short int  n_fc = cm->n_fc;
   const cs_quant_t  pfbq = cm->face[fb];
   const cs_nvec3_t  debq = cm->dedge[fb];
+  const double  inv_volc = 1./cm->vol_c;
 
-  /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
-  const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = hodgep->coef * fb_k_fb / cm->pvol_f[fb];
+  /* beta * |fb|^2 * nu_{fb}^T.kappa.nu_{fb} / |pvol_fb| */
+  const cs_real_t  stab_scaling =
+    hodgep->coef * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
 
+  /* Get the 'fb' row */
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (n_fc + 1);
   cs_real_t  row_sum = 0.0;
+
   for (short int f = 0; f < n_fc; f++) {
 
-    const cs_real_t  if_ov = cm->f_sgn[f] / cm->vol_c;
-    const cs_real_t  f_k_fb = pfbq.meas * _dp3(kappa_f[f], pfbq.unitv);
     const cs_quant_t  pfq = cm->face[f];
-    cs_real_t  stab = - pfq.meas*debq.meas * _dp3(debq.unitv, pfq.unitv);
-    if (f == fb) stab += cm->vol_c;
-    const cs_real_t  int_gradf_dot_f = if_ov *
-      ( f_k_fb                        /* Consistent part */
-        + beta_fbkfb_o_pfc * stab);   /* Stabilization part */
-    ntrgrd_fb[f] -= int_gradf_dot_f;  /* Minus because -du/dn */
-    row_sum      += int_gradf_dot_f;
+
+    /* consistent part */
+    const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
+    double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
+
+    /* stabilization part */
+    double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
+    if (f == fb) stab_part += 1;
+    stab_part *= stab_scaling;
+
+    const cs_real_t  fb_f_part = consist_part + stab_part;
+
+    ntrgrd_fb[f] -= fb_f_part;  /* Minus because -du/dn */
+    row_sum      += fb_f_part;
 
   } /* Loop on f */
 
@@ -1490,7 +1498,6 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   const cs_property_data_t  *pty = hodge->pty_data;
   const double  chi =
     eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
-  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1498,6 +1505,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
+  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
@@ -1519,31 +1527,26 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   } /* Loop boundary faces */
 
   /* Second pass: add the bc_op matrix, add the BC */
-  cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + 3*n_dofs;
+
+  /* Update bc_op = bc_op + transp and bc_op_t = transpose(bc_op) */
+  cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
   /* Putting the face DoFs of the BC, into a face- and cell-DoFs array which
      is non-interlaced */
-  cs_real_t *d_x = dir_val, *d_y = dir_val + n_dofs, *d_z = dir_val + 2*n_dofs;
-  for (short int f = 0; f < cm->n_fc; f++) {
-    const cs_real_t *d_f = csys->dir_values + 3*f;
-    d_x[f] = d_f[0], d_y[f] = d_f[1], d_z[f] = d_f[2];
-  }
-  d_x[cm->n_fc] = d_y[cm->n_fc] = d_z[cm->n_fc] = 0.0; /* cell DoF */
+  cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
+  for (short int k = 0; k < 3; k++) {
 
-  /* Update bc_op = bc_op + transp and transp = transpose(bc_op) cb->loc
-     plays the role of the flux operator */
-  cs_sdm_square_add_transpose(bc_op, bc_op_t);
-  for (short int k = 0; k < 3; k++)
-    cs_sdm_square_matvec(bc_op_t, dir_val + k*n_dofs, u0_trgradv + k*n_dofs);
+    /* Build dir_val */
+    for (short int f = 0; f < cm->n_fc; f++)
+      dir_val[f] = csys->dir_values[3*f+k];
+    dir_val[cm->n_fc] = 0.;     /* cell DoF */
 
-  /* Resulting rhs has to be interlaced to update the rhs */
-  const cs_real_t  *ux = u0_trgradv, *uy = u0_trgradv + n_dofs,
-    *uz = u0_trgradv + 2*n_dofs;
-  for (short int i = 0; i < n_dofs; i++) { /* Cell too! */
-    csys->rhs[3*i  ] += ux[i];
-    csys->rhs[3*i+1] += uy[i];
-    csys->rhs[3*i+2] += uz[i];
-  }
+    cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
+
+    for (short int i = 0; i < n_dofs; i++) /* Cell too! */
+      csys->rhs[3*i+k] += u0_trgradv[i];
+
+  } /* Loop on components */
 
   /* Third pass: Update the cell system with the bc_op matrix and the Dirichlet
      values. Avoid a truncation error if the arbitrary coefficient of the
