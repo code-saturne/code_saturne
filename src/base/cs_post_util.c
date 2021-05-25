@@ -1032,10 +1032,10 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
  *                                energy field
  * \param[in]  n_cells            number of points
  * \param[in]  cell_ids           cell location of points
- *                                (indexed from 0 to n-1)
- * \param[in]  coords             point coordinates
+ *                                 (indexed from 0 to n-1, or NULL if 1-to-1)
+ * \param[in]  coords             point coordinates (or NULL for cell centers)
  * \param[out] rst                Reynolds stresses stored as vector
- *                                [r11,r22,r33,r12,r23,r13]
+ *                                [r11, r22, r33, r12, r23, r13]
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1068,24 +1068,39 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
                            inc,
                            gradv);
 
-  cs_real_t *xk;
-  BFT_MALLOC(xk, n_cells, cs_real_t);
+  const cs_real_t *xk = CS_F_(k)->val;
+  cs_real_t *_xk = NULL;
 
-  cs_field_interpolate(CS_F_(k),
-                       interpolation_type,
-                       n_cells,
-                       cell_ids,
-                       coords,
-                       xk);
+  if (cell_ids != NULL) {
+    BFT_MALLOC(_xk, n_cells, cs_real_t);
+
+    if (coords != NULL)
+      cs_field_interpolate(CS_F_(k),
+                           interpolation_type,
+                           n_cells,
+                           cell_ids,
+                           coords,
+                           _xk);
+    else {
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        _xk[i] = xk[cell_ids[i]];
+
+      }
+    }
+
+    xk = _xk;
+  }
 
   /* Compute Reynolds stresses */
 
   const cs_real_t d2s3 = 2./3.;
+  const cs_real_t *cpro_mu_t = CS_F_(mu_t)->val;
+  const cs_real_t *cpro_rho = CS_F_(rho)->val;
   for (cs_lnum_t iloc = 0; iloc < n_cells; iloc++) {
     cs_lnum_t iel = cell_ids[iloc];
 
     cs_real_t divu = gradv[iel][0][0] + gradv[iel][1][1] + gradv[iel][2][2];
-    cs_real_t nut = CS_F_(mu_t)->val[iel]/CS_F_(rho)->val[iel];
+    cs_real_t nut = cpro_mu_t[iel] / cpro_rho[iel];
 
     cs_real_t xdiag = d2s3*(xk[iloc]+ nut*divu);
     rst[iloc][0] =  xdiag - 2.*nut*gradv[iel][0][0];
@@ -1097,7 +1112,7 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
   }
 
   BFT_FREE(gradv);
-  BFT_FREE(xk);
+  BFT_FREE(_xk);
 }
 
 /*----------------------------------------------------------------------------*/
