@@ -3289,18 +3289,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function to get the bc type array pointer
-
-    subroutine cs_f_mass_source_terms_get_pointers(ncesmp, icetsm) &
-      bind(C, name='cs_f_mass_source_terms_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), intent(out) :: ncesmp
-      type(c_ptr), intent(out) :: icetsm
-    end subroutine cs_f_mass_source_terms_get_pointers
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function computing standard atmospheric profile
 
     subroutine atmstd(z, p, t, r) &

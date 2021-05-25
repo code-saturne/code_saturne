@@ -165,7 +165,6 @@ cs_user_boundary_conditions-richards.f90 \
 cs_user_boundary_conditions_ale-base.f90 \
 cs_user_boundary_mass_source_terms-condensation.f90 \
 cs_user_boundary_mass_source_terms-nzones_condensation.f90 \
-cs_user_extra_operations-energy_balance.f90 \
 cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-nusselt_calculation.f90 \
 cs_user_extra_operations-parallel_operations.f90 \

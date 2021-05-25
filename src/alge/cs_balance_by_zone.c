@@ -72,6 +72,7 @@
 #include "cs_thermal_model.h"
 #include "cs_convection_diffusion.h"
 #include "cs_boundary_conditions.h"
+#include "cs_volume_mass_injection.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -849,11 +850,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
-  bool itemperature = false;
-  if (f == cs_thermal_model_field()) {
-    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
-      itemperature = true;
-  }
+  const int itemperature
+    = cs_field_get_key_int(f, cs_field_key_id("is_temperature"));
 
   /* Specific heat (CP) */
   cs_real_t *cpro_cp = NULL;
@@ -876,7 +874,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     }
   }
 
-  /* Internal coupling initialisation*/
+  /* Internal coupling initialization*/
   if (var_cal_opt.icoupl > 0) {
     const int coupling_key_id = cs_field_key_id("coupling_entity");
     const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
@@ -1015,7 +1013,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                            true, /* _recompute_cocg */
                            grad);
 
-  if (false) {//FIXME
+  if (false) { //FIXME
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       /* Associated boundary cell */
       cs_lnum_t c_id = b_face_cells[f_id];
@@ -1291,8 +1289,51 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   }
 
-  // TODO mass source terms and mass accumulation term
-  // In case of a mass source term, add contribution from Gamma*Tn+1
+  /* Mass source terms and mass accumulation term.
+     In case of a mass source term, add contribution from Gamma*Tn+1 */
+
+  cs_lnum_t ncesmp = 0;
+  cs_lnum_t *icetsm = NULL;
+  int *itpsmp = NULL;
+  cs_real_t *smcelp, *gamma = NULL;
+
+  cs_volume_mass_injection_get_arrays(f, &ncesmp, &icetsm, &itpsmp,
+                                      &smcelp, &gamma);
+
+  if (ncesmp > 0) {
+
+    const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+    const double cp0 = cs_glob_fluid_properties->cp0;
+
+    for (cs_lnum_t c_idx = 0; c_idx < ncesmp; c_idx++) {
+      cs_lnum_t c_id_sel = icetsm[c_idx] - 1;
+
+      if (cells_tag_ids[c_id_sel]) {
+
+        cs_real_t vg = gamma[c_idx];
+        cs_real_t v;
+        if (itpsmp[c_idx] == 0 || vg < 0)
+          v = f->val[c_id_sel];
+        else
+          v = smcelp[c_idx];
+
+        cs_real_t c_st = cell_f_vol[c_id_sel] * dt[c_id_sel]* vg * v;
+
+        if (itemperature) {
+          if (icp >= 0)
+            c_st *= cpro_cp[c_id_sel];
+          else
+            c_st *= cp0;
+        }
+
+        if (vg < 0)
+          mass_o_balance += c_st;
+        else
+          mass_i_balance += c_st;
+      }
+
+    }
+  }
 
   int iconvp = var_cal_opt.iconv;
   int idiffp = var_cal_opt.idiff;

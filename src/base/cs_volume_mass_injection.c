@@ -46,6 +46,7 @@
 #include "cs_base.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -57,6 +58,17 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_volume_mass_injection.h"
+
+/*----------------------------------------------------------------------------
+ * Prototypes for Fortran-defined function
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_volume_mass_injection_get_arrays(int         var_id,
+                                      cs_lnum_t  *ncesmp,
+                                      cs_lnum_t  **icetsm,
+                                      int        **itpsmp,
+                                      cs_real_t  **smcelp);
 
 /*----------------------------------------------------------------------------*/
 
@@ -541,6 +553,53 @@ cs_volume_mass_injection_eval(int        nvar,
   }
 
   BFT_FREE(z_shift);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointers to the mass source term arrays.
+ *
+ * \param[in]   f         pointer to associated field
+ * \param[out]  ncesmp    number of cells with mass source terms
+ * \param[out]  icetsm    pointet to source mass cells list (1-based numbering)
+ * \param[out]  itpsmp    mass source type for the working variable
+ *                              (see \ref cs_user_mass_source_terms)
+ * \param[out]  s_type    mass source types (0: ambient value, 1: s_val value)
+ * \param[out]  smcelp    pointer to mass source values
+ * \param[out]  gamma     pointer to flow mass value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_volume_mass_injection_get_arrays(const cs_field_t  *f,
+                                    cs_lnum_t         *ncesmp,
+                                    cs_lnum_t         **icetsm,
+                                    int               **itpsmp,
+                                    cs_real_t         **smcelp,
+                                    cs_real_t         **gamma)
+{
+  *ncesmp = 0;
+  *icetsm = NULL;
+  *itpsmp = NULL;
+  *smcelp = NULL;
+  *gamma = NULL;
+
+  const int k_variable_id = cs_field_key_id("variable_id");
+
+  const int var_id = cs_field_get_key_int(f, k_variable_id);
+
+  cs_f_volume_mass_injection_get_arrays(var_id,
+                                        ncesmp, icetsm, itpsmp, smcelp);
+
+  if (*ncesmp > 0) {
+    cs_lnum_t _ncesmp;
+    cs_lnum_t *_icetsm;
+    int *_itpsmp;
+    const int p_var_id = cs_field_get_key_int(CS_F_(p), k_variable_id);
+    cs_f_volume_mass_injection_get_arrays(p_var_id,
+                                          &_ncesmp, &_icetsm, &_itpsmp,
+                                          gamma);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
