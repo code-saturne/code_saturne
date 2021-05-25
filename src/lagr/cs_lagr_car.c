@@ -65,6 +65,7 @@
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 #include "cs_thermal_model.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -150,7 +151,12 @@ cs_lagr_car(int              iprev,
   cs_real_t ktil   = 0.0;
 
   cs_real_t rec    = 1000.0;
-  cs_real_t c0     = 2.1;
+  cs_real_t c0     = 3.5;
+  cs_turb_model_t *turb_mod = cs_get_glob_turb_model();
+  /* In case of Rotta model (ie LRR + Cr2 = 0) compute
+   * automatically the C0 constant */
+  if (turb_mod->iturb = CS_TURB_RIJ_EPSILON_LRR && CS_ABS(cs_turb_crij2) < 1.e-12)
+    c0 = (cs_turb_crij1-1.0)*2.0/3.0;
   cs_real_t cl     = 1.0 / (0.5 + (3.0 / 4.0) * c0);
   cs_real_t cb     = 0.8;
   cs_real_t cbcb   = 0.64;

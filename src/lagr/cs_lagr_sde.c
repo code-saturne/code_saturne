@@ -52,6 +52,7 @@
 #include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_adh.h"
@@ -1030,7 +1031,12 @@ _lagesd(cs_real_t             dtp,
     tvisq = cs_math_big_r;
 
   /* Constants for the calculation of bxp and tlp  */
-  cs_real_t c0 = 2.1;
+  cs_real_t c0 = 3.5;
+  cs_turb_model_t *turb_mod = cs_get_glob_turb_model();
+  /* In case of Rotta model (ie LRR + Cr2 = 0) compute
+   * automatically the C0 constant */
+  if (turb_mod->iturb = CS_TURB_RIJ_EPSILON_LRR && CS_ABS(cs_turb_crij2) < 1.e-12)
+    c0 = (cs_turb_crij1-1.0)*2.0/3.0;
   cs_real_t cl = 1.0 / (0.5 + (3.0 / 4.0) * c0);
 
   /* Pointer on the density w.r.t the flow    */
