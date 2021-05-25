@@ -1601,7 +1601,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     }
   }
 
-  else if (b_type == CS_LAGR_REBOUND || b_type == CS_LAGR_SYM) {
+  /* Anelastic rebound */
+  else if (b_type == CS_LAGR_REBOUND ) {
+
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -1631,13 +1634,61 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
 
-    for (int k = 0; k < 3; k++)
-      particle_velocity_seen[k] -= tmp * face_norm[k];
+    /* Wall function */
+    if (extra->cvar_rij != NULL) {
+      /* Reynolds stress tensor (current value) */
+      cs_real_t *r_ij = &(extra->cvar_rij->vals[0][6*cell_id]);
+      /* Component Rnn = ni Rij nj */
+      cs_real_t r_nn = cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm);
+
+      /* Vector Rij.nj */
+      cs_real_t r_in[3];
+      cs_math_sym_33_3_product(r_ij, face_norm, r_in);
+
+      for (int k = 0; k < 3; k++)
+        particle_velocity_seen[k] -=  r_in[k] / r_nn * tmp ;
+    }
+    /* TODO else: for EVM u*^2 / r_nn */
 
     event_flag = event_flag | CS_EVENT_REBOUND;
 
   }
 
+  /* Elastic rebound */
+  else if (b_type == CS_LAGR_SYM){
+
+    particle_state = CS_LAGR_PART_TO_SYNC;
+
+    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+    cs_real_3_t vect_cen;
+    for (int k = 0; k < 3; k++) {
+      vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
+      p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
+    }
+
+    /* Modify the ending point. */
+    for (int k = 0; k < 3; k++)
+      disp[k] = particle_coord[k] - intersect_pt[k];
+
+    tmp = 2. * cs_math_3_dot_product(disp, face_norm);
+
+    for (int k = 0; k < 3; k++)
+      particle_coord[k] -= tmp * face_norm[k];
+
+    /* Modify particle velocity and velocity seen */
+
+    tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
+
+    for (int k = 0; k < 3; k++)
+      particle_velocity[k] -= tmp * face_norm[k];
+
+    tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+
+    for (int k = 0; k < 3; k++)
+      particle_velocity_seen[k] -= tmp * face_norm[k];
+
+    event_flag = event_flag | CS_EVENT_REBOUND;
+  }
   else if (b_type == CS_LAGR_FOULING) {
 
     /* Fouling of the particle, if its properties make it possible and
@@ -1739,6 +1790,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
 
+      /*TODO set aneslastic rebound */
       for (int k = 0; k < 3; k++) {
         particle_velocity_seen[k] -= tmp * face_norm[k];
         // particle_velocity_seen[k] = 0.0; //FIXME
@@ -1996,7 +2048,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
     bool restart = false;
 
-  reloop_cen:;
+    reloop_cen:;
 
     cs_lnum_t exit_face = 0; /* > 0 for interior faces,
                                 < 0 for boundary faces */
