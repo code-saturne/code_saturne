@@ -3362,7 +3362,6 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
-                                                    CS_HALO_ROTATION_IGNORE,
                                                     rtol,
                                                     r_norm,
                                                     &n_iters,

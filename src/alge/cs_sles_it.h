@@ -112,7 +112,6 @@ extern const char *cs_sles_it_type_name[];
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
  *   diag_block_size <-- diagonal block size (unused here)
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -127,7 +126,6 @@ cs_sles_convergence_state_t
 cs_user_sles_it_solver(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
                        cs_real_t                 *restrict vx,
@@ -246,7 +244,6 @@ cs_sles_it_setup(void               *context,
  *   name          <-- pointer to system name
  *   a             <-- matrix
  *   verbosity     <-- verbosity level
- *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
  *   n_iter        --> number of iterations
@@ -265,7 +262,6 @@ cs_sles_it_solve(void                *context,
                  const char          *name,
                  const cs_matrix_t   *a,
                  int                  verbosity,
-                 cs_halo_rotation_t   rotation_mode,
                  double               precision,
                  double               r_norm,
                  int                 *n_iter,
@@ -549,7 +545,6 @@ cs_sles_it_log_parallel_options(void);
  *   sles          <-> pointer to solver object
  *   state         <-- convergence state
  *   a             <-- matrix
- *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
  *
@@ -561,7 +556,6 @@ bool
 cs_sles_it_error_post_and_abort(cs_sles_t                    *sles,
                                 cs_sles_convergence_state_t   state,
                                 const cs_matrix_t            *a,
-                                cs_halo_rotation_t            rotation_mode,
                                 const cs_real_t              *rhs,
                                 cs_real_t                    *vx);
 

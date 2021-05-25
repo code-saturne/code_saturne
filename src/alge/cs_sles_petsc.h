@@ -276,7 +276,6 @@ cs_sles_petsc_setup(void               *context,
  *   name          <-- pointer to system name
  *   a             <-- matrix
  *   verbosity     <-- verbosity level
- *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
  *   n_iter        --> number of iterations
@@ -295,7 +294,6 @@ cs_sles_petsc_solve(void                *context,
                     const char          *name,
                     const cs_matrix_t   *a,
                     int                  verbosity,
-                    cs_halo_rotation_t   rotation_mode,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
@@ -331,7 +329,6 @@ cs_sles_petsc_free(void  *context);
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  *
@@ -343,7 +340,6 @@ bool
 cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    cs_sles_convergence_state_t   state,
                                    const cs_matrix_t            *a,
-                                   cs_halo_rotation_t            rotation_mode,
                                    const cs_real_t              *rhs,
                                    cs_real_t                    *vx);
 

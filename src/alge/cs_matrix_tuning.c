@@ -198,9 +198,9 @@ _matrix_tune_test(const cs_matrix_t     *m,
             if (run_id % 8)
               test_sum = 0;
             if (ed_flag == 0)
-              cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, &m_t, x, y);
+              cs_matrix_vector_multiply(&m_t, x, y);
             else
-              cs_matrix_exdiag_vector_multiply(CS_HALO_ROTATION_COPY, &m_t, x, y);
+              cs_matrix_exdiag_vector_multiply(&m_t, x, y);
             test_sum += y[n-1];
             run_id++;
           }

@@ -733,7 +733,6 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
     cs_matrix_vector_native_multiply(false,  /* symmetric */
                                      _d_block_size,
                                      NULL,   /* extra diag block size */
-                                     CS_HALO_ROTATION_COPY,
                                      -1,     /* field id or -1 */
                                      da,
                                      xa,
@@ -898,7 +897,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
       cs_matrix_assembler_values_finalize(&mav);
 
-      cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m, x, y);
+      cs_matrix_vector_multiply(m, x, y);
 
       cs_matrix_release_coefficients(m);
 

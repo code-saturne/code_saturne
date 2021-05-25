@@ -828,15 +828,13 @@ cs_matrix_apply_variant(cs_matrix_t                *m,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode --> halo update option for rotational periodicity
  *   matrix        --> pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
-                          const cs_matrix_t   *matrix,
+cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y);
 
@@ -865,15 +863,13 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode <-- halo update option for rotational periodicity
  *   matrix        <-- pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
-                                 const cs_matrix_t   *matrix,
+cs_matrix_exdiag_vector_multiply(const cs_matrix_t   *matrix,
                                  cs_real_t           *restrict x,
                                  cs_real_t           *restrict y);
 
@@ -881,14 +877,12 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
  * Synchronize ghost values prior to matrix.vector product
  *
  * parameters:
- *   rotation_mode <-- halo update option for rotational periodicity
  *   matrix        <-- pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
-                                   const cs_matrix_t   *matrix,
+cs_matrix_pre_vector_multiply_sync(const cs_matrix_t   *matrix,
                                    cs_real_t           *x);
 
 /*----------------------------------------------------------------------------*/

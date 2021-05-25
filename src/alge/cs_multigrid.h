@@ -291,7 +291,6 @@ cs_multigrid_setup_conv_diff(void               *context,
  *   name          <-- pointer to name of linear system
  *   a             <-- matrix
  *   verbosity     <-- associated verbosity
- *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
  *   n_iter        --> number of iterations
@@ -310,7 +309,6 @@ cs_multigrid_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
                    int                  verbosity,
-                   cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
@@ -372,7 +370,6 @@ cs_multigrid_pc_create(cs_multigrid_type_t  mg_type);
  *   sles          <-> pointer to solver object
  *   state         <-- convergence status
  *   a             <-- matrix
- *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
  *
@@ -384,7 +381,6 @@ bool
 cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                                   cs_sles_convergence_state_t   state,
                                   const cs_matrix_t            *a,
-                                  cs_halo_rotation_t            rotation_mode,
                                   const cs_real_t              *rhs,
                                   cs_real_t                    *vx);
 

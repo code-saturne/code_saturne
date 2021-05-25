@@ -117,7 +117,6 @@ static cs_lnum_t _pcg_sr_threshold = 512;
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -132,7 +131,6 @@ static cs_sles_convergence_state_t
 _conjugate_gradient(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
                     cs_lnum_t                  diag_block_size,
-                    cs_halo_rotation_t         rotation_mode,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
                     cs_real_t                 *restrict vx,
@@ -174,7 +172,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   /* Residue and descent direction */
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -183,14 +181,11 @@ _conjugate_gradient(cs_sles_it_t              *c,
   {
     /* Preconditioning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context,
-                            rotation_mode,
-                            rk,
-                            gk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
     /* Descent direction */
 
-    cs_matrix_vector_multiply(rotation_mode, a, gk, zk);  /* dk = gk */
+    cs_matrix_vector_multiply(a, gk, zk);  /* dk = gk */
 
     /* Descent parameter */
 
@@ -224,10 +219,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     /* Preconditioning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context,
-                            rotation_mode,
-                            rk,
-                            gk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
     /* Prepare descent parameter */
 
@@ -242,7 +234,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = gk[ii] + (beta * dk[ii]);
 
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+    cs_matrix_vector_multiply(a, dk, zk);
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
@@ -287,7 +279,6 @@ _conjugate_gradient(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
  *   diag_block_size <-- block size of element ii, ii
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -302,7 +293,6 @@ static cs_sles_convergence_state_t
 _conjugate_gradient_sr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
                        cs_real_t                 *restrict vx,
@@ -345,7 +335,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   /* Residue and descent direction */
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
   {
 
@@ -355,14 +345,11 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Preconditionning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context,
-                            rotation_mode,
-                            rk,
-                            gk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
     /* Descent direction */
 
-    cs_matrix_vector_multiply(rotation_mode, a, gk, zk); /* zk = A.dk
+    cs_matrix_vector_multiply(a, gk, zk); /* zk = A.dk
                                                             dk == gk */
 
     /* Descent parameter */
@@ -400,12 +387,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Preconditionning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context,
-                            rotation_mode,
-                            rk,
-                            gk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    cs_matrix_vector_multiply(rotation_mode, a, gk, sk);  /* sk = A.gk */
+    cs_matrix_vector_multiply(a, gk, sk);  /* sk = A.gk */
 
     /* compute residue and prepare descent parameter */
 
@@ -461,7 +445,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
  *   diag_block_size <-- block size of element ii, ii
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -476,7 +459,6 @@ static cs_sles_convergence_state_t
 _conjugate_gradient_npc(cs_sles_it_t              *c,
                         const cs_matrix_t         *a,
                         cs_lnum_t                  diag_block_size,
-                        cs_halo_rotation_t         rotation_mode,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
                         cs_real_t                 *restrict vx,
@@ -516,7 +498,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   /* Residue and descent direction */
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -525,7 +507,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   {
     /* Descent direction */
 
-    cs_matrix_vector_multiply(rotation_mode, a, rk, zk); /* rk == dk */
+    cs_matrix_vector_multiply(a, rk, zk); /* rk == dk */
 
     /* Descent parameter */
 
@@ -572,7 +554,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = rk[ii] + (beta * dk[ii]);
 
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+    cs_matrix_vector_multiply(a, dk, zk);
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
@@ -619,7 +601,6 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
  *   diag_block_size <-- block size of element ii, ii
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -634,7 +615,6 @@ static cs_sles_convergence_state_t
 _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            const cs_matrix_t         *a,
                            cs_lnum_t                  diag_block_size,
-                           cs_halo_rotation_t         rotation_mode,
                            cs_sles_it_convergence_t  *convergence,
                            const cs_real_t           *rhs,
                            cs_real_t                 *restrict vx,
@@ -676,7 +656,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   /* Residue and descent direction */
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+  cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -685,7 +665,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   {
     /* Descent direction */
 
-    cs_matrix_vector_multiply(rotation_mode, a, rk, zk); /* zk = A.dk
+    cs_matrix_vector_multiply(a, rk, zk); /* zk = A.dk
                                                             dk == rk*/
 
     /* Descent parameter */
@@ -715,7 +695,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    cs_matrix_vector_multiply(rotation_mode, a, rk, sk);  /* sk = A.zk */
+    cs_matrix_vector_multiply(a, rk, sk);  /* sk = A.zk */
 
     /* Descent parameter */
 
@@ -771,7 +751,6 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -786,7 +765,6 @@ static cs_sles_convergence_state_t
 _jacobi(cs_sles_it_t              *c,
         const cs_matrix_t         *a,
         cs_lnum_t                  diag_block_size,
-        cs_halo_rotation_t         rotation_mode,
         cs_sles_it_convergence_t  *convergence,
         const cs_real_t           *rhs,
         cs_real_t                 *restrict vx,
@@ -840,7 +818,7 @@ _jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vx);
+    cs_matrix_exdiag_vector_multiply(a, rk, vx);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++) {
@@ -866,7 +844,6 @@ _jacobi(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size (unused here)
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              --> system solution
@@ -881,7 +858,6 @@ static cs_sles_convergence_state_t
 _block_3_jacobi(cs_sles_it_t              *c,
                 const cs_matrix_t         *a,
                 cs_lnum_t                  diag_block_size,
-                cs_halo_rotation_t         rotation_mode,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
                 cs_real_t                 *restrict vx,
@@ -930,7 +906,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
     /* Compute vxx <- vx - (a-diag).rk */
 
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
+    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
 
     /* Compute vx <- diag^-1 . (vxx - rhs) */
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
@@ -960,7 +936,6 @@ _block_3_jacobi(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- block size of diagonal elements
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              --> system solution
@@ -975,7 +950,6 @@ static cs_sles_convergence_state_t
 _block_jacobi(cs_sles_it_t              *c,
               const cs_matrix_t         *a,
               cs_lnum_t                  diag_block_size,
-              cs_halo_rotation_t         rotation_mode,
               cs_sles_it_convergence_t  *convergence,
               const cs_real_t           *rhs,
               cs_real_t                 *restrict vx,
@@ -1021,7 +995,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
+    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
 
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
@@ -1051,7 +1025,6 @@ _block_jacobi(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1066,7 +1039,6 @@ static cs_sles_convergence_state_t
 _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             const cs_matrix_t         *a,
                             cs_lnum_t                  diag_block_size,
-                            cs_halo_rotation_t         rotation_mode,
                             cs_sles_it_convergence_t  *convergence,
                             const cs_real_t           *rhs,
                             cs_real_t                 *restrict vx)
@@ -1093,7 +1065,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
     /* Synchronize ghost cells first */
 
     if (halo != NULL)
-      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
+      cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
@@ -1165,7 +1137,6 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1180,7 +1151,6 @@ static cs_sles_convergence_state_t
 _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
                     cs_lnum_t                  diag_block_size,
-                    cs_halo_rotation_t         rotation_mode,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
                     cs_real_t                 *restrict vx)
@@ -1205,7 +1175,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
     /* Synchronize ghost cells first */
 
     if (halo != NULL)
-      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
+      cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
@@ -1276,7 +1246,6 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1291,7 +1260,6 @@ static cs_sles_convergence_state_t
 _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         const cs_matrix_t         *a,
                         cs_lnum_t                  diag_block_size,
-                        cs_halo_rotation_t         rotation_mode,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
                         cs_real_t                 *restrict vx,
@@ -1331,7 +1299,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     /* Synchronize ghost cells first */
 
     if (halo != NULL)
-      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
+      cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk: forward step */
 
@@ -1388,7 +1356,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     /* Synchronize ghost cells again */
 
     if (halo != NULL)
-      cs_matrix_pre_vector_multiply_sync(rotation_mode, a, vx);
+      cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
 
@@ -1460,7 +1428,6 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1475,14 +1442,12 @@ static cs_sles_convergence_state_t
 _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
-  CS_UNUSED(rotation_mode);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
@@ -1581,7 +1546,6 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1596,14 +1560,12 @@ static cs_sles_convergence_state_t
 _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
-  CS_UNUSED(rotation_mode);
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
@@ -1701,7 +1663,6 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
  *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
@@ -1716,7 +1677,6 @@ static cs_sles_convergence_state_t
 _p_gauss_seidel(cs_sles_it_t              *c,
                 const cs_matrix_t         *a,
                 cs_lnum_t                  diag_block_size,
-                cs_halo_rotation_t         rotation_mode,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
                 cs_real_t                 *restrict vx,
@@ -1754,7 +1714,6 @@ _p_gauss_seidel(cs_sles_it_t              *c,
     cvg = _p_ordered_gauss_seidel_msr(c,
                                       a,
                                       diag_block_size,
-                                      rotation_mode,
                                       convergence,
                                       rhs,
                                       vx);
@@ -1763,7 +1722,6 @@ _p_gauss_seidel(cs_sles_it_t              *c,
     cvg = _p_gauss_seidel_msr(c,
                               a,
                               diag_block_size,
-                              rotation_mode,
                               convergence,
                               rhs,
                               vx);
@@ -2008,7 +1966,6 @@ cs_multigrid_smoother_setup(void               *context,
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -2028,7 +1985,6 @@ cs_multigrid_smoother_solve(void                *context,
                             const char          *name,
                             const cs_matrix_t   *a,
                             int                  verbosity,
-                            cs_halo_rotation_t   rotation_mode,
                             double               precision,
                             double               r_norm,
                             int                 *n_iter,
@@ -2086,7 +2042,7 @@ cs_multigrid_smoother_solve(void                *context,
 #endif
 
     cvg = c->solve(c,
-                   a, _diag_block_size, rotation_mode, &convergence,
+                   a, _diag_block_size, &convergence,
                    rhs, vx,
                    aux_size, aux_vectors);
 

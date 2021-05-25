@@ -4190,14 +4190,12 @@ _mat_vec_p_l_msr_mkl(bool                exclude_diag,
  * Synchronize ghost values prior to matrix.vector product
  *
  * parameters:
- *   rotation_mode <-- halo update option for rotational periodicity
  *   matrix        <-- pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *----------------------------------------------------------------------------*/
 
 static void
-_pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
-                            const cs_matrix_t   *matrix,
+_pre_vector_multiply_sync_x(const cs_matrix_t   *matrix,
                             cs_real_t            x[restrict])
 {
   assert(matrix->halo != NULL);
@@ -4207,10 +4205,9 @@ _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
   if (matrix->db_size[3] == 1) {
 
     if (matrix->halo != NULL)
-      cs_halo_sync_component(matrix->halo,
-                             CS_HALO_STANDARD,
-                             rotation_mode,
-                             x);
+      cs_halo_sync_var(matrix->halo,
+                       CS_HALO_STANDARD,
+                       x);
 
   }
 
@@ -4277,21 +4274,19 @@ _pre_vector_multiply_sync_y(const cs_matrix_t   *matrix,
  * Synchronize ghost values prior to matrix.vector product
  *
  * parameters:
- *   rotation_mode <-- halo update option for rotational periodicity
  *   matrix        <-- pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 static void
-_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
-                          const cs_matrix_t   *matrix,
+_pre_vector_multiply_sync(const cs_matrix_t   *matrix,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
 {
   _pre_vector_multiply_sync_y(matrix, y);
 
-  _pre_vector_multiply_sync_x(rotation_mode, matrix, x);
+  _pre_vector_multiply_sync_x(matrix, x);
 }
 
 /*----------------------------------------------------------------------------
@@ -6602,8 +6597,6 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
  *
  * This function includes a halo update of x prior to multiplication by A.
  *
- * \param[in]       rotation_mode  halo update option for
- *                                 rotational periodicity
  * \param[in]       matrix         pointer to matrix structure
  * \param[in, out]  x              multipliying vector values
  *                                 (ghost values updated)
@@ -6612,18 +6605,14 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
-                          const cs_matrix_t   *matrix,
+cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
 {
   assert(matrix != NULL);
 
   if (matrix->halo != NULL)
-    _pre_vector_multiply_sync(rotation_mode,
-                              matrix,
-                              x,
-                              y);
+    _pre_vector_multiply_sync(matrix, x, y);
 
   if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
     matrix->vector_multiply[matrix->fill_type][0](false, matrix, x, y);
@@ -6673,8 +6662,6 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  *
  * This function includes a halo update of x prior to multiplication by A.
  *
- * \param[in]       rotation_mode  halo update option for
- *                                 rotational periodicity
  * \param[in]       matrix         pointer to matrix structure
  * \param[in, out]  x              multipliying vector values
  *                                 (ghost values updated)
@@ -6683,18 +6670,14 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
-                                 const cs_matrix_t   *matrix,
+cs_matrix_exdiag_vector_multiply(const cs_matrix_t   *matrix,
                                  cs_real_t           *restrict x,
                                  cs_real_t           *restrict y)
 {
   assert(matrix != NULL);
 
   if (matrix->halo != NULL)
-    _pre_vector_multiply_sync(rotation_mode,
-                              matrix,
-                              x,
-                              y);
+    _pre_vector_multiply_sync(matrix, x, y);
 
   if (matrix->vector_multiply[matrix->fill_type][1] != NULL)
     matrix->vector_multiply[matrix->fill_type][1](true, matrix, x, y);
@@ -6710,18 +6693,16 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
  * Synchronize ghost values prior to matrix.vector product
  *
  * parameters:
- *   rotation_mode <-- halo update option for rotational periodicity
  *   matrix        <-- pointer to matrix structure
  *   x             <-> multipliying vector values (ghost values updated)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
-                                   const cs_matrix_t   *matrix,
+cs_matrix_pre_vector_multiply_sync(const cs_matrix_t   *matrix,
                                    cs_real_t           *x)
 {
   if (matrix->halo != NULL)
-    _pre_vector_multiply_sync_x(rotation_mode, matrix, x);
+    _pre_vector_multiply_sync_x(matrix, x);
 }
 
 /*----------------------------------------------------------------------------*/

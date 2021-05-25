@@ -668,7 +668,6 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
   /* A gather view is used inside the following step */
   cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
                                                     m11,
-                                                    CS_HALO_ROTATION_IGNORE,
                                                     m11_slesp->eps,
                                                     m11_info.rhs_norm,
                                                     &(m11_info.n_it),
@@ -834,7 +833,7 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
   cs_real_t  *mmz = pc_wsp + ssys->max_x1_size; /* size = x1_size */
   memset(mmz, 0, sizeof(cs_real_t)*ssys->max_x1_size);
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, m11, m12z2, mmz);
+  cs_matrix_vector_multiply(m11, m12z2, mmz);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
   cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
@@ -1135,7 +1134,7 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
                       z1_hat,   /* in:  size=n_sles_scatter_elts */
                       z1_hat);  /* out: size=n_sles_gather_elts */
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, m11, z1_hat, r1_tilda);
+  cs_matrix_vector_multiply(m11, z1_hat, r1_tilda);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
   cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
@@ -1954,7 +1953,7 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
                       matvec,          /* in:  size=n_sles_scatter_elts */
                       matvec);         /* out: size=n_sles_gather_elts */
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, mat, vec, matvec);
+  cs_matrix_vector_multiply(mat, vec, matvec);
 
   /* gather view to scatter view (i.e. algebraic to mesh view) */
   cs_range_set_scatter(rset,
@@ -2019,7 +2018,7 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
   cs_real_t  *matvec = NULL;
   BFT_MALLOC(matvec, n_cols, cs_real_t);
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_IGNORE, mat, vecx, matvec);
+  cs_matrix_vector_multiply(mat, vecx, matvec);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
   if (rset != NULL) {

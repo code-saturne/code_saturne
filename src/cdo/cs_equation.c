@@ -2599,7 +2599,6 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
-                                                   CS_HALO_ROTATION_IGNORE,
                                                    sles_param->eps,
                                                    r_norm,
                                                    &n_iters,

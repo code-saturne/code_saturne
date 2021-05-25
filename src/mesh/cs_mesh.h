@@ -553,21 +553,6 @@ void
 cs_mesh_sync_var_scal_ext(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
- * Update a component of a vector for parallelism and/or periodicity,
- * ignoring periodicity of rotation.
- *
- * Note: this function is only present so that a C equivalent to the
- *       Fortran wrappers is available. In C code, directly using the
- *       cs_halo_sync_var() is preferred.
- *
- * parameters:
- *   var  <->  scalar array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_component(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * parameters:
@@ -601,16 +586,6 @@ cs_mesh_sync_var_vect(cs_real_t  *var);
 
 void
 cs_mesh_sync_var_vect_ext(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Update a components of a vector for parallelism and/or periodicity,
- * ignoring periodicity of rotation.
- *
- *   var                  <-> gradient components (interleaved)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect_no_rotation(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.

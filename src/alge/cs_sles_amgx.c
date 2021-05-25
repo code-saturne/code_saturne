@@ -1319,7 +1319,6 @@ cs_sles_amgx_setup(void               *context,
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -1339,7 +1338,6 @@ cs_sles_amgx_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
                    int                  verbosity,
-                   cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
@@ -1379,14 +1377,6 @@ cs_sles_amgx_solve(void                *context,
   double    _residue = -1;
   const int n_rows = cs_matrix_get_n_rows(a);
   const int  db_size = cs_matrix_get_diag_block_size(a)[0];
-
-  if (rotation_mode != CS_HALO_ROTATION_COPY) {
-    if (db_size > 1)
-      bft_error(__FILE__, __LINE__, 0,
-        _("Rotation mode %d with block size %d for system \"%s\"\n"
-          "is not usable by AmgX."),
-          rotation_mode, db_size, name);
-  }
 
   /* Try to set tolerance to normalized value. */
   {

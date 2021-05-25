@@ -132,7 +132,6 @@ typedef void
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
- *   rotation_mode <-- halo update option for rotational periodicity
  *   x_in          <-- input vector
  *   x_out         <-> input/output vector
  *
@@ -142,7 +141,6 @@ typedef void
 
 typedef cs_sles_pc_state_t
 (cs_sles_pc_apply_t) (void                *context,
-                      cs_halo_rotation_t   rotation_mode,
                       const cs_real_t     *x_in,
                       cs_real_t           *x_out);
 
@@ -434,7 +432,6 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * \param[in, out]  pc             pointer to preconditioner object
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       x_in           input vector
  * \param[in, out]  x_out          input/output vector
  *
@@ -444,7 +441,6 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
 
 cs_sles_pc_state_t
 cs_sles_pc_apply(cs_sles_pc_t        *pc,
-                 cs_halo_rotation_t   rotation_mode,
                  cs_real_t           *x_in,
                  cs_real_t           *x_out);
 

@@ -2355,9 +2355,6 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
   if (free_halos) {
 
-    if (mesh == cs_glob_mesh)
-      cs_halo_free_buffer();
-
     if (mesh->vtx_interfaces != NULL)
       cs_interface_set_destroy(&(mesh->vtx_interfaces));
     if (mesh->halo != NULL)
@@ -3298,30 +3295,6 @@ cs_mesh_sync_var_scal_ext(cs_real_t  *var)
 }
 
 /*----------------------------------------------------------------------------
- * Update a component of a vector for parallelism and/or periodicity,
- * ignoring periodicity of rotation.
- *
- * Note: this function is only present so that a C equivalent to the
- *       Fortran wrappers is available. In C code, directly using the
- *       cs_halo_sync_var() is preferred.
- *
- * parameters:
- *   var  <->  scalar array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_component(cs_real_t  *var)
-{
-  const cs_halo_t  *halo = cs_glob_mesh->halo;
-
-  if (halo != NULL)
-    cs_halo_sync_component(halo,
-                           CS_HALO_STANDARD,
-                           CS_HALO_ROTATION_IGNORE,
-                           var);
-}
-
-/*----------------------------------------------------------------------------
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * parameters:
@@ -3394,27 +3367,6 @@ cs_mesh_sync_var_vect_ext(cs_real_t  *var)
                                 CS_HALO_EXTENDED,
                                 var,
                                 3);
-}
-
-/*----------------------------------------------------------------------------
- * Update a components of a vector for parallelism and/or periodicity,
- * ignoring periodicity of rotation.
- *
- *   var                  <-> gradient components (interleaved)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect_no_rotation(cs_real_t  *var)
-{
-  const cs_halo_t  *halo = cs_glob_mesh->halo;
-
-  if (halo == NULL) return;
-
-  cs_halo_sync_components_strided(halo,
-                                  CS_HALO_STANDARD,
-                                  CS_HALO_ROTATION_IGNORE,
-                                  var,
-                                  3);
 }
 
 /*----------------------------------------------------------------------------

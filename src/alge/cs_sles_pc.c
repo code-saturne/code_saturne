@@ -153,7 +153,6 @@ BEGIN_C_DECLS
   be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
 
   \param[in, out]  context        pointer to solver context
-  \param[in]       rotation_mode  halo update option for rotational periodicity
   \param[in]       x_in           input vector
   \param[in, out]  x_out          input/output vector
 
@@ -448,7 +447,6 @@ _sles_pc_poly_setup_none(void               *context,
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
- *   rotation_mode <-- halo update option for rotational periodicity
  *   x_in          <-- input vector
  *   x_out         <-> input/output vector
  *
@@ -458,12 +456,9 @@ _sles_pc_poly_setup_none(void               *context,
 
 static cs_sles_pc_state_t
 _sles_pc_poly_apply_none(void                *context,
-                         cs_halo_rotation_t   rotation_mode,
                          const cs_real_t     *x_in,
                          cs_real_t           *x_out)
 {
-  CS_UNUSED(rotation_mode);
-
   if (x_in != NULL) {
 
     cs_sles_pc_poly_t  *c = context;
@@ -486,7 +481,6 @@ _sles_pc_poly_apply_none(void                *context,
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
- *   rotation_mode <-- halo update option for rotational periodicity
  *   x_in          <-- input vector
  *   x_out         <-> input/output vector
  *
@@ -496,12 +490,9 @@ _sles_pc_poly_apply_none(void                *context,
 
 static cs_sles_pc_state_t
 _sles_pc_poly_apply_jacobi(void                *context,
-                           cs_halo_rotation_t   rotation_mode,
                            const cs_real_t     *x_in,
                            cs_real_t           *x_out)
 {
-  CS_UNUSED(rotation_mode);
-
   cs_sles_pc_poly_t  *c = context;
 
   const cs_lnum_t n_rows = c->n_rows;
@@ -530,7 +521,6 @@ _sles_pc_poly_apply_jacobi(void                *context,
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
- *   rotation_mode <-- halo update option for rotational periodicity
  *   x_in          <-- input vector
  *   x_out         <-> input/output vector
  *
@@ -540,7 +530,6 @@ _sles_pc_poly_apply_jacobi(void                *context,
 
 static cs_sles_pc_state_t
 _sles_pc_poly_apply_poly(void                *context,
-                         cs_halo_rotation_t   rotation_mode,
                          const cs_real_t     *x_in,
                          cs_real_t           *x_out)
 {
@@ -579,7 +568,7 @@ _sles_pc_poly_apply_poly(void                *context,
 
     /* Compute Wk = (A-diag).Gk */
 
-    cs_matrix_exdiag_vector_multiply(rotation_mode, c->a, x_out, w);
+    cs_matrix_exdiag_vector_multiply(c->a, x_out, w);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -950,7 +939,6 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * \param[in, out]  pc             pointer to preconditioner object
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       x_in           input vector
  * \param[in, out]  x_out          input/output vector
  *
@@ -960,11 +948,10 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
 
 cs_sles_pc_state_t
 cs_sles_pc_apply(cs_sles_pc_t        *pc,
-                 cs_halo_rotation_t   rotation_mode,
                  cs_real_t           *x_in,
                  cs_real_t           *x_out)
 {
-  return pc->apply_func(pc->context, rotation_mode, x_in, x_out);
+  return pc->apply_func(pc->context, x_in, x_out);
 }
 
 /*----------------------------------------------------------------------------*/

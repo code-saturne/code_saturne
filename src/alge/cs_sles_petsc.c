@@ -300,7 +300,7 @@ _shell_mat_mult(Mat  a,
   VecGetArrayRead(x, &ax);
   VecGetArray(y, &ay);
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, sh->a, ax, ay);
+  cs_matrix_vector_multiply(sh->a, ax, ay);
 
   VecRestoreArray(x, &ax);
   VecRestoreArray(y, &ay);
@@ -1279,7 +1279,6 @@ cs_sles_petsc_setup(void               *context,
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -1299,7 +1298,6 @@ cs_sles_petsc_solve(void                *context,
                     const char          *name,
                     const cs_matrix_t   *a,
                     int                  verbosity,
-                    cs_halo_rotation_t   rotation_mode,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,
@@ -1343,14 +1341,6 @@ cs_sles_petsc_solve(void                *context,
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
   const int  db_size = cs_matrix_get_diag_block_size(a)[0];
-
-  if (rotation_mode != CS_HALO_ROTATION_COPY) {
-    if (db_size > 1)
-      bft_error(__FILE__, __LINE__, 0,
-        _("Rotation mode %d with block size %d for system \"%s\"\n"
-          "is not usable by PETSc."),
-          rotation_mode, db_size, name);
-  }
 
   if (cs_glob_n_ranks > 1) {
 
@@ -1509,7 +1499,6 @@ cs_sles_petsc_free(void  *context)
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  *
@@ -1521,12 +1510,10 @@ bool
 cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    cs_sles_convergence_state_t   state,
                                    const cs_matrix_t            *a,
-                                   cs_halo_rotation_t            rotation_mode,
                                    const cs_real_t              *rhs,
                                    cs_real_t                    *vx)
 {
   CS_UNUSED(a);
-  CS_UNUSED(rotation_mode);
   CS_UNUSED(rhs);
   CS_UNUSED(vx);
 

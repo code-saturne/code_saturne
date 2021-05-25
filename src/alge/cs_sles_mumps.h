@@ -253,7 +253,6 @@ cs_sles_mumps_setup(void               *context,
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -273,7 +272,6 @@ cs_sles_mumps_solve(void                *context,
                     const char          *name,
                     const cs_matrix_t   *a,
                     int                  verbosity,
-                    cs_halo_rotation_t   rotation_mode,
                     double               precision,
                     double               r_norm,
                     int                 *n_iter,

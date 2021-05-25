@@ -151,7 +151,6 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
- *   rotation_mode          <-- halo update option for rotational periodicity
  *   r_epsilon              <-- precision
  *   r_norm                 <-- residue normalization
  *   n_iter                 --> number of iterations
@@ -171,7 +170,6 @@ cs_sles_solve_native(int                  f_id,
                      const cs_lnum_t     *extra_diag_block_size,
                      const cs_real_t     *da,
                      const cs_real_t     *xa,
-                     cs_halo_rotation_t   rotation_mode,
                      double               precision,
                      double               r_norm,
                      int                 *n_iter,
@@ -209,7 +207,6 @@ cs_sles_free_native(int          f_id,
  *   sles          <-> pointer to solver object
  *   state         <-- convergence status
  *   a             <-- matrix
- *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
  *
@@ -221,7 +218,6 @@ bool
 cs_sles_default_error(cs_sles_t                    *sles,
                       cs_sles_convergence_state_t   state,
                       const cs_matrix_t            *a,
-                      cs_halo_rotation_t            rotation_mode,
                       const cs_real_t               rhs[],
                       cs_real_t                     vx[]);
 

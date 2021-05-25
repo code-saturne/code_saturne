@@ -121,7 +121,6 @@ cs_multigrid_smoother_setup(void               *context,
  *   name          <-- pointer to system name
  *   a             <-- matrix
  *   verbosity     <-- verbosity level
- *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
  *   n_iter        --> number of iterations
@@ -140,7 +139,6 @@ cs_multigrid_smoother_solve(void                *context,
                             const char          *name,
                             const cs_matrix_t   *a,
                             int                  verbosity,
-                            cs_halo_rotation_t   rotation_mode,
                             double               precision,
                             double               r_norm,
                             int                 *n_iter,

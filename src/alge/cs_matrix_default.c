@@ -370,7 +370,6 @@ _create_assembler(int  coupling_id)
  *   symmetric     <-- Symmetry indicator:
  *   db_size       <-- block sizes for diagonal
  *   eb_size       <-- block sizes for extra diagonal
- *   rotation_mode <-- halo update option for rotational periodicity
  *   f_id          <-- associated field id, or < 0
  *   dam           <-- Matrix diagonal
  *   xam           <-- Matrix extra-diagonal terms
@@ -382,7 +381,6 @@ void
 cs_matrix_vector_native_multiply(bool                symmetric,
                                  const cs_lnum_t     db_size[4],
                                  const cs_lnum_t     eb_size[4],
-                                 cs_halo_rotation_t  rotation_mode,
                                  int                 f_id,
                                  const cs_real_t    *dam,
                                  const cs_real_t    *xam,
@@ -403,10 +401,7 @@ cs_matrix_vector_native_multiply(bool                symmetric,
                              dam,
                              xam);
 
-  cs_matrix_vector_multiply(rotation_mode,
-                            a,
-                            vx,
-                            vy);
+  cs_matrix_vector_multiply(a, vx, vy);
 
   /* Add extended contribution for domain coupling */
 

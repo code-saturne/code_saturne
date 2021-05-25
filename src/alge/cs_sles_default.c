@@ -711,8 +711,6 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  *                                         or NULL
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
- * \param[in]       rotation_mode          halo update option for
- *                                         rotational periodicity
  * \param[in]       precision              solver precision
  * \param[in]       r_norm                 residue normalization
  * \param[out]      n_iter                 number of "equivalent" iterations
@@ -732,7 +730,6 @@ cs_sles_solve_native(int                  f_id,
                      const cs_lnum_t     *extra_diag_block_size,
                      const cs_real_t     *da,
                      const cs_real_t     *xa,
-                     cs_halo_rotation_t   rotation_mode,
                      double               precision,
                      double               r_norm,
                      int                 *n_iter,
@@ -837,7 +834,7 @@ cs_sles_solve_native(int                  f_id,
       _rhs[i] = rhs[i];
       _vx[i] = vx[i];
     }
-    cs_matrix_pre_vector_multiply_sync(rotation_mode, a, _rhs);
+    cs_matrix_pre_vector_multiply_sync(a, _rhs);
     rhs_p = _rhs;
 
   }
@@ -846,7 +843,6 @@ cs_sles_solve_native(int                  f_id,
 
   cvg = cs_sles_solve(sc,
                       a,
-                      rotation_mode,
                       precision,
                       r_norm,
                       n_iter,
@@ -934,7 +930,6 @@ cs_sles_free_native(int          f_id,
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence status
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  *
@@ -946,11 +941,9 @@ bool
 cs_sles_default_error(cs_sles_t                    *sles,
                       cs_sles_convergence_state_t   state,
                       const cs_matrix_t            *a,
-                      cs_halo_rotation_t            rotation_mode,
                       const cs_real_t               rhs[],
                       cs_real_t                     vx[])
 {
-  CS_UNUSED(rotation_mode);
   CS_UNUSED(rhs);
 
   bool alternative = false;

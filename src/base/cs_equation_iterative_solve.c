@@ -256,8 +256,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   double residu, rnorm, ressol, rnorm2;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
 
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
@@ -577,7 +575,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_matrix_vector_native_multiply(symmetric,
                                      db_size,
                                      eb_size,
-                                     rotation_mode,
                                      f_id,
                                      dam,
                                      xam,
@@ -654,7 +651,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                          eb_size,
                          dam,
                          xam,
-                         rotation_mode,
                          epsilp,
                          rnorm,
                          &niterf,
@@ -1214,8 +1210,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
 
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
@@ -1526,7 +1520,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
                                    eb_size,
-                                   rotation_mode,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
@@ -1607,7 +1600,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                          eb_size,
                          (cs_real_t *)dam,
                          xam,
-                         rotation_mode,
                          epsilp,
                          rnorm,
                          &niterf,
@@ -2081,8 +2073,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
 
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
@@ -2371,7 +2361,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
                                    eb_size,
-                                   rotation_mode,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
@@ -2454,7 +2443,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                          eb_size,
                          (cs_real_t *)dam,
                          xam,
-                         rotation_mode,
                          epsilp,
                          rnorm,
                          &niterf,

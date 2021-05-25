@@ -99,7 +99,6 @@ BEGIN_C_DECLS
  * parameters:
  *   c             <-- pointer to solver context info
  *   a             <-- linear equation matrix
- *   rotation_mode <-- halo update option for rotational periodicity
  *   convergence   <-- convergence information structure
  *   rhs           <-- right hand side
  *   vx            --> system solution
@@ -114,7 +113,6 @@ typedef cs_sles_convergence_state_t
 (cs_sles_it_solve_t) (cs_sles_it_t              *c,
                       const cs_matrix_t         *a,
                       cs_lnum_t                  diag_block_size,
-                      cs_halo_rotation_t         rotation_mode,
                       cs_sles_it_convergence_t  *convergence,
                       const cs_real_t           *rhs,
                       cs_real_t                 *restrict vx,

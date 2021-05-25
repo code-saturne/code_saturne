@@ -1296,7 +1296,6 @@ _multigrid_pc_tolerance_t(void    *context,
  *
  * parameters:
  *   context       <-> pointer to preconditioner context
- *   rotation_mode <-- halo update option for rotational periodicity
  *   x_in          <-- input vector
  *   x_out         <-> input/output vector
  *
@@ -1306,7 +1305,6 @@ _multigrid_pc_tolerance_t(void    *context,
 
 static cs_sles_pc_state_t
 _multigrid_pc_apply(void                *context,
-                    cs_halo_rotation_t   rotation_mode,
                     const cs_real_t     *x_in,
                     cs_real_t           *x_out)
 {
@@ -1345,7 +1343,6 @@ _multigrid_pc_apply(void                *context,
                                                         mgd->pc_name,
                                                         a,
                                                         mgd->pc_verbosity,
-                                                        rotation_mode,
                                                         mg->pc_precision,
                                                         mg->pc_r_norm,
                                                         &n_iter,
@@ -2667,7 +2664,6 @@ _convergence_test(cs_multigrid_t        *mg,
  *   int cycle_id    <-- cycle id
  *   var_name        <-- variable name
  *   a               <-- matrix
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   rhs             <-- right hand side
  *   vx              <-> system solution
  *
@@ -2680,7 +2676,6 @@ _log_residual(const cs_multigrid_t   *mg,
               int                     cycle_id,
               const char             *var_name,
               const cs_matrix_t      *a,
-              cs_halo_rotation_t      rotation_mode,
               const cs_real_t        *rhs,
               cs_real_t              *restrict vx)
 {
@@ -2691,7 +2686,7 @@ _log_residual(const cs_multigrid_t   *mg,
   cs_real_t  *r;
   BFT_MALLOC(r, n_cols, cs_real_t);
 
-  cs_matrix_vector_multiply(rotation_mode, a, vx, r);
+  cs_matrix_vector_multiply(a, vx, r);
 
   for (cs_lnum_t i = 0; i < n_rows; i++)
     r[i] -= rhs[i];
@@ -2828,7 +2823,6 @@ _level_names_init(const char  *name,
  *   lv_names        <-- names of linear systems
  *                       (indexed as mg->setup_data->sles_hierarchy)
  *   verbosity       <-- verbosity level
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   cycle_id        <-- id of currect cycle
  *   n_equiv_iter    <-> equivalent number of iterations
  *   precision       <-- solver precision
@@ -2848,7 +2842,6 @@ static cs_sles_convergence_state_t
 _multigrid_v_cycle(cs_multigrid_t       *mg,
                    const char          **lv_names,
                    int                   verbosity,
-                   cs_halo_rotation_t    rotation_mode,
                    int                   cycle_id,
                    int                  *n_equiv_iter,
                    double                precision,
@@ -2961,7 +2954,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 lv_names[level*2],
                                 _matrix,
                                 verbosity - 4, /* verbosity */
-                                rotation_mode,
                                 precision*mg->info.precision_mult[0],
                                 r_norm_l,
                                 &n_iter,
@@ -2985,7 +2977,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     if (verbosity > 1)
       _log_residual(mg, cycle_id, lv_names[level*2],
-                    _matrix, rotation_mode, rhs_lv, vx_lv);
+                    _matrix, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN) {
       end_cycle = true;
@@ -2998,10 +2990,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
        correct sign and meaning of the residue
        (regarding timing, this stage is part of the descent smoother) */
 
-    cs_matrix_vector_multiply(rotation_mode,
-                              _matrix,
-                              vx_lv,
-                              wr);
+    cs_matrix_vector_multiply(_matrix, vx_lv, wr);
 
     _n_rows = n_rows*db_size[1];
 #   pragma omp parallel for if(_n_rows > CS_THR_MIN)
@@ -3104,7 +3093,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                 lv_names[level*2],
                                 _matrix,
                                 verbosity - 3,
-                                rotation_mode,
                                 precision*mg->info.precision_mult[2],
                                 r_norm_l,
                                 &n_iter,
@@ -3129,7 +3117,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     if (verbosity > 1)
       _log_residual(mg, cycle_id, lv_names[level*2],
-                    _matrix, rotation_mode, rhs_lv, vx_lv);
+                    _matrix, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN)
       end_cycle = true;
@@ -3193,7 +3181,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                                     lv_names[level*2+1],
                                     _matrix,
                                     verbosity - 4, /* verbosity */
-                                    rotation_mode,
                                     precision*mg->info.precision_mult[1],
                                     r_norm_l,
                                     &n_iter,
@@ -3218,7 +3205,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
         if (verbosity > 1)
           _log_residual(mg, cycle_id, lv_names[level*2+1],
-                        _matrix, rotation_mode, rhs_lv, vx_lv);
+                        _matrix, rhs_lv, vx_lv);
 
         if (c_cvg < CS_SLES_BREAKDOWN)
           break;
@@ -3262,7 +3249,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
  *   lv_names        <-- names of linear systems
  *                       (indexed as mg->setup_data->sles_hierarchy)
  *   verbosity       <-- verbosity level
- *   rotation_mode   <-- halo update option for rotational periodicity
  *   cycle_id        <-- id of currect cycle
  *   n_equiv_iter    <-> equivalent number of iterations
  *   precision       <-- solver precision
@@ -3283,7 +3269,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                    int                   level,
                    const char          **lv_names,
                    int                   verbosity,
-                   cs_halo_rotation_t    rotation_mode,
                    int                   cycle_id,
                    int                  *n_equiv_iter,
                    double                precision,
@@ -3369,7 +3354,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               lv_names[level*2],
                               f_matrix,
                               0, /* verbosity */
-                              rotation_mode,
                               precision*mg->info.precision_mult[0],
                               r_norm_l,
                               &n_iter,
@@ -3390,10 +3374,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   if (verbosity > 0)
     _log_residual(mg, cycle_id, lv_names[level*2],
-                  f_matrix, rotation_mode, rhs_lv, vx_lv);
+                  f_matrix, rhs_lv, vx_lv);
 
   /* Compute new residual */
-  cs_matrix_vector_multiply(rotation_mode, f_matrix, vx_lv, rt_lv);
+  cs_matrix_vector_multiply(f_matrix, vx_lv, rt_lv);
 
 # pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
@@ -3465,7 +3449,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               lv_names[coarsest_level*2],
                               c_matrix,
                               verbosity - 2,
-                              rotation_mode,
                               precision*mg->info.precision_mult[2],
                               r_norm_l,
                               &n_iter,
@@ -3482,7 +3465,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     if (verbosity > 0)
       _log_residual(mg, cycle_id, lv_names[coarsest_level*2],
-                    c_matrix, rotation_mode, rhs_lv1, vx_lv1);
+                    c_matrix, rhs_lv1, vx_lv1);
 
     *n_equiv_iter += n_iter * c_n_g_rows * denom_n_g_rows_0;
 
@@ -3496,7 +3479,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                                level + 1,
                                lv_names,
                                verbosity,
-                               rotation_mode,
                                cycle_id,
                                &n_iter,
                                precision,
@@ -3514,10 +3496,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     cs_real_t *restrict v_lv1 = mgd->rhs_vx[(level+1)*na + 6];
     cs_real_t *restrict rt_lv1 = mgd->rhs_vx[(level+1)*na + 7];
 
-    cs_matrix_vector_multiply(rotation_mode,
-                              c_matrix,
-                              vx_lv1,
-                              v_lv1);
+    cs_matrix_vector_multiply(c_matrix, vx_lv1, v_lv1);
 
     /* Coefficients for the Krylov iteration */
 
@@ -3563,7 +3542,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                                  level + 1,
                                  lv_names,
                                  verbosity,
-                                 rotation_mode,
                                  cycle_id,
                                  &n_iter,
                                  precision,
@@ -3577,10 +3555,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
       t1 = cs_timer_time();
 
-      cs_matrix_vector_multiply(rotation_mode,
-                                c_matrix,
-                                vx2_lv1,
-                                w_lv1);
+      cs_matrix_vector_multiply(c_matrix, vx2_lv1, w_lv1);
 
       /* Krylov iteration */
 
@@ -3632,7 +3607,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   lv_info->n_calls[5] += 1;
 
   /* New residual */
-  cs_matrix_vector_multiply(rotation_mode, f_matrix, z1_lv, rb_lv);
+  cs_matrix_vector_multiply(f_matrix, z1_lv, rb_lv);
 # pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
     rb_lv[ii] = rt_lv[ii] - rb_lv[ii];
@@ -3649,7 +3624,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                             lv_names[level*2+1],
                             f_matrix,
                             0, /* verbosity */
-                            rotation_mode,
                             precision*mg->info.precision_mult[1],
                             r_norm_l,
                             &n_iter,
@@ -3667,7 +3641,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   if (verbosity > 0)
     _log_residual(mg, cycle_id, lv_names[level*2 + 1],
-                  c_matrix, rotation_mode, rb_lv, z2_lv);
+                  c_matrix, rb_lv, z2_lv);
 
 # pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
@@ -4250,7 +4224,6 @@ cs_multigrid_setup_conv_diff(void               *context,
  * \param[in]       name           pointer to name of linear system
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -4270,7 +4243,6 @@ cs_multigrid_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
                    int                  verbosity,
-                   cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
@@ -4349,7 +4321,6 @@ cs_multigrid_solve(void                *context,
       cvg = _multigrid_v_cycle(mg,
                                lv_names,
                                verbosity,
-                               rotation_mode,
                                cycle_id,
                                n_iter,
                                precision,
@@ -4372,7 +4343,6 @@ cs_multigrid_solve(void                *context,
                                0,
                                lv_names,
                                verbosity,
-                               rotation_mode,
                                cycle_id,
                                n_iter,
                                precision,
@@ -4531,7 +4501,6 @@ cs_multigrid_pc_create(cs_multigrid_type_t  mg_type)
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
  *
@@ -4543,7 +4512,6 @@ bool
 cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                                   cs_sles_convergence_state_t   state,
                                   const cs_matrix_t            *a,
-                                  cs_halo_rotation_t            rotation_mode,
                                   const cs_real_t               rhs[],
                                   cs_real_t                     vx[])
 {
@@ -4585,7 +4553,6 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
     cs_sles_post_error_output_def(name,
                                   mesh_id,
-                                  rotation_mode,
                                   a,
                                   rhs,
                                   vx);
@@ -4680,8 +4647,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
       _matrix = cs_grid_get_matrix(g);
 
-      cs_matrix_vector_multiply(rotation_mode,
-                                _matrix,
+      cs_matrix_vector_multiply(_matrix,
                                 mgd->rhs_vx[level*2+1],
                                 c_res);
 

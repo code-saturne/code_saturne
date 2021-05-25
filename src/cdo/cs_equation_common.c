@@ -567,14 +567,13 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
     memcpy(_x, x, n_dofs*sizeof(cs_real_t));
     memcpy(_b, b, n_dofs*sizeof(cs_real_t));
 
-    cs_matrix_pre_vector_multiply_sync(CS_HALO_ROTATION_IGNORE, matrix, _b);
+    cs_matrix_pre_vector_multiply_sync(matrix, _b);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, _x);
   }
 
   /* Solve the linear solver */
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
-                                                    CS_HALO_ROTATION_IGNORE,
                                                     slesp->eps,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),
@@ -662,7 +661,6 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   /* Solve the linear solver */
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
-                                                    CS_HALO_ROTATION_IGNORE,
                                                     slesp->eps,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),

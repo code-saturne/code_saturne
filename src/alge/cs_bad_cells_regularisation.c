@@ -168,7 +168,6 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
                        NULL, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
-                       CS_HALO_ROTATION_COPY,
                        epsilp,
                        rnorm,
                        &niterf,
@@ -346,7 +345,6 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
                        NULL, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
-                       CS_HALO_ROTATION_COPY,
                        epsilp,
                        rnorm,
                        &niterf,
@@ -383,8 +381,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Regularisation on bad cells for symmetric tensors
- *
+ * \brief Regularisation on bad cells for symmetric tensors.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -530,7 +527,6 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
                        NULL, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
-                       CS_HALO_ROTATION_COPY,
                        epsilp,
                        rnorm,
                        &niterf,
@@ -587,12 +583,8 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
-  double *distbr = mq->b_dist;
   double *volume  = mq->cell_vol;
-
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
 
   cs_real_99_t *dam;
   cs_real_9_t *rhs;
@@ -671,7 +663,10 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 #if 0
   /* Boudanry projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
-    cs_lnum_t n_b_faces = mesh->n_b_faces;
+    const cs_lnum_t n_b_faces = mesh->n_b_faces;
+    const cs_real_t *distbr = mq->b_dist;
+    const cs_real_t *surfbn = mq->b_face_surf;
+    const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
     const cs_lnum_t *b_face_cells = mesh->b_face_cells;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (cs_glob_bc_type[face_id] == CS_SMOOTHWALL ||
@@ -713,7 +708,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
                        NULL, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
-                       CS_HALO_ROTATION_COPY,
                        epsilp,
                        rnorm,
                        &niterf,

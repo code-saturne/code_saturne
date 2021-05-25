@@ -936,10 +936,9 @@ _matrix_time_test(double                       t_measure,
                   vector_multiply(ed_flag, m, x, y);
                 else {
                   if (ed_flag == 0)
-                    cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m, x, y);
+                    cs_matrix_vector_multiply(m, x, y);
                   else
-                    cs_matrix_exdiag_vector_multiply(CS_HALO_ROTATION_COPY,
-                                                     m, x, y);
+                    cs_matrix_exdiag_vector_multiply(m, x, y);
                 }
                 wtf = cs_timer_wtime();
                 test_sum += y[n_cells-1];

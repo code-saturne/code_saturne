@@ -156,7 +156,6 @@ BEGIN_C_DECLS
   \param[in]       name           pointer to name of linear system
   \param[in]       a              matrix
   \param[in]       verbosity      associated verbosity
-  \param[in]       rotation_mode  halo update option for rotational periodicity
   \param[in]       precision      solver precision
   \param[in]       r_norm         residue normalization
   \param[out]      n_iter         number of "equivalent" iterations
@@ -233,7 +232,6 @@ BEGIN_C_DECLS
   \param[in, out]  sles           pointer to solver object
   \param[in]       status         convergence status
   \param[in]       a              matrix
-  \param[in]       rotation_mode  Halo update option for rotational periodicity
   \param[in]       rhs            Right hand side
   \param[out]      vx             System solution
 
@@ -601,7 +599,6 @@ _save_system_info(cs_sles_t  *s)
  *
  * parameters:
  *   n_vals           <-- Number of values
- *   rotation_mode    <-- Halo update option for rotational periodicity
  *   a                <-- Linear equation matrix
  *   rhs              <-- Right hand side
  *   vx               <-> Current system solution
@@ -610,13 +607,12 @@ _save_system_info(cs_sles_t  *s)
 
 static void
 _residual(cs_lnum_t            n_vals,
-          cs_halo_rotation_t   rotation_mode,
           const cs_matrix_t   *a,
           const cs_real_t      rhs[],
           cs_real_t            vx[],
           cs_real_t            res[])
 {
-  cs_matrix_vector_multiply(rotation_mode, a, vx, res);
+  cs_matrix_vector_multiply(a, vx, res);
 
 # pragma omp parallel for if(n_vals > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_vals; ii++)
@@ -1570,7 +1566,6 @@ cs_sles_setup(cs_sles_t          *sles,
  *
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -1588,7 +1583,6 @@ cs_sles_setup(cs_sles_t          *sles,
 cs_sles_convergence_state_t
 cs_sles_solve(cs_sles_t           *sles,
               const cs_matrix_t   *a,
-              cs_halo_rotation_t   rotation_mode,
               double               precision,
               double               r_norm,
               int                 *n_iter,
@@ -1639,7 +1633,6 @@ cs_sles_solve(cs_sles_t           *sles,
                              sles_name,
                              a,
                              sles->verbosity,
-                             rotation_mode,
                              precision,
                              r_norm,
                              n_iter,
@@ -1653,7 +1646,6 @@ cs_sles_solve(cs_sles_t           *sles,
       do_solve = sles->error_func(sles,
                                   state,
                                   a,
-                                  rotation_mode,
                                   rhs,
                                   vx);
     else
@@ -1668,7 +1660,6 @@ cs_sles_solve(cs_sles_t           *sles,
     const cs_lnum_t n_vals
       = sles->post_info->n_rows * sles->post_info->block_size;
     _residual(n_vals,
-              rotation_mode,
               a,
               rhs,
               vx,
@@ -1851,7 +1842,6 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func)
  *
  * \param[in]       name           variable name
  * \param[in]       mesh_id        id of error output mesh, or 0 if none
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       a              linear equation matrix
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             current system solution
@@ -1861,7 +1851,6 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func)
 void
 cs_sles_post_error_output_def(const char          *name,
                               int                  mesh_id,
-                              cs_halo_rotation_t   rotation_mode,
                               const cs_matrix_t   *a,
                               const cs_real_t     *rhs,
                               cs_real_t           *vx)
@@ -1920,7 +1909,6 @@ cs_sles_post_error_output_def(const char          *name,
       case 3:
         strcpy(base_name, "Residual");
         _residual(n_rows*diag_block_size[1],
-                  rotation_mode,
                   a,
                   rhs,
                   vx,

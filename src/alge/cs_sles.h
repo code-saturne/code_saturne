@@ -113,7 +113,6 @@ typedef void
  *   name          <-- pointer to name of linear system
  *   a             <-- matrix
  *   verbosity     <-- associated verbosity
- *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
  *   n_iter        --> number of "equivalent" iterations
@@ -132,7 +131,6 @@ typedef cs_sles_convergence_state_t
                    const char          *name,
                    const cs_matrix_t   *a,
                    int                  verbosity,
-                   cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
                    int                 *n_iter,
@@ -224,7 +222,6 @@ typedef void
  *   sles          <-> pointer to solver object
  *   state         <-- convergence status
  *   a             <-- matrix
- *   rotation_mode <-- Halo update option for rotational periodicity
  *   rhs           <-- Right hand side
  *   vx            <-- System solution
  *
@@ -236,7 +233,6 @@ typedef bool
 (cs_sles_error_handler_t) (cs_sles_t                    *sles,
                            cs_sles_convergence_state_t   state,
                            const cs_matrix_t            *a,
-                           cs_halo_rotation_t            rotation_mode,
                            const cs_real_t              *rhs,
                            cs_real_t                    *vx);
 
@@ -622,7 +618,6 @@ cs_sles_setup(cs_sles_t          *sles,
  *
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       a              matrix
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
@@ -640,7 +635,6 @@ cs_sles_setup(cs_sles_t          *sles,
 cs_sles_convergence_state_t
 cs_sles_solve(cs_sles_t           *sles,
               const cs_matrix_t   *a,
-              cs_halo_rotation_t   rotation_mode,
               double               precision,
               double               r_norm,
               int                 *n_iter,
@@ -763,7 +757,6 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
  *
  * \param[in]       name           variable name
  * \param[in]       mesh_id        id of error output mesh, or 0 if none
- * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       a              linear equation matrix
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             current system solution
@@ -773,7 +766,6 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
 void
 cs_sles_post_error_output_def(const char          *name,
                               int                  mesh_id,
-                              cs_halo_rotation_t   rotation_mode,
                               const cs_matrix_t   *a,
                               const cs_real_t     *rhs,
                               cs_real_t           *vx);

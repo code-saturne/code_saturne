@@ -1117,14 +1117,13 @@ module cs_c_bindings
     ! by a vector
 
     subroutine cs_matrix_vector_native_multiply(symmetric, db_size, eb_size,   &
-                                                rotation_mode, f_id, dam, xam, &
-                                                vx, vy)  &
+                                                f_id, dam, xam, vx, vy)  &
       bind(C, name='cs_matrix_vector_native_multiply')
       use, intrinsic :: iso_c_binding
       implicit none
       logical(c_bool), value :: symmetric
       integer(c_int), dimension(4), intent(in) :: db_size, eb_size
-      integer(c_int), value :: rotation_mode, f_id
+      integer(c_int), value :: f_id
       real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
       real(kind=c_double), dimension(*), intent(out) :: vy
     end subroutine cs_matrix_vector_native_multiply
@@ -1727,7 +1726,7 @@ module cs_c_bindings
 
     function cs_sles_solve_native(f_id, name, symmetric,                      &
                                   diag_block_size, extra_diag_block_size,     &
-                                  da, xa, rotation_mode, precision, r_norm,   &
+                                  da, xa, precision, r_norm,                  &
                                   n_iter, residue, rhs, vx) result(state)     &
       bind(C, name='cs_sles_solve_native')
       use, intrinsic :: iso_c_binding
@@ -1735,7 +1734,6 @@ module cs_c_bindings
       integer(c_int), value :: f_id
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       logical(kind=c_bool), value :: symmetric
-      integer(c_int), value :: rotation_mode
       integer(c_int), dimension(*) :: diag_block_size, extra_diag_block_size
       real(kind=c_double), value :: precision, r_norm
       integer(c_int), intent(out) :: n_iter
@@ -3502,7 +3500,6 @@ contains
     ! Local variables
 
     integer(c_int), dimension(4) :: c_db_size, c_eb_size
-    integer(c_int) :: c_rotation_mode
     logical(c_bool) :: c_symmetric
 
     if (isym.eq.1) then
@@ -3510,8 +3507,6 @@ contains
     else
       c_symmetric = .false.
     endif
-
-    c_rotation_mode = 0 ! CS_HALO_ROTATION_COPY
 
     c_db_size(0+1) = ibsize;
     c_db_size(1+1) = ibsize;
@@ -3524,7 +3519,7 @@ contains
     c_eb_size(3+1) = iesize*iesize;
 
     call cs_matrix_vector_native_multiply(c_symmetric, c_db_size, c_eb_size, &
-                                          c_rotation_mode, f_id, dam, xam, vx, vy)
+                                          f_id, dam, xam, vx, vy)
 
     return
 
@@ -4840,7 +4835,7 @@ contains
     ! Local variables
 
     character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: rotation_mode, cvg
+    integer(c_int) :: cvg
     integer(c_int), dimension(4) :: db_size, eb_size
     logical(kind=c_bool) :: c_sym
 
@@ -4851,8 +4846,6 @@ contains
     else
       c_sym = .false.
     endif
-
-    rotation_mode = 0 ! CS_HALO_ROTATION_COPY, might not be called
 
     db_size(1) = ibsize
     db_size(2) = ibsize
@@ -4865,7 +4858,7 @@ contains
     eb_size(4) = iesize*iesize
 
     cvg = cs_sles_solve_native(f_id, c_name, c_sym, db_size, eb_size,         &
-                               dam, xam, rotation_mode, epsilp, rnorm,        &
+                               dam, xam, epsilp, rnorm,                       &
                                niter, residue, rhs, vx)
 
     return
