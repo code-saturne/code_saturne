@@ -171,7 +171,9 @@ _field_interpolate_by_mean(const cs_field_t   *f,
 {
   for (cs_lnum_t i = 0; i < n_points; i++) {
 
-    cs_lnum_t cell_id = point_location[i];
+    cs_lnum_t cell_id =
+      (point_location != NULL) ?
+      point_location[i] : i;
 
     for (cs_lnum_t j = 0; j < f->dim; j++)
       val[i*f->dim + j] =  f->val[cell_id*f->dim + j];
@@ -240,7 +242,9 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
 
-    cs_lnum_t cell_id = point_location[i];
+    cs_lnum_t cell_id =
+      (point_location != NULL) ?
+      point_location[i] : i;
 
     cs_real_3_t d = {point_coords[i][0] - cell_cen[cell_id][0],
                      point_coords[i][1] - cell_cen[cell_id][1],

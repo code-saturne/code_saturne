@@ -1082,18 +1082,20 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
 
   const cs_real_t d2s3 = 2./3.;
   for (cs_lnum_t iloc = 0; iloc < n_cells; iloc++) {
-    cs_lnum_t iel = cell_ids[iloc];
+    cs_lnum_t cell_id = (cell_ids != NULL) ? cell_ids[iloc] : iloc;
 
-    cs_real_t divu = gradv[iel][0][0] + gradv[iel][1][1] + gradv[iel][2][2];
-    cs_real_t nut = CS_F_(mu_t)->val[iel]/CS_F_(rho)->val[iel];
+    cs_real_t divu = gradv[cell_id][0][0]
+                   + gradv[cell_id][1][1]
+                   + gradv[cell_id][2][2];
+    cs_real_t nut = CS_F_(mu_t)->val[cell_id]/CS_F_(rho)->val[cell_id];
 
     cs_real_t xdiag = d2s3*(xk[iloc]+ nut*divu);
-    rst[iloc][0] =  xdiag - 2.*nut*gradv[iel][0][0];
-    rst[iloc][1] =  xdiag - 2.*nut*gradv[iel][1][1];
-    rst[iloc][2] =  xdiag - 2.*nut*gradv[iel][2][2];
-    rst[iloc][3] = -nut*(gradv[iel][1][0]+gradv[iel][0][1]);
-    rst[iloc][4] = -nut*(gradv[iel][2][1]+gradv[iel][1][2]);
-    rst[iloc][5] = -nut*(gradv[iel][2][0]+gradv[iel][0][2]);
+    rst[iloc][0] =  xdiag - 2.*nut*gradv[cell_id][0][0];
+    rst[iloc][1] =  xdiag - 2.*nut*gradv[cell_id][1][1];
+    rst[iloc][2] =  xdiag - 2.*nut*gradv[cell_id][2][2];
+    rst[iloc][3] = -nut*(gradv[cell_id][1][0]+gradv[cell_id][0][1]);
+    rst[iloc][4] = -nut*(gradv[cell_id][2][1]+gradv[cell_id][1][2]);
+    rst[iloc][5] = -nut*(gradv[cell_id][2][0]+gradv[cell_id][0][2]);
   }
 
   BFT_FREE(gradv);
