@@ -702,6 +702,11 @@ option, which changes the system options with which libraries are loaded
 OSMesa 17.x versions. Using the \texttt{DL\_PRELOAD} environment variable
 at runtime to preload the OSMesa library also avoids the issue.
 
+On at least one system (with RHEL 8.3 and the gcc 8.3.1 compiler),
+a crash at finalization of Catalyst has been observed. If this is the case,
+setting the \texttt{CS\_PV\_CP\_DELETE\_CRASH\_WORKAROUND} environment
+variable to 1 should avoid calling the offending code.
+
 \section{Preparing for build\label{sec:prepare}}
 
 If the code was obtained as an archive, it must be unpacked:
