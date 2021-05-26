@@ -181,7 +181,7 @@ def unset_executable(path):
     elif os.path.isdir(path):
         l = os.listdir(path)
         for p in l:
-            unset_executable(p)
+            unset_executable(os.path.join(path, p))
 
     return
 
