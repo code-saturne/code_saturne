@@ -188,7 +188,9 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .species_to_field_id = NULL,
   .molar_mass = NULL,
   .chempoint = NULL,
-  .aero_file_name = NULL
+  .aero_file_name = NULL,
+  .chem_conc_file_name = NULL,
+  .aero_conc_file_name = NULL
 };
 
 /*============================================================================
@@ -224,6 +226,16 @@ void
 cs_f_atmo_get_meteo_file_name(int           name_max,
                               const char  **name,
                               int          *name_len);
+
+void
+cs_f_atmo_get_chem_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len);
+
+void
+cs_f_atmo_get_aero_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len);
 
 void
 cs_f_atmo_get_pointers(cs_real_t              **ps,
@@ -280,7 +292,7 @@ cs_f_atmo_chem_finalize(void);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the name meteo file
+ * Return the name of the meteo file
  *
  * This function is intended for use by Fortran wrappers.
  *
@@ -305,6 +317,64 @@ cs_f_atmo_get_meteo_file_name(int           name_max,
          "Fortran caller name length (%d) is too small for name \"%s\"\n"
          "(of length %d)."),
        _atmo_option.meteo_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of the chemistry concentration file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_chem_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len)
+{
+  *name = _atmo_chem.chem_conc_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_chem.chem_conc_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of the aerosol concentration file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_aero_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len)
+{
+  *name = _atmo_chem.aero_conc_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_chem.aero_conc_file_name, name_max, *name, *name_len);
   }
 }
 
@@ -441,6 +511,7 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.chempoint);
   BFT_FREE(_atmo_chem.spack_file_name);
   BFT_FREE(_atmo_chem.aero_file_name);
+  BFT_FREE(_atmo_chem.chem_conc_file_name);
 }
 
 /*============================================================================
@@ -1502,11 +1573,79 @@ cs_atmo_set_meteo_file_name(const char *file_name)
     return;
   }
 
-  BFT_MALLOC(_atmo_option.meteo_file_name,
-             strlen(file_name) + 1,
-             char);
+  if (_atmo_option.meteo_file_name == NULL) {
+    BFT_MALLOC(_atmo_option.meteo_file_name,
+               strlen(file_name) + 1,
+               char);
+  }
+  else {
+    BFT_REALLOC(_atmo_option.meteo_file_name,
+                strlen(file_name) + 1,
+                char);
+  }
 
   sprintf(_atmo_option.meteo_file_name, "%s", file_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the chemistry file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_chem_conc_file_name(const char *file_name)
+{
+  if (file_name == NULL) {
+    return;
+  }
+
+  if (_atmo_chem.chem_conc_file_name == NULL) {
+    BFT_MALLOC(_atmo_chem.chem_conc_file_name,
+               strlen(file_name) + 1,
+               char);
+  }
+  else {
+    BFT_REALLOC(_atmo_chem.chem_conc_file_name,
+                strlen(file_name) + 1,
+                char);
+  }
+
+  sprintf(_atmo_chem.chem_conc_file_name, "%s", file_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the aerosol file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_aero_conc_file_name(const char *file_name)
+{
+  if (file_name == NULL) {
+    return;
+  }
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_OFF) {
+    return;
+  }
+
+  if (_atmo_chem.aero_conc_file_name == NULL) {
+    BFT_MALLOC(_atmo_chem.aero_conc_file_name,
+               strlen(file_name) + 1,
+               char);
+  }
+  else {
+    BFT_REALLOC(_atmo_chem.aero_conc_file_name,
+                strlen(file_name) + 1,
+                char);
+  }
+
+  sprintf(_atmo_chem.aero_conc_file_name, "%s", file_name);
 }
 
 /*----------------------------------------------------------------------------*/

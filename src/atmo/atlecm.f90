@@ -61,6 +61,7 @@ integer           imode
 
 character(len=80) :: ficmet
 
+integer impmet
 integer itp, ii, ios, k
 integer year, quant,hour,minute, month, day
 integer ih2o
@@ -92,7 +93,7 @@ csaute = '/'
 ! --> Opens the meteo file
 call atmo_get_meteo_file_name(ficmet)
 
-open (unit=impmet, file=ficmet,                                  &
+open (newunit=impmet, file=ficmet,                                  &
      status='old', form='formatted', access='sequential',       &
      iostat=ios, err=99)
 rewind(unit=impmet, err=99)

@@ -83,8 +83,6 @@ module entsor
   !> Input files for the atmospheric specific physics
   !> ficmet is moved to C.
   !> Get it in Fortran with atmo_get_meteo_file_name
-  !> logical unit of the meteo profile file
-  integer, save :: impmet
 
   !> \}
 

@@ -182,7 +182,6 @@ ficfpp = 'define_ficfpp_in_usppmo'
 indjon = 1
 
 ! ---> Fichiers module atmospherique
-impmet = 26
 call atmo_set_meteo_file_name('meteo')
 
 ! ---> Fichiers historiques

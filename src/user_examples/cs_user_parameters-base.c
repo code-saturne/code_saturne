@@ -199,6 +199,9 @@ cs_user_model(void)
    */
    cs_glob_atmo_chemistry->model = 0;
 
+   /* Default file for the chemistry profile is "chemistry" */
+   cs_atmo_set_chem_conc_file_name("chem_01_01_2000");
+
    /* Chemistry with photolysis: inclusion (true) or not (false) of photolysis reactions
     * warning: photolysis is not compatible with space-variable time step
     */
@@ -217,6 +220,9 @@ cs_user_model(void)
     *       if no namelist file is specified, "namelist.ssh" is used
     */
    cs_glob_atmo_chemistry->aerosol_model = CS_ATMO_AEROSOL_SSH;
+
+   /* Default file for the aerosol profile is "aerosols" */
+   cs_atmo_set_aero_conc_file_name("aero_01_01_2001");
 
    /* Frozen gaseous chemistry
     *   false: gaseous chemistry is activated (default)

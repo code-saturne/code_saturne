@@ -70,6 +70,7 @@ integer           imode
 ! Local variables
 
 logical, save :: switch_to_labels
+integer impmec
 integer f_id
 integer itp, ii, ios, k
 integer sjday,minute
@@ -82,6 +83,8 @@ character(len=1) :: csaute
 double precision  zconctemp(nespgi+1)
 ! names of species in the initialization file
 character(len=80), dimension(:), allocatable :: labels
+! name of the chemistry concentration file
+character(len=80) :: ficmec
 
 !===============================================================================
 
@@ -99,7 +102,8 @@ else
 
 csaute = '/'
 ! --> Opens the concentration profiles file
-open ( unit=impmec, file=ficmec, status='old', iostat=ios, err=99 )
+call atmo_get_chem_conc_file_name(ficmec)
+open ( newunit=impmec, file=ficmec, status='old', iostat=ios, err=99 )
 rewind ( unit=impmec,err=99 )
 
 itp = 0

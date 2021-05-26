@@ -81,10 +81,6 @@ double precision dtchemmax
 !> latitude and longitude in degres
 double precision, save ::  lat, lon
 
-!> logical unit of the concentration profiles file
-integer, save         ::  impmec
-!> name of the concentration profiles file
-character(len=10), save    ::  ficmec
 !> number of time steps for the concentration profiles file
 integer, save         ::  nbchim
 !> number of altitudes for the concentration profiles file
@@ -109,7 +105,114 @@ integer, save :: iprofc(nozppm)
 
 !> \}
 
+  interface
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning a chemistry concentration file name
+
+    subroutine cs_f_atmo_get_chem_conc_file_name(f_name_max, f_name, f_name_len)  &
+      bind(C, name='cs_f_atmo_get_chem_conc_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_atmo_get_chem_conc_file_name
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning a aerosol concentration file name
+
+    subroutine cs_f_atmo_get_aero_conc_file_name(f_name_max, f_name, f_name_len)  &
+      bind(C, name='cs_f_atmo_get_aero_conc_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value       :: f_name_max
+      type(c_ptr), intent(out)    :: f_name
+      integer(c_int), intent(out) :: f_name_len
+    end subroutine cs_f_atmo_get_aero_conc_file_name
+
+
+  end interface
+
 contains
+
+!=============================================================================
+
+!> \brief Return chemistry concentration file name
+
+!> \param[out]  name   chemistry concentration file name
+
+subroutine atmo_get_chem_conc_file_name(name)
+
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  ! Arguments
+
+  character(len=*), intent(out) :: name
+
+  ! Local variables
+
+  integer :: i
+  integer(c_int) :: name_max, c_name_len
+  type(c_ptr) :: c_name_p
+  character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
+  name_max = len(name)
+
+  call cs_f_atmo_get_chem_conc_file_name(name_max, c_name_p, c_name_len)
+  call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+  do i = 1, c_name_len
+    name(i:i) = c_name(i)
+  enddo
+  do i = 1, c_name_len + 1, name_max
+    name(i:i) = ' '
+  enddo
+
+  return
+
+end subroutine atmo_get_chem_conc_file_name
+
+!=============================================================================
+
+!> \brief Return aerosol concentration file name
+
+!> \param[out]  name   aerosol concentration file name
+
+subroutine atmo_get_aero_conc_file_name(name)
+
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  ! Arguments
+
+  character(len=*), intent(out) :: name
+
+  ! Local variables
+
+  integer :: i
+  integer(c_int) :: name_max, c_name_len
+  type(c_ptr) :: c_name_p
+  character(kind=c_char, len=1), dimension(:), pointer :: c_name
+
+  name_max = len(name)
+
+  call cs_f_atmo_get_aero_conc_file_name(name_max, c_name_p, c_name_len)
+  call c_f_pointer(c_name_p, c_name, [c_name_len])
+
+  do i = 1, c_name_len
+    name(i:i) = c_name(i)
+  enddo
+  do i = 1, c_name_len + 1, name_max
+    name(i:i) = ' '
+  enddo
+
+  return
+
+end subroutine atmo_get_aero_conc_file_name
 
 !=============================================================================
 !> \brief Allocate memory

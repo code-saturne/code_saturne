@@ -764,7 +764,6 @@ implicit none
 character(line_len) :: a_file
 character(line_len), dimension(:), allocatable :: the_list
 integer unilog
-parameter (unilog = 10)
 character(line_len) :: current_line
 integer l_iostat, l_stat
 integer counter
@@ -772,7 +771,7 @@ integer counter
 ! ----------------------------------------------------------------
 ! executables
 ! ----------------------------------------------------------------
-open(unilog,file=imbrication_files_list,status='old', &
+open(newunit=unilog,file=imbrication_files_list,status='old', &
      form='formatted',iostat=l_iostat)
 
 counter = 0
@@ -785,7 +784,7 @@ number_of_files = counter
 
 allocate(the_list(number_of_files),stat=l_stat)
 ! find_next closes the file when reaching the end
-open(unilog,file=imbrication_files_list,status='old',&
+open(newunit=unilog,file=imbrication_files_list,status='old',&
      form='formatted',iostat=l_iostat)
 counter = 0
 do while (.true.)
@@ -871,7 +870,6 @@ subroutine read_meteo_file(meteo_file)
 !
 character(line_len) :: meteo_file
 integer unilog
-parameter (unilog = 10)
 character(line_len) :: current_line
 integer l_iostat
 integer first, last
@@ -891,7 +889,7 @@ integer i
 ! ----------------------------------------------------------------
 file_count = file_count + 1
 
-open(unilog,file=meteo_file,status='old',form='formatted',iostat=l_iostat)
+open(newunit=unilog,file=meteo_file,status='old',form='formatted',iostat=l_iostat)
 count_lines = 0
 
 ! --------------------------------------------------------------
@@ -997,7 +995,7 @@ endif
 call bounds(meteo_file,len(meteo_file),first,last)
 if (imbrication_verbose) write(nfecra,*) "reopening the file'", &
      meteo_file(first:last),"'"
-open(unilog,file=meteo_file,status='old',form='formatted',iostat=l_iostat)
+open(newunit=unilog,file=meteo_file,status='old',form='formatted',iostat=l_iostat)
 if (l_iostat.ne.0) then
   call bounds(meteo_file,len(meteo_file),first,last)
   write(nfecra,*) "read_meteo_file could not open file '", &

@@ -652,6 +652,12 @@ vertical_influence_radius = 100.d0
 ! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
 ifilechemistry = 0
 
+! Change the name of the chemistry concentration profile
+call atmo_set_chem_conc_file_name('chem_01_01_2001')
+
+! Change the name of the aerosol concentration profile
+call atmo_set_aero_conc_file_name('aero_01_01_2001')
+
 ! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun)
 ! resolution of chemistry.
 ! Splitted (=1) mandatory for aerosols.

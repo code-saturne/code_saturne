@@ -70,8 +70,8 @@ enddo
 !*    1. Compute DLx
 
 if (kindlu .eq. 0) then
-  do ji = 1, nespg
-    do jj = 1, nespg
+  do jj = 1, nespg
+    do ji = 1, nespg
       dlalu(ji,jj) = dla(ji,jj)
     enddo
   enddo

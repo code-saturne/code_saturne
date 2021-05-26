@@ -59,11 +59,6 @@ integer(c_int), pointer, save :: nlayer_aer
 !> Number of aerosols
 integer(c_int), pointer, save :: n_aer
 
-!> logical unit of the aerosol concentration profiles file
-integer, save :: impmea
-!> name of the aerosol concentration profiles file
-character(len=10), save :: ficmea
-
 !> Initial gaseous and particulate concentrations
 !> and aerosol number read in file
 double precision, save, allocatable, dimension(:) :: dlconc0

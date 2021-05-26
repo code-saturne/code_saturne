@@ -2636,6 +2636,28 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Sets the chemistry concentration file name
+
+    subroutine cs_atmo_set_chem_conc_file_name(name) &
+      bind(C, name='cs_atmo_set_chem_conc_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_atmo_set_chem_conc_file_name
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Sets the aerosol concentration file name
+
+    subroutine cs_atmo_set_aero_conc_file_name(name) &
+      bind(C, name='cs_atmo_set_aero_conc_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_atmo_set_aero_conc_file_name
+
+    !---------------------------------------------------------------------------
+
     !> \brief Sets the file name used to initialize SPACK
 
     subroutine cs_atmo_chemistry_set_spack_file_name(name) &
@@ -5285,6 +5307,54 @@ contains
     call cs_atmo_set_meteo_file_name(c_name)
 
   end subroutine atmo_set_meteo_file_name
+
+  !=============================================================================
+
+  !> \brief Sets the chemistry concentration file name
+
+  !> \param[in]     name      name of the file
+
+  subroutine atmo_set_chem_conc_file_name(name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+    call cs_atmo_set_chem_conc_file_name(c_name)
+
+  end subroutine atmo_set_chem_conc_file_name
+
+  !=============================================================================
+
+  !> \brief Sets the aerosol concentration file name
+
+  !> \param[in]     name      name of the file
+
+  subroutine atmo_set_aero_conc_file_name(name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+    call cs_atmo_set_aero_conc_file_name(c_name)
+
+  end subroutine atmo_set_aero_conc_file_name
 
   !=============================================================================
 

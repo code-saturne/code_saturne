@@ -1002,7 +1002,7 @@ if test "$?" = "0" ; then
   test -n "$cs_fc_vers_patch" || cs_fc_vers_patch=0
 
   # Default compiler flags
-  fcflags_default="-x f95-cpp-input -Wall -pedantic-errors -std=f2003"
+  fcflags_default="-x f95-cpp-input -Wall -pedantic-errors -std=f2008"
   fcflags_default_dbg="-g -fcheck=bounds"
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"

@@ -157,6 +157,8 @@ cs_atmo_aerosol_finalize(void)
 
   if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_finalize();
+
+  BFT_FREE(cs_glob_atmo_chemistry->aero_conc_file_name);
 }
 
 /*----------------------------------------------------------------------------*/

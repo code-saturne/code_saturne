@@ -62,7 +62,9 @@ implicit none
 
 integer    isc, f_id
 integer    jsp, jb
+integer    impmea
 character  label*80
+character  ficmea*80
 
 !================================================================================
 ! ALLOCATE
@@ -96,7 +98,8 @@ if (init_aero_with_lib) then
 else
 
   ! Read from file
-  open(impmea,file=ficmea,status='old')
+  call atmo_get_aero_conc_file_name(ficmea)
+  open(newunit=impmea,file=ficmea,status='old')
   ! Reading aerosol numbers
   do jb = 1, n_aer
     read(impmea,*) dlconc0(nlayer_aer*n_aer+jb)

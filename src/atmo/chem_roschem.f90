@@ -107,12 +107,12 @@ endif
 !------------------------------------------------------------------------
 !*    4. Computes K1    system: DLmat * K1 = DLb1
 
-do ji = 1, nespg
-  dlb1(ji) = dlr(ji)
-  do jj = 1, nespg
+do jj = 1, nespg
+  dlb1(jj) = dlr(jj)
+  do ji = 1, nespg
     dlmat(ji,jj) = -igamma*dlstep*dldrdc(ji,jj)
   enddo
-  dlmat(ji,ji) = 1.d0 + dlmat(ji,ji)
+  dlmat(jj,jj) = 1.d0 + dlmat(jj,jj)
 enddo
 
 call cs_solvlin (0,dlmat,dlmatlu,dlk1,dlb1)

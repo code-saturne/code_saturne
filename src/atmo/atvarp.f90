@@ -157,9 +157,8 @@ if (nogaseouschemistry .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF) ichemistry = 0
 
 if (ifilechemistry.ge.1) then
 
-  ! logical unit and name of the chemical profiles file
-  impmec = 27
-  ficmec = 'chemistry'
+  ! Set the name of the chemical profiles file
+  call cs_atmo_set_chem_conc_file_name('chemistry')
 
   ! Initialization of the chemical scheme
   ! quasi steady equilibrium NOx scheme with 4 species and 5 reactions
@@ -379,9 +378,8 @@ endif
 ! Atmospheric aerosol chemistry
 if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
-  ! logical unit and name of the chemical profiles file
-  impmea=28
-  ficmea='aerosols'
+  ! Set the name of the chemical profiles file
+  call cs_atmo_set_aero_conc_file_name('aerosols')
 
   ! Verification
   if (ifilechemistry.ne.4) then

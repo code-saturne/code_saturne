@@ -279,7 +279,12 @@ typedef struct {
 
   /*! Name of the file used to initialize the aerosol shared library */
   char *aero_file_name;
-
+  /*! Name of the file used to initialize and to apply boundary
+   *  conditions on chemical species */
+  char *chem_conc_file_name;
+  /*! Name of the file used to initialize and to apply boundary
+   *  conditions on aerosol species */
+  char *aero_conc_file_name;
 } cs_atmo_chemistry_t;
 
 /*============================================================================
@@ -394,6 +399,29 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 void
 cs_atmo_set_meteo_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the chemistry concentration file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_chem_conc_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the aerosol concentration file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_aero_conc_file_name(const char *file_name);
+
 
 /*----------------------------------------------------------------------------*/
 /*!
