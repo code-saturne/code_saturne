@@ -1272,7 +1272,7 @@ cs_atmo_z_ground_compute(void)
     /* Compute the L_infinity norm */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(inf_norm, abs(f->val[cell_id]-f->val_pre[cell_id]));//FIXME make it dimensionless
+      inf_norm = fmax(inf_norm, fabs(f->val[cell_id]-f->val_pre[cell_id]));//FIXME make it dimensionless
 
       /* Current to previous */
       f->val_pre[cell_id] = f->val[cell_id];
@@ -1455,7 +1455,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(abs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
+      inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
 
       /* f_ext = rho^k * g */
       temp->val[cell_id] = potemp->val[cell_id]
