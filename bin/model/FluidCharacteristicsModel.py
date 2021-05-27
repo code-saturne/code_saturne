@@ -829,7 +829,8 @@ class FluidCharacteristicsModel(Variables, Model):
         'specific_heat' or 'thermal_conductivity'
         only if actually defined, None otherwise.
         """
-        self.isInList(tag, ('density', 'molecular_viscosity',
+        self.isInList(tag, ('density', 'dynamic_diffusion',
+                            'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
