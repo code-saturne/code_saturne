@@ -134,6 +134,18 @@ save             ipass
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ht_convert_h_to_t_cells_solid() &
+    bind(C, name='cs_ht_convert_h_to_t_cells_solid')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_ht_convert_h_to_t_cells_solid
+
+end interface
 
 !===============================================================================
 ! Initializations
@@ -181,6 +193,10 @@ call usphyv(nvar, nscal, mbrom, dt)
 if (mbrom.eq.0 .and. nfabor.gt.0) then
   call field_get_val_s(ibrom, brom)
   brom(1) = -grand
+endif
+
+if (itherm.eq.2) then
+  call cs_ht_convert_h_to_t_cells_solid
 endif
 
 call user_physical_properties()

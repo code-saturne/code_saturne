@@ -234,6 +234,59 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Convert enthalpy to temperature at solid cells only.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ht_convert_h_to_t_cells_solid(void)
+{
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  if (mq->has_disable_flag == 0 || CS_F_(h) == NULL || CS_F_(t) == NULL)
+    return;
+
+  const cs_real_t *h = CS_F_(h)->val;
+  cs_real_t *t = CS_F_(t)->val;
+
+  int n_zones = cs_volume_zone_n_zones();
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (   z->type & CS_VOLUME_ZONE_SOLID
+        && z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+
+      const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+      if (f_cp != NULL) {
+        const cs_real_t *cpro_cp = f_cp->val;
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t c_id = z->elt_ids[i];
+          t[c_id] = h[c_id] / cpro_cp[c_id];
+        }
+      }
+      else {
+        const double cp0 = cs_glob_fluid_properties->cp0;
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t c_id = z->elt_ids[i];
+          t[c_id] = h[c_id] / cp0;
+        }
+      }
+
+      cs_user_physical_properties_h_to_t(cs_glob_domain,
+                                         z,
+                                         false,  /* z_local */
+                                         h,
+                                         t);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Convert enthalpy to temperature at all boundary faces.
  *
  * This handles both user and model enthalpy conversions, so can be used
