@@ -63,6 +63,18 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Convert enthalpy to temperature at solid cells only.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ht_convert_h_to_t_cells_solid(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Convert enthalpy to temperature at all boundary faces.
  *
  * This handles both user and model enthalpy conversions, so can be used
