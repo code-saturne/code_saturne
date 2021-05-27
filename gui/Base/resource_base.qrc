@@ -33,5 +33,8 @@
     <file>icons/22x22/utilities-terminal.png</file>
     <file>icons/22x22/volume_zones.png</file>
     <file>icons/22x22/x-office-address-book.png</file>
+    <file>icons/22x22/cube_volume_zone_v2.png</file>
+    <file>icons/22x22/cube_mesh.png</file>
+    <file>icons/22x22/cube_bc.png</file>
   </qresource>
 </RCC>
