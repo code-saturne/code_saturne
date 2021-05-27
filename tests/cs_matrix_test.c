@@ -710,8 +710,8 @@ main (int argc, char *argv[])
     for (cs_lnum_t i = 0; i < n_rows; i++)
       x[i] = (i+1)*0.5;
 
-    cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m_0, x, y_0);
-    cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m_1, x, y_1);
+    cs_matrix_vector_multiply(m_0, x, y_0);
+    cs_matrix_vector_multiply(m_1, x, y_1);
 
     bft_printf("\nSpMV pass %d\n", id_ie);
     for (cs_lnum_t i = 0; i < n_rows; i++)
