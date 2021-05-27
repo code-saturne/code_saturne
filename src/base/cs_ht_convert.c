@@ -137,9 +137,11 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_real_t *cpro_t = NULL;
-
   const int *pm_flag = cs_glob_physical_model_flag;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  bool need_solid_default = (mq->has_disable_flag) ? true : false;
+
+  cs_real_t *cpro_t = NULL;
 
   /* Gas combustion: premixed or diffusion flame */
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
@@ -181,6 +183,32 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
       const double cp0 = cs_glob_fluid_properties->cp0;
       for (cs_lnum_t i = 0; i < n_cells; i++)
         t[i] = h[i] / cp0;
+    }
+
+    need_solid_default = false;
+
+  }
+
+  /* Handle solid zones */
+
+  if (need_solid_default) {
+
+    const int *disable_flag = mq->c_disable_flag;
+
+    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+    if (f_cp != NULL) {
+      const cs_real_t *cpro_cp = f_cp->val;
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        if (disable_flag[i])
+          t[i] = h[i] / cpro_cp[i];
+      }
+    }
+    else {
+      const double cp0 = cs_glob_fluid_properties->cp0;
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        if (disable_flag[i])
+          t[i] = h[i] / cp0;
+      }
     }
 
   }
