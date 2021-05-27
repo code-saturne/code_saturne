@@ -171,12 +171,12 @@ _cdofb_normal_flux_reco(short int                  fb,
   const double  inv_volc = 1./cm->vol_c;
 
   /* beta * |fb|^2 * nu_{fb}^T.kappa.nu_{fb} / |pvol_fb| */
-  const cs_real_t  stab_scaling =
+  const double  stab_scaling =
     hodgep->coef * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
 
   /* Get the 'fb' row */
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (n_fc + 1);
-  cs_real_t  row_sum = 0.0;
+  double  row_sum = 0.0;
 
   for (short int f = 0; f < n_fc; f++) {
 
@@ -184,14 +184,14 @@ _cdofb_normal_flux_reco(short int                  fb,
 
     /* consistent part */
     const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
-    double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
+    const double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
 
     /* stabilization part */
     double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
     if (f == fb) stab_part += 1;
     stab_part *= stab_scaling;
 
-    const cs_real_t  fb_f_part = consist_part + stab_part;
+    const double  fb_f_part = consist_part + stab_part;
 
     ntrgrd_fb[f] -= fb_f_part;  /* Minus because -du/dn */
     row_sum      += fb_f_part;
@@ -1531,15 +1531,19 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   /* Update bc_op = bc_op + transp and bc_op_t = transpose(bc_op) */
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
-  /* Putting the face DoFs of the BC, into a face- and cell-DoFs array which
-     is non-interlaced */
+  /* Fill a face- and cell-DoFs array with the face DoFs values associated to
+   * Dirichlet BC. These Dirichlet BC values are interlaced. One first
+   * de-interlaces this array to perform the local matrix-vector product:
+   * bc_op_t dir_val = u0_trgradv */
   cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
-  for (short int k = 0; k < 3; k++) {
+
+  dir_val[cm->n_fc] = 0.;     /* cell DoF is not attached to a Dirichlet */
+
+  for (int k = 0; k < 3; k++) {
 
     /* Build dir_val */
     for (short int f = 0; f < cm->n_fc; f++)
       dir_val[f] = csys->dir_values[3*f+k];
-    dir_val[cm->n_fc] = 0.;     /* cell DoF */
 
     cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
 

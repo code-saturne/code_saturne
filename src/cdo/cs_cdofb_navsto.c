@@ -184,30 +184,35 @@ _normal_flux_reco(short int                  fb,
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
   const short int  nfc = cm->n_fc;
+  const double  inv_volc = 1./cm->vol_c;
   const cs_quant_t  pfbq = cm->face[fb];
   const cs_nvec3_t  debq = cm->dedge[fb];
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
-  const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = beta * fb_k_fb / cm->pvol_f[fb];
-  const cs_real_t  ov_vol = 1./cm->vol_c;
+  const double  stab_scaling =
+    beta * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
 
+  /* Get the 'fb' row */
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
-  cs_real_t  row_sum = 0.0;
+  double  row_sum = 0.0;
+
   for (short int f = 0; f < nfc; f++) {
 
-    const cs_real_t  if_ov = ov_vol * cm->f_sgn[f];
-    const cs_real_t  f_k_fb = pfbq.meas * _dp3(kappa_f[f], pfbq.unitv);
     const cs_quant_t  pfq = cm->face[f];
 
-    cs_real_t  stab = -pfq.meas*debq.meas * _dp3(debq.unitv, pfq.unitv);
-    if (f == fb) stab += cm->vol_c;
+    /* consistent part */
+    const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
+    const double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
 
-    const cs_real_t  int_gradf_dot_f = if_ov *
-      ( f_k_fb                        /* Cons */
-        + beta_fbkfb_o_pfc * stab);   /* Stab */
-    ntrgrd_fb[f] -= int_gradf_dot_f;  /* Minus because -du/dn */
-    row_sum      += int_gradf_dot_f;
+    /* stabilization part */
+    double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
+    if (f == fb) stab_part += 1;
+    stab_part *= stab_scaling;
+
+    const double  fb_f_part = consist_part + stab_part;
+
+    ntrgrd_fb[f] -= fb_f_part;  /* Minus because -du/dn */
+    row_sum      += fb_f_part;
 
   } /* Loop on f */
 
@@ -1336,7 +1341,7 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
  *         that the velocity-block has size 3*(n_fc + 1)
  *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
@@ -1346,7 +1351,7 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_weak(short int                       f,
+cs_cdofb_block_dirichlet_weak(short int                       fb,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
                               const cs_property_data_t       *pty,
@@ -1359,11 +1364,12 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
-  for (short int i = 0; i < cm->n_fc; i++) {
-    const cs_real_t  coef = cm->face[i].meas*pty->value;
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const double  coef = cm->face[f].meas*pty->value;
     for (short int k = 0; k < 3; k++)
-      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+      kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
 
   /* 1) Build the bc_op matrix (scalar-valued version) */
@@ -1374,21 +1380,22 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, eqp->diffusion_hodgep.coef, cm,
+  _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
                     (const cs_real_t (*)[3])kappa_f,
                     bc_op);
 
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
   /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
+  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
 
-  bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
+  bc_op->val[fb*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
   for (short int k = 0; k < 3; k++)
-    csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
+    csys->rhs[3*fb + k] += pcoef * csys->dir_values[3*fb + k];
 
   /* 3) Update the local system matrix */
+
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
     for (int bj = 0; bj < n_dofs; bj++) {
 
@@ -1417,7 +1424,7 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
  *         that the velocity-block has size 3*(n_fc + 1)
  *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
@@ -1427,15 +1434,13 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_wsym(short int                       f,
+cs_cdofb_block_dirichlet_wsym(short int                       fb,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
                               const cs_property_data_t       *pty,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys)
 {
-  const cs_hodge_param_t  hodgep = eqp->diffusion_hodgep;
-
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
@@ -1443,11 +1448,12 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
-  for (short int i = 0; i < cm->n_fc; i++) {
-    const cs_real_t  coef = cm->face[i].meas*pty->value;
-    for (short int k = 0; k < 3; k++)
-      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const double  coef = cm->face[f].meas*pty->value;
+    for (int k = 0; k < 3; k++)
+      kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
 
   /* 1) Build the bc_op matrix (scalar-valued version) */
@@ -1457,36 +1463,41 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
   cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
-  /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+  /* Compute \int_f du/dn v and update the matrix. Only the line associated to
+     fb has non-zero values */
+  _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
+                    (const cs_real_t (*)[3])kappa_f,
+                    bc_op);
 
-  /* 2) Update the bc_op matrixand the RHS with the Dirichlet values */
+  /* 2) Update the bc_op matrix and the RHS with the Dirichlet values */
 
   /* Update bc_op = bc_op + transp and transp = transpose(bc_op)
      cb->loc plays the role of the flux operator */
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
-  /* Update the RHS with bc_op_t*dir_face */
-  for (short int k = 0; k < 3; k++) {
+  /* Update the RHS with bc_op_t * dir_fb */
+  for (int k = 0; k < 3; k++) {
 
-    /* Only this value is not zero (simplify the matvec operation) */
-    const cs_real_t  dir_f = csys->dir_values[3*f+k];
+    /* Only the fb column has non-zero values in bc_op_t
+       One thus simplifies the matrix-vector operation */
+    const cs_real_t  dir_fb = csys->dir_values[3*fb+k];
     for (short int i = 0; i < n_dofs; i++)
-      csys->rhs[3*i+k] += bc_op_t->val[i*n_dofs+f] * dir_f;
+      csys->rhs[3*i+k] += bc_op_t->val[i*n_dofs+fb] * dir_fb;
 
   } /* Loop on components */
 
   /* 3) Update the bc_op matrix and the RHS with the penalization */
 
-  /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
+  /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
+  const double  pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
 
-  bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
+  bc_op->val[fb*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
   for (short int k = 0; k < 3; k++)
-    csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
+    csys->rhs[3*fb + k] += pcoef * csys->dir_values[3*fb + k];
 
   /* 4) Update the local system matrix */
+
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
     for (int bj = 0; bj < n_dofs; bj++) {
 
@@ -1507,14 +1518,14 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Take into account a symmetric boundary (treated as a sliding BCs on
- *         the three velocity components.
- *         A weak penalization technique (symmetrized Nitsche) is used.
- *         One assumes that static condensation has not been performed yet and
- *         that the velocity-block has (n_fc + 1) blocks of size 3x3.
+ * \brief  Take into account a boundary defined as 'symmetry' (treated as a
+ *         sliding BCs on the three velocity components.)
+ *         A weak penalization technique (symmetrized Nitsche) is used.  One
+ *         assumes that static condensation has not been performed yet and that
+ *         the velocity-block has (n_fc + 1) blocks of size 3x3.
  *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
@@ -1524,15 +1535,13 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry(short int                       f,
+cs_cdofb_symmetry(short int                       fb,
                   const cs_equation_param_t      *eqp,
                   const cs_cell_mesh_t           *cm,
                   const cs_property_data_t       *pty,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys)
 {
-  const cs_hodge_param_t  hodgep = eqp->diffusion_hodgep;
-
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
@@ -1540,39 +1549,45 @@ cs_cdofb_symmetry(short int                       f,
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
-  for (short int i = 0; i < cm->n_fc; i++) {
-    const cs_real_t  coef = cm->face[i].meas*pty->value;
-    for (short int k = 0; k < 3; k++)
-      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const double  coef = cm->face[f].meas*pty->value;
+    for (int k = 0; k < 3; k++)
+      kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
+
+  /* 1) Build the bc_op matrix (scalar-valued version) */
 
   /* Initialize the matrix related this flux reconstruction operator */
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
-  /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+  /* Compute \int_f du/dn v and update the matrix. Only the line associated to
+     fb has non-zero values */
+  _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
+                    (const cs_real_t (*)[3])kappa_f,
+                    bc_op);
 
   /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
      means homogeneous Dirichlet values on the normal component and hommogeneous
      Neumann on the tangential flux */
 
-  const cs_quant_t  pfq = cm->face[f];
+  const cs_quant_t  pfq = cm->face[fb];
   const cs_real_t  *nf = pfq.unitv;
   const cs_real_33_t  nf_nf = { {nf[0]*nf[0], nf[0]*nf[1], nf[0]*nf[2]},
                                 {nf[1]*nf[0], nf[1]*nf[1], nf[1]*nf[2]},
                                 {nf[2]*nf[0], nf[2]*nf[1], nf[2]*nf[2]} };
 
-  /* chi * \meas{f} / h_f  */
-  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
+  /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
+  const double  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
-  cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, f, f);
+  cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, fb, fb);
   assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
 
-  const cs_real_t  _val = pcoef + 2*bc_op->val[f*(n_dofs+1)];
+  const cs_real_t  _val = pcoef + 2*bc_op->val[fb*(n_dofs+1)];
   for (short int k = 0; k < 3; k++) {
     bFF->val[3*k  ] += nf_nf[0][k] * _val;
     bFF->val[3*k+1] += nf_nf[1][k] * _val;
@@ -1581,18 +1596,18 @@ cs_cdofb_symmetry(short int                       f,
 
   for (short int xj = 0; xj < n_dofs; xj++) {
 
-    if (xj == f)
+    if (xj == fb)
       continue;
 
     /* It should be done both for face- and cell-defined DoFs */
     /* Retrieve the 3x3 matrix */
-    cs_sdm_t  *bFJ = cs_sdm_get_block(csys->mat, f, xj);
+    cs_sdm_t  *bFJ = cs_sdm_get_block(csys->mat, fb, xj);
     assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
-    cs_sdm_t  *bJF = cs_sdm_get_block(csys->mat, xj, f);
+    cs_sdm_t  *bJF = cs_sdm_get_block(csys->mat, xj, fb);
     assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
 
-    const cs_real_t  op_fj = bc_op->val[n_dofs*f  + xj];
-    const cs_real_t  op_jf = bc_op->val[n_dofs*xj + f];
+    const cs_real_t  op_fj = bc_op->val[n_dofs*fb  + xj];
+    const cs_real_t  op_jf = bc_op->val[n_dofs*xj + fb];
     const cs_real_t  _val_fj_jf = op_fj + op_jf;
 
     for (int k = 0; k < 3; k++) {
@@ -1615,10 +1630,9 @@ cs_cdofb_symmetry(short int                       f,
 /*!
  * \brief   Take into account a wall BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment.
- *          Case of vector-valued CDO Face-based schemes
  *          This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       fb        face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       pty       pointer to a \ref cs_property_data_t structure
@@ -1628,7 +1642,7 @@ cs_cdofb_symmetry(short int                       f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_fixed_wall(short int                       f,
+cs_cdofb_fixed_wall(short int                       fb,
                     const cs_equation_param_t      *eqp,
                     const cs_cell_mesh_t           *cm,
                     const cs_property_data_t       *pty,
@@ -1640,16 +1654,16 @@ cs_cdofb_fixed_wall(short int                       f,
 
   assert(cm != NULL && csys != NULL);  /* Sanity checks */
 
-  const cs_quant_t  pfq = cm->face[f];
+  const cs_quant_t  pfq = cm->face[fb];
   const cs_real_t  *ni = pfq.unitv;
   const cs_real_t  ni_ni[9] = { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
                                 ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
                                 ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2] };
 
-  /* chi * \meas{f} / h_f  */
+  /* coeff * \meas{fb} / h_fb \equiv coeff * h_fb */
   const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
-  cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, f, f);
+  cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fb, fb);
   assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
 
   for (short int k = 0; k < 9; k++)
