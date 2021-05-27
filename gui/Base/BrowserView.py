@@ -205,25 +205,16 @@ class TreeModel(QAbstractItemModel):
                 icon = QIcon()
 
                 if page_name == self.tr('Mesh'):
-                    img_path = ":/icons/22x22/prepro-mode.png"
+                    img_path = ":/icons/22x22/cube_mesh.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Calculation features'):
                     img_path = ":/icons/22x22/calculation_features.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-#                elif page_name == self.tr('Fluid properties'):
-#                    img_path = ":/icons/22x22/physical_properties.png"
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == self.tr('Volume zones'):
-                    img_path = ":/icons/22x22/volume_zones.png"
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Volume conditions'):
-                    img_path = ":/icons/22x22/volume_zones.png"
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == self.tr('Boundary zones'):
-                    img_path = ":/icons/22x22/boundary_conditions.png"
+                    img_path = ":/icons/22x22/cube_volume_zone_v2.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary conditions'):
-                    img_path = ":/icons/22x22/boundary_conditions.png"
+                    img_path = ":/icons/22x22/cube_bc.png"
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Time settings'):
                     img_path = ":/icons/22x22/time_stepping.png"
