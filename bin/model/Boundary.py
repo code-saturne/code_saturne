@@ -537,7 +537,7 @@ class InletBoundary(Boundary):
             value = XMLVelocityNode.xmlGetChildDouble(choice)
         elif choice in ('norm_formula', 'flow1_formula', 'flow2_formula'):
             value = XMLVelocityNode.xmlGetChildString(choice)
-        if value == None:
+        if not value:
             value = self.__defaultValues()[choice]
             self.setVelocity(value)
 
@@ -575,7 +575,7 @@ class InletBoundary(Boundary):
             Model().isInList(component, ('direction_formula',))
             value = XMLVelocityNode.xmlGetChildString(component)
 
-        if value == None :
+        if not value:
             value = self.__defaultValues()[component]
             self.setDirection(component, value)
         return value
@@ -695,7 +695,7 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
         value = XMLTurbulenceNode.xmlGetDouble('hydraulic_diameter')
-        if value == None :
+        if value == None:
             value = self.__defaultValues()['hydraulic_diameter']
             self.setHydraulicDiameter(value)
         return value
@@ -791,7 +791,7 @@ omega = 0.;"""
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
         value = XMLTurbulenceNode.xmlGetDouble('turbulent_intensity')
-        if value == None :
+        if value == None:
             value = self.__defaultValues()['turbulent_intensity']
             self.setTurbulentIntensity(value)
 
@@ -864,7 +864,7 @@ omega = 0.;"""
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None :
+        if value == None:
             value = self.__defaultValues()['scalar']
             self.setScalarValue(scalarName, choice, value)
         return value
