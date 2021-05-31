@@ -124,13 +124,6 @@
 
 #define CS_PV_VERSION  (PARAVIEW_VERSION_MAJOR*10 + PARAVIEW_VERSION_MINOR)
 
-/* Workaround for segmentation fault observed on a Red Hat 8.3 system
-   with gcc 8.3.1, at coprocessor destruction, not observed on other
-   machines.
-   TODO: find a cleaner solution or use an environment variable. */
-   
-#define CS_PV_CP_DELETE_CRASH_WORKAROUND 1
-
 /*----------------------------------------------------------------------------
  * Catalyst field structure
  *----------------------------------------------------------------------------*/
@@ -603,9 +596,21 @@ _free_coprocessor(void)
   if (_processor != NULL && _n_writers < 2) {
 
     _processor->Finalize();
-#if !defined(CS_PV_CP_DELETE_CRASH_WORKAROUND)
-    _processor->Delete();
-#endif
+
+    /* Workaround for segmentation fault observed on a Red Hat 8.3 system
+       with gcc 8.3.1, at coprocessor destruction, not observed on other
+       machines. */
+
+    bool cp_delete = true;
+
+    const char *s = getenv("CS_PV_CP_DELETE_CRASH_WORKAROUND");
+    if (s != NULL) {
+      if (atoi(s) > 0)
+        cp_delete = false;
+    }
+    if (cp_delete)
+      _processor->Delete();
+
     _processor = NULL;
 
     for (int i = 0; i < _n_scripts; i++)

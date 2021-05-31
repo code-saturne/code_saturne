@@ -997,6 +997,11 @@ option, which changes the system options with which libraries are loaded
 OSMesa 17.x versions. Using the `LD_PRELOAD` environment variable
 at runtime to preload the OSMesa library also avoids the issue.
 
+On at least one system (with RHEL 8.3 and the gcc 8.3.1 compiler),
+a crash at finalization of Catalyst has been observed. If this is the case,
+setting the `CS_PV_CP_DELETE_CRASH_WORKAROUND` environment variable to 1
+should avoid calling the offending code.
+
 ### Coupling with SYRTHES
 
 Coupling with SYRTHES requires defining the path to a SYRTHES installation
