@@ -118,8 +118,8 @@ typedef struct {
   cs_real_t     *diipf;          /* Vector II'  for interior faces */
   cs_real_t     *djjpf;          /* Vector JJ'  for interior faces */
 
-  cs_real_t     *i_dist;         /* Distance between the cell center and
-                                    the center of gravity of interior faces */
+  cs_real_t     *i_dist;         /* Distance between the centers of the two
+                                    cells sharing an interior face */
   cs_real_t     *b_dist;         /* Distance between the cell center and
                                     the center of gravity of border faces */
 
