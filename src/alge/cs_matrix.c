@@ -7406,7 +7406,7 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
     return;
 
   for (int i = 0; i < 2; i++)
-    m->vector_multiply[m->fill_type][0] = mv->vector_multiply[0];
+    m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
 }
 
 /*----------------------------------------------------------------------------*/
