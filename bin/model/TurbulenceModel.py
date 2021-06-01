@@ -474,7 +474,6 @@ class TurbulenceModel(Variables, Model):
         """
         if turb_diff_model == self.defaultTurbulenceValues()['turbulent_diffusion_model']:
             self.node_turb.xmlRemoveChild('turbulent_diffusion_model')
-            print(self.node_turb)
         else:
             self.node_turb.xmlSetData('turbulent_diffusion_model', turb_diff_model)
 
