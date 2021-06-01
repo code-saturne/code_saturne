@@ -82,19 +82,34 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.case = case
         self.case.undoStopGlobal()
 
+        self.labelTurbDiff.hide()
+        self.comboBoxTurbDiff.hide()
+
+        self.default = default
+        self.result  = self.default.copy()
+
         if default['model'] in ('k-epsilon', 'k-epsilon-PL'):
             title = self.tr("Options for k-epsilon model")
         elif default['model'] in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             title = self.tr("Options for Rij-epsilon model")
+
+            self.labelTurbDiff.show()
+            self.comboBoxTurbDiff.show()
+            self.turbDiff = ComboModel(self.comboBoxTurbDiff, 2, 1)
+            self.turbDiff.addItem(self.tr("Scalar diffusivity (Shir model)"), 'shir')
+            self.turbDiff.addItem(self.tr("Tensorial diffusivity (Daly and Harlow model)"), 'daly_harlow')
+
+            # Initialization of turb diff model
+            self.turbDiff.setItem(str_model=str(self.result['turb_diff']))
+
         elif default['model'] == 'k-omega-SST':
             title = self.tr("Options for k-omega-SST model")
         elif default['model'] == 'v2f-BL-v2/k':
             title = self.tr("Options for v2f-BL-v2/k model")
         elif default['model'] == 'Spalart-Allmaras':
             title = self.tr("Options for Spalart-Allmaras model")
+
         self.setWindowTitle(title)
-        self.default = default
-        self.result  = self.default.copy()
 
         self.checkBoxGravity.setEnabled(True)
         self.comboBoxWallFunctions.setEnabled(True)
@@ -163,7 +178,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         else:
             self.result['gravity_terms'] = "off"
         self.result['wall_function'] = \
-        int(self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())])
+          int(self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())])
+        self.result['turb_diff'] = self.turbDiff.dicoV2M[str(self.comboBoxTurbDiff.currentText())]
 
         QDialog.accept(self)
 
@@ -435,6 +451,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         default = {}
         default['model']         = self.model.getTurbulenceModel()
         default['wall_function'] = self.model.getWallFunction()
+        default['turb_diff']     = self.model.getTurbDiffModel()
         default['gravity_terms'] = self.model.getGravity()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
@@ -444,6 +461,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             log.debug("slotAdvancedOptions -> %s" % str(result))
             self.model.setTurbulenceModel(result['model'])
             self.model.setWallFunction(result['wall_function'])
+            self.model.setTurbDiffModel(result['turb_diff'])
             self.model.setGravity(result['gravity_terms'])
 
 

@@ -147,13 +147,14 @@ class TurbulenceModel(Variables, Model):
         @return: default values
         """
         default = {}
-        default['turbulence_model']       = "k-epsilon-PL"
-        default['length_scale']           = 1.0
-        default['wall_function']          = 3
-        default['gravity_terms']          = "on"
-        default['reference_velocity']     = 1.0
-        default['reference_length_choice']= 'automatic'
-        default['reference_length']       = 1.0
+        default['turbulence_model']          = "k-epsilon-PL"
+        default['length_scale']              = 1.0
+        default['turbulent_diffusion_model'] = 'daly_harlow'
+        default['wall_function']             = 3
+        default['gravity_terms']             = "on"
+        default['reference_velocity']        = 1.0
+        default['reference_length_choice']   = 'automatic'
+        default['reference_length']          = 1.0
 
         return default
 
@@ -453,6 +454,29 @@ class TurbulenceModel(Variables, Model):
         """
         self.isIntInList(wall_function, [0, 1, 2, 3, 4, 5, 7])
         self.node_turb.xmlSetData('wall_function', wall_function)
+
+
+    @Variables.noUndo
+    def getTurbDiffModel(self):
+        """
+        Return turbulent diffusion model from advanced options.
+        """
+        turb_diff_model = self.node_turb.xmlGetString('turbulent_diffusion_model')
+        if not turb_diff_model:
+            turb_diff_model = self.defaultTurbulenceValues()['turbulent_diffusion_model']
+        return turb_diff_model
+
+
+    @Variables.undoLocal
+    def setTurbDiffModel(self, turb_diff_model):
+        """
+        Input turbulent diffusion model for advanced options.
+        """
+        if turb_diff_model == self.defaultTurbulenceValues()['turbulent_diffusion_model']:
+            self.node_turb.xmlRemoveChild('turbulent_diffusion_model')
+            print(self.node_turb)
+        else:
+            self.node_turb.xmlSetData('turbulent_diffusion_model', turb_diff_model)
 
 
     @Variables.noUndo
