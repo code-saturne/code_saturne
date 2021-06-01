@@ -1721,6 +1721,18 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_rans_model->iclsyr,
                   cs_glob_turb_rans_model->iclptr);
 
+    int idirsm = cs_glob_turb_rans_model->idirsm;
+    if (idirsm < 0 || idirsm > 1)
+      idirsm = 2;
+
+    const char *s_turb_diff_model[3]
+      = {"scalar diffusivity: Shir model",
+         "tensorial diffusivity: Daly-Harlow model",
+         "<unknown>"};
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    idirsm:      %14d (%s)\n"),
+                  idirsm, s_turb_diff_model[idirsm]);
 
     if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
       cs_log_printf(CS_LOG_SETUP,
@@ -1731,7 +1743,7 @@ cs_turb_model_log_setup(void)
     }
     else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_log_printf(CS_LOG_SETUP,
-                    _("    reinit_turb:   %9d (turbulence reinitialization)\n"),
+                    _("    reinit_turb: %14d (turbulence reinitialization)\n"),
                     cs_glob_turb_rans_model->reinit_turb);
     }
 

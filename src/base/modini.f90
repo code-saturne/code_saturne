@@ -293,6 +293,7 @@ enddo
 ! Diffusivity model:
 ! Daly Harlow (GGDH) on Rij and epsilon by default
 if (itytur.eq.3) then
+
   if (irijco.eq.1) then
     call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
     call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
@@ -1083,22 +1084,6 @@ if (iok.ne.0) then
   call csexit (1)
 endif
 
- 1001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@    ISTMPF = ',   i10,                                        /,&
-'@    THETFL WILL BE AUTOMATICALLY INITIALIZED.',               /,&
-'@    DO NOT MODIFY IT.,'                                       /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  Check cs_user_parameters.f90',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1011 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

@@ -1561,6 +1561,18 @@ void cs_gui_turb_model(void)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
   }
 
+  if (   turb_mdl->iturb >= CS_TURB_RIJ_EPSILON_LRR
+      && turb_mdl->iturb <= CS_TURB_RIJ_EPSILON_EBRSM) {
+    const char *s
+      = cs_tree_node_get_child_value_str(tn_t, "turbulent_diffusion_model");
+    if (s != NULL) {
+      if (cs_gui_strcmp(s, "shir"))
+        rans_mdl->idirsm = 0;
+      else if (cs_gui_strcmp(s, "daly_harlow"))
+        rans_mdl->idirsm = 1;
+    }
+  }
+
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--model: %s\n", model);
@@ -1569,6 +1581,7 @@ void cs_gui_turb_model(void)
   bft_printf("--igrari = %i\n", rans_mdl->igrari);
   bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
+  bft_printf("--idirsm = %f\n", rans_mdl->idirsm);
 #endif
 }
 
