@@ -267,4 +267,5 @@ $(top_srcdir)/tests/graphics
 clean-local:
 	-rm -f $(BUILT_SOURCES)
 
-
+.cu.lo:
+	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) -c -o $@ $<
