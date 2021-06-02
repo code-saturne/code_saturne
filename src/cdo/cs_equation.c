@@ -1253,9 +1253,11 @@ cs_equation_add(const char            *eqname,
   eq->rhs = NULL;
 
   /* Set timer statistic structure to a default value */
-  eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
-                                         eqname,
-                                         eqname);
+  eq->main_ts_id = cs_timer_stats_id_by_name(eqname);
+  if (eq->main_ts_id < 0)
+    eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */
+                                           eqname,
+                                           eqname);
 
   return  eq;
 }

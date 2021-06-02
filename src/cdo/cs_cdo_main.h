@@ -97,6 +97,21 @@ cs_cdo_finalize(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if CDO has been initialized.
+ *
+ * \param[in, out]  setup       indicator if setup has been initialized,
+ *                              or NULL if not queried
+ * \param[in, out]  structures  indicator if structures have been initialized,
+ *                              or NULL if not queried
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_is_initialized(bool  *setup,
+                      bool  *structures);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Main program for running a simulation with the CDO kernel
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure

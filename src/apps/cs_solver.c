@@ -454,10 +454,6 @@ _run(void)
 
       }
 
-      /* Finalize sparse linear systems resolution */
-
-      cs_matrix_finalize();
-
     }
 
     /* Finalize gradient computation */
@@ -471,13 +467,17 @@ _run(void)
 
   }
 
-  /* Finalize user extra operations */
-  if (opts.verif == false)
-    cs_user_extra_operations_finalize(cs_glob_domain);
-
   /* Finalize linear system resolution */
 
   cs_sles_default_finalize();
+
+  /* Finalize sparse linear systems resolution */
+
+  cs_matrix_finalize();
+
+  /* Finalize user extra operations */
+  if (opts.verif == false)
+    cs_user_extra_operations_finalize(cs_glob_domain);
 
   /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 
