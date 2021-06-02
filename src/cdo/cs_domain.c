@@ -249,10 +249,6 @@ cs_domain_free(cs_domain_t   **p_domain)
   cs_boundary_free(&(domain->boundaries));
   cs_boundary_free(&(domain->ale_boundaries));
 
-  /* Free CDO structures related to geometric quantities and connectivity */
-  domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
-  domain->connect = cs_cdo_connect_free(domain->connect);
-
   BFT_FREE(domain);
   *p_domain = NULL;
 }

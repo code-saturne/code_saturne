@@ -1086,8 +1086,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                        connect->range_sets + CS_CDO_CONNECT_VTX_SCAL);
 
     /* Shared structures */
+    if (mesh->vtx_range_set != NULL)
+      cs_range_set_destroy(&(mesh->vtx_range_set));
     mesh->vtx_range_set = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
   }
 
   /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
@@ -1212,6 +1213,12 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP1);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP2);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL);
+
+  if (   cs_glob_mesh->vtx_range_set
+      != connect->range_sets[CS_CDO_CONNECT_VTX_SCAL])
+    cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_VTX_SCAL);
+  else
+    connect->range_sets[CS_CDO_CONNECT_VTX_SCAL] = NULL;
 
   BFT_FREE(connect);
 

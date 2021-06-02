@@ -495,6 +495,8 @@ cs_mesh_deform_finalize(void)
   BFT_FREE(_fixed_vtx_values);
   _n_fixed_vertices = 0;
   _fixed_vertices = false;
+
+  _active = false;
 }
 
 /*---------------------------------------------------------------------------*/

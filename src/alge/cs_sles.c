@@ -946,6 +946,13 @@ cs_sles_finalize(void)
 void
 cs_sles_log(cs_log_t  log_type)
 {
+  int n_tot_systems = 0;
+  for (int i = 0; i < 3; i++)
+    n_tot_systems += _cs_sles_n_systems[i];
+
+  if (n_tot_systems < 1)
+    return;
+
   int log_order[] = {2, 0, 1}; /* log previous setups first, then fields,
                                   then others */
 

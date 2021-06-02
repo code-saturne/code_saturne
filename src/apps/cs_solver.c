@@ -453,14 +453,6 @@ _run(void)
 
       }
 
-      /* Finalize linear system resolution */
-
-      cs_sles_default_finalize();
-
-      /* Finalize sparse linear systems resolution */
-
-      cs_matrix_finalize();
-
     }
 
     /* Finalize gradient computation */
@@ -472,6 +464,14 @@ _run(void)
     cs_les_inflow_finalize();
 
   }
+
+  /* Finalize linear system resolution */
+
+  cs_sles_default_finalize();
+
+  /* Finalize sparse linear systems resolution */
+
+  cs_matrix_finalize();
 
   /* Finalize user extra operations */
   if (opts.verif == false)

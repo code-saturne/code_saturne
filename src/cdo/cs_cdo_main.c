@@ -80,8 +80,11 @@ BEGIN_C_DECLS
  * Local definitions
  *============================================================================*/
 
-static int  cs_cdo_ts_id;
+static int  _cdo_ts_id = -1;
 static cs_property_t  *cs_dt_pty = NULL;
+
+static bool _initialized_setup = false;
+static bool _initialized_structures = false;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -484,7 +487,6 @@ _solve_domain(cs_domain_t  *domain)
 
   /* User-defined equations */
   _compute_unsteady_user_equations(domain, nt_cur);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -586,7 +588,9 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
     return;
 
   /* Timer statistics */
-  cs_cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
+  _cdo_ts_id = cs_timer_stats_id_by_name("cdo");
+  if (_cdo_ts_id < 0)
+    _cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
 
   /* Store the fact that the CDO/HHO module is activated */
   cs_domain_cdo_log(domain);
@@ -611,7 +615,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   }
   cs_dt_pty = pty;
 
-  cs_timer_stats_start(cs_cdo_ts_id);
+  cs_timer_stats_start(_cdo_ts_id);
 
   /* Add an automatic boundary zone gathering all "wall" boundaries */
   cs_boundary_def_wall_zones(domain->boundaries);
@@ -626,8 +630,10 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
    */
   cs_domain_initialize_setup(domain);
 
+  _initialized_setup = true;
+
   /* Monitoring */
-  cs_timer_stats_stop(cs_cdo_ts_id);
+  cs_timer_stats_stop(_cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
@@ -663,7 +669,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_timer_t  t0 = cs_timer_time();
 
   /* Timer statistics */
-  cs_timer_stats_start(cs_cdo_ts_id);
+  cs_timer_stats_start(_cdo_ts_id);
 
   cs_domain_init_cdo_structures(domain);
 
@@ -717,9 +723,11 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_log_printf_flush(CS_LOG_PERFORMANCE);
 
   /* Monitoring */
-  cs_timer_stats_stop(cs_cdo_ts_id);
+  cs_timer_stats_stop(_cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+
+  _initialized_structures = true;
 
   CS_TIMER_COUNTER_ADD(domain->tcs, domain->tcs, time_count);
 
@@ -743,7 +751,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
     return;
 
   /* Timer statistics */
-  cs_timer_stats_start(cs_cdo_ts_id);
+  cs_timer_stats_start(_cdo_ts_id);
 
   /* Write a restart file if needed */
   cs_domain_write_restart(domain);
@@ -795,7 +803,36 @@ cs_cdo_finalize(cs_domain_t    *domain)
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n  Finalize and free CDO-related structures.\n");
 
-  cs_timer_stats_stop(cs_cdo_ts_id);
+  _initialized_setup = false;
+  _initialized_structures = false;
+
+  /* Free CDO structures related to geometric quantities and connectivity */
+  domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
+  domain->connect = cs_cdo_connect_free(domain->connect);
+
+  cs_timer_stats_stop(_cdo_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if CDO has been initialized.
+ *
+ * \param[in, out]  setup       indicator if setup has been initialized,
+ *                              or NULL if not queried
+ * \param[in, out]  structures  indicator if structures have been initialized,
+ *                              or NULL if not queried
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_is_initialized(bool  *setup,
+                      bool  *structures)
+{
+  if (setup != NULL)
+    *setup = _initialized_setup;
+
+  if (structures != NULL)
+    *structures = _initialized_structures;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -820,7 +857,7 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_timer_t t0 = cs_timer_time();
 
   /* Timer statistics */
-  cs_timer_stats_start(cs_cdo_ts_id);
+  cs_timer_stats_start(_cdo_ts_id);
 
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
@@ -903,7 +940,7 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO> Total runtime", time_count.nsec*1e-9);
 
-  cs_timer_stats_stop(cs_cdo_ts_id);
+  cs_timer_stats_stop(_cdo_ts_id);
   if (cs_glob_rank_id <= 0) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO core module\n");

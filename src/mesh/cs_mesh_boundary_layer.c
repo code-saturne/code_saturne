@@ -460,7 +460,11 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   cs_mesh_deform_activate();
 
-  cs_cdo_initialize_setup(domain);
+  bool pre_init_setup = false, pre_init_structures = false;
+  cs_cdo_is_initialized(&pre_init_setup, &pre_init_structures);
+
+  if (pre_init_setup == false)
+    cs_cdo_initialize_setup(domain);
 
   /* Deactivate logging and visualization for deformation
      fields, as they are reset to 0 anyways after extrusion */
@@ -481,7 +485,8 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                                      fixed_vertex_ids,
                                      NULL);
 
-  cs_cdo_initialize_structures(domain, m, mq);
+  if (pre_init_structures == false)
+    cs_cdo_initialize_structures(domain, m, mq);
 
   /* Create equation builder and context.
    * Initialize field values (connect can be updated) */
