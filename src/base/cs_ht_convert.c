@@ -519,6 +519,8 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
     cs_lnum_t f_id = face_ids[i];
     h[f_id] = h_f[f_id];
   }
+
+  BFT_FREE(h_f);
 }
 
 /*----------------------------------------------------------------------------*/
