@@ -1216,8 +1216,6 @@ echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
-  echo "   MPI2 one-sided communication support: "$cs_have_mpi_one_sided""
-  echo "   MPI3 neighborhood collectives support: "$cs_have_mpi_one_sided""
   echo "   MPI3 nonblocking barrier support: "$cs_have_mpi_ibarrier""
 fi
 echo " OpenMP support: "$cs_have_openmp""

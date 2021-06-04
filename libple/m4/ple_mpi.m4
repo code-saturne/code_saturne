@@ -14,7 +14,6 @@ AC_DEFUN([PLE_AC_TEST_MPI], [
 
 ple_have_mpi=no
 ple_have_mpi_header=no
-ple_have_mpi_one_sided=no
 
 AC_ARG_WITH(mpi,
             [AS_HELP_STRING([--with-mpi=PATH],
@@ -307,18 +306,6 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
   # MPI libraries should now have been detected
 
-  if test "x$ple_have_mpi" != "xno"; then
-    # Try to detect some MPI 2 features
-    AC_MSG_CHECKING([for MPI2 one-sided communication])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Win_free((void *)0); ]])],
-                   [AC_DEFINE([HAVE_MPI_ONE_SIDED], 1, [MPI one-sided communication])
-                    ple_have_mpi_one_sided=yes],
-                   [ple_have_mpi_one_sided=no])
-    AC_MSG_RESULT($ple_have_mpi_one_sided)
-
-  fi
-
   CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
@@ -341,7 +328,6 @@ fi
 unset mpi_includedir
 
 AM_CONDITIONAL(HAVE_MPI, test x$ple_have_mpi = xyes)
-AM_CONDITIONAL(HAVE_MPI_ONE_SIDED, test x$ple_have_mpi_one_sided = xyes)
 
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
