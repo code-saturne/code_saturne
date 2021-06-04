@@ -4201,12 +4201,12 @@ cs_field_log_key_vals(int   key_id,
           }
           else if (kd->type_id == 't') {
             if (kv->is_set) {
-              cs_log_printf(CS_LOG_SETUP, _("    %s\n"), name_s);
+              cs_log_printf(CS_LOG_SETUP, _("\n    %s\n"), name_s);
               if (kd->log_func != NULL)
                 kd->log_func(kv->val.v_p);
             }
             else if (log_defaults) {
-              cs_log_printf(CS_LOG_SETUP, _("    %s (default)\n"), name_s);
+              cs_log_printf(CS_LOG_SETUP, _("\n    %s (default)\n"), name_s);
               if (kd->log_func != NULL)
                 kd->log_func(kd->def_val.v_p);
             }
