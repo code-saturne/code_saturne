@@ -272,7 +272,6 @@ call tstjpe(iperio, iperot)
 nscal  = 0
 nscaus = 0
 nscapp = 0
-nscasp = 0
 nvar   = 0
 
 !===============================================================================

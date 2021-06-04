@@ -229,6 +229,7 @@ module ppincl
   !> - ippmod(igmix) = 2  Air/Steam    gas mixtures
   !> - ippmod(igmix) = 3  Air/Helium/Steam gas mixtures
   !> - ippmod(igmix) = 4  Air/Hydrogen/Steam gas mixtures
+  !> - ippmod(igmix) = 5  Air/Helium with O2 from the air deduced
 
   integer ::  igmix
 

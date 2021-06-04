@@ -1,6 +1,15 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Gas mix now accepts user definitions, using the
+  `cs_gas_mix_add_species_with_properties` function.
+  * The model currenty still assumes that of n associated species,
+    n-1 will be solved variables, and the last one will be
+    of property field, deduced from the others so the sum of
+    mass fractions is 1.
+
 Numerics:
 
 - Add GCR (Generalized Conjugate Residual) which enables a flexible

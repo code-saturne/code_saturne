@@ -237,19 +237,6 @@ ippmod(ielarc) = -1
 
 ippmod(iaeros) = -1
 
-! --- igmix: Gas mixtures modelling
-! ==========
-!        if =-1 module not activated
-!        if = 0  Air/Helium   gas mixtures
-!        if = 1  Air/Hydrogen gas mixtures
-!        if = 2  Air/Steam    gas mixtures
-!        if = 3  Air/Helium/Steam gas mixtures
-!        if = 4  Air/Hydrogen/Steam gas mixtures
-
-
-ippmod(igmix) = 0
-
-
 ! Radiative transfer module (iirayo)
 !--------------------------
 !        if = 0: not activated (Default)
@@ -302,20 +289,17 @@ if (ippmod(icfuel).ge.0) then
   ficfpp = 'dp_FUE'
 endif
 
-if (ippmod(igmix).ge.0) then
-  ! Specific condensation modelling
+! Specific condensation modelling (used with ippmod(igmix) >= 0)
 
-  ! wall condensation
-  !      if = -1 module not activated
-  !      if =  0 condensation source terms activated
-  icondb = -1
+! wall condensation model
+!   -1: not activated
+!    0: condensation source terms
+icondb = -1
 
-  ! internal condensation
-  !      if = -1 module not activated
-  !      if =  0 condensation source terms with metal
-  !                               structures activate
-  icondv = -1
-endif
+! internal condensation model
+!   -1: not activated
+!    0: condensation source terms with metal structures
+icondv = -1
 
 !< [usppmo]
 
@@ -387,12 +371,9 @@ integer nmodpp
 
 ! Local variables
 
-logical       inoprv
-integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
-integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
-integer        kturt, turb_flux_model
-
-type(var_cal_opt) :: vcopt
+integer       ii, jj
+integer       iscal, ifcvsl
+integer       kturt, turb_flux_model
 
 !===============================================================================
 
@@ -726,7 +707,7 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, f_id
+integer ii, f_id
 
 type(var_cal_opt) :: vcopt
 
@@ -967,9 +948,7 @@ implicit none
 
 ! Local variables
 
-integer :: ifcvsl, nphases
-
-double precision :: cv(2), gamma(2), pinf(2), qprim(2)
+integer :: ifcvsl
 
 !===============================================================================
 

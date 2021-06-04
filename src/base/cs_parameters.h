@@ -74,26 +74,6 @@ typedef struct {
 } cs_solving_info_t;
 
 /*----------------------------------------------------------------------------
- * Structure of condensation modelling physical properties
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  double  mol_mas;
-  double  cp;
-  double  vol_dif;
-  double  mu_a;
-  double  mu_b;
-  double  lambda_a;
-  double  lambda_b;
-  double  muref;     /* ref. viscosity for Sutherland law                */
-  double  lamref;    /* ref. thermal conductivity for Sutherland law     */
-  double  trefmu;    /* ref. temperature for viscosity in Sutherland law */
-  double  treflam;   /* ref. temperature for conductivity Sutherland law */
-  double  smu;       /* Sutherland temperature for viscosity             */
-  double  slam;      /* Sutherland temperature for conductivity          */
-} cs_gas_mix_species_prop_t;
-
-/*----------------------------------------------------------------------------
  * Boundary condition types
  *----------------------------------------------------------------------------*/
 
@@ -289,17 +269,6 @@ cs_get_glob_time_scheme(void);
 
 void
 cs_parameters_define_field_keys(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define field key for condensation.
- *
- * Note: this should be moved in the future to a condensation-specific file.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_define_field_key_gas_mix(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

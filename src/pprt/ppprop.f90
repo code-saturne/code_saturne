@@ -68,12 +68,10 @@ implicit none
 
 ! Local variables
 
-character(len=80) :: name_d, label_d
 character(len=80) :: f_name
 
-integer          idim1, f_id
+integer          f_id
 integer          itycat
-logical       :: has_previous
 
 !===============================================================================
 ! Interfaces
@@ -86,6 +84,12 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_elec_add_property_fields
+
+  subroutine cs_gas_mix_add_property_fields()  &
+    bind(C, name='cs_gas_mix_add_property_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gas_mix_add_property_fields
 
 end interface
 
@@ -174,30 +178,15 @@ endif
 
 ! Add the mixture molar mass fraction field
 if (ippmod(igmix).ge.0) then
-  call add_property_field_1d('mix_mol_mas', 'Mix_mol_mass', igmxml)
 
-  ! Gas mixtures with Air/Helium and the Helium gas deduced
-  if (ippmod(igmix).eq.0) then
-    name_d = 'y_he'
-    label_d = 'Y_He'
-   ! Gas mixtures with Air/Hydrogen and the Hydrogen gas deduced
-  else if (ippmod(igmix).eq.1) then
-    name_d = 'y_h2'
-    label_d = 'Y_H2'
-  ! Gas mixtures with steam with/without condensation modelling
-  ! the steam gas will be deduced from the gas species transported
-  else if (ippmod(igmix).ge.2.and.ippmod(igmix).le.4) then
-    name_d = 'y_h2o_g'
-    label_d = 'Y_H2O_g'
-  ! Gas mixtures with Helium/Air Helium and the O2 from the air deduced
-  else if (ippmod(igmix).eq.5) then
-    name_d = 'y_o2'
-    label_d = 'Y_O2'
+  call cs_gas_mix_add_property_fields
+
+  call field_get_id('mix_mol_mas', igmxml)
+
+  if (ippmod(igmix).ge.0 .and. ippmod(igmix).le.5) then
+    iddgas = cs_gas_mix_species_to_field_id(nscasp)
   endif
 
-  idim1 =  1
-  has_previous = .true.
-  call add_property_field(name_d, label_d, idim1, has_previous, iddgas)
 endif
 
 end subroutine ppprop

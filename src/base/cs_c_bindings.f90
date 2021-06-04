@@ -1309,11 +1309,26 @@ module cs_c_bindings
 
     ! Interface to C function initializing condensation-related field key.
 
-    subroutine cs_parameters_define_field_key_gas_mix()  &
-      bind(C, name='cs_parameters_define_field_key_gas_mix')
+    function cs_gas_mix_get_field_key()  &
+      result(k_id) &
+      bind(C, name='cs_gas_mix_get_field_key')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_parameters_define_field_key_gas_mix
+      integer(c_int) :: k_id
+    end function cs_gas_mix_get_field_key
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function initializing condensation-related field key.
+
+    function cs_gas_mix_species_to_field_id(sp_id)  &
+      result(f_id) &
+      bind(C, name='cs_f_gas_mix_species_to_field_id')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: sp_id
+      integer(c_int) :: f_id
+    end function cs_gas_mix_species_to_field_id
 
     !---------------------------------------------------------------------------
 

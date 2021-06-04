@@ -458,23 +458,6 @@ static cs_solving_info_t _solving_info =
   0.,    /* l2residual: L2 time residual                     */
 };
 
-static cs_gas_mix_species_prop_t _gas_mix_species_prop =
-{
-  -1.,   /* molar mass                              */
-  -1.,   /* specific heat                           */
-  -1.,   /* volume diffusion                        */
-  -1.,   /* dynamic viscosity a                     */
-  -1.,   /* dynamic viscosity b                     */
-  -1.,   /* thermal conductivity a                  */
-  -1.,   /* thermal conductivity b                  */
-  -1.,   /* reference viscosity (Sutherland)        */
-  -1.,   /* reference conductivity (Sutherland)     */
-  -1.,   /* reference temperature for viscosity     */
-  -1.,   /* reference temperature for conductivity  */
-  -1.,   /* Sutherland temperature for viscosity    */
-  -1.,   /* Sutherland temperature for conductivity */
-};
-
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -635,63 +618,6 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Backward differential scheme in time order"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv,
                 _("Relaxation of variables (1 for no relaxation)"));
-}
-
-/* Log values of the structure */
-
-static void
-_log_func_gas_mix_species_prop(const void *t)
-{
-  const char fmt[] = N_("      %-19s  %-12.3g\n");
-  const cs_gas_mix_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, fmt, "mol_mas ", _t->mol_mas);
-  cs_log_printf(CS_LOG_SETUP, fmt, "cp      ", _t->cp);
-  cs_log_printf(CS_LOG_SETUP, fmt, "vol_diff", _t->vol_dif);
-  cs_log_printf(CS_LOG_SETUP, fmt, "mu_a    ", _t->mu_a);
-  cs_log_printf(CS_LOG_SETUP, fmt, "mu_b    ", _t->mu_b);
-  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_a", _t->lambda_a);
-  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_b", _t->lambda_b);
-  cs_log_printf(CS_LOG_SETUP, fmt, "muref   ", _t->muref);
-  cs_log_printf(CS_LOG_SETUP, fmt, "lamref  ", _t->lamref);
-  cs_log_printf(CS_LOG_SETUP, fmt, "trefmu  ", _t->trefmu);
-  cs_log_printf(CS_LOG_SETUP, fmt, "treflam ", _t->treflam);
-  cs_log_printf(CS_LOG_SETUP, fmt, "smu     ", _t->smu);
-  cs_log_printf(CS_LOG_SETUP, fmt, "slam    ", _t->slam);
-}
-
-/* Log default values of the structure */
-
-static void
-_log_func_default_gas_mix_species_prop(const void *t)
-{
-  const char fmt[] = "      %-19s  %-12.3g %s\n";
-  const cs_gas_mix_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, fmt, "mol_mas ", _t->mol_mas,
-                _("Molar mass"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "cp      ", _t->cp,
-                _("Specific heat"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "vol_diff", _t->vol_dif,
-                _("Volume diffusion"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "mu_a    ", _t->mu_a,
-                _("Dynamic viscosity a"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "mu_b    ", _t->mu_b,
-                _("Dynamic viscosity b"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_a", _t->lambda_a,
-                _("Thermal conductivity a"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_b", _t->lambda_b,
-                _("Thermal conductivity b"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "muref   ", _t->muref,
-                _("Reference thermal viscosity (Sutherland)"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "lamref  ", _t->lamref,
-                _("Reference thermal conductivity (Sutherland)"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "trefmu  ", _t->trefmu,
-                _("Reference temperature (Sutherland for viscosity)"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "treflam ", _t->treflam,
-                _("Reference temperature (Sutherland conductivity)"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "smu     ", _t->smu,
-                _("Sutherland temperature for viscosity"));
-  cs_log_printf(CS_LOG_SETUP, fmt, "slam    ", _t->slam,
-                _("Sutherland temperature for conductivity"));
 }
 
 /*----------------------------------------------------------------------------
@@ -1085,28 +1011,6 @@ cs_parameters_define_field_keys(void)
 
   /* Restart options */
   cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define field key for condensation.
- *
- * Note: this should be moved in the future to a condensation-specific file.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_define_field_key_gas_mix(void)
-{
-  /* Structure containing physical properties relative to
-     species scalars used by the gas mixture modelling */
-  cs_field_define_key_struct("gas_mix_species_prop",
-                             &_gas_mix_species_prop,
-                             _log_func_gas_mix_species_prop,
-                             _log_func_default_gas_mix_species_prop,
-                             NULL,
-                             sizeof(cs_gas_mix_species_prop_t),
-                             0);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -404,6 +404,15 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
+  /*! [gax_mix_activation] */
+
+  cs_gas_mix_type_t gas_mix_type = CS_GAS_MIX_AIR_HELIUM;
+  cs_glob_physical_model_flag[CS_GAS_MIX] = gas_mix_type;
+
+  /*! [gax_mix_activation] */
+
+  /*--------------------------------------------------------------------------*/
+
   /*! [scalars_addition] */
 
   /* Example: add 2 scalar variables ("species" in the GUI nomenclature).
