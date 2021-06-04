@@ -48,19 +48,11 @@ try:
     from vtkmodules.vtkFiltersSourcesPython import *
 except:
     try:
+        from vtkmodules.vtkRenderingCore import *
+        from vtkmodules.vtkFiltersSources import *
+    except:
         from vtkRenderingCorePython import *
         from vtkFiltersSourcesPython import *
-    except:
-        # for compatibility with salome 7.2
-        try:
-            from libvtkRenderingCorePython import *
-            from libvtkFiltersSourcesPython import *
-        except:
-            # for compatibility with salome 6.6
-            try:
-                from libvtkRenderingPython import *
-            except:
-                from vtkRenderingPython import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
