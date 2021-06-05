@@ -24,11 +24,9 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
-
 /*!
 
-  \page cs_user_extra_operations-nusselt_calculation Calculation of a local Nusselt number
+  \page cs_user_extra_operations_examples_nusselt_calculation_p Calculation of a local Nusselt number
 
   \brief This function is called at the end of each time step, and has a very general purpose (\c i.e. anything that does not have another dedicated user subroutine)
 
@@ -37,54 +35,41 @@
 
   \subsection loc_var_f_user Local variables
 
-  \snippet cs_user_extra_operations-nusselt_calculation.f90 loc_var_f_user
+  \snippet cs_user_extra_operations-nusselt_calculation.c loc_var_f_user
 
   \subsection nusselt_number Calculation of the Nusselt number
 
-  \snippet cs_user_extra_operations-nusselt_calculation.f90  nusselt_number
+  \snippet cs_user_extra_operations-nusselt_calculation.c  nusselt_number
 
   \subsubsection compute_nusselt Compute value reconstructed at I' for boundary faces
-  
-  \snippet cs_user_extra_operations-nusselt_calculation.f90 compute_nusselt
 
-   \subsubsection general_nusselt General cas (for non-orthogonal meshes)
-  \snippet cs_user_extra_operations-nusselt_calculation.f90 gen_nusselt
+  \snippet cs_user_extra_operations-nusselt_calculation.c compute_nusselt
 
-   Allocate a work array for the gradient calculation
+  \subsubsection general_nusselt General case (for non-orthogonal meshes)
+  Allocate a work array for the gradient calculation, then
+  compute gradient, then compute reconstructed value in boundary cells,
+  and then free memory
+  \snippet cs_user_extra_operations-nusselt_calculation.c gen_nusselt
 
-  \snippet  cs_user_extra_operations-nusselt_calculation.f90  allocate_nusselt
+  \subsubsection orthogonal_nusselt Case of orthogonal meshes
 
-  Compute gradient
+  Compute boundary value without reconstruction
+  \snippet cs_user_extra_operations-nusselt_calculation.c else_nusselt
 
-  \snippet  cs_user_extra_operations-nusselt_calculation.f90 gradient_nusselt
+  \note Here, we assign the non-reconstructed value.
 
-  Compute reconstructed value in boundary cells
+  Open file to print values and perform parallel operations to
+  broadcast values to all ranks.
+  \snippet  cs_user_extra_operations-nusselt_calculation.c value_ortho_nusselt
 
- \snippet  cs_user_extra_operations-nusselt_calculation.f90  value_nusselt
+  Calculation of the bulk temperature, finalize the Nusselt number, print it and
+  free memory
 
-  Free memory
+  \snippet cs_user_extra_operations-nusselt_calculation.c  bulk_nusselt
 
-\snippet  cs_user_extra_operations-nusselt_calculation.f90 free_nusselt
+\section sortc2 Utility function to sort global data
 
-\subsubsection orthogonal_nusselt Case of orthogonal meshes 
-
-\snippet  cs_user_extra_operations-nusselt_calculation.f90 else_nusselt 
-
-Compute reconstructed value 
-
-\note Here, we assign the non-reconstructed value.
-
-\snippet  cs_user_extra_operations-nusselt_calculation.f90 value_ortho_nusselt
-
-Calculation of the bulk temperature
-
-\snippet  cs_user_extra_operations-nusselt_calculation.f90  bulk_nusselt
-
-\section sortc2  sortc2 subroutine 
-\subsection loc_var_sortc2 Local variables
-\snippet  cs_user_extra_operations-nusselt_calculation.f90 loc_var_sortc2
- 
 \subsection body_sortc2 Body
-\snippet cs_user_extra_operations-nusselt_calculation.f90 body_sortc2 
+\snippet cs_user_extra_operations-nusselt_calculation.c body_sortc2
 
-*/  
+*/

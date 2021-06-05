@@ -108,7 +108,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
 
-    /* We compute the thermal fluxes at boundaries */
+    /* Compute the thermal fluxes at selected boundary faces */
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
     cs_real_t *boundary_flux = NULL;
@@ -163,18 +163,18 @@ cs_user_extra_operations(cs_domain_t  *domain)
 
     /* -------- TO MODIFY ---------- */
     cs_real_t length_ref = 1.0;
-    cs_real_t temp_ref     = 1.0;
+    cs_real_t temp_ref = 1.0;
     /* -------- TO MODIFY ---------- */
 
     for (cs_lnum_t ielt = 0; ielt < n_selected_faces; ielt++) {
       cs_lnum_t f_id = selected_faces[ielt];
 
-      // Compute the Nusselt number
+      /* Compute the Nusselt number */
       cs_real_t tfac = f_b_temp[f_id];
       loc_nusselt[ielt] =   boundary_flux[f_id] * length_ref
                           / (visls_0 * (tfac-temp_ref));
 
-      // Compute the friction coefficient
+      /* Compute the friction coefficient */
       srfbn = surfbn[f_id];
       srfnor[0] = surfbo[f_id][0] / srfbn;
       srfnor[1] = surfbo[f_id][1] / srfbn;
@@ -189,7 +189,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
 
       loc_friction[ielt] = cs_math_3_norm(stresses);
 
-      // Here we plot the results with respect to X
+      /* Here we plot the results with respect to X */
       loc_coords[ielt]   = b_face_cog[f_id][0];
     }
 

@@ -90,6 +90,7 @@ cs_user_extra_operations-vorticity_field.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-boundary_forces.c \
 cs_user_extra_operations-nusselt_and_friction_calculation.c \
+cs_user_extra_operations-nusselt_calculation.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
@@ -166,7 +167,6 @@ cs_user_boundary_conditions_ale-base.f90 \
 cs_user_boundary_mass_source_terms-condensation.f90 \
 cs_user_boundary_mass_source_terms-nzones_condensation.f90 \
 cs_user_extra_operations-force_temperature.f90 \
-cs_user_extra_operations-nusselt_calculation.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \

@@ -40,9 +40,9 @@
   - \subpage cs_user_extra_operations_examples_vorticity_field_p
   - \subpage cs_user_extra_operations_examples_balance_by_zone_p
   - \subpage cs_user_extra_operations_examples_scalar_balance_p
-  - \subpage cs_user_extra_operations_examples_energy_balance_p
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_boundary_forces_p
+  - \subpage cs_user_extra_operations_examples_nusselt_calculation_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
   - \subpage cs_user_extra_operations_examples_stopping_criterion_p
 
