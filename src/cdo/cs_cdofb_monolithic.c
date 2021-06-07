@@ -1803,7 +1803,6 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
       cs_cdofb_monolithic_cw_mat[0] = cs_sdm_block_create(3, 3,
                                                           block_sizes,
                                                           block_sizes);
-
 #endif /* openMP */
     }
     break;
@@ -1824,11 +1823,24 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
     break;
 
-  default: /* Build the fully coupled system */
+  default:
+    /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+     * CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+     * CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+     * CS_NAVSTO_SLES_GKB_PETSC
+     * CS_NAVSTO_SLES_GKB_GMRES
+     * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_MUMPS
+     * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+     */
+
     _build_shared_structures();
 
     cs_shared_interface_set = _shared_interface_set;
     cs_shared_range_set = _shared_range_set;
+
+    /* Build the fully coupled system */
     cs_shared_matrix_structure = _shared_matrix_structure;
     cs_shared_matrix_assembler = _shared_matrix_assembler;
     break;
@@ -2106,6 +2118,16 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     break;
 
   default:
+    /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+     * CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+     * CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+     * CS_NAVSTO_SLES_GKB_PETSC
+     * CS_NAVSTO_SLES_GKB_GMRES
+     * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_MUMPS
+     * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+     */
     sc->init_system = _init_system_default;
     sc->solve = cs_cdofb_monolithic_solve;
     sc->assemble = _full_assembly;
@@ -2113,6 +2135,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
+    msles->graddiv_coef = 0;    /* No augmentation */
     msles->n_row_blocks = 1;
     BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
     break;

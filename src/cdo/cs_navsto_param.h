@@ -348,8 +348,9 @@ typedef enum {
  * \var CS_NAVSTO_SLES_MUMPS
  * Associated keyword: "mumps"
  *
- * Direct solver to solve systems arising from the discretization of the
- * Navier-Stokes equations
+ * Direct solver to solve the full (saddle-point) system arising from the
+ * discretization of the Navier-Stokes equations
+ *
  *
  * \var CS_NAVSTO_SLES_SGS_SCHUR_GCR
  * Associated keyword: "sgs_schur_gcr"

@@ -1108,23 +1108,19 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "additive_gmres") == 0)
       nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK);
-    else if (strcmp(val, "multiplicative_gmres") == 0)
-      nsp->sles_param->strategy =
-        _check_petsc_strategy(val,
-                              CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK);
     else if (strcmp(val, "diag_schur_gmres") == 0)
       nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_DIAG_SCHUR_GMRES);
-    else if (strcmp(val, "upper_schur_gmres") == 0)
-      nsp->sles_param->strategy =
-        _check_petsc_strategy(val, CS_NAVSTO_SLES_UPPER_SCHUR_GMRES);
     else if (strcmp(val, "gkb_gmres") == 0)
       nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_GMRES);
     else if (strcmp(val, "gkb_petsc") == 0)
       nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_PETSC);
-
+    else if (strcmp(val, "multiplicative_gmres") == 0)
+      nsp->sles_param->strategy =
+        _check_petsc_strategy(val,
+                              CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK);
     else if (strcmp(val, "mumps") == 0) {
 #if defined(HAVE_MUMPS)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_MUMPS;
@@ -1142,6 +1138,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
     }
+    else if (strcmp(val, "upper_schur_gmres") == 0)
+      nsp->sles_param->strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_UPPER_SCHUR_GMRES);
+
 
     else {
       const char *_val = val;

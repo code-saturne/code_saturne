@@ -3140,7 +3140,47 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 
 #if defined(HAVE_PETSC)
-#if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
+
+  /* Strategies available before the 3.11 version of PETSc */
+  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _additive_amg_hook,
+                         (void *)nsp);
+    break;
+
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _diag_schur_hook,
+                         (void *)nsp);
+    break;
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _multiplicative_hook,
+                         (void *)nsp);
+    break;
+
+
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _upper_schur_hook,
+                         (void *)nsp);
+    break;
+
+  /* Golub-Kahan Bi-diagonalization is available starting from the 3.11 version
+     of PETSc */
+#if PETSC_VERSION_GE(3,11,0)
   case CS_NAVSTO_SLES_GKB_PETSC:
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
@@ -3166,10 +3206,16 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
               " PETSc 3.11.x or greater is required with this option.\n",
               __func__, mom_eqp->name);
     break;
-#endif
+#endif /* PETSc version */
+
 #else  /* no HAVE_PETSC */
+
+  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
   case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc is required with this option.\n"
@@ -3177,7 +3223,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
               __func__, mom_eqp->name);
     break;
 
-#endif
+#endif  /* HAVE_PETSC */
 
   case CS_NAVSTO_SLES_MUMPS:
 #if defined(HAVE_MUMPS)
@@ -3214,56 +3260,6 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
     break;
-
-#if defined(HAVE_PETSC)
-  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _additive_amg_hook,
-                         (void *)nsp);
-    break;
-
-  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _multiplicative_hook,
-                         (void *)nsp);
-    break;
-
-  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _diag_schur_hook,
-                         (void *)nsp);
-    break;
-
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _upper_schur_hook,
-                         (void *)nsp);
-    break;
-
-#else
-  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
-  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
-  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
-              " PETSc is required with this option.\n"
-              " Please use a version of Code_Saturne built with PETSc.",
-              __func__, mom_eqp->name);
-    break;
-#endif /* HAVE_PETSC */
 
   default:
     bft_error(__FILE__, __LINE__, 0,
