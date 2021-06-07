@@ -805,8 +805,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exa = """#example: """
 
         zone_id = str(self.zone.getCodeNumber())
-        exp, req, sym = self.init.getEnergyFormulaComponenets(zone_id)
-        exp, req, sym = self.init.getEnergyFormulaComponenets(zone_id)
+        exp, req, sym = self.init.getEnergyFormulaComponents(zone_id)
+        exp, req, sym = self.init.getEnergyFormulaComponents(zone_id)
 
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",

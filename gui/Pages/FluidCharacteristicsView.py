@@ -499,7 +499,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.widgetRefMu.setVisible(is_main_zone)
             self.widgetVofMu.hide()
         else:
-            self.widgetRefRho.setVisible(is_main_zone)
+            if mdl_comp != "off":
+                self.widgetRefRho.hide()
+            else:
+                self.widgetRefRho.setVisible(is_main_zone)
             self.widgetVofRho.hide()
             self.widgetRefMu.setVisible(is_main_zone)
             self.widgetVofMu.hide()
