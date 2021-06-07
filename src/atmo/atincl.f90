@@ -1208,7 +1208,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   double precision coef_mom_old
   double precision prec_ustar
   double precision num, denom
-  double precision :: dlmoclip = 0.05d0
+  double precision :: dlmoclip = 1.0d0
   integer icompt
 
   ! Precision initialisation
@@ -1296,7 +1296,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   double precision prec_ustar,prec_tstar
   double precision num, denom
   real(c_double) :: zref
-  double precision :: dlmoclip = 0.05d0
+  double precision :: dlmoclip = 1.0d0
   integer icompt
 
   ! Precision initialisation
