@@ -232,8 +232,8 @@ The set of equations to be solved is
 \end{equation}
 %
 where $\rho$ is the density field, $\vect{u}$ is the velocity field to be solved,
-$[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are sources terms (note that $\tens{K}$ is expected to be a positive definite tensor),
- $\tens{\sigma}$ is the stress tensor, composed of the viscous tensor $\tens{\tau}$ and of the pressure field as follows
+$[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are source terms (note that $\tens{K}$ is expected to be a positive definite tensor),
+ $\tens{\sigma}$ is the stress tensor, composed of the viscous stress tensor $\tens{\tau}$ and of the pressure field as follows
  %
 \begin{equation}
 \left\{\begin{array}{r c l}
@@ -244,7 +244,7 @@ $[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are sources terms (note
 \end{equation}
  where  $\mu$ is the dynamic molecular viscosity,
  $\kappa$ the volume viscosity (also called the second viscosity, usually neglected in the code, excepted for compressible flows).
-$\tens{S}$ is called the strain rate and  $\Gamma$ is an eventual mass source term.
+$\tens{S}$ is called the strain rate tensor and  $\Gamma$ is a possible mass source term.
 
 %-------------------------------------------------------------------------------
 \subsection{Segregated solver: SIMPLEC}

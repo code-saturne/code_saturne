@@ -50,8 +50,8 @@ depending on the considered time-stepping scheme.} ${t^{n+1}}$.
 Therefore, the associated time step is ${\Delta {t^n} ={t^{n+1}- {t^n}}}$.
 To begin with, the velocity prediction step is performed by solving the
 momentum balance equation with an explicit pressure. This is followed by
-the pressure correction (or velocity projection) step allowing to obtain
-a null divergence velocity field.
+the pressure correction (or velocity projection) step allowing one to obtain
+a divergence-free velocity field.
 
 The continuous equations are thus:
 \begin{equation}
@@ -247,7 +247,7 @@ Following the classical approach, the time-discretized equations are then integr
 If we do not take account of the $\theta$-scheme convection and diffusion
 terms, the explicit volume source terms of the equation \eqref{eq:navstv:c0_prediction_step}
 for the system concerning the quantity $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$
-	are expressed as:
+        are expressed as:
 
 \begin{equation*}
  -\grad P^{n-1+\theta} + \dive \left[ (\mu \transpose{ \left( \gradt \vect{u}\right) })^{n+\theta_{S}}- \frac{2}{3} ( \mu  \dive \vect{u})^{n+\theta_{S}}\tens{Id} \,\right]+\vect{TS}^{n+\theta_{S}}- \,\tens{K}^{n} \vect{u}^{n}+\vect{u}^{n} \dive{(\rho\vect{u})}.
