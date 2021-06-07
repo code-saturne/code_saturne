@@ -195,7 +195,7 @@ double precision rough_t
 double precision dtplus, yplus_t
 double precision coef_mom
 double precision one_minus_ri
-double precision dlmo,dt,tm,flux
+double precision dlmo,dt,theta0,flux
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
@@ -637,6 +637,7 @@ cvar_totwt => null()
 cpro_liqwt => null()
 
 if (ippmod(iatmos).ge.1) then
+  theta0 = t0 * (ps / p0)**(rair/cp0)
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
   if (ippmod(iatmos).eq.2) then
     call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
@@ -896,14 +897,12 @@ do ifac = 1, nfabor
         if (ippmod(iatmos).ge.1) then
           gredu = gx*rnx + gy*rny + gz*rnz
 
-          ! TODO should be preproc_theta0
-          tm = theipb(ifac)
-
           if (icodcl(ifac,isca(iscalt)).eq.6) then
 
             dt = theipb(ifac)-rcodcl(ifac,isca(iscalt),1)
-            call mo_compute_from_thermal_diff(distbf,rough_d,utau,dt,tm,gredu, &
-                                              dlmo,uet)
+            call mo_compute_from_thermal_diff(distbf,rough_d,utau,dt, &
+                                              theta0, gredu,          &
+                                              dlmo, uet)
 
           elseif (icodcl(ifac,isca(iscalt)).eq.3) then
             if (icp.ge.0) then
@@ -913,8 +912,9 @@ do ifac = 1, nfabor
             endif
 
             flux = rcodcl(ifac, isca(iscalt),3)/romc/cpp
-            call mo_compute_from_thermal_flux(distbf,rough_d,utau,flux,tm,gredu, &
-                                              dlmo,uet)
+            call mo_compute_from_thermal_flux(distbf,rough_d,utau,flux, &
+                                              theta0, gredu,            &
+                                              dlmo, uet)
 
           endif
 
