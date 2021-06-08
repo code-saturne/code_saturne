@@ -1046,7 +1046,7 @@ typedef struct {
  * \var CS_EQKEY_PRECOND
  * Specify the preconditioner associated to an iterative solver. Available
  * choices are:
- * - "jacobi" or "diag" or "diagonal": diagonal preconditoner
+ * - "jacobi" or "diag": diagonal preconditoner
  * - "block_jacobi": Only with PETSc
  * - "poly1": Neumann polynomial of order 1 (only with Code_Saturne)
  * - "poly2": Neumann polynomial of order 2 (only with Code_Saturne)

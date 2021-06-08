@@ -528,7 +528,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
     }
-    else if (strcmp(keyval, "jacobi") == 0)
+    else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0)
       eqp->sles_param->precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0 ||
              strcmp(keyval, "block_jacobi_ilu0") == 0 ||
