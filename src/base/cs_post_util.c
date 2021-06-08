@@ -1351,58 +1351,89 @@ cs_post_field_cell_to_b_face_values(cs_field_t       *f,
 
   const cs_lnum_t dim = f->dim;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  cs_real_t *grad;
-  BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
 
-  if (dim == 1)
+  int coupled = 0;
+  if (f->type & CS_FIELD_VARIABLE && f->dim > 1) {
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > -1)
+      coupled = cs_field_get_key_int(f, coupled_key_id);
+  }
+
+  if (dim == 1) {
+
+    cs_real_3_t *grad;
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
                              1,    /* not an increment */
                              true, /* recompute_cocg */
-                             (cs_real_3_t *)grad);
-  else if (dim == 3)
-    cs_field_gradient_vector(f,
-                             true, /* use_previous_t */
-                             1,    /* not an increment */
-                             (cs_real_33_t *)grad);
+                             grad);
+
+    for (cs_lnum_t ii = 0; ii < n_loc_b_faces; ii++) {
+      cs_lnum_t face_id = b_face_ids[ii];
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      cs_real_t c =   f->val[cell_id]
+                    + cs_math_3_dot_product(diipb[face_id], grad[cell_id]);
+
+      b_val[ii] =   f->bc_coeffs->a[face_id]
+                  + f->bc_coeffs->b[face_id] * c;
+    }
+
+    BFT_FREE(grad);
+
+  }
+
+  else if (dim == 3 || dim == 6) {
+
+    cs_real_t *grad;
+    BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
+
+    if (dim == 3)
+      cs_field_gradient_vector(f,
+                               true, /* use_previous_t */
+                               1,    /* not an increment */
+                               (cs_real_33_t *)grad);
+    else if (dim == 6)
+      cs_field_gradient_tensor(f,
+                               true, /* use_previous_t */
+                               1,    /* not an increment */
+                               (cs_real_63_t *)grad);
+
+    for (cs_lnum_t ii = 0; ii < n_loc_b_faces; ii++) {
+      cs_lnum_t face_id = b_face_ids[ii];
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      cs_real_t val_ip[3];
+      for (cs_lnum_t j = 0; j < dim; j++) {
+        cs_lnum_t k = (cell_id*dim + j)*3;
+        val_ip[j] =   f->val[cell_id*dim + j]
+                    + diipb[face_id][0] * grad[k]
+                    + diipb[face_id][1] * grad[k+1]
+                    + diipb[face_id][2] * grad[k+2];
+      }
+
+      for (int j = 0; j < dim; j++) {
+        b_val[ii*dim + j] = f->bc_coeffs->a[dim*face_id + j];
+
+        if (coupled)
+          for (int k = 0; k < dim; k++)
+            b_val[ii*dim + j]
+              += f->bc_coeffs->b[dim*dim*face_id+j*dim+k]*val_ip[k];
+        else
+          b_val[ii*dim + j] += f->bc_coeffs->b[dim*face_id + j]*val_ip[j];
+      }
+    }
+
+    BFT_FREE(grad);
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Postprocessing face boundary values for field %s"
                 " of dimension %d:\n not implemented."),
               f->name, f->dim);
 
-  int coupled = 0;
-  if (f->type & CS_FIELD_VARIABLE) {
-    int coupled_key_id = cs_field_key_id_try("coupled");
-    if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
-  }
-
-  for (cs_lnum_t ii = 0; ii < n_loc_b_faces; ii++) {
-    cs_lnum_t face_id = b_face_ids[ii];
-    cs_lnum_t cell_id = b_face_cells[face_id];
-
-    cs_real_3_t val_ip;
-    for (int j = 0; j < dim; j++) {
-      cs_lnum_t k = (cell_id*dim + j)*3;
-      val_ip[j] =   f->val[cell_id*dim + j]
-                  + diipb[face_id][0] * grad[k]
-                  + diipb[face_id][1] * grad[k+1]
-                  + diipb[face_id][2] * grad[k+2];
-    }
-
-    for (int j = 0; j < dim; j++) {
-      b_val[ii*dim + j] = f->bc_coeffs->a[dim*face_id + j];
-
-      if (coupled)
-        for (int k = 0; k < dim; k++)
-          b_val[ii*dim + j] += f->bc_coeffs->b[dim*dim*face_id+j*dim+k]*val_ip[k];
-      else
-        b_val[ii*dim + j] += f->bc_coeffs->b[dim*face_id + j]*val_ip[j];
-    }
-  }
-
-  BFT_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
