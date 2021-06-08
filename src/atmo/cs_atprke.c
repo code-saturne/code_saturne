@@ -57,6 +57,7 @@
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 #include "cs_atmo_profile_std.h"
 #include "cs_intprf.h"
@@ -283,6 +284,10 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t rho, visct, xeps, xk, ttke, gravke;
   cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
+  cs_real_t *cpro_beta = NULL;
+  cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
+  if (vp_model->idilat == 0)
+    cpro_beta = cs_field_by_name("thermal_expansion")->val;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rho    = cromo[c_id];
@@ -290,9 +295,10 @@ _dry_atmosphere(const cs_real_t  cromo[],
     xeps   = cvara_ep[c_id];
     xk     = cvara_k[c_id];
     ttke   = xk / xeps;
+    cs_real_t beta = (cpro_beta == NULL) ? 1./cvara_tpp[c_id] : cpro_beta[c_id];
 
-    gravke =
-      cs_math_3_dot_product(grad[c_id], grav) / (cvara_tpp[c_id]*prdtur);
+    gravke = beta *
+      cs_math_3_dot_product(grad[c_id], grav) / prdtur;
 
     /* Implicit part (no implicit part for epsilon because the source
      * term is positive) */
