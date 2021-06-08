@@ -1187,8 +1187,8 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    nslesp->il_algo_rtol,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
+                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
+                   nslesp->il_algo_dtol,   /* divergence tolerance */
                    nslesp->n_max_il_algo_iter); /* max number of iterations */
 
   switch (slesp->resnorm_type) {
@@ -1446,6 +1446,8 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
     KSPSetType(u_ksp, KSPPREONLY);
     break;
   case CS_PARAM_ITSOL_FCG:
+    KSPSetType(u_ksp, KSPFCG);
+    break;
   case CS_PARAM_ITSOL_CG:
     KSPSetType(u_ksp, KSPCG);
     break;
@@ -1467,9 +1469,11 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
 #endif
     break;
   case CS_PARAM_ITSOL_GMRES:
+    /* Number of iterations before restarting = 30 (default value)  */
     KSPSetType(u_ksp, KSPGMRES);
     break;
   case CS_PARAM_ITSOL_FGMRES:
+    /* Number of iterations before restarting = 30 (default value)  */
     KSPSetType(u_ksp, KSPFGMRES);
     break;
 
@@ -1574,7 +1578,7 @@ _additive_amg_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the main iterative solver for the velocity block */
+  /* Set the main iterative solver for the saddle-point problem */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
@@ -1655,7 +1659,7 @@ _multiplicative_hook(void     *context,
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  *slesp = eqp->sles_param;
 
-  /* Set the main iterative solver for the velocity block */
+  /* Set the main iterative solver for the saddle-point problem */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
@@ -1713,7 +1717,6 @@ _multiplicative_hook(void     *context,
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1739,7 +1742,7 @@ _diag_schur_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the main iterative solver for the velocity block */
+  /* Set the main iterative solver for the saddle-point problem */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
@@ -1824,7 +1827,7 @@ _upper_schur_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the main iterative solver for the velocity block */
+  /* Set the main iterative solver for the saddle-point problem */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
@@ -1987,7 +1990,7 @@ _gkb_precond_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the main iterative solver for the velocity block */
+  /* Set the main iterative solver for the saddle-point */
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
@@ -1997,9 +2000,10 @@ _gkb_precond_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc,  slesp->eps);
-  PCFieldSplitSetGKBMaxit(up_pc, slesp->n_max_iter);
-  PCFieldSplitSetGKBNu(up_pc, 0);
+  /* Default settings for the GKB as preconditioner */
+  PCFieldSplitSetGKBTol(up_pc,  1e-2);
+  PCFieldSplitSetGKBMaxit(up_pc, 10);
+  PCFieldSplitSetGKBNu(up_pc, 0); /* No augmentation */
   PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
   _build_is_for_fieldsplit(&isp, &isv);
@@ -2019,10 +2023,8 @@ _gkb_precond_hook(void     *context,
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
   assert(n_split == 2);
 
-  /* Set KSP tolerances */
-  PetscInt  max_it = 50;
-  PetscReal  rtol = 1e-2;
-  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
+  /* Set KSP options for the velocity block */
+  _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
