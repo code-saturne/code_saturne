@@ -40,6 +40,7 @@
 
 #include "bft_error.h"
 #include "bft_mem.h"
+#include "cs_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -939,6 +940,52 @@ cs_parall_allgather_r(int        n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build an ordered global array from each local array in each domain.
+ *
+ * Local array elements are ordered based on a given key value (usually
+ * some form of coordinate, so the result should be independent of
+ * partitioning as long as the definition of the o_key array's defintion
+ * is itself independent of the partitioning.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   n_elts    number of local elements
+ * \param[in]   n_g_elts  number of global elements
+ * \param[in]   stride    number of values per element
+ * \param[in]   o_key     ordering key (coordinate) value per element
+ * \param[in]   array     local array (size: n_elts*stride)
+ * \param[out]  g_array   global array  (size: n_g_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_allgather_ordered_r(int        n_elts,
+                              int        n_g_elts,
+                              int        stride,
+                              cs_real_t  o_key[],
+                              cs_real_t  array[],
+                              cs_real_t  g_array[])
+{
+  cs_lnum_t  *order;
+  cs_real_t  *g_o_key;
+
+  BFT_MALLOC(g_o_key, n_g_elts, cs_real_t);
+  BFT_MALLOC(order, n_g_elts, cs_lnum_t);
+
+  cs_parall_allgather_r(n_elts, n_g_elts, o_key, g_o_key);
+  cs_parall_allgather_r(n_elts, n_g_elts*stride, array, g_array);
+
+  cs_order_real_allocated(NULL, g_o_key, order, n_g_elts);
+  cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
+
+  BFT_FREE(order);
+  BFT_FREE(g_o_key);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build a global array on the given root rank from all local arrays.
  *
  * Local arrays are appended in order of owning MPI rank.
@@ -964,8 +1011,6 @@ cs_parall_gather_r(int               root_rank,
                    const cs_real_t   array[],
                    cs_real_t         g_array[])
 {
-  assert(array != NULL && n_elts > 0);
-
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
@@ -1000,6 +1045,59 @@ cs_parall_gather_r(int               root_rank,
       g_array[i] = array[i];
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build an ordered global array on the given root rank from
+ *        all local arrays.
+ *
+ * Local array elements are ordered based on a given key value (usually
+ * some form of coordinate, so the result should be independent of
+ * partitioning as long as the definition of the o_key array's defintion
+ * is itself independent of the partitioning.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     number of local elements
+ * \param[in]   n_g_elts   number of global elements
+ * \param[in]   stride     number of values per element
+ * \param[in]   o_key      ordering key (coordinate) value per element
+ * \param[in]   array      local array (size: n_elts*stride)
+ * \param[out]  g_array    global array  (size: n_g_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_ordered_r(int        root_rank,
+                           int        n_elts,
+                           int        n_g_elts,
+                           int        stride,
+                           cs_real_t  o_key[],
+                           cs_real_t  array[],
+                           cs_real_t  g_array[])
+{
+  cs_lnum_t  *order = NULL;
+  cs_real_t  *g_o_key = NULL;
+
+  if (cs_glob_rank_id == root_rank) {
+    BFT_MALLOC(g_o_key, n_g_elts, cs_real_t);
+    BFT_MALLOC(order, n_g_elts, cs_lnum_t);
+  }
+
+  cs_parall_gather_r(root_rank, n_elts, n_g_elts, o_key, g_o_key);
+  cs_parall_gather_r(root_rank, n_elts, n_g_elts*stride, array, g_array);
+
+  if (cs_glob_rank_id == root_rank) {
+    cs_order_real_allocated(NULL, g_o_key, order, n_g_elts);
+    cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
+  }
+
+  BFT_FREE(order);
+  BFT_FREE(g_o_key);
 }
 
 /*----------------------------------------------------------------------------*/

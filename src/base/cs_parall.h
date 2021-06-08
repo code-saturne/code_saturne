@@ -264,6 +264,35 @@ cs_parall_allgather_r(int        n_elts,
                       cs_real_t  array[],
                       cs_real_t  g_array[]);
 
+/*----------------------------------------------------------------------------
+ * Build an ordered global array from each local array in each domain.
+ *
+ * Local array elements are ordered based on a given key value (usually
+ * some form of coordinate, so the result should be independent of
+ * partitioning as long as the definition of the o_key array's defintion
+ * is itself independent of the partitioning.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * parameters:
+ *   n_elts   <-- number of local elements
+ *   n_g_elts <-- number of global elements
+ *   stride   <-- number of values per element
+ *   o_key    <-- ordering key (coordinate) value per element
+ *   array    <-- local array (size: n_elts*stride)
+ *   g_array  --> global array  (size: n_g_elts*stride)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_allgather_ordered_r(int        n_elts,
+                              int        n_g_elts,
+                              int        stride,
+                              cs_real_t  o_key[],
+                              cs_real_t  array[],
+                              cs_real_t  g_array[]);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build a global array on the given root rank from all local arrays.
@@ -290,6 +319,39 @@ cs_parall_gather_r(int               root_rank,
                    int               n_g_elts,
                    const cs_real_t   array[],
                    cs_real_t         g_array[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build an ordered global array on the given root rank from
+ *        all local arrays.
+ *
+ * Local array elements are ordered based on a given key value (usually
+ * some form of coordinate, so the result should be independent of
+ * partitioning as long as the definition of the o_key array's defintion
+ * is itself independent of the partitioning.
+ *
+ * Use of this function may be quite practical, but should be limited
+ * to user functions, as it may limit scalability (especially as regards
+ * memory usage).
+ *
+ * \param[in]   root_rank  rank which stores the global array
+ * \param[in]   n_elts     number of local elements
+ * \param[in]   n_g_elts   number of global elements
+ * \param[in]   stride     number of values per element
+ * \param[in]   o_key      ordering key (coordinate) value per element
+ * \param[in]   array      local array (size: n_elts*stride)
+ * \param[out]  g_array    global array  (size: n_g_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_gather_ordered_r(int        root_rank,
+                           int        n_elts,
+                           int        n_g_elts,
+                           int        stride,
+                           cs_real_t  o_key[],
+                           cs_real_t  array[],
+                           cs_real_t  g_array[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

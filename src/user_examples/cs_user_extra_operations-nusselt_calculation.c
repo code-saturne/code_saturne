@@ -71,35 +71,6 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
-/* Utility function to sort global data */
-
-/*! [body_sortc2] */
-static void
-_sortc2(cs_real_t tab1[], cs_real_t tab2[], cs_lnum_t n)
-{
-  cs_lnum_t ns, ii, jj, kk;
-  cs_real_t tabmin, t2;
-
-  ns = 0;
-  for (ii = 0; ii < n - 1; ii++) {
-    tabmin = 10e20;
-    kk = 0;
-    for (jj = ns; jj < n; jj++) {
-      if (tabmin > tab1[jj]) {
-        tabmin = tab1[jj];
-        kk = jj;
-      }
-    }
-    t2 = tab2[kk];
-    tab1[kk] = tab1[ns];
-    tab2[kk] = tab2[ns];
-    tab2[ns] = t2;
-    tab1[ns] = tabmin;
-    ns++;
-  }
-}
-/*! [body_sortc2] */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is called at the end of each time step.
@@ -126,14 +97,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     const cs_real_3_t *cell_cen
       = (const cs_real_3_t *)domain->mesh_quantities->cell_cen;
-    const cs_real_3_t  *diipb
-      = (const cs_real_3_t *)domain->mesh_quantities->diipb;
     const cs_real_3_t *cdgfbo
       = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
     const cs_real_t *volume  = domain->mesh_quantities->cell_vol;
-
-    const cs_real_t *coefap = CS_F_(t)->bc_coeffs->a;
-    const cs_real_t *coefbp = CS_F_(t)->bc_coeffs->b;
 
     FILE *file = NULL;
 
@@ -146,14 +112,20 @@ cs_user_extra_operations(cs_domain_t     *domain)
     const cs_field_t *f = CS_F_(t);
     const cs_field_t *mu = CS_F_(mu);
 
-    cs_real_t *xabs = NULL, *xabsg = NULL, *xnusselt = NULL;
-    cs_real_t *treco = NULL, *treglo = NULL, *treloc = NULL;
+    cs_lnum_t nlelt;
+    cs_lnum_t *lstelt;
+    BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list
+      ("normal[0, -1, 0, 0.1] and box[-1000, -1000, -1000, 1000, 0.01, 1000]",
+       &nlelt, lstelt);
     /*! [loc_var_f_user] */
 
     /* Compute value reconstructed at I' for boundary faces */
 
     /*! [compute_nusselt] */
-    BFT_MALLOC(treco, n_b_faces, cs_real_t);
+    cs_real_t *treloc;
+    BFT_MALLOC(treloc, nlelt, cs_real_t);
 
     int iortho = 0;
     /*! [compute_nusselt] */
@@ -162,24 +134,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     /*! [gen_nusselt] */
     if (iortho == 0) {
-      cs_real_3_t *grad;
-      BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
-      cs_field_gradient_scalar(f,
-                               false, /* use_previous_t */
-                               1,    /* inc */
-                               true, /* recompute_cocg */
-                               grad);
-
-      /* Compute reconstructed value in boundary cells */
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-        cs_lnum_t c_id = b_face_cells[face_id];
-        cs_real_t c = cs_math_3_dot_product(diipb[face_id], grad[c_id]);
-        treco[face_id] =   coefap[face_id]
-                         + coefbp[face_id] * (f->val[c_id] + c);
-      }
-
-      BFT_FREE(grad);
+      cs_post_field_cell_to_b_face_values(f, nlelt, lstelt, treloc);
     }
     /*! [gen_nusselt] */
 
@@ -187,58 +142,50 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     else {
       /*! [else_nusselt] */
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      const cs_real_t *coefap = CS_F_(t)->bc_coeffs->a;
+      const cs_real_t *coefbp = CS_F_(t)->bc_coeffs->b;
+
+      for (cs_lnum_t ielt = 0; ielt < nlelt; ielt++) {
+        cs_lnum_t face_id = lstelt[ielt];
         cs_lnum_t c_id = b_face_cells[face_id];
-        treco[face_id] =  coefap[face_id] + coefbp[face_id] * f->val[c_id];
+        treloc[ielt] = coefap[face_id] + coefbp[face_id] * f->val[c_id];
       }
       /*! [else_nusselt] */
     }
 
     /*! [value_ortho_nusselt] */
     if  (cs_glob_rank_id < 1) {
-      file = fopen("Nusselt.dat","w");
+      file = fopen("Nusselt.dat", "w");
     }
-
-    cs_lnum_t nlelt;
-    cs_lnum_t *lstelt;
-    BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
-
-    cs_selector_get_b_face_list("normal[0,-1,0,0.1] and y < 0.01",
-                                &nlelt, lstelt);
 
     cs_gnum_t neltg = nlelt;
-    cs_parall_counter(&neltg,1);
+    cs_parall_counter(&neltg, 1);
+
+    cs_real_t *xabs = NULL, *xabsg = NULL, *xnusselt = NULL;
+    cs_real_t *treglo = NULL;
 
     BFT_MALLOC(xabs, nlelt, cs_real_t);
-    BFT_MALLOC(treloc, nlelt, cs_real_t);
-    BFT_MALLOC(xnusselt, neltg, cs_real_t);
 
-    if (cs_glob_rank_id >= 0) {
-      BFT_MALLOC(xabsg, neltg, cs_real_t);
-      BFT_MALLOC(treglo, neltg, cs_real_t);
-    }
+    BFT_MALLOC(xnusselt, neltg, cs_real_t);
+    BFT_MALLOC(xabsg, neltg, cs_real_t);
+    BFT_MALLOC(treglo, neltg, cs_real_t);
 
     for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt ++) {
       cs_lnum_t face_id = lstelt[ilelt];
       xabs[ilelt] = cdgfbo[face_id][0];
-      treloc[ilelt] = treco[face_id];
     }
 
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_allgather_r(nlelt, neltg, xabs, xabsg);
-      cs_parall_allgather_r(nlelt, neltg, treloc, treglo);
-    }
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, xabs, xabsg);
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, treloc, treglo);
+
+    BFT_FREE(xabs);
+    BFT_FREE(treloc);
+    BFT_FREE(lstelt);
     /*! [value_ortho_nusselt] */
 
     /* Calculation of the bulk temperature and compute Nusselt number */
     /*! [bulk_nusselt] */
     for (cs_gnum_t ilelt = 0; ilelt < neltg; ilelt ++) {
-
-      cs_real_t xab;
-      if (cs_glob_rank_id >= 0)
-        xab = xabsg[ilelt];
-      else
-        xab = xabs[ilelt];
 
       cs_real_t xtbulk = 0;
       cs_real_t xubulk = 0;
@@ -253,7 +200,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
         cs_lnum_t c_id;
 
-        cs_real_t xyz[3] = {xab,
+        cs_real_t xyz[3] = {xabsg[ilelt],
                             (cs_real_t)ii/(cs_real_t)(npoint-1),
                             0.};
 
@@ -283,43 +230,27 @@ cs_user_extra_operations(cs_domain_t     *domain)
          would seem better */
       cs_parall_bcast(irangv, 1, CS_REAL_TYPE, &lambda);
 
-      cs_parall_sum(1, CS_REAL_TYPE, &xtbulk);
-      cs_parall_sum(1, CS_REAL_TYPE, &xubulk);
+      cs_real_t xbulk[2] = {xtbulk, xubulk};
+      cs_parall_sum(2, CS_REAL_TYPE, xbulk);
 
-      xtbulk /= xubulk;
+      xtbulk = xbulk[0] / xbulk[1];
+      xubulk = xbulk[1];
 
-      cs_real_t tfac;
-      if (cs_glob_rank_id >= 0)
-        tfac = treglo[ilelt];
-      else
-        tfac = treloc[ilelt];
+      cs_real_t tfac = treglo[ilelt];
 
       xnusselt[ilelt] = qwall * 2. * height / lambda / (tfac - xtbulk);
     }
 
-    if (cs_glob_rank_id < 0)
-      for (cs_gnum_t ii = 0; ii < neltg; ii++)
-        fprintf(file,
-                "%17.9e %17.9e\n",
-                xabs[ii]*10.,
-                xnusselt[ii]/(0.023*pow(30000., 0.8)*pow(0.71, 0.4)));
-    else if (cs_glob_rank_id == 0) {
-      _sortc2(xabsg, xnusselt, neltg);
-      for (cs_gnum_t ii = 0; ii < neltg; ii++)
-        fprintf(file,
-                "%17.9e %17.9e\n",
-                xabsg[ii]*10.,
-                xnusselt[ii]/(0.023*pow(30000., 0.8)*pow(0.71, 0.4)));
-    }
+    for (cs_gnum_t ii = 0; ii < neltg; ii++)
+      fprintf(file,
+              "%17.9e %17.9e\n",
+              xabsg[ii]*10.,
+              xnusselt[ii]/(0.023*pow(30000., 0.8)*pow(0.71, 0.4)));
 
     if (file != NULL)
       fclose(file);
 
-    BFT_FREE(treco);
-    BFT_FREE(xabs);
     BFT_FREE(xnusselt);
-    BFT_FREE(lstelt);
-    BFT_FREE(treloc);
     BFT_FREE(xabsg);
     BFT_FREE(treglo);
     /*! [bulk_nusselt] */

@@ -30,10 +30,12 @@
 
   \brief This function is called at the end of each time step, and has a very general purpose (\c i.e. anything that does not have another dedicated user subroutine)
 
-
   \section cs_f_user_extra_operations cs_f_user_extra_operations subroutine
 
   \subsection loc_var_f_user Local variables
+
+  Faces can be selected either using a selector (as is done here) or directly
+  using boundary zone element ids if an appropriate zone has been defined.
 
   \snippet cs_user_extra_operations-nusselt_calculation.c loc_var_f_user
 
@@ -41,14 +43,12 @@
 
   \snippet cs_user_extra_operations-nusselt_calculation.c  nusselt_number
 
-  \subsubsection compute_nusselt Compute value reconstructed at I' for boundary faces
+  \subsubsection compute_nusselt Reconstruct value at selected boundary faces
 
+  Allocate a local array for the selected boundary faces.
   \snippet cs_user_extra_operations-nusselt_calculation.c compute_nusselt
 
   \subsubsection general_nusselt General case (for non-orthogonal meshes)
-  Allocate a work array for the gradient calculation, then
-  compute gradient, then compute reconstructed value in boundary cells,
-  and then free memory
   \snippet cs_user_extra_operations-nusselt_calculation.c gen_nusselt
 
   \subsubsection orthogonal_nusselt Case of orthogonal meshes
@@ -58,18 +58,16 @@
 
   \note Here, we assign the non-reconstructed value.
 
-  Open file to print values and perform parallel operations to
-  broadcast values to all ranks.
+  Open file to print values and broadcast values to all parallel ranks.
+  Values are ordered by the \c xabs array
+  values provided to the \ref cs_parall_allgather_ordered_r, so this function
+  is needed even when not running in parallel.
+
   \snippet  cs_user_extra_operations-nusselt_calculation.c value_ortho_nusselt
 
   Calculation of the bulk temperature, finalize the Nusselt number, print it and
-  free memory
+  free memory not already freed before.
 
   \snippet cs_user_extra_operations-nusselt_calculation.c  bulk_nusselt
-
-\section sortc2 Utility function to sort global data
-
-\subsection body_sortc2 Body
-\snippet cs_user_extra_operations-nusselt_calculation.c body_sortc2
 
 */
