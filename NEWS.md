@@ -35,6 +35,11 @@ Numerics:
   another solver to solve saddle-point problem arising from the monolithic
   coupling of CDO face-based schemes for the (Navier-)Stokes equations.
 
+- CDO: Add a transformation of saddle-point problem using the Notay's
+  change of variable. Available only with a link to the PETSc library.
+  This is a based on a common work with the ALGO team at CERFACS.
+
+
 Architectural changes:
 
 - Simplify handling of timers, focusing on wall-time.

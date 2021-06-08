@@ -351,6 +351,12 @@ typedef enum {
  * Direct solver to solve the full (saddle-point) system arising from the
  * discretization of the Navier-Stokes equations
  *
+ * \var CS_NAVSTO_SLES_NOTAY_TRANSFORM
+ * Associated keyword: "notay"
+ *
+ * Transform the saddle-point problem into an equivalent system without a zero
+ * block for the (2,2) block. This transformation allows one to consider
+ * standard preconditionner and iterative Krylow solver.
  *
  * \var CS_NAVSTO_SLES_SGS_SCHUR_GCR
  * Associated keyword: "sgs_schur_gcr"
@@ -433,6 +439,7 @@ typedef enum {
   CS_NAVSTO_SLES_MINRES,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,
+  CS_NAVSTO_SLES_NOTAY_TRANSFORM,
   CS_NAVSTO_SLES_SGS_SCHUR_GCR,
   CS_NAVSTO_SLES_UPPER_SCHUR_GCR,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
@@ -1071,6 +1078,34 @@ cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the scaling coefficient used in the Notay's transformation
+ *         devised in "Algebraic multigrid for Stokes equations" SIAM
+ *         J. Sci. Comput. Vol. 39 (5), 2017
+ *         In this article, this scaling is denoted by alpha
+ *
+ * \return the value of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_navsto_param_get_notay_scaling(void);
+
+ /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the scaling coefficient used in the Notay's transformation
+ *         devised in "Algebraic multigrid for Stokes equations" SIAM
+ *         J. Sci. Comput. Vol. 39 (5), 2017
+ *         In this article, this scaling is denoted by alpha
+ *
+ * \param[in]  scaling_coef   valued of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_notay_scaling(double  scaling_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!

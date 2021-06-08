@@ -1826,6 +1826,226 @@ _diag_schur_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
+ *         Case of Notay's transformation.
+ *         This relies on the following article.
+ *         "Algebraic multigrid for Stokes equations", Y. Notay (2017)
+ *         SIAM J. Sci. Comput., Vol. 39 (5), pp 88-111
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_notay_hook(void     *context,
+            KSP       ksp)
+{
+  IS  isv = NULL, isp = NULL;
+
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
+  cs_param_sles_t  *slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* Build IndexSet structures to extract block matrices */
+  _build_is_for_fieldsplit(&isp, &isv);
+
+  Mat Amat, Amat_nest;
+  KSPGetOperators(ksp, &Amat, NULL);
+
+  /* Retrieve blocks */
+  Mat A00, A01, A10;
+  MatCreateSubMatrix(Amat, isv, isv, MAT_INITIAL_MATRIX, &A00);
+  MatCreateSubMatrix(Amat, isv, isp, MAT_INITIAL_MATRIX, &A01);
+  MatCreateSubMatrix(Amat, isp, isv, MAT_INITIAL_MATRIX, &A10);
+
+  PetscInt n_v, n_p;
+  MatGetSize(A01, &n_v, &n_p);
+
+  /* Define diag = inv(diag(A00)) */
+  Vec diag;
+  VecCreate(PETSC_COMM_WORLD, &diag);
+  VecSetSizes(diag, PETSC_DECIDE, n_v);
+  VecSetType(diag, VECMPI);
+  MatGetDiagonal(A00, diag);
+  VecReciprocal(diag);
+
+  const PetscReal  alpha = cs_navsto_param_get_notay_scaling();
+  if (fabs(alpha - 1.0) > 0)
+    VecScale(diag, alpha);
+
+  /* Computing new blocks for the transformed system */
+  PetscScalar one = 1.0;
+
+  /* Compute the 01 block
+   * First step: temp00 <- Id - A*inv(D_A) */
+  Mat temp00;
+  MatConvert(A00, MATSAME, MAT_INITIAL_MATRIX, &temp00);
+
+  MatDiagonalScale(temp00, NULL, diag); /* left scaling = NULL;
+                                           right scaling = diag */
+  MatScale(temp00, -one);
+
+  Vec ones;
+  VecCreate(PETSC_COMM_WORLD, &ones);
+  VecSetSizes(ones, PETSC_DECIDE, n_v);
+  VecSetType(ones, VECMPI);
+  VecSet(ones, one);
+  MatDiagonalSet(temp00, ones, ADD_VALUES);
+
+  /* temp01 = temp00*A01 = (Id - A*inv(D_A))*Bt */
+  Mat temp01;
+  MatMatMult(temp00, A01, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &temp01);
+
+  /* Compute the A11 block
+   * A11 = B*inv(D_A)*Bt */
+  Mat temp10, A11;;
+  MatConvert(A10, MATSAME, MAT_INITIAL_MATRIX, &temp10);
+  MatDiagonalScale(temp10, NULL, diag); /* temp10 <- B*inv(D_A) */
+  MatMatMult(temp10, A01, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &A11);
+
+  /* Partial free */
+  VecDestroy(&diag);
+  VecDestroy(&ones);
+  MatDestroy(&A01);
+  MatDestroy(&temp00);
+  MatDestroy(&temp10);
+
+  /* Compute A10 <- -1.0*B */
+  MatScale(A10, -1.0);
+
+  /* Update blocks and assemble Amat */
+  Mat subA[4] = {A00, temp01, A10, A11};
+
+  MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, subA, &Amat_nest);
+  MatConvert(Amat_nest, MATMPIAIJ, MAT_INITIAL_MATRIX, &Amat);
+
+  KSPSetOperators(ksp, Amat, Amat);
+
+  /* Partial free */
+  MatDestroy(&Amat_nest);
+  MatDestroy(&A00);
+  MatDestroy(&A10);
+  MatDestroy(&A11);
+  MatDestroy(&temp01);
+
+  /* Set the main solver and main options forthe preconditioner */
+  PC up_pc;
+
+  KSPGetPC(ksp, &up_pc);
+  PCType  pc_type = _petsc_get_pc_type(slesp);
+
+  switch (slesp->solver) {
+
+  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+#if defined(PETSC_HAVE_MUMPS)
+    KSPSetType(ksp, KSPPREONLY);
+    PCSetType(up_pc, PCLU);
+    PCFactorSetMatSolverType(up_pc, MATSOLVERMUMPS);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: MUMPS not interfaced with this installation of PETSc.",
+              __func__);
+#endif
+    break;
+
+  case CS_PARAM_ITSOL_FGMRES:
+    /* Number of iterations before restarting = 30 (default value)  */
+    KSPSetType(ksp, KSPFGMRES);
+    KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+    PCSetType(up_pc, pc_type);
+    break;
+
+  default:
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%s: Switch to FGMRES solver.\n", __func__);
+    /* Number of iterations before restarting = 30 (default value)  */
+    KSPSetType(ksp, KSPFGMRES);
+    KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+    PCSetType(up_pc, pc_type);
+    break;
+
+  } /* End of switch */
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+  KSPSetTolerances(ksp,
+                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
+                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
+                   nslesp->il_algo_dtol,   /* divergence tolerance */
+                   nslesp->n_max_il_algo_iter); /* max number of iterations */
+
+  _set_residual_normalization(slesp->resnorm_type, ksp);
+
+  /* Additional settings for the preconditioner */
+  switch (slesp->precond) {
+
+  case CS_PARAM_PRECOND_AMG:
+    switch (slesp->amg_type) {
+
+    case CS_PARAM_AMG_PETSC_GAMG:
+      PCGAMGSetType(up_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(up_pc, 1);
+      break;
+
+    case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(up_pc, "boomeramg");
+#else
+      PCGAMGSetType(up_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(up_pc, 1);
+#endif
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
+      break;
+
+    } /* AMG type */
+    break;
+
+  default:
+    break; /* Nothing else to do */
+
+  } /* Switch on preconditioner */
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+     Natacha Bereux) */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+  KSPSetUp(ksp);
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, ksp);
+
+  /* Apply modifications to the KSP structure */
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp->setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp->setup_done = true;
+  }
+
+  /* Free temporary PETSc structures */
+  ISDestroy(&isp);
+  ISDestroy(&isv);
+  MatDestroy(&Amat);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+}
+
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
  *         Case of upper Schur preconditioner by block
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
@@ -3189,6 +3409,15 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
                          (void *)nsp);
     break;
 
+  case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _notay_hook,
+                         (void *)nsp);
+    break;
+
 
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     cs_sles_petsc_init();
@@ -3325,22 +3554,22 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   const cs_lnum_t  n_cells = msles->n_cells;
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
   const cs_lnum_t  n_scatter_elts = 3*n_faces + n_cells;
+  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
   /* De-interlace the velocity array and the rhs for the face DoFs */
-  cs_real_t  *xsol = NULL;
-  BFT_MALLOC(xsol, n_cols, cs_real_t);
+  cs_real_t  *sol = NULL;
+  BFT_MALLOC(sol, n_cols, cs_real_t);
 
   cs_real_t  *b = NULL;
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
 
 # pragma omp parallel for if (CS_THR_MIN > n_faces)     \
-  shared(msles, xsol, b)                                \
-  firstprivate(n_faces)
+  shared(msles, sol, b) firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
-    xsol[f            ] = msles->u_f[3*f];
-    xsol[f +   n_faces] = msles->u_f[3*f+1];
-    xsol[f + 2*n_faces] = msles->u_f[3*f+2];
+    sol[f            ] = msles->u_f[3*f];
+    sol[f +   n_faces] = msles->u_f[3*f+1];
+    sol[f + 2*n_faces] = msles->u_f[3*f+2];
 
     b[f            ] = msles->b_f[3*f];
     b[f +   n_faces] = msles->b_f[3*f+1];
@@ -3349,8 +3578,17 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   }
 
   /* Add the pressure related elements */
-  memcpy(xsol + 3*n_faces, msles->p_c, n_cells*sizeof(cs_real_t));
+  memcpy(sol + 3*n_faces, msles->p_c, n_cells*sizeof(cs_real_t));
   memcpy(b + 3*n_faces, msles->b_c, n_cells*sizeof(cs_real_t));
+
+  if (nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM) {
+
+# pragma omp parallel for if (CS_THR_MIN > n_cells)     \
+  shared(b) firstprivate(n_faces)
+    for (cs_lnum_t f = 3*n_faces; f < n_scatter_elts; f++)
+      b[f] = -1.0*b[f];
+
+  }
 
   const cs_range_set_t  *rset = cs_shared_range_set;
   int  n_iters = 0;
@@ -3362,10 +3600,9 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                              matrix,
                              rset,
                              true,  /* rhs_redux */
-                             xsol, b);
+                             sol, b);
 
   /* Solve the linear solver */
-  const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
   const cs_param_sles_t  *sles_param = eqp->sles_param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
@@ -3374,6 +3611,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   if (nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
       nslesp->strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK  ||
+      nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM                ||
       nslesp->strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
     rtol = nslesp->il_algo_rtol;
 
@@ -3384,7 +3622,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                                                     &n_iters,
                                                     &residual,
                                                     b,
-                                                    xsol,
+                                                    sol,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
 
@@ -3394,9 +3632,11 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
 
+  /* sol is computed and stored in a "gather" view. Switch to a "scatter"
+     view */
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
-                       xsol, xsol);
+                       sol, sol);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 1
   cs_range_set_scatter(rset,
@@ -3406,25 +3646,73 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   cs_dbg_fprintf_system(eqp->name,
                         -1,
                         CS_CDOFB_MONOLITHIC_SLES_DBG,
-                        xsol, b, 3*n_faces);
+                        sol, b, 3*n_faces);
 #endif
 
-  /* Interlace xsol --> u_f and p_c */
-# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
-  shared(msles, xsol) firstprivate(n_faces)
-  for (cs_lnum_t f = 0; f < n_faces; f++) {
+  /* Switch from sol (not interlaced) to u_f and p_c */
+  cs_real_t  *u_f = msles->u_f;
 
-    msles->u_f[3*f]   = xsol[f];
-    msles->u_f[3*f+1] = xsol[f +   n_faces];
-    msles->u_f[3*f+2] = xsol[f + 2*n_faces];
+  /* Copy the part of the solution array related to the pressure in cells */
+  memcpy(msles->p_c, sol + 3*n_faces, n_cells*sizeof(cs_real_t));
+
+  if (nslesp->strategy == CS_NAVSTO_SLES_NOTAY_TRANSFORM) {
+
+    cs_real_t  *grad_p = NULL, *mat_diag = NULL;
+
+    /* Compute the pressure gradient */
+    BFT_MALLOC(grad_p, 3*n_faces, cs_real_t);
+
+    _apply_div_op_transpose(msles->div_op, msles->p_c, grad_p);
+
+    /* grad_p is build cellwise. Perform the parallel synchronization. */
+    if (rset->ifs != NULL)
+      cs_interface_set_sum(rset->ifs,
+                           3*n_faces,
+                           1, false, CS_REAL_TYPE, /* stride, interlaced */
+                           grad_p);
+
+    /* Retrieve the diagonal of the matrix in a "scatter" view */
+    BFT_MALLOC(mat_diag, n_scatter_elts, cs_real_t);
+
+    /* diag is stored in a "gather view". Switch to a "scatter view" to make
+       the change of variable */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE,
+                         1,     /* treated as scalar-valued up to now */
+                         cs_matrix_get_diagonal(matrix), /* gathered view */
+                         mat_diag);                      /* scatter view */
+
+    const double  alpha = cs_navsto_param_get_notay_scaling();
+    const cs_real_t  *dx = mat_diag, *dy = mat_diag + n_faces;
+    const cs_real_t  *dz = mat_diag + 2*n_faces;
+    const cs_real_t  *solx = sol, *soly = sol+n_faces, *solz = sol+2*n_faces;
+
+# pragma omp parallel for if (CS_THR_MIN > n_faces)                     \
+  shared(gpx, gpy, gpz, dx, dy, dz, solx, doly, solz) firstprivate(n_faces)
+    for (cs_lnum_t f = 0; f < n_faces; f++) {
+      u_f[3*f  ] = solx[f] - alpha * grad_p[3*f]/dx[f];
+      u_f[3*f+1] = soly[f] - alpha * grad_p[3*f+1]/dy[f];
+      u_f[3*f+2] = solz[f] - alpha * grad_p[3*f+2]/dz[f];
+    }
+
+    BFT_FREE(grad_p);
+    BFT_FREE(mat_diag);
+
+  }
+  else { /* Other strategies: No change of variable */
+
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(msles, sol) firstprivate(n_faces)
+    for (cs_lnum_t f = 0; f < n_faces; f++) {
+      u_f[3*f  ] = sol[f          ];
+      u_f[3*f+1] = sol[f+  n_faces];
+      u_f[3*f+2] = sol[f+2*n_faces];
+    }
 
   }
 
-  /* Copy the part of the solution array related to the pressure in cells */
-  memcpy(msles->p_c, xsol + 3*n_faces, n_cells*sizeof(cs_real_t));
-
   /* Free what can be freed at this stage */
-  BFT_FREE(xsol);
+  BFT_FREE(sol);
   BFT_FREE(b);
 
   return n_iters;

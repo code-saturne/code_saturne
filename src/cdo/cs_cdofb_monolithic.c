@@ -1038,6 +1038,56 @@ _full_assembly(const cs_cell_sys_t            *csys,
   if (has_sourceterm)
     for (int k = 0; k < 3; k++)
       eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform the assembly stage for a vector-valued system obtained
+ *         with CDO-Fb schemes
+ *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Specify to the Notay's trabsformation of the saddle-point system.
+ *         Rely on the _full_assembly() function
+ *
+ * \param[in]      csys             pointer to a cs_cell_sys_t structure
+ * \param[in]      cm               pointer to a cs_cell_mesh_t structure
+ * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      has_sourceterm   has the equation a source term ?
+ * \param[in, out] sc               pointer to scheme context structure
+ * \param[in, out] eqc              context structure for a vector-valued Fb
+ * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_full_assembly(const cs_cell_sys_t            *csys,
+                     const cs_cell_mesh_t           *cm,
+                     const cs_real_t                *div_op,
+                     const bool                      has_sourceterm,
+                     cs_cdofb_monolithic_t          *sc,
+                     cs_cdofb_vecteq_t              *eqc,
+                     cs_equation_assemble_t         *eqa)
+{
+  /* 1. First part shared with the assembly of the full saddle-point problem
+   * ======================================================================= */
+
+  _full_assembly(csys, cm, div_op, has_sourceterm, sc, eqc, eqa);
+
+  /* 2. Store divergence operator in non assembly
+   * ============================================ */
+
+  cs_real_t *_div = sc->msles->div_op + 3*cs_shared_connect->c2f->idx[cm->c_id];
+
+  if (csys->has_internal_enforcement) {
+    for (int i = 0; i < 3*cm->n_fc; i++) {
+      if (csys->intern_forced_ids[i] > -1)
+        _div[i] = 0.; /* The velocity-block set the value of this DoF */
+      else
+        _div[i] = div_op[i];
+    }
+  }
+  else
+    memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1832,6 +1882,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
      * CS_NAVSTO_SLES_GKB_GMRES
      * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
      * CS_NAVSTO_SLES_MUMPS
+     * CS_NAVSTO_SLES_NOTAY_TRANSFORM
      * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
      */
 
@@ -2106,6 +2157,22 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->assemble = _velocity_full_assembly;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
                                                       CS_CDO_CONNECT_FACE_VP0);
+
+    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+
+    msles->graddiv_coef = 0;    /* No augmentation */
+    msles->n_row_blocks = 1;
+    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
+    BFT_MALLOC(msles->div_op,
+               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
+               cs_real_t);
+    break;
+
+  case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
+    sc->init_system = _init_system_default;
+    sc->solve = cs_cdofb_monolithic_solve;
+    sc->assemble = _notay_full_assembly;
+    sc->elemental_assembly = NULL;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 

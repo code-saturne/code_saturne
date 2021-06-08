@@ -173,6 +173,11 @@ _adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
     "explicit"
   };
 
+/* scaling coefficient used in Notay's transformation devised in
+ * "Algebraic multigrid for Stokes equations" SIAM J. Sci. Comput. Vol. 39 (5),
+ *  2017 */
+static double  cs_navsto_param_notay_scaling = 1.0;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -477,6 +482,10 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_MUMPS:
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
     break;
+  case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
+    cs_log_printf(CS_LOG_SETUP, "Notay's transformation (scaling=%4.2e)\n",
+                  cs_navsto_param_notay_scaling);
+    break;
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
     cs_log_printf(CS_LOG_SETUP, "Symmetric Gauss-Seidel block preconditioner"
                   " with Schur approx. + (in-house) GCR\n");
@@ -548,6 +557,40 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the scaling coefficient used in the Notay's transformation
+ *         devised in "Algebraic multigrid for Stokes equations" SIAM
+ *         J. Sci. Comput. Vol. 39 (5), 2017
+ *         In this article, this scaling is denoted by alpha
+ *
+ * \return the value of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_navsto_param_get_notay_scaling(void)
+{
+  return cs_navsto_param_notay_scaling;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the scaling coefficient used in the Notay's transformation
+ *         devised in "Algebraic multigrid for Stokes equations" SIAM
+ *         J. Sci. Comput. Vol. 39 (5), 2017
+ *         In this article, this scaling is denoted by alpha
+ *
+ * \param[in]  scaling_coef   valued of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_notay_scaling(double  scaling_coef)
+{
+  cs_navsto_param_notay_scaling = scaling_coef;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1138,19 +1181,22 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
     }
+    else if (strcmp(val, "notay") == 0)
+      nsp->sles_param->strategy = CS_NAVSTO_SLES_NOTAY_TRANSFORM;
     else if (strcmp(val, "upper_schur_gmres") == 0)
       nsp->sles_param->strategy =
         _check_petsc_strategy(val, CS_NAVSTO_SLES_UPPER_SCHUR_GMRES);
-
 
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                " Choice between: no_block, by_locks, block_amg_cg,\n"
+                " Choice between: no_block, block_amg_cg, minres, gcr,\n"
                 " {additive,multiplicative}_gmres, {diag,upper}_schur_gmres,\n"
-                " gkb, gkb_petsc, gkb_gmres, gkb_saturne,\n"
-                " mumps, uzawa_al or alu", __func__, _val);
+                " gkb, gkb_petsc, gkb_gmres, gkb_saturne, mumps, notay\n"
+                " uzawa_al or alu, uzawa_cg, uzawa_schur_gcr,\n"
+                " {diag,upper,lower,sgs}_schur_gcr, diag_schur_minres",
+                __func__, _val);
     }
     break;
 
