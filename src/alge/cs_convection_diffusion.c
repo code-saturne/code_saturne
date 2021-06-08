@@ -5764,8 +5764,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             double flux = visco*tgrdfl + secvis*grdtrv*i_f_face_normal[face_id][isou];
 
-            rhs[ii][isou] += flux*bndcel[ii];
-            rhs[jj][isou] -= flux*bndcel[jj];
+            rhs[ii][isou] += thetap * flux*bndcel[ii];
+            rhs[jj][isou] -= thetap * flux*bndcel[jj];
 
           }
 
@@ -5790,7 +5790,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       for (int isou = 0; isou < 3; isou++) {
 
         double flux = secvis*grdtrv*b_f_face_normal[face_id][isou];
-        rhs[ii][isou] += flux * bndcel[ii];
+        rhs[ii][isou] += thetap * flux * bndcel[ii];
 
       }
 
