@@ -115,11 +115,11 @@ static inline bool
 _is_last_iter(const cs_time_step_t   *ts)
 {
   if (ts->t_max > 0) /* t_max has been set */
-    if (ts->t_cur + ts->dt[0] > ts->t_max)
+    if (ts->t_cur + ts->dt[0] >= ts->t_max)
       return true;
 
   if (ts->nt_max > 0) /* nt_max has been set */
-    if (ts->nt_cur + 1 > ts->nt_max)
+    if (ts->nt_cur + 1 >= ts->nt_max)
       return true;
 
   return false;
@@ -238,7 +238,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 {
   const int  n_equations = cs_equation_get_n_equations();
 
-  if (nt_cur > 0) {
+  if (nt_cur >= 0) {
 
     for (int eq_id = 0; eq_id < n_equations; eq_id++) {
 
@@ -439,7 +439,7 @@ _solve_domain(cs_domain_t  *domain)
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "# Iter: %d >>"
                   " Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
-                  nt_cur, t_cur, t_cur + dt_cur, dt_cur);
+                  nt_cur + 1, t_cur, t_cur + dt_cur, dt_cur);
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
 
   }
@@ -889,9 +889,6 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Main time loop */
   /* ============== */
 
-  if (domain->time_step->nt_cur == 0)
-    domain->time_step->nt_cur = 1; /* Same numbering as Finite Volume part */
-
   while (cs_domain_needs_iteration(domain)) {
 
     /* Define the current time step */
@@ -903,9 +900,11 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Build and solve equations related to the computational domain */
     _solve_domain(domain);
 
-    /* Increment time (time increment is not performed at the same time as the
-       time step (since one starts with nt_cur == 1) */
+    /* Increment time */
     cs_domain_increment_time(domain);
+
+    /* Increment time steps */
+    cs_domain_increment_time_step(domain);
 
     /* Extra operations and post-processing of the computed solutions */
     cs_post_time_step_begin(domain->time_step);
@@ -913,9 +912,6 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_post(domain);
 
     cs_post_time_step_end();
-
-    /* Increment time steps */
-    cs_domain_increment_time_step(domain);
 
     /* Read a control file if present */
     cs_control_check_file();

@@ -318,7 +318,7 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
   cs_time_step_t  *ts = domain->time_step;
 
   if (ts->nt_max > 0) /* nt_max has been set */
-    if (ts->nt_cur > ts->nt_max)
+    if (ts->nt_cur >= ts->nt_max)
       one_more_iter = false;
 
   if (ts->t_max > 0) /* t_max has been set */
@@ -356,7 +356,7 @@ cs_domain_needs_log(const cs_domain_t      *domain)
     return true;
 
   if (domain->output_nt > 0)
-    if (ts->nt_cur % domain->output_nt == 0)
+    if ((ts->nt_cur + 1 - ts->nt_prev) % domain->output_nt == 0)
       return true;
 
   if (domain->is_last_iter)
