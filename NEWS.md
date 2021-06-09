@@ -1,5 +1,5 @@
-Release 7.0 (unreleased)
-------------------------
+Release 7.0.0-rc1 (June 9 2021)
+-------------------------------
 
 User changes:
 
