@@ -2329,7 +2329,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
     for (cs_lnum_t i = 0; i < n_faces; i++) {
 
       cs_lnum_t f_id = face_ids[i];
-      cs_lnum_t c_id = b_face_cells[c_id];
+      cs_lnum_t c_id = b_face_cells[f_id];
       for (int gas_id = 0; gas_id < n_gasses - 1; gas_id++) {
         ym[gas_id] = CS_FI_(ycoel, gas_id)->val[c_id];
         ym[n_gasses - 1] -= ym[gas_id];
