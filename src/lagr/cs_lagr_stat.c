@@ -349,11 +349,11 @@ _class_name(const char  *name,
             int          class_id,
             char         class_name[64])
 {
-  char _class_ext[12];
+  char _class_ext[13];
 
   _class_ext[0] = '\0';
   if (class_id > 0)
-    snprintf(_class_ext, 12, "_c%d", class_id);
+    snprintf(_class_ext, 13, "_c%d", class_id);
 
   size_t l0 = strlen(_class_ext);
 
@@ -1116,12 +1116,12 @@ _statistical_weight_name(cs_lagr_stat_group_t  stat_group,
                          int                   class,
                          char                  name[64])
 {
-  char _class_name[12];
+  char _class_name[13];
 
   _class_name[0] = '\0';
 
   if (class > 0)
-    snprintf(_class_name, 12, "_c%d", class);
+    snprintf(_class_name, 13, "_c%d", class);
 
   size_t l0 =  strlen(_class_name);
 
@@ -1167,8 +1167,8 @@ _attr_moment_name(int                    attr_id,
 {
   _check_moment_type(moment_type);
 
-  char _class_name[12];
-  char _comp_name[12];
+  char _class_name[13];
+  char _comp_name[13];
 
   const char *type_name[2] = {"mean", "var"};
 
@@ -1176,10 +1176,10 @@ _attr_moment_name(int                    attr_id,
   _class_name[0] = '\0';
 
   if (component_id > -1)
-    snprintf(_comp_name, 12, "_l%d", component_id);
+    snprintf(_comp_name, 13, "_l%d", component_id);
 
   if (class_id > 0)
-    snprintf(_class_name, 12, "_c%d", class_id);
+    snprintf(_class_name, 13, "_c%d", class_id);
 
   size_t l0 =   strlen(_comp_name) + strlen(_class_name)
               + strlen(type_name[moment_type]);
@@ -1218,8 +1218,8 @@ _moment_name(const char            *base_name,
 {
   _check_moment_type(moment_type);
 
-  char _class_name[12];
-  char _comp_name[12];
+  char _class_name[13];
+  char _comp_name[13];
 
   const char *type_name[2] = {"mean", "var"};
 
@@ -1227,10 +1227,10 @@ _moment_name(const char            *base_name,
   _class_name[0] = '\0';
 
   if (component_id > -1)
-    snprintf(_comp_name, 12, "_l%d", component_id);
+    snprintf(_comp_name, 13, "_l%d", component_id);
 
   if (class_id > 0)
-    snprintf(_class_name, 12, "_c%d", class_id);
+    snprintf(_class_name, 13, "_c%d", class_id);
 
   size_t l0 =   strlen(_comp_name) + strlen(_class_name)
               + strlen(type_name[moment_type]);

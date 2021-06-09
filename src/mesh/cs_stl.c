@@ -1659,7 +1659,7 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
   }
 
   /* Write header */
-  char header[] = "Exported from code_saturne";
+  char header[80] = "Exported from code_saturne";
   memcpy(buf, header, 80);
 
   /* Cut number of triangles in 4 8bytes unsigned int */
@@ -1756,7 +1756,7 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
   cs_lnum_t  n_boxes = n_cells + n_tria_stl;
   int dim = 3;
 
-  cs_lnum_t *_tria_in_cell_lst;
+  cs_lnum_t *_tria_in_cell_lst = NULL;
   if (tria_in_cell_lst != NULL)
     _tria_in_cell_lst = *tria_in_cell_lst;
 
