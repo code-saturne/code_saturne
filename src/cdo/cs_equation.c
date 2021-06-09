@@ -2488,11 +2488,15 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     const cs_equation_param_t  *eqp = eq->param;
 
     /* Allocate and initialize a system builder */
-    eq->builder = cs_equation_init_builder(eqp, mesh);
-    eq->scheme_context = eq->init_context(eqp,
-                                          eq->field_id,
-                                          eq->boundary_flux_id,
-                                          eq->builder);
+    /* Not initialized here if it is a restart */
+    if (eq->builder == NULL)
+      eq->builder = cs_equation_init_builder(eqp, mesh);
+
+    if (eq->scheme_context == NULL)
+      eq->scheme_context = eq->init_context(eqp,
+                                            eq->field_id,
+                                            eq->boundary_flux_id,
+                                            eq->builder);
 
     /* Define a face interface if not already allocated in this specific case */
     if (eqp->n_ic_defs > 0) {

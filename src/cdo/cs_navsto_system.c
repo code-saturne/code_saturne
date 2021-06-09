@@ -1158,14 +1158,15 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                                                ns->bf_type,
                                                ns->coupling_context);
 
-  /* Initial conditions for the velocity */
-  if (ns->init_velocity != NULL)
-    ns->init_velocity(nsp, quant, time_step, ns->scheme_context);
+  if (time_step->nt_cur < 1) {
+    /* Initial conditions for the velocity */
+    if (ns->init_velocity != NULL)
+      ns->init_velocity(nsp, quant, time_step, ns->scheme_context);
 
-  /* Initial conditions for the pressure */
-  if (ns->init_pressure != NULL)
-    ns->init_pressure(nsp, quant, time_step, ns->pressure);
-
+    /* Initial conditions for the pressure */
+    if (ns->init_pressure != NULL)
+      ns->init_pressure(nsp, quant, time_step, ns->pressure);
+  }
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
     if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {

@@ -722,6 +722,12 @@ cs_domain_read_restart(cs_domain_t  *domain)
     cs_field_current_to_previous(f);
   }
 
+  /* Initialization of the scheme context */
+  cs_equation_initialize(domain->mesh,
+                         domain->time_step,
+                         domain->cdo_quantities,
+                         domain->connect);
+
   /* Read additional arrays of values according to the type of
      equation and the discretization scheme */
   cs_equation_read_extra_restart(restart);
