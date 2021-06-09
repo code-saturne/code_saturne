@@ -212,6 +212,15 @@ BEGIN_C_DECLS
         for instance, in case of flows with weak convection effects and
         highly variable viscosity).
 
+  \var  cs_velocity_pressure_model_t::itpcol
+        Time scheme option:
+        - 0: staggered time scheme. On the time grids, the velocity is
+             half a time step behind the density and the buoyant scalar.
+             (See the thesis of \cite Pierce:2004)
+        - 1: collocated time scheme. On the time grids, the velocity is
+             at the same location as the density and the buoyant scalar.
+             (See \cite Ma:2019)
+
   \var  cs_velocity_pressure_model_t::arak
         <a name="arak"></a>
         Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
@@ -291,6 +300,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .igprij = 0,
   .igpust = 1,
   .ipucou = 0,
+  .itpcol = 0,
   .arak   = 1.0,
   .rcfact = 0,
   .staggered = 0,
@@ -324,6 +334,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **igprij,
                                           int     **igpust,
                                           int     **ipucou,
+                                          int     **itpcol,
                                           double  **arak,
                                           int     **rcfact,
                                           int     **staggered,
@@ -375,6 +386,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **igprij,
                                           int     **igpust,
                                           int     **ipucou,
+                                          int     **itpcol,
                                           double  **arak,
                                           int     **rcfact,
                                           int     **staggered,
@@ -393,6 +405,7 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
   *igprij = &(_velocity_pressure_param.igprij);
   *igpust = &(_velocity_pressure_param.igpust);
   *ipucou = &(_velocity_pressure_param.ipucou);
+  *itpcol = &(_velocity_pressure_param.itpcol);
   *arak   = &(_velocity_pressure_param.arak);
   *rcfact = &(_velocity_pressure_param.rcfact);
   *staggered = &(_velocity_pressure_param.staggered);

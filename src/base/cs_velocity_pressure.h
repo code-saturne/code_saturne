@@ -125,6 +125,10 @@ typedef struct {
                                  - 1: true (default)
                                  - 0: false */
 
+  int         itpcol;         /* time scheme option:
+                                  - 0: staggered.
+                                  - 1: collocated time scheme. */
+
   double      arak;           /* Arakawa multiplier for the Rhie and Chow
                                  filter (1 by default) */
 

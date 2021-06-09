@@ -76,13 +76,13 @@ module optcal
   integer, save ::          istmpf
 
   !> Time scheme option:
-  !>    - 0: scattered time scheme. On the time grids, the velocity is
+  !>    - 0: staggered time scheme. On the time grids, the velocity is
   !>         half a time step behind the density and the buoyant scalar.
-  !>         (See the thesis of C.D. PIERCE, 2004)
+  !>         (See the thesis of \cite Pierce:2004)
   !>    - 1: collocated time scheme. On the time grids, the velocity is
   !>         at the same location as the density and the buoyant scalar.
-  !>         (See L. MA, 2019)
-  integer, save ::          itpcol
+  !>         (See \cite Ma:2019)
+  integer(c_int), pointer, save :: itpcol
 
   !> number of iterations on the velocity-pressure coupling on Navier-Stokes
   !> (for the U/P inner iterations scheme)
@@ -1370,14 +1370,14 @@ module optcal
 
     subroutine cs_f_velocity_pressure_param_get_pointers  &
       (iphydr, icalhy, iprco, irevmc, iifren, irecmf,  &
-       igprij, igpust, ipucou, arak, rcfact, staggered, nterup, epsup,  &
+       igprij, igpust, ipucou, itpcol, arak, rcfact, staggered, nterup, epsup, &
        xnrmu, xnrmu0, c_epsdp)  &
       bind(C, name='cs_f_velocity_pressure_param_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: iphydr, icalhy, iprco, irevmc, iifren
-      type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, arak
-      type(c_ptr), intent(out) :: rcfact, staggered, nterup, epsup
+      type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, itpcol
+      type(c_ptr), intent(out) :: arak, rcfact, staggered, nterup, epsup
       type(c_ptr), intent(out) :: xnrmu, xnrmu0, c_epsdp
     end subroutine cs_f_velocity_pressure_param_get_pointers
 
@@ -1698,7 +1698,7 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact, c_staggered
-    type(c_ptr) :: c_ipucou, c_idilat, c_epsdp, c_iphydr
+    type(c_ptr) :: c_ipucou, c_itpcol, c_idilat, c_epsdp, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
     type(c_ptr) :: c_fluid_solid
     type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
@@ -1717,8 +1717,8 @@ contains
 
     call cs_f_velocity_pressure_param_get_pointers  &
       (c_iphydr, c_icalhy, c_iprco, c_irevmc, c_iifren, c_irecmf,  &
-       c_igprij, c_igpust, c_ipucou, c_arak, c_rcfact, c_staggered, c_nterup, c_epsup,  &
-       c_xnrmu, c_xnrmu0, c_epsdp)
+       c_igprij, c_igpust, c_ipucou, c_itpcol, c_arak, c_rcfact,   &
+       c_staggered, c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_epsdp)
 
     call c_f_pointer(c_iphydr, iphydr)
     call c_f_pointer(c_icalhy, icalhy)
@@ -1729,6 +1729,7 @@ contains
     call c_f_pointer(c_igprij, igprij)
     call c_f_pointer(c_igpust, igpust)
     call c_f_pointer(c_ipucou, ipucou)
+    call c_f_pointer(c_itpcol, itpcol)
     call c_f_pointer(c_arak  , arak  )
     call c_f_pointer(c_rcfact, rcfact)
     call c_f_pointer(c_staggered, staggered)
