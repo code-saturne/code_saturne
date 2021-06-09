@@ -2208,7 +2208,7 @@ cs_cdofb_vecteq_read_restart(cs_restart_t    *restart,
   retcode = cs_restart_check_section(restart,
                                      sec_name,
                                      b_ml_id,
-                                     1, /* vector-valued */
+                                     3, /* vector-valued */
                                      CS_TYPE_cs_real_t);
 
   /* Read section */
@@ -2216,7 +2216,7 @@ cs_cdofb_vecteq_read_restart(cs_restart_t    *restart,
     retcode = cs_restart_read_section(restart,
                                       sec_name,
                                       b_ml_id,
-                                      1, /* vector-valued */
+                                      3, /* vector-valued */
                                       CS_TYPE_cs_real_t,
                                       b_values);
 

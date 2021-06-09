@@ -539,13 +539,9 @@ cs_domain_post(cs_domain_t  *domain)
 void
 cs_domain_read_restart(cs_domain_t  *domain)
 {
-  if (cs_restart_present() == false) {
-
-    /* Initialize time step if a restart frequency is set */
-    cs_restart_checkpoint_set_last_ts(domain->time_step->t_cur);
-
+  if (cs_restart_present() == false)
     return;
-  }
+
 
   cs_restart_t  *restart = cs_restart_create("main.csc", /* restart file name */
                                              NULL,   /* directory name */
