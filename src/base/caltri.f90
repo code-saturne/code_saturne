@@ -804,8 +804,8 @@ if (iilagr.gt.0) then
 
 endif
 
-! CDO module (user-defined equations)
-!====================================
+! Solve CDO module(s) or user-defined equations using CDO schemes
+!================================================================
 
 if (icdo.eq.1) then
    ! FV and CDO activated
@@ -935,8 +935,8 @@ call tridim(itrale, nvar, nscal, dt)
 
 if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 
-  ! CDO module (user-defined equations)
-  !====================================
+  ! Solve CDO module(s) or user-defined equations using CDO schemes
+  !================================================================
 
   if (icdo.eq.1) then
      ! FV and CDO activated
