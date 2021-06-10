@@ -829,9 +829,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     const cs_real_t *b_dist = NULL, *v_dist = NULL;
 
-    if (coupling_ent->elt_dim == 2)
+    if (coupling_ent->elt_dim == syr_coupling->dim - 1)
       b_dist = cs_to_syr_dist;
-    else if (coupling_ent->elt_dim == 3)
+    else if (coupling_ent->elt_dim == syr_coupling->dim)
       v_dist = cs_to_syr_dist;
 
     cs_post_write_var(coupling_ent->post_mesh_id,
