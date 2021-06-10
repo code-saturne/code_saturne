@@ -1,3 +1,10 @@
+Release 6.0.8 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix crash with Syrthes volume coupling.
+
 Release 6.0.7 (May 18 2021)
 ---------------------------
 

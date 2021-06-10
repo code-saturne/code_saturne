@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2021 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -366,9 +366,9 @@ _cs_syr4_coupling_post_function(void                  *coupling,
                             false,
                             false,
                             CS_POST_TYPE_float,
-                            NULL,
-                            NULL,
                             coupling_ent->flux,
+                            NULL,
+                            NULL,
                             ts);
 
       }
@@ -809,6 +809,13 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     cs_post_activate_writer(-1, 1);
     cs_post_write_meshes(cs_glob_time_step);
 
+    const cs_real_t *b_dist = NULL, *v_dist = NULL;
+
+    if (coupling_ent->elt_dim == syr_coupling->dim - 1)
+      b_dist = cs_to_syr_dist;
+    else if (coupling_ent->elt_dim == syr_coupling->dim)
+      v_dist = cs_to_syr_dist;
+
     cs_post_write_var(coupling_ent->post_mesh_id,
                       CS_POST_WRITER_ALL_ASSOCIATED,
                       _("distance_to_solid"),
@@ -816,9 +823,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                       false,
                       false, /* use_parent, */
                       CS_POST_TYPE_float,
+                      v_dist,
                       NULL,
-                      NULL,
-                      cs_to_syr_dist,
+                      b_dist,
                       NULL);  /* time-independent variable */
 
     BFT_FREE(cs_to_syr_dist);
