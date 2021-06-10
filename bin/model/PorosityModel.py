@@ -107,12 +107,21 @@ class PorosityModel(Variables, Model):
         """
         self.node_porosit.xmlInitChildNode('porosity', zone_id=zoneid)
 
+        # Initialize mdl at None for sanity sake
+        mdl = None
+
         # Use existing model or default if none is defined
         try:
             n = self.node_porosit.xmlGetNode('porosity', zone_id=zoneid)
             mdl = n['model']
         except:
+            pass
+
+        # If model is None set to default.
+        # Could be the result of 'try' failure or un-initialized zone
+        if not mdl:
             mdl = self.__defaultValues()['choice']
+
         self.setPorosityModel(zoneid, mdl)
 
 
