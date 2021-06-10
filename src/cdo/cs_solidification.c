@@ -2417,6 +2417,11 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
     cs_solidification_voller_t  *v_model = NULL;
     BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
+
+    /* Initialize pointer */
+    v_model->update = NULL;
+
+    /* Set the context */
     solid->model_context = (void *)v_model;
 
   }
@@ -2425,8 +2430,34 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
     cs_solidification_binary_alloy_t  *alloy = NULL;
     BFT_MALLOC(alloy, 1, cs_solidification_binary_alloy_t);
-    solid->model_context = (void *)alloy;
 
+    /* Initialize pointers */
+    alloy->update_velocity_forcing = NULL;
+    alloy->update_gl = NULL;
+    alloy->update_clc = NULL;
+    alloy->update_thm_st = NULL;
+    alloy->thermosolutal_coupling = NULL;
+
+    alloy->solute_equation = NULL;
+    alloy->diff_pty = NULL;
+    alloy->diff_pty_array = NULL;
+    alloy->eta_coef_pty = NULL;
+    alloy->eta_coef_array = NULL;
+
+    alloy->c_bulk = NULL;
+    alloy->tk_bulk = NULL;
+    alloy->ck_bulk = NULL;
+    alloy->tx_bulk = NULL;
+    alloy->cx_bulk = NULL;
+    alloy->c_l_cells = NULL;
+    alloy->c_l_faces = NULL;
+
+    alloy->t_liquidus = NULL;
+    alloy->tbulk_minus_tliq = NULL;
+    alloy->cliq_minus_cbulk = NULL;
+
+    /* Set the context */
+    solid->model_context = (void *)alloy;
   }
 
   /* Set the global pointer */
