@@ -1,3 +1,10 @@
+Release 7.0.0 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix crash with Syrthes volume coupling.
+
 Release 7.0.0-rc1 (June 9 2021)
 -------------------------------
 
