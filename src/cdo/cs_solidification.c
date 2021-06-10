@@ -2571,20 +2571,30 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  cs_solidification_binary_alloy_t  *alloy
-    = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-  /* Sanity checks */
-  assert(name != NULL && varname != NULL);
   assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
-  assert(alloy != NULL);
+
+  /* Check the validity of some parameters */
+  assert(name != NULL && varname != NULL);
   assert(kp > 0);
+  assert(s_das > 0);
+  if (s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, s_das);
+
+  solid->forcing_coef = 180./(s_das*s_das);
+
+  cs_solidification_binary_alloy_t
+    *alloy = (cs_solidification_binary_alloy_t *)solid->model_context;
+  assert(alloy != NULL);
 
   alloy->solute_equation = cs_equation_add(name, varname,
                                            CS_EQUATION_TYPE_SOLIDIFICATION,
                                            1,
                                            CS_PARAM_BC_HMG_NEUMANN);
-  alloy->c_bulk = NULL;  /* variable field related to this equation */
+
+  alloy->c_bulk = NULL;  /* Variable field related to this equation. This will
+                            be set later (after the equation initialization) */
 
   /* Set an upwind scheme by default since it could be a pure advection eq. */
   cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
@@ -2630,14 +2640,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
   /* Physical constants */
   alloy->latent_heat = latent_heat;
-
   alloy->s_das = s_das;
-  if (s_das < FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, s_das);
-
-  solid->forcing_coef = 180./(s_das*s_das);
 
   /* Phase diagram parameters */
   alloy->kp = kp;
