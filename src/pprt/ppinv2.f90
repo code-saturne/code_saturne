@@ -20,11 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppinv2 &
-!================
-
- ( nvar   , nscal  ,                                              &
-   dt     )
+subroutine ppinv2
 
 !===============================================================================
 ! FONCTION :
@@ -51,19 +47,6 @@ subroutine ppinv2 &
 !     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
 !     ET PAS ICI
 
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -88,48 +71,23 @@ use mesh
 
 implicit none
 
-integer          nvar   , nscal
-
-double precision dt(ncelet)
-
 ! Local variables
 
-
-!===============================================================================
-
-!===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
-!===============================================================================
-
-
-!===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
 !===============================================================================
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
- if ( ippmod(icoebu).ge.0 ) then
-  call ebuini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     )
+ if (ippmod(icoebu).ge.0) then
+  call ebuini
 endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele LWC
 
- if ( ippmod(icolwc).ge.0 ) then
-  call lwcini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     )
+ if (ippmod(icolwc).ge.0) then
+  call lwcini
 endif
-
-
-!----
-! FORMATS
-!----
 
 !----
 ! FIN

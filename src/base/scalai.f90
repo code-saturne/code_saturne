@@ -125,8 +125,7 @@ if (nscapp.gt.0) then
 
   if (ippmod(iphpar).ge.1) then
 
-    call ppinv2(nvar, nscal, dt)
-    !==========
+    call ppinv2
 
     ! TODO: check that the following loop may be removed, as it is
     !       handled in tridim.
