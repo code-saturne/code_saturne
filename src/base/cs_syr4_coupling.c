@@ -368,9 +368,9 @@ _cs_syr4_coupling_post_function(void                  *coupling,
                             false,
                             false,
                             CS_POST_TYPE_float,
-                            NULL,
-                            NULL,
                             coupling_ent->flux,
+                            NULL,
+                            NULL,
                             ts);
 
       }
@@ -827,6 +827,13 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     cs_post_activate_writer(-1, 1);
     cs_post_write_meshes(cs_glob_time_step);
 
+    const cs_real_t *b_dist = NULL, *v_dist = NULL;
+
+    if (coupling_ent->elt_dim == 2)
+      b_dist = cs_to_syr_dist;
+    else if (coupling_ent->elt_dim == 3)
+      v_dist = cs_to_syr_dist;
+
     cs_post_write_var(coupling_ent->post_mesh_id,
                       CS_POST_WRITER_ALL_ASSOCIATED,
                       _("distance_to_solid"),
@@ -834,9 +841,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                       false,
                       false, /* use_parent, */
                       CS_POST_TYPE_float,
+                      v_dist,
                       NULL,
-                      NULL,
-                      cs_to_syr_dist,
+                      b_dist,
                       NULL);  /* time-independent variable */
 
     BFT_FREE(cs_to_syr_dist);
@@ -1455,7 +1462,7 @@ cs_syr4_coupling_add_location(cs_syr4_coupling_t  *syr_coupling,
 {
   cs_mesh_location_type_t l_type = cs_mesh_location_get_type(location_id);
 
-  if (l_type & CS_MESH_LOCATION_BOUNDARY_FACES) {
+  if (l_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
     int i = syr_coupling->n_b_locations;
     syr_coupling->n_b_locations += 1;
     BFT_REALLOC(syr_coupling->b_location_ids, syr_coupling->n_b_locations, int);
@@ -1463,7 +1470,7 @@ cs_syr4_coupling_add_location(cs_syr4_coupling_t  *syr_coupling,
     syr_coupling->b_location_ids[i] = location_id;
   }
 
-  else if (l_type & CS_MESH_LOCATION_CELLS) {
+  else if (l_type == CS_MESH_LOCATION_CELLS) {
     int i = syr_coupling->n_v_locations;
     syr_coupling->n_v_locations += 1;
     BFT_REALLOC(syr_coupling->v_location_ids, syr_coupling->n_v_locations, int);
