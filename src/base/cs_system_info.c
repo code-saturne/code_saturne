@@ -744,11 +744,10 @@ cs_system_info(void)
 {
 #if defined(HAVE_MPI)
   _system_info(comm, true);
+  _mpi_version_info(false);
 #else
   _system_info(true);
 #endif
-
-  _mpi_version_info(false);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -774,11 +773,11 @@ cs_system_info_no_log(void)
 {
 #if defined(HAVE_MPI)
   _system_info(comm, false);
+  _mpi_version_info(false);
 #else
   _system_info(false);
 #endif
 
-  _mpi_version_info(false);
   _omp_version_info(false);
 }
 
