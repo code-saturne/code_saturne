@@ -88,6 +88,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.case = None
         self.zone = None
         self.parent = parent
+        self.is_solid  = False
 
         # create group to control hide/show options
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
@@ -123,6 +124,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 self.zone = zone
 
         if self.zone.isNatureActivated("initialization"):
+            if self.zone.isNatureActivated("solid"):
+                self.is_solid = True
             self.setViewFromCase()
         else:  # TODO ask Chai and Yvan if the content of a disabled tab should remain visible or not
             self.displayDefaultView()
@@ -225,10 +228,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.scalar_combustion = ""
         scalar_combustion_list = DefineUserScalarsModel( self.case).getGasCombScalarsNameList()
         if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
-            # For the d3p model (option extended), we let only the Automatic Initialization for the enthalpy
-            option = GasCombustionModel(self.case).getGasCombustionOption()
-            if option == 'extended':
-                self.modelThermal.disableItem(str_model = 'formula')
+            # For the d3p model (option extended),
+            # we allow only the Automatic Initialization for the enthalpy
+            if not self.is_solid:
+                option = GasCombustionModel(self.case).getGasCombustionOption()
+                if option == 'extended':
+                    self.modelThermal.disableItem(str_model = 'formula')
             self.scalar_combustion = scalar_combustion_list[0]
             for item in self.combustion_group:
                 item.show()
