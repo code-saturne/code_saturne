@@ -208,7 +208,7 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
-double precision, dimension(:), pointer :: cpro_scal_st
+double precision, dimension(:), pointer :: cpro_scal_st, cpro_st
 double precision, dimension(:), pointer :: cpro_turb_schmidt
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
@@ -469,11 +469,6 @@ endif
 call field_get_key_int(iflid, kst, st_id)
 if (st_id .ge.0) then
   call field_get_val_s(st_id, cpro_scal_st)
-
-  do iel = 1, ncel
-    !Fill the scalar source term field
-    cpro_scal_st(iel) = smbrs(iel)
-  end do
   ! Handle parallelism and periodicity
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(cpro_scal_st)
@@ -525,14 +520,22 @@ endif
 !     on implicite le terme (donc ROVSDT*RTPA va dans SMBRS)
 !   En std, on adapte le traitement au signe de ROVSDT, mais ROVSDT*RTPA va
 !     quand meme dans SMBRS (pas d'autre choix)
+
+! Map the source term pointer depending on whether it's a bouyant scalar
+if (st_prv_id .ge. 0) then
+  if (iterns.eq.-1) then
+    cpro_st => cproa_scal_st
+  else
+    cpro_st => cpro_scal_st
+  endif
+endif
 if (st_prv_id .ge. 0) then
   do iel = 1, ncel
     smbexp = cproa_scal_st(iel)
     ! If the scalar is not buoyant no need of saving the current source term,
     ! save directly the previous one
-    if (iterns.eq.-1) then
-      cproa_scal_st(iel) = smbrs(iel)
-    endif
+    cpro_st(iel) = smbrs(iel)
+
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)
@@ -682,10 +685,10 @@ if (ncesmp.gt.0) then
 
   deallocate(srcmas)
 
-  ! Si on extrapole les TS on met Gamma Pinj dans cproa_scal_st
+  ! Si on extrapole les TS on met Gamma Pinj dans cpro_st
   if (st_prv_id .ge. 0) then
     do iel = 1, ncel
-      cproa_scal_st(iel) = cproa_scal_st(iel) + w1(iel)
+      cpro_st(iel) = cpro_st(iel) + w1(iel)
     enddo
   ! Sinon on le met directement dans SMBRS
   else
@@ -841,28 +844,27 @@ if (itspdv.eq.1) then
         call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
         call field_get_val_v(f_id, xut)
-
         do iel = 1, ncel
-          cproa_scal_st(iel) = cproa_scal_st(iel)                              &
-                             - 2.d0*xcpp(iel)*cell_f_vol(iel)*crom(iel)        &
-                                          *(xut(1,iel)*grad(1,iel)             &
-                                           +xut(2,iel)*grad(2,iel)             &
-                                           +xut(3,iel)*grad(3,iel) )
+          cpro_st(iel) = cpro_st(iel)                                  &
+                       - 2.d0*xcpp(iel)*cell_f_vol(iel)*crom(iel)      &
+                                    *(xut(1,iel)*grad(1,iel)           &
+                                     +xut(2,iel)*grad(2,iel)           &
+                                     +xut(3,iel)*grad(3,iel) )
         enddo
       ! SGDH model
       else
         ! Variable Schmidt number
         if (t_scd_id.ge.0) then
           do iel = 1, ncel
-            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
-                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
-                 *cell_f_vol(iel)/cpro_turb_schmidt(iel)                        &
+            cpro_st(iel) = cpro_st(iel)                                        &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                    &
+                 *cell_f_vol(iel)/cpro_turb_schmidt(iel)                       &
                  *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
           enddo
         else
           do iel = 1, ncel
-            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
-                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+            cpro_st(iel) = cpro_st(iel)                                        &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                    &
                  *cell_f_vol(iel)/turb_schmidt                                 &
                  *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
           enddo
@@ -1036,7 +1038,7 @@ endif
 if (st_prv_id .ge. 0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel) + thetp1 * cproa_scal_st(iel)
+    smbrs(iel) = smbrs(iel) + thetp1 * cpro_st(iel)
   enddo
 endif
 

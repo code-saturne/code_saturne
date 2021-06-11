@@ -116,6 +116,7 @@ integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
+integer          key_buoyant_id, is_buoyant_fld, st_prv_id
 
 double precision cvcst
 double precision xxp0, xyp0, xzp0
@@ -162,6 +163,7 @@ double precision, dimension(:), pointer :: cproa_sat
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
+double precision, dimension(:), pointer :: cpro_scal_st, cproa_scal_st
 
 type(gwf_soilwater_partition) :: sorption_scal
 
@@ -707,10 +709,18 @@ do f_id = 0, nfld - 1
 
       call field_current_to_previous(f_id)
 
-      ! For buoyant scalar with source terms, current to previous for them
-      call field_get_key_int(f_id, kst, st_id)
-      if (st_id .ge.0) then
-        call field_current_to_previous(st_id)
+      ! For buoyant scalar with source termes, current to previous for them
+      call field_get_key_id("is_buoyant", key_buoyant_id)
+      call field_get_key_int(f_id, key_buoyant_id, is_buoyant_fld)
+      call field_get_key_int(f_id, kstprv, st_prv_id)
+      if (is_buoyant_fld.eq.1.and.st_prv_id.ge.0.and.itrale.gt.1) then
+        call field_get_key_int(f_id, kst, st_id)
+        call field_get_val_s(st_id, cpro_scal_st)
+        call field_get_key_int(f_id, kstprv, st_id)
+        call field_get_val_s(st_id, cproa_scal_st)
+        do iel = 1, ncel
+          cproa_scal_st(iel) = cpro_scal_st(iel)
+        enddo
       endif
 
     endif
