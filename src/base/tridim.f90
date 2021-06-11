@@ -140,7 +140,7 @@ double precision, pointer, dimension(:) :: hbord, theipb
 double precision, pointer, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, crom, cpro_rho_mass
 
 double precision, pointer, dimension(:,:) :: trava
 double precision, dimension(:,:), pointer :: vel
@@ -1136,6 +1136,20 @@ do while (iterns.le.nterup)
       if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
       call phyvar(nvar, nscal, iterns, dt)
 
+      ! Correct the scalar to ensure scalar conservation
+      call field_get_key_id("is_buoyant", key_buoyant_id)
+      call field_get_val_s(icrom,crom)
+      call field_get_val_s_by_name("density_mass",cpro_rho_mass)
+      do iscal = 1, nscal
+        ivar = isca(iscal)
+        call field_get_key_int(ivarfl(ivar), key_buoyant_id, is_buoyant_fld)
+        if (is_buoyant_fld.eq.1) then
+          call field_get_val_s(ivarfl(ivar),cvar_sca)
+          do iel = 1, ncel
+            cvar_sca(iel) = cvar_sca(iel)*cpro_rho_mass(iel)/crom(iel)
+          enddo
+        endif
+      enddo
     endif
 
     if (vcopt_u%iwarni.ge.1) then
@@ -1195,6 +1209,11 @@ do while (iterns.le.nterup)
 
       endif
 
+    endif
+
+    if (istmpf.eq.2.and.itpcol.eq.1) then
+      iappel = 3
+      call schtmp(nscal, iappel)
     endif
 
     !     Si c'est la derniere iteration : INSLST = 1

@@ -529,13 +529,13 @@ if (st_prv_id .ge. 0) then
     cpro_st => cpro_scal_st
   endif
 endif
+
 if (st_prv_id .ge. 0) then
   do iel = 1, ncel
     smbexp = cproa_scal_st(iel)
     ! If the scalar is not buoyant no need of saving the current source term,
     ! save directly the previous one
     cpro_st(iel) = smbrs(iel)
-
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)

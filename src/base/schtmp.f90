@@ -79,11 +79,12 @@ integer          key_t_ext_id, icpext
 integer          iviext
 integer          iroext
 
-double precision flux   , theta  , viscos, varcp
+double precision flux   , theta  , aa, bb, viscos, varcp
 
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: brom, broma, bromaa
+double precision, dimension(:), pointer :: crom, croma, cromaa
 double precision, dimension(:), pointer :: cpro_viscl, cpro_visct
 double precision, dimension(:), pointer :: cpro_cp, cpro_visls
 double precision, dimension(:), pointer :: cproa_cp, cproa_visls, cproa_visct
@@ -110,8 +111,26 @@ if (iappel.eq.1) then
   if (istmpf.ne.0 .or. staggered.eq.1) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_current_to_previous(iflmas)
-    call field_current_to_previous(iflmab)
+    if (itpcol.eq.0) then
+      call field_current_to_previous(iflmas)
+      call field_current_to_previous(iflmab)
+    else
+      call field_get_val_s(iflmas, i_mass_flux)
+      call field_get_val_s(iflmab, b_mass_flux)
+      call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+      call field_get_val_prev_s(iflmab, b_mass_flux_prev)
+      do ifac = 1 , nfac
+        flux                   =                          i_mass_flux(ifac)
+        i_mass_flux(ifac)      = 2.d0*i_mass_flux(ifac) - i_mass_flux_prev(ifac)
+        i_mass_flux_prev(ifac) = flux
+      enddo
+
+      do ifac = 1 , nfabor
+        flux                   =                          b_mass_flux(ifac)
+        b_mass_flux(ifac)      = 2.d0*b_mass_flux(ifac) - b_mass_flux_prev(ifac)
+        b_mass_flux_prev(ifac) = flux
+      enddo
+    endif
   endif
 
   ! If required, the density at time step n-1 is updated
@@ -120,17 +139,36 @@ if (iappel.eq.1) then
   ! Note that at the begining of the calculation, previous values have been
   ! initialized by inivar
   if (irovar.gt.0) then
+    call field_get_id("density_mass", f_id)
+    call field_get_val_s(f_id, cpro_rho_mass)
+    call field_get_id("boundary_density_mass", f_id)
+    call field_get_val_s(f_id, bpro_rho_mass)
+    if (ischtp.eq.2.and.itpcol.eq.1) then
+      call field_get_val_s(icrom, crom)
+      call field_get_val_prev_s(icrom, croma)
+      call field_get_val_prev2_s(icrom, cromaa)
+
+      do iel = 1, ncelet
+        cpro_rho_mass(iel) = 3.d0*crom(iel) - 3.d0*croma(iel)     &
+                            + cromaa(iel)
+      enddo
+
+      call field_get_val_s(ibrom, brom)
+      call field_get_val_prev_s(ibrom, broma)
+      call field_get_val_prev2_s(ibrom, bromaa)
+      do ifac = 1, nfabor
+        bpro_rho_mass(ifac) = 3.d0*brom(ifac) - 3.d0*broma(ifac)  &
+                             + bromaa(ifac)
+      enddo
+    endif
+
     call field_current_to_previous(icrom)
     call field_current_to_previous(ibrom)
 
-    if (idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3) then
+    if (((idilat.gt.1.or.ivofmt.gt.0).and.itpcol.eq.0)            &
+        .or.ippmod(icompf).eq.3) then
       ! Save the latest density field seen by the mass equation
       ! it will be updated in the correction step.
-      call field_get_id("density_mass", f_id)
-      call field_get_val_s(f_id, cpro_rho_mass)
-      call field_get_id("boundary_density_mass", f_id)
-      call field_get_val_s(f_id, bpro_rho_mass)
-
       call field_get_val_s(icrom, crom)
       do iel = 1, ncelet
         cpro_rho_mass(iel) = crom(iel)
@@ -140,6 +178,7 @@ if (iappel.eq.1) then
       do ifac = 1, nfabor
         bpro_rho_mass(ifac) = brom(ifac)
       enddo
+
     endif
   endif
 
@@ -331,13 +370,24 @@ elseif (iappel.eq.3) then
 !     - a toutes les iterations si ISTMPF.NE.0
 !     - a toutes les iterations sauf la derniere si ISTMPF.EQ.0
 
-  if (istmpf.eq.0) then
-    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmas, i_mass_flux)
-    call field_get_val_s(iflmab, b_mass_flux)
-    call field_get_val_prev_s(iflmas, i_mass_flux_prev)
-    call field_get_val_prev_s(iflmab, b_mass_flux_prev)
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, i_mass_flux)
+  call field_get_val_s(iflmab, b_mass_flux)
+  call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+  call field_get_val_prev_s(iflmab, b_mass_flux_prev)
+
+  if (istmpf.eq.2.and.itpcol.eq.1) then
+    theta  = 0.5d0
+    aa = 1.d0/(2.d0-theta)
+    bb = (1.d0-theta)/(2.d0-theta)
+    do ifac = 1 , nfac
+      i_mass_flux(ifac) = aa * i_mass_flux(ifac) + bb * i_mass_flux_prev(ifac)
+    enddo
+    do ifac = 1 , nfabor
+      b_mass_flux(ifac) = aa * b_mass_flux(ifac) + bb * b_mass_flux_prev(ifac)
+    enddo
+  else if (istmpf.eq.0) then
     do ifac = 1 , nfac
       i_mass_flux(ifac) = i_mass_flux_prev(ifac)
     enddo

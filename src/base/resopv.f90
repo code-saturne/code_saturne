@@ -231,12 +231,12 @@ double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
 double precision, allocatable, dimension(:), target :: xdtsro
 double precision, allocatable, dimension(:), target  :: divu
+double precision, allocatable, dimension(:) :: divu_prev
 double precision, allocatable, dimension(:,:), target :: tpusro
 double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
 double precision, dimension(:), pointer :: imasfl, bmasfl, imasfla, bmasfla
 double precision, dimension(:), pointer :: porosi
-
 double precision, dimension(:), pointer :: brom, crom, croma, broma
 double precision, dimension(:), pointer :: brom_eos, crom_eos
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
@@ -358,7 +358,8 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   call field_get_val_s(f_id, bpro_rho_mass)
 
   ! Time interpolated density
-  if (vcopt_u%thetav .lt. 1.d0 .and. iterns.gt.1) then
+  if (vcopt_u%thetav .lt. 1.d0 .and. iterns.gt.1  &
+      .and. itpcol.eq.0) then
     allocate(cpro_rho_tc(ncelet))
     allocate(bpro_rho_tc(nfabor))
 
@@ -375,7 +376,6 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     enddo
 
     brom => bpro_rho_tc
-
   else
     crom => cpro_rho_mass
     brom => bpro_rho_mass
@@ -1438,11 +1438,26 @@ endif
 if ((idilat.eq.2.or.idilat.eq.3).and.ippmod(icompf).ne.3) then
 
   ! Add source term
-  do iel = 1, ncel
-    drom = crom_eos(iel) - croma(iel)
-    cpro_divu(iel) = cpro_divu(iel) + drom*cell_f_vol(iel)/dt(iel)
-  enddo
+  if (itpcol.eq.1.and.vcopt_u%thetav.lt.1.d0) then
+    call field_get_val_prev_s(iflmas, imasfla)
+    call field_get_val_prev_s(iflmab, bmasfla)
 
+    allocate(divu_prev(ncelet))
+    init = 1
+    call divmas(init, imasfla, bmasfla, divu_prev)
+
+    do iel = 1, ncel
+      drom = crom_eos(iel) - croma(iel)
+      cpro_divu(iel) = cpro_divu(iel) +                                       &
+                       (1.d0 + vcopt_u%thetav)*drom*cell_f_vol(iel)/dt(iel)   &
+                      + vcopt_u%thetav*divu_prev(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      drom = crom_eos(iel) - croma(iel)
+      cpro_divu(iel) = cpro_divu(iel) + drom*cell_f_vol(iel)/dt(iel)
+    enddo
+  endif
 endif
 
 ! ---> Termes sources Lagrangien
@@ -2411,6 +2426,7 @@ deallocate(dam, xam)
 deallocate(trav)
 deallocate(res, phia, dphi)
 if (allocated(divu)) deallocate(divu)
+if (allocated(divu_prev)) deallocate(divu_prev)
 deallocate(gradp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)

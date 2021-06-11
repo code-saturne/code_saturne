@@ -354,6 +354,8 @@ itempb = -1
 !     = 2 Ordre deux
 istmpf = -999
 
+itpcol = -999
+
 !   -- Termes sources Navier Stokes
 !     Pour les termes sources explicites en std, I..EXT definit
 !       l'extrapolation -theta ancien + (1+theta) nouveau

@@ -194,6 +194,12 @@ if (istmpf.eq.-999) then
   endif
 endif
 
+if (itpcol.eq.-999) then
+  if (ischtp.eq.2) then
+    itpcol = 1
+  endif
+endif
+
 !     Termes sources NS,
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then

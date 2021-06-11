@@ -288,7 +288,7 @@ if ((    (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3)   &
 ! VOF algorithm and Low Mach compressible algos: density at time n-1
 else if ((idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3) &
          .and.irovar.eq.1) then
-  if (iterns.eq.1) then
+  if (itpcol.eq.0.and.iterns.eq.1) then
     pcrom => cromaa
   else
     pcrom => croma
@@ -327,7 +327,8 @@ endif
 ! NB: the mass flux (n+1) is overwritten because not used after.
 ! The mass flux for (n->n+1) will be recomputed in resopv
 ! FIXME irovar=1 and if dt varies, use theta(rho) = theta(u)*...
-if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
+if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1   &
+    .and. itpcol .eq. 0) then
   allocate(cproa_rho_tc(ncelet))
 
   ! Pointer to the previous mass fluxes

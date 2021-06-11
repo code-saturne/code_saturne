@@ -382,7 +382,7 @@ if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   call field_get_val_s(f_id, bpro_rho_mass)
 
   ! Time interpolated density
-  if (vcopt_u%thetav .lt. 1.d0) then
+  if (vcopt_u%thetav .lt. 1.d0 .and. itpcol .eq. 0) then
     call field_get_val_prev_s(icrom, croma)
     call field_get_val_prev_s(ibrom, broma)
     allocate(cpro_rho_tc(ncelet))

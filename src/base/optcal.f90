@@ -75,6 +75,15 @@ module optcal
   !> and \ref istmpf = 1 otherwise.
   integer, save ::          istmpf
 
+  !> Time scheme option:
+  !>    - 0: scattered time scheme. On the time grids, the velocity is
+  !>         half a time step behind the density and the buoyant scalar.
+  !>         (See the thesis of C.D. PIERCE, 2004)
+  !>    - 1: collocated time scheme. On the time grids, the velocity is
+  !>         at the same location as the density and the buoyant scalar.
+  !>         (See L. MA, 2019)
+  integer, save ::          itpcol
+
   !> number of iterations on the velocity-pressure coupling on Navier-Stokes
   !> (for the U/P inner iterations scheme)
   integer(c_int), pointer, save ::          nterup
