@@ -90,6 +90,7 @@ cs_user_coupling-syrthes.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-vorticity_field.c \
 cs_user_extra_operations-balance_by_zone.c \
+cs_user_extra_operations-mean_profiles.c \
 cs_user_extra_operations-boundary_forces.c \
 cs_user_extra_operations-nusselt_and_friction_calculation.c \
 cs_user_extra_operations-nusselt_calculation.c \
@@ -189,7 +190,9 @@ cs_user_parameters.f90 \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
-cs_user_physical_properties-richards_unsat.f90
+cs_user_physical_properties-richards_unsat.f90 \
+cs_user_profile.h \
+cs_user_profile_plot.py
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)
