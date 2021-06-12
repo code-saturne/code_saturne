@@ -114,8 +114,6 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         for nb in range(len(self.__modelEnergy.getItems())):
             self.__modelEnergy.delItem(0)
 
-        thermo_mdl = ThermodynamicsModel(self.case)
-
         if self.__boundary.getNature() == "inlet"  or  self.__boundary.getNature() == "outlet":
             self.__modelEnergy.addItem(self.tr("Imposed enthalpy"), 'dirichlet')
             self.__modelEnergy.addItem(self.tr("Thermal flux"), 'flux')
@@ -145,7 +143,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                     else :
                         self.labelEnergy.setText('K')
                 self.show()
-                if thermo_mdl.getMaterials(self.__currentField) == 'user_material' :
+                if ThermodynamicsModel(self.case).getMaterials(self.__currentField) == 'user_material' :
                     self.__modelEnergy.disableItem(2)
                     self.__modelEnergy.disableItem(3)
                 else :
@@ -156,22 +154,8 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         elif self.__boundary.getNature() == "wall" :
             if len(MainFieldsModel(self.case).getEnthalpyResolvedField()) != 0 :
                 energychoice = self.__boundary.getEnthalpyChoice("none")
-                val = self.__boundary.getEnthalpy("none")
-
-                # If at least one field is using "user properties", only a
-                # a thermal flux condition is accepted. Enthalpy or temperature
-                # conditions must be imposed using a user function.
-                for fieldId in thermo_mdl.getFieldIdList():
-                    if thermo_mdl.getMaterials(fieldId) == 'user_material':
-                        self.__modelEnergy.disableItem(1)
-                        self.__modelEnergy.disableItem(2)
-                        if energychoice != 'flux':
-                            energychoice = 'flux'
-                            val = 0.
-                            self.__boundary.setEnthalpy("none", val)
-                        break
-
                 self.__modelEnergy.setItem(str_model=energychoice)
+                val = self.__boundary.getEnthalpy("none")
 
                 if energychoice == 'syrthes_coupling':
                     self.lineEditEnergy.hide()
