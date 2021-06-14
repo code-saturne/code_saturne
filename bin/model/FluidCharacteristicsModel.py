@@ -1007,8 +1007,6 @@ class FluidCharacteristicsModel(Variables, Model):
         ref_pressure = self.getPressure()
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
-        symbols.append(('rho', 'Density'))
-
         symbols.append(('volume', 'Zone volume'))
         symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
