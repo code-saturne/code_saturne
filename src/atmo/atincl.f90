@@ -1204,27 +1204,20 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
 
   ! Local variables
   double precision tstar
-  double precision dlmo_old,ustar_old,tstar_old
   double precision coef_mom
-  double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
+  double precision coef_mom_old
+  double precision prec_ustar
   double precision num, denom
   double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
-  prec_lmo=1.d-2
   prec_ustar=1.d-2
-  prec_tstar=1.d-2
-  arr_lmo=1.d-2
 
   icompt=0
 
-  ! Initial inverse LMO
-  if (flux.ge.0.d0) then
-    dlmo = 0.02d0
-  else
-    dlmo = -0.02d0
-  endif
+  ! Initial inverse LMO (neutral)
+  dlmo = 0.d0
 
   ! Call universal functions
   coef_mom = cs_mo_psim((z+z0),z0,dlmo)
@@ -1238,9 +1231,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   icompt=icompt+1
 
   ! Storage previous values
-  dlmo_old = dlmo
-  ustar_old = ustar
-  tstar_old = tstar
+  coef_mom_old = coef_mom
 
   ! Update LMO
   num = coef_mom**3.d0 * gredu * flux
@@ -1251,7 +1242,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
     dlmo = 0.d0 !FIXME other clipping ?
   endif
 
-  ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
+  ! Clipping dlmo (we want |LMO| > 1 m  ie 1/|LMO| < 1 m^-1)
   if (abs(dlmo).ge.dlmoclip) then
     if (dlmo.ge.0.d0) dlmo =   dlmoclip
     if (dlmo.le.0.d0) dlmo = - dlmoclip
@@ -1266,15 +1257,8 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
 
   ! Convergence test
   if (icompt.le.1000) then
-    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*abs(ustar_old)) go to 123
-    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*abs(tstar_old)) go to 123
-    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*abs(dlmo_old)) go to 123
-
-    if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
-    if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
-    if (abs(dlmo_old).le.epzero.and.abs(dlmo).gt.epzero) go to 123
+    if (abs((coef_mom-coef_mom_old)).ge.prec_ustar) go to 123
   endif
-
 
   return
 
@@ -1307,28 +1291,22 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
 
   ! Local variables
   double precision tstar
-  double precision dlmo_old,ustar_old,tstar_old
   double precision coef_mom,coef_moh
-  double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
+  double precision coef_mom_old,coef_moh_old
+  double precision prec_ustar,prec_tstar
   double precision num, denom
   real(c_double) :: zref
   double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
-  prec_lmo=1.d-2
   prec_ustar=1.d-2
   prec_tstar=1.d-2
-  arr_lmo=1.d-2
 
   icompt=0
 
   ! Initial LMO
-  if (dt.ge.0.d0) then
-    dlmo = 0.02d0
-  else
-    dlmo=-0.02d0
-  endif
+  dlmo = 0.d0
 
   ! Call universal functions
   zref = z+z0
@@ -1349,9 +1327,8 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   icompt=icompt+1
 
   ! Storage previous values
-  dlmo_old = dlmo
-  ustar_old = ustar
-  tstar_old = tstar
+  coef_mom_old = coef_mom
+  coef_moh_old = coef_moh
 
   ! Update LMO
   num = coef_mom**2.d0 * gredu * dt
@@ -1362,7 +1339,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
     dlmo = 0.d0 !FIXME
   endif
 
-  ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
+  ! Clipping dlmo (we want |LMO| > 1 m  ie 1/|LMO| < 1 m^-1)
   if (abs(dlmo).ge.dlmoclip) then
     if (dlmo.ge.0.d0) dlmo =   dlmoclip
     if (dlmo.le.0.d0) dlmo = - dlmoclip
@@ -1382,15 +1359,9 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
 
   ! Convergence test
   if (icompt.le.1000) then !FIXME compteur max 1000 a mettre en param
-    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*abs(ustar_old)) go to 123
-    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*abs(tstar_old)) go to 123
-    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*abs(dlmo_old)) go to 123
-
-    if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
-    if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
-    if (abs(dlmo_old).le.epzero.and.abs(dlmo).gt.epzero) go to 123
+    if (abs((coef_mom-coef_mom_old)).ge.prec_ustar) go to 123
+    if (abs((coef_moh-coef_moh_old)).ge.prec_tstar) go to 123
   endif
-
 
   return
 
