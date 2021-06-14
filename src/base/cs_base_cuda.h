@@ -178,6 +178,18 @@ cs_cuda_mem_free(void         *p,
 void
 cs_base_cuda_device_info(cs_log_t  log_id);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set CUDA device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_cuda_set_default_device(void);
+
 #endif
 
 /*----------------------------------------------------------------------------*/

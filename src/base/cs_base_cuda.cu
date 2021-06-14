@@ -182,8 +182,6 @@ cs_cuda_mem_free(void         *p,
                  const char   *file_name,
                  int           line_num)
 {
-  void *ptr = NULL;
-
   CS_CUDA_CHECK_CALL(cudaFree(p), file_name, line_num);
 
 #if 0
@@ -255,6 +253,61 @@ cs_base_cuda_device_info(cs_log_t  log_id)
     strncpy(buffer, prop.name, 255);
     buffer[255] = '\0';
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set CUDA device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_cuda_set_default_device(void)
+{
+  int device_id = 0, n_devices = 0;
+
+  cudaError_t ret_code = cudaGetDeviceCount(&n_devices);
+
+  if (ret_code == cudaErrorNoDevice)
+    return;
+
+  if (cudaSuccess != ret_code)
+    bft_error(__FILE__, __LINE__, 0, "[CUDA errror] %d: %s\n  running: %s",
+              ret_code, ::cudaGetErrorString(ret_code), __func__);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_rank_id > -1 && n_devices > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    int       max_ranks_per_node = -1;
+
+    /* get local rank */
+
+    MPI_Comm sh_comm;
+    MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0,
+                        MPI_INFO_NULL, &sh_comm);
+    int sh_rank;
+    MPI_Comm_rank(sh_comm, &sh_rank);
+
+    MPI_Allreduce(MPI_IN_PLACE, &sh_rank, 1, MPI_INT, MPI_MAX, sh_comm);
+    MPI_Comm_free(&sh_comm);
+
+    MPI_Allreduce(&sh_rank, &max_ranks_per_node, 1, MPI_INT, MPI_MAX, comm);
+    max_ranks_per_node += 1;
+
+    int n_ranks_per_device = max_ranks_per_node / n_devices;
+
+    device_id = sh_rank / n_ranks_per_device;
+
+  }
+
+#endif
+
+  CS_CUDA_CHECK_CALL(cudaSetDevice(device_id), __FILE__, __LINE__);
 }
 
 /*----------------------------------------------------------------------------*/
