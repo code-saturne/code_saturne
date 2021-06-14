@@ -695,12 +695,12 @@ endif
 '@    Two and only two independant variables among            ',/,&
 '@    P, rho, T and E (except T and E) should be imposed at   ',/,&
 '@    the initialisation in the GUI or in the user subroutine ',/,&
-'@    of initialisation (cs_user_initialisation.f90) or       ',/,&
+'@    of initialization (cs_user_initialization.f90) or       ',/,&
 '@    in both.                                                ',/,&
 '@                                                            ',/,&
 '@    Check if iccfth has not been partially set through the  ',/,&
 '@    GUI in a non consistant manner with                     ',/,&
-'@    cs_user_initialisation.f90.                             ',/,&
+'@    cs_user_initialization.f90.                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
