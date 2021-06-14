@@ -929,12 +929,17 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   } /* Loop on domain boundaries */
 
   /* Update the flux through the default boundary */
-  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
-    if (belong_to_default[i])
+  cs_lnum_t  default_case_count = 0;
+  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
+    if (belong_to_default[i]) {
+      default_case_count += 1;
       boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
+    }
+  }
 
   /* Parallel synchronization if needed */
   cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
+  cs_parall_counter_max(&default_case_count, 1);
 
   /* Output result */
   cs_log_printf(CS_LOG_DEFAULT,
@@ -952,11 +957,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   } /* Loop on boundaries */
 
-  /* Default boundary */
-  cs_boundary_get_type_descr(boundaries, boundaries->default_type, 32, descr);
-  cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
-                descr, "default boundary",
-                boundary_fluxes[boundaries->n_boundaries]);
+  /* Default boundary (if something to do) */
+  if (default_case_count > 0) {
+    cs_boundary_get_type_descr(boundaries, boundaries->default_type, 32, descr);
+    cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
+                  descr, "default boundary",
+                  boundary_fluxes[boundaries->n_boundaries]);
+  }
 
   /* Free temporary buffers */
   BFT_FREE(belong_to_default);
