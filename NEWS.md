@@ -1,5 +1,7 @@
-Release 6.2.2 (Unreleased)
---------------------------
+Release 6.2.2 (June 15 2021)
+----------------------------
+
+This is the last release of the 6.2 series.
 
 Bug fixes:
 
