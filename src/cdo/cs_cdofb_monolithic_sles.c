@@ -349,6 +349,36 @@ _face_gdot(cs_lnum_t    size,
   return result;
 }
 
+#if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the way to normalize the residual vector
+ *
+ * \param[in]       norm_type   type of normalization
+ * \param[in, out]  ksp         pointer to a PETSc KSP structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_set_residual_normalization(cs_param_resnorm_type_t    norm_type,
+                            KSP                        ksp)
+{
+  switch (norm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
+}
+#endif  /* HAVE_PETSC */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the matrix for an approximation of the Schur complement based
@@ -1191,20 +1221,8 @@ _set_petsc_main_solver(const cs_navsto_param_model_t   model,
                    nslesp->il_algo_dtol,   /* divergence tolerance */
                    nslesp->n_max_il_algo_iter); /* max number of iterations */
 
-  switch (slesp->resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  }
-
+  /* Set the normalization of the residual */
+  _set_residual_normalization(slesp->resnorm_type, ksp);
 }
 
 #if defined(PETSC_HAVE_HYPRE)
@@ -1425,19 +1443,7 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
   KSPGetPC(u_ksp, &u_pc);
   PCType  pc_type = _petsc_get_pc_type(slesp);
 
-  switch (slesp->resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(u_ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  _set_residual_normalization(slesp->resnorm_type, u_ksp);
 
   /* Set the solver */
   switch (slesp->solver) {
@@ -1478,9 +1484,12 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try mumps.",
               __func__);
     break;
+
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver.", __func__);
     break;
