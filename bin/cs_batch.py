@@ -189,9 +189,6 @@ class batch:
             elif self.rm_template[0:3] == 'CCC':
                 self.rm_type = 'CCC'
                 self.submit_command = 'ccc_msub'
-            elif self.rm_template[0:5] == 'LOADL':
-                self.rm_type = 'LOADL'
-                self.submit_command = 'llsubmit'
             elif self.rm_template[0:3] == 'LSF':
                 self.rm_type = 'LSF'
                 self.submit_command = 'bsub'
@@ -468,91 +465,6 @@ class batch:
 
     #---------------------------------------------------------------------------
 
-    def __parse_lines_loadl__(self, lines):
-        """
-        Parse LoadLeveler batch file lines
-        """
-        batch_lines = lines
-
-        for i in range(len(batch_lines)):
-            if batch_lines[i][0] == '#':
-                batch_args = self.__pre_parse__(batch_lines[i][1:])
-                try:
-                    if batch_args[0] == '@':
-                        kw, val = batch_args[1:].split('=')
-                        kw = kw.strip()
-                        val = val.split(',')[0].strip()
-                        if kw == 'job_name':
-                            self.params['job_name'] = val
-                        elif kw == 'node':
-                            self.params['job_nodes'] = val
-                        elif kw == 'tasks_per_node':
-                            self.params['job_ppn'] = val
-                        elif kw == 'total_tasks':
-                            self.params['job_procs'] = val
-                        elif kw == 'parallel_threads':
-                            self.params['job_threads'] = val
-                        elif kw == 'wall_clock_limit':
-                            wt = (val.split(',')[0].rstrip()).split(':')
-                            if len(wt) == 3:
-                                self.params['job_walltime'] \
-                                    = int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
-                            elif len(wt) == 2:
-                                self.params['job_walltime'] \
-                                    = int(wt[0])*60 + int(wt[1])
-                            elif len(wt) == 1:
-                                self.params['job_walltime'] = int(wt[0])
-                        elif kw == 'class':
-                            self.params['job_class'] = val
-                        elif kw == 'group':
-                            self.params['job_account'] = val
-                except Exception:
-                    pass
-
-    #---------------------------------------------------------------------------
-
-    def __update_lines_loadl__(self, lines):
-        """
-        Update the LoadLeveler batch file from dictionary self.params.
-        """
-
-        batch_lines = lines
-
-        for i in range(len(batch_lines)):
-            if batch_lines[i][0] == '#':
-                batch_args = self.__pre_parse__(batch_lines[i][1:])
-                try:
-                    if batch_args[0] == '@':
-                        kw, val = batch_args[1:].split('=')
-                        kw = kw.strip()
-                        val = val.split(',')[0].strip()
-                        if kw == 'job_name':
-                            val = self.params['job_name']
-                        elif kw == 'node':
-                            val = self.params['job_nodes']
-                        elif kw == 'tasks_per_node':
-                            val = self.params['job_ppn']
-                        elif kw == 'total_tasks':
-                            val = self.params['job_procs']
-                        elif kw == 'parallel_threads':
-                            val = self.params['job_threads']
-                        elif kw == 'wall_clock_limit':
-                            wt = self.params['job_walltime']
-                            val = '%d:%02d:%02d' % (wt//3600,
-                                                    (wt%3600)//60,
-                                                    wt%60)
-                        elif kw == 'class':
-                            val = self.params['job_class']
-                        elif kw == 'group':
-                            val = self.params['job_account']
-                        else:
-                            continue
-                        batch_lines[i] = '# @ ' + kw + ' = ' + str(val)
-                except Exception:
-                    pass
-
-    #---------------------------------------------------------------------------
-
     def __parse_lines_lsf__(self, lines):
         """
         Parse Platform LSF batch file lines
@@ -806,8 +718,6 @@ class batch:
                 self.__parse_lines_slurm__(lines)
             elif self.rm_type == 'CCC':
                 self.__parse_lines_ccc__(lines)
-            elif self.rm_type == 'LOADL':
-                self.__parse_lines_loadl__(lines)
             elif self.rm_type == 'LSF':
                 self.__parse_lines_lsf__(lines)
             elif self.rm_type == 'PBS':
@@ -836,8 +746,6 @@ class batch:
                 self.__update_lines_slurm__(lines)
             elif self.rm_type == 'CCC':
                 self.__update_lines_ccc__(lines)
-            elif self.rm_type == 'LOADL':
-                self.__update_lines_loadl__(lines)
             elif self.rm_type == 'LSF':
                 self.__update_lines_lsf__(lines)
             elif self.rm_type == 'PBS':
@@ -886,15 +794,6 @@ class batch:
                     if len(l) == 0:
                         break
                     else:
-                        class_list.append(l.split(' ')[0])
-
-            elif rm_type == 'LOADL':
-                output = self.__get_command_output__('llclass')
-                ignore = True
-                for l in output:
-                    if l[0:3] == '---':
-                        ignore = not ignore
-                    elif ignore == False:
                         class_list.append(l.split(' ')[0])
 
             elif rm_type == 'LSF':

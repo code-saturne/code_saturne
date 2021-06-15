@@ -410,7 +410,6 @@ data/setup.xml
 batchdir = ${pkgdatadir}/batch
 batch_DATA = \
 extras/batch/batch.CCC \
-extras/batch/batch.LOADL \
 extras/batch/batch.LSF \
 extras/batch/batch.OAR \
 extras/batch/batch.PBS \

@@ -1006,16 +1006,6 @@ class batch_info:
                 self.job_id = os.getenv('OAR_JOBID')
 
         if self.batch_type == None:
-            s = os.getenv('LOADL_JOB_NAME') # LoadLeveler
-            if s != None:
-                self.batch_type = 'LOADL'
-                self.job_file = os.getenv('LOADL_STEP_COMMAND')
-                self.submit_dir = os.getenv('LOADL_STEP_INITDIR')
-                self.job_name = os.getenv('LOADL_JOB_NAME')
-                self.job_id = os.getenv('LOADL_STEP_ID')
-                self.queue = os.getenv('LOADL_STEP_CLASS')
-
-        if self.batch_type == None:
             s = os.getenv('SGE_TASK_ID') # Sun Grid Engine
             if s != None:
                 self.batch_type = 'SGE'
@@ -1148,36 +1138,6 @@ class resource_info(batch_info):
                 if s != None:
                     hl = s.split(' ')
                     self.n_procs_from_hosts_list(hl, True)
-
-        # Test for IBM LoadLeveler.
-
-        if self.manager == None and self.batch_type == 'LOADL':
-            s = os.getenv('LOADL_TOTAL_TASKS')
-            if s != None:
-                self.manager = 'LOADL'
-                self.n_procs = int(s)
-            s = os.getenv('LOADL_BG_SIZE')
-            if s != None:
-                self.manager = 'LOADL'
-                self.n_nodes = int(s)
-            if not self.n_procs:
-                s = os.getenv('LOADL_PROCESSOR_LIST')
-                if s != None:
-                    self.manager = 'LOADL'
-                    hl = s.strip().split(' ')
-                    self.n_procs_from_hosts_list(hl, True)
-            if self.n_nodes and not self.n_procs:
-                if n_procs:
-                    self.n_procs = n_procs
-                elif os.getenv('LOADL_BG_SIZE'): # Blue Gene/Q
-                    self.n_procs = self.n_nodes*16
-                    if n_threads:
-                        if n_threads > 4:
-                            self.n_procs = self.n_nodes*16*4 // n_threads
-            s = os.getenv('LOADL_HOSTFILE')
-            if s != None:
-                self.manager = 'LOADL'
-                self.hosts_file = '$LOADL_HOSTFILE'
 
         # Test for TORQUE or PBS Pro.
 
@@ -1369,12 +1329,6 @@ class resource_info(batch_info):
                 s = os.getenv('LSB_HOSTS')
                 if s != None:
                     hosts_list = s.split(' ')
-
-        elif self.manager == 'LOADL':
-            hosts_list = []
-            s = os.getenv('LOADL_PROCESSOR_LIST')
-            if s != None:
-                hosts_list = s.split(' ')
 
         return hosts_list
 
@@ -1746,7 +1700,7 @@ class mpi_environment:
 
         if pm == 'hydra':
             # Nothing to do for resource managers directly handled by Hydra
-            if rm not in ['PBS', 'LOADL', 'LSF', 'SGE', 'SLURM']:
+            if rm not in ['PBS', 'LSF', 'SGE', 'SLURM']:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     self.mpiexec += ' -f ' + hostsfile
@@ -1848,7 +1802,6 @@ class mpi_environment:
             known_manager = False
             rc_mca_by_type = {'SLURM':' slurm ',
                               'LSF':' lsf ',
-                              'LOADL':' loadleveler ',
                               'PBS':' tm ',
                               'SGE':' gridengine '}
             if resource_info.manager in rc_mca_by_type:

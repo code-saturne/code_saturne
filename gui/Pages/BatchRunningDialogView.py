@@ -974,11 +974,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         # Show Job management box
 
-        if self.jmdl.batch.rm_type == 'LOADL':
-            self.groupBoxJob.setTitle("Load Leveler job parameters")
-            self.labelJobAccount.setText(str("Group"))
-            self.lineEditJobAccount.setToolTip("To obtain a list of defined groups, run <b><tt>xloadl</tt></b>, then select <i>File -> Build a Job</i>, and check the group names in the <i>Group</i> field")
-        elif self.jmdl.batch.rm_type == 'LSF':
+        if self.jmdl.batch.rm_type == 'LSF':
             self.groupBoxJob.setTitle("LSF job parameters")
         elif self.jmdl.batch.rm_type == 'PBS':
             self.groupBoxJob.setTitle("PBS job parameters")
