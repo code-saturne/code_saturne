@@ -76,7 +76,7 @@ typedef struct {
   /* Blocks related to the velocity momentum */
   cs_matrix_t  **block_matrices;
 
-  /* B^t*.approx(A^-1).B which corresponds to a compatible discretization of
+  /* B*.approx(A^-1).B^t which corresponds to a compatible discretization of
      the discrete Laplacian on the pressure space */
   cs_matrix_t   *compatible_laplacian;
 

@@ -1210,7 +1210,7 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
   assert(bd->n_row_blocks == cm->n_fc || bd->n_row_blocks == cm->n_fc + 1);
 
   /* Build x_dir */
-  bool  is_non_homogeneous = true;
+  bool  is_non_homogeneous = false; /* Assume homogeneous by default */
 
   memset(cb->values, 0, 6*sizeof(double));
 

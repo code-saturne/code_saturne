@@ -1314,7 +1314,7 @@ _build_is_for_fieldsplit(IS   *isp,
 
     for (PetscInt i = 0; i < 3*n_faces; i++)
       indices[i] = rset->g_id[i];
-    ISCreateGeneral(PETSC_COMM_WORLD, 3*n_faces, indices, PETSC_COPY_VALUES,
+    ISCreateGeneral(PETSC_COMM_SELF, 3*n_faces, indices, PETSC_COPY_VALUES,
                     isv);
 
   }
@@ -1331,13 +1331,23 @@ _build_is_for_fieldsplit(IS   *isp,
 
   }
 
-  /* IndexSet for the velocity DoFs
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 1
+  /* Print the index set to stdout */
+  ISView(*isv, PETSC_VIEWER_STDOUT_SELF);
+#endif
+
+  /* Re-used the buffer indices to create the IndexSet for pressure DoFs
    * Pressure unknowns are located at cell centers so the treatment should be
    * the same in sequential and parallel computation */
   for (PetscInt i = 0; i < n_cells; i++)
     indices[i] = rset->g_id[i + 3*n_faces];
-  ISCreateGeneral(PETSC_COMM_WORLD, n_cells, indices, PETSC_COPY_VALUES,
+  ISCreateGeneral(PETSC_COMM_SELF, n_cells, indices, PETSC_COPY_VALUES,
                   isp);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 1
+  /* Print the index set to stdout */
+  ISView(*isp, PETSC_VIEWER_STDOUT_SELF);
+#endif
 
   PetscFree(indices);
 }
@@ -1577,7 +1587,7 @@ static void
 _additive_amg_hook(void     *context,
                    KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -1661,7 +1671,7 @@ static void
 _multiplicative_hook(void     *context,
                      KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -1741,7 +1751,7 @@ static void
 _diag_schur_hook(void     *context,
                  KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -1826,7 +1836,7 @@ static void
 _upper_schur_hook(void     *context,
                   KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -1912,7 +1922,7 @@ static void
 _gkb_hook(void     *context,
           KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -1989,7 +1999,7 @@ static void
 _gkb_precond_hook(void     *context,
                   KSP       ksp)
 {
-  IS  isv, isp;
+  IS  isv = NULL, isp = NULL;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
   cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
