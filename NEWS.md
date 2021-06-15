@@ -39,8 +39,8 @@ Architectural changes:
 
 - Simplify handling of timers, focusing on wall-time.
 
-Release 7.0.0 (unreleased)
---------------------------
+Release 7.0.0 (June 15 2021)
+----------------------------
 
 User changes:
 
