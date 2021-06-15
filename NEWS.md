@@ -1,10 +1,12 @@
-Release 6.3.1 (Unreleased)
---------------------------
+Release 6.3.1 (June 15 2021)
+----------------------------
+
+This is the last release of the 6.3 series.
 
 Bug fixes:
 
 - Internal coupling: fix incorrect loop size (whose chances of causing
-  issues incresed with partitioning complexity).
+  issues increased with partitioning complexity).
 
 - Fix Electric arcs without Joule effect; broken in v6.3.0.
 
