@@ -53,21 +53,33 @@ hidden, but pages appearing above should not be modified, so setting up
 a computation by visiting GUI pages from top to bottom is recommended,
 though any page may be re-visited at any time.
 
-The headings filled for the initialization of the main parameters
+The sections filled for the initialization of the main parameters
 are the following:
 
-- Thermophysical model options: Steady or unsteady algorithm, specific physics, ALE mobile mesh, turbulence model, thermal model and species transport (definition of the scalars and their variances);
-see figures [calculation features](@ref gui_calculation_features) to  [species](@ref gui_species). If a thermal model is activated, two other headings on conjugate heat transfer and radiative transfers can be filled in (see [thermal scalar](@ref gui_thermal_scalar)).
+- Mesh zone definitions: volume and surface regions required by
+  further definitions must be defined here, using the appropriate selection
+  criteria. In many cases, zones should simply correspond to mesh groups,
+  but explicitely defining them allows merging or splitting selections using
+  boolean operations with group ranges and geometric criteria when needed (see
+  see [mesh zone definitions](@ref gui_volume_zone_def) example figure.
+
+- Thermophysical model options: specific physical models, ALE mobile mesh, turbulence model, thermal model and species transport (definition of the scalars and their variances);
+see figures [calculation features](@ref gui_calculation_features) to  [species](@ref gui_species). If a thermal model is activated, two other sections on conjugate heat transfer and radiative transfers can be filled in (see [thermal scalar](@ref gui_thermal_scalar)).
 
 - Body forces: gravity and coriolis forces, see [body forces](@ref gui_body_forces).
 
-- Physical properties: reference pressure, velocity and length, fluid properties (density, viscosity, thermal conductivity, specific heat and scalar diffusivity), see see [reference values](@ref gui_reference_values) to [fluid properties](@ref gui_fluid_props).
+- Physical properties: reference pressure, fluid properties (density, viscosity, thermal conductivity, specific heat and scalar diffusivity), see [fluid properties](@ref gui_fluid_props).
 
 - Volume conditions: definition of volume regions (for initialization, head losses and source terms, [user source terms](@ref sec_prg_usersourceterms) and [head losses](@ref sec_prg_headlosses), initialization of the variables (including scalars), see [figure](@ref gui_initialization).
 
 - Boundary conditions: definition of boundary conditions.
 
-- Numerical parameters: number and type of time steps, and advanced parameters for the numerical solution of the equations, see figures [global parameters](@ref gui_global_parameters) to [time step](@ref gui_time_step).
+- Time settings: number and type of time steps, and restart settings, see figure [time step](@ref gui_time_step).
+
+- Numerical parameters: number and type of time steps, and advanced parameters for the numerical solution of the equations, see figures [global parameters](@ref gui_global_parameters) to [numerical parameters](@ref gui_numerical_parmeters).
+
+\anchor gui_volume_zone_def
+\image html gui_volume_zone_def.png "Definition of mesh zones"
 
 \anchor gui_calculation_features
 \image html gui_calculation_features.png "Calculation feature selection"
@@ -84,9 +96,6 @@ see figures [calculation features](@ref gui_calculation_features) to  [species](
 \anchor gui_body_forces
 \image html gui_body_forces.png "Body forces definition"
 
-\anchor gui_reference_values
-\image html gui_phys_prop_reference_values.png "Reference pressure and velocity"
-
 \anchor gui_fluid_props
 \image html gui_fluid_props.png "Fluid properties"
 
@@ -102,8 +111,9 @@ see figures [calculation features](@ref gui_calculation_features) to  [species](
 \anchor gui_time_step
 \image html gui_time_step.png "Time step settings"
 
-For more details about the different parameters, please refer to the [field key
-word list](@ref field_keywords), [variable reference](@ref cs_var_dico), and [examples](@ref cs_user_examples).
+For more details about the different parameters, please refer to the
+[field keyword list](@ref field_keywords), [variable reference](@ref cs_var_dico),
+and [examples](@ref cs_user_examples).
 
 In addition to the GUI, user-defined functions may be used:
 - \ref cs_user_model to select a given physical model.
@@ -305,7 +315,7 @@ Basic variable physical properties {#cs_ug_phys_prop}
 When the fluid properties are not constant, the user may define the variation laws
 in the GUI or in the \ref cs_user_physical_properties user-defined function,
 which is called at each time step. In the GUI, in the item **Fluid properties**
-under the **Physical properties** heading , the variation laws are defined for the
+under the **Physical properties** section , the variation laws are defined for the
 fluid density, viscosity, specific heat, thermal conductivity and scalar diffusivity
 as shown on the figures below.
 

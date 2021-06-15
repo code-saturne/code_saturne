@@ -1831,20 +1831,62 @@ defined as (\texttt{iscalt}$>0$).
  variable is the total (compressible) energy, the thermal module will not work.}
 
 %==================================
+\subsubsection{Internal Fluid-Thermal coupling}
+%==================================
+
+When at least one volume zone is defined as being solid
+(see \figurename\ref{fig:internal_coupling_vol_solid}), scalar variables (especially
+thermal scalar variables) may be solved in a fully coupled manner across the fluid
+and solid domains.
+
+For this purpose, the ``Internal coupling'' should be activated for the desired variables
+in the matching tab of the ``Coupling parameters'' page, as shown in figure
+\figurename\ref{fig:internal_coupling_param}). This section should appear when
+at least one volume zone is defined as solid.
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{gui_internal_coupling_vol_zone}
+\caption{Solid volume zone definition}
+\label{fig:internal_coupling_vol_solid}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{gui_internal_coupling}
+\caption{Conjugate heat transfer: internal coupling}
+\label{fig:internal_coupling_param}
+\end{center}
+\end{figure}
+
+%==================================
 \subsubsection{Fluid-Thermal coupling with \syrthes}
 %==================================
-When the user wishes to couple \CS with \syrthes to include heat transfers, he can do so with using with the Graphical User Interface (GUI) or the
-\texttt{cs\_syrthes\_coupling} user function.
-To set such a coupling in the Graphic User Interfacee (GUI), a thermal scalar must be
+Coupling \CS with \syrthes for conjugate heat transfer can be defined through
+the GUI or the \texttt{cs\_syrthes\_coupling} user function.
+To set such a coupling in the GUI, a thermal scalar must be
 selected first in the item ``Thermal scalar'' under the heading ``Thermophysical models''.
-Then the item ``Conjugate heat transfer'' will appear, see \figurename\ref{fig:syrthes}.
+At least one wall boundary condition must be set to ``SYRTHES coupling'' type, and
+the name of the associated \syrthes instance (i.e. base directory name of the associated
+solid case definition) be set, as shown in, \figurename\ref{fig:syrthes_bc}.
+The ``Syrthes coupling'' tab will then be available in the ``Coupling parameters''
+section (see \figurename\ref{fig:syrthes}), fo further advanced or global settings.
 The zones where the coupling occurs must be defined and a projection axis can be
 specified in case of 2D coupling.
 
 \begin{figure}[ht]
 \begin{center}
+\includegraphics[width=0.9\textwidth]{gui_syrthes_coupling_bc}
+\caption{Boundary conditions - coupling with \syrthes}
+\label{fig:syrthes_bc}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
 \includegraphics[width=0.9\textwidth]{gui_syrthes_coupling}
-\caption{Thermophysical models - coupling with \syrthes}
+\caption{Coupling parameters - coupling with \syrthes}
 \label{fig:syrthes}
 \end{center}
 \end{figure}
@@ -1922,9 +1964,9 @@ field must be defined. In all cases, the thermal backward coupling of the disper
 In the GUI, the selection of the Lagrangian module activates the heading \texttt{Particle and droplets tracking} in the tree menu. The initialization is performed in the three items included in this heading:
 %
 \begin{itemize}
- \item [$\bullet$] \texttt{Global settings}. The user defines in this item the kind of Euler/Lagrange multi-phase treatment, the main parameters, the specific physics associated with the particles and advanced numerical options, see ~\figurename~\ref {fig:Ini-Lag1} to \figurename\ref {fig:Ini-Lag3}.
+ \item [$\bullet$] \texttt{Global settings}. The user defines in this item the kind of Euler/Lagrange multi-phase treatment, the main parameters, and the specific physics associated with the particles, see ~\figurename~\ref {fig:Ini-Lag1} to \figurename\ref {fig:Ini-Lag3}.
  \item [$\bullet$] \texttt{Statistics}. The user can select the volume and boundary statistics to be post-processed.
- \item [$\bullet$] \texttt{Output}. The user defines the output frequency and post-processing options for particles and select the variables that will appear in the log.
+ \item [$\bullet$] \texttt{Output}. An additional entry in the postprocessing section allows defining the output frequency and post-processing options for particles and selecting the variables that will appear in the log.
 \end{itemize}
 
 \begin{figure}[ht]
@@ -1934,30 +1976,22 @@ In the GUI, the selection of the Lagrangian module activates the heading \texttt
 \label{fig:Ini-Lag1}
 \end{center}
 \end{figure}
-%
- \begin{figure}[ht]
- \begin{center}
- \includegraphics[width=8cm]{gui_lagr_global_advanced}
- \caption{Lagrangian module - Global Settings, advanced numerical options}
- \label{fig:Ini-Lag3}
- \end{center}
- \end{figure}
-%
-% \begin{figure}[ht]
-% \begin{center}
-% \includegraphics[width=11cm]{gui_lagr_statistics}
-% \caption{Lagrangian module - statistics}
-% \label{fig:Ini-Lag4}
-% \end{center}
-% \end{figure}
-%
-% \begin{figure}[ht]
-% \begin{center}
-% \includegraphics[width=11cm]{gui_lagr_output}
-% \caption{Lagrangian module - output}
-% \label{fig:Ini-Lag5}
-% \end{center}
-% \end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=11cm]{gui_lagr_statistics}
+\caption{Lagrangian module - statistics}
+\label{fig:Ini-Lag4}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=11cm]{gui_lagr_output}
+\caption{Lagrangian module - output}
+\label{fig:Ini-Lag5}
+\end{center}
+\end{figure}
 
 \minititre{Use of the subroutine \texttt{cs\_user\_lagr\_model}}
 
