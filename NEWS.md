@@ -1,9 +1,15 @@
-Release 7.0.0 (unreleased)
---------------------------
+Release 7.0.0 (June 15 2021)
+----------------------------
 
 Bug fixes:
 
 - Fix crash with Syrthes volume coupling.
+
+- GUI: allow definition of initial temperature in solid zones.
+
+User changes:
+
+- minor user documentation updates.
 
 Release 7.0.0-rc1 (June 9 2021)
 -------------------------------
