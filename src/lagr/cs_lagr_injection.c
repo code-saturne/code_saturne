@@ -1114,11 +1114,14 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       /* Initialize the additional user variables */
 
-      for (int i = 0;
-           i < cs_glob_lagr_model->n_user_variables;
-           i++)
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_USER + i, 0.0);
-
+      if (cs_glob_lagr_model->n_user_variables > 0) {
+        cs_real_t  *user_attr
+          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_USER);
+        for (int i = 0;
+             i < cs_glob_lagr_model->n_user_variables;
+             i++)
+          user_attr[i] = 0.0;
+      }
     }
 
   }
