@@ -1,3 +1,10 @@
+Release 7.0.1 (unreleased)
+----------------------------
+
+Bug fixes:
+
+- Lagrangian module: fix particle injection when `n_user_variables` > 1.
+
 Release 7.0.0 (June 15 2021)
 ----------------------------
 
