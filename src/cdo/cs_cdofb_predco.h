@@ -89,8 +89,8 @@ cs_cdofb_predco_get_face_pressure(void     *context);
 
 void
 cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
-                        const cs_cdo_connect_t        *connect,
-                        const cs_time_step_t          *time_step);
+                            const cs_cdo_connect_t        *connect,
+                            const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -99,7 +99,7 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
  * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in] adv_field   pointer to \ref cs_adv_field_t structure
  * \param[in] mflux       current values of the mass flux across primal faces
- * \param[in] mflux_pre   current values of the mass flux across primal faces
+ * \param[in] mflux_pre   previous values of the mass flux across primal faces
  * \param[in] fb_type     type of boundary for each boundary face
  * \param[in] nsc_input   pointer to a \ref cs_navsto_predco_t structure
  *
@@ -141,7 +141,7 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context);
 
 void
 cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
-                     void                       *context);
+                         void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,24 +156,8 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
 
 void
 cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
-                             const cs_navsto_param_t      *nsp,
-                             void                         *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a Artificial Compressibility approach and a theta time scheme
- *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_predco_compute_theta(const cs_mesh_t              *mesh,
-                          const cs_navsto_param_t      *nsp,
-                          void                         *scheme_context);
+                                 const cs_navsto_param_t      *nsp,
+                                 void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 
