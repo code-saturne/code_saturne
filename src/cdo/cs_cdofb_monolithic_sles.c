@@ -3384,8 +3384,9 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                        CS_REAL_TYPE, 1, /* type and stride */
                        b, b);
 
-  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
-                        CS_CDOFB_MONOLITHIC_DBG,
+  cs_dbg_fprintf_system(eqp->name,
+                        -1,
+                        CS_CDOFB_MONOLITHIC_SLES_DBG,
                         xsol, b, 3*n_faces);
 #endif
 
