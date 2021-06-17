@@ -120,9 +120,9 @@ double precision smagma, smagmi, smagmy
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10, w0
+double precision, allocatable, dimension(:) :: s_n, sf_n
+double precision, allocatable, dimension(:) :: w0, xrof, xro
 double precision, allocatable, dimension(:,:) :: xmij, w61, w62
-double precision, dimension(:,:,:), allocatable :: gradvf
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
@@ -162,23 +162,33 @@ xsmgmn = smagmn
 
 allocate(w0(ncelet), w1(ncelet))
 allocate(xmij(6,ncelet))
+allocate(xro(ncelet), xrof(ncelet))
 
+! Take into account variable density case: Favre filtering
+! Constant density case: Reynolds filtering
+if(irovar.eq.1) then
+  do iel = 1, ncel
+    xro(iel) = crom(iel)
+  enddo
+else
+  xro(:) = 1.d0
+endif
+
+! In case of constant density, xrof always 1.d0
+call les_filter(1, xro, xrof)
 !===============================================================================
 ! 2.  Calculation of velocity gradient and of
 !       S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradvf(3,3,ncelet))
+allocate(s_n(ncelet), sf_n(ncelet))
+allocate(w61(6,ncelet), w62(6,ncelet))
 
 inc = 1
 iprev = 0
 
 call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
-
-! Filter the velocity gradient on the extended neighborhood
-
-call les_filter(9, gradv, gradvf)
 
 do iel = 1, ncel
 
@@ -193,43 +203,39 @@ do iel = 1, ncel
   dwdx  = gradv(1, 3, iel)
   dwdy  = gradv(2, 3, iel)
 
-  s11f  = gradvf(1, 1, iel)
-  s22f  = gradvf(2, 2, iel)
-  s33f  = gradvf(3, 3, iel)
-  dudyf = gradvf(2, 1, iel)
-  dudzf = gradvf(3, 1, iel)
-  dvdxf = gradvf(1, 2, iel)
-  dvdzf = gradvf(3, 2, iel)
-  dwdxf = gradvf(1, 3, iel)
-  dwdyf = gradvf(2, 3, iel)
 
-  xmij(1,iel) = s11
-  xmij(2,iel) = s22
-  xmij(3,iel) = s33
+
+! In the case of constant density, s11+s22+s33 is zero
+  xmij(1,iel) = s11 - irovar*1.0d0/3.0d0*(s11+s22+s33)
+  xmij(2,iel) = s22 - irovar*1.0d0/3.0d0*(s11+s22+s33)
+  xmij(3,iel) = s33 - irovar*1.0d0/3.0d0*(s11+s22+s33)
   xmij(4,iel) = 0.5d0*(dudy+dvdx)
   xmij(5,iel) = 0.5d0*(dudz+dwdx)
   xmij(6,iel) = 0.5d0*(dvdz+dwdy)
 
-  visct(iel) = radeux*sqrt(                                       &
-                       s11**2 + s22**2 + s33**2                   &
-                     + 0.5d0*( (dudy+dvdx)**2                     &
-                             + (dudz+dwdx)**2                     &
-                             + (dvdz+dwdy)**2 )  )
-
-  w1(iel) = radeux*sqrt(                                          &
-                       s11f**2 + s22f**2 + s33f**2                &
-                     + 0.5d0*( (dudyf+dvdxf)**2                   &
-                             + (dudzf+dwdxf)**2                   &
-                             + (dvdzf+dwdyf)**2 )  )
+  s_n(iel) = radeux*sqrt(                                      &
+             xmij(1,iel)**2 + xmij(2,iel)**2 + xmij(3,iel)**2  &
+           + 2.d0*(xmij(4,iel)**2 + xmij(5,iel)**2             &
+           + xmij(6,iel)**2) )
+  w62(:,iel) = xro(iel)*xmij(:,iel)
 enddo
 
-! Free memory
-deallocate(gradvf)
+! w62 temperarily contains rho*S
+call les_filter(6, w62, w61)
+
+! w61 <rho*S>/<rho>, sf_n is ||<rho*S>/<rho>||
+do iel = 1, ncel
+  w61(:,iel) = w61(:,iel)/xrof(iel)
+  sf_n(iel) = radeux*sqrt(                                      &
+              w61(1,iel)**2 + w61(2,iel)**2 + w61(3,iel)**2     &
+            + 2.d0*(w61(4,iel)**2 + w61(5,iel)**2               &
+            + w61(6,iel)**2) )
+enddo
 
 !     Here XMIJ contains Sij
-!         VISCT contains ||S||
+!         S_n contains ||S||
 !            sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
-!         W1                 contains ||SF||
+!         Sf_n               contains ||SF||
 !            sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2))
 
 !===============================================================================
@@ -240,19 +246,16 @@ do iel = 1, ncel
   w0(iel) = xfil *(xa*volume(iel))**xb
 enddo
 
-allocate(w61(6,ncelet), w62(6,ncelet))
-
-call les_filter(6, xmij, w61)
-
 ! Reuse xmij as temporary array
 
 do iel = 1, ncel
   delta = w0(iel)
   do ii = 1, 6
-    xmij(ii,iel) = -deux*delta**2*visct(iel)*xmij(ii,iel)
+    xmij(ii,iel) = -deux*xro(iel)*delta**2*s_n(iel)*xmij(ii,iel)
   enddo
 enddo
 
+! w62 now contains <-2*rho*delta**2*||S||*S>
 call les_filter(6, xmij, w62)
 
 ! Now compute final xmij value: M_ij = alpha_ij - beta_ij
@@ -261,7 +264,7 @@ do iel = 1, ncel
   delta = w0(iel)
   deltaf = xfil2*delta
   do ii = 1, 6
-    xmij(ii,iel) = -deux*deltaf**2*w1(iel)*w61(ii,iel) - w62(ii,iel)
+    xmij(ii,iel) = -deux*xrof(iel)*deltaf**2*sf_n(iel)*w61(ii,iel) - w62(ii,iel)
   enddo
 enddo
 
@@ -274,73 +277,82 @@ deallocate(w61, w62)
 ! Allocate work arrays
 allocate(w2(ncelet), w3(ncelet), w4(ncelet))
 allocate(w5(ncelet), w6(ncelet), w7(ncelet))
-allocate(w8(ncelet), w9(ncelet), w10(ncelet))
+allocate(w8(ncelet), w9(ncelet))
 
 ! Filtering the velocity and its square
 
 ! U**2
 do iel = 1,ncel
-  w0(iel) = vel(1,iel)*vel(1,iel)
+  w0(iel) = xro(iel)*vel(1,iel)*vel(1,iel)
 enddo
 call les_filter(1, w0, w1)
 
 ! V**2
 do iel = 1,ncel
-  w0(iel) = vel(2,iel)*vel(2,iel)
+  w0(iel) = xro(iel)*vel(2,iel)*vel(2,iel)
 enddo
 call les_filter(1, w0, w2)
 
 ! W**2
 do iel = 1,ncel
-  w0(iel) = vel(3,iel)*vel(3,iel)
+  w0(iel) = xro(iel)*vel(3,iel)*vel(3,iel)
 enddo
 call les_filter(1, w0, w3)
 
 ! UV
 do iel = 1,ncel
-  w0(iel) = vel(1,iel)*vel(2,iel)
+  w0(iel) = xro(iel)*vel(1,iel)*vel(2,iel)
 enddo
 call les_filter(1, w0, w4)
 
 ! UW
 do iel = 1,ncel
-  w0(iel) = vel(1,iel)*vel(3,iel)
+  w0(iel) = xro(iel)*vel(1,iel)*vel(3,iel)
 enddo
 call les_filter(1, w0, w5)
 
 ! VW
 do iel = 1,ncel
-  w0(iel) = vel(2,iel)*vel(3,iel)
+  w0(iel) = xro(iel)*vel(2,iel)*vel(3,iel)
 enddo
 call les_filter(1, w0, w6)
 
 ! U
 do iel = 1,ncel
-  w0(iel) = vel(1,iel)
+  w0(iel) = xro(iel)*vel(1,iel)
 enddo
 call les_filter(1, w0, w7)
+do iel = 1, ncel
+  w7(iel) = w7(iel)/xrof(iel)
+enddo
 
 ! V
 do iel = 1,ncel
-  w0(iel) = vel(2,iel)
+  w0(iel) = xro(iel)*vel(2,iel)
 enddo
 call les_filter(1, w0, w8)
+do iel = 1, ncel
+  w8(iel) = w8(iel)/xrof(iel)
+enddo
 
 ! W
 do iel = 1,ncel
-  w0(iel) = vel(3,iel)
+  w0(iel) = xro(iel)*vel(3,iel)
 enddo
 call les_filter(1, w0, w9)
+do iel = 1, ncel
+  w9(iel) = w9(iel)/xrof(iel)
+enddo
 
 do iel = 1, ncel
 
   ! Calculation of Lij
-  xl11 = w1(iel) - w7(iel) * w7(iel)
-  xl22 = w2(iel) - w8(iel) * w8(iel)
-  xl33 = w3(iel) - w9(iel) * w9(iel)
-  xl12 = w4(iel) - w7(iel) * w8(iel)
-  xl13 = w5(iel) - w7(iel) * w9(iel)
-  xl23 = w6(iel) - w8(iel) * w9(iel)
+  xl11 = w1(iel) - xrof(iel) * w7(iel) * w7(iel)
+  xl22 = w2(iel) - xrof(iel) * w8(iel) * w8(iel)
+  xl33 = w3(iel) - xrof(iel) * w9(iel) * w9(iel)
+  xl12 = w4(iel) - xrof(iel) * w7(iel) * w8(iel)
+  xl13 = w5(iel) - xrof(iel) * w7(iel) * w9(iel)
+  xl23 = w6(iel) - xrof(iel) * w8(iel) * w9(iel)
 
   xm11 = xmij(1,iel)
   xm22 = xmij(2,iel)
@@ -409,7 +421,7 @@ enddo
 do iel = 1, ncel
   coef = cpro_smago(iel)
   delta  = xfil * (xa*volume(iel))**xb
-  visct(iel) = crom(iel) * coef * delta**2 * visct(iel)
+  visct(iel) = crom(iel) * coef * delta**2 * s_n(iel)
 enddo
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
@@ -440,10 +452,12 @@ if (vcopt%iwarni.ge.1) then
 endif
 
 ! Free memory
-deallocate(w10, w9, w8)
+deallocate(s_n, sf_n)
+deallocate(w9, w8)
 deallocate(w7, w6, w5)
 deallocate(w4, w3, w2)
 deallocate(w1, w0)
+deallocate(xro, xrof)
 
 !----
 ! Formats
