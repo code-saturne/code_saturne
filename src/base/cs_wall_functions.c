@@ -579,7 +579,7 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
   default:
     /* TODO Monin Obukhov or Louis atmospheric wall function
      * must be adapted to smooth wall functions.
-     * Arpaci and Larsen walll functions are put as in previous versions of
+     * Arpaci and Larsen wall functions are put as in previous versions of
      * Code_Saturne.
      * */
     cs_wall_functions_s_arpaci_larsen(l_visc,

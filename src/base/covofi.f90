@@ -505,8 +505,8 @@ if ((ichemistry.ge.1) .and. (isepchemistry.eq.2) .and. (ntcabs.ge.ntinit)) then
   endif
 endif
 
-! Precipitation/dissolution for lagrangian module
-! Calculation of source terms du to precipitation and dissolution phenomena
+! Precipitation/dissolution for Lagrangian module
+! Calculation of source terms due to precipitation and dissolution phenomena
 if (ipreci.eq.1.and.iscal.eq.1) then
   call cs_lagr_precipitation_mass_st(dtref, crom, cvar_var, smbrs)
 endif

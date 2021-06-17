@@ -631,7 +631,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
-! pointers to boundary vaiable values
+! pointers to boundary variable values
 
 call field_get_key_id("boundary_value_id", kbfid)
 
@@ -1012,7 +1012,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
                               )
         enddo
 
-      ! nb: at the first time step, coefa and coefb are unknown, so the walue
+      ! nb: at the first time step, coefa and coefb are unknown, so the value
       !     in i is stored instead of the value in i'
       else
 
@@ -2840,7 +2840,7 @@ if (nscal.ge.1) then
         endif
 
         ! Storage of the thermal exchange coefficient
-        ! (conversion in case of energy or enthaly)
+        ! (conversion in case of energy or enthalpy)
         ! the exchange coefficient is in W/(m2 K)
         ! Useful for thermal coupling or radiative transfer
         if (icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3) then
@@ -2908,7 +2908,7 @@ if (nscal.ge.1) then
           call field_get_coefad_v(f_id,cofarut)
           call field_get_coefbd_v(f_id,cofbrut)
 
-          ! --- Physical Propreties
+          ! --- Physical Properties
           visclc = viscl(iel)
 
           ! --- Geometrical quantities

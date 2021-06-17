@@ -1064,7 +1064,7 @@ do while (iterns.le.nterup)
 
   if (iale.ge.1) then
 
-    ! otherwise it is done in navstv.f90
+    ! Otherwise it is done in navstv.f90
     if (itrale.eq.0) then
 
       call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
