@@ -186,7 +186,7 @@ if (ippmod(idarcy).ge.0) then
     darcy_unsaturated)
 endif
 
-call usphyv(nvar, nscal, mbrom, dt)
+call usphyv(nvar, nscal, mbrom, iterns, dt)
 
 ! C version
 

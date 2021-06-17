@@ -92,12 +92,16 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     mbrom         indicator of filling of romb array
+!> \param[in]     iterns        Navier-Stokes sub-iterations indicator:
+!>                              - if strictly negative, indicate that this
+!>                                function is called outside Navier-Stokes loop
+!>                              - if positive, Navier-Stokes iteration number.
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
-   mbrom  ,                                                       &
+   mbrom  , iterns ,                                              &
    dt     )
 
 !===============================================================================
@@ -129,7 +133,7 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          mbrom
+integer          mbrom  , iterns
 
 double precision dt(ncelet)
 
