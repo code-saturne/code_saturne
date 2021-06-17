@@ -885,10 +885,14 @@ enddo
 if (iscalt.gt.0) then
   call field_get_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
   if (visls_0.lt.-grand) then
+    ! For the temperature, the diffusivity factor is directly the
+    ! thermal conductivity
+    ! lambda = Cp * mu / Pr
+    ! where Pr is the (molecular) Prandtl number
     if (itherm .eq. 1) then
-      visls_0 = viscl0
+      visls_0 = viscl0 * cp0
     else if (itherm .eq. 2) then
-      visls_0 = viscl0 / cp0
+      visls_0 = viscl0
     endif
     call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
   endif
