@@ -98,6 +98,14 @@ double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 
 call field_get_key_id("time_extrapolated", key_t_ext_id)
 
+call field_get_id_try("density_mass", f_id)
+if (f_id.ge.0) &
+  call field_get_val_s(f_id, cpro_rho_mass)
+
+call field_get_id_try("boundary_density_mass", f_id)
+if (f_id.ge.0) &
+  call field_get_val_s(f_id, bpro_rho_mass)
+
 !===============================================================================
 ! 1. At the really beginning of the time step
 !===============================================================================
@@ -139,10 +147,6 @@ if (iappel.eq.1) then
   ! Note that at the begining of the calculation, previous values have been
   ! initialized by inivar
   if (irovar.gt.0) then
-    call field_get_id("density_mass", f_id)
-    call field_get_val_s(f_id, cpro_rho_mass)
-    call field_get_id("boundary_density_mass", f_id)
-    call field_get_val_s(f_id, bpro_rho_mass)
     if (ischtp.eq.2.and.itpcol.eq.1) then
       call field_get_val_s(icrom, crom)
       call field_get_val_prev_s(icrom, croma)
