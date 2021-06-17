@@ -1201,6 +1201,16 @@ class case:
 
         s.write('\n')
 
+        # Handle OpenMP if needed
+
+        n_threads = exec_env.resources.n_threads
+        if self.package_compute.config.features['openmp'] == 'yes' or n_threads:
+            if not n_threads:
+                n_threads = 1
+            cs_exec_environment.write_export_env(s, 'OMP_NUM_THREADS',
+                                                 str(n_threads))
+            s.write('\n')
+
         # Handle rcfile if used
 
         rcfile = cs_exec_environment.get_rcfile(self.package_compute)
@@ -1212,16 +1222,6 @@ class case:
             if rcfile:
                 s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
-
-        # Handle OpenMP if needed
-
-        n_threads = exec_env.resources.n_threads
-        if self.package_compute.config.features['openmp'] == 'yes' or n_threads:
-            if not n_threads:
-                n_threads = 1
-            cs_exec_environment.write_export_env(s, 'OMP_NUM_THREADS',
-                                                 str(n_threads))
-            s.write('\n')
 
         # Boot MPI daemons if necessary
 
