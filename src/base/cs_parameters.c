@@ -912,6 +912,9 @@ cs_parameters_define_field_keys(void)
                              -1.e12*10., CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_diffusivity_id", -1, CS_FIELD_VARIABLE);
 
+  /* Only used for turbulent scalar flux model in LES */
+  cs_field_define_key_int("sgs_scalar_flux_coef_id", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_int("density_id", -1, CS_FIELD_VARIABLE);
 
   /* is the field buoyant? 0 if not, 1 if yes */

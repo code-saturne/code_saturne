@@ -78,6 +78,7 @@ use numvar
 use cstnum
 use optcal
 use cstphy
+use ppincl
 use entsor
 use parall
 use period
@@ -104,9 +105,13 @@ double precision, intent(inout) :: gradv(3,3,ncelet)
 
 ! Local variables
 
-integer          ii, iel, inc
+integer          ii, jj, iel, inc, ivar
 integer          iprev
 integer          iclipc
+integer          iccocg, iclip
+integer          key_turb_diff, key_sgs_sca_coef
+integer          t_dif_id, sca_dync_id
+integer          nswrgp, imligp, iwarnp
 
 double precision coef, radeux, deux, delta, deltaf
 double precision s11, s22, s33, s11f, s22f, s33f
@@ -116,18 +121,22 @@ double precision xfil, xa, xb, xfil2, xsmgmx, xsmgmn
 double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmi, smagmy
+double precision scal1, scal2, scal3
+double precision epsrgp, climgp, extrap
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: s_n, sf_n
 double precision, allocatable, dimension(:) :: w0, xrof, xro
-double precision, allocatable, dimension(:,:) :: xmij, w61, w62
+double precision, allocatable, dimension(:,:) :: grads, scami, scamif
+double precision, allocatable, dimension(:,:) :: xmij, w61, w62, gradsf
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, coefas, coefbs, cvar_sca
+double precision, dimension(:), pointer :: cpro_turb_diff
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: visct, cpro_smago
+double precision, dimension(:), pointer :: visct, cpro_smago, cpro_sca_dync
 
 type(var_cal_opt) :: vcopt
 
@@ -413,10 +422,8 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 3.  Calculation of (dynamic) viscosity
+! 5.  Calculation of (dynamic) viscosity
 !===============================================================================
-
-! Clipping in (mu + mu_t)>0 in phyvar
 
 do iel = 1, ncel
   coef = cpro_smago(iel)
@@ -450,6 +457,155 @@ if (vcopt%iwarni.ge.1) then
   write(nfecra,2003)
 
 endif
+
+!===============================================================================
+! 6.  Scalar turbulent model
+!===============================================================================
+! In case of gaz combustion, the SGS scalar flux constant and the turbulent
+! diffusivity are only evaluated with the mixture fraction, then applied
+! automatically to the other scalar equations
+
+call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
+call field_get_key_id("sgs_scalar_flux_coef_id", key_sgs_sca_coef)
+
+do jj = 1, nscal
+  ivar = isca(jj)
+
+  ! For variance of a scalar, the turbulent diffsivity must not be computed
+  if (iscavr(jj).gt.0) cycle
+
+  ! For any scalar other than the mixture fraction in diffusion flames,
+  ! Dt is not computed either. TODO Soot may be an exception
+  if (ippmod(icod3p).ge.0) then
+    if (jj.ne.ifm)  cycle
+  endif
+
+  call field_get_key_int(ivarfl(ivar), key_turb_diff, t_dif_id)
+  call field_get_key_int(ivarfl(ivar), key_sgs_sca_coef, sca_dync_id)
+
+  if (t_dif_id.ge.0.and.sca_dync_id.ge.0) then
+    call field_get_val_s(t_dif_id, cpro_turb_diff)
+    call field_get_val_s(sca_dync_id, cpro_sca_dync)
+
+    !================================================================
+    ! 6.1.  Compute the Mi for scalar
+    !================================================================
+
+    allocate(grads(3, ncelet))
+    allocate(gradsf(3, ncelet))
+
+    inc = 1
+    iprev = 0
+    call field_get_coefa_s(ivarfl(ivar), coefas)
+    call field_get_coefb_s(ivarfl(ivar), coefbs)
+
+    call field_get_val_s(ivarfl(ivar),cvar_sca)
+    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc, 0, grads)
+
+    ! compute grad (<rho.Y>/<rho>)
+    allocate(scami(3,ncelet))
+    allocate(scamif(3,ncelet))
+
+    do iel = 1, ncel
+      w0(iel) = cvar_sca(iel)*xro(iel)
+    enddo
+    call les_filter(1, w0, w4)
+    do iel = 1, ncel
+      w4(iel) = w4(iel)/xrof(iel)
+    enddo
+
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    inc = 1
+    nswrgp = vcopt%nswrgr
+    epsrgp = vcopt%epsrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
+    iccocg = 1
+
+    call gradient_s                                                   &
+      (-1     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+      iwarnp  , epsrgp , climgp ,                                     &
+      w4      , coefas , coefbs ,                                     &
+      gradsf   )
+
+    do iel = 1, ncel
+      delta  = xfil * (xa*volume(iel))**xb
+      do ii = 1, 3
+        scami(ii,iel) = -xro(iel)*delta**2*s_n(iel)*grads(ii,iel)
+      enddo
+    enddo
+
+    call les_filter(3, scami, scamif)
+    do iel = 1, ncel
+      deltaf = xfil2*xfil * (xa*volume(iel))**xb
+      do ii = 1, 3
+        scami(ii,iel) = -deltaf**2*xrof(iel)*sf_n(iel)*gradsf(ii,iel)  &
+                      - scaMif(ii,iel)
+      enddo
+    enddo
+
+    !================================================================
+    ! 6.2.  Compute the Li for scalar
+    !================================================================
+    ! rho*U*Y
+    do iel = 1, ncel
+      w0(iel) = xro(iel)*vel(1,iel)*cvar_sca(iel)
+    enddo
+    call les_filter(1, w0, w1)
+
+    ! rho*V*Y
+    do iel = 1, ncel
+      w0(iel) = xro(iel)*vel(2,iel)*cvar_sca(iel)
+    enddo
+    call les_filter(1, w0, w2)
+
+    ! rho*W*Y
+    do iel = 1, ncel
+      w0(iel) = xro(iel)*vel(3,iel)*cvar_sca(iel)
+    enddo
+    call les_filter(1, w0, w3)
+
+    do iel = 1, ncel
+      scal1 = w1(iel) - xrof(iel)*w7(iel)*w4(iel)
+      scal2 = w2(iel) - xrof(iel)*w8(iel)*w4(iel)
+      scal3 = w3(iel) - xrof(iel)*w9(iel)*w4(iel)
+
+      w1(iel) = scal1*scami(1,iel) + scal2*scami(2,iel) + scal3*scami(3,iel)
+      w2(iel) = scami(1,iel)**2 + scami(2,iel)**2 + scami(3,iel)**2
+    enddo
+
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(w1)
+      call synsca(w2)
+    endif
+
+    call les_filter(1, w1, w3)
+    call les_filter(1, w2, w4)
+
+    !================================================================
+    ! 6.3.  Compute the SGS flux coefficient and SGS diffusivity
+    !       Cs >= 0, Dt >=0
+    !================================================================
+
+    do iel = 1, ncel
+      if(abs(w4(iel)).le.epzero) then
+        cpro_sca_dync(iel) = 0.d0
+      else
+        cpro_sca_dync(iel) = max(w3(iel)/w4(iel), 0.d0)
+      endif
+
+      delta  = xfil * (xa*volume(iel))**xb
+      cpro_turb_diff(iel) = crom(iel) * cpro_sca_dync(iel) * delta**2 * s_n(iel)
+    enddo
+
+    deallocate(scami, scamif)
+    deallocate(grads, gradsf)
+  endif
+
+enddo
+
 
 ! Free memory
 deallocate(s_n, sf_n)

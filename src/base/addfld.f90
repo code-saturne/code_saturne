@@ -95,7 +95,7 @@ integer          nfld
 integer          n_prev
 integer          t_ext
 integer          kclipp
-integer          key_turb_schmidt, kscavr
+integer          key_turb_schmidt, kscavr, key_turb_diff, key_sgs_sca_coef
 integer          var_f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
@@ -312,6 +312,92 @@ do ii = 1, nscal
     endif
   endif
 enddo
+
+! Add a scalar turbulent diffusivity field
+call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
+
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+  call field_get_key_int(f_id, key_turb_diff, ifcvsl)
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.ge.0 .and. var_f_id.lt.0) then
+    ! Build name and label, using a general rule
+    call field_get_name(f_id, s_name)
+    call field_get_label(f_id, s_label)
+    f_name  = trim(s_name) // '_turb_diffusivity'
+    f_label = trim(s_label) // ' Turb Diff'
+
+    if (ippmod(icod3p).ge.0) then
+      call field_get_key_int(ivarfl(isca(ifm)), key_turb_diff, ifcvsl)
+      if (ii .ne. isca(ifm)) then
+        call field_set_key_int(f_id,  key_turb_diff, ifcvsl)
+        cycle
+      endif
+    endif
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., ifcvsl)
+    call field_set_key_int(ivarfl(ii), key_turb_diff, ifcvsl)
+  endif
+enddo
+
+! For variances, the turbulent diffusivity is that of the associated scalar,
+! and must not be initialized first.
+do ii = 1, nscal
+  if (iscavr(ii).gt.0) then
+    f_id = ivarfl(isca(ii))
+    call field_get_key_int(ivarfl(isca(iscavr(ii))), key_turb_diff, ifcvsl)
+    call field_is_key_set(f_id, key_turb_diff, is_set)
+    if (is_set.eqv..true.) then
+      write(nfecra,7041) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
+    else
+      call field_set_key_int(f_id, key_turb_diff, ifcvsl)
+    endif
+  endif
+enddo
+
+if (iturb.eq.41) then
+  ! Add a subgrid-scale scalar flux coefficient field
+  call field_get_key_id("sgs_scalar_flux_coef_id", key_sgs_sca_coef)
+
+  do ii = 1, nvar
+    f_id = ivarfl(ii)
+    call field_get_key_int(f_id, key_sgs_sca_coef, ifcvsl)
+    call field_get_key_int(f_id, kscavr, var_f_id)
+    if (ifcvsl.ge.0 .and. var_f_id.lt.0) then
+      ! Build name and label, using a general rule
+      call field_get_name(f_id, s_name)
+      call field_get_label(f_id, s_label)
+      f_name  = trim(s_name) // '_sgs_flux_coef'
+      f_label = trim(s_label) // ' SGS Flux Coef'
+
+      if (ippmod(icod3p).ge.0) then
+        call field_get_key_int(ivarfl(isca(ifm)), key_sgs_sca_coef, ifcvsl)
+        if (ii .ne. isca(ifm)) then
+          call field_set_key_int(f_id,  key_sgs_sca_coef, ifcvsl)
+          cycle
+        endif
+      endif
+      ! Now create matching property
+      call add_property_field(f_name, f_label, 1, .false., ifcvsl)
+      call field_set_key_int(ivarfl(ii), key_sgs_sca_coef, ifcvsl)
+    endif
+  enddo
+
+  ! For variances, the subgrid-scale flux is that of the associated scalar,
+  ! and must not be initialized first.
+  do ii = 1, nscal
+    if (iscavr(ii).gt.0) then
+      f_id = ivarfl(isca(ii))
+      call field_get_key_int(ivarfl(isca(iscavr(ii))), key_sgs_sca_coef, ifcvsl)
+      call field_is_key_set(f_id, key_sgs_sca_coef, is_set)
+      if (is_set.eqv..true.) then
+        write(nfecra,7042) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
+      else
+        call field_set_key_int(f_id, key_sgs_sca_coef, ifcvsl)
+      endif
+    endif
+  enddo
+endif
 
 ! Add a scalar density when defined as variable and different from the bulk.
 ! WARNING: it must be consitent with continuity equation, this is used
@@ -826,6 +912,44 @@ call cs_field_pointer_map_boundary
 '@    according to value of keyword first_moment_id'           ,/,&
 '@'                                                            ,/,&
 '@  The diffusivity_id keyword must not be set'                ,/,&
+'@  It will be automatically set equal to that of the'         ,/,&
+'@    associated scalar ',i10                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be executed.'                       ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+ 7041 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  The field ', i10, ' represents the variance'               ,/,&
+'@    of fluctuations of the field ', i10                      ,/,&
+'@    according to value of keyword first_moment_id'           ,/,&
+'@'                                                            ,/,&
+'@  The turbulent_diffusivity_id keyword must not be set'      ,/,&
+'@  It will be automatically set equal to that of the'         ,/,&
+'@    associated scalar ',i10                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be executed.'                       ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+ 7042 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  The field ', i10, ' represents the variance'               ,/,&
+'@    of fluctuations of the field ', i10                      ,/,&
+'@    according to value of keyword first_moment_id'           ,/,&
+'@'                                                            ,/,&
+'@  The sgs_scalar_flux_coef_id keyword must not be set'       ,/,&
 '@  It will be automatically set equal to that of the'         ,/,&
 '@    associated scalar ',i10                                  ,/,&
 '@'                                                            ,/,&
