@@ -56,6 +56,7 @@ implicit none
 
 integer          ii, isc, jj
 double precision turb_schmidt
+double precision visls_0
 
 !===============================================================================
 
@@ -111,7 +112,20 @@ if (ippmod(iatmos).eq.1) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
+      call field_get_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
+      ! If not set elsewhere (user, GUI, ...)
+      if (visls_0.lt.-grand) then
+
+        ! For the temperature, the diffusivity factor is directly the thermal conductivity
+        ! lambda = Cp * mu / Pr
+        ! where Pr is the (molecular) Prandtl number
+        if (itherm .eq. 1.and.jj.eq.iscalt) then
+          visls_0 = viscl0 * cp0
+        else
+          visls_0 = viscl0
+        endif
+        call field_set_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
+      endif
     endif
 
   enddo

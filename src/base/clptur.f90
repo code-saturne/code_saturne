@@ -623,7 +623,7 @@ allocate(byplus(nfabor))
 allocate(bdplus(nfabor))
 allocate(buk(nfabor))
 
-!Anas : Adaptation pour l'atmospherique
+! Correction for atmospheric wall functions
 call field_get_id_try("non_neutral_scalar_correction", f_id)
 if (f_id.ge.0) then
   call field_get_val_s(f_id, bcfnns)
@@ -1906,7 +1906,7 @@ do ifac = 1, nfabor
     bdplus(ifac) = dplus
     buk(ifac) = uk
     ustar(ifac) = uet
-    bcfnns(ifac) = cfnns
+    bcfnns(ifac) = 1.d0 ! FIXME note taken into account yet in hturbp cfnns
 
   endif
   ! Test on the presence of a smooth wall (End)
@@ -2456,11 +2456,12 @@ if (iirayo.ge.1 .and. iscal.eq.iscalt) then
   call field_get_val_s_by_name("rad_exchange_coefficient", bhconv)
 endif
 
+! FIXME not really the BC value
 if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_int(f_id, kbfid, b_f_id)
 
-! if thermal variable has no boundary but temperature does, use it
+! If thermal variable has no boundary but temperature does, use it
 if (b_f_id .lt. 0 .and. iscal.eq.iscalt .and. itherm.eq.2) then
   b_f_id = itempb
 endif

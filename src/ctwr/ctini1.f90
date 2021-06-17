@@ -66,6 +66,7 @@ implicit none
 ! Local variables
 
 integer jj, isc
+double precision visls_0
 
 type(var_cal_opt) :: vcopt
 
@@ -84,7 +85,20 @@ do isc = 1, nscapp
 
   ! iscavr = 0 for scalars which are not mean square errors of other scalars
   if (iscavr(jj).le.0) then
-    call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
+    call field_get_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
+    ! If not set elsewhere (user, GUI, ...)
+    if (visls_0.lt.-grand) then
+
+      ! For the temperature, the diffusivity factor is directly the thermal conductivity
+      ! lambda = Cp * mu / Pr
+      ! where Pr is the (molecular) Prandtl number
+      if (itherm .eq. 1.and.jj.eq.iscalt) then
+        visls_0 = viscl0 * cp0
+      else
+        visls_0 = viscl0
+      endif
+      call field_set_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
+    endif
   endif
 
   call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)

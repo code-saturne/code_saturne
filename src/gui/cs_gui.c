@@ -2357,7 +2357,8 @@ void CS_PROCF (cssca3, CSSCA3) (void)
 
     double visls_0 = fprops->lambda0;
 
-    /* for the Temperature, the diffusivity factor is not divided by Cp */
+    /* for the Temperature, the diffusivity factor is not divided by Cp
+     * i.e. it remains lambda */
     if (itherm != CS_THERMAL_MODEL_TEMPERATURE)
       visls_0 /= cs_glob_fluid_properties->cp0;
 
