@@ -1055,7 +1055,7 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
     1. Initializations
     ==========================================================================*/
 
-  (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
+  (*htur) = prl * CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
 
   prlm1 = 0.1;
 
