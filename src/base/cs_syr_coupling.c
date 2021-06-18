@@ -1140,9 +1140,9 @@ cs_syr_coupling_volume_source_terms(int        field_id,
     if (! cs_syr4_coupling_is_vol(syr_coupling))  /* ignore if surface-only */
       continue;
 
-    cs_lnum_t n_cpl_cells = cs_syr4_coupling_get_n_elts(syr_coupling, 1);
-
     /* Get list of coupled cells */
+
+    cs_lnum_t n_cpl_cells = cs_syr4_coupling_get_n_elts(syr_coupling, 1);
 
     cs_lnum_t  *c_ids;
     cs_real_t *t_fluid, *ctbimp, *ctbexp;
@@ -1153,15 +1153,15 @@ cs_syr_coupling_volume_source_terms(int        field_id,
 
     cs_syr4_coupling_get_elt_ids(syr_coupling, c_ids, 1);
 
-    /* Loop on coupled cells to initialize arrays */
+    /* Compute implicit and explicit contribution to source terms */
 
     const cs_real_t *cvara_vart = (const cs_real_t *)f->vals[1];
 
     for (cs_lnum_t i = 0; i < n_cpl_cells; i++) {
       t_fluid[i] = cvara_vart[c_ids[i]];
-      ctbimp[i] = 0.;
-      ctbexp[i] = 0.;
     }
+
+    cs_syr4_coupling_ts_contrib(syr_coupling, t_fluid, ctbimp, ctbexp);
 
     /* Loop on coupled cells to compute crvexp and crvimp */
 
