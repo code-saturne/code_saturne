@@ -1205,7 +1205,7 @@ cs_equation_add(const char            *eqname,
   BFT_MALLOC(eq->varname, len, char);
   strncpy(eq->varname, varname, len);
 
-  eq->param = cs_equation_create_param(eqname, eqtype, dim, default_bc);
+  eq->param = cs_equation_param_create(eqname, eqtype, dim, default_bc);
 
   eq->field_id = -1;           /* This field is created in a second step */
   eq->boundary_flux_id = -1;   /* Not always defined (done in a second step) */
