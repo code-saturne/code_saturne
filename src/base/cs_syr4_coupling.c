@@ -1952,8 +1952,8 @@ cs_syr4_coupling_ts_contrib(const cs_syr4_coupling_t  *syr_coupling,
   hvol = ent->hvol;
   solid_temp = ent->solid_temp;
 
-  assert(hvol != NULL);
-  assert(solid_temp != NULL);
+  assert(hvol != NULL || ent->n_elts == 0);
+  assert(solid_temp != NULL || ent->n_elts == 0);
 
   /* Compute contribution */
 

@@ -3,6 +3,8 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix temperature source term for Syrthes volume coupling.
+
 - Lagrangian module: fix particle injection when `n_user_variables` > 1.
 
 Release 7.0.0 (June 15 2021)
