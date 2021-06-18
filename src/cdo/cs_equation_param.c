@@ -796,9 +796,10 @@ cs_equation_param_create(const char            *name,
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
   /* Store the name of the equation */
-  int  len = strlen(name)+1;
-  BFT_MALLOC(eqp->name, len, char);
+  size_t  len = strlen(name);
+  BFT_MALLOC(eqp->name, len + 1, char);
   strncpy(eqp->name, name, len);
+  eqp->name[len] = '\0';
 
   /* Set additional members */
   eqp->type = type;

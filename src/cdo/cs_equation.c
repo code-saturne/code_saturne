@@ -1201,9 +1201,10 @@ cs_equation_add(const char            *eqname,
   eq->id = eq_id;
 
   /* Store varname */
-  int  len = strlen(varname)+1;
-  BFT_MALLOC(eq->varname, len, char);
+  size_t  len = strlen(varname);
+  BFT_MALLOC(eq->varname, len + 1, char);
   strncpy(eq->varname, varname, len);
+  eq->varname[len] = '\0';
 
   eq->param = cs_equation_param_create(eqname, eqtype, dim, default_bc);
 

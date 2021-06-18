@@ -109,9 +109,10 @@ _get_name(const char   *name,
     sprintf(n, "%s_%2d", base_name, id);
   }
   else {  /* Copy name */
-    int  len = strlen(name) + 1;
-    BFT_MALLOC(n, len, char);
+    size_t  len = strlen(name);
+    BFT_MALLOC(n, len + 1, char);
     strncpy(n, name, len);
+    n[len] = '\0';
   }
 
   return n;

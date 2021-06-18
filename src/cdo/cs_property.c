@@ -656,9 +656,10 @@ _create_property(const char           *name,
   BFT_MALLOC(pty, 1, cs_property_t);
 
   /* Copy name */
-  int  len = strlen(name) + 1;
-  BFT_MALLOC(pty->name, len, char);
+  size_t  len = strlen(name);
+  BFT_MALLOC(pty->name, len + 1, char);
   strncpy(pty->name, name, len);
+  pty->name[len] = '\0';
 
   pty->id = id;
   pty->type = type;

@@ -1407,9 +1407,10 @@ cs_param_sles_create(int          field_id,
 
   slesp->name = NULL;
   if (system_name != NULL) {
-    int  len = strlen(system_name) + 1;
-    BFT_MALLOC(slesp->name, len, char);
+    size_t  len = strlen(system_name);
+    BFT_MALLOC(slesp->name, len + 1, char);
     strncpy(slesp->name, system_name, len);
+    slesp->name[len] = '\0';
   }
 
   return slesp;

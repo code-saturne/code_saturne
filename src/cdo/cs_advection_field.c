@@ -498,9 +498,10 @@ cs_advection_field_add(const char                    *name,
   BFT_MALLOC(adv, 1, cs_adv_field_t);
 
   /* Copy name */
-  int  len = strlen(name) + 1;
-  BFT_MALLOC(adv->name, len, char);
+  size_t  len = strlen(name);
+  BFT_MALLOC(adv->name, len + 1, char);
   strncpy(adv->name, name, len);
+  adv->name[len] = '\0';
 
   adv->id = new_id;
   adv->status = status;
