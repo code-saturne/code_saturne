@@ -298,6 +298,9 @@ typedef struct {
 
 typedef struct {
 
+  /* Alloy features */
+  /* -------------- */
+
   /* Parameters for the Boussinesq approximation in the momentum equation
    * related to solute concentration:
    * solutal dilatation/expansion coefficient and the reference mixture
@@ -314,11 +317,18 @@ typedef struct {
   /* Phase diagram features for an alloy with the component A and B */
   /* -------------------------------------------------------------- */
 
-  /* Temperature of phase change for the pure material (conc = 0) */
-  cs_real_t    t_melt;
-
   /* Secondary dendrite arm spacing */
   cs_real_t    s_das;
+
+  /* Physical parameters */
+  cs_real_t    kp;       /* distribution coefficient */
+  cs_real_t    inv_kp;   /* reciprocal of kp */
+  cs_real_t    inv_kpm1; /* 1/(kp - 1) */
+  cs_real_t    ml;       /* Liquidus slope \frac{\partial g_l}{\partial C} */
+  cs_real_t    inv_ml;   /* reciprocal of ml */
+
+  /* Temperature of phase change for the pure material (conc = 0) */
+  cs_real_t    t_melt;
 
   /* Eutectic point: temperature and concentration */
   cs_real_t    t_eut;
@@ -329,21 +339,19 @@ typedef struct {
   cs_real_t    cs1;
   cs_real_t    dgldC_eut;
 
-  /* Physical parameters */
-  cs_real_t    kp;       /* distribution coefficient */
-  cs_real_t    inv_kp;   /* reciprocal of kp */
-  cs_real_t    inv_kpm1; /* 1/(kp - 1) */
-  cs_real_t    ml;       /* Liquidus slope \frac{\partial g_l}{\partial C} */
-  cs_real_t    inv_ml;   /* reciprocal of ml */
+  /* The variable related to this equation in the solute concentration of
+   * the mixture: c_bulk (c_s in the solid phase and c_l in the liquid phase)
+   * c_bulk = gs*c_s + gl*c_l where gs + gl = 1
+   * gl is the liquid fraction and gs the solid fraction
+   * c_s = kp * c_l (lever rule is assumed up to now)
+   *
+   * --> c_bulk = (gs*kp + gl)*c_l
+   */
 
-  /* Function to update the velocity forcing in the momentum equation */
-  cs_solidification_func_t     *update_velocity_forcing;
+  cs_solidification_strategy_t  strategy;
 
   /* Function to update the liquid fraction */
   cs_solidification_func_t     *update_gl;
-
-  /* Function to update c_l in each cell */
-  cs_solidification_func_t     *update_clc;
 
   /* Function to update the source term for the thermal equation */
   cs_solidification_func_t     *update_thm_st;
@@ -353,20 +361,11 @@ typedef struct {
      is needed inside */
   cs_solidification_func_t     *thermosolutal_coupling;
 
-  /* Alloy features */
-  /* -------------- */
+  /* Function to update the velocity forcing in the momentum equation */
+  cs_solidification_func_t     *update_velocity_forcing;
 
-  cs_equation_t     *solute_equation;
-  cs_field_t        *c_bulk;
-
-  /* The variable related to this equation in the solute concentration of
-   * the mixture: c_bulk (c_s in the solid phase and c_l in the liquid phase)
-   * c_bulk = gs*c_s + gl*c_l where gs + gl = 1
-   * gl is the liquid fraction and gs the solid fraction
-   * c_s = kp * c_l (lever rule is assumed up to now)
-   *
-   * --> c_bulk = (gs*kp + gl)*c_l
-   */
+  /* Function to update c_l in each cell */
+  cs_solidification_func_t     *update_clc;
 
   /* Drive the convergence of the coupled system (solute transport and thermal
    * equation) with respect to the following criteria (taken from Voller and
@@ -387,7 +386,6 @@ typedef struct {
   double                           delta_tolerance;
   double                           eta_relax;
   double                           gliq_relax;
-  cs_solidification_strategy_t     strategy;
 
   /* During the non-linear iteration process one needs:
    *  temp_{n}         --> stored in field->val_pre
@@ -413,6 +411,11 @@ typedef struct {
 
   /* Temperature values at faces (this is not owned by the structure) */
   const cs_real_t   *temp_faces;
+
+  /* Equation for the solute transport and related quantities */
+
+  cs_equation_t     *solute_equation;
+  cs_field_t        *c_bulk;
 
   /* Diffusion coefficient for the solute in the liquid phase
    * diff_pty_val = rho * g_l * diff_coef */

@@ -2428,36 +2428,38 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
-    cs_solidification_binary_alloy_t  *alloy = NULL;
-    BFT_MALLOC(alloy, 1, cs_solidification_binary_alloy_t);
+    BFT_MALLOC(solid->model_context, 1, cs_solidification_binary_alloy_t);
+    cs_solidification_binary_alloy_t
+      *alloy = (cs_solidification_binary_alloy_t *)solid->model_context;
 
     /* Initialize pointers */
-    alloy->update_velocity_forcing = NULL;
+    alloy->strategy = CS_SOLIDIFICATION_N_STRATEGIES;
     alloy->update_gl = NULL;
-    alloy->update_clc = NULL;
     alloy->update_thm_st = NULL;
     alloy->thermosolutal_coupling = NULL;
+    alloy->update_velocity_forcing = NULL;
+    alloy->update_clc = NULL;
+
+    alloy->tk_bulk = NULL;
+    alloy->ck_bulk = NULL;
+    alloy->tx_bulk = NULL;
+    alloy->cx_bulk = NULL;
+
+    alloy->c_l_cells = NULL;
+    alloy->c_l_faces = NULL;
 
     alloy->solute_equation = NULL;
+    alloy->c_bulk = NULL;
+
     alloy->diff_pty = NULL;
     alloy->diff_pty_array = NULL;
     alloy->eta_coef_pty = NULL;
     alloy->eta_coef_array = NULL;
 
-    alloy->c_bulk = NULL;
-    alloy->tk_bulk = NULL;
-    alloy->ck_bulk = NULL;
-    alloy->tx_bulk = NULL;
-    alloy->cx_bulk = NULL;
-    alloy->c_l_cells = NULL;
-    alloy->c_l_faces = NULL;
-
     alloy->t_liquidus = NULL;
     alloy->tbulk_minus_tliq = NULL;
     alloy->cliq_minus_cbulk = NULL;
 
-    /* Set the context */
-    solid->model_context = (void *)alloy;
   }
 
   /* Set the global pointer */
@@ -2584,20 +2586,86 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
   solid->forcing_coef = 180./(s_das*s_das);
 
+  /* Retrieve and set the binary alloy structures */
   cs_solidification_binary_alloy_t
     *alloy = (cs_solidification_binary_alloy_t *)solid->model_context;
   assert(alloy != NULL);
 
-  alloy->solute_equation = cs_equation_add(name, varname,
-                                           CS_EQUATION_TYPE_SOLIDIFICATION,
-                                           1,
-                                           CS_PARAM_BC_HMG_NEUMANN);
+  /* Set the main physical parameters/constants */
+  alloy->dilatation_coef = beta;
+  alloy->ref_concentration = conc0;
+  alloy->latent_heat = latent_heat;
+  alloy->s_das = s_das;
 
-  alloy->c_bulk = NULL;  /* Variable field related to this equation. This will
-                            be set later (after the equation initialization) */
+  /* Phase diagram parameters and related quantities */
+  alloy->kp = kp;
+  alloy->inv_kp = 1./kp;
+  alloy->inv_kpm1 = 1./(alloy->kp - 1.);
+  alloy->ml = mliq;
+  alloy->inv_ml = 1./mliq;
+
+  /* Temperature and concentration parameters */
+  alloy->t_melt = t_melt;
+
+  /* Define a small range of temperature around the eutectic temperature
+   * in which one assumes an eutectic transformation */
+  alloy->t_eut = t_eutec;
+  alloy->t_eut_inf =
+    alloy->t_eut - cs_solidification_eutectic_threshold;
+  alloy->t_eut_sup =
+    alloy->t_eut + cs_solidification_eutectic_threshold;
+
+  /* Derived parameters for the phase diagram */
+  alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
+  alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
+  alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
+
+  /* Strategy to perform the main steps of the simulation of a binary alloy
+   * Default strategy: Taylor which corresponds to the Legacy one with
+   * improvements thanks to some Taylor expansions */
+  alloy->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
+
+  /* Functions which are specific to a strategy */
+  alloy->update_gl = _update_gl_taylor;
+  alloy->update_thm_st = _update_thm_taylor;
+
+  /* Functions which are common to all strategies */
+  alloy->thermosolutal_coupling = _default_binary_coupling;
+  alloy->update_velocity_forcing = _update_velocity_forcing;
+  alloy->update_clc = _update_clc;
+
+  /* Monitoring and criteria to drive the convergence of the coupled system
+     (solute transport and thermal equation) */
+
+  alloy->iter = 0;
+  alloy->n_iter_max = 5;
+  alloy->delta_tolerance = 1e-3;
+  alloy->gliq_relax = 0.;
+  alloy->eta_relax = 0.;
+
+  /* Additional arrays needed during the iteration process to handle the
+     non-linearities */
+
+  alloy->tk_bulk = NULL;
+  alloy->ck_bulk = NULL;
+  alloy->tx_bulk = NULL;
+  alloy->cx_bulk = NULL;
+
+  /* Solute concentration in the liquid phase */
+
+  alloy->c_l_cells = NULL;
+  alloy->c_l_faces = NULL;
+
+  /* alloy->temp_faces is shared and set when defined */
+
+  /* Alloy equation and variable field */
+  cs_equation_t  *eq = cs_equation_add(name, varname,
+                                       CS_EQUATION_TYPE_SOLIDIFICATION,
+                                       1,
+                                       CS_PARAM_BC_HMG_NEUMANN);
 
   /* Set an upwind scheme by default since it could be a pure advection eq. */
-  cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   /* Set the default numerical options that should be used */
   cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
@@ -2606,16 +2674,9 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
   cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, "conservative");
 
-  alloy->c_l_cells = NULL;
-  alloy->c_l_faces = NULL;
-  alloy->temp_faces = NULL;
-
-  /* Set the main physical parameters */
-  alloy->dilatation_coef = beta;
-  alloy->ref_concentration = conc0;
-
-  alloy->eta_coef_array = NULL;
-  alloy->eta_coef_pty = NULL;
+  alloy->solute_equation = eq;
+  alloy->c_bulk = NULL;  /* Variable field related to this equation. This will
+                            be set later (after the equation initialization) */
 
   /* Always add a diffusion term (to avoid a zero block face-face when there
      is no more convection */
@@ -2625,63 +2686,25 @@ cs_solidification_set_binary_alloy_model(const char     *name,
     alloy->diff_coef = cs_solidification_diffusion_eps;
 
   char  *pty_name = NULL;
-  int  len = strlen(varname) + strlen("_diff_pty") + 1;
-  BFT_MALLOC(pty_name, len, char);
+  size_t  len = strlen(varname) + strlen("_diff_pty");
+  BFT_MALLOC(pty_name, len + 1, char);
   sprintf(pty_name, "%s_diff_pty", varname);
+  pty_name[len] = '\0';
   alloy->diff_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
   BFT_FREE(pty_name);
 
   cs_equation_add_diffusion(eqp, alloy->diff_pty);
 
-  alloy->tk_bulk = NULL;
-  alloy->ck_bulk = NULL;
-  alloy->tx_bulk = NULL;
-  alloy->cx_bulk = NULL;
+  alloy->diff_pty_array = NULL;
 
-  /* Physical constants */
-  alloy->latent_heat = latent_heat;
-  alloy->s_das = s_das;
+  /* eta_coef is activated with advanced options */
+  alloy->eta_coef_pty = NULL;
+  alloy->eta_coef_array = NULL;
 
-  /* Phase diagram parameters */
-  alloy->kp = kp;
-  alloy->ml = mliq;
-  alloy->t_eut = t_eutec;
-  alloy->t_melt = t_melt;
-
-  /* Derived parameters for the phase diagram */
-  alloy->inv_kp = 1./kp;
-  alloy->inv_kpm1 = 1./(alloy->kp - 1.);
-  alloy->inv_ml = 1./mliq;
-  alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
-  alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
-  alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
-
-  /* Define a small range of temperature around the eutectic temperature
-   * in which one assumes an eutectic transformation */
-  alloy->t_eut_inf =
-    alloy->t_eut - cs_solidification_eutectic_threshold;
-  alloy->t_eut_sup =
-    alloy->t_eut + cs_solidification_eutectic_threshold;
-
-  /* Numerical parameters (default values) and set function pointers
-     accordingly to update properties/variables */
-  alloy->iter = 0;
-  alloy->n_iter_max = 5;
-  alloy->delta_tolerance = 1e-3;
-  alloy->gliq_relax = 0.;
-  alloy->eta_relax = 0.;
-
-  /* Default strategy: Legacy improvement with some Taylor expansions */
-  alloy->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
-
-  /* Functions which are common to all strategies */
-  alloy->thermosolutal_coupling = _default_binary_coupling;
-  alloy->update_velocity_forcing = _update_velocity_forcing;
-  alloy->update_clc = _update_clc;
-
-  /* Functions which are specific to a strategy */
-  alloy->update_gl = _update_gl_taylor;
-  alloy->update_thm_st = _update_thm_taylor;
+  /* Optional post-processing arrays */
+  alloy->t_liquidus = NULL;
+  alloy->tbulk_minus_tliq = NULL;
+  alloy->cliq_minus_cbulk = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
