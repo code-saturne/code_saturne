@@ -1237,7 +1237,7 @@ do ifac = 1, nfabor
   ! convective boundary conditions
   !-------------------------------
 
-  elseif (icodcl(ifac,iu).eq.2) then
+  elseif (icodcl(ifac,iu).eq.2 .and. iterns.le.1) then
 
     ! coupled solving of the velocity components
 
@@ -2786,7 +2786,7 @@ if (nscal.ge.1) then
         ! Convective Boundary Conditions
         !-------------------------------
 
-        elseif (icodcl(ifac,ivar).eq.2) then
+        elseif (icodcl(ifac,ivar).eq.2 .and. iterns.le.1) then
 
           pimp = rcodcl(ifac,ivar,1)
           cfl = rcodcl(ifac,ivar,2)
