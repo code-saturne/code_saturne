@@ -641,7 +641,11 @@ else if (idilat.eq.0) then
 
 else
   do iel = 1, ncel
-    drom = (crom(iel)-ro0)
+    if (ischtp.eq.2 .and. itpcol.eq.1) then
+      drom = (3.d0/2.d0*croma(iel) - 1.d0/2.d0*cromaa(iel) - ro0)
+    else
+      drom = (crom(iel)-ro0)
+    endif
     trav(1,iel) = trav(1,iel)+(drom*gx - cpro_gradp(1,iel) ) * cell_f_vol(iel)
     trav(2,iel) = trav(2,iel)+(drom*gy - cpro_gradp(2,iel) ) * cell_f_vol(iel)
     trav(3,iel) = trav(3,iel)+(drom*gz - cpro_gradp(3,iel) ) * cell_f_vol(iel)
@@ -1300,7 +1304,12 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
   else
     do iel = 1, ncel
-      drom = (crom(iel)-ro0) * cell_is_active(iel)
+      if (ischtp.eq.2 .and. itpcol.eq.1) then
+        drom = (3.d0/2.d0*croma(iel) - 1.d0/2.d0*cromaa(iel) - ro0)            &
+             * cell_is_active(iel)
+      else
+        drom = (crom(iel)-ro0) * cell_is_active(iel)
+      endif
 
       dfrcxt(1, iel) = drom*gx - frcxt(1, iel) * cell_is_active(iel)
       dfrcxt(2, iel) = drom*gy - frcxt(2, iel) * cell_is_active(iel)
