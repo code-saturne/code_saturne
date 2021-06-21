@@ -108,13 +108,14 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  char                   *port_name;        /* Port name (hostname:socket
-                                               for IP sockets) */
+  char                   *port_name;         /* Port name (hostname:socket
+                                                for IP sockets) */
 
 #if defined(HAVE_SOCKET)
-  int                     socket;            /* Socket number */
+  int                     socket;            /* Socket number; */
 #endif
 
+  bool                    connected;         /* Currently connected ? */
   bool                    swap_endian;       /* Force big-endian communication */
 
   cs_control_comm_type_t  type;              /* Communicator type */
@@ -266,6 +267,7 @@ _comm_sock_disconnect(cs_control_comm_t  *comm)
               comm->port_name);
 
   comm->socket = -1;
+  comm->connected = false;
 }
 
 /*----------------------------------------------------------------------------
@@ -344,7 +346,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
   assert(rec  != NULL);
   assert(comm != NULL);
 
-  if(comm->socket < 0)
+  if (comm->socket < 0)
     return;
 
   /* Determine associated size */
@@ -394,33 +396,28 @@ _comm_write_sock(cs_control_comm_t  *comm,
 }
 
 /*----------------------------------------------------------------------------
- * Read a record from an interface socket into a given buffer
+ * Prepare queue for reading of record into a given buffer
  *
  * parameters:
  *   queue <-- pointer to queue
  *   comm  <-> pointer to communicator
  *
- * return:
- *   number of useable elements read (i.e. elements before the last separator)
+ * return: size of data initially present
  *----------------------------------------------------------------------------*/
 
 static size_t
-_comm_read_sock_to_queue(cs_control_queue_t  *queue,
-                         cs_control_comm_t   *comm)
+_comm_read_sock_to_queue_prepare(cs_control_queue_t  *queue,
+                                 cs_control_comm_t   *comm)
 {
-  size_t   start_id = 0;
-  ssize_t  ret;
-
   if (queue->buf == NULL) {
     queue->buf_idx[0] = 0,
     queue->buf_idx[1] = 0,
     queue->buf_idx[2] = 0,
-    queue->buf_idx[3] = SSIZE_MAX;
+    queue->buf_idx[3] = 32767;
     BFT_MALLOC(queue->buf, queue->buf_idx[3]+1, char);
   }
 
   assert(comm != NULL);
-  assert(comm->socket > -1);
 
   if (queue->buf_idx[0] > 0) {
     bft_error(__FILE__, __LINE__, errno,
@@ -435,20 +432,34 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
   ssize_t n_prv = queue->buf_idx[2] - queue->buf_idx[1];
   if (n_prv > 0) {
     memmove(queue->buf, queue->buf + queue->buf_idx[1], n_prv);
-    start_id = n_prv;
   }
 
+  return (size_t)n_prv;
+}
+
+/*----------------------------------------------------------------------------
+ * Read a record from an interface socket into a given buffer
+ *
+ * parameters:
+ *   queue <-- pointer to queue
+ *   comm  <-> pointer to communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_comm_read_sock_to_queue(cs_control_queue_t  *queue,
+                         cs_control_comm_t   *comm)
+{
   /* Read record from socket */
 
-  ssize_t   n_loc = queue->buf_idx[3];
+  ssize_t  n_loc_max = queue->buf_idx[3];
 
-  start_id = queue->buf_idx[2] - queue->buf_idx[1];
+  size_t start_id = queue->buf_idx[2] - queue->buf_idx[1];
 
   while (true) {
 
-    n_loc = queue->buf_idx[3] - start_id;
+    n_loc_max = queue->buf_idx[3] - start_id;
 
-    ret = read(comm->socket, queue->buf + start_id, n_loc);
+    ssize_t  ret = read(comm->socket, queue->buf + start_id, n_loc_max);
 
     if (ret < 1 && start_id == 0) {
       if (comm->errors_are_fatal)
@@ -486,7 +497,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
     start_id += ret;
 
     /* If we do not have a complete line, continue reading if possible */
-    if (ret == n_loc && cut_id < 1) {
+    if (ret == n_loc_max && cut_id < 1) {
       queue->buf_idx[3] *= 2;
       BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
     }
@@ -494,6 +505,59 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
       break;
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize queue across MPI ranks, and update connect status.
+ *
+ * parameters:
+ *   start_id <-- previous start id in queue
+ *   queue    <-- pointer to queue
+ *   comm     <-> pointer to communicator
+ *
+ * return:
+ *   number of useable elements read (i.e. elements before the last separator)
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_comm_read_sock_to_queue_sync(size_t               start_id,
+                              cs_control_queue_t  *queue,
+                              cs_control_comm_t   *comm)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_rank_id >= 0) {
+
+    long buf[4] = {queue->buf_idx[1],
+                   queue->buf_idx[2],
+                   queue->buf_idx[3],
+                   0};
+
+#if defined(HAVE_SOCKET)
+    buf[3] = comm->socket;
+#endif
+
+    MPI_Bcast(buf, 4, MPI_LONG,  0, cs_glob_mpi_comm);
+
+    if (buf[3] < 0)
+      comm->connected = false;
+
+    if (buf[2] != (long)queue->buf_idx[3]) {
+      queue->buf_idx[3] = buf[2];
+      BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
+    }
+
+    queue->buf_idx[2] = buf[1];
+    queue->buf_idx[1] = buf[0];
+
+    if (queue->buf_idx[2] > start_id) {
+      size_t count = queue->buf_idx[2] - start_id;
+      MPI_Bcast(queue->buf, count, MPI_CHAR,  0, cs_glob_mpi_comm);
+    }
+
+  }
+
+#endif /* defined(HAVE_MPI) */
 
   return queue->buf_idx[1];
 }
@@ -584,13 +648,18 @@ _comm_sock_connect(cs_control_comm_t  *comm)
 
 /*----------------------------------------------------------------------------
  * Initialize a socket for communication
+ *
+ * return:
+ *   0 in case of success, error code otherwise
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _comm_sock_handshake(cs_control_comm_t  *comm,
                      const char         *magic_string,
                      const char         *key)
 {
+  int retval = 0;
+
   int   len = strlen(magic_string);
   char *str_cmp = NULL;
 
@@ -609,10 +678,14 @@ _comm_sock_handshake(cs_control_comm_t  *comm,
   _comm_read_sock(comm, str_cmp, 1, len);
   str_cmp[len] = '\0';
 
-  if (strncmp(str_cmp, magic_string, len))
+  if (strncmp(str_cmp, magic_string, len)) {
     bft_error(__FILE__, __LINE__, 0, _("Handshake with client failed."));
+    retval = 1;
+  }
 
   BFT_FREE(str_cmp);
+
+  return retval;
 }
 
 #endif /* defined(HAVE_SOCKET) */
@@ -644,11 +717,16 @@ _comm_initialize(const char             *port_name,
 
   /* Initialize fields */
 
-  BFT_MALLOC(comm->port_name, strlen(port_name) + 1, char);
-  strcpy(comm->port_name, port_name);
+  if (cs_glob_rank_id <= 0) {
+    BFT_MALLOC(comm->port_name, strlen(port_name) + 1, char);
+    strcpy(comm->port_name, port_name);
+  }
+  else
+    comm->port_name = NULL;
 
   comm->type = type;
   comm->errors_are_fatal = true;
+  comm->connected = false;
 
   /* Test if system is big-endian */
 
@@ -668,44 +746,60 @@ _comm_initialize(const char             *port_name,
   }
 #endif
 
+#if defined(HAVE_SOCKET)
+  comm->socket = -1;
+#endif
+
   /* Info on interface creation */
 
-  if (comm->port_name != NULL)
-    bft_printf(_("Connecting to client:  %s ..."), comm->port_name);
-  else
-    bft_printf(_("Connecting to client ..."));
-  bft_printf_flush();
+  if (cs_glob_rank_id <= 0) {
 
-  /* Initialize interface */
+    if (comm->port_name != NULL)
+      bft_printf(_("Connecting to client:  %s ..."), comm->port_name);
+    else
+      bft_printf(_("Connecting to client ..."));
+    bft_printf_flush();
 
-  if (type == CS_CONTROL_COMM_TYPE_SOCKET) {
+    /* Initialize interface */
+
+    if (type == CS_CONTROL_COMM_TYPE_SOCKET) {
 
 #if defined(HAVE_SOCKET)
 
-    _comm_sock_connect(comm);
-    _comm_sock_handshake(comm, CS_CONTROL_COMM_MAGIC_STRING, key);
+      _comm_sock_connect(comm);
+      retval = _comm_sock_handshake(comm, CS_CONTROL_COMM_MAGIC_STRING, key);
 
 #else
 
-    bft_printf("\n");
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Library compiled without sockets support, so the communicator\n"
-         "type argument to cs_control_comm_initialize() must be different\n"
-         "from CS_CONTROL_COMM_TYPE_SOCKET (%d)."),
-       (int)CS_CONTROL_COMM_TYPE_SOCKET);
+      bft_printf("\n");
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Library compiled without sockets support, so the communicator\n"
+           "type argument to cs_control_comm_initialize() must be different\n"
+           "from CS_CONTROL_COMM_TYPE_SOCKET (%d)."),
+         (int)CS_CONTROL_COMM_TYPE_SOCKET);
 
 #endif
 
+    }
+
+    if (retval == 0)
+      bft_printf("[ok]\n");
+
+    bft_printf_flush();
+
   }
 
-  if (retval == 0)
-    bft_printf("[ok]\n");
-  else {
+#if defined(HAVE_MPI)
+  if (cs_glob_rank_id >= 0) {
+    MPI_Bcast(&retval, 1, MPI_INT, 0, cs_glob_mpi_comm);
+  }
+#endif
+
+  if (retval != 0)
     BFT_FREE(comm);
-  }
-
-  bft_printf_flush();
+  else
+    comm->connected = true;
 
   /* End */
 
@@ -726,12 +820,10 @@ _comm_finalize(cs_control_comm_t  **comm)
 
     cs_control_comm_t  *_comm = *comm;
 
-    bft_printf("\n");
-
-    /* Info on closing interface files */
-
-    bft_printf(_("Closing communication: %s\n"),
-               _comm->port_name);
+    if (cs_glob_rank_id <= 0) {
+      bft_printf(_("\nClosing communication: %s\n"),
+                 _comm->port_name);
+    }
 
 #if defined(HAVE_SOCKET)
     if (_comm->socket > -1)
@@ -989,7 +1081,8 @@ _control_notebook(const cs_time_step_t   *ts,
       }
       ignored = false;
     }
-  } else if (strncmp(*s, "get ", 4) == 0) {
+  }
+  else if (strncmp(*s, "get ", 4) == 0) {
     char *name;
     double val = 0.;
     _read_next_string(true, s, &name);
@@ -1493,11 +1586,7 @@ cs_control_comm_initialize(const char              *port_name,
                            const char              *key,
                            cs_control_comm_type_t   type)
 {
-  if (cs_glob_rank_id <= 0)
-    _cs_glob_control_comm = _comm_initialize(port_name,
-                                             key,
-                                             type);
-
+  _cs_glob_control_comm = _comm_initialize(port_name, key, type);
 
   _control_advance_steps = 1;
 
@@ -1538,12 +1627,14 @@ cs_control_comm_write(const void  *rec,
 {
   cs_control_comm_t *comm = _cs_glob_control_comm;
 
-  assert(comm != NULL);
+  if (cs_glob_rank_id <= 0) {
+    assert(comm != NULL);
 
 #if defined(HAVE_SOCKET)
-  if (comm->socket > -1)
-    _comm_write_sock(comm, rec, size, count);
+    if (comm->socket > -1)
+      _comm_write_sock(comm, rec, size, count);
 #endif
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1563,12 +1654,14 @@ cs_control_comm_read(void    *rec,
 {
   cs_control_comm_t *comm = _cs_glob_control_comm;
 
-  assert(comm != NULL);
+  if (cs_glob_rank_id <= 0) {
+    assert(comm != NULL);
 
 #if defined(HAVE_SOCKET)
-  if (comm->socket > -1)
-    _comm_read_sock(comm, rec, size, count);
+    if (comm->socket > -1)
+      _comm_read_sock(comm, rec, size, count);
 #endif
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1605,15 +1698,19 @@ cs_control_comm_read_to_queue(void)
     }
     return retval;
   }
+  else if (queue != NULL) {
+    size_t n_prv = _comm_read_sock_to_queue_prepare(queue, comm);
 
 #if defined(HAVE_SOCKET)
-  if (comm->socket > -1)
-    retval = _comm_read_sock_to_queue(queue, comm);
-  if (comm->socket < 0) {
-    _comm_finalize(&comm);
+    if (comm->socket > -1)
+      _comm_read_sock_to_queue(queue, comm);
+#endif
+
+    retval = _comm_read_sock_to_queue_sync(n_prv, queue, comm);
+    if (comm->connected == false)
+      _comm_finalize(&comm);
     _cs_glob_control_comm = comm;
   }
-#endif
 
 #if defined(HAVE_MPI)
   if (cs_glob_rank_id >= 0) {
