@@ -88,7 +88,7 @@ BEGIN_C_DECLS
  matrix-vector product per inital matrix-vector product of the algorithm.
  Switching from diagonal to polynomial degree 1 often divides the number of
  required iterations by approximately 2, but each iteration then costs
- close to 2 times that of diagonal preconditoning (other vector operations
+ close to 2 times that of diagonal preconditioning (other vector operations
  are not doubled), so the net gain is often about 10%. Higher degree
  polynomials usually lead to diminishing returns.
 */
