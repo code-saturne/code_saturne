@@ -70,7 +70,7 @@ integer(c_int), dimension(:), pointer, save ::  isca_chem
 double precision, dimension(:), pointer ::  dmmk
 !> pointer to deal with different orders of chemical species
 integer(c_int), dimension(:), pointer ::  chempoint
-!> conversion factors for reaction rates jaccobian matrix
+!> conversion factors for reaction rates Jacobian matrix
 double precision, allocatable, dimension(:) ::  conv_factor_jac
 !> kinetics constants
 double precision, allocatable, dimension(:) ::  reacnum
