@@ -78,9 +78,6 @@ double precision, allocatable, dimension(:) ::  reacnum
 !> maximal time step for chemistry resolution
 double precision dtchemmax
 
-!> latitude and longitude in degres
-double precision, save ::  lat, lon
-
 !> number of time steps for the concentration profiles file
 integer, save         ::  nbchim
 !> number of altitudes for the concentration profiles file
