@@ -3,6 +3,10 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix the normalization of the residual when using PETSc and CDO schemes
+
+- Fix computations with solidification of a binary alloy using CDO schemes
+
 - Atmo module: fix bug when using 1D atmo radiative transfer and
   meteo_profile > 1.
 
