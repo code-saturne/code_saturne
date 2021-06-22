@@ -72,38 +72,9 @@ elif [ "$MP_CHILD" != "" ] ; then
 elif [ "$SMPIRUN_RANK" != "" ] ; then
   MPI_RANK="$MPIRUN_RANK"
 
-# For LAM 7.1 (an appschema can also be used)
-elif [ "$LAMRANK" != "" ] ; then
-  MPI_RANK="$LAMRANK"
-
-# On HP AlphaServer cluster (CCRT: Chrome)
-elif [ "$RMS_RANK" != "" ] ; then
-  MPI_RANK="$RMS_RANK"
-
-# On Opteron cluster under Linux MPICH-GM
-elif [ "$GMPI_ID" != "" ] ; then
-  MPI_RANK="$GMPI_ID"
-
 # On cluster with HP-MPI (has become Platform MPI since)
 elif [ "$MPI_PROC" != "" ] ; then
   MPI_RANK=`echo $MPI_PROC | cut -f 2 -d,`
-
-# On cluster under Linux with Scali MPI (bought by Platform computing)
-elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
-  MPI_RANK=`echo $SCAMPI_PROCESS_PARAM | cut -f4 -d' '`
-
-# For "standard" MPICH 1.2 (with "usual" chp4 communication)
-else
-  MPI_RANK=0
-  next_arg_is_rank=""
-  for arg in "$@" ; do
-    if [ "$arg" = "-p4rmrank" ] ; then
-      next_arg_is_rank="1"
-    elif [ "$next_arg_is_rank" = "1" ] ; then
-      MPI_RANK="$arg"
-      next_arg_is_rank="0"
-    fi
-  done
 
 # End of known cases
 fi
