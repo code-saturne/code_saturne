@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Atmo module: fix bug when using 1D atmo radiative transfer and
+  meteo_profile > 1.
+
 - Fix temperature source term for Syrthes volume coupling.
 
 - Lagrangian module: fix particle injection when `n_user_variables` > 1.
