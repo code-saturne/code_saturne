@@ -3688,7 +3688,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
     const cs_real_t  *solx = sol, *soly = sol+n_faces, *solz = sol+2*n_faces;
 
 # pragma omp parallel for if (CS_THR_MIN > n_faces)                     \
-  shared(gpx, gpy, gpz, dx, dy, dz, solx, doly, solz) firstprivate(n_faces)
+  shared(dx, dy, dz, solx, doly, solz) firstprivate(n_faces)
     for (cs_lnum_t f = 0; f < n_faces; f++) {
       u_f[3*f  ] = solx[f] - alpha * grad_p[3*f]/dx[f];
       u_f[3*f+1] = soly[f] - alpha * grad_p[3*f+1]/dy[f];
