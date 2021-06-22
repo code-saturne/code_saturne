@@ -1931,7 +1931,7 @@ _notay_hook(void     *context,
   MatDestroy(&A11);
   MatDestroy(&temp01);
 
-  /* Set the main solver and main options forthe preconditioner */
+  /* Set the main solver and main options for the preconditioner */
   PC up_pc;
 
   KSPGetPC(ksp, &up_pc);
