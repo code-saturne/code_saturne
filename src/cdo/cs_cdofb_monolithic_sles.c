@@ -1823,6 +1823,262 @@ _diag_schur_hook(void     *context,
                                      SIGFPE detection */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver options and its preconditioner in case of Notay's
+ *         strategy. Solver is a flexible GMRES by default.
+ *
+ * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
+ * \param[in]      slesp   pointer to a cs_sles_param_t structure
+ * \param[in, out] ksp     KSP structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_solver(const cs_navsto_param_sles_t  *nslesp,
+              const cs_param_sles_t         *slesp,
+              KSP                            ksp)
+{
+  PC  up_pc;
+  PCType  pc_type = _petsc_get_pc_type(slesp);
+
+  KSPSetType(ksp, KSPFGMRES);
+  KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, pc_type);
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+  KSPSetTolerances(ksp,
+                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
+                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
+                   nslesp->il_algo_dtol,   /* divergence tolerance */
+                   nslesp->n_max_il_algo_iter); /* max number of iterations */
+
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  /* Additional settings for the preconditioner */
+  switch (slesp->precond) {
+
+  case CS_PARAM_PRECOND_AMG:
+    switch (slesp->amg_type) {
+
+    case CS_PARAM_AMG_PETSC_GAMG:
+      PCGAMGSetType(up_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(up_pc, 1);
+      break;
+
+    case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(up_pc, "boomeramg");
+#else
+      PCGAMGSetType(up_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(up_pc, 1);
+#endif
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
+      break;
+
+    } /* AMG type */
+    break;
+
+  default:
+    break; /* Nothing else to do */
+
+  } /* Switch on preconditioner */
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+     Natacha Bereux) */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+  KSPSetUp(ksp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver options and a 4x4 block preconditioner in case of
+ *         Notay's strategy
+ *
+ * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
+ * \param[in]      slesp   pointer to a cs_sles_param_t structure
+ * \param[in, out] ksp     KSP structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
+                     const cs_param_sles_t         *slesp,
+                     KSP                            ksp)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_range_set_t  *rset = cs_shared_range_set;
+
+  /* Generate an indexed set for each velocity component and the pressure
+     block */
+  PetscInt  n_faces = quant->n_faces;
+  PetscInt  n_cells = quant->n_cells;
+  PetscInt  alloc_size = (n_faces > n_cells) ? n_faces : n_cells;
+
+  PetscInt  *indices = NULL;
+  PetscMalloc1(alloc_size, &indices);
+
+  IS  is[4] = {NULL, NULL, NULL, NULL};
+
+  /* IndexSet for the each component of the velocity DoFs */
+  for (int k = 0; k < 3; k++) {
+
+    const cs_gnum_t  *u_g_ids = rset->g_id + k*n_faces;
+
+    if (rset->n_elts[0] == rset->n_elts[1]) { /* Sequential run */
+
+      for (PetscInt i = 0; i < n_faces; i++)
+        indices[i] = u_g_ids[i];
+
+      ISCreateGeneral(PETSC_COMM_SELF, n_faces, indices, PETSC_COPY_VALUES,
+                      is + k);
+
+    }
+    else { /* Parallel run */
+
+      PetscInt  n_elts = 0;
+      for (PetscInt i = 0; i < n_faces; i++) {
+        if (u_g_ids[i] >= rset->l_range[0] && u_g_ids[i] < rset->l_range[1])
+          indices[n_elts++] = u_g_ids[i];
+      }
+
+      ISCreateGeneral(PETSC_COMM_WORLD, n_elts, indices, PETSC_COPY_VALUES,
+                      is + k);
+
+    }
+
+  } /* Loop on velocity components */
+
+  /* Re-used the buffer indices to create the IndexSet for pressure DoFs
+   * Pressure unknowns are located at cell centers so the treatment should be
+   * the same in sequential and parallel computation */
+  const cs_gnum_t  *pr_g_ids = rset->g_id + 3*n_faces;
+  for (PetscInt i = 0; i < n_cells; i++)
+    indices[i] = pr_g_ids[i];
+
+  ISCreateGeneral(PETSC_COMM_SELF, n_cells, indices, PETSC_COPY_VALUES, is + 3);
+
+  PetscFree(indices);
+
+  PC up_pc;
+
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, PCFIELDSPLIT);
+
+  switch (slesp->pcd_block_type) {
+  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+    PCFieldSplitSetType(up_pc, PC_COMPOSITE_MULTIPLICATIVE);
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+    PCFieldSplitSetType(up_pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_DIAG:
+  default:
+    PCFieldSplitSetType(up_pc, PC_COMPOSITE_ADDITIVE);
+    break;
+  }
+
+  PCFieldSplitSetIS(up_pc, "velx", is[0]);
+  PCFieldSplitSetIS(up_pc, "vely", is[1]);
+  PCFieldSplitSetIS(up_pc, "velz", is[2]);
+  PCFieldSplitSetIS(up_pc, "pr", is[3]);
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+   * Natacha Bereux) */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+  KSPSetUp(ksp);
+
+  PCType  pc_type = _petsc_get_pc_type(slesp);
+  PetscInt  n_split;
+  KSP  *up_subksp;
+  PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
+  assert(n_split == 4);
+
+  for (int k = 0; k < 4; k++) {
+
+    PC  _pc;
+    KSP  _ksp = up_subksp[k];
+
+    KSPSetType(_ksp, KSPPREONLY);
+    KSPGetPC(_ksp, &_pc);
+    KSPSetNormType(_ksp, KSP_NORM_UNPRECONDITIONED);
+    PCSetType(_pc, pc_type);
+
+    /* Additional settings for the preconditioner */
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      switch (slesp->amg_type) {
+
+      case CS_PARAM_AMG_PETSC_GAMG:
+        PCGAMGSetType(_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(_pc, 1);
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+        PCHYPRESetType(_pc, "boomeramg");
+#else
+        PCGAMGSetType(_pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(_pc, 1);
+#endif
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
+        break;
+
+      } /* AMG type */
+      break;
+
+    default:
+      break; /* Nothing else to do */
+
+    } /* Switch on preconditioner */
+
+    PCSetUp(_pc);
+    KSPSetUp(_ksp);
+
+  } /* Loop on blocks */
+
+  KSPSetType(ksp, KSPFGMRES);
+  KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+  KSPSetTolerances(ksp,
+                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
+                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
+                   nslesp->il_algo_dtol,   /* divergence tolerance */
+                   nslesp->n_max_il_algo_iter); /* max number of iterations */
+
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  /* Apply modifications to the KSP structure */
+  PCSetUp(up_pc);
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Free temporary memory */
+  PetscFree(up_subksp);
+  for (int k = 0; k < 4; k++)
+    ISDestroy(&(is[k]));
+}
+
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
@@ -1930,21 +2186,23 @@ _notay_hook(void     *context,
   MatDestroy(&A10);
   MatDestroy(&A11);
   MatDestroy(&temp01);
+  ISDestroy(&isp);
+  ISDestroy(&isv);
+  MatDestroy(&Amat);
 
   /* Set the main solver and main options for the preconditioner */
-  PC up_pc;
-
-  KSPGetPC(ksp, &up_pc);
-  PCType  pc_type = _petsc_get_pc_type(slesp);
-
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
 #if defined(PETSC_HAVE_MUMPS)
-    KSPSetType(ksp, KSPPREONLY);
-    PCSetType(up_pc, PCLU);
-    PCFactorSetMatSolverType(up_pc, MATSOLVERMUMPS);
+    {
+      PC  up_pc;
+      KSPSetType(ksp, KSPPREONLY);
+      KSPGetPC(ksp, &up_pc);
+      PCSetType(up_pc, PCLU);
+      PCFactorSetMatSolverType(up_pc, MATSOLVERMUMPS);
+    }
 #else
     bft_error(__FILE__, __LINE__, 0,
               " %s: MUMPS not interfaced with this installation of PETSc.",
@@ -1953,73 +2211,26 @@ _notay_hook(void     *context,
     break;
 
   case CS_PARAM_ITSOL_FGMRES:
-    /* Number of iterations before restarting = 30 (default value)  */
-    KSPSetType(ksp, KSPFGMRES);
-    KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
-    PCSetType(up_pc, pc_type);
+    if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+      _notay_block_precond(nslesp, slesp, ksp);
+    else
+      _notay_solver(nslesp, slesp, ksp);
     break;
 
   default:
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_DEFAULT,
                   "%s: Switch to FGMRES solver.\n", __func__);
-    /* Number of iterations before restarting = 30 (default value)  */
     KSPSetType(ksp, KSPFGMRES);
     KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
-    PCSetType(up_pc, pc_type);
+
+    if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+      _notay_block_precond(nslesp, slesp, ksp);
+    else
+      _notay_solver(nslesp, slesp, ksp);
     break;
 
   } /* End of switch */
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
-                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
-                   nslesp->il_algo_dtol,   /* divergence tolerance */
-                   nslesp->n_max_il_algo_iter); /* max number of iterations */
-
-  _set_residual_normalization(slesp->resnorm_type, ksp);
-
-  /* Additional settings for the preconditioner */
-  switch (slesp->precond) {
-
-  case CS_PARAM_PRECOND_AMG:
-    switch (slesp->amg_type) {
-
-    case CS_PARAM_AMG_PETSC_GAMG:
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);
-      break;
-
-    case CS_PARAM_AMG_HYPRE_BOOMER:
-#if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(up_pc, "boomeramg");
-#else
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);
-#endif
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
-      break;
-
-    } /* AMG type */
-    break;
-
-  default:
-    break; /* Nothing else to do */
-
-  } /* Switch on preconditioner */
-
-  /* Need to call PCSetUp before configuring the second level (Thanks to
-     Natacha Bereux) */
-  PCSetFromOptions(up_pc);
-  PCSetUp(up_pc);
-  KSPSetUp(ksp);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
@@ -2033,11 +2244,6 @@ _notay_hook(void     *context,
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
   }
-
-  /* Free temporary PETSc structures */
-  ISDestroy(&isp);
-  ISDestroy(&isv);
-  MatDestroy(&Amat);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
