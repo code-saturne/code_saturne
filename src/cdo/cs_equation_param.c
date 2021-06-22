@@ -526,6 +526,7 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
       eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
     }
     else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0)
@@ -629,6 +630,25 @@ _set_key(cs_equation_param_t   *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND");
     }
+    break; /* Precond */
+
+  case CS_EQKEY_PRECOND_BLOCK_TYPE:
+    if (strcmp(keyval, "none") == 0)
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+    else if (strcmp(keyval, "diag") == 0)
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
+    else if (strcmp(keyval, "lower_tri") == 0)
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
+    else if (strcmp(keyval, "upper_tri") == 0)
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR;
+    else if (strcmp(keyval, "symm") == 0)
+      eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND_BLOCK_TYPE");
+    }
+
     break;
 
   case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */

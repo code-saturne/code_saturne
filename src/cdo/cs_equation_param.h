@@ -1056,7 +1056,18 @@ typedef struct {
  *   only with PETSc)
  * - "amg": algebraic multigrid
  * - "amg_block": algebraic multigrid by block (useful for vector-valued
- *                equations)
+ *                equations). By default, a
+ *
+ *
+ * \var CS_EQKEY_PRECOND_BLOCK_TYPE
+ * Specify the type of block preconditioner associated to a preconditioner.
+ * Available choices are:
+ * - "none": no block preconditioner (default choice)
+ * - "diag": diagonal (or additive) block preconditoner
+ * - "lower_tri": lower triangular (multiplicative) block preconditioner
+ * - "upper_tri": upper triangular (multiplicative) block preconditioner
+ * - "symm": symmetric Gauss-Seidel block preconditioner
+ * Most of these options are available only with PETSc.
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system
@@ -1124,6 +1135,7 @@ typedef enum {
   CS_EQKEY_ITSOL_RESTART,
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
+  CS_EQKEY_PRECOND_BLOCK_TYPE,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,
   CS_EQKEY_SPACE_SCHEME,
