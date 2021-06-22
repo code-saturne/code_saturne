@@ -233,9 +233,13 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
       if (imeteo.eq.0) then
         call atmstd(zray(k), preray(k), dum, dum)
-      else
+      else if (imeteo.eq.1) then
         call intprf(nbmetd, nbmetm, ztmet, tmmet, phmet, zray(k), ttcabs, &
                     preray(k))
+      else
+        !TODO would be more coherent with an averaging of "meteo_pressure"
+        ! Field
+        call atmstd(zray(k), preray(k), dum, dum)
       endif
     enddo
 
