@@ -339,20 +339,9 @@ static void
 _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
                          KSP                 ksp)
 {
-  /* 1) Set the type of normalization for the residual */
-  switch (slesp->resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  /* No choice otherwise PETSc yields an error */
+  slesp->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* 2) Set the krylov solver */
   switch (slesp->solver) {
@@ -363,8 +352,6 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
   case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
-    /* No choice otherwise PETSc yields an error */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
     break;
 
   case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
