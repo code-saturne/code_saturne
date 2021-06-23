@@ -257,9 +257,12 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Eq. %s: Switch to MG since BoomerAMG is not"
+                      "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
                       " available.\n",
                       __func__, slesp->name);
+        PCSetType(pc, PCGAMG);
+        PCGAMGSetType(pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(pc, 1);
 #endif
         break;
 
@@ -325,7 +328,7 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t   *slesp)
 #if defined(PETSC_HAVE_HYPRE)
         _petsc_pchypre_hook();
 #else
-        _petsc_pcmg_hook();
+        _petsc_pcgamg_hook();
 #endif
         break;
 
@@ -1314,17 +1317,23 @@ _set_petsc_hypre_sles(bool                 use_field_id,
                            _petsc_amg_block_boomer_hook,
                            (void *)slesp);
 #else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: System: %s.\n"
-                " Boomer is not available. Switch to another AMG solver.",
-                __func__, slesp->name);
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: System: %s.\n"
+                    " Boomer is not available. Switch to GAMG solver.",
+                    __func__, slesp->name);
+      cs_sles_petsc_define(slesp->field_id,
+                           sles_name,
+                           MATMPIAIJ,
+                           _petsc_amg_block_gamg_hook,
+                           (void *)slesp);
 #endif
     }
     else
       bft_error(__FILE__, __LINE__, 0,
                 " %s: System: %s\n"
-                " No AMG solver available for a block-AMG.", __func__,
-                slesp->name);
+                " No AMG solver available for a block-AMG.",
+                __func__, slesp->name);
 
   }
   else if (slesp->precond == CS_PARAM_PRECOND_BJACOB_ILU0 ||
