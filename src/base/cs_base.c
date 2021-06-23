@@ -957,6 +957,27 @@ _cs_datatype_to_mpi_init(void)
 #endif
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine node-local MPI info
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_mpi_node_info(void)
+{
+#if (MPI_VERSION >= 3)
+  MPI_Comm sh_comm;
+  MPI_Comm_split_type(cs_glob_mpi_comm, MPI_COMM_TYPE_SHARED, 0,
+                      MPI_INFO_NULL, &sh_comm);
+
+  MPI_Comm_rank(sh_comm, &cs_glob_node_rank_id);
+  MPI_Comm_size(sh_comm, &cs_glob_node_n_ranks);
+
+  MPI_Comm_free(&sh_comm);
+#endif
+}
+
 /*----------------------------------------------------------------------------
  * Complete MPI setup.
  *
@@ -1015,6 +1036,8 @@ _cs_base_mpi_setup(const char *app_name)
 
   if (cs_glob_n_ranks == 1 && app_num > -1)
     cs_glob_rank_id = -1;
+
+  _mpi_node_info();
 
   /* Initialize datatype conversion */
 

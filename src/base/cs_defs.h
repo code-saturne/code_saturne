@@ -552,12 +552,16 @@ extern MPI_Datatype   cs_datatype_to_mpi[];
 
 #endif
 
-/* Global variables indicationg task state */
+/* Global variables indicating task state */
 
-extern int  cs_glob_n_threads;      /* Number of threads */
+extern int  cs_glob_n_threads;     /* Number of threads */
 
-extern int  cs_glob_rank_id;        /* Rank in main MPI communicator */
-extern int  cs_glob_n_ranks;        /* Size of main MPI communicator */
+extern int  cs_glob_rank_id;       /* Rank in main MPI communicator */
+extern int  cs_glob_n_ranks;       /* Size of main MPI communicator */
+
+extern int  cs_glob_node_rank_id;  /* Rank on node in main MPI communicator */
+extern int  cs_glob_node_n_ranks;  /* Number of ranks on node of main
+                                      MPI communicator */
 
 #if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
 

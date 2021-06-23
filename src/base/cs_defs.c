@@ -167,12 +167,16 @@ MPI_Datatype  cs_datatype_to_mpi[] = {MPI_DATATYPE_NULL,
 
 #endif
 
-/* Global variables indicationg task state */
+/* Global variables indicating task state */
 
-int  cs_glob_n_threads = 1;    /* Number of threads */
+int  cs_glob_n_threads = 1;     /*<! Number of threads */
 
-int  cs_glob_rank_id = -1;     /* Rank of process in communicator */
-int  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
+int  cs_glob_rank_id = -1;      /*!< Rank of process in communicator */
+int  cs_glob_n_ranks =  1;      /*!< Number of processes in communicator */
+
+int  cs_glob_node_rank_id = 0;   /*!< Rank on node in main MPI communicator */
+int  cs_glob_node_n_ranks = 1;   /*!< Number of ranks on node of main
+                                      MPI communicator */
 
 #if defined(HAVE_MPI)
 

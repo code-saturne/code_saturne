@@ -259,14 +259,7 @@ _mpi_ranks_per_node(MPI_Comm  comm,
   ranks_per_node[1] = -1;
 #else
 
-  MPI_Comm sh_comm;
-  MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0,
-                      MPI_INFO_NULL, &sh_comm);
-  int sh_ranks;
-  MPI_Comm_rank(sh_comm, &sh_ranks);
-  sh_ranks += 1;
-  MPI_Allreduce(MPI_IN_PLACE, &sh_ranks, 1, MPI_INT, MPI_MAX, sh_comm);
-  MPI_Comm_free(&sh_comm);
+  int sh_ranks = cs_glob_node_n_ranks;
 
   MPI_Allreduce(&sh_ranks, ranks_per_node, 1, MPI_INT, MPI_MIN, comm);
   MPI_Allreduce(&sh_ranks, ranks_per_node+1, 1, MPI_INT, MPI_MAX, comm);
@@ -744,7 +737,7 @@ cs_system_info(void)
 {
 #if defined(HAVE_MPI)
   _system_info(comm, true);
-  _mpi_version_info(false);
+  _mpi_version_info(true);
 #else
   _system_info(true);
 #endif
