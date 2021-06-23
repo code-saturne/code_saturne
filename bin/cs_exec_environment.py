@@ -474,6 +474,88 @@ def write_prepend_path(fd, var, user_path):
 
 #-------------------------------------------------------------------------------
 
+def write_mps_start(fd):
+    """
+    Write MPS start code in run script.
+    This assumes we use an MPMD type launcher script (whether
+    we have multiple programs or not) so as to be able to run
+    rank_specific code around the main executable.
+    """
+
+    fd.write("""
+# Determine node-local MPI rank id
+#---------------------------------
+
+mpi_local_rank_id=-1
+
+# For Open MPI
+if [ "$OMPI_COMM_WORLD_LOCAL_RANK" != "" ]; then
+  mpi_local_rank_id="$OMPI_COMM_WORLD_LOCAL_RANK"
+
+elif [ "$MPI_LOCALNRANKS" != "" ]; then
+  mpi_local_rank_id="$MPI_LOCALNRANKS"
+
+fi
+
+# start MPS
+#----------
+
+if [ "$CUDA_MPS_PIPE_DIRECTORY" = "" ]; then
+  export CUDA_MPS_PIPE_DIRECTORY=/dev/shm/${USER}/mps
+fi
+if [ "$CUDA_MPS_LOG_DIRECTORY" = "" ]; then
+  export CUDA_MPS_LOG_DIRECTORY=/dev/shm/${USER}/mps_log
+fi
+
+if [ $mpi_local_rank_id = 0 ]; then
+  if [ $MPI_RANK = 0 ]; then
+    echo "Starting NVIDIA MPS ..."
+    echo "(pipes in $CUDA_MPS_PIPE_DIRECTORY,"
+    echo " logs in $CUDA_MPS_LOG_DIRECTORY)"
+  fi
+
+  rm -rf $CUDA_MPS_PIPE_DIRECTORY
+  rm -rf $CUDA_MPS_LOG_DIRECTORY
+  mkdir -p $CUDA_MPS_PIPE_DIRECTORY
+  mkdir -p $CUDA_MPS_LOG_DIRECTORY
+
+  nvidia-cuda-mps-control -d
+fi
+
+# Leave a bit of time for the MPS server to start
+sleep 5
+
+""")
+
+#-------------------------------------------------------------------------------
+
+def write_mps_stop(fd):
+    """
+    Write MPS stop code in run script.
+    This assumes we use an MPMD type launcher script (whether
+    we have multiple programs or not) so as to be able to run
+    rank_specific code around the main executable.
+    """
+
+    fd.write("""
+# stop  MPS
+#----------
+
+if [ $mpi_local_rank_id = 0 ]; then
+  if [ $MPI_RANK = 0 ]; then
+    echo "Stopping NVIDIA MPS ..."
+  fi
+
+  echo "quit" | nvidia-cuda-mps-control
+  sleep 1
+  rm -rf $CUDA_MPS_PIPE_DIRECTORY
+  rm -rf $CUDA_MPS_LOG_DIRECTORY
+fi
+
+""")
+
+#-------------------------------------------------------------------------------
+
 def clean_path(path):
     """
     Remove duplicates from path.

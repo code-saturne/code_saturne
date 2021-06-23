@@ -324,57 +324,73 @@ cs_base_cuda_device_info(cs_log_t  log_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set CUDA device based on MPI rank and number of devices.
+ * \brief  Log information on available CUDA version.
  *
- * \param[in]  comm            associated MPI communicator
- * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ * \param[in]  log_id  id of log file in which to print information
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_base_cuda_set_default_device(void)
+cs_base_cuda_version_info(cs_log_t  log_id)
+{
+  int n_devices = 0, runtime_version = -1, driver_version = -1;
+
+  if (cudaDriverGetVersion(&driver_version) == cudaSuccess)
+    cs_log_printf(log_id,
+                  "  %s%d\n", _("CUDA driver:         "), driver_version);
+  if (cudaRuntimeGetVersion(&runtime_version) == cudaSuccess)
+    cs_log_printf(log_id,
+                  "  %s%d\n", _("CUDA runtime:        "), runtime_version);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set CUDA device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_cuda_select_default_device(void)
 {
   int device_id = 0, n_devices = 0;
 
   cudaError_t ret_code = cudaGetDeviceCount(&n_devices);
 
   if (ret_code == cudaErrorNoDevice)
-    return;
+    return -1;
 
-  if (cudaSuccess != ret_code)
-    bft_error(__FILE__, __LINE__, 0, "[CUDA errror] %d: %s\n  running: %s",
-              ret_code, ::cudaGetErrorString(ret_code), __func__);
-
-#if defined(HAVE_MPI)
+  if (cudaSuccess != ret_code) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("[CUDA error] %d: %s\n  running: %s\n  in: %s\n",
+               ret_code, ::cudaGetErrorString(ret_code),
+               "cudaGetDeviceCount", __func__);
+    return -1;
+  }
 
   if (cs_glob_rank_id > -1 && n_devices > 1) {
 
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    int       max_ranks_per_node = -1;
+    int device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
 
-    /* get local rank */
-
-    MPI_Comm sh_comm;
-    MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0,
-                        MPI_INFO_NULL, &sh_comm);
-    int sh_rank;
-    MPI_Comm_rank(sh_comm, &sh_rank);
-
-    MPI_Allreduce(MPI_IN_PLACE, &sh_rank, 1, MPI_INT, MPI_MAX, sh_comm);
-    MPI_Comm_free(&sh_comm);
-
-    MPI_Allreduce(&sh_rank, &max_ranks_per_node, 1, MPI_INT, MPI_MAX, comm);
-    max_ranks_per_node += 1;
-
-    int n_ranks_per_device = max_ranks_per_node / n_devices;
-
-    device_id = sh_rank / n_ranks_per_device;
+    assert(device_id > -1 && device_id < n_devices);
 
   }
 
-#endif
+  ret_code = cudaSetDevice(device_id);
 
-  CS_CUDA_CHECK_CALL(cudaSetDevice(device_id), __FILE__, __LINE__);
+  if (cudaSuccess != ret_code) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("[CUDA error] %d: %s\n  running: %s\n  in: %s\n",
+               ret_code, ::cudaGetErrorString(ret_code),
+               "cudaSetDevice", __func__);
+    return -1;
+  }
+
+  return device_id;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -905,7 +905,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_mpmd_script(self, n_procs, mpi_env):
+    def generate_solver_mpmd_script(self, n_procs, mpi_env, use_mps=False):
         """
         Generate MPMD dispatch file.
         """
@@ -913,18 +913,19 @@ class case:
         e_path = os.path.join(self.exec_dir, 'mpmd_exec.sh')
         e = open(e_path, 'w')
 
-        user_shell = cs_exec_environment.get_shell_type()
+        cs_exec_environment.write_shell_shebang(e)
 
-        e.write('#!' + user_shell + '\n\n')
         e.write('# Make sure to transmit possible additional '
-                + 'arguments assigned by mpirun to\n'
-                + '# the executable with some MPI-1 implementations:\n'
+                + 'arguments assigned by mpirun.\n'
                 + '# we use $@ to forward arguments passed to this script'
                 + ' to the executable files.\n\n')
 
         e.write('MPI_RANK=`'
                 + self.package.get_pkgdatadir_script('runcase_mpi_rank')
                 + ' $@`\n')
+
+        if use_mps:
+            cs_exec_environment.write_mps_start(e)
 
         app_id = 0
         nr = 0
@@ -962,8 +963,12 @@ class case:
             app_id += 1
 
         e.write('fi\n'
-                + 'CS_RET=$?\n'
-                + 'exit $CS_RET\n')
+                + 'CS_RET=$?\n')
+
+        if use_mps:
+            cs_exec_environment.write_mps_stop(e)
+
+        e.write('exit $CS_RET\n')
 
         e.close()
 
@@ -1017,10 +1022,19 @@ class case:
             else:
                 mpi_cmd += ' '
 
+        # Check if we need MPS. Currently, this can be done
+        use_mps = os.getenv('CS_USE_MPS')
+        if use_mps:
+            if use_mps.lower() not in ('0', 'false', 'no'):
+                use_mps = True
+        if use_mps != True:
+            use_mps = False
+
         # Case with only one cs_solver instance possibly under MPI
 
-        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
-           and len(self.py_domains) == 0:
+        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
+
+        if n_domains == 1 and not use_mps:
 
             s_args = self.domains[0].solver_command()
 
@@ -1033,7 +1047,14 @@ class case:
 
         else:
 
-            if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
+            if use_mps or (mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script):
+
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
+                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env, use_mps)
+
+            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
 
                 if mpi_env.mpiexec_separator != None:
                     mpi_cmd += mpi_env.mpiexec_separator + ' '
@@ -1054,13 +1075,6 @@ class case:
                     mpi_cmd += '-configfile ' + e_path
 
                 e_path = ''
-
-            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
-
-                if mpi_env.mpiexec_separator != None:
-                    mpi_cmd += mpi_env.mpiexec_separator + ' '
-
-                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)
 
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')

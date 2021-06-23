@@ -47,6 +47,7 @@
 #include "cs_atmo.h"
 #include "cs_all_to_all.h"
 #include "cs_base.h"
+#include "cs_base_cuda.h"
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_boundary_zone.h"
@@ -120,6 +121,9 @@
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
+#if defined(HAVE_CUDA)
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -170,6 +174,10 @@ _run(void)
   cs_system_info(cs_glob_mpi_comm);
 #else
   cs_system_info();
+#endif
+
+#if defined(HAVE_CUDA)
+  cs_base_cuda_select_default_device();
 #endif
 
   cs_timer_stats_initialize();

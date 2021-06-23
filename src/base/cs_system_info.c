@@ -509,8 +509,10 @@ _system_info(bool  log)
 #endif
 
 #if defined(HAVE_CUDA)
-  for (int log_id = 0; log_id < n_logs; log_id++)
+  for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_base_cuda_device_info(log_id);
+    cs_base_cuda_version_info(logs[log_id]);
+  }
 #endif
 
 #if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \

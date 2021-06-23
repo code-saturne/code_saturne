@@ -65,12 +65,6 @@ BEGIN_C_DECLS
  * Global variable definitions
  *============================================================================*/
 
-#if defined(HAVE_CUDA)
-
-extern int  cs_glob_cuda_device_id;
-
-#endif
-
 /*============================================================================
  * Semi-private function prototypes
  *
@@ -233,15 +227,28 @@ cs_base_cuda_device_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set CUDA device based on MPI rank and number of devices.
+ * \brief  Log information on available CUDA version.
  *
- * \param[in]  comm            associated MPI communicator
- * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ * \param[in]  log_id  id of log file in which to print information
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_base_cuda_set_default_device(void);
+cs_base_cuda_version_info(cs_log_t  log_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set CUDA device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_cuda_select_default_device(void);
 
 #endif
 
