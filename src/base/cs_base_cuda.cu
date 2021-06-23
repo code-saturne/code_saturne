@@ -34,6 +34,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "assert.h"
 #include "bft_error.h"
 #include "bft_mem.h"
 #include "bft_printf.h"
@@ -88,7 +89,7 @@ int  cs_glob_cuda_device_id = -1;
 /*!
  * \brief Allocate n bytes of CUDA device memory.
  *
- * This function simply wraps cudaMallocManaged, which could probably be
+ * This function simply wraps cudaMalloc, which could probably be
  * directly called from C or C++, but whose use in such manner is not
  * well documented, and whose declaration in cuda_runtime.h requires
  * support of function attributes by compiler.
@@ -113,6 +114,39 @@ cs_cuda_mem_malloc_device(size_t        n,
   void *ptr = NULL;
 
   CS_CUDA_CHECK_CALL(cudaMalloc(&ptr, n), file_name, line_num);
+
+  return ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of host memory using CUDA.
+ *
+ * This function simply wraps cudaMallocHost, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cuda_mem_malloc_host(size_t        n,
+                        const char   *var_name,
+                        const char   *file_name,
+                        int           line_num)
+{
+  void *ptr = NULL;
+
+  CS_CUDA_CHECK_CALL(cudaMallocHost(&ptr, n), file_name, line_num);
 
   return ptr;
 }
@@ -183,6 +217,39 @@ cs_cuda_mem_free(void         *p,
                  int           line_num)
 {
   CS_CUDA_CHECK_CALL(cudaFree(p), file_name, line_num);
+
+#if 0
+  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free CUDA-allocated host memory associated with a given pointer.
+ *
+ * This function simply wraps cudaFree, which could probably be
+ * directly called from C or C++, but whose use in such manner is not
+ * well documented, and whose declaration in cuda_runtime.h requires
+ * support of function attributes by compiler.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  p          pointer to device memory
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_mem_free_host(void         *p,
+                      const char   *var_name,
+                      const char   *file_name,
+                      int           line_num)
+{
+  CS_CUDA_CHECK_CALL(cudaFreeHost(p), file_name, line_num);
 
 #if 0
   CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);

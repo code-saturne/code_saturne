@@ -128,15 +128,18 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
     .size = ni * size,
     .mode = mode};
 
-  if (mode <= CS_ALLOC_HOST_DEVICE)
+  if (mode < CS_ALLOC_HOST_DEVICE)
     me.host_ptr = bft_mem_malloc(ni, size, var_name, file_name, line_num);
 
 #if defined(HAVE_CUDA)
 
-  // if (mode == CS_ALLOC_HOST_DEVICE_SHARED)
-  //   delay host allocation to when we request device address
+  else if (mode == CS_ALLOC_HOST_DEVICE)
+    me.host_ptr = cs_cuda_mem_malloc_host(me.size,
+                                          var_name,
+                                          file_name,
+                                          line_num);
 
-  if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+  else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
     me.host_ptr = cs_cuda_mem_malloc_managed(me.size,
                                              var_name,
                                              file_name,
@@ -180,12 +183,15 @@ cs_free_hd(void        *host_ptr,
 
   _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
 
-  if (me.mode <= CS_ALLOC_HOST_DEVICE)
+  if (me.mode < CS_ALLOC_HOST_DEVICE)
     bft_mem_free(me.host_ptr, var_name, file_name, line_num);
 
   if (me.device_ptr != NULL) {
 
 #if defined(HAVE_CUDA)
+
+    if (me.mode == CS_ALLOC_HOST_DEVICE)
+      cs_cuda_mem_free(me.host_ptr, var_name, file_name, line_num);
 
     if (me.mode >= CS_ALLOC_HOST_DEVICE)
       cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
