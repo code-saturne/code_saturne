@@ -625,7 +625,22 @@ _petsc_common_block_hook(cs_param_sles_t    *slesp,
   }
 
   PCSetType(pc, PCFIELDSPLIT);
-  PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
+
+  switch (slesp->pcd_block_type) {
+  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+    PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+    PCFieldSplitSetType(pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_DIAG:
+  default:
+    PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
+    break;
+  }
 
   /* Apply modifications to the KSP structure */
   PetscInt  id, n_split;
@@ -1300,7 +1315,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
   cs_sles_petsc_init();
 
   if (slesp->precond == CS_PARAM_PRECOND_AMG &&
-      slesp->pcd_block_type == CS_PARAM_PRECOND_BLOCK_DIAG) {
+      slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
 
     if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG) {
       cs_sles_petsc_define(slesp->field_id,
