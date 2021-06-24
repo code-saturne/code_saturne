@@ -343,7 +343,8 @@ if (idtvar.ge.0) then
 
   write(nfecra,3060)
   write(nfecra,3061) ischtp
-  write(nfecra,3062)
+  if (ischtp.eq.2)  write(nfecra,3062) itpcol
+  write(nfecra,3063)
 
 endif
 
@@ -377,6 +378,8 @@ write(nfecra,9900)
  3061 format(                                                     &
 '       ISCHTP = ',4x,i10,    ' (1: order 1; 2: order 2      )'  )
  3062 format(                                                     &
+'       ITPCOL = ',4x,i10,    ' (0: staggered; 1: collocated )'  )
+ 3063 format(                                                     &
 '                                                             '  )
 
 ! --- Stokes
