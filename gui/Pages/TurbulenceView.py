@@ -84,6 +84,7 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
 
         self.labelTurbDiff.hide()
         self.comboBoxTurbDiff.hide()
+        self.turbDiff = None
 
         self.default = default
         self.result  = self.default.copy()
@@ -179,7 +180,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             self.result['gravity_terms'] = "off"
         self.result['wall_function'] = \
           int(self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())])
-        self.result['turb_diff'] = self.turbDiff.dicoV2M[str(self.comboBoxTurbDiff.currentText())]
+        if self.turbDiff:
+            self.result['turb_diff'] = self.turbDiff.dicoV2M[str(self.comboBoxTurbDiff.currentText())]
 
         QDialog.accept(self)
 

@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- GUI: fix crash when validating advanced turbulence dialog with RANS
+  models other than RSM (issue #313).
+
 - Fix the normalization of the residual when using PETSc and CDO schemes
 
 - Fix computations with solidification of a binary alloy using CDO schemes
