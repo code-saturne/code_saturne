@@ -75,10 +75,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Generic function pointer for an evaluation relying on an analytic
- *         function
- *         elt_ids is optional. If not NULL, it enables to access to the coords
- *         array with an indirection. The same indirection can be applied to
- *         fill retval if dense_output is set to false.
+ *         function.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, the coords
+ * array should be accessed with an indirection. The same indirection can
+ * be applied to fill retval if dense_output is set to false.
  *
  * \param[in]      time          when ?
  * \param[in]      n_elts        number of elements to consider
@@ -104,8 +105,10 @@ typedef void
  * \brief  Generic function pointer for computing a quantity at predefined
  *         locations such as degrees of freedom (DoF): cells, faces, edges or
  *         or vertices.
- *         elt_ids is optional. If not NULL, it enables to fill retval partially
- *         with this indirection if dense_output is set to false.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, the coords
+ * array should be accessed with an indirection. The same indirection can
+ * be applied to fill retval if dense_output is set to false.
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids

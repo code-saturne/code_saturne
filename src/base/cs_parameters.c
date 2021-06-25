@@ -1495,7 +1495,34 @@ cs_parameters_add_boundary_temperature(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Complete general output options definitions.
+ * \brief Complete general equation parameter definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_eqp_complete(void)
+{
+  /* Complete settings for variable fields. */
+
+  int k_id = cs_field_key_id_try("var_cal_opt");
+  if (k_id >= 0) {
+    const int n_fields = cs_field_n_fields();
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_key_struct_ptr(f, k_id);
+        if (eqp != NULL) {
+          if (eqp->dim != f->dim)
+            eqp->dim = f->dim;
+        }
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Complete general output option definitions.
  */
 /*----------------------------------------------------------------------------*/
 

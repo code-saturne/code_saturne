@@ -435,7 +435,11 @@ cs_equation_has_field_name(const cs_equation_t  *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the cs_equation_param_t structure associated to a
- *         cs_equation_t structure thanks to the equation name
+ *         cs_equation_t structure based on the equation name
+ *
+ * If no equation matches the given name but a field does, equation
+ * parameter structure associated to the field will be returned instead.
+ * This allows using this function with non-CDO (legacy) fields.
  *
  * \param[in]  eqname       name of the equation
  *
@@ -446,15 +450,23 @@ cs_equation_has_field_name(const cs_equation_t  *eq,
 cs_equation_param_t *
 cs_equation_param_by_name(const char    *eqname)
 {
-  if (eqname == NULL)
-    return NULL;
+  cs_equation_param_t *eq_param = NULL;
 
-  cs_equation_t  *eq = cs_equation_by_name(eqname);
+  if (eqname != NULL) {
 
-  if (eq == NULL)
-    return NULL;
-  else
-    return eq->param;
+    cs_equation_t  *eq = cs_equation_by_name(eqname);
+    if (eq != NULL)
+      eq_param = eq->param;
+
+    else {
+      cs_field_t *f = cs_field_by_name_try(eqname);
+      if (f != NULL)
+        eq_param = cs_field_get_equation_param(f);
+    }
+
+  }
+
+  return eq_param;
 }
 
 /*----------------------------------------------------------------------------*/

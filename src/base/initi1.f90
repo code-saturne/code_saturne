@@ -74,6 +74,12 @@ interface
     implicit none
   end subroutine cs_gui_output
 
+  subroutine cs_parameters_eqp_complete()  &
+      bind(C, name='cs_parameters_eqp_complete')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_parameters_eqp_complete
+
   subroutine cs_parameters_output_complete()  &
       bind(C, name='cs_parameters_output_complete')
     use, intrinsic :: iso_c_binding
@@ -159,6 +165,8 @@ if (icdo.lt.2) then
   call modini
   call fldini
 endif
+
+call cs_parameters_eqp_complete
 
 !===============================================================================
 ! Time moments called after additionnal creation

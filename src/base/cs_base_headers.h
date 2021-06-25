@@ -107,6 +107,7 @@
 #include "cs_volume_zone.h"
 #include "cs_vof.h"
 #include "cs_wall_functions.h"
+#include "cs_xdef_eval_at_zone.h"
 #include "cs_zone.h"
 
 #include "cs_medcoupling_remapper.h"

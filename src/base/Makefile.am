@@ -180,6 +180,7 @@ cs_vof.h \
 cs_volume_zone.h \
 cs_volume_mass_injection.h \
 cs_wall_functions.h \
+cs_xdef_eval_at_zone.h \
 cs_zone.h \
 cs_base_headers.h \
 cs_headers.h
@@ -276,6 +277,9 @@ csclli.f90 \
 cscloc.f90 \
 cscpce.f90 \
 cscpfb.f90 \
+csinit.f90 \
+csopli.f90 \
+csprnt.f90 \
 cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \
@@ -290,8 +294,8 @@ cs_gas_mix.c \
 cs_halo.c \
 cs_halo_perio.c \
 cs_head_losses.c \
+cs_internal_coupling.c \
 cs_interpolate.c \
-csinit.f90 \
 cs_log_iteration.c \
 cs_log_setup.c \
 cs_notebook.c \
@@ -301,7 +305,6 @@ cs_mesh_tagmr.f90 \
 cs_metal_structures_tag.f90 \
 cs_gas_mix_initialization.f90 \
 cs_gas_mix_physical_properties.f90 \
-csopli.f90 \
 cs_opts.c \
 cs_parall.c \
 cs_param_types.c \
@@ -346,8 +349,7 @@ cs_vof.c \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \
 cs_wall_functions.c \
-cs_internal_coupling.c \
-csprnt.f90 \
+cs_xdef_eval_at_zone.c \
 diffst.f90 \
 distpr.f90 \
 distpr2.f90 \
