@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2021 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -847,11 +847,14 @@ def source_syrthes_env(pkg):
 
     # Finally, ensure module can be imported
 
+    syrthes_bin = os.path.join(syrthes_home, 'bin')
     syr_datapath = os.path.join(syrthes_home,
                                 os.path.join('share', 'syrthes'))
-    if sys.path.count(syr_datapath) > 0:
-        sys.path.remove(syr_datapath)
-    sys.path.insert(0, syr_datapath)
+
+    for p in (syrthes_bin, syr_datapath):
+        if sys.path.count(p) > 0:
+            sys.path.remove(p)
+        sys.path.insert(0, p)
 
 #-------------------------------------------------------------------------------
 
