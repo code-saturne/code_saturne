@@ -317,9 +317,8 @@ class ListingDialogView(CommandMgrDialogView):
         """
         import subprocess
 
-        cmd = [self.case['package'].config.python]
-        cmd.append(os.path.join(self.case['package'].dirs['bindir'][1],
-                                self.case['package'].name))
+        cmd = [os.path.join(self.case['package'].dirs['bindir'][1],
+                            self.case['package'].name)]
         cmd.append("trackcvg")
         if self.scratch_dir:
             cmd.append("-r")
