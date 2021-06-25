@@ -374,7 +374,7 @@ cs_base_cuda_select_default_device(void)
 
   if (cs_glob_rank_id > -1 && n_devices > 1) {
 
-    int device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
+    device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
 
     assert(device_id > -1 && device_id < n_devices);
 
