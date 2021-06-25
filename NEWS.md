@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- GUI: fix launch of track convergence tool for builds using
+  `--with-shell-env` configure option (issue #315).
+
 - GUI: fix crash when validating advanced turbulence dialog with RANS
   models other than RSM (issue #313).
 
