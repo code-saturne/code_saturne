@@ -797,36 +797,6 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! Clipping of the turbulent viscosity in dynamic LES
-!===============================================================================
-
-! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
-! a ce que mu+mu_t soit positif, .e. on autorise mu_t legerement negatif
-! La diffusivite turbulente des scalaires (mu_t/sigma), elle, sera clippee a 0
-! dans covofi
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-
-if (iturb.eq.41) then
-  call field_get_val_s(iviscl, viscl)
-  call field_get_val_s(ivisct, visct)
-  iclipc = 0
-  do iel = 1, ncel
-    viscto = viscl(iel) + visct(iel)
-    if (viscto.lt.0.d0) then
-      visct(iel) = 0.d0
-      iclipc = iclipc + 1
-    endif
-  enddo
-  if (vcopt%iwarni.ge.1) then
-    if (irangp.ge.0) then
-      call parcpt(iclipc)
-    endif
-    write(nfecra,1000) iclipc
-  endif
-endif
-
-!===============================================================================
 ! Checking of the user values and put turbulent viscosity to 0 in
 ! disabled cells
 !===============================================================================
@@ -1162,8 +1132,6 @@ endif
 ! Formats
 !--------
 
- 1000 format(                                                     &
-' Nb of clippings for the effective viscosity (mu+mu_t>0):',i10,/)
  3010 format(                                                     &
 ' -----------------------------------------',                   /,&
 ' Property           Min. value  Max. value',                   /,&

@@ -459,7 +459,28 @@ if (vcopt%iwarni.ge.1) then
 endif
 
 !===============================================================================
-! 6.  Scalar turbulent model
+! 6.  Clipping of the turbulent viscosity
+!===============================================================================
+
+! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
+! a ce que mu_t soit positif,
+
+iclipc = 0
+do iel = 1, ncel
+  if (visct(iel).lt.0.d0) then
+    visct(iel) = 0.d0
+    iclipc = iclipc + 1
+  endif
+enddo
+if (vcopt%iwarni.ge.1) then
+  if (irangp.ge.0) then
+    call parcpt(iclipc)
+  endif
+  write(nfecra,2004) iclipc
+endif
+
+!===============================================================================
+! 7.  Scalar turbulent model
 !===============================================================================
 ! In case of gaz combustion, the SGS scalar flux constant and the turbulent
 ! diffusivity are only evaluated with the mixture fraction, then applied
@@ -488,7 +509,7 @@ do jj = 1, nscal
     call field_get_val_s(sca_dync_id, cpro_sca_dync)
 
     !================================================================
-    ! 6.1.  Compute the Mi for scalar
+    ! 7.1.  Compute the Mi for scalar
     !================================================================
 
     allocate(grads(3, ncelet))
@@ -547,7 +568,7 @@ do jj = 1, nscal
     enddo
 
     !================================================================
-    ! 6.2.  Compute the Li for scalar
+    ! 7.2.  Compute the Li for scalar
     !================================================================
     ! rho*U*Y
     do iel = 1, ncel
@@ -585,7 +606,7 @@ do jj = 1, nscal
     call les_filter(1, w2, w4)
 
     !================================================================
-    ! 6.3.  Compute the SGS flux coefficient and SGS diffusivity
+    ! 7.3.  Compute the SGS flux coefficient and SGS diffusivity
     !       Cs >= 0, Dt >=0
     !================================================================
 
@@ -620,7 +641,7 @@ deallocate(xro, xrof)
 !----
 
  1000 format(                                                           &
-' Nb of clipping of the Smagorinsky constant by max values',I10,/)
+' Nb of clipping of the Smagorinsky constant',              I10,/)
  2001 format(                                                           &
 ' --- Informations on the squared Smagorinsky constant'        ,/,&
 ' --------------------------------'                            ,/,&
@@ -630,6 +651,8 @@ deallocate(xro, xrof)
  e12.4    ,      e12.4,      e12.4                               )
  2003 format(                                                           &
 ' --------------------------------'                            ,/)
+ 2004 format(                                                           &
+' Nb of clippings for the turbulent viscosity (mu_t>0):',   i10,/)
 
 !----
 ! End
