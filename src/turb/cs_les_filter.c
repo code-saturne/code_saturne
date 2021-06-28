@@ -125,8 +125,8 @@ cs_les_filter(int        stride,
 
   /* Allocate and initialize working buffers */
 
-  BFT_MALLOC(w1, n_elts, cs_real_t);
-  BFT_MALLOC(w2, n_elts, cs_real_t);
+  BFT_MALLOC(w1, n_elts_l, cs_real_t);
+  BFT_MALLOC(w2, n_elts_l, cs_real_t);
 
   /* Case for scalar variable */
   /*--------------------------*/
@@ -168,11 +168,15 @@ cs_les_filter(int        stride,
           cs_lnum_t i = mesh->i_face_cells[face_id][0];
           cs_lnum_t j = mesh->i_face_cells[face_id][1];
 
-          w1[i] += val[j] * cell_vol[j];
-          w2[i] += cell_vol[j];
-          w1[j] += val[i] * cell_vol[i];
-          w2[j] += cell_vol[i];
+          if (i < n_cells) {
+            w1[i] += val[j] * cell_vol[j];
+            w2[i] += cell_vol[j];
+          }
 
+          if (j < n_cells) {
+            w1[j] += val[i] * cell_vol[i];
+            w2[j] += cell_vol[i];
+          }
         }
 
       }
@@ -239,10 +243,16 @@ cs_les_filter(int        stride,
           for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
             const cs_lnum_t ic = i *_stride + c_id;
             const cs_lnum_t jc = j *_stride + c_id;
-            w1[ic] += val[jc] * cell_vol[j];
-            w2[ic] += cell_vol[j];
-            w1[jc] += val[ic] * cell_vol[i];
-            w2[jc] += cell_vol[i];
+
+            if (i < n_cells) {
+              w1[ic] += val[jc] * cell_vol[j];
+              w2[ic] += cell_vol[j];
+            }
+
+            if (j < n_cells) {
+              w1[jc] += val[ic] * cell_vol[i];
+              w2[jc] += cell_vol[i];
+            }
           }
 
         }
