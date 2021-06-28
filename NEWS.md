@@ -20,6 +20,9 @@ Bug fixes:
 
 - Lagrangian module: fix particle injection when `n_user_variables` > 1.
 
+- Fix in LES filtering procedure for parallel runs, only for fully extended
+  neighborhood.
+
 Release 7.0.0 (June 15 2021)
 ----------------------------
 
