@@ -252,7 +252,7 @@ cs_user_sles_petsc_hook(void               *context,
 
     /* Assume a PETSc version greater or equal to 3.7.0 */
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
-      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
+      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V) {
 
         PetscOptionsSetValue(NULL,
                              "-pc_hypre_boomeramg_strong_threshold", "0.7");

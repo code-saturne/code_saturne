@@ -858,13 +858,16 @@ typedef struct {
  * Specify which type of algebraic multigrid (AMG) to choose.
  * Available choices are:
  * - "none" --> (default) No predefined AMG solver
- * - "boomer" --> Boomer AMG multigrid from the Hypre library
- * - "gamg" --> GAMG multigrid from the PETSc library
+ * - "boomer"/"boomer_v" --> Boomer AMG V-cycle multigrid from the Hypre library
+ * - "boomer_w" --> Boomer AMG W-cycle multigrid from the Hypre library
+ * - "gamg"/"gamg_v" --> GAMG V-cycle multigrid from the PETSc library
+ * - "gamg_w" --> GAMG W-cycle multigrid from the PETSc library
  * - "pcmg" --> MG multigrid as preconditioner from the PETSc library
- * - "v_cycle" --> Code_Saturne's built-in multigrid with a V-cycle strategy
- * - "k_cycle" --> Code_Saturne's built-in multigrid with a K-cycle strategy
- * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
- * PETSc in this case
+ * - "v_cycle" --> code_saturne's built-in multigrid with a V-cycle strategy
+ * - "k_cycle" --> code_saturne's built-in multigrid with a K-cycle strategy
+ * WARNING: When selecting "boomer", "boomer_w" and "gamg"/"gamg_w", one needs
+ * to install code_saturne with the PETSc library and PETSc with Hypre if one
+ * wants to use boomeramg
  *
  * \var CS_EQKEY_BC_ENFORCEMENT
  * Set the type of enforcement of the boundary conditions.

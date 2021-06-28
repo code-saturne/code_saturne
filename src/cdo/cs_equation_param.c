@@ -209,12 +209,22 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
     }
-    else if (strcmp(keyval, "boomer") == 0) {
-      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+    else if (strcmp(keyval, "boomer") == 0 ||
+             strcmp(keyval, "boomer_v") == 0) {
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
     }
-    else if (strcmp(keyval, "gamg") == 0) {
-      eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+    else if (strcmp(keyval, "boomer_w") == 0) {
+      eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+    }
+    else if (strcmp(keyval, "gamg") == 0 ||
+             strcmp(keyval, "gamg_v") == 0) {
+      eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+    }
+    else if (strcmp(keyval, "gamg_w") == 0) {
+      eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else if (strcmp(keyval, "pcmg") == 0) {
@@ -562,14 +572,14 @@ _set_key(cs_equation_param_t   *eqp,
       if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
       else if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
         /* Default when using PETSc */
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
       }
 #if defined(PETSC_HAVE_HYPRE)
       /* Up to now HYPRE is available only through the PETSc interface */
       else if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
         /* Default when using PETSc */
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
       }
@@ -594,20 +604,20 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
         break;
       case CS_PARAM_SLES_CLASS_PETSC:
-        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
         /* Default when using PETSc */
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
       case CS_PARAM_SLES_CLASS_HYPRE:
         /* Set the default choice */
 #if defined(PETSC_HAVE_HYPRE)
-        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
         cs_base_warn(__FILE__, __LINE__);
         bft_printf(" Switch to PETSc multigrid since Hypre is not available"
                    " for equation %s.\n", eqname);
-        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
         /* Default when using PETSc */

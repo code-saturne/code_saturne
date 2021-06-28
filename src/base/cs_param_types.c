@@ -642,11 +642,17 @@ cs_param_get_amg_type_name(cs_param_amg_type_t   type)
   case CS_PARAM_AMG_NONE:
     return  "None";
     break;
-  case CS_PARAM_AMG_HYPRE_BOOMER:
-    return  "Boomer (Hypre)";
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+    return  "Boomer V-cycle (Hypre)";
     break;
-  case CS_PARAM_AMG_PETSC_GAMG:
-    return  "GAMG (PETSc)";
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    return  "Boomer W-cycle (Hypre)";
+    break;
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+    return  "GAMG V-cycle (PETSc)";
+    break;
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+    return  "GAMG W-cycle (PETSc)";
     break;
   case CS_PARAM_AMG_PETSC_PCMG:
     return  "PCMG (PETSc)";

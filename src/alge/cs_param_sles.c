@@ -240,20 +240,29 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     {
       switch (slesp->amg_type) {
 
-      case CS_PARAM_AMG_PETSC_GAMG:
+      case CS_PARAM_AMG_PETSC_GAMG_V:
         PCSetType(pc, PCGAMG);
         PCGAMGSetType(pc, PCGAMGAGG);
         PCGAMGSetNSmooths(pc, 1);
+        PCMGSetCycleType(pc, PC_MG_CYCLE_V);
+        break;
+
+      case CS_PARAM_AMG_PETSC_GAMG_W:
+        PCSetType(pc, PCGAMG);
+        PCGAMGSetType(pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(pc, 1);
+        PCMGSetCycleType(pc, PC_MG_CYCLE_W);
         break;
 
       case CS_PARAM_AMG_PETSC_PCMG:
         PCSetType(pc, PCMG);
         break;
 
-      case CS_PARAM_AMG_HYPRE_BOOMER:
+      case CS_PARAM_AMG_HYPRE_BOOMER_V:
 #if defined(PETSC_HAVE_HYPRE)
         PCSetType(pc, PCHYPRE);
         PCHYPRESetType(pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
@@ -263,6 +272,25 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
         PCSetType(pc, PCGAMG);
         PCGAMGSetType(pc, PCGAMGAGG);
         PCGAMGSetNSmooths(pc, 1);
+        PCMGSetCycleType(pc, PC_MG_CYCLE_V);
+#endif
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER_W:
+#if defined(PETSC_HAVE_HYPRE)
+        PCSetType(pc, PCHYPRE);
+        PCHYPRESetType(pc, "boomeramg");
+        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
+#else
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
+                      " available.\n",
+                      __func__, slesp->name);
+        PCSetType(pc, PCGAMG);
+        PCGAMGSetType(pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(pc, 1);
+        PCMGSetCycleType(pc, PC_MG_CYCLE_W);
 #endif
         break;
 
@@ -316,7 +344,8 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t   *slesp)
     {
       switch (slesp->amg_type) {
 
-      case CS_PARAM_AMG_PETSC_GAMG:
+      case CS_PARAM_AMG_PETSC_GAMG_V:
+      case CS_PARAM_AMG_PETSC_GAMG_W:
         _petsc_pcgamg_hook();
         break;
 
@@ -324,7 +353,8 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t   *slesp)
         _petsc_pcmg_hook();
         break;
 
-      case CS_PARAM_AMG_HYPRE_BOOMER:
+      case CS_PARAM_AMG_HYPRE_BOOMER_V:
+      case CS_PARAM_AMG_HYPRE_BOOMER_W:
 #if defined(PETSC_HAVE_HYPRE)
         _petsc_pchypre_hook();
 #else
@@ -1317,14 +1347,16 @@ _set_petsc_hypre_sles(bool                 use_field_id,
   if (slesp->precond == CS_PARAM_PRECOND_AMG &&
       slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
 
-    if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG) {
+    if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W) {
       cs_sles_petsc_define(slesp->field_id,
                            sles_name,
                            MATMPIAIJ,
                            _petsc_amg_block_gamg_hook,
                            (void *)slesp);
     }
-    else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
+    else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+             slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 #if defined(PETSC_HAVE_HYPRE)
       cs_sles_petsc_define(slesp->field_id,
                            sles_name,
