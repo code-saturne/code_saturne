@@ -59,9 +59,9 @@ implicit none
 
 ! Local variables
 
-integer          f_id, n_moments
-integer          ii, jj, imom, iok, ikw
-integer          nbccou, flag
+integer          f_id
+integer          ii, jj, iok, ikw
+integer          nbccou
 integer          nscacp, iscal, ivar
 integer          imrgrp
 integer          iscacp, kcpsyr, icpsyr
@@ -69,8 +69,6 @@ integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext
 integer          kturt, turb_flux_model, turb_flux_model_type
-
-logical          is_set
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
 double precision scminp
@@ -97,10 +95,6 @@ call field_get_key_id('turbulent_flux_model', kturt)
 !===============================================================================
 
 !---> sorties chrono?
-!     Sauf mention contraire de l'utilisateur, on sort a la fin les
-!        variables de calcul, la viscosite, rho, le pas de temps s'il
-!        est variable, les estimateurs s'ils sont actives, les moments
-!        s'il y en a et la viscosite de maillage en ALE.
 
 if (idtvar.lt.0) then
   call hide_property(icour)
@@ -113,23 +107,6 @@ endif
 !      On sort toutes les variables a tous les pas de temps par defaut
 !      NTHIST = -1 : on ne sort pas d'historiques
 !      NTHIST =  n : on sort des historiques tous les n pas de temps
-!      NTHSAV = -1 : on sauvegarde a la fin uniquement
-!      NTHSAV =  0 : periode par defaut (voir caltri)
-!             > 0  : periode
-
-n_moments = cs_time_moment_n_moments()
-
-do imom = 1, n_moments
-  f_id = time_moment_field_id(imom)
-  if (f_id.lt.0) cycle
-  call field_is_key_set(f_id, keyvis, is_set)
-  if (.not. is_set) then
-    flag = POST_ON_LOCATION + POST_MONITOR
-    call field_set_key_int(f_id, keyvis, flag)
-  endif
-  call field_is_key_set(f_id, keylog, is_set)
-  if (.not. is_set) call field_set_key_int(f_id, keylog, 1)
-enddo
 
 ! Adapt the output frequency parameters according to the time scheme.
 if (idtvar.lt.0.or.idtvar.eq.2) then
@@ -178,7 +155,6 @@ endif
 ! ---> restart
 
 call indsui(isuite)
-!==========
 
 if (isuit1.eq.-1) isuit1 = isuite
 

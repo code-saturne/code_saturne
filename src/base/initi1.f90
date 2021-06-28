@@ -74,6 +74,12 @@ interface
     implicit none
   end subroutine cs_gui_output
 
+  subroutine cs_parameters_output_complete()  &
+      bind(C, name='cs_parameters_output_complete')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_parameters_output_complete
+
   subroutine user_finalize_setup_wrapper()  &
       bind(C, name='cs_user_finalize_setup_wrapper')
     use, intrinsic :: iso_c_binding
@@ -157,7 +163,6 @@ endif
 !===============================================================================
 ! Time moments called after additionnal creation
 !===============================================================================
-! Time moments
 
 call cs_gui_time_moments
 call cs_user_time_moments
@@ -187,6 +192,8 @@ if (icdo.lt.2) then
       call user_finalize_setup_wrapper
    endif
 endif
+
+call cs_parameters_output_complete
 
 !===============================================================================
 ! Coherency checks

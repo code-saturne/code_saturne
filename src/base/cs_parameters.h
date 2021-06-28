@@ -403,6 +403,15 @@ cs_parameters_add_boundary_temperature(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Complete general output options definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_output_complete(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a local variable calculation options structure,
  *        with default options.
  *

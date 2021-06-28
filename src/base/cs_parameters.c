@@ -51,11 +51,12 @@
 #include "cs_gradient.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_parall.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
-#include "cs_mesh_location.h"
+#include "cs_time_moment.h"
 #include "cs_tree.h"
 
 /*----------------------------------------------------------------------------
@@ -1487,6 +1488,35 @@ cs_parameters_add_boundary_temperature(void)
   }
 
   return bf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Complete general output options definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_output_complete(void)
+{
+  /* Complete default settings for moment fields */
+
+  const int n_moments = cs_time_moment_n_moments();
+  if (n_moments > 0) {
+    int k_log = cs_field_key_id("log");
+    int k_vis = cs_field_key_id("post_vis");
+    for (int m_id = 0; m_id < n_moments; m_id++) {
+      cs_field_t *f = cs_time_moment_get_field(m_id);
+      if (f != NULL) {
+        if (cs_field_is_key_set(f, k_vis) == false) {
+          int flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+          cs_field_set_key_int(f, k_vis, flag);
+        }
+        if (cs_field_is_key_set(f, k_log) == false)
+          cs_field_set_key_int(f, k_vis, 1);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

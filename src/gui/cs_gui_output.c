@@ -727,7 +727,7 @@ cs_gui_output(void)
   BFT_FREE(moment_id);
 
 #if _XML_DEBUG_
-  bft_printf("==>CSENSO\n");
+  bft_printf("%s\n", __func__);
   bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
 #endif
 }
