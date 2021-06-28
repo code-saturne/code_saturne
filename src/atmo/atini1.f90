@@ -75,82 +75,15 @@ endif
 ! 2. Transported variables for IPPMOD(IATMOS) = 0, 1 or 2
 !===============================================================================
 
-! 2.0  Constant density
-! =====================
-
 if (ippmod(iatmos).eq.0) then
 
   ! constant density
   irovar = 0
 
-  ! physical or numerical quantities specific to scalars
+else if (ippmod(iatmos).ge.1) then
 
-  do isc = 1, nscapp
-
-    jj = iscapp(isc)
-
-    if (iscavr(jj).le.0) then
-      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
-    endif
-
-  enddo
-
-endif
-
-! 2.1  Dry atmosphere
-! ===================
-
-if (ippmod(iatmos).eq.1) then
-
-  ! for the dry atmosphere case, non constant density
+  ! for the dry or humid atmosphere case, non constant density
   irovar = 1
-
-  ! physical or numerical quantities specific to scalars
-
-  do isc = 1, nscapp
-
-    jj = iscapp(isc)
-
-    if (iscavr(jj).le.0) then
-      call field_get_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
-      ! If not set elsewhere (user, GUI, ...)
-      if (visls_0.lt.-grand) then
-
-        ! For the temperature, the diffusivity factor is directly the thermal conductivity
-        ! lambda = Cp * mu / Pr
-        ! where Pr is the (molecular) Prandtl number
-        if (itherm .eq. 1.and.jj.eq.iscalt) then
-          visls_0 = viscl0 * cp0
-        else
-          visls_0 = viscl0
-        endif
-        call field_set_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
-      endif
-    endif
-
-  enddo
-
-endif
-
-! 2.2  Humid atmosphere
-! =====================
-
-if (ippmod(iatmos).eq.2) then
-
-  ! for the humid atmosphere case, non constant density
-  irovar = 1
-
-  ! physical or numerical quantities specific to scalars
-
-  do isc = 1, nscapp
-
-    jj = iscapp(isc)
-
-    if (iscavr(jj).le.0) then
-      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
-    endif
-
-  enddo
 
 endif
 

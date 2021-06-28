@@ -851,51 +851,35 @@ do iscal = 1, nscal
   endif
 enddo
 
-! For scalars which are not variances, define the reference diffusivity
+do ii = 1, nscal
+  f_id = ivarfl(isca(ii))
+  call field_get_key_double(f_id, kvisl0, visls_0)
 
-! Pour les variances de fluctuations, les valeurs du tableau
-! precedent ne doivent pas avoir ete modifiees par l'utilisateur
-! Elles sont prises egales aux valeurs correspondantes pour le
-! scalaire associe.
-
-if (iscalt.gt.0) then
-  call field_get_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
-  if (visls_0.lt.-grand) then
-    ! For the temperature, the diffusivity factor is directly the
-    ! thermal conductivity
-    ! lambda = Cp * mu / Pr
-    ! where Pr is the (molecular) Prandtl number
-    if (itherm .eq. 1) then
+  ! For scalars which are not variances, define the reference diffusivity
+  if (iscavr(ii).le.0 .and. visls_0.lt.-grand) then
+    call field_get_key_int(f_id, kscacp, iscacp)
+    if (iscacp.gt.0) then
+      ! For temperature, the diffusivity factor is directly the thermal conductivity
+      ! lambda = Cp * mu / Pr
+      ! where Pr is the (molecular) Prandtl number
       visls_0 = viscl0 * cp0
-    else if (itherm .eq. 2) then
+    else
       visls_0 = viscl0
     endif
-    call field_set_key_double(ivarfl(isca(iscalt)), kvisl0, visls_0)
+    call field_set_key_double(f_id, kvisl0, visls_0)
   endif
-endif
 
-if (nscaus.gt.0) then
-  do jj = 1, nscaus
-    call field_get_key_double(ivarfl(isca(jj)), kvisl0, visls_0)
-    if (iscavr(jj).le.0 .and. visls_0.lt.-grand) then
-      call field_set_key_double(ivarfl(isca(jj)), kvisl0, viscl0)
+  ! For fluctuation variances, the diffusivity is that of the associated scalar.
+  iscal = iscavr(ii)
+  if (iscal.gt.0.and.iscal.le.nscal)then
+    call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
+    call field_get_key_double(f_id, kvisl0, visls_cmp)
+    call field_set_key_double(f_id, kvisl0, visls_0)
+    if (visls_cmp.gt.-grand) then
+      write(nfecra,1071) ii, iscal, ii, iscal, visls_0
     endif
-  enddo
-endif
-
-if (nscal.gt.0) then
-  do ii = 1, nscal
-    iscal = iscavr(ii)
-    if (iscal.gt.0.and.iscal.le.nscal)then
-      call field_get_key_double(ivarfl(isca(ii)), kvisl0, visls_cmp)
-      call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
-      call field_set_key_double(ivarfl(isca(ii)), kvisl0, visls_0)
-      if (visls_cmp.gt.-grand) then
-        write(nfecra,1071) ii, iscal, ii, iscal, visls_0
-      endif
-    endif
-  enddo
-endif
+  endif
+enddo
 
 ! xyzp0 : reference point for hydrostatic pressure
 ! The user should specify the 3 coordinates, otherwise
