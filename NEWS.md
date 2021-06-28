@@ -5,6 +5,8 @@ Bug fixes:
 
 - Fix crash with Syrthes volume coupling.
 
+- Fix in LES filtering procedure for parallel runs.
+
 Release 6.0.7 (May 18 2021)
 ---------------------------
 
