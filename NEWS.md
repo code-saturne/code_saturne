@@ -3,6 +3,8 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- GUI: fix handling of density and laminar viscosity output.
+
 - Do not postprocess "volume_forces" and "hydrostatic_pressure"
   by default, as those are undocumented and numerics-oriented only.
 
