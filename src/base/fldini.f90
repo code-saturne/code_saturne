@@ -188,7 +188,7 @@ if (iphydr.eq.1) then
                             itycat, ityloc, idim3, f_id)
 
   call field_set_key_int(f_id, keylog, 1)
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION)
+  call field_set_key_int(f_id, keyvis, 0)
 endif
 
 ! friction velocity at the wall, in the case of a LES calculation
