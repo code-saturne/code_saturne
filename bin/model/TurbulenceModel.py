@@ -149,7 +149,7 @@ class TurbulenceModel(Variables, Model):
         default = {}
         default['turbulence_model']          = "k-epsilon-PL"
         default['length_scale']              = 1.0
-        default['turbulent_diffusion_model'] = 'daly_harlow'
+        default['turbulent_diffusion_model'] = 'shir'
         default['wall_function']             = 3
         default['gravity_terms']             = "on"
         default['reference_velocity']        = 1.0

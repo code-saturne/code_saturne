@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Turbulence: RSM models now default to isotropic (Shir) diffusivity model.
+
 - Gas mix now accepts user definitions, using the
   `cs_gas_mix_add_species_with_properties` function.
   * The model currenty still assumes that of n associated species,

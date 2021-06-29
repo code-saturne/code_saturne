@@ -497,13 +497,6 @@ ikwcln = 1
 irccor = 0
 itycor = -999
 
-! --- Turbulent diffusion model for second moment closure
-!     Set to 1 (Daly and Harlow model) by default
-idirsm = 1
-
-! --- Stokes
-
-
 ! --- Take porosity into account
 
 iporos = 0

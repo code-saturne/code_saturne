@@ -331,7 +331,7 @@ cs_user_model(void)
      - 0: scalar diffusivity (Shir model)
      - 1: tensorial diffusivity (Daly and Harlow model, default model)
      */
-  rans_model->idirsm = 0;
+  rans_model->idirsm = 1;
 
   /*! [Rij_coupled_solver_choice] */
 

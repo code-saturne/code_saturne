@@ -343,7 +343,7 @@ _turb_rans_model =
 {
   .irccor     =    0,
   .itycor     = -999,
-  .idirsm     =    1,
+  .idirsm     =    0,
   .iclkep     =    0,
   .igrhok     =    0,
   .igrake     =    1,
