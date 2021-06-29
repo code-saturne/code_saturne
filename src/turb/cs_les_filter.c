@@ -122,8 +122,8 @@ _les_filter_ext_neighborhood(int        stride,
 
   /* Allocate and initialize working buffers */
 
-  BFT_MALLOC(w1, n_elts_l, cs_real_t);
-  BFT_MALLOC(w2, n_elts_l, cs_real_t);
+  BFT_MALLOC(w1, n_elts, cs_real_t);
+  BFT_MALLOC(w2, n_elts, cs_real_t);
 
   /* Case for scalar variable */
   /*--------------------------*/
@@ -153,6 +153,12 @@ _les_filter_ext_neighborhood(int        stride,
 
     } /* End of loop on cells */
 
+#   pragma omp parallel for if (mesh->n_ghost_cells > CS_THR_MIN)
+    for (cs_lnum_t i = n_cells; i < n_cells_ext; i++) {
+      w1[i] = 0;
+      w2[i] = 0;
+    }
+
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for
@@ -165,15 +171,11 @@ _les_filter_ext_neighborhood(int        stride,
           cs_lnum_t i = mesh->i_face_cells[face_id][0];
           cs_lnum_t j = mesh->i_face_cells[face_id][1];
 
-          if (i < n_cells) {
-            w1[i] += val[j] * cell_vol[j];
-            w2[i] += cell_vol[j];
-          }
+          w1[i] += val[j] * cell_vol[j];
+          w2[i] += cell_vol[j];
 
-          if (j < n_cells) {
-            w1[j] += val[i] * cell_vol[i];
-            w2[j] += cell_vol[i];
-          }
+          w1[j] += val[i] * cell_vol[i];
+          w2[j] += cell_vol[i];
         }
 
       }
@@ -225,6 +227,15 @@ _les_filter_ext_neighborhood(int        stride,
 
     } /* End of loop on cells */
 
+#   pragma omp parallel for if (mesh->n_ghost_cells > CS_THR_MIN)
+    for (cs_lnum_t i = n_cells; i < n_cells_ext; i++) {
+      for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
+        const cs_lnum_t ic = i *_stride + c_id;
+        w1[ic] = 0;
+        w2[ic] = 0;
+      }
+    }
+
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for
@@ -241,15 +252,11 @@ _les_filter_ext_neighborhood(int        stride,
             const cs_lnum_t ic = i *_stride + c_id;
             const cs_lnum_t jc = j *_stride + c_id;
 
-            if (i < n_cells) {
-              w1[ic] += val[jc] * cell_vol[j];
-              w2[ic] += cell_vol[j];
-            }
+            w1[ic] += val[jc] * cell_vol[j];
+            w2[ic] += cell_vol[j];
 
-            if (j < n_cells) {
-              w1[jc] += val[ic] * cell_vol[i];
-              w2[jc] += cell_vol[i];
-            }
+            w1[jc] += val[ic] * cell_vol[i];
+            w2[jc] += cell_vol[i];
           }
 
         }
