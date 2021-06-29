@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Do not postprocess "volume_forces" and "hydrostatic_pressure"
+  by default, as those are undocumented and numerics-oriented only.
+
 - GUI: fix launch of track convergence tool for builds using
   `--with-shell-env` configure option (issue #315).
 
