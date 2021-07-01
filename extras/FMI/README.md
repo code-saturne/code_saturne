@@ -36,6 +36,10 @@ after the project (project.cpp) which much be filled;
 * Once every methods are completed (mainly init, doStep, terminate, getters and
 setters of every used variable types), the FMU can be built;
 
+Note that when updating the FMU (for example adding variables), the
+generated `code_saturne.h` file in the project should be removed before
+re-building the FMU, as it will not be overwritten by default.
+
 Using code_saturne as a FMU
 ---------------------------
 
