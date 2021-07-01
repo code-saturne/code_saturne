@@ -66,6 +66,7 @@
 #endif
 
 #include "cs_cf_thermo.h"
+#include "cs_coupling.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_ht_convert.h"
