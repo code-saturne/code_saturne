@@ -36,7 +36,7 @@
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
-   mbrom  , iterns ,                                              &
+   mbrom  ,                                                       &
    dt     )
 
 use paramx
@@ -63,7 +63,7 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          mbrom  , iterns
+integer          mbrom
 
 double precision dt(ncelet)
 

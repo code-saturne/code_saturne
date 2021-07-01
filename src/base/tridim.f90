@@ -1185,7 +1185,7 @@ do while (iterns.le.nterup)
 
       ! Darcy : update data specific to underground flow
       mbrom = 0
-      call usphyv(nvar, nscal, mbrom, iterns, dt)
+      call usphyv(nvar, nscal, mbrom, dt)
 
       ! C version
       call user_physical_properties()
