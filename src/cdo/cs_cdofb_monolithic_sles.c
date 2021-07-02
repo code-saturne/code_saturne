@@ -352,6 +352,200 @@ _face_gdot(cs_lnum_t    size,
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the command line option for PETSc
+ *
+ * \param[in]      use_prefix    need a prefix
+ * \param[in]      prefix        optional prefix
+ * \param[in]      keyword       command keyword
+ * \param[in]      keyval        command value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_cmd(bool          use_prefix,
+           const char   *prefix,
+           const char   *keyword,
+           const char   *keyval)
+{
+  char  cmd_line[128];
+
+  if (use_prefix)
+    sprintf(cmd_line, "-%s_%s", prefix, keyword);
+  else
+    sprintf(cmd_line, "-%s", keyword);
+
+  PetscOptionsSetValue(NULL, cmd_line, keyval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the default options for a PCGAMG type in PETSc
+ *
+ * \param[in]  prefix        optional prefix
+ * \param[in]  system_size   size of the linear system
+ * \param[in]  amg_type      type of AMG preconditioner
+ * \param[in]  is_sym        system to solve is symmetric ?
+ * \param[in]  light_smooth  use a light-weight smoothing strategy
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_gamg_pc(const char            prefix[],
+             cs_gnum_t             system_size,
+             cs_param_amg_type_t   amg_type,
+             bool                  is_sym,
+             bool                  light_smooth)
+{
+  /* Estimate the number of levels */
+  double  _n_levels = ceil(0.6*(log(system_size) - 5));
+  int n_levels = 1, max_levels = 14;
+  if (_n_levels > 1)
+    n_levels = (int)_n_levels;
+
+  /* Need to add a prefix */
+  bool  use_pre = (prefix != NULL) ? true : false;
+  if (use_pre)
+    if (strlen(prefix) < 1) use_pre = false;
+
+  /* Set the type of cycles (V or W) */
+  switch(amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+    _petsc_cmd(use_pre, prefix, "pc_mg_cycle_type", "v");
+    n_levels = CS_MIN(n_levels, max_levels) + 1;
+    break;
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+    _petsc_cmd(use_pre, prefix, "pc_mg_cycle_type", "w");
+    n_levels = CS_MIN(n_levels, max_levels);
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Incompatible type of AMG for PETSc.\n",
+              __func__);
+    break;
+  }
+
+  char  string_n_levels[4];
+  sprintf(string_n_levels, "%2d", n_levels);
+  _petsc_cmd(use_pre, prefix, "pc_mg_levels", string_n_levels);
+
+  /* Symmetrize the graph before computing the aggregation. Some algorithms
+   * require the graph be symmetric (default=false) */
+  _petsc_cmd(use_pre, prefix, "pc_gamg_sym_graph", "true");
+
+  /* Remark: -pc_gamg_reuse_interpolation
+   *
+   * Reuse prolongation when rebuilding algebraic multigrid
+   * preconditioner. This may negatively affect the convergence rate of the
+   * method on new matrices if the matrix entries change a great deal, but
+   * allows rebuilding the preconditioner quicker. (default=false)
+   */
+
+  /* Remark: -pc_gamg_square_graph
+   *
+   * Squaring the graph increases the rate of coarsening (aggressive
+   * coarsening) and thereby reduces the complexity of the coarse grids, and
+   * generally results in slower solver converge rates. Reducing coarse grid
+   * complexity reduced the complexity of Galerkin coarse grid construction
+   * considerably. (default = 1)
+   *
+   * Remark: -pc_gamg_threshold
+   *
+   * Increasing the threshold decreases the rate of coarsening. Conversely
+   * reducing the threshold increases the rate of coarsening (aggressive
+   * coarsening) and thereby reduces the complexity of the coarse grids, and
+   * generally results in slower solver converge rates. Reducing coarse grid
+   * complexity reduced the complexity of Galerkin coarse grid construction
+   * considerably. Before coarsening or aggregating the graph, GAMG removes
+   * small values from the graph with this threshold, and thus reducing the
+   * coupling in the graph and a different (perhaps better) coarser set of
+   * points. (default=0.0) */
+
+  if (is_sym) {
+
+    /* Number of smoothing steps to use with smooth aggregation (default=1) */
+    _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "1");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
+
+    /* PCMG settings (options shared with PCGAMG) */
+    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.08");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "2");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "500");
+
+    /* Coarse grid solver */
+    /* _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs"); */
+
+    /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
+
+    /* Set the up/down smoothers */
+    if (light_smooth) {
+
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
+
+    }
+    else {
+
+      /* Each Richardson step is completed with a ILU(0)-GMRES call */
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_bjacobi_blocks", "1");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_type", "gmres");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_gmres_restart", "5");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_max_it", "5");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_rtol", "1e-5");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_pc_type", "sor");
+
+    }
+
+  }
+  else { /* Not a symmetric system */
+
+    /* Number of smoothing steps to use with smooth aggregation (default=1) */
+    _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "0");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "250");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "0");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.02");
+
+    /* Set the up/down smoothers */
+    _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
+
+    /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_norm_type", "none");
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
+    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
+
+    if (light_smooth) {
+
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
+
+    }
+    else {
+
+      /* Each Richardson step is completed with a ILU(0)-GMRES call */
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_bjacobi_blocks", "1");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_type", "gmres");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_gmres_restart", "10");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_max_it", "10");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_rtol", "1e-5");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_norm_type", "none");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_pc_type", "ilu");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_pc_factor_levels", "0");
+
+    } /* Light smoothing ? */
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the way to normalize the residual vector
  *
  * \param[in]       norm_type   type of normalization
@@ -1852,24 +2046,13 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
               KSP                            ksp)
 {
   PC  up_pc;
-  PCType  pc_type = _petsc_get_pc_type(slesp);
-
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
   KSPGetPC(ksp, &up_pc);
+
+  PCType  pc_type = _petsc_get_pc_type(slesp);
   PCSetType(up_pc, pc_type);
 
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
-                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
-                   nslesp->il_algo_dtol,   /* divergence tolerance */
-                   nslesp->n_max_il_algo_iter); /* max number of iterations */
-
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  cs_gnum_t  system_size = 3*quant->n_g_faces + quant->n_cells;
 
   /* Additional settings for the preconditioner */
   switch (slesp->precond) {
@@ -1878,15 +2061,9 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
     switch (slesp->amg_type) {
 
     case CS_PARAM_AMG_PETSC_GAMG_V:
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);         /* default: 1 */
-      PCMGSetCycleType(up_pc, PC_MG_CYCLE_V);
-      break;
-
     case CS_PARAM_AMG_PETSC_GAMG_W:
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);         /* default: 1 */
-      PCMGSetCycleType(up_pc, PC_MG_CYCLE_W);
+      _set_gamg_pc("", system_size, slesp->amg_type,
+                   false, false); /* is_sym, light_smooth */
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
@@ -1894,9 +2071,8 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
       PCHYPRESetType(up_pc, "boomeramg");
       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
 #else
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);
-      PCMGSetCycleType(up_pc, PC_MG_CYCLE_V);
+      _set_gamg_pc("", system_size, slesp->amg_type,
+                   false, false); /* is_sym, light_smooth */
 #endif
       break;
 
@@ -1905,9 +2081,8 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
       PCHYPRESetType(up_pc, "boomeramg");
       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
 #else
-      PCGAMGSetType(up_pc, PCGAMGAGG);
-      PCGAMGSetNSmooths(up_pc, 1);
-      PCMGSetCycleType(up_pc, PC_MG_CYCLE_W);
+      _set_gamg_pc("", system_size, slesp->amg_type,
+                   false, false); /* is_sym, light_smooth */
 #endif
       break;
 
@@ -1923,16 +2098,11 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
 
   } /* Switch on preconditioner */
 
-  /* Need to call PCSetUp before configuring the second level (Thanks to
-     Natacha Bereux) */
-  PCSetFromOptions(up_pc);
-  PCSetUp(up_pc);
-  KSPSetUp(ksp);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver options and a 4x4 block preconditioner in case of
+ * \brief  Set the solver options with a 4x4 block preconditioner in case of
  *         Notay's strategy
  *
  * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
@@ -1942,9 +2112,9 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
-                     const cs_param_sles_t         *slesp,
-                     KSP                            ksp)
+_notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
+                          const cs_param_sles_t         *slesp,
+                          KSP                            ksp)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_range_set_t  *rset = cs_shared_range_set;
@@ -1959,6 +2129,9 @@ _notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
   PetscMalloc1(alloc_size, &indices);
 
   IS  is[4] = {NULL, NULL, NULL, NULL};
+  PC up_pc;
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, PCFIELDSPLIT);
 
   /* IndexSet for the each component of the velocity DoFs */
   for (int k = 0; k < 3; k++) {
@@ -2000,39 +2173,33 @@ _notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
 
   PetscFree(indices);
 
-  PC up_pc;
-
-  KSPGetPC(ksp, &up_pc);
-  PCSetType(up_pc, PCFIELDSPLIT);
-
-  switch (slesp->pcd_block_type) {
-  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
-    PCFieldSplitSetType(up_pc, PC_COMPOSITE_MULTIPLICATIVE);
-    break;
-
-  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
-    PCFieldSplitSetType(up_pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
-    break;
-
-  case CS_PARAM_PRECOND_BLOCK_DIAG:
-  default:
-    PCFieldSplitSetType(up_pc, PC_COMPOSITE_ADDITIVE);
-    break;
-  }
-
+  /* Define the preconditioner */
   PCFieldSplitSetIS(up_pc, "velx", is[0]);
   PCFieldSplitSetIS(up_pc, "vely", is[1]);
   PCFieldSplitSetIS(up_pc, "velz", is[2]);
   PCFieldSplitSetIS(up_pc, "pr", is[3]);
 
-  /* Need to call PCSetUp before configuring the second level (Thanks to
-   * Natacha Bereux) */
-  PCSetFromOptions(up_pc);
-  PCSetUp(up_pc);
-  KSPSetUp(ksp);
+  switch (slesp->pcd_block_type) {
+  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "multiplicative");
+    break;
 
-  PCType  pc_type = _petsc_get_pc_type(slesp);
+  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "symmetric_multiplicative");
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_DIAG:
+  default:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "additive");
+    break;
+  }
+
+  char prefix[4][32] = { "fieldsplit_velx",
+                         "fieldsplit_vely",
+                         "fieldsplit_velz",
+                         "fieldsplit_pr" };
+
   PetscInt  n_split;
   KSP  *up_subksp;
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
@@ -2040,13 +2207,15 @@ _notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
 
   for (int k = 0; k < 4; k++) {
 
-    PC  _pc;
-    KSP  _ksp = up_subksp[k];
+    _petsc_cmd(true, prefix[k], "ksp_type", "preonly");
+    _petsc_cmd(true, prefix[k], "ksp_norm_type", "unpreconditioned");
 
-    KSPSetType(_ksp, KSPPREONLY);
-    KSPGetPC(_ksp, &_pc);
-    KSPSetNormType(_ksp, KSP_NORM_UNPRECONDITIONED);
-    PCSetType(_pc, pc_type);
+    bool  is_sym = false, light_smooth = true;
+    cs_gnum_t  system_size = quant->n_g_faces;
+    if (k == 3) {
+      system_size = quant->n_g_cells;
+      is_sym = true;
+    }
 
     /* Additional settings for the preconditioner */
     switch (slesp->precond) {
@@ -2055,36 +2224,33 @@ _notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
       switch (slesp->amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG_V:
-        PCGAMGSetType(_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(_pc, 1);
-        PCMGSetCycleType(_pc, PC_MG_CYCLE_V);
-        break;
-
       case CS_PARAM_AMG_PETSC_GAMG_W:
-        PCGAMGSetType(_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(_pc, 1);
-        PCMGSetCycleType(_pc, PC_MG_CYCLE_W);
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, light_smooth);
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
 #if defined(PETSC_HAVE_HYPRE)
-        PCHYPRESetType(_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
+        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
 #else
-        PCGAMGSetType(_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(_pc, 1);
-        PCMGSetCycleType(_pc, PC_MG_CYCLE_V);
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, light_smooth);
 #endif
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
 #if defined(PETSC_HAVE_HYPRE)
-        PCHYPRESetType(_pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
+        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","W");
 #else
-        PCGAMGSetType(_pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(_pc, 1);
-        PCMGSetCycleType(_pc, PC_MG_CYCLE_W);
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, light_smooth);
 #endif
         break;
 
@@ -2100,30 +2266,15 @@ _notay_block_precond(const cs_navsto_param_sles_t  *nslesp,
 
     } /* Switch on preconditioner */
 
-    PCSetUp(_pc);
-    KSPSetUp(_ksp);
+    KSP  _ksp = up_subksp[k];
+    PC  _pc;
+    KSPGetPC(_ksp, &_pc);
+    PCSetFromOptions(_pc);
 
   } /* Loop on blocks */
 
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp->il_algo_rtol,   /* relative convergence tolerance */
-                   nslesp->il_algo_atol,   /* absolute convergence tolerance */
-                   nslesp->il_algo_dtol,   /* divergence tolerance */
-                   nslesp->n_max_il_algo_iter); /* max number of iterations */
-
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-
-  /* Apply modifications to the KSP structure */
+  PCSetFromOptions(up_pc);
   PCSetUp(up_pc);
-  KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
 
   /* Free temporary memory */
   PetscFree(up_subksp);
@@ -2242,6 +2393,9 @@ _notay_hook(void     *context,
   ISDestroy(&isv);
   MatDestroy(&Amat);
 
+  PC  up_pc;
+  KSPGetPC(ksp, &up_pc);
+
   /* Set the main solver and main options for the preconditioner */
   switch (slesp->solver) {
 
@@ -2249,9 +2403,7 @@ _notay_hook(void     *context,
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
 #if defined(PETSC_HAVE_MUMPS)
     {
-      PC  up_pc;
       KSPSetType(ksp, KSPPREONLY);
-      KSPGetPC(ksp, &up_pc);
       PCSetType(up_pc, PCLU);
       PCFactorSetMatSolverType(up_pc, MATSOLVERMUMPS);
     }
@@ -2262,24 +2414,36 @@ _notay_hook(void     *context,
 #endif
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:
-    if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
-      _notay_block_precond(nslesp, slesp, ksp);
-    else
-      _notay_solver(nslesp, slesp, ksp);
-    break;
-
   default:
-    cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%s: Switch to FGMRES solver.\n", __func__);
-    KSPSetType(ksp, KSPFGMRES);
-    KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+    {
+      if (slesp->solver != CS_PARAM_ITSOL_FGMRES) {
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s: Switch to FGMRES solver.\n", __func__);
+      }
 
-    if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
-      _notay_block_precond(nslesp, slesp, ksp);
-    else
-      _notay_solver(nslesp, slesp, ksp);
+      /* Set the solver parameters */
+      KSPSetType(ksp, KSPFGMRES);
+      KSPGMRESSetRestart(ksp, nslesp->il_algo_restart);
+
+      /* Set KSP tolerances */
+      PetscReal rtol, abstol, dtol;
+      PetscInt  max_it;
+      KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+      KSPSetTolerances(ksp,
+                       nslesp->il_algo_rtol,        /* relative tolerance */
+                       nslesp->il_algo_atol,        /* absolute tolerance */
+                       nslesp->il_algo_dtol,        /* divergence tolerance */
+                       nslesp->n_max_il_algo_iter); /* max number of iter */
+
+      KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+      if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
+        _notay_full_block_precond(nslesp, slesp, ksp);
+      else
+        _notay_solver(nslesp, slesp, ksp);
+
+    }
     break;
 
   } /* End of switch */
@@ -2288,6 +2452,8 @@ _notay_hook(void     *context,
   cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
   KSPSetFromOptions(ksp);
   KSPSetUp(ksp);
 
