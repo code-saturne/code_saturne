@@ -100,6 +100,7 @@ cs_equation_priv.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_gwf.h \
+cs_gwf_priv.h \
 cs_gwf_soil.h \
 cs_gwf_tracer.h \
 cs_hho_builder.h \

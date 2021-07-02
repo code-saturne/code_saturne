@@ -218,15 +218,17 @@ cs_user_model(void)
      ================================
 
      For the groundwater flow module:
-     >> cs_gwf_activate(permeability_type, option_flag);
+     >> cs_gwf_activate(permeability_type, model_type, option_flag);
 
      * permeability_type is one of the following keywords:
        CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or CS_PROPERTY_ANISO
 
+     * model_type = CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
+
      * richards_flag are
      CS_GWF_GRAVITATION, CS_GWF_RICHARDS_UNSTEADY, CS_GWF_SOIL_PROPERTY_UNSTEADY
      CS_GWF_SOIL_ALL_SATURATED
-     or 0 if there is no flag to set
+     or 0 if there is no option to set
 
      * Consequences of the activation of the groundwater flow module are:
      - add a new equation named "Richards" along with an associated field named
@@ -241,7 +243,9 @@ cs_user_model(void)
   {
     cs_flag_t  option_flag = 0;
 
-    cs_gwf_activate(CS_PROPERTY_ISO, option_flag);
+    cs_gwf_activate(CS_PROPERTY_ISO,
+                    CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
+                    option_flag);
   }
   /*! [param_cdo_activate_gwf] */
 
@@ -253,7 +257,9 @@ cs_user_model(void)
     /* In this case, the gravity vector has to be defined (either using the GUI
        or in cs_user_parameters() function */
 
-    cs_gwf_activate(CS_PROPERTY_ISO, option_flag);
+    cs_gwf_activate(CS_PROPERTY_ISO,
+                    CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
+                    option_flag);
   }
   /*! [param_cdo_activate_gwf_b] */
 

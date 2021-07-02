@@ -46,7 +46,31 @@ BEGIN_C_DECLS
 
 #define CS_GWF_ADV_FIELD_NAME   "darcy_velocity"
 
-typedef cs_flag_t  cs_gwf_model_t;
+/*!
+ * @name Flags specifying the general behavior of the groundwater flow module
+ * @{
+ *
+ * \enum cs_gwf_model_type_t
+ * \brief Type of system of equation(s) to consider for the physical modelling
+ *
+ * \def CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
+ * \brief Single phase (liquid phase) modelling in porous media. This is based
+ * on the Richards equation (in case of unsaturated soils)
+ *
+ * \def CS_GWF_MODEL_TWO_PHASE_RICHARDS
+ * \brief Two phase flow modelling (for instance gaz and liquid) in porous
+ * media. A Richards-like equation is considered in each phase.
+ */
+
+typedef enum {
+
+  CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
+  CS_GWF_MODEL_TWO_PHASE_RICHARDS,
+  CS_GWF_N_MODEL_TYPES
+
+} cs_gwf_model_type_t;
+
+typedef cs_flag_t  cs_gwf_option_flag_t;
 
 /*!
  * @name Flags specifying the general behavior of the groundwater flow module
@@ -169,16 +193,18 @@ cs_gwf_is_activated(void);
 /*!
  * \brief  Initialize the module dedicated to groundwater flows
  *
- * \param[in]      pty_type         type of permeability (iso, ortho...)
- * \param[in]      flag             flag to handle this module
+ * \param[in]   permeability_type     type of permeability (iso, ortho...)
+ * \param[in]   model                 type of physical modelling
+ * \param[in]   option_flag           optional flag to specify this module
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_t *
-cs_gwf_activate(cs_property_type_t    pty_type,
-                cs_flag_t             flag);
+cs_gwf_activate(cs_property_type_t           pty_type,
+                cs_gwf_model_type_t          model,
+                cs_gwf_option_flag_t         option_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -219,15 +245,16 @@ cs_gwf_set_post_options(cs_flag_t       post_flag);
  *         Tracer is advected thanks to the darcian velocity and
  *         diffusion/reaction parameters result from a physical modelling.
  *         Terms solved in the equation are activated according to the settings.
+ *         The advection field corresponds to that of the liquid phase.
  *
- * \param[in]  model      physical modelling to consider (0 = default settings)
+ * \param[in]  tr_model   physical modelling to consider (0 = default settings)
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_tracer(cs_gwf_tracer_model_t     model,
+cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
                   const char               *eq_name,
                   const char               *var_name);
 
@@ -395,7 +422,8 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Predefined post-processing output for the groundwater flow module
- *         prototype of this function is fixed since it is a function pointer
+ *         in case of single-phase flows in porous media.
+ *         Prototype of this function is given since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
@@ -417,17 +445,17 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_extra_post(void                      *input,
-                  int                        mesh_id,
-                  int                        cat_id,
-                  int                        ent_flag[5],
-                  cs_lnum_t                  n_cells,
-                  cs_lnum_t                  n_i_faces,
-                  cs_lnum_t                  n_b_faces,
-                  const cs_lnum_t            cell_ids[],
-                  const cs_lnum_t            i_face_ids[],
-                  const cs_lnum_t            b_face_ids[],
-                  const cs_time_step_t      *time_step);
+cs_gwf_extra_post_single_phase(void                      *input,
+                               int                        mesh_id,
+                               int                        cat_id,
+                               int                        ent_flag[5],
+                               cs_lnum_t                  n_cells,
+                               cs_lnum_t                  n_i_faces,
+                               cs_lnum_t                  n_b_faces,
+                               const cs_lnum_t            cell_ids[],
+                               const cs_lnum_t            i_face_ids[],
+                               const cs_lnum_t            b_face_ids[],
+                               const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 
