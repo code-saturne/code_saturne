@@ -556,7 +556,9 @@ _build_halo_index(cs_mesh_t  *mesh)
   for (i = 0; i < 2*n_c_domains; i++)
     buffer_size += halo->send_index[i+1];
 
-  BFT_MALLOC(halo->send_list, buffer_size, cs_lnum_t);
+  cs_alloc_mode_t halo_alloc_mode = cs_halo_get_buffer_alloc_mode();
+
+  CS_MALLOC_HD(halo->send_list, buffer_size, cs_lnum_t, halo_alloc_mode);
 
   /* Define parallel and periodic index */
 
@@ -2715,6 +2717,8 @@ _clean_halo(cs_mesh_t  *mesh)
 
   const cs_lnum_t n_transforms = mesh->n_transforms;
 
+  cs_alloc_mode_t halo_alloc_mode = cs_halo_get_buffer_alloc_mode();
+
   /* Is there something to do ? */
 
   for (rank_id = 0; rank_id < n_c_domains; rank_id++)
@@ -2727,7 +2731,8 @@ _clean_halo(cs_mesh_t  *mesh)
   /* halo->index, halo->perio_lst and n_c_domains need an update */
 
   BFT_MALLOC(new_c_domain_rank, n_real_c_domains, cs_lnum_t);
-  BFT_MALLOC(new_index, 2*n_real_c_domains+1, cs_lnum_t);
+
+  CS_ALLOC_HD(new_index, 2*n_real_c_domains+1, cs_lnum_t, halo_alloc_mode);
 
   if (n_transforms > 0)
     BFT_MALLOC(new_perio_lst, 4*n_transforms*n_real_c_domains, cs_lnum_t);
@@ -2759,7 +2764,7 @@ _clean_halo(cs_mesh_t  *mesh)
      halo->c_domain_rank by new ones */
 
   BFT_FREE(halo->c_domain_rank);
-  BFT_FREE(halo->send_index);
+  CS_FREE_HD(halo->send_index);
 
   if (n_transforms > 0)
     BFT_FREE(halo->send_perio_lst);
@@ -3084,8 +3089,6 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
   if (mesh->n_ghost_cells > 0)
     BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, int);
-
-  cs_halo_update_buffers(halo);
 
 #if 0 /* for debugging purposes */
   cs_halo_dump(halo, 1);

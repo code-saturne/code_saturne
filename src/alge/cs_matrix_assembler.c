@@ -1568,8 +1568,6 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
                                                  r_loc_id);
   ma->halo = ma->_halo;
 
-  cs_halo_update_buffers(ma->halo);
-
   BFT_FREE(r_loc_id);
   BFT_FREE(rank_id);
 

@@ -1099,7 +1099,8 @@ _coarsen_halo(const cs_grid_t   *f,
   /* Pass to build send list */
   /*-------------------------*/
 
-  BFT_MALLOC(c_halo->send_list, c_halo->n_send_elts[0], cs_lnum_t);
+  CS_MALLOC_HD(c_halo->send_list, c_halo->n_send_elts[0], cs_lnum_t,
+               CS_ALLOC_HOST);
 
   c_halo->n_send_elts[0] = 0;
 
@@ -1327,7 +1328,7 @@ _rebuild_halo_send_lists(cs_halo_t  *h,
 
   /* Update sizes */
 
-  BFT_MALLOC(h->send_index, h->n_c_domains*2 + 1, cs_lnum_t);
+  CS_MALLOC_HD(h->send_index, h->n_c_domains*2 + 1, cs_lnum_t, CS_ALLOC_HOST);
   h->send_index[0] = 0;
   for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
     h->send_index[rank_id*2 + 1]
@@ -1361,7 +1362,7 @@ _rebuild_halo_send_lists(cs_halo_t  *h,
   h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
   h->n_send_elts[1] = h->n_send_elts[0];
 
-  BFT_MALLOC(h->send_list, h->n_send_elts[0], cs_lnum_t);
+  CS_MALLOC_HD(h->send_list, h->n_send_elts[0], cs_lnum_t, CS_ALLOC_HOST);
 
   /* Receive data from distant ranks */
 
@@ -1420,8 +1421,8 @@ _empty_halo(cs_halo_t  *h)
   h->n_elts[0] = 0;
   h->n_elts[1] = 0;
 
-  BFT_FREE(h->send_list);
-  BFT_FREE(h->send_index);
+  CS_FREE_HD(h->send_list);
+  CS_FREE_HD(h->send_index);
   BFT_FREE(h->send_perio_lst);
   BFT_FREE(h->index);
   BFT_FREE(h->perio_lst);
@@ -1689,8 +1690,8 @@ _append_halos(cs_grid_t   *g,
 
   h->n_send_elts[0] = 0;
   h->n_send_elts[1] = 0;
-  BFT_FREE(h->send_list);
-  BFT_FREE(h->send_index);
+  CS_FREE_HD(h->send_list);
+  CS_FREE_HD(h->send_index);
   BFT_FREE(h->send_perio_lst);
 
   if (g->merge_sub_size == 0) {
@@ -1857,8 +1858,6 @@ _append_halos(cs_grid_t   *g,
 
   if (new_src_cell_id != NULL)
     BFT_FREE(new_src_cell_id);
-
-  cs_halo_update_buffers(h);
 
   g->halo = h;
   g->_halo = h;

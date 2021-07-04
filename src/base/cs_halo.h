@@ -31,7 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_interface.h"
 #include "cs_rank_neighbors.h"
 
@@ -40,6 +42,10 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
 
 /*=============================================================================
  * Type definitions
@@ -144,6 +150,10 @@ typedef struct {
 
 } cs_halo_t;
 
+/*! Structure to maintain halo exchange state */
+
+typedef struct _cs_halo_state_t  cs_halo_state_t;
+
 /*=============================================================================
  * Global static variables
  *============================================================================*/
@@ -230,22 +240,50 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 void
 cs_halo_destroy(cs_halo_t  **halo);
 
-/*----------------------------------------------------------------------------
- * Update global buffer sizes so as to be usable with a given halo.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo state structure.
  *
- * Calls to halo synchronizations with variable strides up to 3 are
- * expected. For strides greater than 3, the halo will be resized if
- * necessary directly by the synchronization function.
+ * \return  pointer to created cs_halo_state_t structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_state_t *
+cs_halo_state_create(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * brief Destroy a halo structure.
  *
- * This function should be called at the end of any halo creation,
- * so that buffer sizes are increased if necessary.
- *
- * parameters:
- *   halo <-- pointer to cs_halo_t structure.
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  halo  pointer to pointer to cs_halo structure to destroy.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_halo_update_buffers(const cs_halo_t  *halo);
+cs_halo_state_destroy(cs_halo_state_t  **halo_state);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute required size for packing send data into dense buffer.
+ *
+ * \param[in]   halo        pointer to halo structure
+ * \param[in]   data_type   data type
+ * \param[in]   stride       number of (interlaced) values by entity
+ *
+ * \return  required size, in bytes
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline size_t
+cs_halo_pack_size(const cs_halo_t  *halo,
+                  cs_datatype_t     data_type,
+                  int               stride)
+{
+  size_t elt_size = cs_datatype_size[data_type]*stride;
+  size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
+
+  return pack_size;
+}
 
 /*----------------------------------------------------------------------------
  * Apply local cells renumbering to a halo
@@ -270,6 +308,104 @@ cs_halo_renumber_cells(cs_halo_t        *halo,
 void
 cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
                              const cs_lnum_t   old_cell_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Pack halo data to send into dense buffer.
+ *
+ * A local state handler may be provided, or the default state handler will
+ * be used.
+ *
+ * A local state and/or buffer may be provided, or the default (global) state
+ * and buffer will be used. If provided explicitely,
+ * the buffer must be of sufficient size.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       data_type   data type
+ * \param[in]       stride      number of (interlaced) values by entity
+ * \param[in]       val         pointer to variable value array
+ * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_pack(const cs_halo_t  *halo,
+                  cs_halo_type_t    sync_mode,
+                  cs_datatype_t     data_type,
+                  int               stride,
+                  void             *val,
+                  void             *send_buf,
+                  cs_halo_state_t  *hs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Launch update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * The cs_halo_sync_pack function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_start(const cs_halo_t  *halo,
+                   void             *val,
+                   cs_halo_state_t  *hs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wait for completion of update array of values in case of
+ *  parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * The cs_halo_sync_start function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_wait(const cs_halo_t  *halo,
+                  void             *val,
+                  cs_halo_state_t  *hs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \param[in]   halo        pointer to halo structure
+ * \param[in]   sync_mode   synchronization mode (standard or extended)
+ * \param[in]   data_type   data type
+ * \param[in]   stride      number of (interlaced) values by entity
+ * \param[in]   val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             cs_datatype_t     data_type,
+             int               stride,
+             void             *val);
 
 /*----------------------------------------------------------------------------
  * Update array of any type of halo values in case of parallelism or
@@ -376,6 +512,28 @@ cs_halo_get_use_barrier(void);
 
 void
 cs_halo_set_use_barrier(bool use_barrier);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get default host/device allocation mode for message packing arrays.
+ *
+ * \return  allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_halo_get_buffer_alloc_mode(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default host/device allocation mode for message packing arrays.
+ *
+ * \param[in]  mode  allocation mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_set_buffer_alloc_mode(cs_alloc_mode_t  mode);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_halo_t structure.

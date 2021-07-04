@@ -43,6 +43,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_order.h"
 
 #include "cs_interface.h"
@@ -62,33 +63,57 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/*=============================================================================
+ * Local type definitions
+ *============================================================================*/
+
+/* Structure to maintain halo exchange state */
+
+struct _cs_halo_state_t {
+
+  /* Current synchronization state */
+
+  cs_halo_type_t  sync_mode;      /* Standard or extended */
+  cs_datatype_t   data_type;      /* Datatype */
+  int             stride;         /* Number of values per location */
+
+  void        *send_buffer_cur;   /* Send buffer used for current progress
+                                     (either _send_buffer or passed by caller) */
+
+  int       n_requests;        /* Number of MPI requests */
+  int       local_rank_id;     /* Id of halo for own rank, -1 if not present */
+
+  /* Send buffer for synchronization */
+
+  size_t       send_buffer_size;  /* Size of send buffer, in bytes */
+  void        *send_buffer;       /* Send buffer (amintained by this object) */
+
+#if defined(HAVE_MPI)
+
+  int          request_size;      /* Size of requests and status arrays */
+
+  MPI_Request  *request;          /* Array of MPI requests */
+  MPI_Status   *status;           /* Array of MPI status */
+
+#endif
+
+};
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
 /* Number of defined halos */
+static int _n_halos = 0;
 
-static int _cs_glob_n_halos = 0;
-static int _cs_glob_halo_max_stride = 3;
-
-#if defined(HAVE_MPI)
-
-/* Send buffer for synchronization */
-
-static size_t _cs_glob_halo_send_buffer_size = 0;
-static void  *_cs_glob_halo_send_buffer = NULL;
-
-/* MPI Request and status arrays */
-
-static int           _cs_glob_halo_request_size = 0;
-static MPI_Request  *_cs_glob_halo_request = NULL;
-static MPI_Status   *_cs_glob_halo_status = NULL;
-
-#endif
+/* Allocation mode for arrays which might be used on accelerator device */
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE;
 
 /* Should we use barriers after posting receives ? */
+static int _halo_use_barrier = false;
 
-static int _cs_glob_halo_use_barrier = false;
+/* Default halo state handler */
+static cs_halo_state_t *_halo_state = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -128,6 +153,77 @@ _order_int_test(const int  list[],
     return 1;
   else
     return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Update state request arrays so as to be usable with a given halo.
+ *
+ * This function should be called at the end of any halo creation,
+ * so that buffer sizes are increased if necessary.
+ *
+ * parameters:
+ *   halo       <-- pointer to cs_halo_t structure.
+ *   halo_state <-> pointer to halo state structure.
+ *---------------------------------------------------------------------------*/
+
+static void
+_update_requests(const cs_halo_t  *halo,
+                 cs_halo_state_t  *hs)
+{
+  if (halo == NULL)
+    return;
+
+  int n_requests = halo->n_c_domains*2;
+
+  if (n_requests > hs->request_size) {
+    hs->request_size = n_requests;
+    BFT_REALLOC(hs->request, hs->request_size, MPI_Request);
+    BFT_REALLOC(hs->status, hs->request_size,  MPI_Status);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Local copy from halo send buffer to destination array.
+ *
+ * This allows pariodicity data which may be present on the local rank to
+ * be exchanged without any MPI call.
+ *
+ * Data is untyped; only its size is given, so this function may also
+ * be used to synchronize interleaved multidimendsional data, using
+ * size = element_size*dim (assuming a homogeneous environment, at least
+ * as far as data encoding goes).
+ *
+ * parameters:
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
+ *   size      <-- datatype size
+ *   num       <-> pointer to local number value array
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_local(const cs_halo_t  *halo,
+            int               local_rank_id,
+            cs_halo_type_t    sync_mode,
+            size_t            size,
+            const void       *send_buf,
+            void             *val)
+{
+  cs_lnum_t end_shift = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+
+  unsigned char *_val = val;
+  unsigned char *recv
+    = _val + (halo->n_local_elts + halo->index[2*local_rank_id]) * size;
+
+  cs_lnum_t start = halo->send_index[2*local_rank_id]*size;
+  cs_lnum_t length = (  halo->send_index[2*local_rank_id + end_shift]
+                      - halo->send_index[2*local_rank_id]);
+
+  const unsigned char *buffer = (const unsigned char *)send_buf;
+  const unsigned char *_buffer = buffer + start;
+
+  size_t count = length * size;
+
+  memcpy(recv, _buffer, count);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -223,7 +319,8 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   } /* End of ordering ranks */
 
-  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
+               _halo_buffer_alloc_mode);
   BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
@@ -262,7 +359,11 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   halo->send_list = NULL;
 
-  _cs_glob_n_halos += 1;
+  /* Create default state if first halo */
+  if (_n_halos == 0)
+    _halo_state = cs_halo_state_create();
+
+  _n_halos += 1;
 
   return halo;
 }
@@ -299,7 +400,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   for (i = 0; i < halo->n_c_domains; i++)
     halo->c_domain_rank[i] = ref->c_domain_rank[i];
 
-  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
+               _halo_buffer_alloc_mode);
   BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
@@ -326,7 +428,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   halo->send_list = NULL;
 
-  _cs_glob_n_halos += 1;
+  _n_halos += 1;
 
   return halo;
 }
@@ -423,7 +525,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   /* Exchange local range with neighbor ranks */
 
   int request_count = 0;
-  const int local_rank = cs_glob_rank_id;
+  const int local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   for (int i = 0; i < rn->size; i++) {
     MPI_Irecv(rank_count + rn->size + i,
@@ -472,8 +574,10 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
 
-  BFT_MALLOC(halo->send_list, recv_count, cs_lnum_t);
-  BFT_MALLOC(halo->send_index, halo->n_c_domains*2+1, cs_lnum_t);
+  CS_MALLOC_HD(halo->send_list, recv_count, cs_lnum_t,
+               _halo_buffer_alloc_mode);
+  CS_MALLOC_HD(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t,
+               _halo_buffer_alloc_mode);
   BFT_MALLOC(halo->index, halo->n_c_domains*2+1, cs_lnum_t);
 
   halo->n_c_domains = 0;
@@ -559,7 +663,11 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   BFT_FREE(request);
   BFT_FREE(status);
 
-  _cs_glob_n_halos += 1;
+  /* Create default state if first halo */
+  if (_n_halos == 0)
+    _halo_state = cs_halo_state_create();
+
+  _n_halos += 1;
 
   return halo;
 }
@@ -587,91 +695,82 @@ cs_halo_destroy(cs_halo_t  **halo)
 
   BFT_FREE(_halo->c_domain_rank);
 
-  BFT_FREE(_halo->send_perio_lst);
-  BFT_FREE(_halo->send_index);
-  BFT_FREE(_halo->perio_lst);
+  CS_FREE_HD(_halo->send_list);
+  CS_FREE_HD(_halo->send_index);
   BFT_FREE(_halo->index);
 
-  BFT_FREE(_halo->send_list);
+  BFT_FREE(_halo->send_perio_lst);
+  BFT_FREE(_halo->perio_lst);
 
   BFT_FREE(*halo);
 
-  _cs_glob_n_halos -= 1;
+  _n_halos -= 1;
 
-  /* Delete buffers if no halo remains */
+  /* Delete default state if no halo remains */
 
-  if (_cs_glob_n_halos == 0) {
-
-#if defined(HAVE_MPI)
-
-    if (cs_glob_n_ranks > 1) {
-
-      _cs_glob_halo_send_buffer_size = 0;
-      _cs_glob_halo_request_size = 0;
-
-      BFT_FREE(_cs_glob_halo_send_buffer);
-
-      BFT_FREE(_cs_glob_halo_request);
-      BFT_FREE(_cs_glob_halo_status);
-    }
-
-#endif
-
-  }
+  if (_n_halos == 0)
+    cs_halo_state_destroy(&_halo_state);
 }
 
-/*----------------------------------------------------------------------------
- * Update global buffer sizes so as to be usable with a given halo.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo state structure.
  *
- * Calls to halo synchronizations with variable strides up to 3 are
- * expected. For strides greater than 3, the halo will be resized if
- * necessary directly by the synchronization function.
+ * \return  pointer to created cs_halo_state_t structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_state_t *
+cs_halo_state_create(void)
+{
+  cs_halo_state_t *hs;
+  BFT_MALLOC(hs, 1, cs_halo_state_t);
+
+  cs_halo_state_t hs_ini = {
+    .sync_mode = CS_HALO_STANDARD,
+    .data_type = CS_DATATYPE_NULL,
+    .stride = 0,
+    .send_buffer_cur = NULL,
+    .n_requests = 0,
+    .local_rank_id = -1,
+    .send_buffer_size = 0,
+    .send_buffer = NULL
+#if defined(HAVE_MPI)
+    ,
+    .request_size = 0,
+    .request = NULL,
+    .status = NULL
+#endif
+  };
+
+  *hs = hs_ini;
+
+  return hs;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * brief Destroy a halo structure.
  *
- * This function should be called at the end of any halo creation,
- * so that buffer sizes are increased if necessary.
- *
- * parameters:
- *   halo <-- pointer to cs_halo_t structure.
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  halo  pointer to pointer to cs_halo structure to destroy.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_halo_update_buffers(const cs_halo_t *halo)
+cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 {
-  if (halo == NULL)
-    return;
+  if (halo_state != NULL) {
+    cs_halo_state_t *hs = *halo_state;
+
+    CS_FREE_HD(hs->send_buffer);
 
 #if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                                       halo->n_elts[CS_HALO_EXTENDED])
-                              * CS_MAX(sizeof(cs_lnum_t),
-                                       sizeof(cs_real_t)) * _cs_glob_halo_max_stride;
-
-    int n_requests = halo->n_c_domains*2;
-
-    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
-      _cs_glob_halo_send_buffer_size =  send_buffer_size;
-      BFT_REALLOC(_cs_glob_halo_send_buffer,
-                  _cs_glob_halo_send_buffer_size,
-                  char);
-    }
-
-    if (n_requests > _cs_glob_halo_request_size) {
-      _cs_glob_halo_request_size = n_requests;
-      BFT_REALLOC(_cs_glob_halo_request,
-                  _cs_glob_halo_request_size,
-                  MPI_Request);
-      BFT_REALLOC(_cs_glob_halo_status,
-                  _cs_glob_halo_request_size,
-                  MPI_Status);
-
-    }
-
-  }
-
+    BFT_FREE(hs->request);
+    BFT_FREE(hs->status);
 #endif
+
+    BFT_FREE(*halo_state);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -738,6 +837,12 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
     int request_count = 0;
     const int local_rank = cs_glob_rank_id;
 
+    MPI_Request  *request;
+    MPI_Status   *status;
+
+    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+
     /* Receive data from distant ranks */
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
@@ -754,7 +859,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
                     halo->c_domain_rank[rank_id],
                     local_rank,
                     cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
+                    &(request[request_count++]));
       }
       else
         local_rank_id = rank_id;
@@ -763,7 +868,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    if (_cs_glob_halo_use_barrier)
+    if (_halo_use_barrier)
       MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
@@ -785,7 +890,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
                     halo->c_domain_rank[rank_id],
                     halo->c_domain_rank[rank_id],
                     cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
+                    &(request[request_count++]));
 
       }
 
@@ -793,7 +898,10 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
     /* Wait for all exchanges */
 
-    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+    MPI_Waitall(request_count, request, status);
+
+    BFT_FREE(request);
+    BFT_FREE(status);
 
   }
 
@@ -830,6 +938,335 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
   BFT_FREE(send_buf);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Pack halo data to send into dense buffer.
+ *
+ * A local state handler may be provided, or the default state handler will
+ * be used.
+ *
+ * A local state and/or buffer may be provided, or the default (global) state
+ * and buffer will be used. If provided explicitely,
+ * the buffer must be of sufficient size.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       data_type   data type
+ * \param[in]       stride      number of (interlaced) values by entity
+ * \param[in]       val         pointer to variable value array
+ * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_pack(const cs_halo_t  *halo,
+                  cs_halo_type_t    sync_mode,
+                  cs_datatype_t     data_type,
+                  int               stride,
+                  void             *val,
+                  void             *send_buf,
+                  cs_halo_state_t  *hs)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+  void *_send_buffer = send_buf;
+  if (_send_buffer == NULL) {
+    size_t send_buffer_size = cs_halo_pack_size(halo, data_type, stride);
+
+    if (send_buffer_size > _hs->send_buffer_size) {
+      cs_alloc_mode_t alloc_mode = cs_check_device_ptr(halo->send_list);
+
+      _hs->send_buffer_size = send_buffer_size;
+      CS_FREE_HD(_hs->send_buffer);
+      CS_MALLOC_HD(_hs->send_buffer,
+                   _hs->send_buffer_size,
+                   char,
+                   alloc_mode);
+    }
+
+    _send_buffer = _hs->send_buffer;
+  }
+
+  _hs->send_buffer_cur = _send_buffer;
+
+  _hs->sync_mode = sync_mode;
+  _hs->data_type = data_type;
+  _hs->stride = stride;
+
+  cs_lnum_t end_shift = 0;
+
+  if (sync_mode == CS_HALO_STANDARD)
+    end_shift = 1;
+
+  else if (sync_mode == CS_HALO_EXTENDED)
+    end_shift = 2;
+
+  /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
+     scheduling led to slightly higher cost here in some tests,
+     and even static scheduling might lead to false sharing for small
+     halos. */
+
+  if (data_type == CS_REAL_TYPE) {
+
+    cs_real_t *buffer = (cs_real_t *)_send_buffer;
+    cs_real_t *var = val;
+
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      cs_lnum_t p_start = halo->send_index[2*rank_id]*stride;
+      size_t start = halo->send_index[2*rank_id];
+      size_t length = (  halo->send_index[2*rank_id + end_shift]
+                       - halo->send_index[2*rank_id]);
+
+      if (stride == 3) { /* Unroll loop for this case */
+        for (size_t i = 0; i < length; i++) {
+          buffer[p_start + i*3]
+            = var[(halo->send_list[start + i])*3];
+          buffer[p_start + i*3 + 1]
+            = var[(halo->send_list[start + i])*3 + 1];
+          buffer[p_start + i*3 + 2]
+            = var[(halo->send_list[start + i])*3 + 2];
+        }
+      }
+      else {
+        size_t _stride = stride;
+        for (size_t i = 0; i < length; i++) {
+          size_t r_start = halo->send_list[start + i] * stride;
+          for (size_t j = 0; j < _stride; j++)
+            buffer[p_start + i*_stride + j] = var[r_start + j];
+        }
+      }
+
+    }
+
+  }
+
+  else {
+
+    unsigned char *buffer = (unsigned char *)_send_buffer;
+
+    size_t elt_size = cs_datatype_size[data_type] * stride;
+
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      cs_lnum_t p_start = halo->send_index[2*rank_id]*elt_size;
+      size_t start = halo->send_index[2*rank_id];
+      size_t length = (  halo->send_index[2*rank_id + end_shift]
+                       - halo->send_index[2*rank_id]);
+
+      unsigned char *restrict _val = val;
+      unsigned char *_buffer = buffer + p_start;
+
+      for (size_t i = 0; i < length; i++) {
+        size_t r_start = halo->send_list[start + i] * elt_size;
+        for (size_t j = 0; j < elt_size; j++)
+          _buffer[i*elt_size + j] = _val[r_start + j];
+      }
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Launch update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * The cs_halo_sync_pack function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_start(const cs_halo_t  *halo,
+                   void             *val,
+                   cs_halo_state_t  *hs)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+  unsigned char *buffer = (unsigned char *)(_hs->send_buffer_cur);
+
+  cs_lnum_t end_shift = (_hs->sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+  cs_lnum_t stride = _hs->stride;
+  size_t elt_size = cs_datatype_size[_hs->data_type] * stride;
+  size_t n_loc_elts = halo->n_local_elts;
+
+  unsigned char *restrict _val = val;
+
+#if defined(HAVE_MPI)
+
+  _update_requests(halo, _hs);
+
+  MPI_Datatype mpi_datatype = cs_datatype_to_mpi[_hs->data_type];
+
+  int request_count = 0;
+  const int local_rank = CS_MAX(cs_glob_rank_id, 0);
+
+  /* Receive data from distant ranks */
+
+  for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+    cs_lnum_t length = (  halo->index[2*rank_id + end_shift]
+                        - halo->index[2*rank_id]) * stride;
+
+    if (halo->c_domain_rank[rank_id] != local_rank) {
+
+      if (length > 0) {
+        size_t start = (size_t)(halo->index[2*rank_id]);
+        unsigned char *dest = _val + (n_loc_elts + start) * elt_size;
+
+        MPI_Irecv(dest,
+                  length*_hs->stride,
+                  mpi_datatype,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_mpi_comm,
+                  &(_hs->request[request_count++]));
+      }
+
+    }
+    else
+      _hs->local_rank_id = rank_id;
+  }
+
+  /* We wait for posting all receives (often recommended) */
+
+  if (_halo_use_barrier)
+    MPI_Barrier(cs_glob_mpi_comm);
+
+  /* Send data to distant ranks */
+
+  for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+    cs_lnum_t start = halo->send_index[2*rank_id]*elt_size;
+    cs_lnum_t length = (  halo->send_index[2*rank_id + end_shift]
+                        - halo->send_index[2*rank_id]);
+
+    if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
+      MPI_Isend(buffer + start,
+                length*stride,
+                mpi_datatype,
+                halo->c_domain_rank[rank_id],
+                local_rank,
+                cs_glob_mpi_comm,
+                &(_hs->request[request_count++]));
+
+  }
+
+  _hs->n_requests = request_count;
+
+#endif /* defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wait for completion of update array of values in case of
+ *  parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * The cs_halo_sync_start function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_wait(const cs_halo_t  *halo,
+                  void             *val,
+                  cs_halo_state_t  *hs)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+#if defined(HAVE_MPI)
+
+  /* Wait for all exchanges */
+
+  if (_hs->n_requests > 0)
+    MPI_Waitall(_hs->n_requests, _hs->request, _hs->status);
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (_hs->local_rank_id > -1) {
+    size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
+    _sync_local(halo, _hs->local_rank_id, _hs->sync_mode, elt_size,
+                _hs->send_buffer_cur, val);
+  }
+
+  /* Cleanup */
+
+  _hs->sync_mode = CS_HALO_STANDARD;
+  _hs->data_type = CS_DATATYPE_NULL;
+  _hs->stride = 0;
+  _hs->send_buffer_cur = NULL;
+  _hs->n_requests = 0;
+  _hs->local_rank_id  = -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \param[in]   halo        pointer to halo structure
+ * \param[in]   sync_mode   synchronization mode (standard or extended)
+ * \param[in]   data_type   data type
+ * \param[in]   stride      number of (interlaced) values by entity
+ * \param[in]   val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             cs_datatype_t     data_type,
+             int               stride,
+             void             *val)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_sync_pack(halo,
+                    sync_mode,
+                    data_type,
+                    stride,
+                    val,
+                    NULL,
+                    NULL);
+
+  cs_halo_sync_start(halo, val, NULL);
+
+  cs_halo_sync_wait(halo, val, NULL);
+}
+
 /*----------------------------------------------------------------------------
  * Update array of any type of halo values in case of parallelism or
  * periodicity.
@@ -850,166 +1287,13 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  *   num       <-> pointer to local number value array
  *----------------------------------------------------------------------------*/
 
-#if defined(__INTEL_COMPILER) && defined(__KNC__)
-#pragma optimization_level 1 /* Crash with O2 on KNC with icc 14.0.0 20130728 */
-#endif
-
 void
 cs_halo_sync_untyped(const cs_halo_t  *halo,
                      cs_halo_type_t    sync_mode,
                      size_t            size,
                      void             *val)
 {
-  cs_lnum_t i, start, length;
-  size_t j;
-
-  cs_lnum_t end_shift = 0;
-  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
-  unsigned char *src;
-  unsigned char *restrict _val = val;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    const size_t send_buffer_size = CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
-                                           halo->n_elts[CS_HALO_EXTENDED])
-                                    * size;
-
-    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
-      _cs_glob_halo_send_buffer_size =  send_buffer_size;
-      BFT_REALLOC(_cs_glob_halo_send_buffer,
-                  _cs_glob_halo_send_buffer_size,
-                  char);
-    }
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
-
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    int rank_id;
-    int request_count = 0;
-    unsigned char *build_buffer = (unsigned char *)_cs_glob_halo_send_buffer;
-    const int local_rank = cs_glob_rank_id;
-
-    /* Receive data from distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      start = halo->index[2*rank_id];
-      length = (  halo->index[2*rank_id + end_shift]
-                - halo->index[2*rank_id]);
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        if (length > 0) {
-
-          unsigned char *dest = _val + (halo->n_local_elts*size) + start*size;
-
-          MPI_Irecv(dest,
-                    length * size,
-                    MPI_UNSIGNED_CHAR,
-                    halo->c_domain_rank[rank_id],
-                    halo->c_domain_rank[rank_id],
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-        }
-      }
-      else
-        local_rank_id = rank_id;
-
-    }
-
-    /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly
-       higher cost here, and even static scheduling might lead to
-       false sharing for small halos. */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length = (  halo->send_index[2*rank_id + end_shift]
-                  - halo->send_index[2*rank_id]);
-
-        src = build_buffer + start*size;
-
-        for (i = 0; i < length; i++) {
-          for (j = 0; j < size; j++)
-            src[i*size + j] = _val[halo->send_list[start + i]*size + j];
-        }
-
-      }
-
-    }
-
-    /* We wait for posting all receives (often recommended) */
-
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length = (  halo->send_index[2*rank_id + end_shift]
-                  - halo->send_index[2*rank_id]);
-
-        if (length > 0)
-          MPI_Isend(build_buffer + start*size,
-                    length*size,
-                    MPI_UNSIGNED_CHAR,
-                    halo->c_domain_rank[rank_id],
-                    local_rank,
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-      }
-
-    }
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  /* Copy local values in case of periodicity */
-
-  if (halo->n_transforms > 0) {
-
-    if (local_rank_id > -1) {
-
-      unsigned char *recv
-        = _val + (halo->n_local_elts + halo->index[2*local_rank_id]) * size;
-
-      start = halo->send_index[2*local_rank_id];
-      length = (  halo->send_index[2*local_rank_id + end_shift]
-                - halo->send_index[2*local_rank_id]);
-
-      for (i = 0; i < length; i++) {
-        for (j = 0; j < size; j++)
-          recv[i*size + j] = _val[halo->send_list[start + i]*size + j];
-      }
-    }
-
-  }
+  cs_halo_sync(halo, sync_mode, CS_CHAR, size, val);
 }
 
 /*----------------------------------------------------------------------------
@@ -1030,124 +1314,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
                  cs_lnum_t         num[])
 {
-  cs_lnum_t i, start, length;
-
-  cs_lnum_t end_shift = 0;
-  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
-
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
-
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    int rank_id;
-    int request_count = 0;
-    cs_lnum_t *build_buffer = (cs_lnum_t *)_cs_glob_halo_send_buffer;
-    const int local_rank = cs_glob_rank_id;
-
-    /* Receive data from distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      start = halo->index[2*rank_id];
-      length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        if (length > 0)
-          MPI_Irecv(num + halo->n_local_elts + start,
-                    length,
-                    CS_MPI_LNUM,
-                    halo->c_domain_rank[rank_id],
-                    halo->c_domain_rank[rank_id],
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-      }
-      else
-        local_rank_id = rank_id;
-
-    }
-
-    /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly
-       higher cost here, and even static scheduling might lead to
-       false sharing for small halos. */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length =   halo->send_index[2*rank_id + end_shift]
-                 - halo->send_index[2*rank_id];
-
-        for (i = 0; i < length; i++)
-          build_buffer[start + i] = num[halo->send_list[start + i]];
-
-      }
-
-    }
-
-    /* We wait for posting all receives (often recommended) */
-
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length =   halo->send_index[2*rank_id + end_shift]
-                 - halo->send_index[2*rank_id];
-
-        if (length > 0)
-          MPI_Isend(build_buffer + start,
-                    length,
-                    CS_MPI_LNUM,
-                    halo->c_domain_rank[rank_id],
-                    local_rank,
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-      }
-
-    }
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  /* Copy local values in case of periodicity */
-
-  if (halo->n_transforms > 0) {
-
-    if (local_rank_id > -1) {
-
-      cs_lnum_t *recv_num
-        = num + halo->n_local_elts + halo->index[2*local_rank_id];
-
-      start = halo->send_index[2*local_rank_id];
-      length =   halo->send_index[2*local_rank_id + end_shift]
-               - halo->send_index[2*local_rank_id];
-
-      for (i = 0; i < length; i++)
-        recv_num[i] = num[halo->send_list[start + i]];
-
-    }
-
-  }
+  cs_halo_sync(halo, sync_mode, CS_LNUM_TYPE, 1, num);
 }
 
 /*----------------------------------------------------------------------------
@@ -1169,115 +1336,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
                  cs_real_t         var[])
 {
-  cs_lnum_t i, start, length;
-
-  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
-  const cs_lnum_t end_shift = (sync_mode == CS_HALO_STANDARD) ? 1 : 2;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    int rank_id;
-    int request_count = 0;
-    cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
-    const int local_rank = cs_glob_rank_id;
-
-    /* Receive data from distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      start = halo->index[2*rank_id];
-      length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-        if (length > 0)
-          MPI_Irecv(var + halo->n_local_elts + start,
-                    length,
-                    CS_MPI_REAL,
-                    halo->c_domain_rank[rank_id],
-                    halo->c_domain_rank[rank_id],
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-      }
-      else
-        local_rank_id = rank_id;
-
-    }
-
-    /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
-       scheduling led to slightly higher cost here, and even static scheduling
-       might lead to false sharing for small halos. */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length =   halo->send_index[2*rank_id + end_shift]
-                 - halo->send_index[2*rank_id];
-
-        for (i = 0; i < length; i++)
-          build_buffer[start + i] = var[halo->send_list[start + i]];
-
-      }
-
-    }
-
-    /* We wait for posting all receives (often recommended) */
-
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length =   halo->send_index[2*rank_id + end_shift]
-                 - halo->send_index[2*rank_id];
-
-        if (length > 0)
-          MPI_Isend(build_buffer + start,
-                    length,
-                    CS_MPI_REAL,
-                    halo->c_domain_rank[rank_id],
-                    local_rank,
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-      }
-
-    }
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  /* Copy local values in case of periodicity */
-
-  if (halo->n_transforms > 0) {
-
-    if (local_rank_id > -1) {
-
-      cs_real_t *recv_var
-        = var + halo->n_local_elts + halo->index[2*local_rank_id];
-
-      start = halo->send_index[2*local_rank_id];
-      length =   halo->send_index[2*local_rank_id + end_shift]
-               - halo->send_index[2*local_rank_id];
-
-      for (i = 0; i < length; i++)
-        recv_var[i] = var[halo->send_list[start + i]];
-
-    }
-
-  }
+  cs_halo_sync(halo, sync_mode, CS_REAL_TYPE, 1, var);
 }
 
 /*----------------------------------------------------------------------------
@@ -1301,161 +1360,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                          cs_real_t         var[],
                          int               stride)
 {
-  cs_lnum_t i, j, start, length;
-
-  cs_lnum_t end_shift = 0;
-  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
-
-  if (stride > _cs_glob_halo_max_stride)
-    _cs_glob_halo_max_stride = stride;
-  cs_halo_update_buffers(halo);
-
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
-
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    int rank_id;
-    int request_count = 0;
-    cs_real_t *build_buffer = (cs_real_t *)_cs_glob_halo_send_buffer;
-    cs_real_t *buffer = NULL;
-    const int local_rank = cs_glob_rank_id;
-
-    /* Receive data from distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      length = (  halo->index[2*rank_id + end_shift]
-                - halo->index[2*rank_id]) * stride;
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        if (length > 0) {
-
-          buffer = var + (halo->n_local_elts + halo->index[2*rank_id])*stride;
-
-          MPI_Irecv(buffer,
-                    length,
-                    CS_MPI_REAL,
-                    halo->c_domain_rank[rank_id],
-                    halo->c_domain_rank[rank_id],
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-        }
-      }
-      else
-        local_rank_id = rank_id;
-
-    }
-
-    /* Assemble buffers for halo exchange; avoid threading for now, as dynamic
-       scheduling led to slightly higher cost here, and even static scheduling
-       might lead to false sharing for small halos. */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length = (  halo->send_index[2*rank_id + end_shift]
-                  - halo->send_index[2*rank_id]);
-
-        if (stride == 3) { /* Unroll loop for this case */
-          for (i = 0; i < length; i++) {
-            build_buffer[(start + i)*3]
-              = var[(halo->send_list[start + i])*3];
-            build_buffer[(start + i)*3 + 1]
-              = var[(halo->send_list[start + i])*3 + 1];
-            build_buffer[(start + i)*3 + 2]
-              = var[(halo->send_list[start + i])*3 + 2];
-          }
-        }
-        else {
-          for (i = 0; i < length; i++) {
-            for (j = 0; j < stride; j++)
-              build_buffer[(start + i)*stride + j]
-                = var[(halo->send_list[start + i])*stride + j];
-          }
-        }
-
-      }
-
-    }
-
-    /* We wait for posting all receives (often recommended) */
-
-    if (_cs_glob_halo_use_barrier)
-      MPI_Barrier(cs_glob_mpi_comm);
-
-    /* Send data to distant ranks */
-
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        start = halo->send_index[2*rank_id];
-        length = (  halo->send_index[2*rank_id + end_shift]
-                  - halo->send_index[2*rank_id]);
-
-        if (length > 0)
-          MPI_Isend(build_buffer + start*stride,
-                    length*stride,
-                    CS_MPI_REAL,
-                    halo->c_domain_rank[rank_id],
-                    local_rank,
-                    cs_glob_mpi_comm,
-                    &(_cs_glob_halo_request[request_count++]));
-
-      }
-
-    }
-
-    /* Wait for all exchanges */
-
-    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  /* Copy local values in case of periodicity */
-
-  if (halo->n_transforms > 0) {
-
-    if (local_rank_id > -1) {
-
-      cs_real_t *recv_var
-        = var + (halo->n_local_elts + halo->index[2*local_rank_id])*stride;
-
-      start = halo->send_index[2*local_rank_id];
-      length =   halo->send_index[2*local_rank_id + end_shift]
-               - halo->send_index[2*local_rank_id];
-
-      if (stride == 3) { /* Unroll loop for this case */
-        for (i = 0; i < length; i++) {
-          recv_var[i*3]     = var[(halo->send_list[start + i])*3];
-          recv_var[i*3 + 1] = var[(halo->send_list[start + i])*3 + 1];
-          recv_var[i*3 + 2] = var[(halo->send_list[start + i])*3 + 2];
-        }
-      }
-      else {
-        for (i = 0; i < length; i++) {
-          for (j = 0; j < stride; j++)
-            recv_var[i*stride + j]
-              = var[(halo->send_list[start + i])*stride + j];
-        }
-      }
-
-    }
-
-  }
+  cs_halo_sync(halo, sync_mode, CS_REAL_TYPE, stride, var);
 }
 
 /*----------------------------------------------------------------------------
@@ -1469,7 +1374,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 bool
 cs_halo_get_use_barrier(void)
 {
-  return _cs_glob_halo_use_barrier;
+  return _halo_use_barrier;
 }
 
 /*----------------------------------------------------------------------------
@@ -1483,7 +1388,35 @@ cs_halo_get_use_barrier(void)
 void
 cs_halo_set_use_barrier(bool use_barrier)
 {
-  _cs_glob_halo_use_barrier = use_barrier;
+  _halo_use_barrier = use_barrier;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get default host/device allocation mode for message packing arrays.
+ *
+ * \return  allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_halo_get_buffer_alloc_mode(void)
+{
+  return _halo_buffer_alloc_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default host/device allocation mode for message packing arrays.
+ *
+ * \param[in]  mode  allocation mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_set_buffer_alloc_mode(cs_alloc_mode_t  mode)
+{
+  _halo_buffer_alloc_mode = mode;
 }
 
 /*----------------------------------------------------------------------------
