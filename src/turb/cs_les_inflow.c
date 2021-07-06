@@ -1613,7 +1613,7 @@ cs_les_synthetic_eddy_restart_write(void)
  * \param[in]   inflow              pointer to structure for Batten method
  * \param[in]   t_cur               current time
  * \param[in]   vel_m_l             mean velocity at each point
- * \param[in]   rij_l               reynolds stresses at each point
+ * \param[in]   rij_l               Reynolds stresses at each point
  * \param[in]   eps_l               dissipation rate at each point
  * \param[out]  fluctuations        velocity fluctuations at each point
  */
