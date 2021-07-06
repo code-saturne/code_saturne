@@ -1570,44 +1570,94 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
                                inc,
                                gradv); /* Calculate velocity gradient */
 
-      if (itytur_old == 3) { /* Rij */
-
-        warn_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_k);
-
-        warn_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
-        for (cs_lnum_t i = 0; i < n_cells; i++)
-          v_k[i] += v_tmp[i];
-
-        warn_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
-        for (cs_lnum_t i = 0; i < n_cells; i++)
-          v_k[i] = 0.5 * (v_k[i] + v_tmp[i]);
-
-      }
-      else {
-      }
-      warn_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
       warn_sum += _read_turb_array_1d_compat(r, "epsilon", "epsilon",
                                              t_id, v_eps);
+      if (itytur_old == 3) { /* Rij */
 
-      /* Loop over the  cells to compute each component
-         of the Reynolds stress tensor for each cell */
+        warn_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][0] = v_tmp[cell_id];
 
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        cs_real_t divu =   gradv[cell_id][0][0]
-                         + gradv[cell_id][1][1]
-                         + gradv[cell_id][2][2];
-        // Turbulent viscosity = Experimental constant (0.09) * k^2 / epsilon
-        cs_real_t nut = 0.09*cs_math_pow2(v_k[cell_id])/(v_eps[cell_id]);
+        warn_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][1] = v_tmp[cell_id];
 
-        // Diagonal of the Reynolds stress tensor
-        cs_real_t xdiag = 2. / 3. *(v_k[cell_id]+ nut*divu);
+        warn_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][2] = v_tmp[cell_id];
 
-        rst[cell_id][0] =  xdiag - 2.*nut*gradv[cell_id][0][0];
-        rst[cell_id][1] =  xdiag - 2.*nut*gradv[cell_id][1][1];
-        rst[cell_id][2] =  xdiag - 2.*nut*gradv[cell_id][2][2];
-        rst[cell_id][3] = -nut*(gradv[cell_id][1][0]+gradv[cell_id][0][1]);
-        rst[cell_id][4] = -nut*(gradv[cell_id][2][1]+gradv[cell_id][1][2]);
-        rst[cell_id][5] = -nut*(gradv[cell_id][2][0]+gradv[cell_id][0][2]);
+        warn_sum += _read_turb_array_1d_compat(r, "r12", "R12", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][3] = v_tmp[cell_id];
+
+        warn_sum += _read_turb_array_1d_compat(r, "r23", "R23", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][4] = v_tmp[cell_id];
+
+        warn_sum += _read_turb_array_1d_compat(r, "r13", "R13", t_id, v_tmp);
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rst[cell_id][5] = v_tmp[cell_id];
+      }
+      /* Eddy viscosity model */
+      else {
+        warn_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+
+        /* Loop over the  cells to compute each component
+           of the Reynolds stress tensor for each cell */
+
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          cs_real_t divu =   gradv[cell_id][0][0]
+            + gradv[cell_id][1][1]
+            + gradv[cell_id][2][2];
+          // Turbulent viscosity = Experimental constant (0.09) * k^2 / epsilon
+          cs_real_t nut = 0.09*cs_math_pow2(v_k[cell_id])/(v_eps[cell_id]);
+
+          // Diagonal of the Reynolds stress tensor
+          cs_real_t xdiag = 2. / 3. *(v_k[cell_id]+ nut*divu);
+
+          rst[cell_id][0] =  xdiag - 2.*nut*gradv[cell_id][0][0];
+          rst[cell_id][1] =  xdiag - 2.*nut*gradv[cell_id][1][1];
+          rst[cell_id][2] =  xdiag - 2.*nut*gradv[cell_id][2][2];
+          rst[cell_id][3] = -nut*(gradv[cell_id][1][0]+gradv[cell_id][0][1]);
+          rst[cell_id][4] = -nut*(gradv[cell_id][2][1]+gradv[cell_id][1][2]);
+          rst[cell_id][5] = -nut*(gradv[cell_id][2][0]+gradv[cell_id][0][2]);
+
+          /* Clip it if necessary to get a SPD matrix
+           * (same code as in clprij.f90) */
+
+          cs_real_t trrij = 2. * v_k[cell_id];
+          /* Dimension less tensor R/2k */
+          cs_real_t tensor[6];
+          for (int i = 0; i < 6; i++)
+            tensor[i] = rst[cell_id][i] / trrij;
+
+          cs_real_t eigen_vals[3];
+          cs_math_sym_33_eigen(tensor, eigen_vals);
+
+          cs_real_t eigen_tol = 1.e-4;
+          cs_real_t eigen_min = eigen_vals[0];
+          cs_real_t eigen_max = eigen_vals[0];
+          for (int i = 1; i < 3; i++) {
+            eigen_min = CS_MIN(eigen_min, eigen_vals[i]);
+            eigen_max = CS_MAX(eigen_max, eigen_vals[i]);
+          }
+          /* If negative eigen value, return to isotropy */
+          if ( eigen_min <= (eigen_tol*eigen_max) ||
+              eigen_min < cs_math_epzero) {
+
+            eigen_min = CS_MIN(eigen_min, - eigen_tol);
+            cs_real_t eigen_offset = CS_MIN(- eigen_min / (1./3. - eigen_min) + 0.1, 1.);
+
+            for (int i = 0; i < 6; i++) {
+              rst[cell_id][i] *= (1. - eigen_offset);
+
+              /* Diagonal terms */
+              if (i < 3)
+                rst[cell_id][i] += trrij * (eigen_offset + eigen_tol) / 3.;
+            }
+          }
+
+        }
       }
 
       /* Synthetic Eddy Method: eddies generation over the whole domain.

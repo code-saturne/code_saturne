@@ -3,6 +3,8 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Improve robustness when restarting from RANS to LES (issue #322).
+
 - GUI: fix handling of density and laminar viscosity output.
 
 - Do not postprocess "volume_forces" and "hydrostatic_pressure"
