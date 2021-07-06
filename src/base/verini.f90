@@ -561,7 +561,6 @@ do iest = 1, nestmx
   endif
 enddo
 
-
 ! --- Distance a la paroi
 
 if (ineedy.eq.1) then
@@ -898,8 +897,7 @@ endif
 '@',                                                            /,&
 '@  computation will go on.',                                   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -921,8 +919,7 @@ endif
 '@',                                                            /,&
 '@  computation will go on.',                                   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -940,8 +937,7 @@ endif
 '@',                                                            /,&
 '@  computation will go on',                                    /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -959,8 +955,7 @@ endif
 '@',                                                            /,&
 '@  computation will go on',                                    /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1011,8 +1006,7 @@ endif
 '@    - time-step variable with space or iteration or',         /,&
 '@      steady-state   algorithm(IDTVAR)',                      /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1036,8 +1030,7 @@ endif
 '@    - frozen velocity field (ICCVFG=1)',                      /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1062,8 +1055,7 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA EPS',             /,&
 '@',      e12.4,      i10,      e12.4,      e12.4,              /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1090,8 +1082,7 @@ endif
 '@     THETA PHI    THETA FB',                                  /,&
 '@',       e12.4,      e12.4,                                   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1116,8 +1107,7 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA',           /,&
 '@',      e12.4,      i10,      e12.4,      e12.4,              /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1141,8 +1131,7 @@ endif
 '@       THETST    ISTO2T     THETA K   THETA OMEGA',           /,&
 '@',      e12.4,      i10,      e12.4,      e12.4,              /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1224,8 +1213,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1247,9 +1235,7 @@ endif
 '@  a computation, it does contain information that avoid',     /,&
 '@   numerical perturbations when restarting a computation',    /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1264,8 +1250,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1283,8 +1268,8 @@ endif
 '@',                                                            /,&
 '@  CDTVAR(I) multiplier coefficient applied to the',           /,&
 '@  timestep for the  resolution of variable I.',               /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1300,8 +1285,7 @@ endif
 '@'                                                            ,/,&
 '@   The calculation could NOT run.'                           ,/,&
 '@'                                                            ,/,&
-'@ Check the input data given through the User Interface'      ,/,&
-'@   or in cs_user_parameters.f90.'                            ,/,&
+'@ Check the input data.',                                      /,&
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1317,8 +1301,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1340,10 +1323,7 @@ endif
 '@    variable with temperature (natural convection)',          /,&
 '@   this could be an error',                                   /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1364,7 +1344,7 @@ endif
 '@     other than via temperature',                             /,&
 '@  this could be by user defined density.',                    /,&
 '@',                                                            /,&
-'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1389,8 +1369,7 @@ endif
 '@        IESCOR = ', i10,                                      /,&
 '@        IESTOT = ', i10,                                      /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1407,8 +1386,7 @@ endif
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1425,8 +1403,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1444,8 +1421,8 @@ endif
 '@',                                                            /,&
 '@  ICLVFL(I) defines the type of clipping of scalar I',        /,&
 '@    when it is a variance of  fluctuations.',                 /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1464,11 +1441,7 @@ endif
 '@',                                                            /,&
 '@  ICLVFL(I) flags the type of clipping for scalar I',         /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1486,8 +1459,8 @@ endif
 '@',                                                            /,&
 '@  SIFMAS(I) is the turbulent Prandtl turbulent',              /,&
 '@    associated to scalar I.',                                 /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1507,8 +1480,8 @@ endif
 '@    scalar   I, which is a variance',                         /,&
 '@  with ICLVFL(I) = 2, value SCAMAX must be',                  /,&
 '@   strictly  positive.',                                      /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1527,8 +1500,8 @@ endif
 '@  RVARFL(I) is the coefficient R for the scalar I (which is', /,&
 '@ a variance) related to the dissipation equation sourceterme',/,&
 '@    - (1/R) rho scalaire epsilon/k',                          /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@ Check the input data.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1589,7 +1562,6 @@ endif
 '@',                                                            /,&
 '@  At least one rotational periodicity has been defined',      /,&
 '@  Flag IIRAYO is equal to', i10, '.',                         /,&
-'@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1698,8 +1670,6 @@ endif
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  Verify the parameters given in the interface or usipsu.',   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
