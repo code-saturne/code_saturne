@@ -117,7 +117,7 @@ BEGIN_C_DECLS
 
 /* Cache line multiple, in cs_real_t units */
 
-#define CS_CL  (CS_CL_SIZE/8)
+static const cs_lnum_t _cs_cl = (CS_CL_SIZE/8);
 
 /*=============================================================================
  * Local Type Definitions
@@ -3821,7 +3821,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 
-      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
+      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, _cs_cl);
       if (n_s_rows > n_rows)
         n_s_rows = n_rows;
 
@@ -3840,7 +3840,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 
       }
 
-#     pragma omp for schedule(dynamic, CS_CL)
+#     pragma omp for schedule(dynamic, _cs_cl)
       for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
@@ -3866,7 +3866,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 
-      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
+      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, _cs_cl);
       if (n_s_rows > n_rows)
         n_s_rows = n_rows;
 
@@ -3885,7 +3885,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 
       }
 
-#     pragma omp for schedule(dynamic, CS_CL)
+#     pragma omp for schedule(dynamic, _cs_cl)
       for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];

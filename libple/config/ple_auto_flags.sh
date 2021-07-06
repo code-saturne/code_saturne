@@ -102,6 +102,8 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=fujitsu
   elif test -n "`echo $ple_ac_cc_version | grep Arm`" ; then
     ple_gcc=arm
+  elif test -n "`$CC $user_CFLAGS --version 2>&1 | grep NVIDIA`" ; then
+    ple_gcc=no
   else
     ple_gcc=gcc
   fi
@@ -136,7 +138,7 @@ if test "x$ple_gcc" = "xgcc"; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cflags_default="-funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_omp="-fopenmp"
@@ -161,7 +163,7 @@ if test "x$ple_gcc" = "xgcc"; then
 
   case "$ple_cc_vendor-$ple_cc_version" in
     gcc-[4]*)
-      cflags_default="$cflags_default -std=c99 -fms-extensions "
+      cflags_default="$cflags_default -std=c11"
       ;;
     gcc-[5]*)
       ;;
@@ -277,7 +279,6 @@ elif test "x$ple_gcc" = "xoneapi" ; then
   cflags_default_opt="-O2"
   cflags_default_omp="-fiopenmp"
 
-
 # Otherwise, are we using clang ?
 #--------------------------------
 
@@ -301,23 +302,29 @@ elif test "x$ple_gcc" = "xclang"; then
 
 fi
 
-# Otherwise, are we using pgcc ?
-#-------------------------------
+# Otherwise, are we using nvc/pgcc ?
+#---------------------------------
 
 if test "x$ple_cc_compiler_known" != "xyes" ; then
 
-  $CC -V 2>&1 | grep 'The Portland Group' > /dev/null
+  $CC -V 2>&1 | grep 'NVIDIA' > /dev/null
+  if test "$?" = "0" ; then
+    $CC -V 2>&1 | grep 'Compilers and Tools' > /dev/null
+  fi
   if test "$?" = "0" ; then
 
-    echo "compiler '$CC' is Portland Group pgcc"
+    echo "compiler '$CC' is NVIDIA compiler"
 
     # Version strings for logging purposes and known compiler flag
     $CC -V > $outfile 2>&1
-    ple_ac_cc_version=`grep -i pgcc $outfile`
+    ple_ac_cc_version=`grep pgcc $outfile | head -1`
+    if test "$ple_ac_cc_version" = "" ; then
+      ple_ac_cc_version=`grep nvc $outfile | head -1`
+    fi
     ple_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-noswitcherror"
+    cflags_default=""
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
     cflags_default_omp="-mp"
@@ -386,7 +393,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
 fi
 
 # Otherwise, are we using the Fujitsu compiler ?
-#--------------------------------------------
+#-----------------------------------------------
 
 if test "x$ple_cc_compiler_known" != "xyes" ; then
 
@@ -415,7 +422,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
 fi
 
 # Otherwise, are we using the Arm compiler ?
-#--------------------------------------------
+#-------------------------------------------
 
 if test "x$ple_cc_compiler_known" != "xyes" ; then
 
