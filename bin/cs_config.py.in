@@ -79,7 +79,7 @@ class config:
         self.optfeatures = ['debug', 'relocatable', 'shared',
                             'gui', 'frontend',
                             'mpi', 'openmp', 'socket',
-                            'long-gnum', 'nls', 'host']
+                            'long-gnum', 'host']
         self.features = {}
 
         # List of mandatory and optionnal libraries to link with
@@ -169,7 +169,6 @@ class config:
         self.features['openmp'] = "@cs_have_openmp@"
         self.features['cuda'] = "@cs_have_cuda@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
-        self.features['nls'] = '@USE_NLS@'
         self.features['build_os'] = "@build_os@"
 
         # Now, one can setup the prerequisites information
