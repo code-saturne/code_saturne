@@ -420,6 +420,8 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
      To be changed at first call to cs_domain_time_step_increment() */
 
   domain->time_step->dt[0] = domain->time_step->t_max;
+  domain->time_step->dt[1] = domain->time_step->t_max;
+  domain->time_step->dt[2] = domain->time_step->t_max;
   domain->time_step->dt_ref = domain->time_step->t_max;
   domain->time_options.dtmin = domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
@@ -447,7 +449,9 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   /* Constant time step by default */
   domain->time_options.idtvar = CS_TIME_STEP_CONSTANT;
 
-  domain->time_step->dt[0] = dt;
+  domain->time_step->dt[0] = dt;    /* time step n */
+  domain->time_step->dt[1] = dt;    /* time step n-1 */
+  domain->time_step->dt[2] = dt;    /* time step n-2 */
   domain->time_step->dt_ref = dt;
   domain->time_step->dt_next = dt;
   domain->time_options.dtmin = dt;
