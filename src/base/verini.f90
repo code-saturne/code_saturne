@@ -2219,7 +2219,6 @@ endif
 '@     Source terme in Navier-Stokes: ISNO2T = ', i10,          /,&
 '@                                    THETSN = ', e12.4,        /,&
 '@      Density                     : IROEXT = ', i10,          /,&
-'@                                    THETRO = ', e12.4,        /,&
 '@      Viscosity                   : IVIEXT = ', i10,          /,&
 '@                                    THETVI = ', e12.4,        /,&
 '@  Current version does not allow this in combination with',   /,&
