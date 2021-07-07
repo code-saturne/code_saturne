@@ -1502,12 +1502,13 @@ cs_parameters_add_boundary_temperature(void)
 void
 cs_parameters_output_complete(void)
 {
+  const int k_log = cs_field_key_id("log");
+  const int k_vis = cs_field_key_id("post_vis");
+
   /* Complete default settings for moment fields */
 
   const int n_moments = cs_time_moment_n_moments();
   if (n_moments > 0) {
-    int k_log = cs_field_key_id("log");
-    int k_vis = cs_field_key_id("post_vis");
     for (int m_id = 0; m_id < n_moments; m_id++) {
       cs_field_t *f = cs_time_moment_get_field(m_id);
       if (f != NULL) {
@@ -1518,6 +1519,23 @@ cs_parameters_output_complete(void)
         if (cs_field_is_key_set(f, k_log) == false)
           cs_field_set_key_int(f, k_vis, 1);
       }
+    }
+  }
+
+  /* Complete settings for property fields; properties
+     which are hidden should already have had their settings
+     forced at this stage, so should not be changed here. */
+
+  const int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_PROPERTY) {
+      if (cs_field_is_key_set(f, k_vis) == false) {
+        int flag = CS_POST_ON_LOCATION;
+        cs_field_set_key_int(f, k_vis, flag);
+      }
+      if (cs_field_is_key_set(f, k_log) == false)
+        cs_field_set_key_int(f, k_vis, 1);
     }
   }
 }

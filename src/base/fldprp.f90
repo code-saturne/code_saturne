@@ -443,10 +443,7 @@ subroutine hide_property &
 ! Module files
 !===============================================================================
 
-use paramx
-use dimens
 use entsor
-use numvar
 use field
 
 !===============================================================================
@@ -518,7 +515,7 @@ integer, intent(out)         :: f_id
 
 ! Local variables
 
-integer  type_flag, post_flag, location_id
+integer  type_flag, location_id
 
 character(len=len_trim(name)+1, kind=c_char) :: c_name
 integer(c_int) :: c_type_flag
@@ -528,7 +525,6 @@ logical(c_bool) :: c_has_previous
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
-post_flag = POST_ON_LOCATION
 location_id = 1 ! variables defined on cells
 
 ! Test if the field has already been defined
@@ -554,9 +550,6 @@ call cs_physical_property_define_from_field(c_name, c_type_flag, &
   c_location_id, dim, c_has_previous)
 
 f_id = cs_physical_property_field_id_by_name(c_name)
-
-call field_set_key_int(f_id, keyvis, post_flag)
-call field_set_key_int(f_id, keylog, 1)
 
 if (len(trim(label)).gt.0) then
   call field_set_key_str(f_id, keylbl, trim(label))
