@@ -870,7 +870,7 @@ do ii = 1, nn
   if (ii.eq.2) call field_get_name(iviscl, chaine)
   if (ii.eq.3) call field_get_name(ivisct, chaine)
   if (ii.eq.4) call field_get_name(icp, chaine)
-  if (vcopt%iwarni.ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
+  if (ipass.eq.1.or.varmn(ii).lt.0.d0) then
     if (iok1.eq.0) then
       write(nfecra,3010)
       iok1 = 1
