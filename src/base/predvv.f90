@@ -219,7 +219,7 @@ double precision, dimension(:,:,:), pointer :: coefbp
 double precision, dimension(:,:), allocatable :: coefat
 double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
-double precision, dimension(:,:), allocatable :: divt
+double precision, allocatable, dimension(:,:), target :: divt
 double precision, dimension(:,:), pointer :: forbr, c_st_vel
 double precision, dimension(:), pointer :: cvar_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -228,6 +228,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:,:), pointer :: cpro_gradp
+double precision, dimension(:,:), pointer :: cpro_divr
 double precision, dimension(:,:), pointer :: cpro_pred_vel
 double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
@@ -1128,9 +1129,17 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
     enddo
   endif
 
-  allocate(divt(3,ncelet))
+
+  call field_get_id_try("reynolds_stress_divergence", f_id)
+  if (f_id.ge.0) then
+    call field_get_val_v(f_id, cpro_divr)
+  else
+    allocate(divt(3,ncelet))
+    cpro_divr => divt
+  endif
+
   init = 1
-  call divmat(init,tflmas,tflmab,divt)
+  call divmat(init,tflmas,tflmab, cpro_divr)
 
   deallocate(tflmas, tflmab)
 
@@ -1141,7 +1150,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
     if (isno2t.gt.0) then
       do iel = 1, ncel
         do isou = 1, 3
-          c_st_vel(isou,iel) = c_st_vel(isou,iel) - divt(isou,iel)
+          c_st_vel(isou,iel) = c_st_vel(isou,iel) - cpro_divr(isou,iel)
         enddo
       enddo
 
@@ -1152,14 +1161,14 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
       if (nterup.eq.1) then
         do iel = 1, ncel
           do isou = 1, 3
-            trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
+            trav(isou,iel) = trav(isou,iel) - cpro_divr(isou,iel)
           enddo
         enddo
       ! Inner iterations
       else
         do iel = 1, ncel
           do isou = 1, 3
-            trava(isou,iel) = trava(isou,iel) - divt(isou,iel)
+            trava(isou,iel) = trava(isou,iel) - cpro_divr(isou,iel)
           enddo
         enddo
       endif
@@ -1372,7 +1381,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       ! If it is not a solid cell
       if (cell_is_active(iel).eq.1) dvol = 1.d0 / cell_f_vol(iel)
       do isou = 1, 3
-        dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)*dvol
+        dfrcxt(isou, iel) = dfrcxt(isou, iel) - cpro_divr(isou, iel)*dvol
       enddo
     enddo
   endif
