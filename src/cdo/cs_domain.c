@@ -339,13 +339,15 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
  * \brief  Check if an output is requested according to the domain setting
  *
  * \param[in]   domain    pointer to a cs_domain_t structure
+ * \param[in]   oneplus   add or not plus one to the current time step
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_log(const cs_domain_t      *domain)
+cs_domain_needs_log(const cs_domain_t      *domain,
+                    bool                    oneplus)
 {
   const cs_time_step_t  *ts = domain->time_step;
 
@@ -355,9 +357,19 @@ cs_domain_needs_log(const cs_domain_t      *domain)
   if (domain->only_steady)
     return true;
 
-  if (domain->output_nt > 0)
-    if ((ts->nt_cur + 1 - ts->nt_prev) % domain->output_nt == 0)
+  if (domain->output_nt > 0) {
+
+    int nt_cur = (oneplus) ? ts->nt_cur + 1 : ts->nt_cur;
+
+    /* Steady-state computation in an unsteady computation or
+     * force the output for the first iteration */
+    if (nt_cur < 2)
       return true;
+
+    if ((nt_cur - ts->nt_prev) % domain->output_nt == 0)
+      return true;
+
+  }
 
   if (domain->is_last_iter)
     return true;

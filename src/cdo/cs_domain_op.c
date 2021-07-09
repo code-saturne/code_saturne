@@ -435,7 +435,7 @@ cs_domain_post(cs_domain_t  *domain)
   cs_advection_field_update(domain->time_step->t_cur, true);
 
   /* Log output */
-  if (cs_domain_needs_log(domain)) {
+  if (cs_domain_needs_log(domain, false)) {
 
     /* Post-processing */
     /* =============== */

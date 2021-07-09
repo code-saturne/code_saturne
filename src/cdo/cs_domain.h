@@ -222,13 +222,15 @@ cs_domain_needs_iteration(cs_domain_t  *domain);
  * \brief  Check if an output is requested according to the domain setting
  *
  * \param[in]   domain    pointer to a cs_domain_t structure
+ * \param[in]   oneplus   add or not plus one to the current time step
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_log(const cs_domain_t      *domain);
+cs_domain_needs_log(const cs_domain_t      *domain,
+                    bool                    oneplus);
 
 /*----------------------------------------------------------------------------*/
 /*!

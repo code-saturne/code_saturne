@@ -306,7 +306,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     }
   }
 
-  bool  do_output = cs_domain_needs_log(domain);
+  bool  do_output = cs_domain_needs_log(domain, false);
 
   /* Output information */
   if (domain->only_steady) {
@@ -428,7 +428,7 @@ _solve_domain(cs_domain_t  *domain)
   const cs_time_step_t  *ts = domain->time_step;
   const int  nt_cur = ts->nt_cur;
 
-  bool  do_output = cs_domain_needs_log(domain);
+  bool  do_output = cs_domain_needs_log(domain, true);
 
   /* Output information */
   if (do_output) {
