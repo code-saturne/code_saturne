@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Atmospheric module: fix default molecular thermal conductivity and a small
+  valgrind error with atmospheric preprocessor.
+
 - Improve robustness when restarting from RANS to LES (issue #322).
 
 - GUI: fix handling of density and laminar viscosity output.
