@@ -603,10 +603,12 @@ _free_coprocessor(void)
 
     bool cp_delete = true;
 
-    const char *s = getenv("CS_PV_CP_DELETE_CRASH_WORKAROUND");
-    if (s != NULL) {
-      if (atoi(s) > 0)
-        cp_delete = false;
+    if (_n_scripts > 0) {
+      const char *s = getenv("CS_PV_CP_DELETE_CRASH_WORKAROUND");
+      if (s != NULL) {
+        if (atoi(s) > 0)
+          cp_delete = false;
+      }
     }
     if (cp_delete)
       _processor->Delete();
