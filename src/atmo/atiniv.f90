@@ -247,7 +247,7 @@ if (iatra1.eq.1 .and. (xlat.ge.rinfin*0.5 .or. xlon.ge.rinfin*0.5)) then
 endif
 
 ! Check latitude / longitude from meteo file
-if (imeteo.gt.0) then
+if (imeteo.eq.1) then
   if (maxval(xmet).ge.rinfin*0.5 .or. maxval(ymet).ge.rinfin*0.5) then
     write(nfecra,1003)
     call csexit (1)
@@ -660,7 +660,7 @@ if (iatra1.eq.1 .and. (xlat.ge.rinfin*0.5 .or. xlon.ge.rinfin*0.5)) then
 endif
 
 ! Check latitude / longitude from meteo file
-if (imeteo.gt.0) then
+if (imeteo.eq.1) then
   if (maxval(xmet).ge.rinfin*0.5 .or. maxval(ymet).ge.rinfin*0.5) then
     write(nfecra,1003)
     call csexit (1)
