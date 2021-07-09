@@ -154,18 +154,22 @@ _code_saturne() {
                 --id)                    COMPREPLY=( ); return 0;;
                 --id-prefix)             COMPREPLY=( ); return 0;;
                 --id-suffix)             COMPREPLY=( ); return 0;;
-                --n|--n-procs)            COMPREPLY=( ); return 0;;
+                --n|--n-procs)           COMPREPLY=( ); return 0;;
                 --nt|--threads-per-task) COMPREPLY=( ); return 0;;
+                --with-resource)         COMPREPLY=( ); return 0;;
                 *) cmdOpts="-p --param --case --id --id-prefix --id-suffix \
                      --suggest-id --force --stage --initialize --compute \
-                     --finalize -n --n-procs --nt --threads-per-task";;
+                     --finalize -n --n-procs --nt --threads-per-task \
+                     --with-resource";;
             esac
             ;;
-        studymanage | smgr)
+        studymanager | smgr)
             case ${prev} in
                 -f|--file) _filedir; return 0;;
                 -m|--mail) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
+                --with-resource) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-q --quiet -r --run -c --compare -p --post \
+                     --with-resource";;
             esac
             ;;
         studymanagergui | smgrgui)
