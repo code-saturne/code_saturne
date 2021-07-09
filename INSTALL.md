@@ -428,7 +428,7 @@ are required. Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
 
-For some external libraries, such as MED, MEDCoupling,  and ParaView Catalyst,
+For some external libraries, such as MED, MEDCoupling, and ParaView Catalyst,
 a C++11 compliant C++ compiler is also required.
 
 The SALOME platform V9 and above may require Python 3.6 at least,
@@ -981,10 +981,9 @@ an enquoted and semicolon-separated path may be used, for example:
 --with-catalyst="/home/user/opt/paraview-5.8;/home/user/opt/ospray2"
 ```
 
-[Catalyst editions](https://blog.kitware.com/paraview-editions/}
-may be used instead of a full ParaView build, but some
-coprocessing scripts may not work depending on what is included in the
-editions, so this is recommended only for advanced users.
+Also, if the detection of Catalyst fails due to incorrect detection
+of the TBB library, the `TBB_INCLUDE_DIR` environment variable may
+be set to pass the correct path to the configuration scripts.
 
 On some systems, loading the Catalyst module as a plug-in (which is the
 default) seems to interfere with the detection of required OpenGL2 features

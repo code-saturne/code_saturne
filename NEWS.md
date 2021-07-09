@@ -30,6 +30,11 @@ Bug fixes:
 - Fix in LES filtering procedure for parallel runs, only for fully extended
   neighborhood.
 
+Architectural changes:
+
+- Add support for TBB_INCLUDE_PATH environment variable in Catalyst
+  detection to work around Cmake configuration error on some systems.
+
 Release 7.0.0 (June 15 2021)
 ----------------------------
 
