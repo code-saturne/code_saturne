@@ -482,7 +482,7 @@ class Case(object):
             run_cmd += " -n " + n_procs
 
         if resource_name:
-            run_cmd += " -with_resource=" + resource_name
+            run_cmd += " --with-resource=" + resource_name
 
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
