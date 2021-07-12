@@ -683,12 +683,12 @@ _cad_intersect(const cs_mesh_t        *m,
     if (bool_ok) {
       BRepGProp::VolumeProperties(fluid_cell, VProps, Standard_True);
       cs_real_t fluid_volume = VProps.Mass();
-      cell_porosity[i] = fluid_volume / cell_volume;
+      cell_porosity[c_id] = fluid_volume / cell_volume;
       if (cell_f_center != NULL) {
         gp_Pnt c_cen = VProps.CentreOfMass();
-        cell_f_center[i][0] = c_cen.X();
-        cell_f_center[i][1] = c_cen.Y();
-        cell_f_center[i][2] = c_cen.Z();
+        cell_f_center[c_id][0] = c_cen.X();
+        cell_f_center[c_id][1] = c_cen.Y();
+        cell_f_center[c_id][2] = c_cen.Z();
       }
       if (false && compute_face_quantities) {
         for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
@@ -752,7 +752,7 @@ _cad_intersect(const cs_mesh_t        *m,
       }
     }
     else {
-      cell_porosity[i] = -1;
+      cell_porosity[c_id] = -1;
     }
 
     // clear local vertices map and surfaces vector
