@@ -1139,17 +1139,20 @@ do while (iterns.le.nterup)
       ! Correct the scalar to ensure scalar conservation
       call field_get_key_id("is_buoyant", key_buoyant_id)
       call field_get_val_s(icrom,crom)
-      call field_get_val_s_by_name("density_mass",cpro_rho_mass)
-      do iscal = 1, nscal
-        ivar = isca(iscal)
-        call field_get_key_int(ivarfl(ivar), key_buoyant_id, is_buoyant_fld)
-        if (is_buoyant_fld.eq.1) then
-          call field_get_val_s(ivarfl(ivar),cvar_sca)
-          do iel = 1, ncel
-            cvar_sca(iel) = cvar_sca(iel)*cpro_rho_mass(iel)/crom(iel)
-          enddo
-        endif
-      enddo
+      call field_get_id_try("density_mass",f_id)
+      if (f_id.ge.0) then
+        call field_get_val_s(f_id, cpro_rho_mass)
+        do iscal = 1, nscal
+          ivar = isca(iscal)
+          call field_get_key_int(ivarfl(ivar), key_buoyant_id, is_buoyant_fld)
+          if (is_buoyant_fld.eq.1) then
+            call field_get_val_s(ivarfl(ivar),cvar_sca)
+            do iel = 1, ncel
+              cvar_sca(iel) = cvar_sca(iel)*cpro_rho_mass(iel)/crom(iel)
+            enddo
+          endif
+        enddo
+      endif
     endif
 
     if (vcopt_u%iwarni.ge.1) then
