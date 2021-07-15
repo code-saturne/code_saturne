@@ -3,6 +3,12 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix error due to wrong handling of zone names for variable
+  scalar diffusivity (issue #317).
+
+- Fix spurious reset issue when restarting time moments defined by
+  start time (not iteration).
+
 - Atmospheric module: fix default molecular thermal conductivity and a small
   valgrind error with atmospheric preprocessor.
 
