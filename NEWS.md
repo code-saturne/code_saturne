@@ -3,6 +3,9 @@ Release 6.0.8 (unreleased)
 
 Bug fixes:
 
+- Fix spurious reset issue when restarting time moments defined by
+  start time (not iteration).
+
 - Fix crash with Syrthes volume coupling.
 
 - Fix in LES filtering procedure for parallel runs.

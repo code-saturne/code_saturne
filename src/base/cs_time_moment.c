@@ -182,7 +182,7 @@ typedef struct {
 typedef struct {
 
   int                     nt_prev;        /* Restart time step */
-  int                     t_prev;         /* Restart time */
+  double                  t_prev;         /* Restart time */
 
   int                     n_wa;           /* Number of weight accumulators */
   int                     n_moments;      /* Number of moments */
