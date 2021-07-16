@@ -78,7 +78,7 @@ class DefineUserScalarsModel(Variables, Model):
         default['coefficient_label']     = "Dscal"
         default['diffusion_coefficient'] = 1.83e-05
         default['diffusion_choice']      = 'constant'
-        default['zone_id']               = 1
+        default['zone_id']               = "1"
         from code_saturne.model.GroundwaterModel import GroundwaterModel
         if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
             default['GGDH']                  = "OFF"
@@ -638,7 +638,7 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getDiffFormula(self, scalar, zone="all_cells"):
+    def getDiffFormula(self, scalar, zone="1"):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
         'specific_heat' or 'thermal_conductivity'
@@ -648,14 +648,14 @@ class DefineUserScalarsModel(Variables, Model):
         n = self.scalar_node.xmlGetNode('variable', name = scalar)
         node = n.xmlGetNode('property')
 
-        if zone != "all_cells":
+        if zone != "1":
             if node.xmlGetChildNode("zone", name=zone):
                 node = node.xmlGetChildNode("zone", name=zone)
             else:
                 node = node.xmlInitChildNode("zone")
                 node["name"] = zone
 
-        formula = node.xmlGetString('formula')
+        formula = node.xmlGetChildString('formula')
         if not formula:
             formula = self.getDefaultFormula(scalar)
             self.setDiffFormula(scalar, formula)
@@ -678,7 +678,7 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setDiffFormula(self, scalar, formula, zone="all_cells"):
+    def setDiffFormula(self, scalar, formula, zone="1"):
         """
         Gives a formula for 'density', 'molecular_viscosity',
         'specific_heat'or 'thermal_conductivity'
@@ -687,7 +687,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar, self.getUserScalarNameList())
         n = self.scalar_node.xmlGetNode('variable', name = scalar)
         node = n.xmlGetNode('property')
-        if zone != "all_cells":
+        if zone != "1":
             if node.xmlGetChildNode("zone", name=zone):
                 node = node.xmlGetChildNode("zone", name=zone)
             else:
