@@ -385,7 +385,7 @@ _petsc_cmd(bool          use_prefix,
  * \param[in]  system_size   size of the linear system
  * \param[in]  amg_type      type of AMG preconditioner
  * \param[in]  is_sym        system to solve is symmetric ?
- * \param[in]  light_smooth  use a light-weight smoothing strategy
+ * \param[in]  smooth_lvl    level of smoothing (0: light)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -394,7 +394,7 @@ _set_gamg_pc(const char            prefix[],
              cs_gnum_t             system_size,
              cs_param_amg_type_t   amg_type,
              bool                  is_sym,
-             bool                  light_smooth)
+             int                   smooth_lvl)
 {
   /* Estimate the number of levels */
   double  _n_levels = ceil(0.6*(log(system_size) - 5));
@@ -483,9 +483,15 @@ _set_gamg_pc(const char            prefix[],
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 
     /* Set the up/down smoothers */
-    if (light_smooth) {
+    if (smooth_lvl == 0) {
 
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
+
+    }
+    else if (smooth_lvl == 1) {
+
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_sor_lits", "2");
 
     }
     else {
@@ -520,9 +526,18 @@ _set_gamg_pc(const char            prefix[],
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 
-    if (light_smooth) {
+    if (smooth_lvl == 0) {
 
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
+
+    }
+    else if (smooth_lvl == 1) {
+
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(use_pre, prefix, "mg_levels_pc_bjacobi_blocks", "1");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_type", "preonly");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_pc_type", "ilu");
+      _petsc_cmd(use_pre, prefix, "mg_levels_sub_pc_factor_levels", "0");
 
     }
     else {
@@ -2034,15 +2049,13 @@ _diag_schur_hook(void     *context,
  * \brief  Set the solver options and its preconditioner in case of Notay's
  *         strategy. Solver is a flexible GMRES by default.
  *
- * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
  * \param[in]      slesp   pointer to a cs_sles_param_t structure
  * \param[in, out] ksp     KSP structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_notay_solver(const cs_navsto_param_sles_t  *nslesp,
-              const cs_param_sles_t         *slesp,
+_notay_solver(const cs_param_sles_t         *slesp,
               KSP                            ksp)
 {
   PC  up_pc;
@@ -2063,7 +2076,7 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
     case CS_PARAM_AMG_PETSC_GAMG_V:
     case CS_PARAM_AMG_PETSC_GAMG_W:
       _set_gamg_pc("", system_size, slesp->amg_type,
-                   false, false); /* is_sym, light_smooth */
+                   false, 1); /* is_sym, smooth_lvl */
       break;
 
     case CS_PARAM_AMG_HYPRE_BOOMER_V:
@@ -2072,7 +2085,7 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
 #else
       _set_gamg_pc("", system_size, slesp->amg_type,
-                   false, false); /* is_sym, light_smooth */
+                   false, 1); /* is_sym, smooth_lvl */
 #endif
       break;
 
@@ -2082,7 +2095,7 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
 #else
       _set_gamg_pc("", system_size, slesp->amg_type,
-                   false, false); /* is_sym, light_smooth */
+                   false, 1); /* is_sym, smooth_lvl */
 #endif
       break;
 
@@ -2102,18 +2115,153 @@ _notay_solver(const cs_navsto_param_sles_t  *nslesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver options with a 4x4 block preconditioner in case of
+ * \brief  Set the solver options with a 2x2 block preconditioner in case of
  *         Notay's strategy
  *
- * \param[in]      nslesp  pointer to a cs_navsto_param_sles_t structure
  * \param[in]      slesp   pointer to a cs_sles_param_t structure
  * \param[in, out] ksp     KSP structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
-                          const cs_param_sles_t         *slesp,
+_notay_block_precond(const cs_param_sles_t         *slesp,
+                     KSP                            ksp)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  /* Generate an indexed set for each velocity component and the pressure
+     block */
+  PetscInt  n_faces = quant->n_faces;
+  PetscInt  n_cells = quant->n_cells;
+  PetscInt  alloc_size = (3*n_faces > n_cells) ? 3*n_faces : n_cells;
+
+  PetscInt  *indices = NULL;
+  PetscMalloc1(alloc_size, &indices);
+
+  IS  isv, isp;
+  PC up_pc;
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, PCFIELDSPLIT);
+
+  _build_is_for_fieldsplit(&isp, &isv);
+
+  /* Define the preconditioner */
+  PCFieldSplitSetIS(up_pc, "vel", isv);
+  PCFieldSplitSetIS(up_pc, "pr", isp);
+
+  switch (slesp->pcd_block_type) {
+  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "multiplicative");
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "symmetric_multiplicative");
+    break;
+
+  case CS_PARAM_PRECOND_BLOCK_DIAG:
+  default:
+    _petsc_cmd(false, "", "pc_fieldsplit_type", "additive");
+    break;
+  }
+
+  char prefix[2][32] = { "fieldsplit_vel", "fieldsplit_pr" };
+  PetscInt  n_split;
+  KSP  *up_subksp;
+  PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
+  assert(n_split == 2);
+
+  for (int k = 0; k < 2; k++) {
+
+    _petsc_cmd(true, prefix[k], "ksp_type", "preonly");
+    _petsc_cmd(true, prefix[k], "ksp_norm_type", "unpreconditioned");
+
+    bool  is_sym = false;
+    int  smooth_lvl = 1;
+    cs_gnum_t  system_size = 3*quant->n_g_faces;
+    if (k == 1) {
+      system_size = quant->n_g_cells;
+      is_sym = true;
+      smooth_lvl = 0;
+    }
+
+    /* Additional settings for the preconditioner */
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      switch (slesp->amg_type) {
+
+      case CS_PARAM_AMG_PETSC_GAMG_V:
+      case CS_PARAM_AMG_PETSC_GAMG_W:
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, smooth_lvl);
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER_V:
+#if defined(PETSC_HAVE_HYPRE)
+        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","V");
+#else
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, smooth_lvl);
+#endif
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER_W:
+#if defined(PETSC_HAVE_HYPRE)
+        _petsc_cmd(true, prefix[k], "pc_type", "hypre");
+        _petsc_cmd(true, prefix[k], "pc_hypre_type", "boomeramg");
+        _petsc_cmd(true, prefix[k], "pc_hypre_boomeramg_cycle_type","W");
+#else
+        _petsc_cmd(true, prefix[k], "pc_type", "gamg");
+        _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
+                     is_sym, smooth_lvl);
+#endif
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
+        break;
+
+      } /* AMG type */
+      break;
+
+    default:
+      break; /* Nothing else to do */
+
+    } /* Switch on preconditioner */
+
+    KSP  _ksp = up_subksp[k];
+    PC  _pc;
+    KSPGetPC(_ksp, &_pc);
+    PCSetFromOptions(_pc);
+
+  } /* Loop on blocks */
+
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+
+  /* Free temporary memory */
+  PetscFree(up_subksp);
+  ISDestroy(&isp);
+  ISDestroy(&isv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver options with a 4x4 block preconditioner in case of
+ *         Notay's strategy
+ *
+ * \param[in]      slesp   pointer to a cs_sles_param_t structure
+ * \param[in, out] ksp     KSP structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_notay_full_block_precond(const cs_param_sles_t         *slesp,
                           KSP                            ksp)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -2180,16 +2328,16 @@ _notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
   PCFieldSplitSetIS(up_pc, "pr", is[3]);
 
   switch (slesp->pcd_block_type) {
-  case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
-  case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR:
     _petsc_cmd(false, "", "pc_fieldsplit_type", "multiplicative");
     break;
 
-  case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+  case CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL:
     _petsc_cmd(false, "", "pc_fieldsplit_type", "symmetric_multiplicative");
     break;
 
-  case CS_PARAM_PRECOND_BLOCK_DIAG:
+  case CS_PARAM_PRECOND_BLOCK_FULL_DIAG:
   default:
     _petsc_cmd(false, "", "pc_fieldsplit_type", "additive");
     break;
@@ -2210,11 +2358,13 @@ _notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
     _petsc_cmd(true, prefix[k], "ksp_type", "preonly");
     _petsc_cmd(true, prefix[k], "ksp_norm_type", "unpreconditioned");
 
-    bool  is_sym = false, light_smooth = true;
+    bool  is_sym = false;
+    int  smooth_lvl = 1;
     cs_gnum_t  system_size = quant->n_g_faces;
     if (k == 3) {
       system_size = quant->n_g_cells;
       is_sym = true;
+      smooth_lvl = 0;
     }
 
     /* Additional settings for the preconditioner */
@@ -2227,7 +2377,7 @@ _notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
       case CS_PARAM_AMG_PETSC_GAMG_W:
         _petsc_cmd(true, prefix[k], "pc_type", "gamg");
         _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, light_smooth);
+                     is_sym, smooth_lvl);
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
@@ -2238,7 +2388,7 @@ _notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
 #else
         _petsc_cmd(true, prefix[k], "pc_type", "gamg");
         _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, light_smooth);
+                     is_sym, smooth_lvl);
 #endif
         break;
 
@@ -2250,7 +2400,7 @@ _notay_full_block_precond(const cs_navsto_param_sles_t  *nslesp,
 #else
         _petsc_cmd(true, prefix[k], "pc_type", "gamg");
         _set_gamg_pc(prefix[k], system_size, slesp->amg_type,
-                     is_sym, light_smooth);
+                     is_sym, smooth_lvl);
 #endif
         break;
 
@@ -2438,10 +2588,23 @@ _notay_hook(void     *context,
 
       KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
-      if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
-        _notay_full_block_precond(nslesp, slesp, ksp);
-      else
-        _notay_solver(nslesp, slesp, ksp);
+      switch (slesp->pcd_block_type) {
+      case CS_PARAM_PRECOND_BLOCK_DIAG:
+      case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+      case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+      case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
+        _notay_block_precond(slesp, ksp);
+        break;
+      case CS_PARAM_PRECOND_BLOCK_FULL_DIAG:
+      case CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR:
+      case CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL:
+      case CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR:
+        _notay_full_block_precond(slesp, ksp);
+        break;
+      default:
+        _notay_solver(slesp, ksp);
+        break;
+      }
 
     }
     break;

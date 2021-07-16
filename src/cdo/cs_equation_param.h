@@ -1070,6 +1070,11 @@ typedef struct {
  * - "lower_tri": lower triangular (multiplicative) block preconditioner
  * - "upper_tri": upper triangular (multiplicative) block preconditioner
  * - "symm": symmetric Gauss-Seidel block preconditioner
+ * - "full_diag": full diagonal (or additive) block preconditoner
+ * - "full_lower_tri": full lower triangular (multiplicative) block
+     preconditioner
+ * - "full_upper_tri": upper triangular (multiplicative) block preconditioner
+ * - "full_symm": symmetric Gauss-Seidel block preconditioner
  * Most of these options are available only with PETSc.
  *
  * \var CS_EQKEY_SLES_VERBOSITY
