@@ -368,7 +368,7 @@ class MobileMeshTestCase(ModelTest):
         mdl.setMethod('on')
         doc = """<ale_method status="on">
                     <variable label="Mesh Velocity" name="mesh_velocity"/>
-                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity"/>
                     <mesh_viscosity type="isotrop"/>
                  </ale_method>"""
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
@@ -384,7 +384,7 @@ class MobileMeshTestCase(ModelTest):
 ##
         doc = """<ale_method status="on">
                     <variable label="Mesh Velocity" name="mesh_velocity"/>
-                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity"/>
                     <mesh_viscosity type="isotrop"/>
                     <fluid_initialization_sub_iterations>12</fluid_initialization_sub_iterations>
                 </ale_method>"""
@@ -403,10 +403,10 @@ class MobileMeshTestCase(ModelTest):
 
         doc = """<ale_method status="on">
                     <variable label="Mesh Velocity" name="mesh_velocity"/>
-                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity[X]"/>
                     <mesh_viscosity type="orthotrop"/>
-                    <property label="mesh_vi2" name="mesh_viscosity_2"/>
-                    <property label="mesh_vi3" name="mesh_viscosity_3"/>
+                    <property label="mesh_vi2" name="mesh_viscosity[Y]"/>
+                    <property label="mesh_vi3" name="mesh_viscosity[Z]"/>
                 </ale_method>"""
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
             'Could not set mobil mesh model visocity type'
@@ -418,17 +418,17 @@ class MobileMeshTestCase(ModelTest):
         """Check whether the MobileMeshModel class could be set and get formula"""
         mdl = MobileMeshModel(self.case)
         mdl.setMethod('on')
-        mdl.setFormula('mesh_viscosity_1 = 1000;')
+        mdl.setFormula('mesh_viscosity = 1000;')
 
         doc = """<ale_method status="on">
                     <variable label="Mesh Velocity" name="mesh_velocity"/>
-                    <property label="mesh_vi1" name="mesh_viscosity_1"/>
+                    <property label="mesh_vi1" name="mesh_viscosity"/>
                     <mesh_viscosity type="isotrop"/>
-                    <formula>mesh_viscosity_1 = 1000;</formula>
+                    <formula>mesh_viscosity = 1000;</formula>
                     </ale_method> """
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
             'Could not set formula'
-        assert mdl.getFormula() == 'mesh_viscosity_1 = 1000;',\
+        assert mdl.getFormula() == 'mesh_viscosity = 1000;',\
             'Could not get formula'
 
 

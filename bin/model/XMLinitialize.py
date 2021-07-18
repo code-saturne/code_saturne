@@ -1888,17 +1888,28 @@ class XMLinit(BaseXmlInit):
 
         XMLAleMethod = XMLThermoPhysicalNode.xmlGetNode("ale_method")
         if XMLAleMethod != None and XMLAleMethod['status'] == 'on':
+
+            # If not mentionned it is isotrop
+            ale_type = 'isotrop'
             nat = XMLAleMethod.xmlGetNode('mesh_viscosity')
+
             if nat:
                 ale_type = nat['type']
-                d = ale_replace_dict[ale_type]
-                nf = XMLAleMethod.xmlGetNode('formula')
-                if nf != None:
-                    f = XMLAleMethod.xmlGetString("formula")
-                    for k in d.keys():
-                        f = f.replace(k, d[k])
 
-                    nf.xmlSetTextNode(f)
+            d = ale_replace_dict[ale_type]
+            # Rename properties
+            for k in d.keys():
+                node = XMLAleMethod.xmlGetNode('property', name=k)
+                if node:
+                    node['name'] = d[k]
+
+            nf = XMLAleMethod.xmlGetNode('formula')
+            if nf != None:
+                f = XMLAleMethod.xmlGetString("formula")
+                for k in d.keys():
+                    f = f.replace(k, d[k])
+
+                nf.xmlSetTextNode(f)
 
     def __backwardCompatibilityFrom_6_2(self):
         """
