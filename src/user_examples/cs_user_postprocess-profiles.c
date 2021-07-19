@@ -241,6 +241,13 @@ cs_user_postprocess_values(const char            *mesh_name,
                            const cs_lnum_t        vertex_list[],
                            const cs_time_step_t  *ts)
 {
+  CS_UNUSED(mesh_name);
+  CS_UNUSED(cat_id);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_vertices);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(vertex_list);
+
   if (probes != NULL) {
 
 /*! [post_profile_advanced_var_0] */

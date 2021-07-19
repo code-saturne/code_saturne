@@ -742,6 +742,7 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
     return;
 
   cs_lnum_t n_cells = mesh->n_cells;
+  CS_UNUSED(n_cells); /* avoid a compiler warning without OpenMP */
 
   cs_turb_context_k_eps_t  *kec =
     (cs_turb_context_k_eps_t *)tbs->context;

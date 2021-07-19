@@ -333,6 +333,8 @@ _sfc_cell_select(void        *input,
                  cs_lnum_t   *n_cells,
                  cs_lnum_t  **cell_ids)
 {
+  CS_UNUSED(input);
+
   *n_cells = 0;
   *cell_ids = NULL;
 
