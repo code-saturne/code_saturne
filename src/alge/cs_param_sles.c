@@ -419,8 +419,12 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
     KSPSetType(ksp, KSPFCG);
     break;
 
-  case CS_PARAM_ITSOL_FGMRES:     /* Preconditioned flexible GMRES */
+  case CS_PARAM_ITSOL_FGMRES:    /* Preconditioned flexible GMRES */
     KSPSetType(ksp, KSPFGMRES);
+    break;
+
+  case CS_PARAM_ITSOL_GCR:       /* Generalized Conjuguate Residual */
+    KSPSetType(ksp, KSPGCR);
     break;
 
   case CS_PARAM_ITSOL_GMRES:     /* Preconditioned GMRES */
