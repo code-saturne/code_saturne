@@ -332,7 +332,7 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t   *slesp)
   case CS_PARAM_PRECOND_ICC0:
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
 #if PETSC_VERSION_GE(3,7,0)
-      PetscOptionsSetValue(NULL, "-pc_euclid_level", "-help");
+      PetscOptionsSetValue(NULL, "-pc_euclid_level", "0");
 #else
       PetscOptionsSetValue("-pc_euclid_level", "0");
 #endif
