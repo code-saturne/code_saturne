@@ -97,72 +97,220 @@ _mumps_is_needed(cs_param_itsol_type_t   solver)
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Predefined settings for GAMG as a preconditioner
+ * \brief  Set the command line option for PETSc
+ *
+ * \param[in]      use_prefix    need a prefix
+ * \param[in]      prefix        optional prefix
+ * \param[in]      keyword       command keyword
+ * \param[in]      keyval        command value
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_pcmg_hook(void)
+_petsc_cmd(bool          use_prefix,
+           const char   *prefix,
+           const char   *keyword,
+           const char   *keyval)
 {
+  char  cmd_line[128];
+
+  if (use_prefix)
+    sprintf(cmd_line, "-%s_%s", prefix, keyword);
+  else
+    sprintf(cmd_line, "-%s", keyword);
+
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
+  PetscOptionsSetValue(NULL, cmd_line, keyval);
 #else
-  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+  PetscOptionsSetValue(cmd_line, keyval);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Predefined settings for GAMG as a preconditioner
+ * \brief Predefined settings for GAMG as a preconditioner even if another
+ *        settings have been defined. One assumes that one really wantss to use
+ *        GAMG (may be HYPRE is not available)
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ * \param[in]      slesp         pointer to a set of SLES parameters
+ * \param[in, out] pc            pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_pcgamg_hook(void)
+_petsc_pcgamg_hook(const char              *prefix,
+                   const cs_param_sles_t   *slesp,
+                   PC                       pc)
 {
-  _petsc_pcmg_hook();
+  /* Sanity checks */
+  assert(prefix != NULL);
+  assert(slesp != NULL);
+  assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
-#else
-  PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-#endif
+  _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+  _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+
+  /* Remark: -pc_gamg_reuse_interpolation
+   *
+   * Reuse prolongation when rebuilding algebraic multigrid
+   * preconditioner. This may negatively affect the convergence rate of the
+   * method on new matrices if the matrix entries change a great deal, but
+   * allows rebuilding the preconditioner quicker. (default=false)
+   */
+
+  _petsc_cmd(true, prefix, "pc_gamg_reuse_interpolation", "true");
+
+  /* Remark: -pc_gamg_sym_graph
+   * Symmetrize the graph before computing the aggregation. Some algorithms
+   * require the graph be symmetric (default=false)
+   */
+
+  _petsc_cmd(true, prefix, "pc_gamg_sym_graph", "true");
+
+  /* Remark: -pc_gamg_square_graph
+   *
+   * Squaring the graph increases the rate of coarsening (aggressive
+   * coarsening) and thereby reduces the complexity of the coarse grids, and
+   * generally results in slower solver converge rates. Reducing coarse grid
+   * complexity reduced the complexity of Galerkin coarse grid construction
+   * considerably. (default = 1)
+   *
+   * Remark: -pc_gamg_threshold
+   *
+   * Increasing the threshold decreases the rate of coarsening. Conversely
+   * reducing the threshold increases the rate of coarsening (aggressive
+   * coarsening) and thereby reduces the complexity of the coarse grids, and
+   * generally results in slower solver converge rates. Reducing coarse grid
+   * complexity reduced the complexity of Galerkin coarse grid construction
+   * considerably. Before coarsening or aggregating the graph, GAMG removes
+   * small values from the graph with this threshold, and thus reducing the
+   * coupling in the graph and a different (perhaps better) coarser set of
+   * points. (default=0.0) */
+
+  _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
+  _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.08");
+
+  /* After command line options, switch to PETSc setup functions */
+
+  PCSetType(pc, PCGAMG);
+  PCGAMGSetType(pc, PCGAMGAGG);
+  PCGAMGSetNSmooths(pc, 1);
+  PCSetUp(pc);
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_PCMG:
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+    PCMGSetCycleType(pc, PC_MG_CYCLE_V);
+    break;
+
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    PCMGSetCycleType(pc, PC_MG_CYCLE_W);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of AMG for SLES %s\n",
+              __func__, slesp->name);
+  }
+
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ * \param[in]      slesp         pointer to a set of SLES parameters
+ * \param[in, out] pc            pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_pchypre_hook(void)
+_petsc_pchypre_hook(const char              *prefix,
+                    const cs_param_sles_t   *slesp,
+                    PC                       pc)
 {
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
-#else
-  PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
-#endif
+  /* Sanity checks */
+  assert(prefix != NULL);
+  assert(slesp != NULL);
+  assert(slesp->precond == CS_PARAM_PRECOND_AMG);
+
+  PCSetType(pc, PCHYPRE);
+  PCHYPRESetType(pc, "boomeramg");
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_cycle_type", "V");
+    break;
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_cycle_type", "W");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of AMG for SLES %s\n",
+              __func__, slesp->name);
+  }
+
+  /* From HYPRE documentation: https://hypre.readthedocs.io/en/lastest
+   *
+   * for three-dimensional diffusion problems, it is recommended to choose a
+   * lower complexity coarsening like HMIS or PMIS (coarsening 10 or 8) and
+   * combine it with a distance-two interpolation (interpolation 6 or 7), that
+   * is also truncated to 4 or 5 elements per row. Additional reduction in
+   * complexity and increased scalability can often be achieved using one or
+   * two levels of aggressive coarsening.
+   */
+
+  /* _petsc_cmd(true, prefix, "pc_hypre_boomeramg_grid_sweeps_down","2"); */
+  /* _petsc_cmd(true, prefix, "pc_hypre_boomeramg_grid_sweeps_up","2"); */
+  /* _petsc_cmd(true, prefix, "pc_hypre_boomeramg_smooth_type","Euclid"); */
+
+  /* Remark: fcf-jacobi or l1scaled-jacobi (or chebyshev) as up/down smoothers
+     can be a good choice
+  */
+
+  /*
+    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_down","fcf-jacobi");
+    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_up","fcf-jacobi");
+  */
+
+  /* Note that the default coarsening is HMIS in HYPRE */
+
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_coarsen_type","HMIS");
+
+  /* Note that the default interpolation is extended+i interpolation truncated
+   * to 4 elements per row. Using 0 means there is no limitation.
+   * good choices are: ext+i-cc, ext+i
+   */
+
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_interp_type","ext+i-cc");
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_P_max","8");
+
+  /* Number of levels (starting from the finest one) on which one applies an
+     aggressive coarsening */
+
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_agg_nl","2");
+
+  /* For best performance, it might be necessary to set certain parameters,
+   * which will affect both coarsening and interpolation. One important
+   * parameter is the strong threshold.  The default value is 0.25, which
+   * appears to be a good choice for 2-dimensional problems and the low
+   * complexity coarsening algorithms. For 3-dimensional problems a better
+   * choice appears to be 0.5, when using the default coarsening
+   * algorithm. However, the choice of the strength threshold is problem
+   * dependent.
+   */
+
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_strong_threshold","0.5");
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_no_CF","");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -171,16 +319,19 @@ _petsc_pchypre_hook(void)
  *        preconditionner
  *
  * \param[in]      slesp    set of parameters for the linear algebra
- * \param[in, out] pc       PETSc preconditioner structure
+ * \param[in, out] ksp      PETSc solver structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_set_pc_type(cs_param_sles_t   *slesp,
-                   PC                 pc)
+                   KSP                ksp)
 {
   if (_mumps_is_needed(slesp->solver))
     return; /* Direct solver: Nothing to do at this stage */
+
+  PC  pc;
+  KSPGetPC(ksp, &pc);
 
   switch (slesp->precond) {
 
@@ -207,6 +358,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
+      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
     }
     else {
       PCSetType(pc, PCICC);
@@ -241,56 +393,22 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
       switch (slesp->amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG_V:
-        PCSetType(pc, PCGAMG);
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        PCMGSetCycleType(pc, PC_MG_CYCLE_V);
-        break;
-
       case CS_PARAM_AMG_PETSC_GAMG_W:
-        PCSetType(pc, PCGAMG);
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        PCMGSetCycleType(pc, PC_MG_CYCLE_W);
-        break;
-
       case CS_PARAM_AMG_PETSC_PCMG:
-        PCSetType(pc, PCMG);
+        _petsc_pcgamg_hook(slesp->name, slesp, pc);
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
-#if defined(PETSC_HAVE_HYPRE)
-        PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V");
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
-                      " available.\n",
-                      __func__, slesp->name);
-        PCSetType(pc, PCGAMG);
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        PCMGSetCycleType(pc, PC_MG_CYCLE_V);
-#endif
-        break;
-
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
 #if defined(PETSC_HAVE_HYPRE)
-        PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "boomeramg");
-        PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W");
+        _petsc_pchypre_hook(slesp->name, slesp, pc);
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
                       "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
                       " available.\n",
                       __func__, slesp->name);
-        PCSetType(pc, PCGAMG);
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        PCMGSetCycleType(pc, PC_MG_CYCLE_W);
+        _petsc_pcgamg_hook(slesp->name, slesp, pc);
 #endif
         break;
 
@@ -311,69 +429,12 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
               __func__, slesp->name);
   }
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set command line options for PC according to the kind of
- *        preconditionner
- *
- * \param[in]  slesp     set of parameters for the linear algebra solver
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_petsc_set_pc_options_from_command_line(cs_param_sles_t   *slesp)
-{
-  switch (slesp->precond) {
-
-#if defined(PETSC_HAVE_HYPRE)
-  case CS_PARAM_PRECOND_ILU0:
-  case CS_PARAM_PRECOND_ICC0:
-    if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
-#if PETSC_VERSION_GE(3,7,0)
-      PetscOptionsSetValue(NULL, "-pc_euclid_level", "0");
-#else
-      PetscOptionsSetValue("-pc_euclid_level", "0");
-#endif
-    }
-    break;
-#endif  /* PETSc with HYPRE */
-
-  case CS_PARAM_PRECOND_AMG:
-    {
-      switch (slesp->amg_type) {
-
-      case CS_PARAM_AMG_PETSC_GAMG_V:
-      case CS_PARAM_AMG_PETSC_GAMG_W:
-        _petsc_pcgamg_hook();
-        break;
-
-      case CS_PARAM_AMG_PETSC_PCMG:
-        _petsc_pcmg_hook();
-        break;
-
-      case CS_PARAM_AMG_HYPRE_BOOMER_V:
-      case CS_PARAM_AMG_HYPRE_BOOMER_W:
-#if defined(PETSC_HAVE_HYPRE)
-        _petsc_pchypre_hook();
-#else
-        _petsc_pcgamg_hook();
-#endif
-        break;
-
-      default:
-        break; /* Nothing else to do at this stage */
-
-      } /* End of switch on the AMG type */
-
-    } /* AMG as preconditioner */
-    break;
-
-  default:
-    break; /* Nothing else to do at this stage */
-  }
-
+  /* Apply modifications to the PC structure given with command lines.
+   * This setting stands for a first setting and may be overwritten with
+   * parameters stored in the structure cs_param_sles_t
+   * To get the last word use cs_user_sles_petsc_hook()  */
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -455,11 +516,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
-#if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-ksp_gmres_modifiedgramschmidt", "1");
-#else
-    PetscOptionsSetValue("-ksp_gmres_modifiedgramschmidt", "1");
-#endif
+    _petsc_cmd(true, slesp->name, "ksp_gmres_modifiedgramschmidt", "1");
     break;
 
   default:
@@ -552,6 +609,14 @@ _petsc_setup_hook(void   *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
+  int len = strlen(slesp->name) + 1;
+  char  *prefix = NULL;
+  BFT_MALLOC(prefix, len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
+  BFT_FREE(prefix);
+
   /* 1) Set the solver */
   _petsc_set_krylov_solver(slesp, ksp);
 
@@ -587,29 +652,16 @@ _petsc_setup_hook(void   *context,
   } /* Advanced check for parallel run */
 
   /* 2) Set the preconditioner */
-  PC  pc;
-  KSPGetPC(ksp, &pc);
-  _petsc_set_pc_type(slesp, pc);
+  _petsc_set_pc_type(slesp, ksp);
 
-  /* 3) Set PC options from command line */
-  _petsc_set_pc_options_from_command_line(slesp);
-
-  /* Apply modifications to the PC structure given with command lines.
-   * This setting stands for a first setting and may be overwritten with
-   * parameters stored in the structure cs_param_sles_t
-   * To get the last word use cs_user_sles_petsc_hook()  */
-  PCSetFromOptions(pc);
-
-  /* 4) User function for additional settings */
+  /* 3) User function for additional settings */
   cs_user_sles_petsc_hook((void *)slesp, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp->setup_done) {
-
     KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
-
   }
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -621,74 +673,48 @@ _petsc_setup_hook(void   *context,
  * \brief  Common settings for block preconditioning (when a system is split
  *         according to the Cartesian components: x,y,z)
  *
- * \param[in, out] slesp       pointer to the SLES parameter settings
+ * \param[in]      slesp       pointer to the SLES parameter settings
  * \param[in, out] ksp         pointer to PETSc KSP structure (solver)
- * \param[in, out] pc          pointer to PETSc PC structure (preconditioner)
- * \param[in, out] xyz_subksp  list of KSP structures for each block
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_common_block_hook(cs_param_sles_t    *slesp,
-                         KSP                 ksp,
-                         PC                  pc,
-                         KSP               **xyz_subksp)
+_petsc_common_block_hook(const cs_param_sles_t    *slesp,
+                         KSP                       ksp)
 {
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(ksp,
-                   slesp->eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp->n_max_iter); /* max number of iterations */
-
-  switch (slesp->resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
-
+  PC  pc;
+  KSPGetPC(ksp, &pc);
   PCSetType(pc, PCFIELDSPLIT);
 
   switch (slesp->pcd_block_type) {
   case CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR:
   case CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR:
+  case CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR:
     PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
     break;
 
   case CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL:
+  case CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL:
     PCFieldSplitSetType(pc, PC_COMPOSITE_SYMMETRIC_MULTIPLICATIVE);
     break;
 
   case CS_PARAM_PRECOND_BLOCK_DIAG:
+  case CS_PARAM_PRECOND_BLOCK_FULL_DIAG:
   default:
     PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
     break;
   }
 
   /* Apply modifications to the KSP structure */
-  PetscInt  id, n_split;
-
   PCFieldSplitSetBlockSize(pc, 3);
-  id = 0;
+
+  PetscInt  id = 0;
   PCFieldSplitSetFields(pc, "x", 1, &id, &id);
   id = 1;
   PCFieldSplitSetFields(pc, "y", 1, &id, &id);
   id = 2;
   PCFieldSplitSetFields(pc, "z", 1, &id, &id);
-
-  PCFieldSplitGetSubKSP(pc, &n_split, xyz_subksp);
-  assert(n_split == 3);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,50 +733,70 @@ static void
 _petsc_amg_block_gamg_hook(void     *context,
                            KSP       ksp)
 {
-  PC  pc;
-  KSP  *xyz_subksp;
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
+  /* prefix will be extended with the fieldsplit */
+  int len = strlen(slesp->name) + 1;
+  int _len = len + strlen("_fieldsplit_x_") + 1;
+  char  *prefix = NULL;
+  BFT_MALLOC(prefix, _len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
+
   /* Set the solver */
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
-  KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
+  _petsc_common_block_hook(slesp, ksp);
 
-  /* Predefined settings when using AMG as a preconditioner */
-  _petsc_pcgamg_hook();
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+  PCSetUp(pc);
 
   PC  _pc;
-  for (PetscInt id = 0; id < 3; id++) {
+  PetscInt  n_split;
+  KSP  *xyz_subksp;
+  const char xyz[3] = "xyz";
 
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
+
+  for (PetscInt id = 0; id < n_split; id++) {
+
+    sprintf(prefix, "%s_fieldsplit_%c", slesp->name, xyz[id]);
+
+    _petsc_cmd(true, prefix, "ksp_type","preonly");
+
+    /* Predefined settings when using AMG as a preconditioner */
     KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
-    PCSetType(_pc, PCGAMG);
 
-  }
+    _petsc_pcgamg_hook(prefix, slesp, _pc);
+
+    PCSetFromOptions(_pc);
+    KSPSetFromOptions(_ksp);
+
+  } /* Loop on block settings */
+
+  BFT_FREE(prefix);
+  PetscFree(xyz_subksp);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp->setup_done) {
+    KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
   }
-
-  PetscFree(xyz_subksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -778,48 +824,66 @@ _petsc_amg_block_boomer_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
+  /* prefix will be extended with the fieldsplit */
+  int len = strlen(slesp->name) + 1;
+  int _len = len + strlen("_fieldsplit_x_") + 1;
+  char  *prefix = NULL;
+  BFT_MALLOC(prefix, _len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
+
   /* Set the solver */
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
-  PC  pc;
-  KSP  *xyz_subksp = NULL;
-
-  KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
+  _petsc_common_block_hook(slesp, ksp);
 
   /* Predefined settings when using AMG as a preconditioner */
-  _petsc_pchypre_hook();
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+  PCSetUp(pc);
 
-  for (PetscInt id = 0; id < 3; id++) {
+  PC  _pc;
+  PetscInt  n_split;
+  KSP  *xyz_subksp;
+  const char xyz[3] = "xyz";
 
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
+
+  for (PetscInt id = 0; id < n_split; id++) {
+
+    sprintf(prefix, "%s_fieldsplit_%c", slesp->name, xyz[id]);
+
+    _petsc_cmd(true, prefix, "ksp_type","preonly");
+
+    /* Predefined settings when using AMG as a preconditioner */
     KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
-
-    PC  _pc;
     KSPGetPC(_ksp, &_pc);
-    PCSetType(_pc, PCHYPRE);
-    PCHYPRESetType(_pc, "boomeramg");
 
-  }
+    _petsc_pchypre_hook(prefix, slesp, _pc);
+
+    PCSetFromOptions(_pc);
+    KSPSetFromOptions(_ksp);
+
+  } /* Loop on block settings */
+
+  BFT_FREE(prefix);
+  PetscFree(xyz_subksp);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp->setup_done) {
+    KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
   }
-
-  PetscFree(xyz_subksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -850,20 +914,21 @@ _petsc_block_jacobi_hook(void     *context,
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
-  PC  pc;
-  KSP  *xyz_subksp;
+  _petsc_common_block_hook(slesp, ksp);
 
+  PC  pc;
   KSPGetPC(ksp, &pc);
-  _petsc_common_block_hook(slesp,
-                           ksp,
-                           pc,
-                           &xyz_subksp);
+
+  KSP  *xyz_subksp;
+  PetscInt  n_split;
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
 
   KSPSetUp(ksp);
 
   /* Predefined settings when using block-ILU as a preconditioner */
   PC  _pc;
-  for (PetscInt id = 0; id < 3; id++) {
+  for (PetscInt id = 0; id < n_split; id++) {
 
     KSP  _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
