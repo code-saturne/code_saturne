@@ -158,7 +158,7 @@ if (nogaseouschemistry .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF) ichemistry = 0
 if (ifilechemistry.ge.1) then
 
   ! Set the name of the chemical profiles file
-  call cs_atmo_set_chem_conc_file_name('chemistry')
+  call cs_atmo_set_chem_conc_file_name('chemistry'//c_null_char)
 
   ! Initialization of the chemical scheme
   ! quasi steady equilibrium NOx scheme with 4 species and 5 reactions
