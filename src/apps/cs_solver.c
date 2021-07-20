@@ -187,7 +187,8 @@ _run(void)
     cs_glob_tree = cs_tree_node_create(NULL);
 
   cs_gui_parallel_io();
-  cs_user_parallel_io();
+  if (cs_glob_n_ranks > 1)
+    cs_user_parallel_io();
   cs_file_defaults_info();
 
   cs_gui_mpi_algorithms();
