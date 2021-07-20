@@ -1268,10 +1268,10 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling_add_volume] */
 
-  cs_internal_coupling_add_volume(NULL,
-                                  "x<.5"); /* Solid volume criterion */
+  const cs_zone_t *sz = cs_volume_zone_by_name("solid");
+  cs_internal_coupling_add_volume_zone(sz);
 
-  /* Activate fluid-solid mode to kill dynamic in the solid */
+  /* Activate fluid-solid mode to kill dynamics in the solid */
   cs_velocity_pressure_model_t *vp_model
     = cs_get_glob_velocity_pressure_model();
   vp_model->fluid_solid = true;
@@ -1283,8 +1283,7 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling_add] */
 
-  cs_internal_coupling_add(NULL,
-                           "solid_volume_criterion",
+  cs_internal_coupling_add("solid_volume_criterion",
                            "interface_criterion");
 
   /*! [param_internal_coupling_add] */
@@ -1299,8 +1298,6 @@ cs_user_internal_coupling(void)
   cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
 
   /*! [param_internal_coupling] */
-
-
 }
 
 /*----------------------------------------------------------------------------*/

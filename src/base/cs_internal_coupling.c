@@ -1013,19 +1013,15 @@ cs_internal_coupling_n_couplings(void)
  *
  * Then, this volume must be separated from the rest of the domain with a wall.
  *
- * \param[in, out]  mesh            pointer to mesh structure to modify
- * \param[in]      criteria_cells  criteria for the first group of cells
- * \param[in]      criteria_faces  criteria for faces to be joined
+ * \param[in]  criteria_cells  criteria for the first group of cells
+ * \param[in]  criteria_faces  criteria for faces to be joined
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add(cs_mesh_t   *mesh,
-                         const char   criteria_cells[],
-                         const char   criteria_faces[])
+cs_internal_coupling_add(const char  criteria_cells[],
+                         const char  criteria_faces[])
 {
-  CS_UNUSED(mesh);
-
   BFT_REALLOC(_internal_coupling,
               _n_internal_couplings + 1,
               cs_internal_coupling_t);
@@ -1046,17 +1042,13 @@ cs_internal_coupling_add(cs_mesh_t   *mesh,
  * \brief Define coupling volume using given criteria. Then, this volume will
  * be separated from the rest of the domain with thin walls.
  *
- * \param[in, out] mesh            pointer to mesh structure to modify
- * \param[in]      criteria_cells  criteria for the first group of cells
+ * \param[in]  criteria_cells  criteria for the first group of cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
-                                const char   criteria_cells[])
+cs_internal_coupling_add_volume(const char  criteria_cells[])
 {
-  CS_UNUSED(mesh);
-
   if (_n_internal_couplings > 0)
     bft_error(__FILE__, __LINE__, 0,
               "Only one volume can be added in this version.");
@@ -1081,17 +1073,13 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
  * \brief Define coupling volume using given cs_zone_t. Then, this volume will
  * be separated from the rest of the domain with thin walls.
  *
- * \param[in, out] mesh  pointer to mesh structure to modify
- * \param[in]      z     pointer to cs_volume_zone_t
+ * \param[in]  z  pointer to cs_volume_zone_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_volume_zone(cs_mesh_t       *mesh,
-                                     const cs_zone_t *z)
+cs_internal_coupling_add_volume_zone(const cs_zone_t *z)
 {
-  CS_UNUSED(mesh);
-
   int z_ids[] = {z->id};
 
   cs_internal_coupling_add_volume_zones(1, z_ids);
