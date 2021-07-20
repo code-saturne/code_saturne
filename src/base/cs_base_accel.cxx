@@ -177,6 +177,9 @@ cs_free_hd(void        *host_ptr,
            const char  *file_name,
            int          line_num)
 {
+  if (host_ptr == NULL)
+    return;
+
   if (_hd_alloc_map.count(host_ptr) == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: No host pointer matching %p."), __func__, host_ptr);
