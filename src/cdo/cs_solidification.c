@@ -2514,6 +2514,16 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
               " activation of the solidification module.\n"
               " Please check your settings.", __func__);
 
+  if (t_liquidus - t_solidus < 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The liquidus and solidus temperatures are not"
+              " consistent.\n"
+              " Please check your settings.", __func__);
+  if (s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, s_das);
+
   cs_solidification_voller_t  *v_model
     = (cs_solidification_voller_t *)solid->model_context;
   assert(v_model != NULL);
@@ -2523,11 +2533,6 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
   v_model->t_liquidus = t_liquidus;
   v_model->latent_heat = latent_heat;
   v_model->s_das = s_das;
-  if (s_das < FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, s_das);
-
   solid->forcing_coef = 180./(s_das*s_das);
 
   /* Update properties */
