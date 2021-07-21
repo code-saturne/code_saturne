@@ -666,7 +666,7 @@ class XMLElement:
         # Add a new ELEMENT_NODE and a new TEXT_NODE
         # or replace an existing TEXT_NODE
         #
-        if textNode and not nodeList:
+        if textNode != None and not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             child.xmlSetTextNode(textNode)
             elementList.append(child)
