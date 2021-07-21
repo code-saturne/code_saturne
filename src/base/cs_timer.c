@@ -538,8 +538,8 @@ cs_timer_cpu_time(void)
   _cs_timer_cpu(&t1);
 
   long long cpu_nsec
-    =  (t1.sec - _cs_timer_start.sec) * (long long)1000000000
-       + t1.nsec - _cs_timer_start.nsec;
+    =  (t1.sec - _cs_timer_cpu_start.sec) * (long long)1000000000
+       + t1.nsec - _cs_timer_cpu_start.nsec;
 
   return cpu_nsec*1.e-9;
 }
