@@ -853,12 +853,13 @@ bft_mem_realloc(void        *ptr,
 {
   void      *p_loc;
 
-  long size_diff;
-  size_t old_size;
+  size_t old_size = 0;
   size_t new_size = ni * size;
 
+  int in_parallel = 0;
+
   /*
-    Behave as bft_malloc() if the previous pointer is equal to NULL.
+    Behave as bft_mem_malloc() if the previous pointer is equal to NULL.
     Note that the operation will then appear as a first allocation
     ('alloc') in the _bft_mem_global_file trace file.
   */
@@ -870,27 +871,10 @@ bft_mem_realloc(void        *ptr,
                           file_name,
                           line_num);
 
-  /* If the old size equals the new size, nothing needs to be done. */
-
-#if defined(HAVE_OPENMP)
-  int in_parallel = omp_in_parallel();
-  if (in_parallel)
-    omp_set_lock(&_bft_mem_lock);
-#endif
-
-  old_size = _bft_mem_block_size(ptr);
-
-#if defined(HAVE_OPENMP)
-  if (in_parallel)
-    omp_unset_lock(&_bft_mem_lock);
-#endif
-
-  if (new_size == old_size)
-    return ptr;
-
   /*
-    We may also simply free memory. Note that in this case, the operation
-    appears as 'free' in the _bft_mem_global_file trace file.
+    Behave as bft_mem_free() if the requested size is zero.
+    Note that in this case, the operation will appear as 'free'
+    in the _bft_mem_global_file trace file.
   */
 
   else if (ni == 0)
@@ -899,11 +883,32 @@ bft_mem_realloc(void        *ptr,
                         file_name,
                         line_num);
 
+  /* If the old size is known to equal the new size,
+     nothing needs to be done. */
+
+  if (_bft_mem_global_file != NULL) {
+
+#if defined(HAVE_OPENMP)
+    in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
+
+    old_size = _bft_mem_block_size(ptr);
+
+#if defined(HAVE_OPENMP)
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
+#endif
+
+    if (new_size == old_size)
+      return ptr;
+
+  }
+
   /* In the final case, we have a true reallocation */
 
   else {
-
-    size_diff = new_size - old_size;
 
     p_loc = realloc(ptr, new_size);
 
@@ -921,6 +926,12 @@ bft_mem_realloc(void        *ptr,
       if (in_parallel)
         omp_set_lock(&_bft_mem_lock);
 #endif
+
+      /* FIXME: size_diff overestimated when memory allocation logging is
+         not active, so bft_mem_size_current/bft_mem_size_max
+         will return incorrect values in this case. */
+
+      long size_diff = new_size - old_size;
 
       _bft_mem_global_alloc_cur += size_diff;
 
