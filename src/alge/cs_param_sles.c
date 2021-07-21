@@ -1657,5 +1657,69 @@ cs_param_sles_set(bool                 use_field_id,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the availability of a solver library and return the requested
+ *        one if this is possible or an alternative or CS_PARAM_SLES_N_CLASSES
+ *        if no alternative is available.
+ *
+ * \param[in]       wanted_class  requested class of solvers
+ *
+ * \return the available solver class related to the requested class
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_class_t
+cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
+{
+  switch (wanted_class) {
+
+  case CS_PARAM_SLES_CLASS_CS:  /* No issue */
+    return CS_PARAM_SLES_CLASS_CS;
+
+  case CS_PARAM_SLES_CLASS_HYPRE:
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_HYPRE)
+    return CS_PARAM_SLES_CLASS_HYPRE;
+#else
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(" Switch to PETSc library since Hypre is not available");
+    return CS_PARAM_SLES_CLASS_PETSC; /* Switch to petsc */
+#endif
+#else
+    return CS_PARAM_SLES_N_CLASSES;
+#endif
+
+  case CS_PARAM_SLES_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+    return CS_PARAM_SLES_CLASS_PETSC;
+#else
+    return CS_PARAM_SLES_N_CLASSES;
+#endif
+
+  case CS_PARAM_SLES_CLASS_MUMPS:
+#if defined(HAVE_MUMPS)
+    return CS_PARAM_SLES_CLASS_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(" Switch to PETSc library since MUMPS is not available as"
+               " a stand-alone library\n");
+    return CS_PARAM_SLES_CLASS_PETSC;
+#else
+    return CS_PARAM_SLES_N_CLASSES;
+#endif  /* PETSC_HAVE_MUMPS */
+#else
+    return CS_PARAM_SLES_N_CLASSES; /* PETSc without MUMPS  */
+#endif  /* HAVE_PETSC */
+    return CS_PARAM_SLES_N_CLASSES; /* Neither MUMPS nor PETSc */
+#endif
+
+  default:
+    return CS_PARAM_SLES_N_CLASSES;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

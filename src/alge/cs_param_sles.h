@@ -169,6 +169,21 @@ cs_param_sles_set(bool                 use_field_id,
                   cs_param_sles_t     *slesp);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the availability of a solver library and return the requested
+ *        one if this is possible or an alternative or CS_PARAM_SLES_N_CLASSES
+ *        if no alternative is available.
+ *
+ * \param[in]       wanted_class  requested class of solvers
+ *
+ * \return the available solver class related to the requested class
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_class_t
+cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
