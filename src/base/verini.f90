@@ -278,7 +278,7 @@ endif
 
 if (nterup.gt.1) then
 
-  if (ipucou.eq.1.or.indest.eq.1.or.                              &
+  if (ipucou.eq.1.or.indest.eq.1.or.                             &
       ippmod(icompf).ge.0.or.iccvfg.eq.1.or.                     &
       idtvar.eq.-1) then
     write(nfecra,2141) nterup
@@ -986,7 +986,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    OPTIONS NOT COMPATIBLE WITH TIME DICRETISATION SCHEME',   /,&
+'@    OPTIONS NOT COMPATIBLE WITH TIME DISCRETISATION SCHEME',  /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
@@ -1016,7 +1016,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    OPTIONS NOT COMPATIBLE WITH TIME DICRETISATION SCHEME',   /,&
+'@    OPTIONS NOT COMPATIBLE WITH TIME DISCRETISATION SCHEME',  /,&
 '@',                                                            /,&
 '@  Pressure-Velocity coupling by fixed-point method',          /,&
 '@    was selected  by setting   NTERUP = ', i10,               /,&
@@ -1024,8 +1024,7 @@ endif
 '@  one of the following options (which has been activated ):', /,&
 '@    - Error estimation (IESCAL)',                             /,&
 '@    - reinforced U-P coupling (IPUCOU)',                      /,&
-'@    - time-step variable with space or iteration or',         /,&
-'@      steady-state   algorithm(IDTVAR=-1)',                   /,&
+'@    - steady-state algorithm(IDTVAR=-1)',                     /,&
 '@    - compressible module (IPPMOD(ICOMPF)>=0)',               /,&
 '@    - frozen velocity field (ICCVFG=1)',                      /,&
 '@  Computation CAN NOT run',                                   /,&
