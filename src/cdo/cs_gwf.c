@@ -882,8 +882,8 @@ _spf_last_setup(const cs_cdo_connect_t     *connect,
 
   } /* Switch on Richards scheme */
 
-    /* Set permeability, moisture content and soil capacity according to the
-       soil settings */
+  /* Set permeability, moisture content and soil capacity according to the
+     soil settings */
   if (gw->flag & CS_GWF_SOIL_ALL_SATURATED) {
 
     cs_gwf_soil_set_all_saturated(gw->permeability,

@@ -94,7 +94,6 @@ typedef cs_flag_t  cs_gwf_option_flag_t;
  *        flag if all soils are considered as saturated (a simpler treatment
  *        can be performed in this case)
  *
- *
  * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
  * \brief Even if the Richards equation is steady-state, this equation is
  *        solved at each iteration.
@@ -106,7 +105,6 @@ typedef cs_flag_t  cs_gwf_option_flag_t;
  *
  * \def CS_GWF_ENFORCE_DIVERGENCE_FREE
  * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
- *
  *
  */
 
