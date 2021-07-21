@@ -3,6 +3,10 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix initialization of `variable_id`, `scalar_id`, and
+  `reference_diffusivity` key values for user scalar fields defined
+  using the GUI.
+
 - Fix error due to wrong handling of zone names for variable
   scalar diffusivity (issue #317).
 
