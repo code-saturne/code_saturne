@@ -900,7 +900,7 @@ cs_mesh_location_get_elt_ids(int id)
                 "Use cs_mesh_location_set_explicit_ids."), id);
 
   const cs_lnum_t *retval = ml->elt_list;
-  if (retval == NULL)
+  if (retval == NULL && ml->n_elts[0] != 0)
     retval = _explicit_ids;
 
   return retval;
