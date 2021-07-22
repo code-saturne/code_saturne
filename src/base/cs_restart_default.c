@@ -1544,7 +1544,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
     /* TODO perform the conversion from other models to SA. */
 
-  } else if (itytur_cur == 4) { /* LES mode */
+  }
+  else if (itytur_cur == 4) { /* LES mode */
 
     if (itytur_old != 4) { /* restart from RANS */
 
@@ -1598,9 +1599,20 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rst[cell_id][5] = v_tmp[cell_id];
       }
+
       /* Eddy viscosity model */
+
       else {
+
         warn_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+
+        if (iturb_old == 60) { /* transform omega to epsilon */
+          err_sum += _read_turb_array_1d_compat(r, "omega", "omega", t_id,
+                                                v_eps);
+
+          for (cs_lnum_t i = 0; i < n_cells; i++)
+            v_eps[i] = cs_turb_cmu*v_eps[i]*v_k[i];
+        }
 
         /* Loop over the  cells to compute each component
            of the Reynolds stress tensor for each cell */
@@ -1641,12 +1653,14 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
             eigen_min = CS_MIN(eigen_min, eigen_vals[i]);
             eigen_max = CS_MAX(eigen_max, eigen_vals[i]);
           }
+
           /* If negative eigen value, return to isotropy */
-          if ( eigen_min <= (eigen_tol*eigen_max) ||
-              eigen_min < cs_math_epzero) {
+          if (   eigen_min <= (eigen_tol*eigen_max)
+              || eigen_min < cs_math_epzero) {
 
             eigen_min = CS_MIN(eigen_min, - eigen_tol);
-            cs_real_t eigen_offset = CS_MIN(- eigen_min / (1./3. - eigen_min) + 0.1, 1.);
+            cs_real_t eigen_offset
+              = fmin(- eigen_min / (1./3. - eigen_min) + 0.1, 1.);
 
             for (int i = 0; i < 6; i++) {
               rst[cell_id][i] *= (1. - eigen_offset);
