@@ -12,6 +12,8 @@ Bug fixes:
 - Atmospheric module: fix default molecular thermal conductivity and a small
   valgrind error with atmospheric preprocessor.
 
+- Fix restart from k-omega to LES.
+
 - Improve robustness when restarting from RANS to LES (issue #322).
 
 - GUI: fix handling of density and laminar viscosity output.
