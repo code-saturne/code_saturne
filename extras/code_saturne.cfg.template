@@ -8,6 +8,12 @@
 
 [install]
 
+### Define an alternate launcher which should be used instead of
+### DATA/code_saturne.
+### This launcher should be in the user's path, and the defined
+### postfix allows handling multiple versions and recognizing them.
+# wrapper_postfix =
+
 ### Select the batch system type and job template.
 # batch =
 
