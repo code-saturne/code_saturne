@@ -2708,21 +2708,21 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
 
       inature2 = itypfb[ifbr];
 
-      int enature2 = inature;
+      int enature2 = inature2;
       if (inature2 == CS_ROUGHWALL)
         enature2 = CS_SMOOTHWALL;
       else if (inature2 == CS_CONVECTIVE_INLET)
-        inature2 = CS_INLET;
+        enature2 = CS_INLET;
 
       if (atmo_auto  && inature2 == 0)
-        inature2 = inature;
+        enature2 = inature;
 
       else if (compr_auto) {
         if (   (compr_auto == CS_INLET  && (   inature2 == CS_ESICF
                                             || inature2 == CS_EPHCF))
             || (compr_auto == CS_OUTLET &&  (   inature2 == CS_SSPCF
                                              || inature2 == CS_SOPCF)))
-          inature2 = inature;
+          enature2 = inature;
       }
 
       if (enature2 != enature)
