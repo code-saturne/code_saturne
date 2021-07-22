@@ -71,13 +71,13 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="quiet", default=False,
                       help="don't print status messages to stdout")
 
-    parser.add_option("-u", "--update",
-                      action="store_true", dest="update", default=False,
-                      help="update scripts in the repository")
+    parser.add_option("-u", "--update-smgr", 
+                      action="store_true", dest="update_smgr", default=False,
+                      help="update the studymanager file smgr.xml")
 
-    parser.add_option("-x", "--update-xml",
-                      action="store_true", dest="update_xml", default=False,
-                      help="update only xml files in the repository")
+    parser.add_option("-x", "--update-setup",
+                      action="store_true", dest="update_setup", default=False,
+                      help="update all code_saturne setup.xml files")
 
     parser.add_option("-t", "--test-compilation",
                       action="store_true", dest="test_compilation",
@@ -121,7 +121,7 @@ def process_cmd_line(argv, pkg):
                       help="remove existing run directories")
 
     parser.add_option("--fow",
-                      action="store_true", dest="force_overwrite", default=False,
+                      action="store_true", dest="force_overwrite", default=True,
                       help="overwrite files in MESH and POST directories")
 
     parser.add_option("-s", "--skip-pdflatex", default=False,
@@ -300,48 +300,50 @@ def run_studymanager(pkg, options):
     studies = Studies(pkg, options, exe, dif)
     if options.debug:
         print(" run_studymanager() >> Studies are initialized")
-    if options.update_xml == False:
-        os.chdir(studies.getDestination())
-    else:
+    if options.update_smgr or options.update_setup:
         os.chdir(studies.getRepository())
+    else:
+        os.chdir(studies.getDestination())
 
     # Print header
+    report_in_file = False
+    if options.compare or options.post or options.runcase:
+        report_in_file = True
 
-    studies.reporting(" -------------")
-    studies.reporting(" Study Manager")
-    studies.reporting(" -------------\n")
-    studies.reporting(" Code name:         " + pkg.name)
-    studies.reporting(" Kernel version:    " + pkg.version)
-    studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'))
-    studies.reporting(" File dump:         " + dif)
+    studies.reporting(" -------------", report=report_in_file)
+    studies.reporting(" Study Manager", report=report_in_file)
+    studies.reporting(" -------------\n", report=report_in_file)
+    studies.reporting(" Code name:         " + pkg.name, report=report_in_file)
+    studies.reporting(" Kernel version:    " + pkg.version, report=report_in_file)
+    studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'), report=report_in_file)
+    studies.reporting(" File dump:         " + dif, report=report_in_file)
 
-    studies.reporting("\n Informations:")
-    studies.reporting(" -------------\n")
-    studies.reporting(" Date:                   " + datetime.now().strftime("%A %B %d %H:%M:%S %Y"))
-    studies.reporting(" Platform:               " + platform.platform())
-    studies.reporting(" Computer:               " + platform.uname()[1] + "  " + release())
-    studies.reporting(" Process Id:             " + str(os.getpid()))
-    studies.reporting(" User name:              " + getpass.getuser())
-    studies.reporting(" Repository:             " + studies.getRepository())
+    studies.reporting("\n Informations:", report=report_in_file)
+    studies.reporting(" -------------\n", report=report_in_file)
+    studies.reporting(" Date:                   " + datetime.now().strftime("%A %B %d %H:%M:%S %Y"),
+                      report=report_in_file)
+    studies.reporting(" Platform:               " + platform.platform(), report=report_in_file)
+    studies.reporting(" Computer:               " + platform.uname()[1] + "  " + release(),
+                      report=report_in_file)
+    studies.reporting(" Process Id:             " + str(os.getpid()), report=report_in_file)
+    studies.reporting(" User name:              " + getpass.getuser(), report=report_in_file)
+    studies.reporting(" Repository:             " + studies.getRepository(), report=report_in_file)
     dest = studies.getDestination()
-    studies.reporting(" Destination:            " + dest)
+    studies.reporting(" Destination:            " + dest, report=report_in_file)
     doc = os.path.join(dest, options.log_file)
-    studies.reporting(" Ext. subprocesses logs: " + doc)
-    studies.reporting("\n")
+    studies.reporting(" Ext. subprocesses logs: " + doc, report=report_in_file)
+    studies.reporting("\n", report=report_in_file)
 
-    # Create dependency graph based on studies and all cases
 
-    studies.dump_graph()
+    # Update setup files in all cases in repository directory
 
-    # Update repository if needed
+    if options.update_setup:
+        studies.updateSetup()
 
-    if options.update:
-        studies.updateRepository()
+    # Create dependency graph based on all studies and cases 
 
-    # Update only xml data if needed
-
-    if options.update_xml:
-        studies.updateRepository(True)
+    if options.compare or options.post or options.runcase:
+        studies.dump_graph()
 
     # Test sources compilation for all cases
 
@@ -388,9 +390,9 @@ def run_studymanager(pkg, options):
         studies.postpro()
         studies.plot()
 
-    studies.reporting("\n --------------------")
-    studies.reporting(" End of Study Manager")
-    studies.reporting(" --------------------")
+    studies.reporting("\n --------------------", report=report_in_file)
+    studies.reporting(" End of Study Manager", report=report_in_file)
+    studies.reporting(" --------------------", report=report_in_file)
 
     # Reporting - attached files are either pdf or
     # raw tex files if pdflatex is disabled

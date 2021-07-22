@@ -287,12 +287,12 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def __update_domain(self, subdir, xmlonly=False):
+    def __update_setup(self, subdir):
         """
-        Update path for the script in the Repository.
+        Update setup file in the Repository.
         """
-        # 1) Load the xml file of parameters in order to update it
-        #    with the __backwardCompatibility method.
+        # Load setup.xml file in order to update it
+        # with the __backwardCompatibility method.
 
         from code_saturne.model.XMLengine import Case
 
@@ -336,28 +336,14 @@ class Case(object):
 
                 case.xmlSaveDocument()
 
-
-        # 2) Recreate missing directories which are compulsory
-        # git removes these usually empty directories
-        if not xmlonly:
-            git_rm_dirs = ["RESU", "SRC"]
-            for gd in git_rm_dirs:
-                r = os.path.join(self.__repo, subdir, gd)
-                if not os.path.isdir(r):
-                    os.makedirs(r)
-
-        # 3) Update the GUI script from the Repository
-        data_subdir = os.path.join(self.__repo, subdir, "DATA")
-        create_local_launcher(self.pkg, data_subdir)
-
     #---------------------------------------------------------------------------
 
-    def update(self, xmlonly=False):
+    def update(self):
         """
         Update path for the script in the Repository.
         """
-        # 1) Load the xml file of parameters in order to update it
-        #    with the __backwardCompatibility method.
+        # Load the setup file in order to update it
+        # with the __backwardCompatibility method.
 
         if self.subdomains:
             cdirs = []
@@ -367,15 +353,7 @@ class Case(object):
             cdirs = (self.label,)
 
         for d in cdirs:
-            self.__update_domain(d, xmlonly)
-
-        if self.subdomains:
-            case_dir = os.path.join(self.__repo, self.label)
-            create_local_launcher(self.pkg, case_dir)
-            # recreate possibly missing but compulsory directory
-            r = os.path.join(case_dir, "RESU_COUPLING")
-            if not os.path.isdir(r):
-                os.makedirs(r)
+            self.__update_setup(d)
 
     #---------------------------------------------------------------------------
 
@@ -762,8 +740,16 @@ class Study(object):
         self.__diff     = dif
         self.__log      = rlog
 
-        self.__repo = os.path.join(self.__parser.getRepository(),  study)
-        self.__dest = os.path.join(self.__parser.getDestination(), study)
+        # read repository and destination from smgr file
+        # based on working directory if information is not available
+        try:
+            self.__repo = os.path.join(self.__parser.getRepository(),  study)
+        except:
+            self.__repo = os.path.join(os.getcwd(),  study)
+        try:
+            self.__dest = os.path.join(self.__parser.getDestination(), study)
+        except:
+            self.__dest = self.__repo
 
         if not os.path.isdir(self.__repo):
             print("Error: the directory %s does not exist" % self.__repo)
@@ -901,21 +887,25 @@ class Studies(object):
 
         smgr = None
         self.__pkg = pkg
+        self.__create_xml = options.create_xml
+        self.__update_smgr = options.update_smgr
+        self.__update_setup = options.update_setup
 
         # Create file of parameters
 
         filename = options.filename
-        if options.create_xml and is_study:
+        if self.__create_xml and is_study:
             if filename == None:
                 studyd = os.path.basename(studyp)
-                filename = "smgr_" + studyd + ".xml"
+                filename = "smgr.xml"
 
             filepath = os.path.join(studyp, filename)
             smgr = create_base_xml_file(filepath, self.__pkg)
 
             init_xml_file_with_study(smgr, studyp)
+            print(" New smgr.xml file was created")
 
-        elif options.create_xml and not is_study:
+        elif self.__create_xml and not is_study:
             msg =   "Can not create XML file of parameter:\n" \
                   + "current directory is apparently not a study (no MESH directory).\n"
             sys.exit(msg)
@@ -926,7 +916,7 @@ class Studies(object):
                    + "See help message and use '--file' or '--create-xml' option.\n"
             sys.exit(msg)
 
-        # create a first xml parser only for
+        # create a first smgr parser only for
         #   the repository verification and
         #   the destination creation
 
@@ -944,9 +934,9 @@ class Studies(object):
 
             # minimal modification of xml for now
             smgr_xml_init(smgr).initialize(reinit_indices = False)
-            smgr.xmlSaveDocument(prettyString=False)
-
-        self.__xmlupdate = options.update_xml
+            if self.__update_smgr:
+                smgr.xmlSaveDocument(prettyString=False)
+                print(" Smgr file was updated")
 
         # set repository
         if len(options.repo_path) > 0:
@@ -971,7 +961,7 @@ class Studies(object):
                 sys.exit(msg)
 
         # set destination
-        if self.__xmlupdate:
+        if self.__update_smgr or self.__update_setup or self.__create_xml:
             self.__dest = self.__repo
         else:
             if len(options.dest_path) > 0:
@@ -991,27 +981,32 @@ class Studies(object):
                         + "line option (--dest=..).\n"
                   sys.exit(msg)
 
-        # create if necessary the destination directory
+        if self.__dest != self.__repo:
 
-        if not os.path.isdir(self.__dest):
-            os.makedirs(self.__dest)
+          # create if necessary the destination directory
 
-        # copy the xml file of parameters for update and restart
+          if not os.path.isdir(self.__dest):
+              os.makedirs(self.__dest)
 
-        file = os.path.join(self.__dest, os.path.basename(filename))
-        try:
-            shutil.copyfile(filename, file)
-        except:
-            pass
+          # copy the smgr file for update and restart
 
-        # create a new parser, which is definitive and the plotter
+          file = os.path.join(self.__dest, os.path.basename(filename))
+          try:
+              shutil.copyfile(filename, file)
+          except:
+              pass
 
-        self.__parser  = Parser(file)
-        self.__parser.setDestination(self.__dest)
-        self.__parser.setRepository(self.__repo)
-        if options.debug:
-            print(" Studies >> Repository  >> ", self.__repo)
-            print(" Studies >> Destination >> ", self.__dest)
+          # create definitive parser for smgr file in destination
+
+          self.__parser  = Parser(file)
+          self.__parser.setDestination(self.__dest)
+          self.__parser.setRepository(self.__repo)
+          if options.debug:
+              print(" Studies >> Repository  >> ", self.__repo)
+              print(" Studies >> Destination >> ", self.__dest)
+
+        # create plotter 
+
         try:
             self.__plotter = Plotter(self.__parser)
         except Exception:
@@ -1056,12 +1051,6 @@ class Studies(object):
             if options.debug:
                 print(" >> Append study ", l)
 
-        # start the report
-
-        self.report = os.path.join(self.__dest, "report.txt")
-        self.reportFile = open(self.report, mode='w')
-        self.reportFile.write('\n')
-
         # attributes
 
         self.__debug       = options.debug
@@ -1077,6 +1066,13 @@ class Studies(object):
         # tex reports compilation with pdflatex
         self.__pdflatex    = not options.disable_pdflatex
 
+        # start the report
+
+        if options.runcase or options.compare or options.post:
+            self.report = os.path.join(self.__dest, "report.txt")
+            self.reportFile = open(self.report, mode='w')
+            self.reportFile.write('\n')
+
         # in case of restart
 
         iok = 0
@@ -1087,8 +1083,7 @@ class Studies(object):
         if not iok:
             self.__running = False
 
-        if self.__xmlupdate:
-            os.remove(file)
+        if self.__update_smgr or self.__update_setup or self.__create_xml:
             os.remove(doc)
 
         # Handle relative paths:
@@ -1158,17 +1153,19 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def updateRepository(self, xml_only=False):
+    def updateSetup(self):
         """
-        Update all cases.
+        Update setup files in all cases.
         """
 
-        self.reporting('  o Update cases: ')
-        for case in self.graph.graph_dict:
-            self.reporting('    - update  %s' % case.title)
-            case.update(xml_only)
+        for l, s in self.studies:
+            self.reporting('  o In repository: ' + l, report=False)
+            for case in s.cases:
+                self.reporting('    - update setup file in %s' % case.label,
+                               report=False)
+                case.update()
 
-        self.reporting('')
+        self.reporting('',report=False)
 
     #---------------------------------------------------------------------------
 
@@ -1279,7 +1276,7 @@ class Studies(object):
             # if overwrite option enabled, overwrite content of DATA, SRC
             if self.__force_ow:
                 dirs_to_overwrite = ["DATA", "SRC"]
-                self.overwriteDirectories(dirs_to_overwrite)
+                case.overwriteDirectories(dirs_to_overwrite)
                 # update path in gui/run script
                 data_subdir = os.path.join(case.label, "DATA")
 
@@ -1288,7 +1285,7 @@ class Studies(object):
 
         if self.__force_ow:
             dirs_to_overwrite = ["POST", "MESH"]
-            self.overwriteDirectories(dirs_to_overwrite)
+            case.overwriteDirectories(dirs_to_overwrite)
 
         return log_lines
 
@@ -1926,30 +1923,31 @@ class Studies(object):
         """
         attached_files = []
 
-        # First global report
-        doc1 = Report1(self.__dest,
-                       report1,
-                       self.__log,
-                       self.report,
-                       self.__parser.write(),
-                       self.__pdflatex)
-
-        # TODO: verify that the use of the graph is relevant here
-        for case in self.graph.graph_dict:
-            if case.diff_value or not case.m_size_eq:
-                is_nodiff = "KO"
-            else:
-                is_nodiff = "OK"
-
-            doc1.add_row(case.study,
-                         case.label,
-                         case.is_compiled,
-                         case.is_run,
-                         case.is_time,
-                         case.is_compare,
-                         is_nodiff)
-
-        attached_files.append(doc1.close())
+        if self.__running or self.__compare or self.__postpro:
+            # First global report
+            doc1 = Report1(self.__dest,
+                           report1,
+                           self.__log,
+                           self.report,
+                           self.__parser.write(),
+                           self.__pdflatex)
+    
+            for l, s in self.studies:
+                for case in s.cases:
+                    if case.diff_value or not case.m_size_eq:
+                        is_nodiff = "KO"
+                    else:
+                        is_nodiff = "OK"
+    
+                    doc1.add_row(case.study,
+                                 case.label,
+                                 case.is_compiled,
+                                 case.is_run,
+                                 case.is_time,
+                                 case.is_compare,
+                                 is_nodiff)
+    
+            attached_files.append(doc1.close())
 
         # Second detailed report
         if self.__compare or self.__postpro:
