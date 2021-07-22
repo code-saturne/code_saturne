@@ -131,6 +131,11 @@ class base_domain:
         self.result_dir = None
         self.src_dir = None
 
+        # Notebook definitions and additional user arguments
+
+        self.notebook = None
+        self.kw_args = None
+
         # Working directory and executable
 
         self.exec_dir = None

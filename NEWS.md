@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 User changes:
 
+- UI: Add optional `--notebook-args [key1=val1] [key2=val]> ...`
+  and `--kw-args [arg1] [arg2] ...` arguments to `code_saturne run`
+  and `code_saturne submit` commands.
+  * If provided, they are available as the `notebook` and `kw_args`
+    attributes of each case domain object (as a Python dictionnary
+    and list respectively). Otherwise, these attributes are `None`.
+
 - Turbulence: RSM models now default to isotropic (Shir) diffusivity model.
 
 - Gas mix now accepts user definitions, using the

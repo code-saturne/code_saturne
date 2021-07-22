@@ -1796,7 +1796,9 @@ class case:
             scratchdir = None,
             run_id = None,
             force_id = False,
-            stages = None):
+            stages = None,
+            notebook_args=None,
+            kw_args=None):
 
         """
         Main script.
@@ -1896,12 +1898,49 @@ class case:
             self.add_exec_dir_stamp()
 
         sys.stdout.write(msg)
+
+        # Log user-defined notebook and keyword arguments
+        # and pass them to domain structures
+
+        if notebook_args:
+            msg = 'Notebook variables:\n'
+            keys = list(notebook_args.keys())
+            keys.sort()
+            for k in keys:
+                msg += "  '" + k + "': '" + notebook_args[k] + "'\n"
+            msg += '\n'
+            sys.stdout.write(msg)
+
+        if kw_args:
+            msg = 'Additional user keyword arguments:\n'
+            msg += '  ' + str(kw_args) + '\n\n'
+            sys.stdout.write(msg)
+
+        if notebook_args:
+            for d in (self.domains + self.syr_domains + self.py_domains):
+                if d.notebook == None:
+                    d.notebook = notebook_args
+                else:
+                    err_str = 'domain: + ' + str(d.name) \
+                              + ' notebook already defined\n'
+                    sys.stderr.write(err_str)
+
+        if kw_args:
+            for d in (self.domains + self.syr_domains + self.py_domains):
+                if d.kw_args == None:
+                    d.kw_args = kw_args
+                else:
+                    err_str = 'domain: + ' + str(d.name) \
+                              + ' kw_args already defined\n'
+                    sys.stderr.write(err_str)
+
         sys.stdout.flush()
 
         # Remove possible status from previous run
 
         self.update_scripts_tmp(('failed,',
                                  'exceeded_time_limit'), None)
+
         # Now run
 
         if self.run_prologue:
