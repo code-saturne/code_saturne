@@ -102,8 +102,11 @@ def main(argv, pkg):
     epilog = ("Options not listed above are passed to the batch "
               "submission commands; see your batch documentation for this.")
 
-    run_parser = cs_run.arg_parser(argv, pkg)
+    run_parser = cs_run.arg_parser(argv)
+    prog = os.path.basename(sys.argv[0]) + " " + sys.argv[1]
+
     parser = ArgumentParser(parents=[run_parser],
+                            prog=prog,
                             description="Submit a case or specified run stages.",
                             usage='%(prog)s [run options] [batch options]',
                             epilog=epilog,

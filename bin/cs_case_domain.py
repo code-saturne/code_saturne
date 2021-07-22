@@ -131,6 +131,12 @@ class base_domain:
         self.result_dir = None
         self.src_dir = None
 
+        # Notebook and parametric  definitions and additional user arguments
+
+        self.notebook = None
+        self.parametric_args = None
+        self.kw_args = None
+
         # Working directory and executable
 
         self.exec_dir = None
@@ -464,7 +470,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def __set_case_parameters__(self):
+    def __set_case_parameters__(self, update_xml=False):
 
         # We may now import user python script functions if present.
 
@@ -484,25 +490,34 @@ class domain(base_domain):
         # We may now parse the optional XML parameter file
         # now that its path may be built and checked.
 
-        param = self.param
-        if param == None:
-            if os.path.isfile(os.path.join(self.exec_dir, 'setup.xml')):
-                param = 'setup.xml'
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+        if os.path.isfile(setup_path):
 
-        if param != None:
-            version_str = '2.0'
-            P = cs_xml_reader.Parser(os.path.join(self.exec_dir, param),
-                                     version_str = version_str)
+            # Ensure XML file is up to date as a precaution,
+            # and filter it in case of parametric or notebook arguments.
+
+            case = self.__xml_case_initialize__(setup_path, apply_filters=True)
+            case['xmlfile'] = setup_path
+
+            P = cs_xml_reader.Parser(doc=case.doc)
             params = P.getParams()
             for k in list(params.keys()):
                 self.__dict__[k] = params[k]
 
-            self.param = param
+            case.xmlSaveDocument()
 
             if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
                 solver_dir = self.package_compute.get_dir("pkglibexecdir")
                 solver_name = "nc_solver" + self.package_compute.config.exeext
                 self.solver_path = os.path.join(solver_dir, solver_name)
+
+            self.param = "setup.xml"
+
+        else:
+            msg  = ('Remark:\n'
+                    '  No setup.xml file was provided in the DATA folder.\n'
+                    '  Default settings will be used.\n')
+            print(msg, file = sys.stderr)
 
         # Now override or complete data from the XML file.
 
@@ -550,7 +565,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def __xml_case_initialize__(self, path):
+    def __xml_case_initialize__(self, path, apply_filters=False):
         """
         Build XML case object
         """
@@ -568,6 +583,44 @@ class domain(base_domain):
         elif module_name == 'neptune_cfd':
             from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
             XMLinitNeptune(case).initialize(preprocess_only)
+
+        if not apply_filters:
+            return case
+
+        # Apply changes defined through notebook or parametric options.
+
+        if self.parametric_args:
+            from code_saturne import cs_parametric_setup
+            cs_parametric_setup.update_case_setup(case, self.parametric_args,
+                                                  pkg=self.package)
+
+        if self.notebook:
+            from code_saturne.model.NotebookModel import NotebookModel
+            notebookModel = NotebookModel(case)
+            nbk_vars = notebookModel.getVarNameList()
+            n_warnings = 0
+            for k in self.notebook.keys():
+                if k in nbk_vars:
+                    vs = self.notebook[k]
+                    v = None
+                    try:
+                        v = float(vs)
+                    except Exception:
+                        fmt = ("Warning: notebook variable '{0}'='{1}'"
+                               " is not a real number.")
+                        msg = fmt.format(k, vs)
+                        print(msg, file = sys.stderr)
+                        n_warnings += 1
+                    if v != None:
+                        notebookModel.setVariableValue(val=v, var=k)
+
+                else:
+                    fmt = ('Warning: {0} is not a known notebook variable.')
+                    msg = fmt.format(k)
+                    print(msg, file = sys.stderr)
+                    n_warnings += 1
+            if n_warnings > 0:
+                print(file = sys.stderr)
 
         return case
 
@@ -612,7 +665,9 @@ class domain(base_domain):
 
         # Create the src folder if there are files to compile in source path
 
-        src_files = cs_compile.files_to_compile(self.src_dir)
+        src_files = []
+        if os.path.exists(self.src_dir):
+            src_files = cs_compile.files_to_compile(self.src_dir)
         if len(src_files) > 0:
             exec_src = os.path.join(self.exec_dir, 'src')
 
@@ -642,9 +697,36 @@ class domain(base_domain):
             if os.path.isfile(src):
                 shutil.copy2(src, os.path.join(self.exec_dir, f))
 
+        # Fixed parameter name
+
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+
+        if self.param != None:
+            param_base = os.path.basename(self.param)
+            if param_base != "setup.xml":
+                src_path = os.path.join(self.exec_dir, param_base)
+                if os.path.isfile(setup_path):
+                    self.purge_result(setup_path) # in case of previous run here
+                    fmt = ('Warning:\n'
+                           '  Both {0} and {1} exist in\n'
+                           '    {2}.\n'
+                           '  {0} will be used for the computation.\n'
+                           '  Be aware that to follow best practices '
+                           'only one of the two should be present.\n\n')
+                    msg = fmt.format(os.path.basename(self.param),
+                                     os.path.basename(setup_path),
+                                     self.data_dir)
+                    print(msg, file = sys.stderr)
+                try:
+                    if os.path.islink(setup_path):
+                        os.remove(setup_path)
+                    os.symlink(self.param, setup_path)
+                except Exception:
+                    shutil.copy2(src_path, setup_path)
+
         # Now set parameters
 
-        self.__set_case_parameters__()
+        self.__set_case_parameters__(update_xml=True)
 
     #---------------------------------------------------------------------------
 
@@ -655,7 +737,7 @@ class domain(base_domain):
 
         # Now set parameters
 
-        self.__set_case_parameters__()
+        self.__set_case_parameters__(update_xml=False)
 
         # Ensure correct executable is used.
 
@@ -726,7 +808,8 @@ class domain(base_domain):
             if self.exec_solver and len(src_files) > 0:
                 needs_comp = True
 
-        if self.param != None:
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+        if os.path.isfile(setup_path):
             fp = os.path.join(self.exec_dir, self.param)
             case = self.__xml_case_initialize__(fp)
 
@@ -929,46 +1012,6 @@ class domain(base_domain):
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
 
-        # Fixed parameter name
-
-        setup_path = os.path.join(self.exec_dir, "setup.xml")
-
-        if self.param != None:
-            param_base = os.path.basename(self.param)
-            src_path = os.path.join(self.exec_dir, param_base)
-            default_path = os.path.join(self.data_dir, 'setup.xml')
-            if param_base != "setup.xml":
-                if os.path.isfile(default_path):
-                    self.purge_result(setup_path) # in case of previous run here
-                    fmt = ('Warning:\n'
-                           '  Both {0} and {1} exist in\n'
-                           '    {2}.\n'
-                           '  {0} will be used for the computation.\n'
-                           '  Be aware that to follow best practices '
-                           'only one of the two should be present.\n\n')
-                    msg = fmt.format(os.path.basename(self.param),
-                                     os.path.basename(setup_path),
-                                     self.data_dir)
-                    print(msg, file = sys.stderr)
-                try:
-                    if os.path.islink(setup_path):
-                        os.remove(setup_path)
-                    os.symlink(self.param, setup_path)
-                except Exception:
-                    shutil.copy2(src_path, setup_path)
-
-        # Ensure XML file is up to date as a precaution
-
-        if os.path.isfile(setup_path):
-            case = self.__xml_case_initialize__(setup_path)
-            case['xmlfile'] = setup_path
-            case.xmlSaveDocument()
-        else:
-            msg  = ('Remark:\n'
-                    '  No setup.xml file was provided in the DATA folder.\n'
-                    '  Default settings will be used.\n')
-            print(msg, file = sys.stderr)
-
         if len(err_str) > 0:
             self.error = 'data preparation'
             sys.stderr.write(err_str)
@@ -978,7 +1021,6 @@ class domain(base_domain):
                 os.symlink("run_solver.log", link_path)
             except Exception:
                 pass
-
 
     #---------------------------------------------------------------------------
 

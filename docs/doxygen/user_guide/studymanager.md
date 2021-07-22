@@ -289,10 +289,10 @@ The case has to be repeated in the parameters file:
 
     <study label="MyStudy1" status="on">
         <case label="CASE1" run_id="Grid1" status="on" compute="on" post="on">
-            <prepro label="grid.py" args="-m grid1.med -p cas.xml" status="on"/>
+            <parametric args="-m grid1.med --iter-dt 0.01"/>
         </case>
         <case label="CASE1" run_id="Grid2" status="on" compute="on" post="on"/>
-            <prepro label="grid.py" args="-m grid2.med -p cas.xml" status="on"/>
+            <parametric args="-m grid2.med --iter-dt 0.005"/>
         </case>
     </study>
 </studymanager>
@@ -383,48 +383,81 @@ provided directly in the command line, as follows:
 
 `code_saturne studymanager -f sample.xml -c -d /scratch/***/reference_destination_directory`
 
-Run external preprocessing scripts with options {#sec_smgr_prepro}
------------------------------------------------
+Run preprocessing filters with options {#sec_smgr_prepro}
+--------------------------------------
 
-The markup `<prepro>` can be added as a child of the considered case.
+The `<notebook>`, `<parametric>`, and `<kw_args>` nodes can be added as children
+of the considered case.
 
 ```{.xml}
 <study label='STUDY' status='on'>
     <case label='CASE1' status='on' compute="on" post="on">
-        <prepro label="mesh_coarse.py" args="-n 1" status="on"/>
+        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
+        <parametric args="-m grid2.med --iter-dt 0.005"/>
+        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
     </case>
 </study>
 ```
 
-The attributes are:
-- `label`: the name of the file of the considered script;
-- `status`: must be `on` or `off`: activate or deactivate the markup;
-- `args`: additional arguments to pass to the script.
+In all cases, the associated attributes are:
+- `args`: additional arguments to pass to the associated option.
 
-Only the `label` and `status` attributes are mandatory.
+These different nodes all apply a specific filter type during the __stage__
+(__initialize__) step of a case's execution (i.e. when copying data,
+just before the \ref define_domain_parameters (and \ref domain_copy_results_add)
+function in the \ref cs_user_scripts.py user scripts. They do not modify
+files in a case's `DATA` or `SRC` directory, only the copied files
+in the matching `RESU/<run_id>`.
 
-An additional option `"-c"` (or `"--case"`) is given by
-default with the path of the current case as argument (see example
-in [tricks](@ref sec_smgr_tricks) for decoding options).
+- `<notebook>` allows passing key-value pairs (with real-values) matching
+  \ref notebook variables already defined in the case, overriding the
+  values in the case's `setup.xml` with the provided values.
+  * They are passed to the underlying `code_saturne run`command using the
+   `--notebook-args` option.
+  * These pairs also appear as a Python dictionnary in the `domain.notebook`
+    member of the `domain` object passed to these functions.
 
-Note that all options must be processed by the script itself.
+- `<parametric>` allows passing options handled by \ref cs_parametric_setup.py
+  filter to modify the case setup.
+  * They are passed to the underlying `code_saturne run`command using the
+   `--parametric-args` option.
+  * These options also appear as a Python list in the `domain.parametric_args`
+    member of the `domain` object passed to these functions.
 
-Several calls of the same script or to different scripts are permitted:
+- `<kw_args>` allows passing additional user options to
+  \ref define_domain_parameters and \ref domain_copy_results_add in
+  \ref cs_user_scripts.py.
+  * They are passed to the underlying `code_saturne run`command using the
+   `--kw-args` option.
+  * These options appear as a Python list in the `domain.kw_args`
+    member of the `domain` object passed to these functions.
+  * When modifying mesh or restart file selections in these functions,
+    the matching `domain.meshes`, `domain.restart`, and similar
+    members of the `domain` argument should be modified directly, rather
+    than modifying the `setup.xml` file, as the matching values have
+    already been read and assigned to `domain` at this point.
+
+Multiple instances the same filter are permitted:
 ```{.xml}
 <study label="STUDY" status="on">
     <case label="CASE1" status="on" compute="on" post="on">
-        <prepro label="script_pre1.py" args="-n 1" status="on"/>
-        <prepro label="script_pre2.py" args="-n 2" status="on"/>
+        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
     </case>
 </study>
 ```
 
-All preprocessing scripts are first searched in the `MESH` directory
-from the current study in the **repository**. If a script is not found,
-it is searched in the directories of the current case.
-The main objective of running such external scripts is to create or modify
-meshes or to modify the current setup of the related case (see
-[tricks](@ref sec_smgr_tricks)).
+and
+
+```{.xml}
+<study label="STUDY" status="on">
+    <case label="CASE1" status="on" compute="on" post="on">
+        <notebook args="u_inlet_1=0.1"/>
+        <notebook args="u_inlet_2=0.2"/>
+    </case>
+</study>
+```
+
+Are equivalent.
 
 Run external additional postprocessing scripts with options for a case
 ----------------------------------------------------------------------
@@ -482,7 +515,7 @@ results in order to plot them.
 Example of a script which searches printed information in the listing,
 (note the function to process the passed command line arguments):
 ```{.py}
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os, sys
@@ -1038,58 +1071,6 @@ The following raw commands can be used:
 </subplot>
 ```
 
-### How to create a mesh automatically with SALOME?
-
-The following example shows how to create a mesh with a SALOME command file:
-```{.xml}
-<study label="STUDY" status="on">
-    <case label="CASE1" status="on" compute="on" post="on">
-        <prepro label="salome" args="-t -u my_mesh.py" status="on"/>
-    </case>
-</study>
-```
-with the `salome` command (depending of the local installation of
-SALOME):
-```{.sh}
-#!/bin/bash
-
-export ROOT_SALOME=/home/salome/Salome-V9_3_0-x86_64-univ
-source /home/salome/Salome-V9_3_0-x86_64-univ/salome_prerequisites.sh
-source /home/salome//Salome-V9_3_0-x86_64-univ/salome_modules.sh
-
-/home/salome/appli_V9_3_0/salome $*
-```
-and the script of SALOME commands `my_mesh.py`:
-```{.py}
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import geompy
-import smesh
-
-# create a box
-box = geompy.MakeBox(0., 0., 0., 100., 200., 300.)
-idbox = geompy.addToStudy(box, "box")
-
-# create a mesh
-tetra = smesh.Mesh(box, "MeshBox")
-
-algo1D = tetra.Segment()
-algo1D.NumberOfSegments(7)
-
-algo2D = tetra.Triangle()
-algo2D.MaxElementArea(800.)
-
-algo3D = tetra.Tetrahedron(smesh.NETGEN)
-algo3D.MaxElementVolume(900.)
-
-# compute the mesh
-tetra.Compute()
-
-# export the mesh in a MED file
-tetra.ExportMED("./my_mesh.med")
-```
-
 ## How to carry out a grid convergence study?
 
 The following example shows how to carry out a grid convergence study by running
@@ -1097,31 +1078,28 @@ the same case three times and changing the parameters between each run with the
 help of a preprocessing script.
 
 Here the mesh, the maximum number of iterations, the reference time step and the
-number of processes are modified, before each run, by the
-`prepro.py` script.
+number of processes are modified, before each run, by the built-in
+`cs_parametric_setup.py` script.
 
 The parameters file is as follows:
 
 ```{.xml}
 <case compute="on" label="COUETTE" post="on" run_id="21_Theta_1" status="on">
-    <prepro args="-m 21_Theta_1.med -p Couette.xml -n 4000 -a 1. -t 0.01024 -u 1"
-            label="prepro.py" status="on"/prepro>
+    <parametric args="-m 21_Theta_1.med -n 4000 -a 1. -t 0.01024 -u 1"/>
     <data dest="" file="profile.dat">
         <plot fig="5" fmt="r-+" legend="21 theta 1" markersize="5.5" xcol="1" ycol="5"/>
     </data>
 </case>
 
 <case compute="on" label="COUETTE" post="on" run_id="43_Theta_05" status="on">
-    <prepro args="-m 43_Theta_05.med -p Couette.xml -n 8000 -a 0.5 -t 0.00512 -u 2"
-            label="prepro.py" status="on"/prepro>
+    <parametric args="-m 43_Theta_05.med -n 8000 -a 0.5. -t 0.00512"/>
     <data dest="" file="profile.dat">
         <plot fig="5" fmt="b" legend="43 Theta 05" markersize="5.5" xcol="1" ycol="5"/>
     </data>
 </case>
 
 <case compute="on" label="COUETTE" post="on" run_id="86_Theta_025" status="on">
-    <prepro args="-m 86_Theta_025.med -p Couette.xml -n 16000 -a 0.25 -t 0.00256 -u 4"
-            label="prepro.py" status="on" /prepro>
+    <parametric args="-m 86_Theta_025.med -n 16000 -a 0.25 -t 0.00256 -u 4"/>
     <data dest="" file="profile.dat">
         <plot fig="5" fmt="g" legend="86 Theta 025" markersize="5.5" xcol="1" ycol="5"/>
     </data>
@@ -1129,109 +1107,47 @@ The parameters file is as follows:
 ```
 
 Recall that the case attribute `run`_id` should be given a different
-value for each run, while the `label` should stay the same and that the
-preprocessing script should be copied in the `MESH` direcrtory of the study or in
-the `DATA` directory of the case.
+value for each run, while the `label` should stay the same.
 
-The preprocessing script is shown below. Note that it can be called inside
-the parameters file without specifying a value for each option:
+## How to convert deprecated `<prepro>` scripts.
+
+To update a setup based on a script called with the deprecated `<prepro>`
+tag, simply copy the contents of that script in the "local functions"
+section of the optional `DATA/cs_user_scripts.py` user scripts,
+renaming `main` to another chose name, for example `prepro`.
+
+Remove the section resembling:
 
 ```{.py}
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Standard modules import
-#-------------------------------------------------------------------------------
-
-import os, sys
-import string
-from optparse import OptionParser
-
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Application modules import
-#-------------------------------------------------------------------------------
-from model.ScriptRunningModel import ScriptRunningModel
-
-#-------------------------------------------------------------------------------
-
-def process_cmd_line(argv):
-    """Processes the passed command line arguments."""
-    parser = OptionParser(usage="usage: %prog [options]")
-
-    parser.add_option("-c", "--case", dest="case", type="string",
-                      help="Directory of the current case")
-
-    parser.add_option("-p", "--param", dest="param", type="string",
-                      help="Name of the parameters file")
-
-    parser.add_option("-m", "--mesh", dest="mesh", type="string",
-                      help="Name of the new mesh")
-
-    parser.add_option("-n", "--iter-num", dest="iterationsNumber", type="int",
-                      help="New iteration number")
-
-    parser.add_option("-t", "--time-step", dest="timeStep", type="float",
-                      help="New time step")
-
-    parser.add_option("-a", "--perio-angle", dest="rotationAngle", type="float",
-                      help="Periodicity angle")
-
-    (options, args) = parser.parse_args(argv)
-
-    return options
-
-#-------------------------------------------------------------------------------
-
-def main(options):
-    from cs_package import package
-    from model.XMLengine import Case
-    from model.XMLinitialize import XMLinit
-    from model.SolutionDomainModel import SolutionDomainModel
-    from model.TimeStepModel import TimeStepModel
-
-    fp = os.path.join(options.case, "DATA", options.param)
-    if os.path.isfile(fp):
-        try:
-            case = Case(package = package(), file_name = fp)
-        except:
-            print("Parameters file reading error.\n")
-            print("This file is not in accordance with XML specifications.")
-            sys.exit(1)
-
-        case['xmlfile'] = fp
-        case.xmlCleanAllBlank(case.xmlRootNode())
-        XMLinit(case).initialize()
-
-        if options.mesh:
-            s = SolutionDomainModel(case)
-            l = s.getMeshList()
-            s.delMesh(l[0])
-            s.addMesh((options.mesh, None))
-
-        if options.rotationAngle:
-            s.setRotationAngle(0, options.rotationAngle)
-
-        if (options.iterationsNumber):
-            t = TimeStepModel(case)
-            t.setStopCriterion('iterations', options.iterationsNumber)
-
-        if (options.TimeStep):
-            t = TimeStepModel(case)
-            t.setTimeStep(options.TimeStep)
-
-        case.xmlSaveDocument()
-
-#-------------------------------------------------------------------------------
-
 if __name__ == '__main__':
     options = process_cmd_line(sys.argv[1:])
     main(options)
-
-#-------------------------------------------------------------------------------
 ```
+
+and add the following section in the `define_domain_parameters` function:
+
+```{.py}
+    options = process_cmd_line(domain.kw_args)
+    prepro(options)
+```
+
+Remember that when modifying mesh or restart file selections, the matching
+values have already been read and assigned to `domain` at this point,
+so the matching `domain` entries should be modified directly, instead
+of modifying the XML file.
+
+Also when reading or writing a setup XML file, the path to that file
+should simply be `setup.xml` or `domain.param`, as this function is
+called directly from the execution directory, and should not modify
+the upstream setup.
+
+In the STUDYMANAGER XML file, `<prepro>` can then simply be replaced with
+`<kw_args>`. Only the `args` attribute is used, so other attributes
+(`label` and `status`) can be removed. Also, the `-c` or `--case` arguments
+commonly used to indicate the matching case are not necessary anymore.
+
+Note also that using the `<notebook>` and `<parametric>` tags is simpler
+for notebook values or options already handled by the `cs_parametric_setup.py`
+script, as they require no intervention in `cs_user_scripts.py`.
+As usual, the approaches can be mixed, so as to minimize the size of
+the user scripts.

@@ -323,13 +323,15 @@ class Parser(object):
         """
         data = []
 
+        setup_filter_keys = ("notebook", "parametric", "kw_args")
+
         for node in self.getStudyNode(l).getElementsByTagName("case"):
             if str(node.attributes["status"].value) == 'on':
                 d = {}
                 d['node']    = node
                 d['label']   = str(node.attributes["label"].value)
                 d['compute'] = str(node.attributes["compute"].value)
-                d['post'] = str(node.attributes["post"].value)
+                d['post']    = str(node.attributes["post"].value)
 
                 try:
                     d['compare'] = str(node.attributes["compare"].value)
@@ -367,10 +369,22 @@ class Parser(object):
                 except:
                     d['estim_wtime'] = None
 
+                for k in setup_filter_keys:
+                    d[k] = None
+
                 for n in node.childNodes:
-                    if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
-                        if n.tagName not in ("compare", "prepro", "script", "data"):
-                            d[n.tagName] = n.childNodes[0].data
+                    if n.nodeType == minidom.Node.ELEMENT_NODE:
+                        if n.childNodes:
+                            if n.tagName not in ("compare", "prepro", "script", "data", "depends"):
+                                d[n.tagName] = n.childNodes[0].data
+                        else:
+                            if n.tagName in setup_filter_keys:
+                                args = n.getAttribute("args")
+                                if not d[n.tagName]:
+                                    d[n.tagName] = str(args)
+                                else:
+                                    d[n.tagName] += " " + str(args)
+
                 data.append(d)
 
         return data

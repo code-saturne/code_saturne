@@ -1,5 +1,20 @@
 Release 7.0.1 (unreleased)
-----------------------------
+--------------------------
+
+User changes:
+
+- UI: Add optional `--notebook-args [key1=val1] [key2=val]> ...`,
+  `--parametric-args [arg1] [arg2] ...`, and `--kw-args [arg1] [arg2] ...`
+  arguments to `code_saturne run` and `code_saturne submit` commands.
+  * If provided, they are available as the `notebook` and `kw_args`
+    attributes of each case domain object (as a Python dictionnary
+    and list respectively). Otherwise, these attributes are `None`.
+  * These options are applied when running the case, and allow modifying
+    the setup "on the fly" at run initialization.
+  * In the studymanager module, these options can be passed using
+    the `<notebook>`, `<parametric>`, and `<kw_args>` tags respectively,
+    providing a safe replacement to the `<prepro>` tag, which is now
+    deprecated due to its possible side effects in the case directory.
 
 Bug fixes:
 

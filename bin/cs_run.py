@@ -39,6 +39,7 @@ try:
     configparser = ConfigParser
 except Exception:
     import configparser  # Python3
+import argparse
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_case_domain
@@ -103,17 +104,43 @@ def update_run_steps(s_c, run_conf, final=False):
             s_c[k] = True
 
 #-------------------------------------------------------------------------------
+# Clean append for command-line arguments parser
+#-------------------------------------------------------------------------------
+
+class multi_append(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) == None:
+            setattr(namespace, self.dest, list())
+        for value in values:
+            v_args = cs_exec_environment.separate_args(value)
+            for sv in v_args:
+                getattr(namespace, self.dest).append(sv)
+
+#-------------------------------------------------------------------------------
+
+class multi_append_kv(argparse.Action):
+    """
+    Parse and append key-value pairs.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) == None:
+            setattr(namespace, self.dest, dict())
+        for value in values:
+            key, value = value.split('=')
+            getattr(namespace, self.dest)[key] = value
+
+#-------------------------------------------------------------------------------
 # Build command-line arguments parser
 #-------------------------------------------------------------------------------
 
-def arg_parser(argv, pkg):
+def arg_parser(argv):
     """
     Process the passed command line arguments.
     """
 
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser(description="Run a case or specified run stages.")
+    prog = os.path.basename(sys.argv[0]) + " " + sys.argv[1]
+    parser = argparse.ArgumentParser(description="Run a case or specified run stages.",
+                                     prog=prog)
 
     parser.add_argument("--compute-build", dest="compute_build", type=str,
                         metavar="<build>",
@@ -125,6 +152,15 @@ def arg_parser(argv, pkg):
 
     parser.add_argument("--nt", "--threads-per-task", dest="nthreads", type=int,
                         help="number of OpenMP threads per task")
+
+    parser.add_argument("--notebook-args", nargs='*', action = multi_append_kv,
+                        help="key=value pairs to pass to user scripts and notebook")
+
+    parser.add_argument("--parametric-args", nargs='*', action = multi_append,
+                        help="key=value pairs to pass to cs_parametric filter")
+
+    parser.add_argument("--kw-args", nargs='*', action = multi_append,
+                        help="additional keywords to pass to user scripts")
 
     parser.add_argument("-p", "--param", dest="param", type=str,
                         metavar="<param>",
@@ -194,7 +230,7 @@ def arg_parser(argv, pkg):
 # Process the command line arguments
 #-------------------------------------------------------------------------------
 
-def parse_cmd_line(argv, pkg):
+def parse_cmd_line(argv):
     """
     Process the passed command line arguments.
     """
@@ -202,7 +238,7 @@ def parse_cmd_line(argv, pkg):
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
 
-    parser = arg_parser(argv, pkg)
+    parser = arg_parser(argv)
     options = parser.parse_args(argv)
 
     return options
@@ -533,7 +569,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         pkg = package()
 
     if run_args == None:
-        options = parse_cmd_line(argv, pkg)
+        options = parse_cmd_line(argv)
     else:
         options = run_args
 
@@ -627,7 +663,10 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
                    time_limit=r_c['time_limit'],
                    run_id=r_c['run_id'],
                    force_id=r_c['force_id'],
-                   stages=stages)
+                   stages=stages,
+                   notebook_args=options.notebook_args,
+                   parametric_args=options.parametric_args,
+                   kw_args=options.kw_args)
 
     if submit_args != None:
         resource_name = cs_run_conf.get_resource_name(i_c)

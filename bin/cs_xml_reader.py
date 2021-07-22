@@ -106,8 +106,9 @@ class Parser:
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 fileName,
-                 version_str = None):
+                 filename = 'setup.xml',
+                 doc = None,
+                 version_str = '2.0'):
 
         self.dict = {}
         self.dict['mesh_dir'] = None
@@ -115,16 +116,20 @@ class Parser:
 
         self.root = None
 
-        if fileName == None:
-            return
+        if doc != None:
+            self.doc = doc
 
-        if not os.path.isfile(fileName):
-            raise XMLError('XML file: ' + fileName + ' not found')
+        else:
+            if fileName == None:
+                return
 
-        try:
-            self.doc = minidom.parse(fileName)
-        except Exception:
-            raise XMLError('Error parsing XML file: ' + fileName)
+            if not os.path.isfile(fileName):
+                raise XMLError('XML file: ' + fileName + ' not found')
+
+            try:
+                self.doc = minidom.parse(fileName)
+            except Exception:
+                raise XMLError('Error parsing XML file: ' + fileName)
 
         self.root = self.doc.documentElement
 
