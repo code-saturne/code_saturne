@@ -155,11 +155,20 @@ class runcase(object):
 
         import os, stat
         from code_saturne.cs_exec_environment import append_shell_shebang, \
-            append_script_comment, prepend_path_command
+            append_script_comment
 
         if not self.package:
             from code_saturne import cs_package
             self.package = cs_package.package()
+
+        # Use alternate wrapper if configured
+
+        wrapper_postfix = None
+
+        config = configparser.ConfigParser()
+        config.read(self.package.get_configfiles())
+        if config.has_option('install', 'wrapper_postfix'):
+            wrapper_postfix = config.get('install', 'wrapper_postfix')
 
         self.lines = []
 
@@ -190,7 +199,11 @@ class runcase(object):
 
         append_script_comment(self.lines, 'Run command:' + os.linesep)
 
-        exec_path = os.path.join(self.package.get_dir("bindir"), self.package.name)
+        if wrapper_postfix == None:
+            exec_path = os.path.join(self.package.get_dir("bindir"), self.package.name)
+        else:
+            exec_path = '\\' + self.package.name + wrapper_postfix
+
         run_cmd = enquote_arg(exec_path) + ' run'
         self.cmd_name = self.package.name
         self.run_cmd_line_id = len(self.lines)

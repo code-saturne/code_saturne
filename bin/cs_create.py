@@ -194,6 +194,17 @@ def create_local_launcher(pkg, path=None):
     Create a local launcher script.
     """
 
+    # Use alternate wrapper if configured
+
+    wrapper_postfix = None
+
+    config = configparser.ConfigParser()
+    config.read(pkg.get_configfiles())
+    if config.has_option('install', 'wrapper_postfix'):
+        wrapper_postfix = config.get('install', 'wrapper_postfix')
+
+    # Generate script
+
     local_script = pkg.name + pkg.config.exeext
     if path:
         local_script = os.path.join(path, local_script)
@@ -201,21 +212,26 @@ def create_local_launcher(pkg, path=None):
     fd = open(local_script, 'w')
     cs_exec_environment.write_shell_shebang(fd)
 
-    cs_exec_environment.write_script_comment(fd,
-                                             'Ensure the correct command is found:\n')
-    cs_exec_environment.write_prepend_path(fd, 'PATH',
-                                           pkg.get_dir("bindir"))
+    launcher_name = pkg.name
+
+    if wrapper_postfix == None:
+        cs_exec_environment.write_script_comment(fd,
+                                                 'Ensure the correct command is found:\n')
+        cs_exec_environment.write_prepend_path(fd, 'PATH',
+                                               pkg.get_dir("bindir"))
+        fd.write('\n')
+    else:
+        launcher_name += wrapper_postfix
 
     if sys.platform.startswith('win'):
         fd.write('\n')
         cs_exec_environment.write_script_comment(fd, 'Run command:\n')
-        fd.write(pkg.name + ' gui ' +
+        fd.write(launcher_name + ' gui ' +
                  cs_exec_environment.get_script_positional_args() + '\n')
     else:
         # On Linux or similar systems, add a backslash to prevent aliases
         # Start "code_saturne gui by default
-        fd.write("""
-# Insert default command
+        fd.write("""# Insert default command
 cs_cmd=""
 if test $# = 1; then
   if test -f $1; then
@@ -229,7 +245,7 @@ fi
 """
         )
         fd.write('\\')
-        fd.write(pkg.name + ' $cs_cmd ' +
+        fd.write(launcher_name + ' $cs_cmd ' +
                  cs_exec_environment.get_script_positional_args() + '\n')
 
     fd.close()
