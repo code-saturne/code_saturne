@@ -609,25 +609,22 @@ _scalar_properties_choice(const char *f_name,
  *        return 0 if not
  *
  * parameters:
- *   f       <-- pointer to field
- *   value   <-- value of diffusion coefficient
+ *   num_sca  <-- number of scalar
+ *   value   <--  value of diffusion coefficient
  *----------------------------------------------------------------------------*/
 
 static void
-_scalar_diffusion_value(const cs_field_t  *f,
-                        cs_real_t         *value)
+_scalar_diffusion_value(int         num_sca,
+                        cs_real_t  *value)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
 
-  while (tn != NULL) {
-    const char *name = cs_tree_node_get_child_value_str(tn, "name");
-    if (cs_gui_strcmp(name, f->name))
-      break;
-    else
-      tn = cs_tree_find_node_next(cs_glob_tree, tn, "variable");
+  for (int i = 1;
+       tn != NULL && i < num_sca ;
+       i++) {
+   tn = cs_tree_node_get_next_of_name(tn);
   }
-
   tn = cs_tree_get_node(tn, "property/initial_value");
 
   cs_gui_node_get_real(tn, value);
@@ -2400,7 +2397,7 @@ void CS_PROCF (cssca3, CSSCA3) (void)
 
           double visls_0 = cs_field_get_key_double(f, kvisls0);
           double coeff = visls_0 / density;
-          _scalar_diffusion_value(f, &coeff);
+          _scalar_diffusion_value(i+1, &coeff);
           visls_0 = coeff * density;
 
           cs_field_set_key_double(f, kvisls0, visls_0);

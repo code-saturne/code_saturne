@@ -724,8 +724,8 @@ implicit none
 
 ! Local variables
 
-integer  nfld
-integer  dim, f_type, id, ii, ivar, keycpl
+integer  iscal, nfld1, nfld2
+integer  dim, id, ii, ivar, keycpl
 
 integer :: keyvar, keysca
 
@@ -749,27 +749,21 @@ end interface
 
 ! Create fields
 
+call field_get_n_fields(nfld1)
+
 call cs_parameters_create_added_variables
 
-call field_get_n_fields(nfld)
+call field_get_n_fields(nfld2)
 
-! Now map those fields which are not yet mapped
+! Now map those fields
+
+iscal = 0
 
 call field_get_key_id('coupled', keycpl)
 call field_get_key_id("scalar_id", keysca)
 call field_get_key_id("variable_id", keyvar)
 
-do id = 0, nfld - 1
-
-  call field_get_type(id, f_type)
-
-  ! Is the field of type FIELD_VARIABLE and not indexed yet ?
-
-  if (iand(f_type, FIELD_VARIABLE).ne.FIELD_VARIABLE) cycle
-
-  call field_get_key_int(id, keyvar, ivar)
-
-  if (ivar.ge.0) cycle
+do id = nfld1, nfld2 - 1
 
   call field_get_dim(id, dim)
 
@@ -779,6 +773,8 @@ do id = 0, nfld - 1
     cycle
   endif
 
+  iscal = iscal + 1
+
   ivar = nvar + 1
   nvar = nvar + dim
   nscal = nscal + 1
@@ -786,11 +782,11 @@ do id = 0, nfld - 1
   ! Check we have enough slots
   call fldvar_check_nvar
 
-  isca(nscal) = ivar
+  isca(iscal) = ivar
   ivarfl(ivar) = id
 
   call field_set_key_int(id, keyvar, ivar)
-  call field_set_key_int(id, keysca, nscal)
+  call field_set_key_int(id, keysca, iscal)
   call init_var_cal_opt(id)
 
   if (dim .gt. 1) then
