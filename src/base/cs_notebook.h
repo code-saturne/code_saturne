@@ -37,9 +37,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- *  \brief Initialize the notebook object (based on cs_tree_node_t)
- *
- *  The name used to identify the object is "cs_notebook".
+ * \brief Initialize the notebook object (based on cs_tree_node_t).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -65,7 +63,7 @@ cs_notebook_parameter_is_present(const char  *name,
 /*!
  * \brief Return a parameter value (real).
  *
- * The name used is the same as the one in the GUI
+ * The name used is the same as the one in the GUI.
  *
  * \param[in] name  name of the parameter
  *
@@ -80,7 +78,7 @@ cs_notebook_parameter_value_by_name(const char *name);
 /*!
  * \brief Set a parameter value (real) for an editable parameter.
  *
- * The name used is the same as the one in the GUI
+ * The name used is the same as the one in the GUI.
  *
  * \param[in] name  name of the parameter
  * \param[in] val   value of the parameter
@@ -112,12 +110,11 @@ cs_notebook_parameter_get_openturns_status(char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Returns the description of the parameter (GUI defined)
+ * \brief Returns the description of the parameter (GUI defined).
  *
  * \param[in] name  name of the parameter
  *
  * \return  a const char pointer containing the description.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -126,9 +123,9 @@ cs_notebook_parameter_get_description(char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Destroy the notebook structure
+ * \brief Destroy the notebook structure.
  *
- * Destroys the structures related to the notebook
+ * Destroys the structures related to the notebook.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -146,10 +143,10 @@ cs_notebook_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Writes uncertain values to output file
+ * \brief Write uncertain values to output file.
  *
  * If input and output uncertain variables are provided, output values
- * are written to an output file : cs_uncertain_output.dat
+ * are written to an output file: cs_uncertain_output.dat
  * Results are ordered in the definition order in the notebook.
  */
 /*----------------------------------------------------------------------------*/

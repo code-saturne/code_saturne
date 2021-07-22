@@ -241,7 +241,6 @@ _entry_create(const char  *name,
  *
  * \param[in] e            pointer to _cs_notebook_entry_t
  * \param[in] description  description of the entry
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -266,7 +265,6 @@ _entry_set_description(_cs_notebook_entry_t *e,
  *
  * \param[in] e      pointer to _cs_notebook_entry_t
  * \param[in] value  value to set to the entry
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -285,45 +283,7 @@ _entry_set_value(_cs_notebook_entry_t *e,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Output the notebook info to the setup log.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_notebook_log(void)
-{
-  if (_n_entries == 0)
-    return;
-
-  cs_log_t l = CS_LOG_SETUP;
-
-  cs_log_printf(l, _("Notebook:\n"
-                     "---------\n"));
-  for (int i = 0; i < _n_entries; i++)
-    cs_log_printf(l, _("\n"
-                       "  Entry #%d\n"
-                       "    name:         %s\n"
-                       "    description:  %s\n"
-                       "    uncertain:    %d\n"
-                       "    editable:     %d\n"
-                       "    value:        %f\n"),
-                  i,
-                  _entries[i]->name,
-                  _entries[i]->description,
-                  _entries[i]->uncertain,
-                  _entries[i]->editable,
-                  _entries[i]->val);
-
-  cs_log_printf(l, "\n");
-  cs_log_separator(l);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- *  \brief Initialize the notebook object (based on cs_tree_node_t)
- *
- *  The name used to identify the object is "cs_notebook".
- *
+ * \brief Initialize the notebook object (based on cs_tree_node_t).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -425,7 +385,7 @@ cs_notebook_parameter_is_present(const char  *name,
 /*!
  * \brief Return a parameter value (real).
  *
- * The name used is the same as the one in the GUI
+ * The name used is the same as the one in the GUI.
  *
  * \param[in] name  name of the parameter
  *
@@ -444,7 +404,7 @@ cs_notebook_parameter_value_by_name(const char *name)
 /*!
  * \brief Set a parameter value (real) for an editable parameter.
  *
- * The name used is the same as the one in the GUI
+ * The name used is the same as the one in the GUI.
  *
  * \param[in] name  name of the parameter
  * \param[in] val   value of the parameter
@@ -490,12 +450,11 @@ cs_notebook_parameter_get_openturns_status(char *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Returns the description of the parameter (GUI defined)
+ * \brief Returns the description of the parameter (GUI defined).
  *
  * \param[in] name  name of the parameter
  *
  * \return  a const char pointer containing the description.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -508,12 +467,78 @@ cs_notebook_parameter_get_description(char *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Writes uncertain values to output file
+ * \brief Destroy the notebook structure.
+ *
+ * Destroys the structures related to the notebook.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_destroy_all(void)
+{
+  /* Before destruction, we dump the results */
+  cs_notebook_uncertain_output();
+
+  for (int i = 0; i < _n_entries; i++) {
+    _cs_notebook_entry_t *e = _entries[i];
+    BFT_FREE(e->description);
+  }
+
+  for (int i = 0; i < _n_entries; i++) {
+    if (i % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE == 0)
+      BFT_FREE(_entries[i]);
+  }
+
+  BFT_FREE(_entries);
+
+  cs_map_name_to_id_destroy(&_entry_map);
+
+  _n_entries     = 0;
+  _n_entries_max = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output the notebook info to the setup log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_log(void)
+{
+  if (_n_entries == 0)
+    return;
+
+  cs_log_t l = CS_LOG_SETUP;
+
+  cs_log_printf(l, _("Notebook:\n"
+                     "---------\n"));
+  for (int i = 0; i < _n_entries; i++)
+    cs_log_printf(l, _("\n"
+                       "  Entry #%d\n"
+                       "    name:         %s\n"
+                       "    description:  %s\n"
+                       "    uncertain:    %d\n"
+                       "    editable:     %d\n"
+                       "    value:        %f\n"),
+                  i,
+                  _entries[i]->name,
+                  _entries[i]->description,
+                  _entries[i]->uncertain,
+                  _entries[i]->editable,
+                  _entries[i]->val);
+
+  cs_log_printf(l, "\n");
+  cs_log_separator(l);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write uncertain values to output file.
  *
  * If input and output uncertain variables are provided, output values
- * are written to an output file : cs_uncertain_output.dat
+ * are written to an output file: cs_uncertain_output.dat
  * Results are ordered in the definition order in the notebook.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -549,39 +574,6 @@ cs_notebook_uncertain_output(void)
     fflush(file);
     fclose(file);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Destroy the notebook structure
- *
- * Destroys the structures related to the notebook
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_notebook_destroy_all(void)
-{
-  /* Before destruction, we dump the results */
-  cs_notebook_uncertain_output();
-
-  for (int i = 0; i < _n_entries; i++) {
-    _cs_notebook_entry_t *e = _entries[i];
-    BFT_FREE(e->description);
-  }
-
-  for (int i = 0; i < _n_entries; i++) {
-    if (i % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE == 0)
-      BFT_FREE(_entries[i]);
-  }
-
-  BFT_FREE(_entries);
-
-  cs_map_name_to_id_destroy(&_entry_map);
-
-  _n_entries     = 0;
-  _n_entries_max = 0;
 }
 
 /*----------------------------------------------------------------------------*/
