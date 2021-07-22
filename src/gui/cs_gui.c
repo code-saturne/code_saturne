@@ -2386,7 +2386,6 @@ void CS_PROCF (cssca3, CSSCA3) (void)
       cs_field_t  *f = cs_field_by_id(f_id);
       if (   (f->type & CS_FIELD_VARIABLE)
           && (f->type & CS_FIELD_USER)) {
-        int i = cs_field_get_key_int(f, keysca) - 1;
         if (cs_field_get_key_int(f, kscavr) < 0) {
 
           if (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] > -1

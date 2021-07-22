@@ -1056,6 +1056,7 @@ _control_checkpoint(const char   *cur_line,
  *
  * parameters:
  *   ts       <-- pointer to time step status
+ *   cur_line <-> pointer to the current line
  *   s        <-> pointer to current position in line
  *----------------------------------------------------------------------------*/
 
@@ -1064,6 +1065,8 @@ _control_notebook(const cs_time_step_t   *ts,
                   char                   *cur_line,
                   char                  **s)
 {
+  CS_UNUSED(ts);
+
   *s += 9; /* shift in string by length of "notebook_" part */
 
   bool ignored = true;

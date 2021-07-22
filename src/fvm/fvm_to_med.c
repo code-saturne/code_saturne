@@ -3778,12 +3778,12 @@ _field_output(void           *context,
 
   med_int block_sub_size = block_end - block_start;
 
-  cs_gnum_t n_g_elements = c->n_g_elts;
-
   if (block_sub_size < 0)
     block_sub_size = 0;
 
 #if defined(HAVE_MED_MPI)
+
+  cs_gnum_t n_g_elements = c->n_g_elts;
 
   if (w->block_comm != MPI_COMM_NULL) { /* Parallel IO */
 

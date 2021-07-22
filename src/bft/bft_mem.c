@@ -856,7 +856,9 @@ bft_mem_realloc(void        *ptr,
   size_t old_size = 0;
   size_t new_size = ni * size;
 
+#if defined(HAVE_OPENMP)
   int in_parallel = 0;
+#endif
 
   /*
     Behave as bft_mem_malloc() if the previous pointer is equal to NULL.
@@ -966,6 +968,7 @@ bft_mem_realloc(void        *ptr,
     return p_loc;
   }
 
+  return NULL; /* Avoid a compiler warning */
 }
 
 /*!
