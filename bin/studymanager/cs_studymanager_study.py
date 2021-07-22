@@ -142,11 +142,16 @@ def isCase(dirpath):
     """Try to determine if dirpath is a Code_Saturne case directory.
     """
 
+    # Verify that DATA folder exists with a xml file inside
     datad = os.path.join(dirpath, 'DATA')
-    scriptd = os.path.join(dirpath, 'SCRIPTS')
-    is_case = os.path.isdir(datad) and os.path.isdir(scriptd)
 
-    return is_case
+    found_xml = False
+    if os.path.isdir(datad):
+        for elt in os.listdir(datad):
+            if ".xml" in str(elt):
+                found_xml = os.path.isfile(os.path.join(datad, elt))
+
+    return found_xml
 
 #===============================================================================
 # Case class
