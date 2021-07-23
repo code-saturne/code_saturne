@@ -463,16 +463,32 @@ _set_gamg_pc(const char            prefix[],
    * coupling in the graph and a different (perhaps better) coarser set of
    * points. (default=0.0) */
 
+  _petsc_cmd(use_pre, prefix, "mg_levels_ksp_norm_type", "none");
+  _petsc_cmd(use_pre, prefix, "pc_gamg_coarse_eq_limit", "100");
+
+  /* In parallel computing, migrate data to another rank if the grid has less
+     than 200 rows */
+  if (cs_glob_n_ranks > 1) {
+    _petsc_cmd(use_pre, prefix, "pc_gamg_repartition", "true");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "200");
+  }
+
+  /* More efficient sparse direct solver */
+  if (cs_glob_n_ranks == 1) {
+    _petsc_cmd(use_pre, prefix, "mg_coarse_ksp_type", "preonly");
+    _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
+  }
+
   if (is_sym) {
 
     /* Number of smoothing steps to use with smooth aggregation (default=1) */
     _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "1");
     _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_esteig_ksp_type", "cg");
 
     /* PCMG settings (options shared with PCGAMG) */
-    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.08");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.10");
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "2");
-    _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "500");
 
     /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
@@ -510,17 +526,12 @@ _set_gamg_pc(const char            prefix[],
     /* Number of smoothing steps to use with smooth aggregation (default=1) */
     _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "0");
     _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
-    _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "250");
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "0");
-    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.02");
-
-    if (cs_glob_n_ranks == 1)
-      _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
+    _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.06");
 
     /* Set the up/down smoothers
      * Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
-    _petsc_cmd(use_pre, prefix, "mg_levels_ksp_norm_type", "none");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 

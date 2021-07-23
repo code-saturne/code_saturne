@@ -150,8 +150,17 @@ _petsc_pcgamg_hook(const char              *prefix,
 
   _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
   _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_norm_type", "none");
 
+  /* Do not build a coarser level if one reaches the following limit */
+  _petsc_cmd(true, prefix, "pc_gamg_coarse_eq_limit", "100");
+
+  /* In parallel computing, migrate data to another rank if the grid has less
+     than 200 rows */
   if (cs_glob_n_ranks > 1) {
+
+    _petsc_cmd(true, prefix, "pc_gamg_repartition", "true");
+    _petsc_cmd(true, prefix, "pc_gamg_process_eq_limit", "200");
 
     _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
     _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_blocks", "1");
@@ -204,7 +213,7 @@ _petsc_pcgamg_hook(const char              *prefix,
    * points. (default=0.0) */
 
   _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
-  _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.08");
+  _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.10");
 
   /* After command line options, switch to PETSc setup functions */
 
