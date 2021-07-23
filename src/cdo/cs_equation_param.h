@@ -1047,35 +1047,46 @@ typedef struct {
  * - "atomic" or "critical"
  *
  * \var CS_EQKEY_PRECOND
- * Specify the preconditioner associated to an iterative solver. Available
- * choices are:
+ * Specify the preconditioner associated to an iterative solver. Be careful
+ * some options are only available with a given solver class. Be sure that your
+ * installation has been installed with the appropriate library.
+ * Available choices are:
+ * - "none": no preconditioner is used
  * - "jacobi" or "diag": diagonal preconditoner
- * - "block_jacobi": Only with PETSc
+ * - "block_jacobi"/"bjacobi": Block Jacobi with ILU(0) in each block. A block
+ *                             is the matrix associated to a rank. (Only with
+ *                             PETSc)
+ * - "bjacobi_sgs"/"bjacobi_ssor": Block Jacobi with Symm. Gauss-Seidel in each
+ *                             block. A block is the matrix associated to a
+ *                             rank. (Only with PETSc)
  * - "poly1": Neumann polynomial of order 1 (only with Code_Saturne)
  * - "poly2": Neumann polynomial of order 2 (only with Code_Saturne)
  * - "ssor": symmetric successive over-relaxation (only with PETSC)
  * - "ilu0": incomplete LU factorization (only with PETSc)
  * - "icc0": incomplete Cholesky factorization (for symmetric matrices and
- *   only with PETSc)
- * - "amg": algebraic multigrid
- * - "amg_block": algebraic multigrid by block (useful for vector-valued
- *                equations). By default, a
- *
+ *           only with PETSc)
+ * - "amg": algebraic multigrid technique (see \ref CS_EQKEY_AMG_TYPE for
+            additional settings)
+ * - "amg_block"/"block_amg: algebraic multigrid by block (useful for
+ *                vector-valued equations). By default, a diagonal block
+ *                preconditioning is used if nothing else is set.
+ * - "as": Additive Scwharz preconditioner. (Only with PETSc)
  *
  * \var CS_EQKEY_PRECOND_BLOCK_TYPE
  * Specify the type of block preconditioner associated to a preconditioner.
+ * When "full" is specified. That means that the smallest possible blocks are
+ * considered. Be careful: Most of these options are available only with
+ * PETSc/HYPRE.
  * Available choices are:
  * - "none": no block preconditioner (default choice)
  * - "diag": diagonal (or additive) block preconditoner
- * - "lower_tri": lower triangular (multiplicative) block preconditioner
- * - "upper_tri": upper triangular (multiplicative) block preconditioner
+ * - "lower": lower triangular (multiplicative) block preconditioner
+ * - "upper": upper triangular (multiplicative) block preconditioner
  * - "symm": symmetric Gauss-Seidel block preconditioner
- * - "full_diag": full diagonal (or additive) block preconditoner
- * - "full_lower_tri": full lower triangular (multiplicative) block
-     preconditioner
- * - "full_upper_tri": upper triangular (multiplicative) block preconditioner
+ * - "full_diag": full diagonal (or additive) block preconditoner.
+ * - "full_lower": full lower triangular (multiplicative) block preconditioner
+ * - "full_upper": upper triangular (multiplicative) block preconditioner
  * - "full_symm": symmetric Gauss-Seidel block preconditioner
- * Most of these options are available only with PETSc.
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system

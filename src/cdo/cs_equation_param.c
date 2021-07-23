@@ -612,8 +612,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0)
       eqp->sles_param->precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0 ||
-             strcmp(keyval, "block_jacobi_ilu0") == 0 ||
-             strcmp(keyval, "jacobi_block") == 0) {
+             strcmp(keyval, "bjacobi") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
@@ -631,8 +630,8 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
-    else if (strcmp(keyval, "block_jacobi_sgs") == 0 ||
-             strcmp(keyval, "block_jacobi_ssor") == 0) {
+    else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
+             strcmp(keyval, "bjacobi_ssor") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
@@ -766,20 +765,20 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
     else if (strcmp(keyval, "full_diag") == 0)
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_FULL_DIAG;
-    else if (strcmp(keyval, "full_lower_tri") == 0)
+    else if (strcmp(keyval, "full_lower") == 0)
       eqp->sles_param->pcd_block_type =
         CS_PARAM_PRECOND_BLOCK_FULL_LOWER_TRIANGULAR;
     else if (strcmp(keyval, "full_symm") == 0)
       eqp->sles_param->pcd_block_type =
         CS_PARAM_PRECOND_BLOCK_FULL_SYM_GAUSS_SEIDEL;
-    else if (strcmp(keyval, "full_upper_tri") == 0)
+    else if (strcmp(keyval, "full_upper") == 0)
       eqp->sles_param->pcd_block_type =
         CS_PARAM_PRECOND_BLOCK_FULL_UPPER_TRIANGULAR;
-    else if (strcmp(keyval, "lower_tri") == 0)
+    else if (strcmp(keyval, "lower") == 0)
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_LOWER_TRIANGULAR;
     else if (strcmp(keyval, "symm") == 0)
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_SYM_GAUSS_SEIDEL;
-    else if (strcmp(keyval, "upper_tri") == 0)
+    else if (strcmp(keyval, "upper") == 0)
       eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_UPPER_TRIANGULAR;
     else {
       const char *_val = keyval;
