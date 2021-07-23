@@ -1254,7 +1254,7 @@ cs_probe_set_auto_curvilinear_coords(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set automatic output of curvilinear coordinates.
+ * \brief  Set automatic output of cartesian coordinates.
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure
  * \param[in]      mode     true or false
