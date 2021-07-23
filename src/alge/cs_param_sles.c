@@ -148,10 +148,23 @@ _petsc_pcgamg_hook(const char              *prefix,
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-  _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
   _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
-  _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
   _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+
+  if (cs_glob_n_ranks > 1) {
+
+    _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
+    _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_blocks", "1");
+    _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
+    _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "sor");
+
+  }
+  else { /* serial run */
+
+    _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
+    _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
+
+  }
 
   /* Remark: -pc_gamg_reuse_interpolation
    *
@@ -390,6 +403,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_AMG:
     {
+
       switch (slesp->amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG_V:

@@ -474,9 +474,6 @@ _set_gamg_pc(const char            prefix[],
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "2");
     _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "500");
 
-    /* Coarse grid solver */
-    /* _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs"); */
-
     /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
@@ -517,10 +514,11 @@ _set_gamg_pc(const char            prefix[],
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "0");
     _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.02");
 
-    /* Set the up/down smoothers */
-    _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
+    if (cs_glob_n_ranks == 1)
+      _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
 
-    /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
+    /* Set the up/down smoothers
+     * Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_norm_type", "none");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
@@ -2457,6 +2455,11 @@ _notay_hook(void     *context,
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
+
+  if (cs_glob_n_ranks > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " %s (Eq. %s) Warning: Algo. not tested in parallel.\n",
+                  __func__, slesp->name);
 
   /* Build IndexSet structures to extract block matrices */
   _build_is_for_fieldsplit(&isp, &isv);

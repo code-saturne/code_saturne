@@ -483,7 +483,8 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
     break;
   case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
-    cs_log_printf(CS_LOG_SETUP, "Notay's transformation (scaling=%4.2e)\n",
+    cs_log_printf(CS_LOG_SETUP,
+                  "Notay's transformation (scaling=%4.2e) -- Experimental\n",
                   cs_navsto_param_notay_scaling);
     break;
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
