@@ -570,6 +570,36 @@ class domain(base_domain):
             from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
             XMLinitNeptune(case).initialize(preprocess_only)
 
+        # Apply changes defined through notebook or parametric options.
+
+        if self.notebook:
+            from code_saturne.model.NotebookModel import NotebookModel
+            notebookModel = NotebookModel(case)
+            nbk_vars = notebookModel.getVarNameList()
+            n_warnings = 0
+            for k in self.notebook.keys():
+                if k in nbk_vars:
+                    vs = self.notebook[k]
+                    v = None
+                    try:
+                        v = float(vs)
+                    except Exception:
+                        fmt = ("Warning: notebook variable '{0}'='{1}'"
+                               " is not a real number.")
+                        msg = fmt.format(k, vs)
+                        print(msg, file = sys.stderr)
+                        n_warnings += 1
+                    if v != None:
+                        notebookModel.setVariableValue(val=v, var=k)
+
+                else:
+                    fmt = ('Warning: {0} is not a known notebook variable.')
+                    msg = fmt.format(k)
+                    print(msg, file = sys.stderr)
+                    n_warnings += 1
+            if n_warnings > 0:
+                print(file = sys.stderr)
+
         return case
 
     #---------------------------------------------------------------------------
@@ -979,7 +1009,6 @@ class domain(base_domain):
                 os.symlink("run_solver.log", link_path)
             except Exception:
                 pass
-
 
     #---------------------------------------------------------------------------
 
