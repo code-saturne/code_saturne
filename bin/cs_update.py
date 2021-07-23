@@ -39,16 +39,9 @@ This module defines the following functions:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-from __future__ import print_function
-
 import os, sys, shutil, stat
 import types, string, re, fnmatch
 from optparse import OptionParser
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_runcase

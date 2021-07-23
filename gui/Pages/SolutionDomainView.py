@@ -33,11 +33,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import os, sys, logging
-try:
-    import ConfigParser
-    configparser = ConfigParser
-except Exception:
-    import configparser
+import configparser
 
 #-------------------------------------------------------------------------------
 # Third-party modules

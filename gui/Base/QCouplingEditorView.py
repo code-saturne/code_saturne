@@ -29,7 +29,7 @@ This module defines the view for coupling parameters handling.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import sys, os, shutil
+import sys, os
 import logging
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *

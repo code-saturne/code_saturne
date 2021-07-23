@@ -40,14 +40,8 @@ This module defines the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, sys, shutil, signal, logging
+import os, sys, signal, logging
 import subprocess, platform
-
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
 
 #-------------------------------------------------------------------------------
 # Third-party modules

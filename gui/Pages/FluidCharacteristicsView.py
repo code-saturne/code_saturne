@@ -473,9 +473,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxTableChoice.setVisible(is_main_zone)
 
             fluids = self.mdl.getLibPropertiesDict()
-            o_keys = list(fluids.keys()) # for Python2/3 compatibility
-                                         # fluids.keys() ordered and iteratable
-                                         # already in Python3
+            o_keys = list(fluids.keys())
             o_keys.sort()
             for f in o_keys:
                 if fluids[f] != 0:

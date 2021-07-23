@@ -40,12 +40,6 @@ import re
 import logging
 import subprocess
 
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
-
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
@@ -315,8 +309,6 @@ class ListingDialogView(CommandMgrDialogView):
         """
         Private slot. Running convergence tracking tool
         """
-        import subprocess
-
         cmd = [os.path.join(self.case['package'].dirs['bindir'][1],
                             self.case['package'].name)]
         cmd.append("trackcvg")

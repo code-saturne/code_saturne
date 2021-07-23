@@ -32,15 +32,11 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import logging
-
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 
 import os
 import subprocess
+
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------

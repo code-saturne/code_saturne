@@ -23,13 +23,7 @@
 
 #-------------------------------------------------------------------------------
 
-from __future__ import print_function
-
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 
 import sys
 import os, os.path, shutil, sys, string, types, re, subprocess

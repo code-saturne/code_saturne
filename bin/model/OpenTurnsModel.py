@@ -30,16 +30,9 @@ This module is used to handle the OpenTurns Study capacity for Code_Saturne
 # Standard modules import
 #-------------------------------------------------------------------------------
 
-from __future__ import print_function
-
 import sys, unittest
-import os, os.path, shutil, sys, types, re
-
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import os, os.path,  sys, types, re
+import configparser
 
 #-------------------------------------------------------------------------------
 # Library modules import

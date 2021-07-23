@@ -24,12 +24,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, os
-
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 
 from code_saturne.cs_exec_environment import separate_args, assemble_args, \
     enquote_arg, get_command_single_value, update_command_single_value, \

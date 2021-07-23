@@ -22,11 +22,8 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+
+import configparser
 import os
 import os.path
 import sys

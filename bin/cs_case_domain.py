@@ -23,11 +23,7 @@
 
 #-------------------------------------------------------------------------------
 
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 import datetime
 import fnmatch
 import os

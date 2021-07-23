@@ -26,11 +26,7 @@
 import sys, os
 
 from collections import OrderedDict
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
+import configparser
 
 from code_saturne import cs_batch
 

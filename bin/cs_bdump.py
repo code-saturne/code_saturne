@@ -38,11 +38,6 @@ import datetime
 import os, sys
 import types, string, re, fnmatch
 from optparse import OptionParser
-try:
-    import ConfigParser  # Python2
-    configparser = ConfigParser
-except Exception:
-    import configparser  # Python3
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_case_domain

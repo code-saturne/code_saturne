@@ -32,7 +32,6 @@ This module describes the script used to run a study/case for Code_Saturne.
 
 import os, sys
 import types, string, re, fnmatch
-import configparser
 import argparse
 
 from code_saturne import cs_exec_environment

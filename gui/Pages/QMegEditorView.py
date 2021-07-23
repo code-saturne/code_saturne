@@ -39,7 +39,6 @@ This module contains the following classes and function:
 import os
 import sys
 import logging
-import subprocess
 
 #-------------------------------------------------------------------------------
 # Third-party modules
