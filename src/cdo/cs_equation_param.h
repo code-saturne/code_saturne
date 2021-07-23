@@ -359,13 +359,13 @@ typedef struct {
    * reconstructed:
    * - 0: no reconstruction
    * - 1: reconstruction
-   * Deactivating the reconstruction of the fluxes can have a stabilizing effect
-   * on the calculation. It is sometimes useful with the \f$ k-\epsilon \f$
-   * model, if the mesh is strongly non-orthogonal in the near-wall region, where
-   * the gradients of k and \f$ \epsilon \f$ are strong. In such a case, setting
-   * \ref ircflu = 0 will probably help (switching to a first order convective
-   * scheme, \ref blencv = 0, for k and \f$ \epsilon \f$ might also help in that
-   * case).
+   * Deactivating the reconstruction of the fluxes can have a stabilizing
+   * effect on the calculation. It is sometimes useful with the \f$ k-\epsilon
+   * \f$ model, if the mesh is strongly non-orthogonal in the near-wall region,
+   * where the gradients of k and \f$ \epsilon \f$ are strong. In such a case,
+   * setting \ref ircflu = 0 will probably help (switching to a first order
+   * convective scheme, \ref blencv = 0, for k and \f$ \epsilon \f$ might also
+   * help in that case).
    *
    * \var iwgrec
    * Gradient calculation weighting
@@ -379,8 +379,8 @@ typedef struct {
    *
    * \var thetav
    * Value of \f$ \theta \f$ used to express at the second order the terms of
-   * convection, diffusion and the source terms which are linear functions of the
-   * solved variable, according to the formula
+   * convection, diffusion and the source terms which are linear functions of
+   * the solved variable, according to the formula
    * \f$ \phi^{n+\theta} = (1-\theta) \phi^n + \theta \phi^{n+1} \f$.
    * Generally, only the values 1 and 0.5 are used. The user is not allowed to
    * modify this variable.
@@ -405,18 +405,18 @@ typedef struct {
    * Relevant where\ref iconv = 1.
    *
    * \var epsilo
-   * Relative precision for the solution of the linear system.
-   * The default is \ref epsilo = \f$ 10^-8 \f$ . When there are enough
-   * iterations on the reconstruction of the right-hand side of the equation, the
-   * value may be increased (by default, in case of second-order in time, with
-   * \ref nswrsm = 5 or 10, \ref epsilo is increased to \f$ 10^-5 \f$.
+   * Relative precision for the solution of the linear system.  The default is
+   * \ref epsilo = \f$ 10^-8 \f$ . When there are enough iterations on the
+   * reconstruction of the right-hand side of the equation, the value may be
+   * increased (by default, in case of second-order in time, with \ref nswrsm =
+   * 5 or 10, \ref epsilo is increased to \f$ 10^-5 \f$.
    *
    * \var epsrsm
-   * Relative precision on the reconstruction of the right hand-side. The default
-   * is \ref epsrsm = \f$ 10^-8 \f$. When there are not enough iterations on the
-   * reconstruction of the right-hand side of the equation, the value may be
-   * increased (by default, in case of second-order in time, with
-   * \ref nswrsm = 5 or 10, \ref epsrsm is increased to \f$ 10^-5 \f$ ).
+   * Relative precision on the reconstruction of the right hand-side. The
+   * default is \ref epsrsm = \f$ 10^-8 \f$. When there are not enough
+   * iterations on the reconstruction of the right-hand side of the equation,
+   * the value may be increased (by default, in case of second-order in time,
+   * with \ref nswrsm = 5 or 10, \ref epsrsm is increased to \f$ 10^-5 \f$ ).
    *
    * \var epsrgr
    * Relative precision for the iterative gradient reconstruction.
