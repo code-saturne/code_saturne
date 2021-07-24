@@ -124,12 +124,14 @@ class multi_append_kv(argparse.Action):
 # Build command-line arguments parser
 #-------------------------------------------------------------------------------
 
-def arg_parser(argv, pkg):
+def arg_parser(argv):
     """
     Process the passed command line arguments.
     """
 
-    parser = argparse.ArgumentParser(description="Run a case or specified run stages.")
+    prog = os.path.basename(sys.argv[0]) + " " + sys.argv[1]
+    parser = argparse.ArgumentParser(description="Run a case or specified run stages.",
+                                     prog=prog)
 
     parser.add_argument("--compute-build", dest="compute_build", type=str,
                         metavar="<build>",
@@ -221,7 +223,7 @@ def arg_parser(argv, pkg):
 # Process the command line arguments
 #-------------------------------------------------------------------------------
 
-def parse_cmd_line(argv, pkg):
+def parse_cmd_line(argv):
     """
     Process the passed command line arguments.
     """
@@ -229,7 +231,7 @@ def parse_cmd_line(argv, pkg):
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
 
-    parser = arg_parser(argv, pkg)
+    parser = arg_parser(argv)
     options = parser.parse_args(argv)
 
     return options
@@ -560,7 +562,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         pkg = package()
 
     if run_args == None:
-        options = parse_cmd_line(argv, pkg)
+        options = parse_cmd_line(argv)
     else:
         options = run_args
 
