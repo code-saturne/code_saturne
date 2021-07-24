@@ -103,17 +103,17 @@
 
   The operation may be a cut (useful when the shape represents a solid
   portion to cut from the fluid), or a boolean "common" operation, when
-  the CAD  shape represents the actual fluid volume.
+  the CAD shape represents the actual fluid volume.
 
   As this feature is not integrated by default, it may require defining
   the following values in \c cs_user_scripts.py (adapting for
   actual install paths):
 
   \code{.py}
-  occ_include_path = "/opt/occ/7.4.0/include/opencascade"
-  occ_lib_paths = ("/opt/occ/7.4.0/lib", "/opt/gl2ps/1.4.0.1/lib")
+  occ_include_path = "/opt/occ/7.4.0.1/include/opencascade"
+  occ_lib_paths = ("/opt/occ/7.4.0.1/lib", "/gl2ps/1.4.0.1/lib")
 
-  occ_libs "-lTKMesh -lTKernel -lTKG2d -lTKG3d -lTKMath -lTKIGES  -lTKXSBase -lTKBin -lTKBool -lTKBO -lTKCDF -lTKBRep -lTKTopAlgo -lTKGeomAlgo -lTKGeomBase -lTKOffset -lTKPrim -lTKSTEP -lTKSTEPBase -lTKSTEPAttr -lTKHLR -lTKFeat"
+  occ_libs = "-lTKMesh -lTKernel -lTKG2d -lTKG3d -lTKMath -lTKIGES  -lTKXSBase -lTKBin -lTKBool -lTKBO -lTKCDF -lTKBRep -lTKTopAlgo -lTKGeomAlgo -lTKGeomBase -lTKOffset -lTKPrim -lTKSTEP -lTKSTEPBase -lTKSTEPAttr -lTKHLR -lTKFeat -lTKShHealing -lTKCAF -lTKBinL -lTKLCAF -lTKFillet -lTKSTEP209"
 
   domain.compile_cxxflags = "-std=c++11 -I" + occ_include_path;
   domain.compile_libs = ""
@@ -690,14 +690,14 @@ _cad_intersect(const cs_mesh_t        *m,
         cell_f_center[c_id][1] = c_cen.Y();
         cell_f_center[c_id][2] = c_cen.Z();
       }
-      if (false && compute_face_quantities) {
+      if (compute_face_quantities) {
         for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
 
           cs_real_t *f_porosity = NULL;
           cs_real_t *f_f_center = NULL;
 
           cs_lnum_t face_num = cell_face_num[s_id + j];
-          cs_lnum_t f_id = CS_ABS(cell_face_num[j]) - 1;
+          cs_lnum_t f_id = CS_ABS(face_num) - 1;
           if (f_id < m->n_b_faces) {
             f_porosity = b_face_porosity + f_id;
             if (b_face_f_center != NULL)
