@@ -2101,7 +2101,7 @@ do ifac = 1, nfabor
     ! Scalar diffusivity
     if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/TURB_SCHMIDT)
-      if (ippmod(icompf) .ge. 0) then
+      if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
           cpscv = cpro_cp(iel)
         else
@@ -2112,15 +2112,15 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        hint = (rkl+vcopt%idifft*cpp*cpscv*visctc/turb_schmidt)/distbf
+        hint = (rkl+vcopt%idifft*cpscv*visctc/turb_schmidt)/distbf
       else
         hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
       endif
 
-      ! Symmetric tensor diffusivity (GGDH or AFM)
+    ! Symmetric tensor diffusivity (GGDH or AFM)
     elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
-      if (ippmod(icompf) .ge. 0) then
+      if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
           cpscv = cpro_cp(iel)
         else
@@ -2131,9 +2131,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        temp = vcopt%idifft*cpp*cpscv*ctheta(iscal)
+        temp = vcopt%idifft*cpscv*ctheta(iscal)/csrij
       else
-        temp = vcopt%idifft*cpp*ctheta(iscal)
+        temp = vcopt%idifft*cpp*ctheta(iscal)/csrij
       endif
       visci(1,1) = temp*visten(1,iel) + rkl
       visci(2,2) = temp*visten(2,iel) + rkl
