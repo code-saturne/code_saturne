@@ -1794,6 +1794,7 @@ class case:
             force_id = False,
             stages = None,
             notebook_args=None,
+            parametric_args=None,
             kw_args=None):
 
         """
@@ -1907,18 +1908,32 @@ class case:
             msg += '\n'
             sys.stdout.write(msg)
 
+        if parametric_args:
+            msg = 'cs_parametric filter arguments:\n'
+            msg += '  ' + str(parametric_args) + '\n\n'
+            sys.stdout.write(msg)
+
         if kw_args:
             msg = 'Additional user keyword arguments:\n'
             msg += '  ' + str(kw_args) + '\n\n'
             sys.stdout.write(msg)
 
         if notebook_args:
-            for d in (self.domains + self.syr_domains + self.py_domains):
+            for d in (self.domains):
                 if d.notebook == None:
                     d.notebook = notebook_args
                 else:
                     err_str = 'domain: + ' + str(d.name) \
                               + ' notebook already defined\n'
+                    sys.stderr.write(err_str)
+
+        if parametric_args:
+            for d in (self.domains):
+                if d.parametric_args == None:
+                    d.parametric_args = parametric_args
+                else:
+                    err_str = 'domain: + ' + str(d.name) \
+                              + ' parametric_args already defined\n'
                     sys.stderr.write(err_str)
 
         if kw_args:

@@ -105,7 +105,8 @@ class multi_append(argparse.Action):
         if getattr(namespace, self.dest) == None:
             setattr(namespace, self.dest, list())
         for value in values:
-            getattr(namespace, self.dest).append(value)
+            for sv in value.split():
+                getattr(namespace, self.dest).append(sv)
 
 #-------------------------------------------------------------------------------
 
@@ -146,6 +147,9 @@ def arg_parser(argv):
 
     parser.add_argument("--notebook-args", nargs='*', action = multi_append_kv,
                         help="key=value pairs to pass to user scripts and notebook")
+
+    parser.add_argument("--parametric-args", nargs='*', action = multi_append,
+                        help="key=value pairs to pass to cs_parametric filter")
 
     parser.add_argument("--kw-args", nargs='*', action = multi_append,
                         help="additional keywords to pass to user scripts")
@@ -661,6 +665,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
                    force_id=r_c['force_id'],
                    stages=stages,
                    notebook_args=options.notebook_args,
+                   parametric_args=options.parametric_args,
                    kw_args=options.kw_args)
 
     if submit_args != None:
