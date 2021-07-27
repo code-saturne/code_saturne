@@ -507,6 +507,8 @@ class domain(base_domain):
                 solver_name = "nc_solver" + self.package_compute.config.exeext
                 self.solver_path = os.path.join(solver_dir, solver_name)
 
+            self.param = "setup.xml"
+
         else:
             msg  = ('Remark:\n'
                     '  No setup.xml file was provided in the DATA folder.\n'
@@ -798,7 +800,8 @@ class domain(base_domain):
             if self.exec_solver and len(src_files) > 0:
                 needs_comp = True
 
-        if self.param != None:
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+        if os.path.isfile(setup_path):
             fp = os.path.join(self.exec_dir, self.param)
             case = self.__xml_case_initialize__(fp)
 
