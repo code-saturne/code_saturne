@@ -193,7 +193,7 @@ double precision liqwt, totwt
 double precision rough_d, duplus, uplus
 double precision rough_t
 double precision dtplus, yplus_t
-double precision coef_mom
+double precision coef_mom, coef_momm
 double precision one_minus_ri
 double precision dlmo,dt,theta0,flux
 
@@ -828,7 +828,7 @@ do ifac = 1, nfabor
     ! Louis or Monin Obukhov wall function for atmospheric flows
     if (ippmod(iatmos).ge.1) then
       ! Louis
-      if (iwalfs.ne.3) then
+      if (iwalfs.eq.2) then
 
         ! Compute reduced gravity for non horizontal walls :
         gredu = gx*rnx + gy*rny + gz*rnz
@@ -891,13 +891,14 @@ do ifac = 1, nfabor
         icodcl , rcodcl )
 
       ! Monin Obukhov wall function
-      else
+      else if (iwalfs.eq.3) then
 
         ! Compute local LMO
         if (ippmod(iatmos).ge.1) then
           gredu = gx*rnx + gy*rny + gz*rnz
 
-          if (icodcl(ifac,isca(iscalt)).eq.6) then
+          if (icodcl(ifac,isca(iscalt)).eq.6 &
+            .or.icodcl(ifac,isca(iscalt)).eq.5) then
 
             dt = theipb(ifac)-rcodcl(ifac,isca(iscalt),1)
             call mo_compute_from_thermal_diff(distbf,rough_d,utau,dt, &
@@ -925,27 +926,44 @@ do ifac = 1, nfabor
                                             dlmo,uet)
 
         endif
+
+        ! Take stability into account for the turbulent velocity scale
+        coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
+        one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
+
+        if (one_minus_ri.gt.0) then
+          ! Warning: overwritting uk, yplus should be recomputed
+          uk = uk / one_minus_ri**0.25d0
+          yplus = distbf * uk / xnuii
+
+          ! Epsilon should be modified as well to get P+G = P(1-Ri) = epsilon
+          ! P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z)
+          cfnne = one_minus_ri * coef_mom
+          ! Nothing done for the moment for really high stability
+        else
+          cfnne = 1.d0
+        endif
+        ! Boundary condition on the velocity to have approximately the good
+        ! turbulence production
+        coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
+        coef_momm = cs_mo_phim(2.d0*distbf+rough_d,dlmo)
+        rcprod = 2.d0*distbf*sqrt(xkappa*uk*romc*coef_mom/visctc/(distbf+rough_d)) &
+          - coef_momm/(2.d0+rough_d/distbf)
+
+        iuntur = 1
+
+        uplus = utau / uet
+        ! Coupled solving of the velocity components
+        ! The boundary term for velocity gradient is implicit
+        ! modified for non neutral boundary layer (in uplus)
+        cofimp  = min(max(1.d0 - 1.d0/(xkappa*uplus)*rcprod,0.d0),1.d0)
         yk = distbf * uk / xnuii
-      endif
+      endif ! End Monin Obukhov
       ! Dimensionless velocity, recomputed and therefore may take stability
       ! into account
       uplus = utau / uet
       ! y+/U+ for non neutral is recomputed
       ypup = yk / max(uplus, epzero)
-
-      ! Take stability into account for the turbulent velocity scale
-      coef_mom = cs_mo_phim(distbf+rough_d,dlmo)
-      one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
-      if (one_minus_ri.gt.0) then
-        uk = uk / one_minus_ri**0.25d0
-
-        ! Epsilon should be modified as well to get P+G = P(1-Ri) = epsilon
-        ! P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z)
-        cfnne = one_minus_ri * coef_mom
-        ! Nothing done for the moment for really high stability
-      else
-        cfnne = 1.d0
-      endif
 
     endif
     ! Store u_star and uk if needed
@@ -2629,7 +2647,8 @@ do ifac = 1, nfabor
 
     ! wall function and Dirichlet or Neumann on the scalar
     if ( iturb.ne.0 .and. &
-        (icodcl(ifac,ivar).eq.5 .or. icodcl(ifac,ivar).eq.15 .or. &
+        (icodcl(ifac,ivar).eq.5 .or.icodcl(ifac,ivar).eq.6.or. &
+         icodcl(ifac,ivar).eq.15 .or. &
          icodcl(ifac,ivar).eq.3)) then
       ! Note: to make things clearer yplus is always
       ! "y uk /nu" even for rough modelling. And the roughness correction is
@@ -2732,7 +2751,8 @@ do ifac = 1, nfabor
     ! ---> Dirichlet Boundary condition with a wall function correction
     !      with or without an additional exchange coefficient hext
 
-    if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
+    if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.6 &
+      .or.icodcl(ifac,ivar).eq.15) then
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
       if (turb_flux_model_type.ge.1) then
@@ -2821,7 +2841,7 @@ do ifac = 1, nfabor
         endif
       endif
 
-    endif ! End if icodcl.eq.5 .or. icodcl.eq.15
+    endif ! End if icodcl.eq.5 or 6 or 15
 
     !--> Turbulent heat flux
     if (turb_flux_model_type.eq.3) then
@@ -2829,7 +2849,8 @@ do ifac = 1, nfabor
       ! Turbulent diffusive flux of the scalar T
       ! (blending factor so that the component v'T' have only
       !  mu_T/(mu+mu_T)* Phi_T)
-      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
+      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.6 &
+        .or.icodcl(ifac,ivar).eq.15) then
         phit = cofafp(ifac)+cofbfp(ifac)*val_s(iel)
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
@@ -2902,7 +2923,8 @@ do ifac = 1, nfabor
     if (b_f_id.ge.0 .or. iscal.eq.iscalt) then
 
       ! Wall function
-      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.15) then
+      if (icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.6 &
+        .or.icodcl(ifac,ivar).eq.15) then
         if (iscal.eq.iscalt) then
           phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
         else
