@@ -323,6 +323,8 @@ class Parser(object):
         """
         data = []
 
+        setup_filter_keys = ("notebook", "parametric", "kw_args")
+
         for node in self.getStudyNode(l).getElementsByTagName("case"):
             if str(node.attributes["status"].value) == 'on':
                 d = {}
@@ -358,10 +360,22 @@ class Parser(object):
                 except:
                     d['depends'] = None
 
+                for k in setup_filter_keys:
+                    d[k] = None
+
                 for n in node.childNodes:
-                    if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
-                        if n.tagName not in ("compare", "prepro", "script", "data", "depends"):
-                            d[n.tagName] = n.childNodes[0].data
+                    if n.nodeType == minidom.Node.ELEMENT_NODE:
+                        if n.childNodes:
+                            if n.tagName not in ("compare", "prepro", "script", "data", "depends"):
+                                d[n.tagName] = n.childNodes[0].data
+                        else:
+                            if n.tagName in setup_filter_keys:
+                                args = n.getAttribute("args")
+                                if not d[n.tagName]:
+                                    d[n.tagName] = str(args)
+                                else:
+                                    d[n.tagName] += " " + str(args)
+
                 data.append(d)
 
         return data
@@ -461,6 +475,29 @@ class Parser(object):
                 args.append("")
 
         return prepro, label, nodes, args
+
+    #---------------------------------------------------------------------------
+
+    def getNotebook(self, caseNode):
+        """
+        Read:
+            <study label='STUDY' status='on'>
+                <case label='CASE1' status='on' compute="on" post="on">
+                    <notebook args=""/>
+                </case>
+            </study>
+        @type caseNode: C{DOM Element}
+        @param caseNode: node of the current case
+        """
+        args = []
+
+        for node in caseNode.getElementsByTagName("notebook"):
+            try:
+                args.append(str(node.attributes["args"].value))
+            except:
+                args.append("")
+
+        return args
 
     #---------------------------------------------------------------------------
 

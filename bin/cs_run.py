@@ -105,7 +105,8 @@ class multi_append(argparse.Action):
         if getattr(namespace, self.dest) == None:
             setattr(namespace, self.dest, list())
         for value in values:
-            for sv in value.split():
+            v_args = cs_exec_environment.separate_args(value)
+            for sv in v_args:
                 getattr(namespace, self.dest).append(sv)
 
 #-------------------------------------------------------------------------------

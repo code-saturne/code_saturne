@@ -182,6 +182,10 @@ class Case(object):
         self.n_procs     = data['n_procs']
         self.depends     = data['depends']
 
+        self.parametric  = data['parametric']
+        self.notebook    = data['notebook']
+        self.kw_args     = data['kw_args']
+
         self.is_compiled = "not done"
         self.is_run      = "not done"
         self.is_time     = None
@@ -481,6 +485,15 @@ class Case(object):
         self.run_dir = run_dir
 
         run_cmd = enquote_arg(self.exe) + " run --id=" + enquote_arg(self.run_id)
+
+        if self.notebook:
+            run_cmd += ' --notebook-args ' + self.notebook
+
+        if self.parametric:
+            run_cmd += ' --parametric-args ' + '"' + self.parametric + '"'
+
+        if self.kw_args:
+            run_cmd += ' --kw-args ' + '"' + self.kw_args + '"'
 
         n_procs = self.__data['n_procs']
         if n_procs:
