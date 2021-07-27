@@ -645,8 +645,6 @@ if (ippmod(iatmos).ge.1) then
   endif
 endif
 
-
-
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 

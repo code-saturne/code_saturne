@@ -261,9 +261,9 @@ type(var_cal_opt) :: vcopt_rij, vcopt_ep
 interface
 
   subroutine clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
-                           byplus, buk, buet, bcfnns, hbord, theipb,  &
-                           tetmax , tetmin , tplumx , tplumn,         &
-                           bdlmo)
+                           byplus , buk, buet  , bcfnns, bdlmo,       &
+                           hbord  , theipb  ,                         &
+                           tetmax , tetmin  , tplumx  , tplumn  )
 
     implicit none
     integer          iscal, isvhb
@@ -292,9 +292,10 @@ rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
 
-! --- Constants
 uet = 1.d0
 utau = 1.d0
+
+! --- Constants
 sqrcmu = sqrt(cmu)
 
 ! --- Correction factors for stratification (used in atmospheric models)
@@ -342,7 +343,7 @@ if (ik.gt.0) then
   call field_get_coefbf_s(ivarfl(ik), coefbf_k)
   call field_get_key_double(ivarfl(ik), ksigmas, sigmak)
 
-  ! Diffuion limiter
+  ! Diffusion limiter
   call field_get_key_int(ivarfl(ik), kdflim, f_id)
   if (f_id.ge.0) then
     call field_get_val_s(f_id, cpro_diff_lim_k)
@@ -362,7 +363,7 @@ if (iep.gt.0) then
   call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
   call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
   call field_get_key_double(ivarfl(iep), ksigmas, sigmae)
-  ! Diffuion limiter
+  ! Diffusion limiter
   call field_get_key_int(ivarfl(iep), kdflim, f_id)
   if (f_id.ge.0) then
     call field_get_val_s(f_id, cpro_diff_lim_eps)
@@ -428,7 +429,7 @@ if (itytur.eq.3) then! Also have boundary conditions for the momentum equation
     coefbf_r23 => null()
     coefad_r23 => null()
     coefbd_r23 => null()
-    ! Diffuion limiter
+    ! Diffusion limiter
     call field_get_key_int(ivarfl(irij), kdflim, f_id)
     if (f_id.ge.0) then
       call field_get_val_s(f_id, cpro_diff_lim_rij)
@@ -560,7 +561,7 @@ if (itytur.eq.2 .or. itytur.eq.5                             &
   call field_get_val_s(ivarfl(ik), cvar_k)
 endif
 
-if(itytur.eq.3) then
+if (itytur.eq.3) then
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)
   else
@@ -600,7 +601,6 @@ tetmin =  grand
 ! min. and max. of inverse of MO length
 dlmomax = -grand
 dlmomin =  grand
-
 
 ! min. and max. of T+
 tplumx = -grand
@@ -925,7 +925,7 @@ do ifac = 1, nfabor
         cfnne = 1.d0
       endif
 
-    endif
+    endif ! End Monin Obukhov
     ! Dimensionless velocity, recomputed and therefore may take stability
     ! into account
     uplus = utau / uet
@@ -1612,9 +1612,9 @@ do iscal = 1, nscal
   if (iscavr(iscal).le.0) then
 
     call clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
-                       byplus, buk, ustar, bcfnns,                &
+                       byplus, buk, ustar, bcfnns, bdlmo,         &
                        hbord, theipb,                             &
-                       tetmax, tetmin, tplumx, tplumn, bdlmo)
+                       tetmax, tetmin, tplumx, tplumn)
   endif
 
 enddo
@@ -1780,8 +1780,7 @@ end subroutine
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -1793,6 +1792,7 @@ end subroutine
 !> \param[in]     buk           dimensionless velocity
 !> \param[in]     buet          boundary ustar value
 !> \param[in]     bcfnns        boundary correction factor
+!> \param[in]     bdlmo         boundary Monin Obukhov length inverse
 !> \param[in,out] hbord         exchange coefficient at boundary
 !> \param[in]     theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
@@ -1806,8 +1806,9 @@ subroutine clptrg_scalar &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    byplus , buk    , buet   , bcfnns ,                            &
+   bdlmo  ,                                                       &
    hbord  , theipb ,                                              &
-   tetmax , tetmin , tplumx , tplumn, bdlmo)
+   tetmax , tetmin , tplumx , tplumn)
 
 !===============================================================================
 ! Module files
@@ -1903,19 +1904,6 @@ endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-bpro_rough_t => null()
-
-call field_get_id_try("boundary_roughness", f_id_rough)
-if (f_id_rough.ge.0) then
-  ! same thermal roughness if not specified
-  call field_get_val_s(f_id_rough, bpro_rough_t)
-endif
-
-call field_get_id_try("boundary_thermal_roughness", f_id_rough)
-if (f_id_rough.ge.0) then
-  call field_get_val_s(f_id_rough, bpro_rough_t)
-endif
-
 ! If we have no diffusion, no boundary face should have a wall BC type
 ! (this is ensured in typecl)
 
@@ -2010,6 +1998,20 @@ if (iscal.eq.iscalt) then
   endif
 endif
 
+bpro_rough_t => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+
 ! Pointers to specific fields
 
 if (iirayo.ge.1 .and. iscal.eq.iscalt) then
@@ -2021,7 +2023,7 @@ if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_int(f_id, kbfid, b_f_id)
 
-! if thermal variable has no boundary but temperature does, use it
+! If thermal variable has no boundary but temperature does, use it
 if (b_f_id .lt. 0 .and. iscal.eq.iscalt .and. itherm.eq.2) then
   b_f_id = itempb
 endif
@@ -2119,7 +2121,7 @@ do ifac = 1, nfabor
       endif
 
     ! Symmetric tensor diffusivity (GGDH or AFM)
-    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+    else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
@@ -2253,45 +2255,6 @@ do ifac = 1, nfabor
       cofafp(ifac) = -heq*pimp
       cofbfp(ifac) =  heq
 
-      !--> Turbulent heat flux
-      if (turb_flux_model_type.eq.3) then
-
-        phit = (cofafp(ifac) + cofbfp(ifac)*val_s(iel))
-
-        hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(1,iel)*ctheta(iscal)/distbf/csrij
-        hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(2,iel)*ctheta(iscal)/distbf/csrij
-        hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(3,iel)*ctheta(iscal)/distbf/csrij
-        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
-        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
-        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
-
-        ! Dirichlet Boundary Condition
-        !-----------------------------
-
-        ! Add rho*uk*Tet to T'v' in High Reynolds
-        do isou = 1, 3
-          pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
-        enddo
-
-        call set_dirichlet_vector_aniso &
-             !========================
-           ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
-             coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
-             pimpv            , hintt            , rinfiv )
-
-        ! Boundary conditions used in the temperature equation
-        do isou = 1, 3
-          cofarut(isou,ifac) = 0.d0
-          do jsou = 1, 3
-            cofbrut(isou,jsou,ifac) = 0.d0
-          enddo
-        enddo
-
-      endif
-
       ! Storage of the thermal exchange coefficient
       ! (conversion in case of energy or enthalpy)
       ! the exchange coefficient is in W/(m2 K)
@@ -2306,7 +2269,7 @@ do ifac = 1, nfabor
             exchange_coef = hflui*cp0
           endif
 
-          ! Total energy (compressible module)
+        ! Total energy (compressible module)
         elseif (itherm.eq.3) then
           ! If Cv is variable
           if (icv.ge.0) then
@@ -2315,7 +2278,7 @@ do ifac = 1, nfabor
             exchange_coef = hflui*cv0
           endif
 
-          ! Temperature
+        ! Temperature
         elseif (iscacp.eq.1) then
           exchange_coef = hflui
         endif
@@ -2335,7 +2298,48 @@ do ifac = 1, nfabor
 
     endif ! End if icodcl=6
 
-    ! Save the value of T^star and T^+ for post-processing
+    !--> Turbulent heat flux
+    if (turb_flux_model_type.eq.3) then
+
+      phit = (cofafp(ifac) + cofbfp(ifac)*val_s(iel))
+
+      hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(1,iel)*ctheta(iscal)/distbf/csrij
+      hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(2,iel)*ctheta(iscal)/distbf/csrij
+      hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
+                 + visten(3,iel)*ctheta(iscal)/distbf/csrij
+      hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+      hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+      hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
+
+      ! Dirichlet Boundary Condition
+      !-----------------------------
+
+      ! Add rho*uk*Tet to T'v' in High Reynolds
+      do isou = 1, 3
+        pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
+      enddo
+
+      call set_dirichlet_vector_aniso &
+           !========================
+         ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+           coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
+           pimpv            , hintt            , rinfiv )
+
+      ! Boundary conditions used in the temperature equation
+      do isou = 1, 3
+        cofarut(isou,ifac) = 0.d0
+        do jsou = 1, 3
+          cofbrut(isou,jsou,ifac) = 0.d0
+        enddo
+      enddo
+
+    endif
+
+
+
+    ! Save the values of T^star and T^+ for post-processing
 
     if (b_f_id.ge.0 .or. iscal.eq.iscalt) then
 
