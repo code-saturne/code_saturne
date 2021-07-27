@@ -884,8 +884,9 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
    *
    */
   cs_real_t y0 = rough_d;
-  /* Sand grain roughness */
+  /* Note : Sand grain roughness given by:
   cs_real_t sg_rough = rough_d * exp(cs_turb_xkappa*cs_turb_cstlog_rough);
+  */
 
   /* Blending for very low values of k */
   Re = sqrt(kinetic_en) * (y + y0) / l_visc;
@@ -901,7 +902,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   *dplus = *uk * y0 / l_visc;
 
   /* Shift of the velocity profile due to roughness */
-  cs_real_t shift_vel = -log(1. + cs_turb_cstlog_alpha * sg_rough * *uk/l_visc)
+  cs_real_t shift_vel = -log(1. + y0 * exp(cs_turb_xkappa * cs_turb_cstlog) * *uk/l_visc)
     / cs_turb_xkappa;
 
   /* Log layer and shifted with the roughness */
@@ -923,15 +924,15 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   cs_real_t uplus = log(*yplus + *dplus) / cs_turb_xkappa + cs_turb_cstlog + shift_vel;
   *ustar = vel / uplus;
 #if 0
-  bft_printf("uet=%f, u=%f, uplus=%f, yk=%f, vel=%f, duplus=%f\n", *ustar, vel, uplus, *yplus, vel, 1./uplus);
+  bft_printf("uet=%f, u=%f, uplus=%f, yk=%f, duplus=%f\n", *ustar, vel, uplus, *yplus, 1./uplus);
 #endif
   *ypup = *yplus / uplus;
 
   /* Mixing length viscosity, compatible with both regimes */
-  ml_visc = cs_turb_xkappa * *uk * (y + y0);
-  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
-  *cofimp = 1. - *yplus / uplus
-          / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus + *dplus));
+  ml_visc = cs_turb_xkappa * l_visc * (*yplus + *dplus);
+  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / (*yplus + *dplus));
+  *cofimp = 1. - *yplus / (cs_turb_xkappa * uplus)
+          * ( 2. * rcprod - 1. / (2. * *yplus + *dplus));
 
 }
 
