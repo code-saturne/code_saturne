@@ -177,7 +177,7 @@ int diffusivity_id;
   \f$C_p\f$ are specified separately, and the matching molecular diffusivity
   is computed automatically.\n
   With the compressible module, \ref diffusivity_ref (given in \ref uscfx2)
-  is irectly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n
+  is directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n
   With gas or coal combustion, the molecular diffusivity of the enthalpy
   (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
   ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
