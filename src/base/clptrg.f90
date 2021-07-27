@@ -1852,6 +1852,7 @@ double precision, dimension(:) :: bdlmo
 ! Local variables
 
 integer          ivar, f_id, b_f_id, isvhbl
+integer          f_id_ut, f_id_al
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
 integer          f_id_rough
@@ -1979,14 +1980,14 @@ if (turb_flux_model_type.eq.3) then
   call field_get_name(ivarfl(ivar), fname)
 
   ! Index of the corresponding turbulent flux
-  call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+  call field_get_id(trim(fname)//'_turbulent_flux', f_id_ut)
 
-  call field_get_coefa_v(f_id,coefaut)
-  call field_get_coefb_v(f_id,coefbut)
-  call field_get_coefaf_v(f_id,cofafut)
-  call field_get_coefbf_v(f_id,cofbfut)
-  call field_get_coefad_v(f_id,cofarut)
-  call field_get_coefbd_v(f_id,cofbrut)
+  call field_get_coefa_v(f_id_ut,coefaut)
+  call field_get_coefb_v(f_id_ut,coefbut)
+  call field_get_coefaf_v(f_id_ut,cofafut)
+  call field_get_coefbf_v(f_id_ut,cofbfut)
+  call field_get_coefad_v(f_id_ut,cofarut)
+  call field_get_coefbd_v(f_id_ut,cofbrut)
 
 endif
 
