@@ -1150,7 +1150,7 @@ if (vcopt%idiff.ge.1) then
 
     if (scalar_turb_flux_model.eq.11 .or. &
         scalar_turb_flux_model.eq.21 .or. &
-        scalar_turb_flux_model.eq.31      ) then
+        scalar_turb_flux_model.eq.20      ) then
       if (ifcvsl.lt.0) then
         do iel = 1, ncel
 
