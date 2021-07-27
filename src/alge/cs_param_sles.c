@@ -988,7 +988,7 @@ _petsc_amg_block_boomer_hook(void     *context,
 /*!
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of block Jacobi preconditioner
+ *         Case of block preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
@@ -996,13 +996,22 @@ _petsc_amg_block_boomer_hook(void     *context,
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_block_jacobi_hook(void     *context,
-                         KSP       ksp)
+_petsc_block_hook(void     *context,
+                  KSP       ksp)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
+
+  /* prefix will be extended with the fieldsplit */
+  int len = strlen(slesp->name) + 1;
+  int _len = len + strlen("_fieldsplit_x_") + 1;
+  char  *prefix = NULL;
+  BFT_MALLOC(prefix, _len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
 
   /* Set the solver (tolerance and max_it too) */
   _petsc_set_krylov_solver(slesp, ksp);
@@ -1012,61 +1021,102 @@ _petsc_block_jacobi_hook(void     *context,
 
   PC  pc;
   KSPGetPC(ksp, &pc);
+  PCSetUp(pc);
 
+  PC  _pc;
   KSP  *xyz_subksp;
   PetscInt  n_split;
+  const char  xyz[3] = "xyz";
+
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
 
-  KSPSetUp(ksp);
-
-  /* Predefined settings when using block-ILU as a preconditioner */
-  PC  _pc;
   for (PetscInt id = 0; id < n_split; id++) {
 
-    KSP  _ksp = xyz_subksp[id];
-    KSPSetType(_ksp, KSPPREONLY);
-    KSPGetPC(_ksp, &_pc);
-    if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+    sprintf(prefix, "%s_fieldsplit_%c", slesp->name, xyz[id]);
+
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_NONE:
+      _petsc_cmd(true, prefix, "ksp_type", "richardson");
+      break;
+
+    case CS_PARAM_PRECOND_DIAG:
+      _petsc_cmd(true, prefix, "ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "pc_type", "jacobi");
+      break;
+
+    case CS_PARAM_PRECOND_ILU0:
+    case CS_PARAM_PRECOND_BJACOB_ILU0:
+      if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
 #if defined(PETSC_HAVE_HYPRE)
-      PCSetType(_pc, PCHYPRE);
-      PCHYPRESetType(_pc, "euclid"); /* ILU(1) by default */
+        _petsc_cmd(true, prefix, "ksp_type", "preonly");
+        _petsc_cmd(true, prefix, "pc_type", "hypre");
+        _petsc_cmd(true, prefix, "pc_hypre_type", "euclid");
+        _petsc_cmd(true, prefix, "pc_hypre_euclid_level", "0");
 #else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid option: HYPRE is not installed.", __func__);
-#endif
-    }
-    else {
-      PC  _subpc;
-      KSP *_subksp;
-
-      PCSetType(_pc, PCBJACOBI); /* Default for the block is an ILU(0) */
-      KSPSetUp(_ksp);
-      PCBJacobiGetSubKSP(_pc, NULL, NULL, &_subksp);
-      KSPSetType(_subksp[0], KSPPREONLY);
-      KSPGetPC(_subksp[0], &_subpc);
-
-      if (slesp->precond == CS_PARAM_PRECOND_BJACOB_SGS)
-        PCSetType(_subpc, PCEISENSTAT);
-      else if (slesp->precond == CS_PARAM_PRECOND_BJACOB_ILU0) {
-        PCFactorSetLevels(_pc, 0);
-        PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
-        PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
-      }
-      else
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid preconditioner.",__func__);
+                  " %s: Invalid option: HYPRE is not installed.", __func__);
+#endif
+      }
+      else {
 
-    }
+          _petsc_cmd(true, prefix, "ksp_type", "richardson");
+          _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+          _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+          _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+          _petsc_cmd(true, prefix, "sub_pc_type", "ilu");
+          _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
+          _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
 
-  }
+      }
+      break;
 
-  PCSetFromOptions(pc);
-  PCSetUp(pc);
+    case CS_PARAM_PRECOND_ICC0:
+
+      _petsc_cmd(true, prefix, "ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+      _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "sub_pc_type", "icc");
+      _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
+      _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+
+      break;
+
+    case CS_PARAM_PRECOND_SSOR:
+    case CS_PARAM_PRECOND_BJACOB_SGS:
+      _petsc_cmd(true, prefix, "ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+      _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "sub_pc_type", "sor");
+      _petsc_cmd(true, prefix, "sub_pc_sor_symmetric", "");
+      _petsc_cmd(true, prefix, "sub_pc_sor_local_symmetric", "");
+      _petsc_cmd(true, prefix, "sub_pc_sor_omega", "1.5");
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Eq. %s: Invalid preconditioner.",__func__, slesp->name);
+      break;
+
+    } /* Switch on preconditioning type */
+
+    KSP  _ksp = xyz_subksp[id];
+    KSPGetPC(_ksp, &_pc);
+    PCSetFromOptions(_pc);
+    KSPSetUp(_ksp);
+
+  } /* Loop on block settings */
+
+  BFT_FREE(prefix);
+  PetscFree(xyz_subksp);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, ksp);
 
+  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
@@ -1075,8 +1125,6 @@ _petsc_block_jacobi_hook(void     *context,
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
   }
-
-  PetscFree(xyz_subksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1087,7 +1135,7 @@ _petsc_block_jacobi_hook(void     *context,
 /*!
  * \brief Check if the settings are consitent. Can apply minor modifications.
  *
- * \param[in, out]  slesp         pointer to a \ref cs_param_sles_t structure
+ * \param[in, out]  slesp       pointer to a \ref cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1098,33 +1146,24 @@ _check_settings(cs_param_sles_t     *slesp)
   /* Checks related to MUMPS */
 
   if (_mumps_is_needed(slesp->solver)) {
-#if defined(HAVE_MUMPS)
-    slesp->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
-#else
-#if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_MUMPS)
-    slesp->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#else  /* MUMPS: no, PETSc: yes: PETSc with MUMPS: no */
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Error detected while setting the SLES \"%s\"\n"
-              " MUMPS is not available with your installation.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
-#endif  /* PETSC_HAVE_MUMPS */
-#else   /* MUMPS: no, PETSc: no */
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Error detected while setting the SLES \"%s\"\n"
-              " MUMPS is not available with your installation.\n"
-              " Please check your installation settings.\n",
-              __func__, slesp->name);
-#endif  /* HAVE_PETSC */
-#endif  /* HAVE_MUMPS */
+
+    cs_param_sles_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
+    if (ret_class == CS_PARAM_SLES_N_CLASSES)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Error detected while setting the SLES \"%s\"\n"
+                " MUMPS is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, slesp->name);
+    else
+      slesp->solver_class = ret_class;
+
   }
   else {
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Error detected while setting the SLES \"%s\"\n"
-                " MUMPS class is not coherent with your settings.\n"
+                " MUMPS class is not consistent with your settings.\n"
                 " Please check your installation settings.\n",
                 __func__, slesp->name);
   }
@@ -1507,64 +1546,70 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 #if defined(HAVE_PETSC)
   cs_sles_petsc_init();
 
-  if (slesp->precond == CS_PARAM_PRECOND_AMG &&
-      slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
+  if (slesp->pcd_block_type != CS_PARAM_PRECOND_BLOCK_NONE) {
 
-    if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W) {
-      cs_sles_petsc_define(slesp->field_id,
-                           sles_name,
-                           MATMPIAIJ,
-                           _petsc_amg_block_gamg_hook,
-                           (void *)slesp);
-    }
-    else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-             slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
+    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+      if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+        cs_sles_petsc_define(slesp->field_id,
+                             sles_name,
+                             MATMPIAIJ,
+                             _petsc_amg_block_gamg_hook,
+                             (void *)slesp);
+
+      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+               slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 #if defined(PETSC_HAVE_HYPRE)
-      cs_sles_petsc_define(slesp->field_id,
-                           sles_name,
-                           MATMPIAIJ,
-                           _petsc_amg_block_boomer_hook,
-                           (void *)slesp);
+        cs_sles_petsc_define(slesp->field_id,
+                             sles_name,
+                             MATMPIAIJ,
+                             _petsc_amg_block_boomer_hook,
+                             (void *)slesp);
 #else
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: System: %s.\n"
-                    " Boomer is not available. Switch to GAMG solver.",
-                    __func__, slesp->name);
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      " %s: System: %s.\n"
+                      " Boomer is not available. Switch to GAMG solver.",
+                      __func__, slesp->name);
+        cs_sles_petsc_define(slesp->field_id,
+                             sles_name,
+                             MATMPIAIJ,
+                             _petsc_amg_block_gamg_hook,
+                             (void *)slesp);
+#endif
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: System: %s\n"
+                  " No AMG solver available for a block-AMG.",
+                  __func__, slesp->name);
+    }
+    else {
+
       cs_sles_petsc_define(slesp->field_id,
                            sles_name,
                            MATMPIAIJ,
-                           _petsc_amg_block_gamg_hook,
+                           _petsc_block_hook,
                            (void *)slesp);
-#endif
+
     }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: System: %s\n"
-                " No AMG solver available for a block-AMG.",
-                __func__, slesp->name);
 
   }
-  else if (slesp->precond == CS_PARAM_PRECOND_BJACOB_ILU0 ||
-           slesp->precond == CS_PARAM_PRECOND_BJACOB_SGS)
-    cs_sles_petsc_define(slesp->field_id,
-                         sles_name,
-                         MATMPIAIJ,
-                         _petsc_block_jacobi_hook,
-                         (void *)slesp);
-  else
+  else { /* No block preconditioner */
+
     cs_sles_petsc_define(slesp->field_id,
                          sles_name,
                          MATMPIAIJ,
                          _petsc_setup_hook,
                          (void *)slesp);
 
+  }
 #else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: PETSC algorithms used to solve %s are not linked.\n"
-                " Please install Code_Saturne with PETSc."),
-              __func__, slesp->name);
+  bft_error(__FILE__, __LINE__, 0,
+            _(" %s: PETSC algorithms used to solve %s are not linked.\n"
+              " Please install Code_Saturne with PETSc."),
+            __func__, slesp->name);
 #endif /* HAVE_PETSC */
 }
 

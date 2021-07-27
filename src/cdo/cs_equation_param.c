@@ -99,6 +99,41 @@ static const char _err_empty_eqp[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if PETSc or HYPRE is available and return the possible
+ *         solver class.
+ *
+ * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
+ * \param[in] keyname    name of the key to handle
+ *
+ * \return a solver class
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_param_sles_class_t
+_get_petsc_or_hypre(const cs_param_sles_t  *slesp,
+                    const char             *keyname)
+{
+  assert(slesp != NULL);
+
+  /* Either with PETSc or with PETSc/HYPRE using Euclid */
+  cs_param_sles_class_t  ret_class =
+    cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
+
+  if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+              " PETSc is not available with your installation.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name, keyname);
+
+  if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE)
+    ret_class = cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+  return ret_class;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *         structure
  *
@@ -611,20 +646,17 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0)
       eqp->sles_param->precond = CS_PARAM_PRECOND_DIAG;
+
     else if (strcmp(keyval, "block_jacobi") == 0 ||
              strcmp(keyval, "bjacobi") == 0) {
 
-      cs_param_sles_class_t  ret_class =
-        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
+      if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
+        eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
-      if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
-                  " PETSc is not available with your installation.\n"
-                  " Please check your installation settings.\n",
-                  __func__, eqname, "CS_EQKEY_PRECOND");
+      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
+                                                          "CS_EQKEY_PRECOND");
 
-      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
       eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
       /* Default when using PETSc */
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
@@ -632,6 +664,9 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
              strcmp(keyval, "bjacobi_ssor") == 0) {
+
+      if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
+        eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
@@ -659,10 +694,30 @@ _set_key(cs_equation_param_t   *eqp,
     }
     else if (strcmp(keyval, "ssor") == 0)
       eqp->sles_param->precond = CS_PARAM_PRECOND_SSOR;
-    else if (strcmp(keyval, "ilu0") == 0)
+    else if (strcmp(keyval, "ilu0") == 0) {
+
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
-    else if (strcmp(keyval, "icc0") == 0)
+
+      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
+                                                          "CS_EQKEY_PRECOND");
+
+      /* Default when using PETSc */
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+    }
+    else if (strcmp(keyval, "icc0") == 0) {
+
       eqp->sles_param->precond = CS_PARAM_PRECOND_ICC0;
+
+      /* Either with PETSc or with PETSc/HYPRE using Euclid */
+      eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
+                                                          "CS_EQKEY_PRECOND");
+
+      /* Default when using PETSc */
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+    }
     else if (strcmp(keyval, "amg") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
