@@ -39,6 +39,7 @@
 !> \param[in]     iscal         number of the scalar used
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     xcpp          Cp
+!> \param[out]    vistet        Diffusivity tensor
 !> \param[out]    smbrs         Right hand side to update
 !_______________________________________________________________________________
 
