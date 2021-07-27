@@ -1986,6 +1986,8 @@ if (irangp.ge.0) then
   endif
 endif
 
+deallocate(byplus)
+deallocate(buk)
 if (allocated(buet)) deallocate(buet)
 if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 
