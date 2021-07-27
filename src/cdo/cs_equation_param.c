@@ -214,7 +214,7 @@ _set_key(cs_equation_param_t   *eqp,
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
 
-      if (ret_class = CS_PARAM_SLES_CLASS_HYPRE) {
+      if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
       }
@@ -234,7 +234,7 @@ _set_key(cs_equation_param_t   *eqp,
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
 
-      if (ret_class = CS_PARAM_SLES_CLASS_HYPRE) {
+      if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
       }
