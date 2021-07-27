@@ -183,6 +183,26 @@ cs_param_sles_set(bool                 use_field_id,
 cs_param_sles_class_t
 cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
 
+
+#if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the command line option for PETSc
+ *
+ * \param[in]      use_prefix    need a prefix
+ * \param[in]      prefix        optional prefix
+ * \param[in]      keyword       command keyword
+ * \param[in]      keyval        command value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_petsc_cmd(bool          use_prefix,
+                        const char   *prefix,
+                        const char   *keyword,
+                        const char   *keyval);
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

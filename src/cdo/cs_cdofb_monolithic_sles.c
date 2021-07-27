@@ -124,6 +124,10 @@ BEGIN_C_DECLS
 
 #define CS_CL  (CS_CL_SIZE/8)
 
+/* Redefined the name of functions from cs_param_sles to get shorter names */
+
+#define _petsc_cmd  cs_param_sles_petsc_cmd
+
 /* This structure follow notations given in the article entitled
  * "An iterative generalized Golub-Kahan algorithm for problems in structural
  *  mechanics" by M. Arioli, C. Kruse, U. Ruede and N. Tardieu
@@ -350,33 +354,6 @@ _face_gdot(cs_lnum_t    size,
 }
 
 #if defined(HAVE_PETSC)
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the command line option for PETSc
- *
- * \param[in]      use_prefix    need a prefix
- * \param[in]      prefix        optional prefix
- * \param[in]      keyword       command keyword
- * \param[in]      keyval        command value
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_petsc_cmd(bool          use_prefix,
-           const char   *prefix,
-           const char   *keyword,
-           const char   *keyval)
-{
-  char  cmd_line[128];
-
-  if (use_prefix)
-    sprintf(cmd_line, "-%s_%s", prefix, keyword);
-  else
-    sprintf(cmd_line, "-%s", keyword);
-
-  PetscOptionsSetValue(NULL, cmd_line, keyval);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the default options for a PCGAMG type in PETSc
@@ -5572,5 +5549,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _petsc_cmd
 
 END_C_DECLS
