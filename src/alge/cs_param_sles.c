@@ -94,6 +94,32 @@ _mumps_is_needed(cs_param_itsol_type_t   solver)
     return false;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return true if the prescribed solver implies a symmetric linear
+ *        system
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_system_should_be_sym(cs_param_itsol_type_t   solver)
+{
+  switch (solver) {
+
+  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_ITSOL_GKB_CG:
+  case CS_PARAM_ITSOL_GKB_GMRES:
+  case CS_PARAM_ITSOL_MINRES:
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+    return true;
+
+  default:
+    return false; /* Assume that the system is not symmetric */
+  }
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -134,6 +160,7 @@ _petsc_cmd(bool          use_prefix,
  *
  * \param[in]      prefix        prefix name associated to the current SLES
  * \param[in]      slesp         pointer to a set of SLES parameters
+ * \param[in]      is_symm       the linear system to solve is symmetric
  * \param[in, out] pc            pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
@@ -141,39 +168,13 @@ _petsc_cmd(bool          use_prefix,
 static inline void
 _petsc_pcgamg_hook(const char              *prefix,
                    const cs_param_sles_t   *slesp,
+                   bool                     is_symm,
                    PC                       pc)
 {
   /* Sanity checks */
   assert(prefix != NULL);
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
-
-  _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
-  _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
-  _petsc_cmd(true, prefix, "mg_levels_ksp_norm_type", "none");
-
-  /* Do not build a coarser level if one reaches the following limit */
-  _petsc_cmd(true, prefix, "pc_gamg_coarse_eq_limit", "100");
-
-  /* In parallel computing, migrate data to another rank if the grid has less
-     than 200 rows */
-  if (cs_glob_n_ranks > 1) {
-
-    _petsc_cmd(true, prefix, "pc_gamg_repartition", "true");
-    _petsc_cmd(true, prefix, "pc_gamg_process_eq_limit", "200");
-
-    _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
-    _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_blocks", "1");
-    _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
-    _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "sor");
-
-  }
-  else { /* serial run */
-
-    _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
-    _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
-
-  }
 
   /* Remark: -pc_gamg_reuse_interpolation
    *
@@ -192,28 +193,93 @@ _petsc_pcgamg_hook(const char              *prefix,
 
   _petsc_cmd(true, prefix, "pc_gamg_sym_graph", "true");
 
-  /* Remark: -pc_gamg_square_graph
-   *
-   * Squaring the graph increases the rate of coarsening (aggressive
-   * coarsening) and thereby reduces the complexity of the coarse grids, and
-   * generally results in slower solver converge rates. Reducing coarse grid
-   * complexity reduced the complexity of Galerkin coarse grid construction
-   * considerably. (default = 1)
-   *
-   * Remark: -pc_gamg_threshold
-   *
-   * Increasing the threshold decreases the rate of coarsening. Conversely
-   * reducing the threshold increases the rate of coarsening (aggressive
-   * coarsening) and thereby reduces the complexity of the coarse grids, and
-   * generally results in slower solver converge rates. Reducing coarse grid
-   * complexity reduced the complexity of Galerkin coarse grid construction
-   * considerably. Before coarsening or aggregating the graph, GAMG removes
-   * small values from the graph with this threshold, and thus reducing the
-   * coupling in the graph and a different (perhaps better) coarser set of
-   * points. (default=0.0) */
+  /* Set smoothers (general settings, i.e. not depending on the symmetry or not
+     of the linear system to solve) */
 
-  _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
-  _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.10");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_norm_type", "none");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_richardson_scale", "1.0");
+
+  /* Do not build a coarser level if one reaches the following limit */
+  _petsc_cmd(true, prefix, "pc_gamg_coarse_eq_limit", "100");
+
+  /* In parallel computing, migrate data to another rank if the grid has less
+     than 200 rows */
+  if (cs_glob_n_ranks > 1) {
+
+    _petsc_cmd(true, prefix, "pc_gamg_repartition", "true");
+    _petsc_cmd(true, prefix, "pc_gamg_process_eq_limit", "200");
+
+  }
+  else {
+
+    _petsc_cmd(true, prefix, "mg_coarse_ksp_type", "preonly");
+    _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
+
+  }
+
+  /* Settings depending on the symmetry or not of the linear system to solve */
+
+  if (is_symm) {
+
+    /* Remark: -pc_gamg_square_graph
+     *
+     * Squaring the graph increases the rate of coarsening (aggressive
+     * coarsening) and thereby reduces the complexity of the coarse grids, and
+     * generally results in slower solver converge rates. Reducing coarse grid
+     * complexity reduced the complexity of Galerkin coarse grid construction
+     * considerably. (default = 1)
+     *
+     * Remark: -pc_gamg_threshold
+     *
+     * Increasing the threshold decreases the rate of coarsening. Conversely
+     * reducing the threshold increases the rate of coarsening (aggressive
+     * coarsening) and thereby reduces the complexity of the coarse grids, and
+     * generally results in slower solver converge rates. Reducing coarse grid
+     * complexity reduced the complexity of Galerkin coarse grid construction
+     * considerably. Before coarsening or aggregating the graph, GAMG removes
+     * small values from the graph with this threshold, and thus reducing the
+     * coupling in the graph and a different (perhaps better) coarser set of
+     * points. (default=0.0) */
+
+    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "1");
+    _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
+    _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.08");
+
+    if (cs_glob_n_ranks > 1) {
+
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_blocks", "1");
+      _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "sor");
+      _petsc_cmd(true, prefix, "mg_levels_sub_pc_sor_local_symmetric", "");
+      _petsc_cmd(true, prefix, "mg_levels_sub_pc_sor_omega", "1.5");
+
+    }
+    else { /* serial run */
+
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
+      _petsc_cmd(true, prefix, "mg_levels_pc_sor_local_symmetric", "");
+      _petsc_cmd(true, prefix, "mg_levels_pc_sor_omega", "1.5");
+
+    }
+
+  }
+  else { /* Not a symmetric linear system */
+
+    /* Number of smoothing steps to use with smooth aggregation (default=1) */
+    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "0");
+    _petsc_cmd(true, prefix, "pc_gamg_square_graph", "0");
+    _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.06");
+
+    _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
+    _petsc_cmd(true, prefix, "mg_levels_pc_bjacobi_blocks", "1");
+    _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
+    _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "ilu");
+    _petsc_cmd(true, prefix, "mg_levels_sub_pc_factor_levels", "0");
+
+  }
 
   /* After command line options, switch to PETSc setup functions */
 
@@ -249,6 +315,7 @@ _petsc_pcgamg_hook(const char              *prefix,
  *
  * \param[in]      prefix        prefix name associated to the current SLES
  * \param[in]      slesp         pointer to a set of SLES parameters
+ * \param[in]      is_symm       the linear system to solve is symmetric
  * \param[in, out] pc            pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
@@ -256,6 +323,7 @@ _petsc_pcgamg_hook(const char              *prefix,
 static inline void
 _petsc_pchypre_hook(const char              *prefix,
                     const cs_param_sles_t   *slesp,
+                    bool                     is_symm,
                     PC                       pc)
 {
   /* Sanity checks */
@@ -306,14 +374,14 @@ _petsc_pchypre_hook(const char              *prefix,
 
   /* Note that the default coarsening is HMIS in HYPRE */
 
-  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_coarsen_type","HMIS");
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_coarsen_type", "HMIS");
 
   /* Note that the default interpolation is extended+i interpolation truncated
    * to 4 elements per row. Using 0 means there is no limitation.
    * good choices are: ext+i-cc, ext+i
    */
 
-  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_interp_type","ext+i-cc");
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_interp_type", "ext+i-cc");
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_P_max","8");
 
   /* Number of levels (starting from the finest one) on which one applies an
@@ -412,26 +480,27 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 
   case CS_PARAM_PRECOND_AMG:
     {
+      bool  is_symm = _system_should_be_sym(slesp->solver);
 
       switch (slesp->amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG_V:
       case CS_PARAM_AMG_PETSC_GAMG_W:
       case CS_PARAM_AMG_PETSC_PCMG:
-        _petsc_pcgamg_hook(slesp->name, slesp, pc);
+        _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER_V:
       case CS_PARAM_AMG_HYPRE_BOOMER_W:
 #if defined(PETSC_HAVE_HYPRE)
-        _petsc_pchypre_hook(slesp->name, slesp, pc);
+        _petsc_pchypre_hook(slesp->name, slesp, is_symm, pc);
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
                       "%s: Eq. %s: Switch to GAMG since BoomerAMG is not"
                       " available.\n",
                       __func__, slesp->name);
-        _petsc_pcgamg_hook(slesp->name, slesp, pc);
+        _petsc_pcgamg_hook(slesp->name, slesp, is_symm, pc);
 #endif
         break;
 
@@ -784,6 +853,7 @@ _petsc_amg_block_gamg_hook(void     *context,
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[3] = "xyz";
+  bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -798,7 +868,7 @@ _petsc_amg_block_gamg_hook(void     *context,
     KSP  _ksp = xyz_subksp[id];
     KSPGetPC(_ksp, &_pc);
 
-    _petsc_pcgamg_hook(prefix, slesp, _pc);
+    _petsc_pcgamg_hook(prefix, slesp, is_symm, _pc);
 
     PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
@@ -871,6 +941,7 @@ _petsc_amg_block_boomer_hook(void     *context,
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[3] = "xyz";
+  bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -885,7 +956,7 @@ _petsc_amg_block_boomer_hook(void     *context,
     KSP  _ksp = xyz_subksp[id];
     KSPGetPC(_ksp, &_pc);
 
-    _petsc_pchypre_hook(prefix, slesp, _pc);
+    _petsc_pchypre_hook(prefix, slesp, is_symm, _pc);
 
     PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
