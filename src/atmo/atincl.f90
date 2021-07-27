@@ -933,7 +933,7 @@ subroutine mo_psim_s (z,z0,dlmo,coef)
   x=z * dlmo
   x0=z0 * dlmo
 
-  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1./b)))
+  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1.d0/b)))
 
 end subroutine mo_psim_s
 
