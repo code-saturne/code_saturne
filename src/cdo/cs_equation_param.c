@@ -684,16 +684,6 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
-    else if (strcmp(keyval, "poly1") == 0) {
-      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY1;
-      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
-    }
-    else if (strcmp(keyval, "poly2") == 0) {
-      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY2;
-      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
-    }
-    else if (strcmp(keyval, "ssor") == 0)
-      eqp->sles_param->precond = CS_PARAM_PRECOND_SSOR;
     else if (strcmp(keyval, "ilu0") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
@@ -787,6 +777,16 @@ _set_key(cs_equation_param_t   *eqp,
       } /* End of switch */
 
     }
+    else if (strcmp(keyval, "poly1") == 0) {
+      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY1;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+    }
+    else if (strcmp(keyval, "poly2") == 0) {
+      eqp->sles_param->precond = CS_PARAM_PRECOND_POLY2;
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+    }
+    else if (strcmp(keyval, "ssor") == 0)
+      eqp->sles_param->precond = CS_PARAM_PRECOND_SSOR;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,

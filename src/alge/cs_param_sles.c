@@ -154,6 +154,77 @@ _petsc_cmd(bool          use_prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Predefined settings for a block ILU(0) with PETSc
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_bilu0_hook(const char              *prefix)
+{
+  /* Sanity checks */
+  assert(prefix != NULL);
+
+  _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+  _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+  _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+  _petsc_cmd(true, prefix, "sub_pc_type", "ilu");
+  _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
+  _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+  /* If one wants to optimize the memory consumption */
+  /* _petsc_cmd(true, prefix, "sub_pc_factor_in_place", ""); */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Predefined settings for a block ICC(0) with PETSc
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_bicc0_hook(const char              *prefix)
+{
+  /* Sanity checks */
+  assert(prefix != NULL);
+
+  _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+  _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+  _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+  _petsc_cmd(true, prefix, "sub_pc_type", "icc");
+  _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
+  _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+  /* If one wants to optimize the memory consumption */
+  /* _petsc_cmd(true, prefix, "sub_pc_factor_in_place", ""); */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Predefined settings for a block SSOR with PETSc
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_bssor_hook(const char              *prefix)
+{
+  /* Sanity checks */
+  assert(prefix != NULL);
+
+  _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+  _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+  _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+  _petsc_cmd(true, prefix, "sub_pc_type", "sor");
+  _petsc_cmd(true, prefix, "sub_pc_sor_symmetric", "");
+  _petsc_cmd(true, prefix, "sub_pc_sor_local_symmetric", "");
+  _petsc_cmd(true, prefix, "sub_pc_sor_omega", "1.5");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Predefined settings for GAMG as a preconditioner even if another
  *        settings have been defined. One assumes that one really wants to use
  *        GAMG (may be HYPRE is not available)
@@ -306,7 +377,6 @@ _petsc_pcgamg_hook(const char              *prefix,
               __func__, slesp->name);
   }
 
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -408,7 +478,7 @@ _petsc_pchypre_hook(const char              *prefix,
  * \brief Set command line options for PC according to the kind of
  *        preconditionner
  *
- * \param[in]      slesp    set of parameters for the linear algebra
+ * \param[in, out] slesp    set of parameters for the linear algebra
  * \param[in, out] ksp      PETSc solver structure
  */
 /*----------------------------------------------------------------------------*/
@@ -434,44 +504,88 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_PRECOND_BJACOB_ILU0:
-  case CS_PARAM_PRECOND_BJACOB_SGS:
-    PCSetType(pc, PCBJACOBI);
-    break;
-
-  case CS_PARAM_PRECOND_SSOR:
-    PCSetType(pc, PCSOR);
-    PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
-    break;
-
-  case CS_PARAM_PRECOND_ICC0:
-#if defined(PETSC_HAVE_HYPRE)
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+#if defined(PETSC_HAVE_HYPRE)
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
       _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+#else
+      _petsc_bilu0_hook(slesp->name);
+#endif
+    }
+    else
+      _petsc_bilu0_hook(slesp->name);
+    break;
+
+  case CS_PARAM_PRECOND_BJACOB_SGS:
+    _petsc_bssor_hook(slesp->name);
+    break;
+
+  case CS_PARAM_PRECOND_SSOR:
+    if (cs_glob_n_ranks > 1) {  /* Switch to a block version */
+
+      slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: System %s: Modify the requested preconditioner to"
+                    " enable a parallel computation with PETSC.\n"
+                    " Switch to a block jacobi preconditioner.\n",
+                    __func__, slesp->name);
+
+      _petsc_bssor_hook(slesp->name);
+
+    }
+    else { /* Serial computation */
+      PCSetType(pc, PCSOR);
+      PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
+    }
+    break;
+
+  case CS_PARAM_PRECOND_ICC0:
+    if (cs_glob_n_ranks > 1) { /* Switch to a block version */
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: System %s: Modify the requested preconditioner to"
+                    " enable a parallel computation with PETSC.\n"
+                    " Switch to a block jacobi preconditioner.\n",
+                    __func__, slesp->name);
+
+      _petsc_bicc0_hook(slesp->name);
+
     }
     else {
       PCSetType(pc, PCICC);
       PCFactorSetLevels(pc, 0);
     }
-#else
-    PCSetType(pc, PCICC);
-    PCFactorSetLevels(pc, 0);
-#endif
     break;
 
   case CS_PARAM_PRECOND_ILU0:
-#if defined(PETSC_HAVE_HYPRE)
     if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+#if defined(PETSC_HAVE_HYPRE)
+      /* Euclid is a parallel version of the ILU(0) factorisation */
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
+      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+#else
+      _petsc_bilu0_hook(slesp->name);
+      if (cs_glob_n_ranks > 1)  /* Switch to a block version */
+        slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+#endif
     }
     else {
-      PCSetType(pc, PCBJACOBI);
+      _petsc_bilu0_hook(slesp->name);
+      if (cs_glob_n_ranks > 1) { /* Switch to a block version */
+
+        slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      " %s: System %s: Modify the requested preconditioner to"
+                      " enable a parallel computation with PETSC.\n"
+                      " Switch to a block jacobi preconditioner.\n",
+                      __func__, slesp->name);
+      }
     }
-#else
-    PCSetType(pc, PCBJACOBI);
-#endif
     break;
 
     break;
@@ -709,37 +823,6 @@ _petsc_setup_hook(void   *context,
 
   /* 1) Set the solver */
   _petsc_set_krylov_solver(slesp, ksp);
-
-  /* Sanity checks */
-  if (cs_glob_n_ranks > 1 && slesp->solver_class == CS_PARAM_SLES_CLASS_PETSC) {
-
-    if (slesp->precond == CS_PARAM_PRECOND_ILU0 ||
-        slesp->precond == CS_PARAM_PRECOND_ICC0) {
-#if defined(PETSC_HAVE_HYPRE)
-      slesp->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
-#else
-      slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: System %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
-                    " Switch to a block jacobi preconditioner.\n"
-                    " Please check your settings.", __func__, slesp->name);
-#endif
-    }
-    else if (slesp->precond == CS_PARAM_PRECOND_SSOR) {
-
-      slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: System %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
-                    " Switch to a block jacobi preconditioner.\n"
-                    " Please check your settings.", __func__, slesp->name);
-
-    }
-
-  } /* Advanced check for parallel run */
 
   /* 2) Set the preconditioner */
   _petsc_set_pc_type(slesp, ksp);
@@ -1060,38 +1143,20 @@ _petsc_block_hook(void     *context,
       else {
 
           _petsc_cmd(true, prefix, "ksp_type", "richardson");
-          _petsc_cmd(true, prefix, "pc_type", "bjacobi");
-          _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
-          _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
-          _petsc_cmd(true, prefix, "sub_pc_type", "ilu");
-          _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
-          _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+          _petsc_bilu0_hook(prefix);
 
       }
       break;
 
     case CS_PARAM_PRECOND_ICC0:
-
       _petsc_cmd(true, prefix, "ksp_type", "richardson");
-      _petsc_cmd(true, prefix, "pc_type", "bjacobi");
-      _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
-      _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
-      _petsc_cmd(true, prefix, "sub_pc_type", "icc");
-      _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
-      _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
-
+      _petsc_bicc0_hook(prefix);
       break;
 
     case CS_PARAM_PRECOND_SSOR:
     case CS_PARAM_PRECOND_BJACOB_SGS:
       _petsc_cmd(true, prefix, "ksp_type", "richardson");
-      _petsc_cmd(true, prefix, "pc_type", "bjacobi");
-      _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
-      _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
-      _petsc_cmd(true, prefix, "sub_pc_type", "sor");
-      _petsc_cmd(true, prefix, "sub_pc_sor_symmetric", "");
-      _petsc_cmd(true, prefix, "sub_pc_sor_local_symmetric", "");
-      _petsc_cmd(true, prefix, "sub_pc_sor_omega", "1.5");
+      _petsc_bssor_hook(prefix);
       break;
 
     default:
