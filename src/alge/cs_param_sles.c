@@ -314,7 +314,7 @@ _petsc_pcgamg_hook(const char              *prefix,
      * coupling in the graph and a different (perhaps better) coarser set of
      * points. (default=0.0) */
 
-    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "1");
+    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "2");
     _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
     _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.08");
 
@@ -448,7 +448,7 @@ _petsc_pchypre_hook(const char              *prefix,
 
   /* Note that the default interpolation is extended+i interpolation truncated
    * to 4 elements per row. Using 0 means there is no limitation.
-   * good choices are: ext+i-cc, ext+i
+   * good choices are: ext+i-cc, ext+i, FF1
    */
 
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_interp_type", "ext+i-cc");
@@ -458,6 +458,10 @@ _petsc_pchypre_hook(const char              *prefix,
      aggressive coarsening */
 
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_agg_nl","2");
+
+  /* Number of paths for aggressive coarsening (default = 1) */
+
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_agg_num_paths","2");
 
   /* For best performance, it might be necessary to set certain parameters,
    * which will affect both coarsening and interpolation. One important
