@@ -493,6 +493,8 @@ class Case(object):
             run_cmd += ' --parametric-args ' + '"' + self.parametric + '"'
 
         if self.kw_args:
+            if self.kw_args.find(" ") < 0:
+                self.kw_args += " "  # workaround for arg-parser issue
             run_cmd += ' --kw-args ' + '"' + self.kw_args + '"'
 
         n_procs = self.__data['n_procs']
