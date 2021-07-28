@@ -693,6 +693,8 @@ class domain(base_domain):
 
         # Fixed parameter name
 
+        setup_path = os.path.join(self.exec_dir, "setup.xml")
+
         if self.param != None:
             param_base = os.path.basename(self.param)
             if param_base != "setup.xml":
