@@ -684,6 +684,26 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
+    else if (strcmp(keyval, "lu") == 0) {
+
+      eqp->sles_param->precond = CS_PARAM_PRECOND_LU;
+
+      cs_param_sles_class_t  ret_class =
+        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
+
+      if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                  " PETSc is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, eqname, "CS_EQKEY_PRECOND");
+
+      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+
+      /* Default when using PETSc */
+      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+
+    }
     else if (strcmp(keyval, "ilu0") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;

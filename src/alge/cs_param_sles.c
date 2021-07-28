@@ -588,6 +588,20 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
     }
     break;
 
+  case CS_PARAM_PRECOND_LU:
+#if defined(PETSC_HAVE_MUMPS)
+    _petsc_cmd(true, slesp->name, "pc_type", "lu");
+    _petsc_cmd(true, slesp->name, "pc_factor_mat_solver_type", "mumps");
+#else
+    if (cs_glob_n_ranks == 1)
+      _petsc_cmd(true, slesp->name, "pc_type", "lu");
+    else { /* Switch to a block version (sequential in each block) */
+      _petsc_cmd(true, slesp->name, "pc_type", "bjacobi");
+      _petsc_cmd(true, slesp->name, "pc_jacobi_blocks", "1");
+      _petsc_cmd(true, slesp->name, "sub_ksp_type", "preonly");
+      _petsc_cmd(true, slesp->name, "sub_pc_type", "lu");
+    }
+#endif
     break;
 
   case CS_PARAM_PRECOND_AMG:
@@ -1151,6 +1165,23 @@ _petsc_block_hook(void     *context,
     case CS_PARAM_PRECOND_ICC0:
       _petsc_cmd(true, prefix, "ksp_type", "richardson");
       _petsc_bicc0_hook(prefix);
+      break;
+
+    case CS_PARAM_PRECOND_LU:
+      _petsc_cmd(true, prefix, "ksp_type", "preonly");
+#if defined(PETSC_HAVE_MUMPS)
+      _petsc_cmd(true, prefix, "pc_type", "lu");
+      _petsc_cmd(true, prefix, "pc_factor_mat_solver_type", "mumps");
+#else
+      if (cs_glob_n_ranks == 1)
+        _petsc_cmd(true, prefix, "pc_type", "lu");
+      else { /* Switch to a block version (sequential in each block) */
+        _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+        _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+        _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+        _petsc_cmd(true, prefix, "sub_pc_type", "lu");
+      }
+#endif
       break;
 
     case CS_PARAM_PRECOND_SSOR:

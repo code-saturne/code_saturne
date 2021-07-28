@@ -1065,6 +1065,8 @@ typedef struct {
  * - "ilu0": incomplete LU factorization (only with PETSc)
  * - "icc0": incomplete Cholesky factorization (for symmetric matrices and
  *           only with PETSc)
+ * - "lu": LU factorization (only with PETSc). It may use MUMPS ig PETSc is
+ *         built with MUMPS
  * - "amg": algebraic multigrid technique (see \ref CS_EQKEY_AMG_TYPE for
             additional settings)
  * - "amg_block"/"block_amg: algebraic multigrid by block (useful for

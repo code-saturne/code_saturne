@@ -545,6 +545,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_GKB_GMRES:
     return "Golub-Kahan.BiOrthogonalization.with.GMRES.(inner.solver)";
     break;
+  case CS_PARAM_PRECOND_LU:
+    return  "LU";
+    break;
   case CS_PARAM_PRECOND_ILU0:
     return  "ILU0";
     break;

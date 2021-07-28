@@ -1582,6 +1582,8 @@ _petsc_get_pc_type(const cs_param_sles_t    *slesp)
   case CS_PARAM_PRECOND_ILU0:
     return PCILU;
 
+  case CS_PARAM_PRECOND_LU:
+    return PCLU;
 
   case CS_PARAM_PRECOND_AMG:
     {
