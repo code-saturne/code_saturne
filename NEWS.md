@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix: with multiple physical property zones (as in fluid/solid coupling),
+  force variable molecular viscosity and thermal diffusivity.
+
 - Fix error due to wrong handling of zone names for variable
   scalar diffusivity (issue #317).
 

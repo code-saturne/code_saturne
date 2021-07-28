@@ -2244,7 +2244,16 @@ cs_gui_physical_properties(void)
     = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
   if (n_zones_pp > 1) {
     phys_pp->irovar = 1;
-    phys_pp->icp = 1;
+    phys_pp->ivivar = 1;
+
+    cs_field_t *tf = cs_thermal_model_field();
+    if (tf != NULL) {
+      phys_pp->icp = 1;
+      int k = cs_field_key_id("diffusivity_id");
+      int cond_diff_id = cs_field_get_key_int(tf, k);
+      if (cond_diff_id < 0)
+        cs_field_set_key_int(tf, k, 0);
+    }
   }
 
 #if _XML_DEBUG_
