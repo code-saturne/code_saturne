@@ -1031,7 +1031,7 @@ class domain(base_domain):
             from code_saturne.model.XMLengine import Case
             from code_saturne.model.SolutionDomainModel import getMeshOriginType
 
-            fp = os.path.join(self.data_dir, self.param)
+            fp = os.path.join(self.exec_dir, self.param)
             case = Case(package=self.package, file_name=fp)
             case['xmlfile'] = fp
             case.xmlCleanAllBlank(case.xmlRootNode())
