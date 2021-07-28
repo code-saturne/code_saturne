@@ -1070,7 +1070,6 @@ typedef struct {
  * - "amg_block"/"block_amg: algebraic multigrid by block (useful for
  *                vector-valued equations). By default, a diagonal block
  *                preconditioning is used if nothing else is set.
- * - "as": Additive Scwharz preconditioner. (Only with PETSc)
  *
  * \var CS_EQKEY_PRECOND_BLOCK_TYPE
  * Specify the type of block preconditioner associated to a preconditioner.

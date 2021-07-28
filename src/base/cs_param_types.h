@@ -689,9 +689,6 @@ typedef enum {
  * Algebraic multigrid preconditioner (additional options may be set using
  * \ref cs_param_amg_type_t)
  *
- * \var CS_PARAM_PRECOND_AS
- * Additive Schwarz preconditioner
- *
  * \var CS_PARAM_PRECOND_DIAG
  * Diagonal (also Jacobi) preconditioner. The cheapest one but not the most
  * efficient one.
@@ -735,7 +732,6 @@ typedef enum {
   CS_PARAM_PRECOND_BJACOB_ILU0, /*!< Only with PETSc */
   CS_PARAM_PRECOND_BJACOB_SGS,  /*!< Only with PETSc */
   CS_PARAM_PRECOND_AMG,
-  CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */
   CS_PARAM_PRECOND_DIAG,
   CS_PARAM_PRECOND_GKB_CG,      /*!< Only with PETSc */
   CS_PARAM_PRECOND_GKB_GMRES,   /*!< Only with PETSc */

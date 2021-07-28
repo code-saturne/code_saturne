@@ -474,8 +474,6 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
 #endif
     break;
 
-  case CS_PARAM_PRECOND_AS:
-    PCSetType(pc, PCASM);
     break;
 
   case CS_PARAM_PRECOND_AMG:

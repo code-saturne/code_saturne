@@ -787,25 +787,6 @@ _set_key(cs_equation_param_t   *eqp,
       } /* End of switch */
 
     }
-    else if (strcmp(keyval, "as") == 0) {
-
-      cs_param_sles_class_t  ret_class =
-        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
-
-      if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
-                  " PETSc is not available with your installation.\n"
-                  " Please check your installation settings.\n",
-                  __func__, eqname, "CS_EQKEY_PRECOND");
-
-      eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
-      eqp->sles_param->precond = CS_PARAM_PRECOND_AS;
-
-      /* Default when using PETSc */
-      eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
-
-    }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
