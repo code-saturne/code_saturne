@@ -87,25 +87,25 @@ def separate_args(s):
         sep = False
         protected = False
         in_quotes = ''
-        for i in range(len(s)):
+        for i, c in enumerate(s):
             if protected:
-                a += s[i]
+                a += c
                 protected = False
             else:
-                if s[i] == '\\' and s[i+1:i+1].isalnum():
+                if c == '\\' and s[i+1:i+1].isalnum():
                     protected = True
-                elif s[i] == '"' or s[i] == "'":
-                    if in_quotes == s[i]:
-                        a += s[i]
+                elif c == '"' or c == "'":
+                    if in_quotes == c:
+                        a += c
                         in_quotes = ''
                     elif in_quotes != '':
-                            a += s[i]
+                            a += c
                     else:
-                        a += s[i]
-                        in_quotes = s[i]
+                        a += c
+                        in_quotes = c
                 elif in_quotes != '':
-                    a += s[i]
-                elif (s[i] == ' ' or s[i] == '\t'):
+                    a += c
+                elif (c == ' ' or c == '\t'):
                     if a != '':
                         if (a[0] == a[-1:]) and (a[0] == '"' or a[0] == "'"):
                             l.append(a[1:-1])
@@ -113,10 +113,13 @@ def separate_args(s):
                             l.append(a)
                         a = ''
                 else:
-                    a += s[i]
+                    a += c
 
         if a != '':
-            l.append(a)
+            if (a[0] == a[-1:]) and (a[0] == '"' or a[0] == "'"):
+                l.append(a[1:-1])
+            else:
+                l.append(a)
 
     return l
 
