@@ -521,7 +521,6 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
     cs_navsto_system_init_setup();
 
-
   }
   else {
 
@@ -553,6 +552,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
   /* Last step: Proceed to the settings of a cs_equation_t structure.
    * Setup the structure related to cs_sles_*
+   * This should be done after the creation of fields
    */
 
   /* Navier-Stokes system */

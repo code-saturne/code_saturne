@@ -710,10 +710,10 @@ typedef enum {
  * Variant with GMRES as inner solver.
  *
  * \var CS_PARAM_PRECOND_ILU0
- * Incomplute LU factorization (fill-in coefficient set to 0)
+ * Incomplete LU factorization (fill-in coefficient set to 0)
  *
  * \var CS_PARAM_PRECOND_ICC0
- * Incomplute Cholesky factorization (fill-in coefficient set to 0). This is
+ * Incomplete Cholesky factorization (fill-in coefficient set to 0). This is
  * variant of the ILU0 preconditioner dedicated to symmetric positive definite
  * system
  *

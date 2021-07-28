@@ -362,7 +362,7 @@ cs_equation_by_name(const char    *eqname)
     cs_equation_t  *_eq = _equations[i];
     assert(_eq != NULL);
     cs_equation_param_t  *eqp = _eq->param;
-    assert(eqp != NULL);
+    assert(eqp != NULL && eqp->name != NULL);
     if (strlen(eqp->name) == len_in)
       if (strcmp(eqname, eqp->name) == 0)
         return _eq;

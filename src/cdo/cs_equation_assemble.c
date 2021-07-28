@@ -492,7 +492,7 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
   const cs_lnum_t  *col_ids = ma->c_id + l_start;
 
   /* Loop on columns to fill col_idx for extra-diag entries
-   *  Diagonal is treated separately */
+   * Diagonal is treated separately */
   for (int j = 0; j < row->i; j++) { /* Lower part */
     row->col_idx[j] = _l_binary_search(0,
                                        n_l_cols,

@@ -155,7 +155,7 @@ _petsc_cmd(bool          use_prefix,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined settings for GAMG as a preconditioner even if another
- *        settings have been defined. One assumes that one really wantss to use
+ *        settings have been defined. One assumes that one really wants to use
  *        GAMG (may be HYPRE is not available)
  *
  * \param[in]      prefix        prefix name associated to the current SLES
@@ -1351,7 +1351,7 @@ _set_saturne_sles(bool                 use_field_id,
   case CS_PARAM_ITSOL_GKB_GMRES:
     it = cs_sles_it_define(slesp->field_id,
                            sles_name,
-                           CS_SLES_GMRES, /* Should a flexible GMRES */
+                           CS_SLES_GMRES, /* Should be a flexible GMRES */
                            poly_degree,
                            slesp->n_max_iter);
     break;
