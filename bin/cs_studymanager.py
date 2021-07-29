@@ -121,7 +121,7 @@ def process_cmd_line(argv, pkg):
                       help="remove existing run directories")
 
     parser.add_option("--fow",
-                      action="store_true", dest="force_overwrite", default=True,
+                      action="store_false", dest="force_overwrite", default=True,
                       help="overwrite files in MESH and POST directories")
 
     parser.add_option("-s", "--skip-pdflatex", default=False,

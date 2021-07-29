@@ -426,7 +426,11 @@ class Case(object):
                         _dest_file = os.path.join(_dest_dir, _file)
                         if os.path.isfile(_dest_file):
                             os.remove(_dest_file)
-                        shutil.copy2(_ref_file, _dest_dir)
+                        try:
+                            shutil.copy2(_ref_file, _dest_dir)
+                        except:
+                            print("      Error when overwriting file %s in folder %s."
+                                  %(_file, _dir))
 
     #---------------------------------------------------------------------------
 
