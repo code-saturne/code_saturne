@@ -45,6 +45,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef cs_flag_t  cs_gwf_tracer_model_t;
+
 typedef struct _gwf_tracer_t  cs_gwf_tracer_t;
 
 /*============================================================================
@@ -80,7 +81,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_gwf_tracer_free_input_t) (cs_gwf_tracer_t      *tracer);
+(cs_gwf_tracer_free_context_t) (cs_gwf_tracer_t      *tracer);
 
 /*============================================================================
  * Structure definitions
@@ -188,11 +189,13 @@ typedef struct {
 
   /* Variables used for the update of physical properties (shared pointers) */
 
-  cs_field_t   *darcy_velocity_field;
-  cs_field_t   *moisture_content;    /* also called the saturation, denoted by
-                                        \theta (-) */
+  const cs_field_t  *darcy_velocity_field;
 
-} cs_gwf_tracer_input_t;
+  /* liquid saturation also called the moisture content, denoted by \theta
+     (-) no unit */
+  const cs_real_t   *l_saturation;
+
+} cs_gwf_tracer_context_t;
 
 /* Set of parameters describing a tracer structure */
 /* ----------------------------------------------- */
@@ -203,6 +206,7 @@ struct _gwf_tracer_t{
   cs_equation_t               *eq;       /* related equation */
 
   /* Physical modelling adopted for this tracer */
+
   cs_gwf_tracer_model_t        model;
 
   cs_field_t                  *diffusivity; /* NULL if no diffusion term is
@@ -210,13 +214,15 @@ struct _gwf_tracer_t{
   int                          reaction_id; /* id related to the reaction
                                                term in the tracer equation */
 
-  /* Pointer to an input structure according to the model */
-  void                        *input;
+  /* Pointer to a context structure according to the model */
+
+  void                        *context;
 
   /* Pointers to functions */
-  cs_gwf_tracer_update_t      *update_diff_tensor;
-  cs_gwf_tracer_update_t      *update_precipitation;
-  cs_gwf_tracer_free_input_t  *free_input;
+
+  cs_gwf_tracer_update_t        *update_diff_tensor;
+  cs_gwf_tracer_update_t        *update_precipitation;
+  cs_gwf_tracer_free_context_t  *free_context;
 
 };
 
@@ -228,15 +234,19 @@ struct _gwf_tracer_t{
 /*!
  * \brief  Generic function to set the parameters related to a tracer equation
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      adv           pointer to an advection field structure
+ * \param[in]      l_saturation  pointer to liquid saturation values or NULL
+ * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_gwf_tracer_setup_t) (const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
+                         const cs_adv_field_t        *adv,
+                         const cs_real_t             *l_saturation,
                          cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
@@ -354,18 +364,43 @@ cs_gwf_tracer_add_terms(cs_gwf_tracer_t     *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameters related to a standard tracer equation
+ * \brief  Set the parameters related to a standard tracer equation case of
+ *         a fully saturated flow model
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      adv           pointer to an advection field structure
+ * \param[in]      l_saturation  pointer to the liquid saturation values
+ * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_setup(const cs_cdo_connect_t      *connect,
-                    const cs_cdo_quantities_t   *quant,
-                    cs_gwf_tracer_t             *tracer);
+cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *quant,
+                              const cs_adv_field_t        *adv,
+                              const cs_real_t             *l_saturation,
+                              cs_gwf_tracer_t             *tracer);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters related to a standard tracer equation in case of
+ *         an unsaturated flow model
+ *
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      adv           pointer to an advection field structure
+ * \param[in]      l_saturation  pointer to the liquid saturation values
+ * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
+                                const cs_cdo_quantities_t   *quant,
+                                const cs_adv_field_t        *adv,
+                                const cs_real_t             *l_saturation,
+                                cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -377,6 +412,49 @@ cs_gwf_tracer_setup(const cs_cdo_connect_t      *connect,
 
 void
 cs_gwf_tracer_log_setup(const cs_gwf_tracer_t     *tracer);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *
+ * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
+ * \param[in]    z         pointer to a volume zone structure
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *cdoq,
+                        const cs_gwf_tracer_t      *tracer,
+                        const cs_zone_t            *z);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *         Case of a fully saturated model.
+ *
+ * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
+ * \param[in]    z         pointer to a volume zone structure
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_tracer_integrate_sat(const cs_cdo_connect_t     *connect,
+                            const cs_cdo_quantities_t  *cdoq,
+                            const cs_gwf_tracer_t      *tracer,
+                            const cs_zone_t            *z);
 
 /*----------------------------------------------------------------------------*/
 

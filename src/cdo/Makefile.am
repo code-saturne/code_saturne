@@ -168,6 +168,7 @@ cs_equation_param.c \
 cs_evaluate.c \
 cs_flag.c \
 cs_gwf.c \
+cs_gwf_priv.c \
 cs_gwf_soil.c \
 cs_gwf_tracer.c \
 cs_hho_builder.c \

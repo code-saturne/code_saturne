@@ -213,7 +213,9 @@ cs_user_model(void)
      - permeability_type is one of the following keywords:
        CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or CS_PROPERTY_ANISO
 
-     - model_type = CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
+     - model_type is one among
+       CS_GWF_MODEL_SATURATED_SINGLE_PHASE
+       CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
 
      - option_flag can be defined from the following flags
        CS_GWF_GRAVITATION
@@ -226,7 +228,7 @@ cs_user_model(void)
     cs_flag_t  option_flag = 0;
 
     cs_gwf_activate(CS_PROPERTY_ISO,
-                    CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
+                    CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
                     option_flag);
   }
   /*! [param_cdo_activate_gwf] */
@@ -241,7 +243,7 @@ cs_user_model(void)
        or in cs_user_parameters() function */
 
     cs_gwf_activate(CS_PROPERTY_ISO,
-                    CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
+                    CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
                     option_flag);
   }
   /*! [param_cdo_activate_gwf_b] */
@@ -253,24 +255,28 @@ cs_user_model(void)
   {
     /* Example 1: two "saturated" soils (simple case) */
 
+    const cs_real_t  theta_s = 1;
+    const cs_real_t  bulk_density = 1.0; /* useless if no tracer is
+                                            considered */
+
     /* Two (volume) zones have be defined called "soil1" and "soil2". */
 
-    cs_gwf_soil_t  *s1 = cs_gwf_soil_add("soil1", CS_GWF_SOIL_SATURATED);
+    cs_gwf_soil_t  *s1 = cs_gwf_add_soil("soil1",
+                                         CS_GWF_SOIL_SATURATED,
+                                         theta_s,
+                                         bulk_density);
 
-    cs_gwf_set_iso_saturated_soil(s1,
-                                  k1,     /* saturated permeability */
-                                  1.0,    /* saturated moisture */
-                                  1.0);   /* bulk density of the soil */
+    cs_gwf_soil_set_iso_saturated(s1, k1);  /* saturated permeability */
 
     /* For "simple" soil definitions, definition can be made here. For more
        complex definition, please use \ref cs_user_gwf_setup */
 
-    cs_gwf_soil_t  *s2 = cs_gwf_soil_add("soil2", CS_GWF_SOIL_SATURATED);
+    cs_gwf_soil_t  *s2 = cs_gwf_add_soil("soil2",
+                                         CS_GWF_SOIL_SATURATED,
+                                         theta_s,
+                                         bulk_density);
 
-    cs_gwf_set_iso_saturated_soil(s2,
-                                  k2,     /* saturated permeability */
-                                  1.0,    /* saturated moisture */
-                                  1.0);   /* bulk density (useless) */
+    cs_gwf_soil_set_iso_saturated(s2, k2);  /* saturated permeability */
   }
   /*! [param_cdo_gwf_add_define_simple_soil] */
 
@@ -278,7 +284,11 @@ cs_user_model(void)
   {
     /* Example 2: Add a new user-defined soil for all the cells */
 
-    cs_gwf_soil_add("cells", CS_GWF_SOIL_USER);
+    const cs_real_t  theta_s = 0.9;         /* max. liquid saturation */
+    const cs_real_t  bulk_density = 1800.0; /* useless if no tracer is
+                                               considered */
+
+    cs_gwf_add_soil("cells", CS_GWF_SOIL_USER, theta_s, bulk_density);
 
     /* The explicit definition of this soil is done in \ref cs_user_gwf_setup */
   }

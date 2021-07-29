@@ -676,13 +676,12 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
     bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
 
   /* Groundwater flow module */
-  if (cs_gwf_is_activated()) {
 
-    /* Setup for the soil structures and the tracer equations */
-    cs_user_gwf_setup(domain);
+  if (cs_gwf_is_activated()) {
 
     /* Add if needed new terms (as diffusion or reaction) to tracer equations
        according to the settings */
+
     cs_gwf_add_tracer_terms();
 
   }

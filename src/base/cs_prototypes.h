@@ -959,23 +959,6 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
                               cs_real_t       *relax_tau);
 
 /*============================================================================
- *  CDO User function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify for each soil and tracer how is defined each term of the
- *         the tracer equation. Soils and tracer equations have to be added
- *         previously
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_gwf_setup(cs_domain_t   *domain);
-
-/*============================================================================
  *  MEG function prototypes
  *============================================================================*/
 

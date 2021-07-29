@@ -92,7 +92,6 @@ cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_gwf.c \
 cs_user_head_losses.c \
 cs_user_hgn.c \
 cs_user_initialization.c \
@@ -226,7 +225,7 @@ clean-local:
 install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
 	for f in $${c_user_files}; do \
-          file=`basename "$${f}"` && \
+	  file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user/$${file}" > "$(DESTDIR)$(userdir)/$${file}"; \
 	done ; \
 	cd $(DESTDIR)$(userdir) && \

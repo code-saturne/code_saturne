@@ -96,7 +96,6 @@ cs_user_extra_operations-nusselt_calculation.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
-cs_user_gwf-example.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
 cs_user_initialization-base.c \
@@ -124,6 +123,7 @@ cs_user_parameters-ctwr.c \
 cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-cdo-gwf.c \
+cs_user_parameters-cdo-gwf_user_soil.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-rotation.c \
 cs_user_parameters-volume_mass_injection.c \
@@ -207,12 +207,12 @@ clean-local:
 install-data-hook:
 	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c* 2>/dev/null`; \
 	for f in $${c_user_files}; do \
-          file=`basename "$${f}"` && \
+	  file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
 	h_user_files=`ls ${top_srcdir}/src/user_examples/*.h 2>/dev/null`; \
 	for f in $${h_user_files}; do \
-          file=`basename "$${f}"` && \
+	  file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(cs_version_short)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(exampledir)/$${file}"; \
 	done ; \
 	cd $(DESTDIR)$(exampledir) && \

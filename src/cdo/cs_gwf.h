@@ -44,8 +44,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_GWF_ADV_FIELD_NAME   "darcy_velocity"
-
 /*!
  * @name Flags specifying the general behavior of the groundwater flow module
  * @{
@@ -53,19 +51,31 @@ BEGIN_C_DECLS
  * \enum cs_gwf_model_type_t
  * \brief Type of system of equation(s) to consider for the physical modelling
  *
- * \def CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
- * \brief Single phase (liquid phase) modelling in porous media. This is based
- * on the Richards equation (in case of unsaturated soils)
+ * \def CS_GWF_MODEL_SATURATED_SINGLE_PHASE
+ * \brief Single phase (liquid phase) modelling in a porous media. All soils
+ * assumed to be saturated. This yields several simplifications in the Richards
+ * equation governing the water conservation. The Richards equation is steady.
+ * The saturation is constant and there is no relative permeability.
  *
- * \def CS_GWF_MODEL_TWO_PHASE_RICHARDS
- * \brief Two phase flow modelling (for instance gaz and liquid) in porous
- * media. A Richards-like equation is considered in each phase.
+ * \def CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
+ * \brief Single phase (liquid phase) modelling in a porous media. Some soils
+ * are not saturated and are described by a more complex model such as the Van
+ * Genuchten-Mualen model. Simplifications made in the case of \ref
+ * CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold anymore.
+ *
+ * \def CS_GWF_MODEL_TWO_PHASE
+ * \brief Two phase flow modelling (gaz and liquid phases) in porous media. A
+ * Richards-like equation is considered in each phase to take into account the
+ * mass conservation of water and one other component. The component can be
+ * disolved in the liquid phase. No water vapour is taken into account. Please
+ * refer to \ref cs_gwf_miscible_two_phase_t for more details.
  */
 
 typedef enum {
 
-  CS_GWF_MODEL_SINGLE_PHASE_RICHARDS,
-  CS_GWF_MODEL_TWO_PHASE_RICHARDS,
+  CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
+  CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
+  CS_GWF_MODEL_TWO_PHASE,
   CS_GWF_N_MODEL_TYPES
 
 } cs_gwf_model_type_t;
@@ -82,17 +92,6 @@ typedef cs_flag_t  cs_gwf_option_flag_t;
 
  * \def CS_GWF_GRAVITATION
  * \brief Gravitation effects are taken into account in the Richards equation
- *
- * \def CS_GWF_RICHARDS_UNSTEADY
- * \brief Richards equation is unsteady (unsatured behavior)
- *
- * \def CS_GWF_SOIL_PROPERTY_UNSTEADY
- * \brief Physical properties related to soil behavior are time-dependent
- *
- * \def CS_GWF_SOIL_ALL_SATURATED
- * \brief Several different hydraulic modeling can be considered. Set a special
- *        flag if all soils are considered as saturated (a simpler treatment
- *        can be performed in this case)
  *
  * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
  * \brief Even if the Richards equation is steady-state, this equation is
@@ -114,10 +113,6 @@ typedef enum {
   /* ----------------------- */
 
   CS_GWF_GRAVITATION                     = 1<< 0, /* =   1 */
-  CS_GWF_RICHARDS_UNSTEADY               = 1<< 1, /* =   2 */
-  CS_GWF_SOIL_PROPERTY_UNSTEADY          = 1<< 2, /* =   4 */
-  CS_GWF_SOIL_ALL_SATURATED              = 1<< 3, /* =   8 */
-
 
   /* Main numerical options */
   /* ---------------------- */
@@ -134,12 +129,13 @@ typedef enum {
  *       the groundwater flow module
  * @{
  *
- * \def CS_GWF_POST_CAPACITY
- * \brief Activate the post-processing of the capacity (property in front of
- *        the unsteady term in Richards equation)
+ * \def CS_GWF_POST_SOIL_CAPACITY
+ * \brief Activate the post-processing of the soil capacity (property in front
+ *        of the unsteady term in Richards equation)
  *
- * \def CS_GWF_POST_MOISTURE
- * \brief Activate the post-processing of the moisture content
+ * \def CS_GWF_POST_LIQUID_SATURATION
+ * \brief Activate the post-processing of the liquid saturation (also nammed
+ *        "moisture content" in case of single phase flow)
  *
  * \def CS_GWF_POST_PERMEABILITY
  * \brief Activate the post-processing of the permeability field
@@ -157,8 +153,8 @@ typedef enum {
  *        post-processing
  */
 
-#define CS_GWF_POST_CAPACITY                   (1 << 0)
-#define CS_GWF_POST_MOISTURE                   (1 << 1)
+#define CS_GWF_POST_SOIL_CAPACITY              (1 << 0)
+#define CS_GWF_POST_LIQUID_SATURATION          (1 << 1)
 #define CS_GWF_POST_PERMEABILITY               (1 << 2)
 #define CS_GWF_POST_DARCY_FLUX_BALANCE         (1 << 3)
 #define CS_GWF_POST_DARCY_FLUX_DIVERGENCE      (1 << 4)
@@ -191,9 +187,9 @@ cs_gwf_is_activated(void);
 /*!
  * \brief  Initialize the module dedicated to groundwater flows
  *
- * \param[in]   permeability_type     type of permeability (iso, ortho...)
- * \param[in]   model                 type of physical modelling
- * \param[in]   option_flag           optional flag to specify this module
+ * \param[in]   pty_type        type of permeability (iso, ortho...)
+ * \param[in]   model           type of physical modelling
+ * \param[in]   option_flag     optional flag to specify this module
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
@@ -206,7 +202,7 @@ cs_gwf_activate(cs_property_type_t           pty_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the main structure related to groundwater flows
+ * \brief  Free all structures related to groundwater flows
  *
  * \return a NULL pointer
  */
@@ -214,6 +210,33 @@ cs_gwf_activate(cs_property_type_t           pty_type,
 
 cs_gwf_t *
 cs_gwf_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters defining the two-phase flow model.
+ *         Use SI unit if not prescribed otherwise.
+ *
+ * \param[in] l_mass_density   mass density of the main liquid component
+ * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
+ * \param[in] g_viscosity      viscosity in the gas phase (Pa.s)
+ * \param[in] l_diffusivity_h  diffusivity of the main gas component in the
+ *                             liquid phase
+ * \param[in] w_molar_mass     molar mass of the main liquid component
+ * \param[in] h_molar_mass     molar mass of the main gas component
+ * \param[in] ref_temperature  reference temperature
+ * \param[in] henry_constant   constant in the Henry law
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
+                           cs_real_t       l_viscosity,
+                           cs_real_t       g_viscosity,
+                           cs_real_t       l_diffusivity_h,
+                           cs_real_t       w_molar_mass,
+                           cs_real_t       h_molar_mass,
+                           cs_real_t       ref_temperature,
+                           cs_real_t       henry_constant);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -229,11 +252,57 @@ cs_gwf_log_setup(void);
  * \brief  Set the flag dedicated to the post-processing of the GWF module
  *
  * \param[in]  post_flag             flag to set
+ * \param[in]  reset                 reset post flag before
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_post_options(cs_flag_t       post_flag);
+cs_gwf_set_post_options(cs_flag_t       post_flag,
+                        bool            reset);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the advection field related to the Darcy flux in the liquid
+ *         phase
+ *
+ * \return a pointer to a cs_adv_field_t structure or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_gwf_get_adv_field(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the head used in soil updates when an unsaturated
+ *         single-phase flow is considered. These values are located at cells.
+ *
+ * \return a pointer to the requested array of values or NULL if not defined
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_gwf_get_uspf_head_in_law(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
+ *         default of all members is performed.
+ *
+ * \param[in]  z_name        name of the volume zone corresponding to the soil
+ * \param[in]  bulk_density  value of the mass density
+ * \param[in]  sat_moisture  value of the saturated moisture content
+ * \param[in]  soil_model    type of modelling for the hydraulic behavior
+ *
+ * \return a pointer to the new allocated soil structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_soil_t *
+cs_gwf_add_soil(const char                      *z_name,
+                double                           bulk_density,
+                double                           sat_moisture,
+                cs_gwf_soil_hydraulic_model_t    soil_model);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -295,18 +364,6 @@ cs_gwf_tracer_by_name(const char   *eq_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the Richards equation and the related
- *         equations defining the groundwater flow module
- *         At this stage, all soils have been defined.
- *         Create new cs_field_t structures according to the setting
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_init_setup(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
  *         equations according to the settings
  */
@@ -317,7 +374,20 @@ cs_gwf_add_tracer_terms(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last initialization step of the groundwater flow module
+ * \brief  Predefined settings for the Richards equation and the related
+ *         equations defining the groundwater flow module.
+ *         At this stage, all soils have been defined and equatino parameters
+ *         are set. Create new cs_field_t structures according to the setting.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_init_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Last initialization step of the groundwater flow module. At this
+ *        stage, the mesh quantities are defined.
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
@@ -421,7 +491,7 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Predefined post-processing output for the groundwater flow module
- *         in case of single-phase flows in porous media.
+ *         in case of saturated single-phase flows (sspf) in porous media.
  *         Prototype of this function is given since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
@@ -444,17 +514,93 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_extra_post_single_phase(void                      *input,
-                               int                        mesh_id,
-                               int                        cat_id,
-                               int                        ent_flag[5],
-                               cs_lnum_t                  n_cells,
-                               cs_lnum_t                  n_i_faces,
-                               cs_lnum_t                  n_b_faces,
-                               const cs_lnum_t            cell_ids[],
-                               const cs_lnum_t            i_face_ids[],
-                               const cs_lnum_t            b_face_ids[],
-                               const cs_time_step_t      *time_step);
+cs_gwf_extra_post_sspf(void                   *input,
+                       int                     mesh_id,
+                       int                     cat_id,
+                       int                     ent_flag[5],
+                       cs_lnum_t               n_cells,
+                       cs_lnum_t               n_i_faces,
+                       cs_lnum_t               n_b_faces,
+                       const cs_lnum_t         cell_ids[],
+                       const cs_lnum_t         i_face_ids[],
+                       const cs_lnum_t         b_face_ids[],
+                       const cs_time_step_t   *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for the groundwater flow module
+ *         in case of unsaturated single-phase flows (uspf) in porous media.
+ *         Prototype of this function is given since it is a function pointer
+ *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
+ *
+ * \param[in, out] input        pointer to a optional structure (here a
+ *                              cs_gwf_t structure)
+ * \param[in]      mesh_id      id of the output mesh for the current call
+ * \param[in]      cat_id       category id of the output mesh for this call
+ * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
+ *                              interior faces (ent_flag[1]), boundary faces
+ *                              (ent_flag[2]), particles (ent_flag[3]) or probes
+ *                              (ent_flag[4])
+ * \param[in]      n_cells      local number of cells of post_mesh
+ * \param[in]      n_i_faces    local number of interior faces of post_mesh
+ * \param[in]      n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]      cell_ids     list of cells (0 to n-1)
+ * \param[in]      i_face_ids   list of interior faces (0 to n-1)
+ * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
+ * \param[in]      time_step    pointer to a cs_time_step_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_extra_post_uspf(void                   *input,
+                       int                     mesh_id,
+                       int                     cat_id,
+                       int                     ent_flag[5],
+                       cs_lnum_t               n_cells,
+                       cs_lnum_t               n_i_faces,
+                       cs_lnum_t               n_b_faces,
+                       const cs_lnum_t         cell_ids[],
+                       const cs_lnum_t         i_face_ids[],
+                       const cs_lnum_t         b_face_ids[],
+                       const cs_time_step_t   *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for the groundwater flow module
+ *         in case of miscible two-phase flows (mtpf) in porous media.
+ *         Prototype of this function is given since it is a function pointer
+ *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
+ *
+ * \param[in, out] input        pointer to a optional structure (here a
+ *                              cs_gwf_t structure)
+ * \param[in]      mesh_id      id of the output mesh for the current call
+ * \param[in]      cat_id       category id of the output mesh for this call
+ * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
+ *                              interior faces (ent_flag[1]), boundary faces
+ *                              (ent_flag[2]), particles (ent_flag[3]) or probes
+ *                              (ent_flag[4])
+ * \param[in]      n_cells      local number of cells of post_mesh
+ * \param[in]      n_i_faces    local number of interior faces of post_mesh
+ * \param[in]      n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]      cell_ids     list of cells (0 to n-1)
+ * \param[in]      i_face_ids   list of interior faces (0 to n-1)
+ * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
+ * \param[in]      time_step    pointer to a cs_time_step_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_extra_post_mtpf(void                      *input,
+                       int                        mesh_id,
+                       int                        cat_id,
+                       int                        ent_flag[5],
+                       cs_lnum_t                  n_cells,
+                       cs_lnum_t                  n_i_faces,
+                       cs_lnum_t                  n_b_faces,
+                       const cs_lnum_t            cell_ids[],
+                       const cs_lnum_t            i_face_ids[],
+                       const cs_lnum_t            b_face_ids[],
+                       const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 
