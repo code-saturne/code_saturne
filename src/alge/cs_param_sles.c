@@ -1741,14 +1741,14 @@ cs_param_sles_create(int          field_id,
 
   slesp->solver_class = CS_PARAM_SLES_CLASS_CS; /* solver family */
 
-  slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
-  slesp->solver = CS_PARAM_ITSOL_GMRES;         /* iterative solver */
+  slesp->precond = CS_PARAM_PRECOND_POLY1;      /* preconditioner */
+  slesp->solver = CS_PARAM_ITSOL_GCR;           /* iterative solver */
   slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
   slesp->pcd_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
 
   slesp->restart = 15;                       /* max. iter. before restarting */
   slesp->n_max_iter = 10000;                 /* max. number of iterations */
-  slesp->eps = 1e-8;                         /* relative tolerance to stop
+  slesp->eps = 1e-6;                         /* relative tolerance to stop
                                                 an iterative solver */
 
   slesp->resnorm_type = CS_PARAM_RESNORM_NONE;

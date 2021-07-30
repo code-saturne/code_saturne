@@ -133,11 +133,10 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Set the default solver settings */
-  cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   else
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "bicg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
 
   return nsc;
 }
@@ -299,8 +298,8 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   }
   else {
-    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "none");
-    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "poly1");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
   }
 
   return nsc;
@@ -457,11 +456,10 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
-    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
     if (nsp->model == CS_NAVSTO_MODEL_STOKES)
       cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
     else
-      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "bicg");
+      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "gcr");
   }
 
   /* The default boundary condition on the pressure field is always a

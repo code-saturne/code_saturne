@@ -487,10 +487,6 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   }
 
   /* Linear algebra default settings */
-  cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-  cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   /* Set and return pointer */
