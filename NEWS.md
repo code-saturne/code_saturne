@@ -25,6 +25,11 @@ User changes:
     of property field, deduced from the others so the sum of
     mass fractions is 1.
 
+Physical modeling:
+
+- Solidification: Add a Stefan model for taking into account the phase
+  change in a purely thermal model.
+
 Numerics:
 
 - Add GCR (Generalized Conjugate Residual) which enables a flexible

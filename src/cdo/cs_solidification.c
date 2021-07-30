@@ -408,6 +408,58 @@ _enforce_solid_cells(const cs_cdo_quantities_t   *quant)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the enthalpy at each cell centers
+ *
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval      physical time at which evaluation is performed
+ * \param[in]      temp        array of temperature values at each cell
+ * \param[in]      g_l         array of the liquid fraction values at each cell
+ * \param[in]      t_ref       reference temperature
+ * \param[in]      latent_heat value of the latent heat coefficient
+ * \param[in]      rho         property related to the mass density
+ * \param[in]      cp          property related to the heat capacity
+ * \param[in, out] enthalpy    array of enthalpy values at each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_enthalpy(const cs_cdo_quantities_t    *quant,
+                  cs_real_t                     t_eval,
+                  const cs_real_t               temp[],
+                  const cs_real_t               g_l[],
+                  const cs_real_t               temp_ref,
+                  const cs_real_t               latent_heat,
+                  const cs_property_t          *rho,
+                  const cs_property_t          *cp,
+                  cs_real_t                     enthalpy[])
+{
+  assert(temp != NULL && g_l != NULL && enthalpy != NULL);
+
+  bool  rho_is_uniform = cs_property_is_uniform(rho);
+  bool  cp_is_uniform = cs_property_is_uniform(cp);
+
+  cs_real_t  rho_c, cp_c;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+    /* Retrieve the value of the properties */
+    if (!rho_is_uniform || c == 0)
+      rho_c = cs_property_get_cell_value(c, t_eval, rho);
+    if (!cp_is_uniform || c == 0)
+      cp_c = cs_property_get_cell_value(c, t_eval, cp);
+
+    enthalpy[c] =
+      /* part linked to the variation of  | part linked to the phase change
+         temperature                      |                                 */
+      rho_c * cp_c * (temp[c] - temp_ref) + rho_c * latent_heat * g_l[c];
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update/initialize the liquid fraction and its related quantities
  *         This corresponds to the Voller and Prakash (87)
  *
@@ -1867,6 +1919,301 @@ _update_thm_path(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the source term for the thermal equation.
+ *         This function is related to the Stefan problem with a liquid fraction
+ *         being a step function w.r.t. the temperature
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_thm_stefan(const cs_mesh_t             *mesh,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *quant,
+                   const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_stefan_t  *model =
+    (cs_solidification_stefan_t *)solid->model_context;
+
+  bool  rho_is_uniform = cs_property_is_uniform(solid->mass_density);
+
+  cs_real_t  rho_c, rhoLovdt;
+
+  const cs_real_t  Lovdt = model->latent_heat/ts->dt[0];
+  const cs_real_t  *g_l = solid->g_l_field->val;
+  const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
+  const cs_real_t  *vol = quant->cell_vol;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+    /* Retrieve the value of the properties */
+    if (!rho_is_uniform || c == 0) {
+      rho_c = cs_property_get_cell_value(c, ts->t_cur, solid->mass_density);
+      rhoLovdt = rho_c * Lovdt;
+    }
+
+    if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL) /* Tag as solid for all the
+                                                       computation */
+      continue; /* No update: 0 by default */
+
+    /* reaction_coef_array is set to zero. Only the source term is updated */
+    if (fabs(g_l[c] - g_l_pre[c]) > 0)
+      solid->thermal_source_term_array[c] = rhoLovdt*vol[c]*(g_l_pre[c]-g_l[c]);
+    else
+      solid->thermal_source_term_array[c] = 0;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the liquid fraction in each cell and the temperature if
+ *         needed. Case of the Stefan model.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_gl_stefan(const cs_mesh_t             *mesh,
+                  const cs_cdo_connect_t      *connect,
+                  const cs_cdo_quantities_t   *quant,
+                  const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(ts);
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_stefan_t  *model =
+    (cs_solidification_stefan_t *)solid->model_context;
+
+  bool  cp_is_uniform = cs_property_is_uniform(solid->thermal_sys->cp);
+
+  cs_real_t  cp_c, cpovL;
+  cs_real_t  *temp = solid->temperature->val;
+  cs_real_t  *g_l = solid->g_l_field->val;
+
+  /* Update g_l values in each cell as well as the cell state and the related
+     count */
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+    /* Retrieve the value of the property */
+    if (!cp_is_uniform || c == 0) {
+      cp_c = cs_property_get_cell_value(c, ts->t_cur,
+                                        solid->thermal_sys->cp);
+      cpovL = cp_c/model->latent_heat;
+    }
+
+    if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL) /* Tag as solid for all the
+                                                       computation */
+      continue; /* No update: 0 by default */
+
+    if (temp[c] > model->t_change) {
+
+      if (g_l[c] < 1) {  /* Not in a stable state */
+
+        /* Compute a new g_l */
+        g_l[c] += cpovL * (temp[c] - model->t_change);
+        if (g_l[c] < 1) {
+
+          temp[c] = model->t_change;
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_MUSHY;
+
+        }
+        else { /* Overshoot of the liquid fraction */
+
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_LIQUID;
+          temp[c] = model->t_change + 1./cpovL * (g_l[c] - 1);
+          g_l[c] = 1.;
+
+        }
+
+      }
+      else {  /* g_l = 1, stable state */
+
+        solid->cell_state[c] = CS_SOLIDIFICATION_STATE_LIQUID;
+
+      }
+
+    }
+    else { /* T < T_ch */
+
+      if (g_l[c] > 0) { /* Not in a stable state */
+
+        /* Compute a new g_l */
+        g_l[c] += cpovL * (temp[c] - model->t_change);
+
+        if (g_l[c] < 0) {       /* Undershoot of the liquid fraction */
+
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_SOLID;
+          temp[c] = model->t_change + 1./cpovL * g_l[c];
+          g_l[c] = 0.;
+
+        }
+        else {
+
+          temp[c] = model->t_change;
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_MUSHY;
+
+        }
+
+      }
+      else { /* g_l = 0, stable state */
+
+        solid->cell_state[c] = CS_SOLIDIFICATION_STATE_SOLID;
+
+      }
+
+    }
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function aims at computing the new couple
+ *         (temperature,liquid fraction) defining the new state
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
+                                const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *quant,
+                                const cs_time_step_t         *time_step)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+  assert(solid->model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE);
+  cs_solidification_stefan_t  *s_model
+    = (cs_solidification_stefan_t *)solid->model_context;
+
+  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
+  const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
+
+  /* Retrieve the current values */
+  cs_real_t  *temp = cs_equation_get_cell_values(t_eq, false);
+  cs_real_t  *g_l = solid->g_l_field->val;
+  cs_real_t  *enthalpy = s_model->enthalpy->val;
+
+  cs_real_t  *hk = NULL;        /* enthalpy h^{n+1,k} */
+  BFT_MALLOC(hk, quant->n_cells, cs_real_t);
+  memcpy(hk, enthalpy, csize);
+
+  /* Non-linear iterations (k) are performed to converge on the relation
+   * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
+   *
+   * h = rho.cp (Temp - Tref) + rho.L.gliq
+   *
+   * One sets:
+   * T^{n+1,0} = T^n and gl^{n+1,0} = gl^n
+   */
+
+  cs_equation_current_to_previous(t_eq);
+  cs_field_current_to_previous(solid->g_l_field);
+  cs_field_current_to_previous(s_model->enthalpy);
+
+  /* Initialize loop stopping criteria */
+
+  cs_real_t  delta_h = 1 + s_model->max_delta_h;
+  int iter = 0;
+
+  while ( delta_h > s_model->max_delta_h && iter < s_model->n_iter_max) {
+
+    /* Compute the new thermal source term */
+
+    s_model->update_thm_st(mesh, connect, quant, time_step);
+
+    /* Solve the thermal system */
+
+    cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
+                                        iterative process */
+                              mesh, connect, quant, time_step);
+
+    /* Compute the new liquid fraction (and update the temperature if needed) */
+
+    s_model->update_gl(mesh, connect, quant, time_step);
+
+    /* Now compute the enthalpy knowing the temperature and the liquid
+     * fraction.
+     * enthalpy stores k+1,n+1 and hk stores k,n+1
+     */
+
+    _compute_enthalpy(quant,
+                      time_step->t_cur,        /* t_eval */
+                      temp,                    /* temperature */
+                      g_l,                     /* liquid fraction */
+                      s_model->t_change,       /* temp_ref */
+                      s_model->latent_heat,    /* latent heat coeff. */
+                      solid->mass_density,     /* rho */
+                      solid->thermal_sys->cp,  /* cp */
+                      enthalpy);               /* computed enthalpy */
+
+    delta_h = -1;
+    for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+      cs_real_t  dh = fabs(enthalpy[c] - hk[c]);
+      hk[c] = enthalpy[c];
+
+      if (dh > delta_h)
+        delta_h = dh;
+
+    } /* Loop on cells */
+
+    iter++;
+    if (solid->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### Solidification.NL: k= %d | delta_enthalpy= %5.3e\n",
+                    iter, delta_h);
+
+  } /* Until convergence */
+
+  BFT_FREE(hk);
+
+  /* Monitoring */
+
+  if (solid->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "## Solidification: Stop after %d iters, delta = %5.3e\n",
+                  iter, delta_h);
+
+  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+    if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
+      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
+    else
+      solid->n_g_cells[solid->cell_state[c]] += 1;
+
+  }
+
+  /* Parallel synchronization of the number of cells in each state */
+  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Function aims at computing the new temperature/bulk concentration
  *         state for the next iteration as well as updating all related
  *         quantities
@@ -2354,7 +2701,9 @@ cs_solidification_activate(cs_solidification_model_t       model,
   /* Activate and default settings for the Navier-Stokes module */
   /* ---------------------------------------------------------- */
 
-  ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
+  /* Not the Stefan model */
+  if ((model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+    ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
   cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
@@ -2372,8 +2721,11 @@ cs_solidification_activate(cs_solidification_model_t       model,
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
 
-  cs_flag_t  thm_num = 0, thm_post = 0;
-  cs_flag_t  thm_model = CS_THERMAL_MODEL_NAVSTO_ADVECTION;
+  cs_flag_t  thm_num = 0, thm_post = 0, thm_model = 0;
+
+  /* Not the Stefan model */
+  if ((model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+    thm_model |= CS_THERMAL_MODEL_NAVSTO_ADVECTION;
 
   if (model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE)
     thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
@@ -2386,17 +2738,16 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   solid->thermal_sys = cs_thermal_system_activate(thm_model, thm_num, thm_post);
 
+  cs_equation_param_t  *th_eqp =
+    cs_equation_get_param(solid->thermal_sys->thermal_eq);
+
   if (thm_model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
 
     /* Add reaction property for the temperature equation */
     solid->thermal_reaction_coef = cs_property_add("thermal_reaction_coef",
                                                    CS_PROPERTY_ISO);
 
-    /* If liquid, this coefficient is equal to zero */
     cs_property_set_reference_value(solid->thermal_reaction_coef, 0);
-
-    cs_equation_param_t  *th_eqp =
-      cs_equation_get_param(solid->thermal_sys->thermal_eq);
 
     cs_equation_add_reaction(th_eqp, solid->thermal_reaction_coef);
 
@@ -2414,7 +2765,33 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* Allocate the structure storing the modelling context/settings */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+
+    cs_solidification_stefan_t  *s_model = NULL;
+    BFT_MALLOC(s_model, 1, cs_solidification_stefan_t);
+
+    /* Default initialization */
+    s_model->t_change = 0.;
+    s_model->latent_heat = 1.0;
+    s_model->n_iter_max = 15;
+    s_model->max_delta_h = 1e-2;
+
+    s_model->enthalpy = NULL;
+
+    /* Function pointers */
+    s_model->update_gl = _update_gl_stefan;
+    s_model->update_thm_st = _update_thm_stefan;
+
+    /* Set the context */
+    solid->model_context = (void *)s_model;
+    solid->forcing_coef = 0.;     /* Not useful with this model */
+
+    /* Set the thermal equation (since there is no velocity for the advection
+       term) the default space scheme CDO-Vb */
+    cs_equation_param_set(th_eqp, CS_EQKEY_SPACE_SCHEME, "cdofb");
+
+  }
+  else if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
     cs_solidification_voller_t  *v_model = NULL;
     BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
@@ -2426,7 +2803,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
     solid->model_context = (void *)v_model;
 
   }
-
   else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
     BFT_MALLOC(solid->model_context, 1, cs_solidification_binary_alloy_t);
@@ -2488,7 +2864,47 @@ cs_solidification_set_forcing_eps(cs_real_t    forcing_eps)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which described the Voller and
+ * \brief  Set the main physical parameters which describe the Stefan model
+ *
+ * \param[in] t_change     liquidus/solidus temperature (in K)
+ * \param[in] latent_heat  latent heat
+ * \param[in] n_iter_max   max. number of iters to handle the non-linearity
+ * \param[in] delta_h      max. variation of enthalpy between sub-iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_stefan_model(cs_real_t    t_change,
+                                   cs_real_t    latent_heat,
+                                   int          iter_max,
+                                   double       delta_h)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  if ((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Stefan model not declared during the"
+              " activation of the solidification module.\n"
+              " Please check your settings.", __func__);
+
+  cs_solidification_stefan_t  *s_model
+    = (cs_solidification_stefan_t *)solid->model_context;
+  assert(s_model != NULL);
+
+  /* Model parameters */
+  s_model->t_change = t_change;
+  s_model->latent_heat = latent_heat;
+
+  s_model->n_iter_max = (iter_max > 0) ? iter_max : 1;
+  s_model->max_delta_h = fabs(delta_h);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which describe the Voller and
  *         Prakash modelling
  *
  * \param[in]  t_solidus      solidus temperature (in K)
@@ -2874,6 +3290,15 @@ cs_solidification_destroy_all(void)
    * the current structure and sub-structures.
    * Free only what is owned by this structure */
 
+  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+
+    cs_solidification_stefan_t  *s_model
+      = (cs_solidification_stefan_t *)solid->model_context;
+
+    BFT_FREE(s_model);
+
+  } /* Stefan modelling */
+
   if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
     cs_solidification_voller_t  *v_model
@@ -2968,6 +3393,23 @@ cs_solidification_init_setup(void)
   cs_post_add_time_mesh_dep_output(cs_solidification_extra_post, solid);
 
   /* Model-specific part */
+
+  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+
+    cs_solidification_stefan_t  *s_model
+      = (cs_solidification_stefan_t *)solid->model_context;
+
+    /* Add a field for the enthalpy */
+    s_model->enthalpy = cs_field_find_or_create("enthalpy",
+                                                field_mask,
+                                                c_loc_id,
+                                                1,
+                                                true); /* has_previous */
+
+    cs_field_set_key_int(s_model->enthalpy, log_key, 1);
+    cs_field_set_key_int(s_model->enthalpy, post_key, 1);
+
+  } /* Stefan modelling */
 
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
@@ -3107,26 +3549,28 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     func = _temp_boussinesq_source_term;
   else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
     func = _temp_conc_boussinesq_source_term;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: This model is not handled yet.", __func__);
 
-  cs_equation_add_source_term_by_dof_func(mom_eqp,
-                                          NULL, /* = all cells */
-                                          cs_flag_primal_cell,
-                                          func,
-                                          thm_bq);
+  if (func != NULL) { /* Coupling with the Navier-Stokes equation is
+                         activated */
 
-  /* Define the forcing term acting as a reaction term in the momentum equation
-     This term is related to the liquid fraction */
-  BFT_MALLOC(solid->forcing_mom_array, n_cells, cs_real_t);
-  memset(solid->forcing_mom_array, 0, size_c);
+    cs_equation_add_source_term_by_dof_func(mom_eqp,
+                                            NULL, /* = all cells */
+                                            cs_flag_primal_cell,
+                                            func,
+                                            thm_bq);
 
-  cs_property_def_by_array(solid->forcing_mom,
-                           cs_flag_primal_cell,
-                           solid->forcing_mom_array,
-                           false, /* definition is owner ? */
-                           NULL); /* no index */
+    /* Define the forcing term acting as a reaction term in the momentum
+       equation. This term is related to the liquid fraction */
+    BFT_MALLOC(solid->forcing_mom_array, n_cells, cs_real_t);
+    memset(solid->forcing_mom_array, 0, size_c);
+
+    cs_property_def_by_array(solid->forcing_mom,
+                             cs_flag_primal_cell,
+                             solid->forcing_mom_array,
+                             false, /* definition is owner ? */
+                             NULL); /* no index */
+
+  }
 
   /* Define the reaction coefficient and the source term for the temperature
      equation */
@@ -3257,7 +3701,24 @@ cs_solidification_log_setup(void)
                 solid->verbosity);
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {
+  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_STEFAN)) {
+
+    cs_solidification_stefan_t  *s_model =
+      (cs_solidification_stefan_t *)solid->model_context;
+
+    cs_log_printf(CS_LOG_SETUP, "Stefan\n");
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Tliq/sol: %5.3e;",
+                  s_model->t_change);
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
+                  s_model->latent_heat);
+
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification |"
+                  " Max. iter: %d; Max. delta enthalpy: %5.3e\n",
+                  s_model->n_iter_max, s_model->max_delta_h);
+
+  }
+  else if (cs_flag_test(solid->model,
+                        CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {
 
     cs_solidification_voller_t  *v_model
       = (cs_solidification_voller_t *)solid->model_context;
@@ -3516,10 +3977,63 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
 
   else {
 
-    cs_solidification_voller_t  *v_model
-      = (cs_solidification_voller_t *)solid->model_context;
+    if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
-    v_model->update(mesh, connect, quant, time_step);
+      cs_solidification_voller_t  *v_model
+        = (cs_solidification_voller_t *)solid->model_context;
+
+      v_model->update(mesh, connect, quant, time_step);
+
+    }
+    else {
+
+      assert((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) > 0);
+
+      cs_solidification_stefan_t  *s_model
+        = (cs_solidification_stefan_t *)solid->model_context;
+
+      /* Temperature has been initialized.
+       * Compute a first guess for the liquid fraction knowing that the liquid
+       * fractions is a step function w.r.t. the temperature. Thus, one assumes
+       * that the liquid fraction is either 0 or 1 after this step. If the
+       * temperature is equal to T_ch, one assumes that g_l = 1
+       *
+       * Initialize source term and reaction term
+       */
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+        if (solid->temperature->val[c] < s_model->t_change) {
+          /* In the solid part */
+          solid->g_l_field->val[c] = 0;
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_SOLID;
+        }
+        else { /* In the liquid part */
+          solid->g_l_field->val[c] = 1;
+          solid->cell_state[c] = CS_SOLIDIFICATION_STATE_LIQUID;
+        }
+
+        /* No source term and reaction term at the begining. One assumes that
+           there is no phase change at the first sub-iteration. */
+        solid->thermal_reaction_coef_array[c] = 0;
+        solid->thermal_source_term_array[c] = 0;
+
+      } /* Loop on cells */
+
+      /* Now compute the enthalpy knowing the temperature and the liquid
+         fraction */
+      _compute_enthalpy(quant,
+                        time_step->t_cur,        /* t_eval */
+                        solid->temperature->val, /* temperature */
+                        solid->g_l_field->val,   /* liquid fraction */
+                        s_model->t_change,       /* temp_ref */
+                        s_model->latent_heat,    /* latent heat coeff. */
+                        solid->mass_density,     /* rho */
+                        cp_p,                    /* cp */
+                        s_model->enthalpy->val); /* computed enthalpy */
+
+    } /* Stefan model */
 
   }
 }
@@ -3548,30 +4062,50 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
+    cs_solidification_binary_alloy_t  *alloy =
+      (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    /* Compute a new couple (Temp, g_l, conc) */
 
     alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
+
+    /* Solve the Navier-Stokes system */
+
+    cs_navsto_system_compute(mesh, connect, quant, time_step);
 
   }
   else { /* Solidification process with a pure component without segregation */
 
-    cs_solidification_voller_t  *v_model
-      = (cs_solidification_voller_t *)solid->model_context;
+    if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
-    /* Add equations to be solved at each time step */
-    cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
-                              mesh, connect, quant, time_step);
+      cs_solidification_voller_t  *v_model =
+        (cs_solidification_voller_t *)solid->model_context;
 
-    /* Update fields and properties which are related to solved variables */
-    cs_field_current_to_previous(solid->g_l_field);
+      /* Add equations to be solved at each time step */
 
-    v_model->update(mesh, connect, quant, time_step);
+      cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
+                                mesh, connect, quant, time_step);
+
+      /* Update fields and properties which are related to solved variables */
+
+      cs_field_current_to_previous(solid->g_l_field);
+
+      v_model->update(mesh, connect, quant, time_step);
+
+      /* Solve the Navier-Stokes system */
+
+      cs_navsto_system_compute(mesh, connect, quant, time_step);
+
+    }
+    else {
+
+      assert((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) > 0);
+
+      _stefan_thermal_non_linearities(mesh, connect, quant, time_step);
+
+    }
 
   }
-
-  /* Solve the Navier-Stokes system */
-  cs_navsto_system_compute(mesh, connect, quant, time_step);
 
   /* Perform the monitoring */
   if (solid->verbosity > 0)
@@ -3673,7 +4207,8 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE) {
       assert(alloy->t_liquidus != NULL);
 
-      /* Compute the value to be sure that it corresponds to the current state */
+      /* Compute the value to be sure that it corresponds to the current
+         state */
       for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
         if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
           alloy->t_liquidus[i] = -999.99; /* no physical meaning */

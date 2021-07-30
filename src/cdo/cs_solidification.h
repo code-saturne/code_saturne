@@ -170,6 +170,11 @@ typedef cs_flag_t  cs_solidification_model_t;
  *      The dynamic system of equations is associated with an energy equation
  *      solved using the enthalpy as variable (not fully available).
  *
+ * \var CS_SOLIDIFICATION_MODEL_STEFAN
+ *      Phase change model without advection field. The phase change is assumed
+ *      to be at a given temperature meaning that the liquid fraction is a step
+ *      function w.r.t. the temperature.
+ *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
  *      Modelling introduced in Voller and Prakash entitled: "A fixed grid
  *      numerical modelling methodology for convection-diffusion mushy region
@@ -195,8 +200,9 @@ typedef enum {
   /* Solidification modelling
      ------------------------ */
 
-  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<2, /* =   4 */
-  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<3, /* =   8 */
+  CS_SOLIDIFICATION_MODEL_STEFAN                  = 1<<2, /* =   4 */
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<3, /* =   8 */
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<4, /* =  16 */
 
 } cs_solidification_model_bit_t;
 
@@ -253,6 +259,53 @@ typedef void
 
 /* Structure storing physical parameters related to a choice of solidification
    modelling */
+
+/*----------------------------------------------------------------------------
+ * Stefan model
+ *----------------------------------------------------------------------------
+ *
+ * Neither advection nor segregation is taken into account.
+ * The liquid fraction is a step function w.r.t. the temperature.
+ */
+
+typedef struct {
+
+  /* Enthalpy is computed for the update of the liquid fraction */
+
+  cs_field_t                    *enthalpy;
+
+  /* Physical parameters to specify the law of variation of the liquid fraction
+   * with respect to the temperature
+   *
+   * gl(T) = 1 if T > T_change
+   * Otherwise:
+   * gl(T) = 0
+   */
+
+  cs_real_t                      t_change;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t                      latent_heat;
+
+  /* Function pointers */
+  /* ----------------- */
+
+  /* Function to update the liquid fraction */
+  cs_solidification_func_t      *update_gl;
+
+  /* Function to update the source term for the thermal equation */
+  cs_solidification_func_t      *update_thm_st;
+
+  /* Numerical parameters */
+  /* -------------------- */
+
+  int                            n_iter_max;
+  double                         max_delta_h;
+
+} cs_solidification_stefan_t;
+
 
 /* Voller and Prakash model "A fixed grid numerical modelling methodology for
  * convection-diffusion mushy region phase-change problems" Int. J. Heat
@@ -597,7 +650,24 @@ cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which described the Voller and
+ * \brief  Set the main physical parameters which describe the Stefan model
+ *
+ * \param[in] t_change     liquidus/solidus temperature (in K)
+ * \param[in] latent_heat  latent heat
+ * \param[in] n_iter_max   max. number of iters to handle the non-linearity
+ * \param[in] delta_h      max. variation of enthalpy between sub-iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_stefan_model(cs_real_t    t_change,
+                                   cs_real_t    latent_heat,
+                                   int          iter_max,
+                                   double       delta_h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which describe the Voller and
  *         Prakash modelling
  *
  * \param[in]  t_solidus      solidus temperature (in K)
