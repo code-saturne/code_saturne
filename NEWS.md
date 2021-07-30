@@ -54,6 +54,18 @@ Numerics:
   change of variable. Available only with a link to the PETSc library.
   This is a based on a common work with the ALGO team at CERFACS.
 
+- CDO: The default settings for solving an equation is now a GCR
+  algorithm using a 1st order Neumann polynomial preconditioner. Moreover,
+  the tolerance is set to 1e-6 instead of 1e-8.
+
+- CDO: Optimized pre-defined settings for Hypre/BoomerAMG and
+  PETSc/GAMG.  This enables a significant improvement in terms of
+  elapsed time when solving (at least) symmetric positive systems.
+
+- CDO: Extend the notion of block preconditioning when solving
+  vector-valued equations with PETSc. Now multiplicative and symmetric
+  Gauss-Seidel block preconditioners can be easily defined. Previously,
+  only additive block preconditioning was easily available.
 
 Architectural changes:
 
