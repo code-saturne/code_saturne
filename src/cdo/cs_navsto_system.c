@@ -364,16 +364,16 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     assert(eqp != NULL);
 
     /* Default settings for this equation */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
 
     /* This is for post-processing purpose, so, there is no need to have
      * a restrictive convergence tolerance on the resolution of the linear
      * system */
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
 
   }
 

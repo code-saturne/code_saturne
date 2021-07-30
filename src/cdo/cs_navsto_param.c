@@ -1296,22 +1296,22 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   /*  Set the space discretization scheme */
   const char  *ss_key = _space_scheme_key[nsp->space_scheme];
 
-  cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
+  cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
   /*  Set the time discretization scheme */
   const char  *ts_key = _time_scheme_key[nsp->time_scheme];
 
-  cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
+  cs_equation_param_set(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
   if (nsp->time_scheme == CS_TIME_SCHEME_THETA) {
     char  cvalue[36]; /* include '\0' */
     snprintf(cvalue, 35*sizeof(char), "%g", nsp->theta);
-    cs_equation_set_param(eqp, CS_EQKEY_TIME_THETA, cvalue);
+    cs_equation_param_set(eqp, CS_EQKEY_TIME_THETA, cvalue);
   }
 
   /*  Set the way DoFs are defined */
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
-  cs_equation_set_param(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
+  cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
 
   /*  Set quadratures type */
   const char  *quad_key = _quad_type_key[nsp->qtype];
@@ -1322,20 +1322,20 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
     /* If different from default value */
     const char *extrap_key = _adv_extrap_key[nsp->adv_extrapol];
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_EXTRAPOL, extrap_key);
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_EXTRAPOL, extrap_key);
 
     const char *stra_key = _adv_strategy_key[nsp->adv_strategy];
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_STRATEGY, stra_key);
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_STRATEGY, stra_key);
 
     const char *form_key = _adv_formulation_key[nsp->adv_form];
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
 
     const char *scheme_key = _adv_scheme_key[nsp->adv_scheme];
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, scheme_key);
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, scheme_key);
 
   }
 
-  cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
+  cs_equation_param_set(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
 }
 
 /*----------------------------------------------------------------------------*/

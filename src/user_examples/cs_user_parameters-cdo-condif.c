@@ -375,27 +375,27 @@ cs_user_parameters(cs_domain_t   *domain)
     cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.Upw");
 
     /* The modification of the space discretization should be apply first */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
     /* Modify other parameters than the space discretization */
-    cs_equation_set_param(eqp, CS_EQKEY_VERBOSITY, "2");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_param_set(eqp, CS_EQKEY_VERBOSITY, "2");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
 
     /* Linear algebra settings */
 #if defined(HAVE_PETSC)
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 #else
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
 #endif
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-12");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "false");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-12");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "false");
 
   }
   /*! [param_cdo_numerics] */
@@ -592,7 +592,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     /* Keep all the settings from "AdvDiff.Upw and then only change the
        advection scheme for the second equation */
-    cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "sg");
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
     /* Call this function to be sure that the linear solver is set to what
        one wants (if there is no modification of the SLES parameters, this

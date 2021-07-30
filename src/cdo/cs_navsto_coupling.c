@@ -129,15 +129,15 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
   /* Space scheme settings (default) */
-  cs_equation_set_param(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-  cs_equation_set_param(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Set the default solver settings */
-  cs_equation_set_param(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "jacobi");
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES)
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   else
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "bicg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "bicg");
 
   return nsc;
 }
@@ -290,17 +290,17 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
   /* Space scheme settings (default) */
-  cs_equation_set_param(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-  cs_equation_set_param(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+  cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Solver settings */
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
     cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "gkb_saturne");
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   }
   else {
-    cs_equation_set_param(mom_eqp, CS_EQKEY_PRECOND, "none");
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "gmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "none");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gmres");
   }
 
   return nsc;
@@ -453,15 +453,15 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->prediction);
 
     /* Space scheme settings (default) */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
     if (nsp->model == CS_NAVSTO_MODEL_STOKES)
-      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
     else
-      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
   /* The default boundary condition on the pressure field is always a
@@ -477,12 +477,12 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->correction);
 
     /* Space scheme settings (default) */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
   }
 
   nsc->div_st = NULL;

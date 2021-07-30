@@ -1124,7 +1124,7 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
@@ -1132,7 +1132,7 @@ _test_cdovb_schemes(FILE                *out,
     for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
     cs_cdo_diffusion_svb_ocs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
@@ -1141,7 +1141,7 @@ _test_cdovb_schemes(FILE                *out,
     for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
     cs_cdo_diffusion_svb_ocs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
@@ -1169,7 +1169,7 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out,
                  "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO", csys);
@@ -1208,21 +1208,21 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
     cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
     /* Enforce Dirichlet BC */
-    cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
+    cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
     cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;

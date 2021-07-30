@@ -581,16 +581,16 @@ cs_gwf_tracer_init(int                      tracer_id,
   assert(adv_field != NULL); /* Sanity check */
   cs_equation_add_advection(tr_eqp, adv_field);
 
-  cs_equation_set_param(tr_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
 
   /* Space discretization */
-  cs_equation_set_param(tr_eqp, CS_EQKEY_HODGE_TIME_ALGO, "wbs");
-  cs_equation_set_param(tr_eqp, CS_EQKEY_HODGE_REAC_ALGO, "wbs");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_HODGE_TIME_ALGO, "wbs");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_HODGE_REAC_ALGO, "wbs");
 
   /* Linear algebra */
-  cs_equation_set_param(tr_eqp, CS_EQKEY_ITSOL, "gcr");
-  cs_equation_set_param(tr_eqp, CS_EQKEY_PRECOND, "poly1");
-  cs_equation_set_param(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ITSOL, "gcr");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "poly1");
+  cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
   const int  n_soils = cs_gwf_get_n_soils();
 

@@ -1522,7 +1522,7 @@ cs_equation_set_default_param(cs_equation_key_t      key,
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    cs_equation_set_param(eq->param, key, keyval);
+    cs_equation_param_set(eq->param, key, keyval);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1981,7 +1981,7 @@ cs_equation_set_functions(void)
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       all_are_steady = false;
     else
-      cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, "steady");
+      cs_equation_param_set(eqp, CS_EQKEY_TIME_SCHEME, "steady");
 
     /* Apply the last modifications to the cs_equation_param_t structure */
     cs_equation_param_last_stage(eqp);

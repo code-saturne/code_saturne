@@ -386,14 +386,14 @@ cs_maxwell_activate(cs_flag_t     model,
     cs_equation_add_diffusion(eqp, mxl->e_permeability);
 
     /* Should be symmetric */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   }
 
@@ -417,14 +417,14 @@ cs_maxwell_activate(cs_flag_t     model,
                              1); /* Inverse of the property is requested */
 
     /* Should be symmetric */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+    cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   }
 
