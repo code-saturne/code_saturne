@@ -103,7 +103,7 @@ static const double  cs_solidification_diffusion_eps = 1e-16;
 
 static const char _err_empty_module[] =
   " Stop execution.\n"
-  " The structure related to the solidifcation module is empty.\n"
+  " The structure related to the solidification module is empty.\n"
   " Please check your settings.\n";
 
 static cs_solidification_t  *cs_solidification_structure = NULL;
@@ -1998,7 +1998,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
 
   } /* while iterating */
 
-    /* Update the liquid concentration of the solute (c_l) */
+  /* Update the liquid concentration of the solute (c_l) */
   alloy->update_clc(mesh, connect, quant, time_step);
 
   /* The cell state is now updated at this stage. This will be useful for
@@ -2410,6 +2410,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
   cs_property_set_reference_value(solid->forcing_mom, 0);
 
   solid->g_l = cs_property_add("liquid_fraction", CS_PROPERTY_ISO);
+  cs_property_set_reference_value(solid->g_l, 1.0);
 
   /* Allocate the structure storing the modelling context/settings */
 
@@ -3084,7 +3085,6 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     else {
       solid->g_l_field->val_pre[i] = 1.;
       solid->cell_state[i] = CS_SOLIDIFICATION_STATE_LIQUID;
-
     }
 
   } /* Loop on cells */
@@ -3399,7 +3399,6 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
-  CS_UNUSED(time_step);
 
   cs_solidification_t  *solid = cs_solidification_structure;
 

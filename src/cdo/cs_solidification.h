@@ -444,7 +444,7 @@ typedef struct {
 
 typedef struct  {
 
-  cs_flag_t        model;       /* Modelling for the solidifcation module */
+  cs_flag_t        model;       /* Modelling for the solidification module */
   cs_flag_t        options;     /* Flag dedicated to general options to handle
                                  * the solidification module*/
   cs_flag_t        post_flag;   /* Flag dedicated to the post-processing
