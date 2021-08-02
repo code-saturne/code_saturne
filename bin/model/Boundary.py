@@ -537,7 +537,7 @@ class InletBoundary(Boundary):
             value = XMLVelocityNode.xmlGetChildDouble(choice)
         elif choice in ('norm_formula', 'flow1_formula', 'flow2_formula'):
             value = XMLVelocityNode.xmlGetChildString(choice)
-        if not value:
+        if value == None:
             value = self.__defaultValues()[choice]
             self.setVelocity(value)
 
