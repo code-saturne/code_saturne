@@ -175,11 +175,15 @@ _update_requests(const cs_halo_t  *halo,
 
   int n_requests = halo->n_c_domains*2;
 
+#if defined(HAVE_MPI)
+
   if (n_requests > hs->request_size) {
     hs->request_size = n_requests;
     BFT_REALLOC(hs->request, hs->request_size, MPI_Request);
     BFT_REALLOC(hs->status, hs->request_size,  MPI_Status);
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
