@@ -328,7 +328,7 @@ _solidification_create(void)
   BFT_MALLOC(solid, 1, cs_solidification_t);
 
   /* Default initialization */
-  solid->model = 0;
+  solid->model = CS_SOLIDIFICATION_N_MODELS;
   solid->options = 0;
   solid->post_flag = 0;
   solid->verbosity = 1;
@@ -2102,7 +2102,6 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
                                 const cs_time_step_t         *time_step)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE);
   cs_solidification_stefan_t  *s_model
     = (cs_solidification_stefan_t *)solid->model_context;
 
@@ -2232,7 +2231,6 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
                          const cs_time_step_t         *time_step)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE);
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
 
@@ -2417,7 +2415,7 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
                 solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID],
                 solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID]);
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
     cs_log_printf(CS_LOG_DEFAULT,
                   "  * Eutectic | %6.2f\%% for %9lu cells;\n",
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
@@ -2494,7 +2492,7 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
 
   /* Sanity checks */
   assert(retval != NULL && input != NULL && solid != NULL);
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  assert(solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
 
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -2684,10 +2682,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
                            cs_navsto_param_coupling_t      algo_coupling,
                            cs_navsto_param_post_flag_t     ns_post_flag)
 {
-  if (model < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid modelling. Model = %d\n", __func__, model);
-
   /* Allocate an empty structure */
   cs_solidification_t  *solid = _solidification_create();
 
@@ -2701,8 +2695,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
   /* Activate and default settings for the Navier-Stokes module */
   /* ---------------------------------------------------------- */
 
-  /* Not the Stefan model */
-  if ((model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+  if (model != CS_SOLIDIFICATION_MODEL_STEFAN)
     ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
@@ -2723,18 +2716,13 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   cs_flag_t  thm_num = 0, thm_post = 0, thm_model = 0;
 
-  /* Not the Stefan model */
-  if ((model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+  if (model != CS_SOLIDIFICATION_MODEL_STEFAN)
     thm_model |= CS_THERMAL_MODEL_NAVSTO_ADVECTION;
 
-  if (model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE)
-    thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
-  else if (model & CS_SOLIDIFICATION_MODEL_USE_ENTHALPY)
+  if (options & CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE)
     thm_model |= CS_THERMAL_MODEL_USE_ENTHALPY;
-  else { /* Defined a default choice*/
+  else
     thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
-    solid->model |= CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE;
-  }
 
   solid->thermal_sys = cs_thermal_system_activate(thm_model, thm_num, thm_post);
 
@@ -2765,79 +2753,139 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* Allocate the structure storing the modelling context/settings */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+  switch (solid->model) {
 
-    cs_solidification_stefan_t  *s_model = NULL;
-    BFT_MALLOC(s_model, 1, cs_solidification_stefan_t);
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    {
+      cs_solidification_stefan_t  *s_model = NULL;
+      BFT_MALLOC(s_model, 1, cs_solidification_stefan_t);
 
-    /* Default initialization */
-    s_model->t_change = 0.;
-    s_model->latent_heat = 1.0;
-    s_model->n_iter_max = 15;
-    s_model->max_delta_h = 1e-2;
+      /* Default initialization of this model */
+      s_model->t_change = 0.;
+      s_model->latent_heat = 1.0;
+      s_model->n_iter_max = 15;
+      s_model->max_delta_h = 1e-2;
 
-    s_model->enthalpy = NULL;
+      s_model->enthalpy = NULL;
 
-    /* Function pointers */
-    s_model->update_gl = _update_gl_stefan;
-    s_model->update_thm_st = _update_thm_stefan;
+      /* Function pointers */
+      s_model->update_gl = _update_gl_stefan;
+      s_model->update_thm_st = _update_thm_stefan;
 
-    /* Set the context */
-    solid->model_context = (void *)s_model;
-    solid->forcing_coef = 0.;     /* Not useful with this model */
+      /* Set the context */
+      solid->model_context = (void *)s_model;
+      solid->forcing_coef = 0.;     /* Not useful with this model */
 
-    /* Set the thermal equation (since there is no velocity for the advection
-       term) the default space scheme CDO-Vb */
-    cs_equation_param_set(th_eqp, CS_EQKEY_SPACE_SCHEME, "cdofb");
+      /* Set the thermal equation (since there is no velocity for the advection
+         term) the default space scheme CDO-Vb */
+      cs_equation_param_set(th_eqp, CS_EQKEY_SPACE_SCHEME, "cdofb");
 
-  }
-  else if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+    }
+    break;
 
-    cs_solidification_voller_t  *v_model = NULL;
-    BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
+      cs_solidification_voller_t  *v_model = NULL;
+      BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
 
-    /* Initialize pointer */
-    v_model->update = NULL;
+      /* Default initialization of this model */
+      v_model->s_das = 0.33541;
+      v_model->latent_heat = 1.0;
+      v_model->t_solidus = 0.;
+      v_model->t_liquidus = 1.0;
 
-    /* Set the context */
-    solid->model_context = (void *)v_model;
+      /* Initialize pointer */
+      v_model->update = _update_liquid_fraction_voller;
 
-  }
-  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+      /* Set the context */
+      solid->model_context = (void *)v_model;
+      solid->forcing_coef = 180./(v_model->s_das*v_model->s_das);
 
-    BFT_MALLOC(solid->model_context, 1, cs_solidification_binary_alloy_t);
-    cs_solidification_binary_alloy_t
-      *alloy = (cs_solidification_binary_alloy_t *)solid->model_context;
+    }
+    break;
 
-    /* Initialize pointers */
-    alloy->strategy = CS_SOLIDIFICATION_N_STRATEGIES;
-    alloy->update_gl = NULL;
-    alloy->update_thm_st = NULL;
-    alloy->thermosolutal_coupling = NULL;
-    alloy->update_velocity_forcing = NULL;
-    alloy->update_clc = NULL;
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t *b_model = NULL;
+      BFT_MALLOC(b_model, 1, cs_solidification_binary_alloy_t);
 
-    alloy->tk_bulk = NULL;
-    alloy->ck_bulk = NULL;
-    alloy->tx_bulk = NULL;
-    alloy->cx_bulk = NULL;
+      /* Set a default value to the model parameters */
+      b_model->dilatation_coef = 1.;
+      b_model->ref_concentration = 1.;
+      b_model->latent_heat = 1.;
+      b_model->s_das = 0.33541;
+      b_model->kp = 0.5;
+      b_model->inv_kp = 2.;
+      b_model->inv_kpm1 = -2;
+      b_model->ml = -1;
+      b_model->inv_ml = -1;
+      b_model->t_melt = 0.;
+      b_model->t_eut = b_model->t_eut_inf = b_model->t_eut_sup = 0.;
+      b_model->c_eut = b_model->cs1 = b_model->dgldC_eut = 0.;
 
-    alloy->c_l_cells = NULL;
-    alloy->c_l_faces = NULL;
+      b_model->diff_coef = 1e-6;
 
-    alloy->solute_equation = NULL;
-    alloy->c_bulk = NULL;
+      /* Monitoring and criteria to drive the convergence of the coupled system
+         (solute transport and thermal equation) */
 
-    alloy->diff_pty = NULL;
-    alloy->diff_pty_array = NULL;
-    alloy->eta_coef_pty = NULL;
-    alloy->eta_coef_array = NULL;
+      b_model->iter = 0;
+      b_model->n_iter_max = 10;
+      b_model->delta_tolerance = 1e-3;
+      b_model->eta_relax = 0.;
+      b_model->gliq_relax = 0.;
 
-    alloy->t_liquidus = NULL;
-    alloy->tbulk_minus_tliq = NULL;
-    alloy->cliq_minus_cbulk = NULL;
+      /* Strategy to perform the main steps of the simulation of a binary alloy
+       * Default strategy: Taylor which corresponds to the Legacy one with
+       * improvements thanks to some Taylor expansions */
+      b_model->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
 
-  }
+      /* Functions which are specific to a strategy */
+      b_model->update_gl = _update_gl_taylor;
+      b_model->update_thm_st = _update_thm_taylor;
+
+      /* Functions which are common to all strategies */
+      b_model->thermosolutal_coupling = _default_binary_coupling;
+      b_model->update_velocity_forcing = _update_velocity_forcing;
+      b_model->update_clc = _update_clc;
+
+      /* Initialize pointers */
+      b_model->tk_bulk = NULL;
+      b_model->ck_bulk = NULL;
+      b_model->tx_bulk = NULL;
+      b_model->cx_bulk = NULL;
+
+      /* alloy->temp_faces is shared and set when defined */
+
+      b_model->c_l_cells = NULL;
+      b_model->c_l_faces = NULL;
+
+      b_model->solute_equation = NULL;
+      b_model->c_bulk = NULL;
+
+      b_model->diff_pty = NULL;
+      b_model->diff_pty_array = NULL;
+
+      /* eta_coef is activated with advanced options */
+      b_model->eta_coef_pty = NULL;
+      b_model->eta_coef_array = NULL;
+
+      /* Optional post-processing arrays */
+      b_model->t_liquidus = NULL;
+      b_model->tbulk_minus_tliq = NULL;
+      b_model->cliq_minus_cbulk = NULL;
+
+      /* Set the context */
+      solid->model_context = (void *)b_model;
+      solid->forcing_coef = 180./(b_model->s_das*b_model->s_das);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid model for the solidification module.\n"
+              " Please check your setup.", __func__);
+
+  } /* Switch on the solidification model */
 
   /* Set the global pointer */
   cs_solidification_structure = solid;
@@ -2884,7 +2932,7 @@ cs_solidification_set_stefan_model(cs_real_t    t_change,
   /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  if ((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) == 0)
+  if (solid->model != CS_SOLIDIFICATION_MODEL_STEFAN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Stefan model not declared during the"
               " activation of the solidification module.\n"
@@ -2925,7 +2973,7 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
   /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  if ((solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) == 0)
+  if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Voller and Prakash model not declared during the"
               " activation of the solidification module.\n"
@@ -2995,12 +3043,20 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  if (solid->model != CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Binary alloy model not declared during the"
+              " activation of the solidification module.\n"
+              " Please check your settings.", __func__);
 
   /* Check the validity of some parameters */
   assert(name != NULL && varname != NULL);
-  assert(kp > 0);
-  assert(s_das > 0);
+  if (kp < FLT_MIN || kp > 1 - FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for partition coefficient", __func__, kp);
+  if (mliq < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the liquidus slope", __func__, mliq);
   if (s_das < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for the secondary dendrite arms spacing",
@@ -3023,6 +3079,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->kp = kp;
   alloy->inv_kp = 1./kp;
   alloy->inv_kpm1 = 1./(alloy->kp - 1.);
+
   alloy->ml = mliq;
   alloy->inv_ml = 1./mliq;
 
@@ -3041,44 +3098,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
   alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
   alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
-
-  /* Strategy to perform the main steps of the simulation of a binary alloy
-   * Default strategy: Taylor which corresponds to the Legacy one with
-   * improvements thanks to some Taylor expansions */
-  alloy->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
-
-  /* Functions which are specific to a strategy */
-  alloy->update_gl = _update_gl_taylor;
-  alloy->update_thm_st = _update_thm_taylor;
-
-  /* Functions which are common to all strategies */
-  alloy->thermosolutal_coupling = _default_binary_coupling;
-  alloy->update_velocity_forcing = _update_velocity_forcing;
-  alloy->update_clc = _update_clc;
-
-  /* Monitoring and criteria to drive the convergence of the coupled system
-     (solute transport and thermal equation) */
-
-  alloy->iter = 0;
-  alloy->n_iter_max = 5;
-  alloy->delta_tolerance = 1e-3;
-  alloy->gliq_relax = 0.;
-  alloy->eta_relax = 0.;
-
-  /* Additional arrays needed during the iteration process to handle the
-     non-linearities */
-
-  alloy->tk_bulk = NULL;
-  alloy->ck_bulk = NULL;
-  alloy->tx_bulk = NULL;
-  alloy->cx_bulk = NULL;
-
-  /* Solute concentration in the liquid phase */
-
-  alloy->c_l_cells = NULL;
-  alloy->c_l_faces = NULL;
-
-  /* alloy->temp_faces is shared and set when defined */
 
   /* Alloy equation and variable field */
   cs_equation_t  *eq = cs_equation_add(name, varname,
@@ -3116,17 +3135,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   BFT_FREE(pty_name);
 
   cs_equation_add_diffusion(eqp, alloy->diff_pty);
-
-  alloy->diff_pty_array = NULL;
-
-  /* eta_coef is activated with advanced options */
-  alloy->eta_coef_pty = NULL;
-  alloy->eta_coef_array = NULL;
-
-  /* Optional post-processing arrays */
-  alloy->t_liquidus = NULL;
-  alloy->tbulk_minus_tliq = NULL;
-  alloy->cliq_minus_cbulk = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3153,14 +3161,23 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
                                       double                        eta_relax)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  assert(solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  if (n_iter_max < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for n_iter_max (current: %d).\n"
+              " Should be strictly greater than 0.\n",
+              __func__, n_iter_max);
+  if (tolerance < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for \"tolerance\" (current: %5.3e).\n",
+              __func__, tolerance);
 
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-  /* Sanity checks */
-  assert(n_iter_max > 0 && tolerance > 0);
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
   assert(alloy != NULL);
 
   /* Numerical parameters */
@@ -3170,42 +3187,43 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
   alloy->gliq_relax = gliq_relax;
   alloy->eta_relax = eta_relax;
 
-  alloy->strategy = strategy;
-  if (strategy == CS_SOLIDIFICATION_STRATEGY_LEGACY) {
+  switch (strategy) {
 
+  case CS_SOLIDIFICATION_STRATEGY_LEGACY:
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
       alloy->update_gl = _update_gl_legacy_ast;
     else
       alloy->update_gl = _update_gl_legacy;
-
     alloy->update_thm_st = _update_thm_legacy;
+    break;
 
-  }
-  else if (strategy == CS_SOLIDIFICATION_STRATEGY_TAYLOR) {
-
+  case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Adding an advective source term is incompatible with"
                 " the Taylor strategy.\n", __func__);
     else
       alloy->update_gl = _update_gl_taylor;
-
     alloy->update_thm_st = _update_thm_taylor;
+    break;
 
-  }
-  else if (strategy == CS_SOLIDIFICATION_STRATEGY_PATH) {
-
+  case CS_SOLIDIFICATION_STRATEGY_PATH:
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Adding an advective source term is incompatible with"
                 " the Path strategy.\n", __func__);
     else
       alloy->update_gl = _update_gl_path;
-
     alloy->update_thm_st = _update_thm_path;
+    break;
 
-  }
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy.\n", __func__);
+    break;
 
+  } /* Switch on strategies */
+
+  alloy->strategy = strategy;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3241,7 +3259,7 @@ cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  assert(solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
   assert(alloy != NULL);
 
   if (vel_forcing != NULL) {
@@ -3290,54 +3308,64 @@ cs_solidification_destroy_all(void)
    * the current structure and sub-structures.
    * Free only what is owned by this structure */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+  switch (solid->model) {
 
-    cs_solidification_stefan_t  *s_model
-      = (cs_solidification_stefan_t *)solid->model_context;
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    {
+      cs_solidification_stefan_t  *s_model
+        = (cs_solidification_stefan_t *)solid->model_context;
 
-    BFT_FREE(s_model);
+      BFT_FREE(s_model);
 
-  } /* Stefan modelling */
+    } /* Stefan modelling */
+    break;
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
+      cs_solidification_voller_t  *v_model
+        = (cs_solidification_voller_t *)solid->model_context;
 
-    cs_solidification_voller_t  *v_model
-      = (cs_solidification_voller_t *)solid->model_context;
+      BFT_FREE(v_model);
 
-    BFT_FREE(v_model);
+    } /* Voller and Prakash modelling */
+    break;
 
-  } /* Voller and Prakash modelling */
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t  *alloy
+        = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+      BFT_FREE(alloy->diff_pty_array);
+      BFT_FREE(alloy->c_l_cells);
+      BFT_FREE(alloy->eta_coef_array);
+      BFT_FREE(alloy->tk_bulk);
+      BFT_FREE(alloy->ck_bulk);
 
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
+      if (solid->options & CS_SOLIDIFICATION_USE_EXTRAPOLATION) {
+        BFT_FREE(alloy->tx_bulk);
+        BFT_FREE(alloy->cx_bulk);
+      }
 
-    BFT_FREE(alloy->diff_pty_array);
-    BFT_FREE(alloy->c_l_cells);
-    BFT_FREE(alloy->eta_coef_array);
-    BFT_FREE(alloy->tk_bulk);
-    BFT_FREE(alloy->ck_bulk);
+      if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
+        BFT_FREE(alloy->c_l_faces);
 
-    if (solid->options & CS_SOLIDIFICATION_USE_EXTRAPOLATION) {
-      BFT_FREE(alloy->tx_bulk);
-      BFT_FREE(alloy->cx_bulk);
-    }
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE)
+        BFT_FREE(alloy->t_liquidus);
 
-    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-      BFT_FREE(alloy->c_l_faces);
+      if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
+        BFT_FREE(alloy->tbulk_minus_tliq);
+        BFT_FREE(alloy->cliq_minus_cbulk);
+      }
 
-    if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE)
-      BFT_FREE(alloy->t_liquidus);
+      BFT_FREE(alloy);
 
-    if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
-      BFT_FREE(alloy->tbulk_minus_tliq);
-      BFT_FREE(alloy->cliq_minus_cbulk);
-    }
+    } /* Binary alloy modelling */
+    break;
 
-    BFT_FREE(alloy);
+  default:
+    break; /* Nothing to do */
 
-  } /* Binary alloy modelling */
+  } /* Switch on solidification model */
 
   BFT_FREE(solid->thermal_reaction_coef_array);
   BFT_FREE(solid->thermal_source_term_array);
@@ -3394,7 +3422,7 @@ cs_solidification_init_setup(void)
 
   /* Model-specific part */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) {
+  if (solid->model == CS_SOLIDIFICATION_MODEL_STEFAN) {
 
     cs_solidification_stefan_t  *s_model
       = (cs_solidification_stefan_t *)solid->model_context;
@@ -3411,7 +3439,7 @@ cs_solidification_init_setup(void)
 
   } /* Stefan modelling */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -3438,14 +3466,14 @@ cs_solidification_init_setup(void)
   if (cs_glob_rank_id < 1) {
 
     int  n_output_states = CS_SOLIDIFICATION_N_STATES - 1;
-    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+    if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       n_output_states += 1;
 
     int  n_output_values = n_output_states;
     if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE)
       n_output_values += 1;
 
-    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
       if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
         n_output_values += 1;
     }
@@ -3456,7 +3484,7 @@ cs_solidification_init_setup(void)
       labels[i] = _state_names[i];
 
     n_output_values = n_output_states;
-    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+    if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
         labels[n_output_values++] = "SegrIndex";
 
@@ -3545,9 +3573,9 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                                           solid->mass_density->ref_value);
 
   cs_dof_func_t  *func = NULL;
-  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
+  if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
     func = _temp_boussinesq_source_term;
-  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+  else if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
     func = _temp_conc_boussinesq_source_term;
 
   if (func != NULL) { /* Coupling with the Navier-Stokes equation is
@@ -3598,8 +3626,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
   }
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
-    /*               ==================================== */
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    /*                ==================================== */
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -3694,150 +3722,151 @@ cs_solidification_log_setup(void)
   if (solid == NULL)
     return;
 
+  const char  *module = "Solidification";
+
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the solidification module\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
-  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Verbosity: %d\n",
-                solid->verbosity);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Verbosity: %d\n",
+                module, solid->verbosity);
 
-  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_STEFAN)) {
+  switch (solid->model) {
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    {
+      cs_solidification_stefan_t  *s_model =
+        (cs_solidification_stefan_t *)solid->model_context;
 
-    cs_solidification_stefan_t  *s_model =
-      (cs_solidification_stefan_t *)solid->model_context;
-
-    cs_log_printf(CS_LOG_SETUP, "Stefan\n");
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Tliq/sol: %5.3e;",
-                  s_model->t_change);
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
-                  s_model->latent_heat);
-
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification |"
-                  " Max. iter: %d; Max. delta enthalpy: %5.3e\n",
-                  s_model->n_iter_max, s_model->max_delta_h);
-
-  }
-  else if (cs_flag_test(solid->model,
-                        CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {
-
-    cs_solidification_voller_t  *v_model
-      = (cs_solidification_voller_t *)solid->model_context;
-
-    cs_log_printf(CS_LOG_SETUP, "Voller-Prakash (1987)\n");
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Tliq: %5.3e; Tsol: %5.3e",
-                  v_model->t_liquidus, v_model->t_solidus);
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
-                  v_model->latent_heat);
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * Solidification | Forcing coef: %5.3e s_das: %5.3e\n",
-                  solid->forcing_coef, v_model->s_das);
-
-  }
-  else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)) {
-
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-    cs_log_printf(CS_LOG_SETUP, "Binary alloy\n");
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Alloy: %s\n",
-                  cs_equation_get_name(alloy->solute_equation));
-
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * Solidification | Dilatation coef. concentration: %5.3e\n"
-                  "  * Solidification | Distribution coef.: %5.3e\n"
-                  "  * Solidification | Liquidus slope: %5.3e\n"
-                  "  * Solidification | Phase change temp.: %5.3e\n"
-                  "  * Solidification | Eutectic conc.: %5.3e\n"
-                  "  * Solidification | Reference concentration: %5.3e\n"
-                  "  * Solidification | Latent heat: %5.3e\n",
-                  alloy->dilatation_coef, alloy->kp, alloy->ml, alloy->t_melt,
-                  alloy->c_eut, alloy->ref_concentration, alloy->latent_heat);
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * Solidification | Forcing coef: %5.3e; s_das: %5.3e\n",
-                  solid->forcing_coef, alloy->s_das);
-
-    /* Display options */
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Strategy:");
-    switch (alloy->strategy) {
-
-    case CS_SOLIDIFICATION_STRATEGY_LEGACY:
-      cs_log_printf(CS_LOG_SETUP, " Legacy\n");
-      break;
-    case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
-      cs_log_printf(CS_LOG_SETUP, " Legacy + Taylor-based updates\n");
-      break;
-    case CS_SOLIDIFICATION_STRATEGY_PATH:
-      cs_log_printf(CS_LOG_SETUP, " Rely on the solidification path\n");
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy\n", __func__);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Stefan\n", module);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Tliq/sol: %5.3e\n"
+                    "  * %s | Latent heat: %5.3e\n"
+                    "  * %s | Max. iter: %d; Max. delta enthalpy: %5.3e\n",
+                    module, s_model->t_change, module, s_model->latent_heat,
+                    module, s_model->n_iter_max, s_model->max_delta_h);
     }
+    break;
 
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC)
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
+      cs_solidification_voller_t  *v_model
+        = (cs_solidification_voller_t *)solid->model_context;
+
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Voller-Prakash (1987)\n",
+                    module);
       cs_log_printf(CS_LOG_SETUP,
-                    " User-defined function for the concentration eq.");
-    else {
-
-      if (cs_flag_test(solid->options,
-                       CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM))
-        cs_log_printf(CS_LOG_SETUP,
-                      " Solute concentration with an advective source term");
-      else
-        cs_log_printf(CS_LOG_SETUP,
-                      " Solute concentration with an advective coefficient");
-
-    } /* Not user-defined */
-    cs_log_printf(CS_LOG_SETUP, "\n");
-
-    if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC)
-      cs_log_printf(CS_LOG_SETUP,
-                    "  * Solidification | Options:"
-                    " User-defined function for the thermal eq.\n");
-
-    if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC)
-      cs_log_printf(CS_LOG_SETUP,
-                    "  * Solidification | Options:"
-                    " User-defined function for the liquid fraction/state\n");
-
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC)
-      cs_log_printf(CS_LOG_SETUP,
-                    " User-defined function for the thermo-solutal coupling");
-    else
-      cs_log_printf(CS_LOG_SETUP,
-                    " Default thermo-solutal coupling algorithm");
-    cs_log_printf(CS_LOG_SETUP, "\n");
-
-    if (cs_flag_test(solid->options,
-                     CS_SOLIDIFICATION_USE_EXTRAPOLATION))
-      cs_log_printf(CS_LOG_SETUP,
-                    "  * Solidification | Options:"
-                    " Update using a second-order in time extrapolation\n");
-
-    if (solid->options & CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC) {
-      if (alloy->strategy == CS_SOLIDIFICATION_STRATEGY_PATH)
-        cs_log_printf(CS_LOG_SETUP,
-                      "  * Solidification | Options:"
-                      " Penalized eutectic temperature\n");
-      else
-        cs_log_printf(CS_LOG_SETUP,
-                      "  * Solidification | Options:"
-                      " Penalized eutectic temperature (unused)\n");
+                    "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
+                    "  * %s | Latent heat: %5.3e\n"
+                    "  * %s | Forcing coef: %5.3e s_das: %5.3e\n",
+                    module, v_model->t_liquidus, v_model->t_solidus,
+                    module, v_model->latent_heat,
+                    module, solid->forcing_coef, v_model->s_das);
     }
+    break;
 
-    if (alloy->n_iter_max > 1)
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t  *alloy
+        = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Binary alloy\n",
+                    module);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Alloy: %s\n",
+                    module, cs_equation_get_name(alloy->solute_equation));
       cs_log_printf(CS_LOG_SETUP,
-                    "  * Solidification | Options:"
-                    " Sub-iterations requested with "
-                    " n_iter_max %d; tolerance: %.3e\n",
-                    alloy->n_iter_max, alloy->delta_tolerance);
+                    "  * %s | Dilatation coef. concentration: %5.3e\n"
+                    "  * %s | Distribution coef.: %5.3e\n"
+                    "  * %s | Liquidus slope: %5.3e\n"
+                    "  * %s | Phase change temp.: %5.3e\n"
+                    "  * %s | Eutectic conc.: %5.3e\n"
+                    "  * %s | Reference concentration: %5.3e\n"
+                    "  * %s | Latent heat: %5.3e\n",
+                    module, alloy->dilatation_coef, module, alloy->kp,
+                    module, alloy->ml, module, alloy->t_melt,
+                    module, alloy->c_eut, module, alloy->ref_concentration,
+                    module, alloy->latent_heat);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Forcing coef: %5.3e; s_das: %5.3e\n",
+                    module, solid->forcing_coef, alloy->s_das);
 
-  } /* Binary alloy */
+      /* Display options */
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Strategy:", module);
+      switch (alloy->strategy) {
+
+      case CS_SOLIDIFICATION_STRATEGY_LEGACY:
+        cs_log_printf(CS_LOG_SETUP, " Legacy\n");
+        break;
+      case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
+        cs_log_printf(CS_LOG_SETUP, " Legacy + Taylor-based updates\n");
+        break;
+      case CS_SOLIDIFICATION_STRATEGY_PATH:
+        cs_log_printf(CS_LOG_SETUP, " Rely on the solidification path\n");
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy\n", __func__);
+      }
+
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Options:", module);
+      if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC)
+        cs_log_printf(CS_LOG_SETUP,
+                      " User-defined function for the concentration eq.");
+      else {
+
+        if (cs_flag_test(solid->options,
+                         CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM))
+          cs_log_printf(CS_LOG_SETUP,
+                        " Solute concentration with an advective source term");
+        else
+          cs_log_printf(CS_LOG_SETUP,
+                        " Solute concentration with an advective coefficient");
+
+      } /* Not user-defined */
+      cs_log_printf(CS_LOG_SETUP, "\n");
+
+      if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC)
+        cs_log_printf(CS_LOG_SETUP,
+                      "  * %s | Options: %s\n", module,
+                      " User-defined function for the thermal equation");
+
+      if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC)
+        cs_log_printf(CS_LOG_SETUP,
+                      "  * %s | Options: %s\n", module,
+                      " User-defined function for the liquid fraction/state");
+
+      if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC)
+        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
+                      " User-defined function for the thermo-solutal coupling");
+      else
+        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
+                      " Default thermo-solutal coupling algorithm");
+
+      if (cs_flag_test(solid->options, CS_SOLIDIFICATION_USE_EXTRAPOLATION))
+        cs_log_printf(CS_LOG_SETUP,
+                      "  * %s | Options: %s\n", module,
+                      " Update using a second-order in time extrapolation");
+
+      if (solid->options & CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC) {
+        if (alloy->strategy == CS_SOLIDIFICATION_STRATEGY_PATH)
+          cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
+                      " Penalized eutectic temperature");
+      else
+        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
+                      " Penalized eutectic temperature (unused)");
+      }
+
+      if (alloy->n_iter_max > 1)
+        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: Use sub-iterations"
+                      " n_iter_max %d; tolerance: %.3e\n",
+                      module, alloy->n_iter_max, alloy->delta_tolerance);
+
+    } /* Binary alloy */
+
+  default:
+    break;
+
+  } /* Switch on model type */
 
   cs_log_printf(CS_LOG_SETUP, "\n");
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3936,59 +3965,60 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
   /* End of sanity checks */
   /* -------------------- */
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  switch (solid->model) {
 
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t  *alloy
+        = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM) {
+      if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM) {
 
-      if (cs_equation_get_space_scheme(alloy->solute_equation) !=
-          CS_SPACE_SCHEME_CDOFB)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid space scheme for equation %s\n",
-                  __func__, cs_equation_get_name(alloy->solute_equation));
+        if (cs_equation_get_space_scheme(alloy->solute_equation) !=
+            CS_SPACE_SCHEME_CDOFB)
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid space scheme for equation %s\n",
+                    __func__, cs_equation_get_name(alloy->solute_equation));
 
-      cs_equation_add_user_hook(alloy->solute_equation,
-                                NULL,                    /* hook context */
-                                _fb_solute_source_term); /* hook function */
+        cs_equation_add_user_hook(alloy->solute_equation,
+                                  NULL,                    /* hook context */
+                                  _fb_solute_source_term); /* hook function */
 
-      /* Store the pointer to the current face temperature values */
-      alloy->temp_faces =
-        cs_equation_get_face_values(solid->thermal_sys->thermal_eq, false);
+        /* Store the pointer to the current face temperature values */
+        alloy->temp_faces =
+          cs_equation_get_face_values(solid->thermal_sys->thermal_eq, false);
 
-    } /* CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM */
+      } /* CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM */
 
-    /* One assumes that all the alloy mixture is liquid thus C_l = C_bulk */
-    const cs_lnum_t  n_cells = quant->n_cells;
-    memcpy(alloy->c_l_cells, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
+      /* One assumes that all the alloy mixture is liquid thus C_l = C_bulk */
+      const cs_lnum_t  n_cells = quant->n_cells;
+      memcpy(alloy->c_l_cells, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
 
-    /* Set the previous iterate before calling update functions */
-    memcpy(alloy->tk_bulk, solid->temperature->val, n_cells*sizeof(cs_real_t));
-    memcpy(alloy->ck_bulk, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
+      /* Set the previous iterate before calling update functions */
+      memcpy(alloy->tk_bulk, solid->temperature->val, n_cells*sizeof(cs_real_t));
+      memcpy(alloy->ck_bulk, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
 
-    if (alloy->c_l_faces != NULL) {
-      cs_real_t  *c_bulk_faces =
-        cs_equation_get_face_values(alloy->solute_equation, false);
-      memcpy(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
-    }
+      if (alloy->c_l_faces != NULL) {
+        cs_real_t  *c_bulk_faces =
+          cs_equation_get_face_values(alloy->solute_equation, false);
+        memcpy(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
+      }
 
-  } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
+    } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
+    break;
 
-  else {
-
-    if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
-
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
       v_model->update(mesh, connect, quant, time_step);
 
     }
-    else {
+    break;
 
-      assert((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) > 0);
-
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    {
       cs_solidification_stefan_t  *s_model
         = (cs_solidification_stefan_t *)solid->model_context;
 
@@ -4034,8 +4064,12 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
                         s_model->enthalpy->val); /* computed enthalpy */
 
     } /* Stefan model */
+    break;
 
-  }
+  default:
+    break; /* Nothing to do */
+
+  } /* Switch on model */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4060,24 +4094,27 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  switch (solid->model) {
 
-    cs_solidification_binary_alloy_t  *alloy =
-      (cs_solidification_binary_alloy_t *)solid->model_context;
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t  *alloy =
+        (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    /* Compute a new couple (Temp, g_l, conc) */
+      /* Compute a new couple (Temp, g_l, conc) */
 
-    alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
+      alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
 
-    /* Solve the Navier-Stokes system */
+      /* Solve the Navier-Stokes system */
 
-    cs_navsto_system_compute(mesh, connect, quant, time_step);
+      cs_navsto_system_compute(mesh, connect, quant, time_step);
 
-  }
-  else { /* Solidification process with a pure component without segregation */
+    }
+    break;
 
-    if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
-
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
+      /* Solidification process with a pure component without segregation */
       cs_solidification_voller_t  *v_model =
         (cs_solidification_voller_t *)solid->model_context;
 
@@ -4097,15 +4134,16 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
       cs_navsto_system_compute(mesh, connect, quant, time_step);
 
     }
-    else {
+    break;
 
-      assert((solid->model & CS_SOLIDIFICATION_MODEL_STEFAN) > 0);
-
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
       _stefan_thermal_non_linearities(mesh, connect, quant, time_step);
+      break;
 
-    }
+  default:
+    break; /* Nothing else to do */
 
-  }
+  } /* Switch on model */
 
   /* Perform the monitoring */
   if (solid->verbosity > 0)
@@ -4134,7 +4172,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
   /* Estimate the number of values to output */
   int  n_output_values = CS_SOLIDIFICATION_N_STATES - 1;
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
     n_output_values += 1;
 
     if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
@@ -4150,7 +4188,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
   BFT_MALLOC(output_values, n_output_values, cs_real_t);
   memset(output_values, 0, n_output_values*sizeof(cs_real_t));
 
-  int n_output_states = (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) ?
+  int n_output_states = (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) ?
     CS_SOLIDIFICATION_N_STATES : CS_SOLIDIFICATION_N_STATES - 1;
   for (int i = 0; i < n_output_states; i++)
     output_values[i] = solid->state_ratio[i];
@@ -4176,7 +4214,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
   }
 
-  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -4320,7 +4358,7 @@ cs_solidification_extra_post(void                      *input,
                                fld->val,
                                time_step);
 
-    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
       cs_solidification_binary_alloy_t  *alloy
         = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -4410,7 +4448,7 @@ cs_solidification_extra_post(void                      *input,
 
     }
 
-    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
       cs_solidification_binary_alloy_t  *alloy
         = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -4502,7 +4540,7 @@ cs_solidification_extra_post(void                      *input,
 
     } /* Binary alloy model */
 
-  } /* VOLUME_MESH + on cells */
+  } /* volume_mesh + on cells */
 }
 
 /*----------------------------------------------------------------------------*/

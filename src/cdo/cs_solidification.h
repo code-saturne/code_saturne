@@ -94,9 +94,12 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_ADVANCED_ANALYSIS           (1 << 6) /* =  64 */
 
 /*!
- * @name Flags specifying numerical options specific to the solidification
- *       module
+ * @name Flags specifying options specific to the solidification module
  * @{
+ *
+ * \def CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE
+ * \brief The dynamic system of equations is associated with an energy equation
+ *        solved using the enthalpy as variable (not fully available).
  *
  * \def CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM
  * \brief The solute equation related to the transport of the bulk concentration
@@ -117,9 +120,10 @@ BEGIN_C_DECLS
  *        the eutectic plateau.
  */
 
-#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 0) /*=    1 */
-#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 1) /*=    2 */
-#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 2) /*=    4 */
+#define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE             (1 << 0) /*=    1 */
+#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 2) /*=    4 */
+#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 3) /*=    8 */
 
 /* Automatically set by the code if user functions are used
  * The following flags are set when calling \ref cs_solidification_set_functions
@@ -156,19 +160,9 @@ BEGIN_C_DECLS
  * Structure and type definitions
  *============================================================================*/
 
-typedef cs_flag_t  cs_solidification_model_t;
-
-/*! \enum cs_solidification_model_bit_t
- *  \brief Bit values for physical modelling related to the Navier-Stokes system
- *         of equations
- *
- * \var CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE
- *      The dynamic system of equations is associated with an energy equation
- *      solved using the temperature as variable. This is the default option.
- *
- * \var CS_SOLIDIFICATION_MODEL_USE_ENTHALPY
- *      The dynamic system of equations is associated with an energy equation
- *      solved using the enthalpy as variable (not fully available).
+/*! \enum cs_solidification_model_t
+ *  \brief Type of physical model used to simulate the solidifcation/fusion
+ *         process
  *
  * \var CS_SOLIDIFICATION_MODEL_STEFAN
  *      Phase change model without advection field. The phase change is assumed
@@ -191,20 +185,13 @@ typedef cs_flag_t  cs_solidification_model_t;
 
 typedef enum {
 
-  /* Main modelling for the thermal system
-     ------------------------------------- */
+  CS_SOLIDIFICATION_MODEL_STEFAN,
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY,
 
-  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<0, /* =   1 */
-  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<1, /* =   2 */
+  CS_SOLIDIFICATION_N_MODELS
 
-  /* Solidification modelling
-     ------------------------ */
-
-  CS_SOLIDIFICATION_MODEL_STEFAN                  = 1<<2, /* =   4 */
-  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<3, /* =   8 */
-  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<4, /* =  16 */
-
-} cs_solidification_model_bit_t;
+} cs_solidification_model_t;
 
 /*! \enum cs_solidification_state_t
  *  \brief Kind of state in which a cell or an entity is
