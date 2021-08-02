@@ -91,7 +91,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     /*! [loc_var_f_user] */
     const cs_lnum_t n_cells     = domain->mesh->n_cells;
-    const cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts;
     const cs_lnum_t n_b_faces    = domain->mesh->n_b_faces;
     const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
 

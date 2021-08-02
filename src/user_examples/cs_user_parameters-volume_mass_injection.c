@@ -174,11 +174,6 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   const char z_name[] = "mass_injection";
 
-  cs_turb_model_type_t  iturb = cs_glob_turb_model->iturb;
-  int                   itytur = cs_glob_turb_model->itytur;
-
-  cs_real_t ustar2 = 0, xkent = cs_math_epzero, xeent = cs_math_epzero;
-
   /* Pressure */
 
   double mass_in[1] = {30000};

@@ -438,7 +438,7 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
   bool  rho_is_uniform = cs_property_is_uniform(rho);
   bool  cp_is_uniform = cs_property_is_uniform(cp);
 
-  cs_real_t  rho_c, cp_c;
+  cs_real_t  rho_c = 0., cp_c = 0.; /* Avoid a compiler warning */
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
@@ -1944,7 +1944,7 @@ _update_thm_stefan(const cs_mesh_t             *mesh,
 
   bool  rho_is_uniform = cs_property_is_uniform(solid->mass_density);
 
-  cs_real_t  rho_c, rhoLovdt;
+  cs_real_t  rho_c = 0., rhoLovdt = 0.; /* Avoid a compiler warning */
 
   const cs_real_t  Lovdt = model->latent_heat/ts->dt[0];
   const cs_real_t  *g_l = solid->g_l_field->val;
@@ -2001,7 +2001,7 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
 
   bool  cp_is_uniform = cs_property_is_uniform(solid->thermal_sys->cp);
 
-  cs_real_t  cp_c, cpovL;
+  cs_real_t  cp_c = 0, cpovL = 0.; /* Avoid a compiler warning */
   cs_real_t  *temp = solid->temperature->val;
   cs_real_t  *g_l = solid->g_l_field->val;
 

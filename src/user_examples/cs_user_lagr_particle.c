@@ -354,12 +354,6 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[])
 {
-
-  const int ntcabs = cs_glob_time_step->nt_cur;
-
-  cs_lagr_zone_data_t  *lagr_bdy_conditions
-    = cs_lagr_get_boundary_conditions();
-
   /* Simple changes to selected attributes
      ------------------------------------- */
 
@@ -681,7 +675,6 @@ cs_user_lagr_sde(const cs_real_t  dt[],
     for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
       unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-      cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
       cs_real_t *usr_var
         = cs_lagr_particle_attr_n(part, p_am, 0, CS_LAGR_USER);
