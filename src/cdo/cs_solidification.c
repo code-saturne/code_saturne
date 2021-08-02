@@ -440,7 +440,7 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
 
   cs_real_t  rho_c, cp_c;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     /* Retrieve the value of the properties */
@@ -1951,7 +1951,7 @@ _update_thm_stefan(const cs_mesh_t             *mesh,
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
   const cs_real_t  *vol = quant->cell_vol;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     /* Retrieve the value of the properties */
@@ -2007,7 +2007,7 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
 
   /* Update g_l values in each cell as well as the cell state and the related
      count */
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     /* Retrieve the value of the property */
@@ -2197,7 +2197,7 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
 
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
@@ -4001,7 +4001,7 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
        * Initialize source term and reaction term
        */
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
       for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
         if (solid->temperature->val[c] < s_model->t_change) {
