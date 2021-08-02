@@ -2687,15 +2687,21 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* Set members of the structure according to the given settings */
   solid->model = model;
+
+  /* By default, Stefan model is with a frozen field */
+  if (model == CS_SOLIDIFICATION_MODEL_STEFAN)
+    options |= CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD;
   solid->options = options;
+
   if (post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS)
     post_flag |= CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE;
   solid->post_flag = post_flag;
 
-  /* Activate and default settings for the Navier-Stokes module */
-  /* ---------------------------------------------------------- */
+  /* Activate the Navier-Stokes module */
+  /* --------------------------------- */
 
-  if (model != CS_SOLIDIFICATION_MODEL_STEFAN)
+  if ((options & CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD) == 0)
+    /* The Navier-Stokes is not solved when the frozen field is set */
     ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
 
   /* Activate the Navier-Stokes module */
@@ -3002,7 +3008,6 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 
   /* Update properties */
   v_model->update = _update_liquid_fraction_voller;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3963,7 +3968,6 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
   }
 
   /* End of sanity checks */
-  /* -------------------- */
 
   switch (solid->model) {
 
@@ -4104,11 +4108,6 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
       /* Compute a new couple (Temp, g_l, conc) */
 
       alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
-
-      /* Solve the Navier-Stokes system */
-
-      cs_navsto_system_compute(mesh, connect, quant, time_step);
-
     }
     break;
 
@@ -4128,11 +4127,6 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
       cs_field_current_to_previous(solid->g_l_field);
 
       v_model->update(mesh, connect, quant, time_step);
-
-      /* Solve the Navier-Stokes system */
-
-      cs_navsto_system_compute(mesh, connect, quant, time_step);
-
     }
     break;
 
@@ -4144,6 +4138,12 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
     break; /* Nothing else to do */
 
   } /* Switch on model */
+
+  /* Solve the Navier-Stokes system */
+
+  if ((solid->options & CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD) == 0)
+    /* The Navier-Stokes is not solved when the frozen field is set */
+    cs_navsto_system_compute(mesh, connect, quant, time_step);
 
   /* Perform the monitoring */
   if (solid->verbosity > 0)
@@ -4291,7 +4291,6 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
                             output_values);
 
   BFT_FREE(output_values);
-
 }
 
 /*----------------------------------------------------------------------------*/

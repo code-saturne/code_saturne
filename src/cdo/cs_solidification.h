@@ -101,6 +101,10 @@ BEGIN_C_DECLS
  * \brief The dynamic system of equations is associated with an energy equation
  *        solved using the enthalpy as variable (not fully available).
  *
+ * \def CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD
+ * \brief The system of equations does not involve the Navier-Stokes equations.
+ *        By default, no velocity is taken into account.
+ *
  * \def CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM
  * \brief The solute equation related to the transport of the bulk concentration
  *        is treated with a source term related to an explicit advection of the
@@ -121,9 +125,10 @@ BEGIN_C_DECLS
  */
 
 #define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE             (1 << 0) /*=    1 */
-#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 1) /*=    2 */
-#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 2) /*=    4 */
-#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 3) /*=    8 */
+#define CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD         (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 2) /*=    4 */
+#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 3) /*=    8 */
+#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 4) /*=   16 */
 
 /* Automatically set by the code if user functions are used
  * The following flags are set when calling \ref cs_solidification_set_functions
