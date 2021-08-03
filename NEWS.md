@@ -3,6 +3,9 @@ Release 7.0.1 (unreleased)
 
 Bug fixes:
 
+- Fix incorrect path computation in modules such as neptune_cfd
+  for relocatable builds (used by EDF salome_cfd installers).
+
 - Fix: with multiple physical property zones (as in fluid/solid coupling),
   force variable molecular viscosity and thermal diffusivity.
 
