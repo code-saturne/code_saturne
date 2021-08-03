@@ -2657,6 +2657,23 @@ cs_solidification_set_verbosity(int   verbosity)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the value of the epsilon parameter used in the forcing term
+ *         of the momentum equation
+ *
+ * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
+ *                            division by zero
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_forcing_eps(cs_real_t    forcing_eps)
+{
+  assert(forcing_eps > 0);
+  cs_solidification_forcing_eps = forcing_eps;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Activate the solidification module
  *
  * \param[in]  model            type of modelling
@@ -2780,12 +2797,10 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Set the context */
       solid->model_context = (void *)s_model;
-      solid->forcing_coef = 0.;     /* Not useful with this model */
 
       /* Set the thermal equation (since there is no velocity for the advection
          term) the default space scheme CDO-Vb */
       cs_equation_param_set(th_eqp, CS_EQKEY_SPACE_SCHEME, "cdofb");
-
     }
     break;
 
@@ -2805,8 +2820,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Set the context */
       solid->model_context = (void *)v_model;
-      solid->forcing_coef = 180./(v_model->s_das*v_model->s_das);
-
     }
     break;
 
@@ -2882,7 +2895,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Set the context */
       solid->model_context = (void *)b_model;
-      solid->forcing_coef = 180./(b_model->s_das*b_model->s_das);
     }
     break;
 
@@ -2901,37 +2913,14 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the value of the epsilon parameter used in the forcing term
- *         of the momentum equation
+ * \brief  Get the structure defining the Stefan model
  *
- * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
- *                            division by zero
+ * \return a pointer to the structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_solidification_set_forcing_eps(cs_real_t    forcing_eps)
-{
-  assert(forcing_eps > 0);
-  cs_solidification_forcing_eps = forcing_eps;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the main physical parameters which describe the Stefan model
- *
- * \param[in] t_change     liquidus/solidus temperature (in K)
- * \param[in] latent_heat  latent heat
- * \param[in] n_iter_max   max. number of iters to handle the non-linearity
- * \param[in] delta_h      max. variation of enthalpy between sub-iterations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_set_stefan_model(cs_real_t    t_change,
-                                   cs_real_t    latent_heat,
-                                   int          iter_max,
-                                   double       delta_h)
+cs_solidification_stefan_t *
+cs_solidification_get_stefan_struct(void)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
@@ -2948,12 +2937,107 @@ cs_solidification_set_stefan_model(cs_real_t    t_change,
     = (cs_solidification_stefan_t *)solid->model_context;
   assert(s_model != NULL);
 
+  return s_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the Stefan's model settings
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_stefan_t *
+cs_solidification_check_stefan_model(void)
+{
+  cs_solidification_stefan_t  *s_model = cs_solidification_get_stefan_struct();
+
+  if (s_model->n_iter_max < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for n_iter_max (= %d)\n",
+              __func__, s_model->n_iter_max);
+  if (s_model->max_delta_h < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for max_delta_h (= %5.3e)\n",
+              __func__, s_model->max_delta_h);
+
+  return s_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which describe the Stefan model
+ *
+ * \param[in] t_change     liquidus/solidus temperature (in K)
+ * \param[in] latent_heat  latent heat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_stefan_model(cs_real_t    t_change,
+                                   cs_real_t    latent_heat)
+{
+  cs_solidification_stefan_t  *s_model = cs_solidification_get_stefan_struct();
+
   /* Model parameters */
   s_model->t_change = t_change;
   s_model->latent_heat = latent_heat;
+}
 
-  s_model->n_iter_max = (iter_max > 0) ? iter_max : 1;
-  s_model->max_delta_h = fabs(delta_h);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the structure defining the Voller model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_voller_t *
+cs_solidification_get_voller_struct(void)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Voller model not declared during the"
+              " activation of the solidification module.\n"
+              " Please check your settings.", __func__);
+
+  cs_solidification_voller_t  *v_model
+    = (cs_solidification_voller_t *)solid->model_context;
+  assert(v_model != NULL);
+
+  return v_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the Voller's model settings
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_voller_t *
+cs_solidification_check_voller_model(void)
+{
+  cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
+
+  if (v_model->t_liquidus - v_model->t_solidus < 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The liquidus and solidus temperatures are not"
+              " consistent.\n"
+              " Please check your settings.", __func__);
+  if (v_model->s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, v_model->s_das);
+
+  return v_model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2974,40 +3058,82 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
                                    cs_real_t    latent_heat,
                                    cs_real_t    s_das)
 {
-  cs_solidification_t  *solid = cs_solidification_structure;
-
-  /* Sanity checks */
-  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
-
-  if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Voller and Prakash model not declared during the"
-              " activation of the solidification module.\n"
-              " Please check your settings.", __func__);
-
-  if (t_liquidus - t_solidus < 0.)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: The liquidus and solidus temperatures are not"
-              " consistent.\n"
-              " Please check your settings.", __func__);
-  if (s_das < FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, s_das);
-
-  cs_solidification_voller_t  *v_model
-    = (cs_solidification_voller_t *)solid->model_context;
-  assert(v_model != NULL);
+  cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
 
   /* Model parameters */
   v_model->t_solidus = t_solidus;
   v_model->t_liquidus = t_liquidus;
   v_model->latent_heat = latent_heat;
   v_model->s_das = s_das;
-  solid->forcing_coef = 180./(s_das*s_das);
+}
 
-  /* Update properties */
-  v_model->update = _update_liquid_fraction_voller;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the structure defining the binary alloy model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_binary_alloy_t *
+cs_solidification_get_binary_alloy_struct(void)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  if (solid->model != CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The binary alloy model was not declared during the"
+              " activation of the solidification module.\n"
+              " Please check your settings.", __func__);
+
+  cs_solidification_binary_alloy_t  *b_model
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+  assert(b_model != NULL);
+
+  return b_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the settings of the binary alloy
+ *         model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_binary_alloy_t *
+cs_solidification_check_binary_alloy_model(void)
+{
+  cs_solidification_binary_alloy_t
+    *b_model = cs_solidification_get_binary_alloy_struct();
+
+  if (b_model->s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, b_model->s_das);
+  if (b_model->kp < FLT_MIN || b_model->kp > 1 - FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for partition coefficient",
+              __func__, b_model->kp);
+  if (fabs(b_model->ml) < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the liquidus slope",
+              __func__, b_model->ml);
+  if (b_model->n_iter_max < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for n_iter_max (current: %d).\n"
+              " Should be strictly greater than 0.\n",
+              __func__, b_model->n_iter_max);
+  if (b_model->delta_tolerance < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid value for \"tolerance\" (current: %5.3e).\n",
+              __func__, b_model->delta_tolerance);
+
+  return b_model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3045,17 +3171,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       latent_heat,
                                          cs_real_t       s_das)
 {
-  cs_solidification_t  *solid = cs_solidification_structure;
-  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
-
-  if (solid->model != CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Binary alloy model not declared during the"
-              " activation of the solidification module.\n"
-              " Please check your settings.", __func__);
-
   /* Check the validity of some parameters */
-  assert(name != NULL && varname != NULL);
   if (kp < FLT_MIN || kp > 1 - FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for partition coefficient", __func__, kp);
@@ -3067,12 +3183,9 @@ cs_solidification_set_binary_alloy_model(const char     *name,
               " %s: Invalid value %g for the secondary dendrite arms spacing",
               __func__, s_das);
 
-  solid->forcing_coef = 180./(s_das*s_das);
-
   /* Retrieve and set the binary alloy structures */
   cs_solidification_binary_alloy_t
-    *alloy = (cs_solidification_binary_alloy_t *)solid->model_context;
-  assert(alloy != NULL);
+    *alloy = cs_solidification_get_binary_alloy_struct();
 
   /* Set the main physical parameters/constants */
   alloy->dilatation_coef = beta;
@@ -3081,30 +3194,30 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->s_das = s_das;
 
   /* Phase diagram parameters and related quantities */
-  alloy->kp = kp;
+  alloy->kp = kp;               /* partition coeff. */
+  alloy->ml = mliq;             /* liquidus slope */
+  alloy->t_melt = t_melt;       /* melting temperature */
+  alloy->t_eut = t_eutec;       /* eutectic temperature */
+
+  /* Derived quantities from the phase diagram */
   alloy->inv_kp = 1./kp;
   alloy->inv_kpm1 = 1./(alloy->kp - 1.);
-
-  alloy->ml = mliq;
   alloy->inv_ml = 1./mliq;
+  alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
+  alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
 
-  /* Temperature and concentration parameters */
-  alloy->t_melt = t_melt;
+  assert(fabs(alloy->c_eut - alloy->cs1) > FLT_MIN);
+  alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
 
   /* Define a small range of temperature around the eutectic temperature
    * in which one assumes an eutectic transformation */
-  alloy->t_eut = t_eutec;
   alloy->t_eut_inf =
     alloy->t_eut - cs_solidification_eutectic_threshold;
   alloy->t_eut_sup =
     alloy->t_eut + cs_solidification_eutectic_threshold;
 
-  /* Derived parameters for the phase diagram */
-  alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
-  alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
-  alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
-
   /* Alloy equation and variable field */
+  assert(name != NULL && varname != NULL);
   cs_equation_t  *eq = cs_equation_add(name, varname,
                                        CS_EQUATION_TYPE_SOLIDIFICATION,
                                        1,
@@ -3166,24 +3279,8 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
                                       double                        eta_relax)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-
-  /* Sanity checks */
-  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
-
-  assert(solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
-  if (n_iter_max < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid value for n_iter_max (current: %d).\n"
-              " Should be strictly greater than 0.\n",
-              __func__, n_iter_max);
-  if (tolerance < FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid value for \"tolerance\" (current: %5.3e).\n",
-              __func__, tolerance);
-
-  cs_solidification_binary_alloy_t  *alloy
-    = (cs_solidification_binary_alloy_t *)solid->model_context;
-  assert(alloy != NULL);
+  cs_solidification_binary_alloy_t
+    *alloy = cs_solidification_get_binary_alloy_struct();
 
   /* Numerical parameters */
   alloy->n_iter_max = n_iter_max;
@@ -3427,46 +3524,67 @@ cs_solidification_init_setup(void)
 
   /* Model-specific part */
 
-  if (solid->model == CS_SOLIDIFICATION_MODEL_STEFAN) {
+  switch (solid->model) {
 
-    cs_solidification_stefan_t  *s_model
-      = (cs_solidification_stefan_t *)solid->model_context;
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    {
+      /* Check the sanity of the model parameters and retrieve the structure */
+      cs_solidification_stefan_t
+        *s_model = cs_solidification_check_stefan_model();
 
-    /* Add a field for the enthalpy */
-    s_model->enthalpy = cs_field_find_or_create("enthalpy",
-                                                field_mask,
-                                                c_loc_id,
-                                                1,
-                                                true); /* has_previous */
+      /* Add a field for the enthalpy */
+      s_model->enthalpy = cs_field_find_or_create("enthalpy",
+                                                  field_mask,
+                                                  c_loc_id,
+                                                  1,
+                                                  true); /* has_previous */
 
-    cs_field_set_key_int(s_model->enthalpy, log_key, 1);
-    cs_field_set_key_int(s_model->enthalpy, post_key, 1);
-
-  } /* Stefan modelling */
-
-  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
-
-    cs_solidification_binary_alloy_t  *alloy
-      = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-    cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
-
-    /* Add the unsteady term */
-    cs_equation_add_time(eqp, solid->mass_density);
-
-    /* Add an advection term to the solute concentration equation */
-    cs_equation_add_advection(eqp, cs_navsto_get_adv_field());
-
-    if ((solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-        == 0) {
-
-      alloy->eta_coef_pty = cs_property_add("alloy_adv_coef", CS_PROPERTY_ISO);
-
-      cs_equation_add_advection_scaling_property(eqp, alloy->eta_coef_pty);
-
+      cs_field_set_key_int(s_model->enthalpy, log_key, 1);
+      cs_field_set_key_int(s_model->enthalpy, post_key, 1);
     }
+    break; /* Stefan modelling */
 
-  } /* Binary alloy model */
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    {
+      /* Check the sanity of the model parameters and retrieve the structure */
+      cs_solidification_voller_t
+        *v_model = cs_solidification_check_voller_model();
+
+      solid->forcing_coef = 180./(v_model->s_das*v_model->s_das);
+    }
+    break;
+
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      /* Check the sanity of the model parameters and retrieve the structure */
+      cs_solidification_binary_alloy_t
+        *alloy = cs_solidification_check_binary_alloy_model();
+
+      cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
+
+      /* Add the unsteady term */
+      cs_equation_add_time(eqp, solid->mass_density);
+
+      /* Add an advection term to the solute concentration equation */
+      cs_equation_add_advection(eqp, cs_navsto_get_adv_field());
+
+      if ((solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM) == 0) {
+
+        alloy->eta_coef_pty = cs_property_add("alloy_adv_coef",
+                                              CS_PROPERTY_ISO);
+
+        cs_equation_add_advection_scaling_property(eqp, alloy->eta_coef_pty);
+
+      }
+
+      solid->forcing_coef = 180./(alloy->s_das*alloy->s_das);
+    }
+    break; /* Binary alloy model */
+
+  default: /* Nothing else to do */
+    break;
+
+  } /* Switch on model */
 
   if (cs_glob_rank_id < 1) {
 

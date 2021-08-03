@@ -602,6 +602,19 @@ cs_solidification_set_verbosity(int   verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the value of the epsilon parameter used in the forcing term
+ *         of the momentum equation
+ *
+ * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
+ *                            division by zero
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Activate the solidification module
  *
  * \param[in]  model            type of modelling
@@ -629,16 +642,25 @@ cs_solidification_activate(cs_solidification_model_t      model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the value of the epsilon parameter used in the forcing term
- *         of the momentum equation
+ * \brief  Get the structure defining the Stefan model
  *
- * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
- *                            division by zero
+ * \return a pointer to the structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
+cs_solidification_stefan_t *
+cs_solidification_get_stefan_struct(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the Stefan's model settings
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_stefan_t *
+cs_solidification_check_stefan_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -646,16 +668,34 @@ cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
  *
  * \param[in] t_change     liquidus/solidus temperature (in K)
  * \param[in] latent_heat  latent heat
- * \param[in] n_iter_max   max. number of iters to handle the non-linearity
- * \param[in] delta_h      max. variation of enthalpy between sub-iterations
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_stefan_model(cs_real_t    t_change,
-                                   cs_real_t    latent_heat,
-                                   int          iter_max,
-                                   double       delta_h);
+                                   cs_real_t    latent_heat);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the structure defining the Voller model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_voller_t *
+cs_solidification_get_voller_struct(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the Voller's model settings
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_voller_t *
+cs_solidification_check_voller_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -674,6 +714,29 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
                                    cs_real_t    s_das);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the structure defining the binary alloy model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_binary_alloy_t *
+cs_solidification_get_binary_alloy_struct(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Sanity checks on the consistency of the settings of the binary alloy
+ *         model
+ *
+ * \return a pointer to the structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_binary_alloy_t *
+cs_solidification_check_binary_alloy_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
