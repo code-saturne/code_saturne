@@ -50,7 +50,7 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_3_t   gravity;           /* gravity vector */
+  cs_real_t     gravity[3];        /* gravity vector */
   int           icorio;            /* Coriolis source terms indicator */
 
 } cs_physical_constants_t;
