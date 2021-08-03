@@ -111,8 +111,6 @@ class package:
                                     "@pkgdatadir@"),
                      'docdir': (os.path.join("share", "doc", self.name),
                                 "@docdir@"),
-                     'pdfdir': (os.path.join("share", "doc", self.name),
-                                "@pdfdir@"),
                      'sysconfdir': ("etc", "@sysconfdir@")}
 
         # Adjust docdir for additional modules.
