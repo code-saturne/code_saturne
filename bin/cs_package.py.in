@@ -41,12 +41,14 @@ class package:
                  reload_config=False,
                  name="@PACKAGE_NAME@"):
 
+        base_package = 'code_saturne'
+
         # System configuration (compilers, pre-requisites, ...)
 
         if reload_config:
             import importlib
             try:
-                config = importlib.import_module('cs_config', package='code_saturne')
+                config = importlib.import_module('cs_config', package=base_package)
                 self.config = config.config()
             except Exception:  # Upon installation
                 import traceback
@@ -86,11 +88,11 @@ class package:
                      'exec_prefix': ("", "@exec_prefix@"),
                      'bindir': ("bin", "@bindir@"),
                      'includedir': ("include", "@includedir@"),
-                     'pkgincludedir': (os.path.join("include", self.name),
+                     'pkgincludedir': (os.path.join("include", base_package),
                                        "@pkgincludedir@"),
                      'libdir': ("lib", "@libdir@"),
                      'libexecdir': ("libexec", "@libexecdir@"),
-                     'pkglibexecdir': (os.path.join("libexec", self.name),
+                     'pkglibexecdir': (os.path.join("libexec", base_package),
                                        "@pkglibexecdir@"),
                      'pythondir': (os.path.join("lib",
                                                 "python" + sys.version[:3],
@@ -99,13 +101,13 @@ class package:
                      'pkgpythondir': (os.path.join("lib",
                                                    "python" + sys.version[:3],
                                                    "site-packages",
-                                                   self.name),
+                                                   base_package),
                                       "@pkgpythondir@"),
                      'localedir': (os.path.join("share", "locale"),
                                    "@localedir@"),
                      'datarootdir': ("share", "@datarootdir@"),
                      'datadir': ("share", "@datadir@"),
-                     'pkgdatadir': (os.path.join("share", self.name),
+                     'pkgdatadir': (os.path.join("share", base_package),
                                     "@pkgdatadir@"),
                      'docdir': (os.path.join("share", "doc", self.name),
                                 "@docdir@"),
@@ -115,7 +117,7 @@ class package:
 
         # Adjust docdir for additional modules.
 
-        # We should try to find a cleaner/more conistant solution,
+        # We should try to find a cleaner/more consistant solution,
         # perhaps storing all documents in the main module's
         # directory (code_saturne).
 
