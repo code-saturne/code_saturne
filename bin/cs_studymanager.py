@@ -71,7 +71,7 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="quiet", default=False,
                       help="don't print status messages to stdout")
 
-    parser.add_option("-u", "--update-smgr", 
+    parser.add_option("-u", "--update-smgr",
                       action="store_true", dest="update_smgr", default=False,
                       help="update the studymanager file smgr.xml")
 
@@ -340,7 +340,7 @@ def run_studymanager(pkg, options):
     if options.update_setup:
         studies.updateSetup()
 
-    # Create dependency graph based on all studies and cases 
+    # Create dependency graph based on all studies and cases
 
     if options.compare or options.post or options.runcase:
         studies.dump_graph()

@@ -1009,7 +1009,7 @@ class Studies(object):
               print(" Studies >> Repository  >> ", self.__repo)
               print(" Studies >> Destination >> ", self.__dest)
 
-        # create plotter 
+        # create plotter
 
         try:
             self.__plotter = Plotter(self.__parser)
@@ -1935,14 +1935,14 @@ class Studies(object):
                            self.report,
                            self.__parser.write(),
                            self.__pdflatex)
-    
+
             for l, s in self.studies:
                 for case in s.cases:
                     if case.diff_value or not case.m_size_eq:
                         is_nodiff = "KO"
                     else:
                         is_nodiff = "OK"
-    
+
                     doc1.add_row(case.study,
                                  case.label,
                                  case.is_compiled,
@@ -1950,7 +1950,7 @@ class Studies(object):
                                  case.is_time,
                                  case.is_compare,
                                  is_nodiff)
-    
+
             attached_files.append(doc1.close())
 
         # Second detailed report
