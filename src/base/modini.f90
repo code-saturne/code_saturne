@@ -146,13 +146,17 @@ endif
 ! 3. OPTIONS DU CALCUL : TABLEAUX DE optcal
 !===============================================================================
 
-! ---> restart
+! time scheme
+
+if (ntmabs.eq.-1 .and. ttmabs.lt.-0.5) then
+  ntmabs = 10
+endif
+
+! restart
 
 call indsui(isuite)
 
 if (isuit1.eq.-1) isuit1 = isuite
-
-! ---> Schema en temps
 
 !    -- Proprietes physiques
 call field_get_key_int(iviscl, key_t_ext_id, iviext)
