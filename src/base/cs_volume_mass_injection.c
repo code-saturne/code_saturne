@@ -189,17 +189,6 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                st_loc);
     break;
 
-  case CS_XDEF_BY_FUNCTION:
-    {
-      cs_volume_mass_injection_by_function_context_t *context
-        = def->context;
-      context->func(context->input,
-                    z,
-                    NULL, /* field */
-                    st_loc);
-    }
-    break;
-
   case CS_XDEF_BY_QOV:
     {
       if (dim == 1) {

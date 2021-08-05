@@ -78,8 +78,8 @@ typedef enum {
  * Note: if the input pointer is non-NULL, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
- * - post-processing output must be ensured using cs_post_write_meshes()
- *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ * - when a single integer identifier is needed, the input pointer can be
+ *   set to that value instead of an actual address;
  *
  * parameters:
  *   input <-- pointer to optional (untyped) value or structure.

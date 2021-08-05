@@ -39,50 +39,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Function pointer to update cell values in a given zone
- *        for volume mass injection.
- *
- * \note if the input pointer is non-NULL, it must point to valid data
- * when the selection function is called, so either:
- * - that value or structure should not be temporary (i.e. local);
- * - post-processing output must be ensured using cs_post_write_meshes()
- *   with a fixed-mesh writer before the data pointed to goes out of scope;
- *
- * \param<(in]       input  pointer to optional (untyped) value or structure
- * \param<(in]       z      pointer to associated zone.
- * \param<(in]       f      pointer to associated field
- * \param<(in, out]  val    resulting values, defined on cells
- *----------------------------------------------------------------------------*/
-
-typedef void
-(cs_volume_mass_injection_eval_t) (void             *input,
-                                   const cs_zone_t  *z,
-                                   cs_field_t       *f,
-                                   cs_real_t        *val);
-
-/*!
- * \struct cs_volume_mass_injection_by_function_context_t
- * \brief Context structure associated to a mass injection inside a volume
- *        relying on a function
- */
-
-typedef struct {
-
-  /*! \var input
-   * NULL or pointer to a structure cast on-the-fly for additional information
-   * used in the function
-   */
-  void                             *input;
-
-  /*! \var func
-   * pointer to a \ref cs_volume_mass_injection_eval_t to call
-   */
-  cs_volume_mass_injection_eval_t  *func;
-
-} cs_volume_mass_injection_by_function_context_t;
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
