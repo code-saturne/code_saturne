@@ -885,8 +885,7 @@ bft_mem_realloc(void        *ptr,
                         file_name,
                         line_num);
 
-  /* If the old size is known to equal the new size,
-     nothing needs to be done. */
+  /* When logging memory, get previous size to compute difference. */
 
   if (_bft_mem_global_file != NULL) {
 
@@ -903,67 +902,67 @@ bft_mem_realloc(void        *ptr,
       omp_unset_lock(&_bft_mem_lock);
 #endif
 
+    /* If the old size is known to equal the new size,
+       nothing needs to be done. */
+
     if (new_size == old_size)
       return ptr;
 
   }
 
-  /* In the final case, we have a true reallocation */
+  /* In the general case, we have a true reallocation. */
 
-  else {
+  p_loc = realloc(ptr, new_size);
 
-    p_loc = realloc(ptr, new_size);
+  if (p_loc == NULL) {
+    _bft_mem_error(file_name, line_num, errno,
+                   _("Failure to reallocate \"%s\" (%lu bytes)"),
+                   var_name, (unsigned long)new_size);
+    return NULL;
+  }
+  else if (_bft_mem_global_initialized == 0)
+    return p_loc;
 
-    if (p_loc == NULL) {
-      _bft_mem_error(file_name, line_num, errno,
-                     _("Failure to reallocate \"%s\" (%lu bytes)"),
-                     var_name, (unsigned long)new_size);
-      return NULL;
-    }
-    else if (_bft_mem_global_initialized == 0)
-      return p_loc;
-
-    {
+  {
 #if defined(HAVE_OPENMP)
-      if (in_parallel)
-        omp_set_lock(&_bft_mem_lock);
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
 #endif
 
-      /* FIXME: size_diff overestimated when memory allocation logging is
-         not active, so bft_mem_size_current/bft_mem_size_max
-         will return incorrect values in this case. */
+    /* FIXME: size_diff overestimated when memory allocation logging is
+       not active, so bft_mem_size_current/bft_mem_size_max
+       will return incorrect values in this case. */
 
-      long size_diff = new_size - old_size;
+    long size_diff = new_size - old_size;
 
-      _bft_mem_global_alloc_cur += size_diff;
+    _bft_mem_global_alloc_cur += size_diff;
 
-      if (size_diff > 0) {
-        if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-          _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
-      }
+    if (size_diff > 0) {
+      if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
+        _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+    }
 
-      if (_bft_mem_global_file != NULL) {
-        char sgn = (size_diff > 0) ? '+' : '-';
-        fprintf(_bft_mem_global_file, "\nrealloc: %-27s:%6d : %-39s: %9lu",
-                _bft_mem_basename(file_name), line_num,
-                var_name, (unsigned long)new_size);
-        fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%10p]",
-                sgn,
-                (unsigned long) ((size_diff > 0) ? size_diff : -size_diff),
-                (unsigned long)_bft_mem_global_alloc_cur,
-                p_loc);
-        fflush(_bft_mem_global_file);
-      }
+    if (_bft_mem_global_file != NULL) {
+      char sgn = (size_diff > 0) ? '+' : '-';
+      fprintf(_bft_mem_global_file, "\nrealloc: %-27s:%6d : %-39s: %9lu",
+              _bft_mem_basename(file_name), line_num,
+              var_name, (unsigned long)new_size);
+      fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%10p]",
+              sgn,
+              (unsigned long) ((size_diff > 0) ? size_diff : -size_diff),
+              (unsigned long)_bft_mem_global_alloc_cur,
+              p_loc);
+      fflush(_bft_mem_global_file);
+    }
 
-      _bft_mem_block_realloc(ptr, p_loc, new_size);
+    _bft_mem_block_realloc(ptr, p_loc, new_size);
 
-      _bft_mem_global_n_reallocs += 1;
+    _bft_mem_global_n_reallocs += 1;
 
 #if defined(HAVE_OPENMP)
-      if (in_parallel)
-        omp_unset_lock(&_bft_mem_lock);
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
 #endif
-    }
 
     return p_loc;
   }
