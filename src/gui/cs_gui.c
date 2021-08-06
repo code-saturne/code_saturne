@@ -2351,7 +2351,6 @@ void CS_PROCF (cssca3, CSSCA3) (void)
 {
   double result, density;
 
-  const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
 
