@@ -661,7 +661,9 @@ class domain(base_domain):
 
         # Create the src folder if there are files to compile in source path
 
-        src_files = cs_compile.files_to_compile(self.src_dir)
+        src_files = []
+        if os.path.exists(self.src_dir):
+            src_files = cs_compile.files_to_compile(self.src_dir)
         if len(src_files) > 0:
             exec_src = os.path.join(self.exec_dir, 'src')
 
