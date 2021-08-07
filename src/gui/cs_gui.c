@@ -1979,7 +1979,8 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 
       /* For CDO equation, if non-automatic value ie != -1 */
       cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
-      if (eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0)
+      if (   eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0
+          && eqp->sles_param != NULL)
         eqp->sles_param->eps = var_cal_opt.epsilo;
 
       /* convection scheme options */
