@@ -73,7 +73,8 @@ def arg_parser(argv):
     parser.add_argument("--imrgra", dest="imrgra", type=int,
                         help="Gradient reconstruction")
 
-    parser.add_argument("--blencv", dest="blencv", type=float,
+    parser.add_argument("--blencv", dest="blencv", type=str, nargs='*',
+                        metavar="<var>:<val>",
                         help="Blencv")
 
     parser.add_argument("--update-bc-criteria", dest="bc_criteria",
@@ -122,6 +123,7 @@ class case_setup_filter(object):
         self.meshModel     = None
         self.notebookModel = None
         self.numParamModel = None
+        self.numParamEquationModel = None
 
     #---------------------------------------------------------------------------
 
@@ -209,6 +211,16 @@ class case_setup_filter(object):
         if self.numParamModel == None:
             from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
             self.numParamModel = NumericalParamGlobalModel(self.case)
+
+    #---------------------------------------------------------------------------
+
+    def initNumParamEquationModel(self):
+        """
+        Initialize the numerical parameters equation model
+        """
+        if self.numParamEquationModel == None:
+            from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
+            self.numParamEquationModel = NumericalParamEquationModel(self.case)
 
     #---------------------------------------------------------------------------
 
@@ -497,9 +509,10 @@ class case_setup_filter(object):
         @param varName : name of the variable
         @param blencv  : Blending factor value
         """
-        self.initNumParamModel()
 
-        self.numParamModel.setBlendingFactor(varName, blencv)
+        self.initNumParamEquationModel()
+
+        self.numParamEquationModel.setBlendingFactor(varName, blencv)
 
     #---------------------------------------------------------------------------
 
@@ -606,7 +619,8 @@ def update_case_model(case, options, pkg):
 
     if options.blencv:
         for elt in options.blencv:
-            fname, factor = elt.split(':')
+            fname, factor_str = elt.split(':')
+            factor = float(factor_str)
             xml_controller.setBlendingFactor(fname, factor)
 
     # Notebook
