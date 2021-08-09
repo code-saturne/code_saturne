@@ -111,24 +111,6 @@ cs_user_parameters(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define or modify output user parameters.
- *
- * For CDO schemes, this function concludes the setup of properties,
- * equations, source terms...
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_finalize_setup
-void
-cs_user_finalize_setup(cs_domain_t   *domain)
-{
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based
@@ -180,6 +162,24 @@ void
 cs_user_internal_coupling(void)
 {
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_finalize_setup
+void
+cs_user_finalize_setup(cs_domain_t   *domain)
+{
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
