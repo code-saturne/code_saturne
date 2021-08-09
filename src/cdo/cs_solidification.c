@@ -3059,7 +3059,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   if (kp < FLT_MIN || kp > 1 - FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for partition coefficient", __func__, kp);
-  if (mliq < FLT_MIN)
+  if (fabs(mliq) < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for the liquidus slope", __func__, mliq);
   if (s_das < FLT_MIN)
