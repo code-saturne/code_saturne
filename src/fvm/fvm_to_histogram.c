@@ -103,7 +103,9 @@ typedef struct {
 static void * _catalyst_plugin = NULL;
 #endif
 
+#if defined(HAVE_CATALYST)
 static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = NULL;
+#endif
 
 /*============================================================================
  * Private function definitions
