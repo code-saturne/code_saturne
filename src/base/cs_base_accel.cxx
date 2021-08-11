@@ -31,7 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <errno.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Standard C++ library headers
@@ -83,9 +83,71 @@ typedef struct
 
 static std::map<void *, _cs_base_accel_mem_map> _hd_alloc_map;
 
+static bool _initialized = false;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * \param [in]  host_ptr   host pointer
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_realloc_host(void            *host_ptr,
+              size_t           ni,
+              size_t           size,
+              const char      *var_name,
+              const char      *file_name,
+              int              line_num)
+{
+  return cs_realloc_hd(host_ptr,
+                       CS_ALLOC_HOST,
+                       ni, size,
+                       var_name, file_name, line_num);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate allocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_initialize(void)
+{
+  bft_mem_alternative_set(cs_get_allocation_hd_size,
+                          _realloc_host,
+                          cs_free_hd);
+
+  _initialized = true;
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -99,9 +161,8 @@ BEGIN_C_DECLS
 /*!
  * \brief Allocate memory on host and device for ni elements of size bytes.
  *
- * This function calls malloc(), but adds tracing capabilities, and
- * automatically calls the bft_error() errorhandler if it fails to
- * allocate the required memory.
+ * This function calls the appropriate allocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
  *
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
@@ -122,6 +183,9 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
              const char      *file_name,
              int              line_num)
 {
+  if (_initialized == false)
+    _initialize();
+
   _cs_base_accel_mem_map  me = {
     .host_ptr = NULL,
     .device_ptr = NULL,
@@ -153,11 +217,87 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
 
 #endif
 
-  _hd_alloc_map[me.host_ptr] = me;
+  if (me.host_ptr != NULL)
+    _hd_alloc_map[me.host_ptr] = me;
 
   /* Return pointer to allocated memory */
 
   return me.host_ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * \param [in]  host_ptr   host pointer
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_realloc_hd(void            *host_ptr,
+              cs_alloc_mode_t  mode,
+              size_t           ni,
+              size_t           size,
+              const char      *var_name,
+              const char      *file_name,
+              int              line_num)
+{
+  void *ret_ptr = host_ptr;
+  size_t new_size = ni*size;
+
+  if (host_ptr == NULL) {
+    return cs_malloc_hd(mode, ni, size, var_name, file_name, line_num);
+  }
+  else if (new_size == 0) {
+    cs_free_hd(host_ptr, var_name, file_name, line_num);
+    return NULL;
+  }
+
+  _cs_base_accel_mem_map  me;
+
+  if (_hd_alloc_map.count(host_ptr) == 0) {
+    me = {.host_ptr = host_ptr,
+          .device_ptr = NULL,
+          .size = bft_mem_get_block_size(host_ptr),
+          .mode = CS_ALLOC_HOST};
+    _hd_alloc_map[me.host_ptr] = me;
+  }
+  else {
+    me = _hd_alloc_map[host_ptr];
+  }
+
+  if (new_size == me.size)
+    return me.host_ptr;
+
+  if (   me.mode <= CS_ALLOC_HOST
+      && me.mode == mode) {
+    me.host_ptr = bft_mem_realloc(me.host_ptr, ni, size,
+                                  var_name, file_name, line_num);
+    me.size = new_size;
+    _hd_alloc_map.erase(host_ptr);
+    _hd_alloc_map[me.host_ptr] = me;
+  }
+  else {
+    ret_ptr = cs_malloc_hd(me.mode, 1, me.size,
+                           var_name, file_name, line_num);
+
+    memcpy(ret_ptr, host_ptr, me.size);
+
+    cs_free_hd(host_ptr, var_name, file_name, line_num);
+  }
+
+  return ret_ptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -208,6 +348,37 @@ cs_free_hd(void        *host_ptr,
   }
 
   _hd_alloc_map.erase(host_ptr);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free memory on host and device for a given host pointer.
+ *
+ * Compared to \cs_free_hd, this function also allows freeing memory
+ * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
+ *
+ * \param [in]  host_ptr   host pointer to free
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_free(void        *host_ptr,
+        const char  *var_name,
+        const char  *file_name,
+        int          line_num)
+{
+  if (host_ptr == NULL)
+    return;
+
+  else if (_hd_alloc_map.count(host_ptr) == 0) {
+    bft_mem_free(host_ptr, var_name, file_name, line_num);
+    return;
+  }
+  else
+    cs_free_hd(host_ptr, var_name, file_name, line_num);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -320,7 +491,7 @@ cs_associate_device_ptr(void    *host_ptr,
 void
 cs_dissassociate_device_ptr(void  *host_ptr)
 {
-  if (_hd_alloc_map.count(host_ptr) > 0)
+  if (_hd_alloc_map.count(host_ptr) == 0)
     return;
 
   _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
@@ -339,8 +510,74 @@ cs_dissassociate_device_ptr(void  *host_ptr)
 #endif
 
   }
+}
 
-  _hd_alloc_map.erase(host_ptr);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set allocation mode for an already allocated pointer.
+ *
+ * If the allocation mode is different from the previous one,
+ * the associated memory will be reallocated with the desired mode,
+ * and the previous allocation freed.
+ *
+ * \param [in, out]  host_ptr   pointer to host pointer to modify
+ * \param [in]       mode       desired allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_set_alloc_mode(void             **host_ptr,
+                  cs_alloc_mode_t    mode)
+{
+  if (host_ptr == NULL)
+    return;
+
+  void *ret_ptr = *host_ptr;
+
+  void *_host_ptr = *host_ptr;
+
+  if (_host_ptr == NULL)
+    return;
+
+  if (_hd_alloc_map.count(_host_ptr) == 0) {
+
+    _cs_base_accel_mem_map  me = {
+      .host_ptr = _host_ptr,
+      .device_ptr = NULL,
+      .size = bft_mem_get_block_size(_host_ptr),
+      .mode = CS_ALLOC_HOST};
+
+    _hd_alloc_map[me.host_ptr] = me;
+
+  }
+
+  cs_alloc_mode_t old_mode = cs_check_device_ptr(_host_ptr);
+
+  if (mode != old_mode) {
+
+    _cs_base_accel_mem_map  me = _hd_alloc_map[_host_ptr];
+
+    if (old_mode == CS_ALLOC_HOST_DEVICE)
+      cs_dissassociate_device_ptr(_host_ptr);
+
+    if (   mode == CS_ALLOC_HOST_DEVICE_SHARED
+        || old_mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+
+      ret_ptr = cs_malloc_hd(mode, 1, me.size,
+                             "me.host_ptr", __FILE__, __LINE__);
+
+      /* TODO: check if we have multiple OpenMP threads, in which
+         case applying a "first-touch" policy might be useful here */
+
+      memcpy(ret_ptr, _host_ptr, me.size);
+
+      cs_free_hd(_host_ptr, "me.host_ptr", __FILE__, __LINE__);
+
+    }
+
+  }
+
+  *host_ptr = ret_ptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -355,6 +592,26 @@ int
 cs_get_n_allocations_hd(void)
 {
   return _hd_alloc_map.size();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a given host pointer is allocated with associated with
+ *        cs_alloc_hd or cs_realloc_hd.
+ *
+ * \returns allocated memory size, or zero if not allocated with this
+ *          mechanism.
+ */
+/*----------------------------------------------------------------------------*/
+
+size_t
+cs_get_allocation_hd_size(void  *host_ptr)
+{
+  if (_hd_alloc_map.count(host_ptr) == 0)
+    return 0;
+
+  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
+  return me.size;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -207,6 +207,10 @@ static size_t  _bft_mem_global_n_frees = 0;
 static bft_error_handler_t  *_bft_mem_error_handler
                               = (_bft_mem_error_handler_default);
 
+static bft_mem_get_size_t  *_bft_alt_get_size_func = NULL;
+static bft_mem_realloc_t   *_bft_alt_realloc_func = NULL;
+static bft_mem_free_t      *_bft_alt_free_func = NULL;
+
 #if defined(HAVE_OPENMP)
 static omp_lock_t _bft_mem_lock;
 #endif
@@ -410,6 +414,25 @@ _bft_mem_error(const char  *file_name,
 }
 
 /*
+ * Call error function when pointer is not found in allocation info.
+ *
+ * parameters:
+ *   p: <-- allocated block's start adress.
+ *
+ * returns:
+ *   corresponding _bft_mem_block structure.
+ */
+
+static void
+_bft_mem_block_info_error(const void  *p)
+{
+  _bft_mem_error(__FILE__, __LINE__, 0,
+                 _("Adress [%p] does not correspond to "
+                   "the beginning of an allocated block."),
+                 p);
+}
+
+/*
  * Return the _bft_mem_block structure corresponding to a given
  * allocated block.
  *
@@ -433,11 +456,40 @@ _bft_mem_block_info(const void *p_get)
          idx--);
 
     if ((_bft_mem_global_block_array + idx)->p_bloc != p_get)
-      _bft_mem_error(__FILE__, __LINE__, 0,
-                     _("Adress [%10p] does not correspond to "
-                       "the beginning of an allocated block."),
-                     p_get);
+      _bft_mem_block_info_error(p_get);
     else {
+      pinfo = _bft_mem_global_block_array + idx;
+      assert(p_get == pinfo->p_bloc);
+    }
+
+  }
+
+  return pinfo;
+}
+
+/*
+ * Return the _bft_mem_block structure corresponding to a given
+ * allocated block if available.
+ *
+ * parameters:
+ *   p_in: <-- allocated block's start adress.
+ *
+ * returns:
+ *   corresponding _bft_mem_block structure.
+ */
+
+static struct _bft_mem_block_t *
+_bft_mem_block_info_try(const void *p_get)
+{
+  struct _bft_mem_block_t  *pinfo = NULL;
+
+  if (_bft_mem_global_block_array != NULL) {
+
+    unsigned long idx = _bft_mem_global_block_nbr - 1;
+    while (idx > 0 && (_bft_mem_global_block_array + idx)->p_bloc != p_get)
+      idx--;
+
+    if ((_bft_mem_global_block_array + idx)->p_bloc == p_get) {
       pinfo = _bft_mem_global_block_array + idx;
       assert(p_get == pinfo->p_bloc);
     }
@@ -885,9 +937,9 @@ bft_mem_realloc(void        *ptr,
                         file_name,
                         line_num);
 
-  /* When logging memory, get previous size to compute difference. */
+  /* When possible, get previous size to compute difference. */
 
-  if (_bft_mem_global_file != NULL) {
+  if (_bft_mem_global_initialized) {
 
 #if defined(HAVE_OPENMP)
     in_parallel = omp_in_parallel();
@@ -895,12 +947,24 @@ bft_mem_realloc(void        *ptr,
       omp_set_lock(&_bft_mem_lock);
 #endif
 
-    old_size = _bft_mem_block_size(ptr);
+    struct _bft_mem_block_t *pinfo = _bft_mem_block_info_try(ptr);
+    if (pinfo != NULL)
+      old_size = pinfo->size;
 
 #if defined(HAVE_OPENMP)
     if (in_parallel)
       omp_unset_lock(&_bft_mem_lock);
 #endif
+
+    if (pinfo == NULL) {
+      if (_bft_alt_get_size_func != NULL) {
+        old_size = _bft_alt_get_size_func(ptr);
+        if (old_size > 0)
+          return _bft_alt_realloc_func(ptr, ni, size,
+                                     var_name, file_name, line_num);
+      }
+      _bft_mem_block_info_error(ptr);
+    }
 
     /* If the old size is known to equal the new size,
        nothing needs to be done. */
@@ -929,9 +993,10 @@ bft_mem_realloc(void        *ptr,
       omp_set_lock(&_bft_mem_lock);
 #endif
 
-    /* FIXME: size_diff overestimated when memory allocation logging is
-       not active, so bft_mem_size_current/bft_mem_size_max
-       will return incorrect values in this case. */
+    /* FIXME: size_diff overestimated when _bft_mem_global_initialized == 0,
+       so bft_mem_size_current/bft_mem_size_max will return incorrect values
+       in this case.
+       Maybe these functions should simply return 0 in the case. */
 
     long size_diff = new_size - old_size;
 
@@ -993,8 +1058,6 @@ bft_mem_free(void        *ptr,
              const char  *file_name,
              int          line_num)
 {
-  size_t  size_info;
-
   /* NULL pointer case (non-allocated location) */
 
   if (ptr == NULL)
@@ -1010,29 +1073,47 @@ bft_mem_free(void        *ptr,
       omp_set_lock(&_bft_mem_lock);
 #endif
 
-    size_info = _bft_mem_block_size(ptr);
+    struct _bft_mem_block_t *pinfo = _bft_mem_block_info_try(ptr);
 
-    _bft_mem_global_alloc_cur -= size_info;
+    if (pinfo != NULL) {
 
-    if (_bft_mem_global_file != NULL) {
-      fprintf(_bft_mem_global_file,"\n   free: %-27s:%6d : %-39s: %9lu",
-              _bft_mem_basename(file_name), line_num,
-              var_name, (unsigned long)size_info);
-      fprintf(_bft_mem_global_file, " : (-%9lu) : %12lu : [%10p]",
-              (unsigned long)size_info,
-              (unsigned long)_bft_mem_global_alloc_cur,
-              ptr);
-      fflush(_bft_mem_global_file);
+      size_t  size_info = pinfo->size;
+
+      _bft_mem_global_alloc_cur -= size_info;
+
+      if (_bft_mem_global_file != NULL) {
+        fprintf(_bft_mem_global_file,"\n   free: %-27s:%6d : %-39s: %9lu",
+                _bft_mem_basename(file_name), line_num,
+                var_name, (unsigned long)size_info);
+        fprintf(_bft_mem_global_file, " : (-%9lu) : %12lu : [%10p]",
+                (unsigned long)size_info,
+                (unsigned long)_bft_mem_global_alloc_cur,
+                ptr);
+        fflush(_bft_mem_global_file);
+      }
+
+      _bft_mem_block_free(ptr);
+
+      _bft_mem_global_n_frees += 1;
+
     }
-
-    _bft_mem_block_free(ptr);
-
-    _bft_mem_global_n_frees += 1;
 
 #if defined(HAVE_OPENMP)
     if (in_parallel)
       omp_unset_lock(&_bft_mem_lock);
 #endif
+
+    if (pinfo == NULL) {
+      if (_bft_alt_get_size_func != NULL) {
+        size_t size_info = _bft_alt_get_size_func(ptr);
+        if (size_info > 0) {
+          _bft_alt_free_func(ptr, var_name, file_name, line_num);
+          return NULL;
+        }
+      }
+      _bft_mem_block_info_error(ptr);
+    }
+
   }
 
   free(ptr);
@@ -1150,6 +1231,40 @@ bft_mem_memalign(size_t       alignment,
 }
 
 /*!
+ * \brief Return block size associated with a given pointer.
+ *
+ * bft_mem_init() must have beed called before this function can be used.
+ *
+ * \param [in] ptr  pointer to previous memory location
+ *
+ * \returns size of associated memory block.
+ */
+
+size_t
+bft_mem_get_block_size(void  *ptr)
+{
+  size_t block_size = 0;
+
+  if (_bft_mem_global_initialized) {
+
+#if defined(HAVE_OPENMP)
+    int in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
+
+    block_size = _bft_mem_block_size(ptr);
+
+  }
+  else
+    _bft_mem_error(__FILE__, __LINE__, 0,
+                   _("%s: should not be called before %s\n"),
+                   __func__, "bft_mem_init");
+
+  return block_size;
+}
+
+/*!
  * \brief Return current theoretical dynamic memory allocated.
  *
  * \return current memory handled through bft_mem_...() (in kB).
@@ -1171,6 +1286,24 @@ size_t
 bft_mem_size_max(void)
 {
   return (_bft_mem_global_alloc_max / 1024);
+}
+
+/*!
+ * \brief Indicate if a memory aligned allocation variant is available.
+ *
+ * If no such function is available, bft_mem_memalign() will always fail.
+ *
+ * \returns 1 if memory aligned allocation is possible, 0 otherwise.
+ */
+
+int
+bft_mem_have_memalign(void)
+{
+#if defined(HAVE_POSIX_MEMALIGN)
+  return 1;
+#else
+  return 0;
+#endif
 }
 
 /*!
@@ -1202,22 +1335,30 @@ bft_mem_error_handler_set(bft_error_handler_t *handler)
   _bft_mem_error_handler = handler;
 }
 
-/*!
- * \brief Indicate if a memory aligned allocation variant is available.
+/*
+ * Associates alternative functions with the bft_mem_...() functions.
  *
- * If no such function is available, bft_mem_memalign() will always fail.
+ * When memory allocated with another mechanism is reallocated or
+ * freed using a bft_mem_... function, this allows trying the
+ * matching alternative function rather than throwing an error.
  *
- * \returns 1 if memory aligned allocation is possible, 0 otherwise.
+ * Though using matching methods is recommended, this allows handling
+ * compatibility between methods which might be used in different parts
+ * of the code.
+ *
+ * parameter:
+ *   realloc_func <-- pointer to alternative reallocation function.
+ *   realloc_func <-- pointer to alternative free function.
  */
 
-int
-bft_mem_have_memalign(void)
+void
+bft_mem_alternative_set(bft_mem_get_size_t  *get_size_func,
+                        bft_mem_realloc_t   *realloc_func,
+                        bft_mem_free_t      *free_func)
 {
-#if defined(HAVE_POSIX_MEMALIGN)
-  return 1;
-#else
-  return 0;
-#endif
+  _bft_alt_get_size_func = get_size_func;
+  _bft_alt_realloc_func = realloc_func;
+  _bft_alt_free_func = free_func;
 }
 
 /*----------------------------------------------------------------------------*/

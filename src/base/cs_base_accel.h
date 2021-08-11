@@ -65,7 +65,7 @@ _ptr = (_type *) cs_malloc_hd(_mode, _ni, sizeof(_type), \
 /*
  * Reallocate memory for _ni items of type _type.
  *
- * This macro calls bft_mem_realloc(), automatically setting the
+ * This macro calls cs_realloc_hd(), automatically setting the
  * allocated variable name and source file name and line arguments.
  *
  * parameters:
@@ -81,7 +81,7 @@ _ptr = (_type *) cs_realloc_hd(_ptr, _ni, sizeof(_type), \
 /*
  * Free allocated memory.
  *
- * This macro calls bft_mem_free(), automatically setting the
+ * This macro calls cs_mem_free_any(), automatically setting the
  * allocated variable name and source file name and line arguments.
  *
  * The freed pointer is set to NULL to avoid accidental reuse.
@@ -92,6 +92,21 @@ _ptr = (_type *) cs_realloc_hd(_ptr, _ni, sizeof(_type), \
 
 #define CS_FREE_HD(_ptr) \
 cs_free_hd(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
+
+/*
+ * Free allocated memory.
+ *
+ * This macro calls cs_mem_free(), automatically setting the
+ * allocated variable name and source file name and line arguments.
+ *
+ * The freed pointer is set to NULL to avoid accidental reuse.
+ *
+ * parameters:
+ *   _ptr  <->  pointer to allocated memory.
+ */
+
+#define CS_FREE(_ptr) \
+cs_free(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
 
 /*----------------------------------------------------------------------------*/
 
@@ -125,9 +140,8 @@ typedef enum {
 /*!
  * \brief Allocate memory on host and device for ni elements of size bytes.
  *
- * This function calls malloc(), but adds tracing capabilities, and
- * automatically calls the bft_error() errorhandler if it fails to
- * allocate the required memory.
+ * This function calls the appropriate allocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
  *
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
@@ -140,7 +154,7 @@ typedef enum {
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 void *
 cs_malloc_hd(cs_alloc_mode_t   mode,
@@ -168,6 +182,51 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * \param [in]  host_ptr   host pointer
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void *
+cs_realloc_hd(void            *host_ptr,
+              cs_alloc_mode_t  mode,
+              size_t           ni,
+              size_t           size,
+              const char      *var_name,
+              const char      *file_name,
+              int              line_num);
+
+#else
+
+inline static void *
+cs_realloc_hd(void             *host_ptr,
+              size_t            ni,
+              size_t            size,
+              const char       *var_name,
+              const char       *file_name,
+              int               line_num)
+{
+  return bft_mem_realloc(host_ptr, ni, size, var_name, file_name, line_num);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Free memory on host and device for a given host pointer.
  *
  * \param [in]  host_ptr   host pointer to free
@@ -177,7 +236,7 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 void
 cs_free_hd(void         *host_ptr,
@@ -200,6 +259,41 @@ cs_free_hd(void         *host_ptr,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Free memory on host and device for a given host pointer.
+ *
+ * Compared to \cs_free_hd, this function also allows freeing memory
+ * allocated through BFT_MEM_MALLOC.
+ *
+ * \param [in]  host_ptr   host pointer to free
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_free(void        *host_ptr,
+        const char  *var_name,
+        const char  *file_name,
+        int          line_num);
+
+#else
+
+inline static void
+cs_free(void         *host_ptr,
+        const char   *var_name,
+        const char   *file_name,
+        int           line_num)
+{
+  bft_mem_free(host_ptr, var_name, file_name, line_num);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return device pointer for a given host pointer.
  *
  * \param [in]  host_ptr   host pointer
@@ -208,7 +302,7 @@ cs_free_hd(void         *host_ptr,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 void *
 cs_get_device_ptr(void  *host_ptr);
@@ -231,7 +325,7 @@ cs_get_device_ptr(void  *host_ptr)
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 cs_alloc_mode_t
 cs_check_device_ptr(void  *host_ptr);
@@ -263,7 +357,7 @@ cs_check_device_ptr(void  *host_ptr)
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 void *
 cs_associate_device_ptr(void    *host_ptr,
@@ -287,7 +381,7 @@ cs_associate_device_ptr(void    *host_ptr,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 void
 cs_dissassociate_device_ptr(void  *host_ptr);
@@ -300,13 +394,38 @@ cs_dissassociate_device_ptr(void  *host_ptr);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set allocation mode for an already allocated pointer.
+ *
+ * If the allocation mode is different from the previous one,
+ * the associated memory will be reallocated with the desired mode,
+ * and the previous allocation freed.
+ *
+ * \param [in, out]  host_ptr   pointer to host pointer to modify
+ * \param [in]       mode       desired allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_set_alloc_mode(void             **host_ptr,
+                  cs_alloc_mode_t     mode);
+
+#else
+
+#define cs_set_alloc_mode(_host_ptr, mode);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return number of host-device allocations
  *
  * \returns current number of host-device allocations.
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined (HAVE_CUDA)
+#if defined(HAVE_ACCEL)
 
 int
 cs_get_n_allocations_hd(void);
@@ -321,6 +440,30 @@ cs_get_n_allocations_hd(void)
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a given host pointer is allocated with associated with
+ *        cs_alloc_hd or cs_realloc_hd.
+ *
+ * \returns allocated memory size, or zero if not allocated with this
+ *          mechanism.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+size_t
+cs_get_allocation_hd_size(void  *host_ptr);
+
+#else
+
+static inline size_t
+cs_get_allocation_hd_size(void  *host_ptr)
+{
+  return 0;
+}
+
+#endif
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

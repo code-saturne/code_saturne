@@ -107,6 +107,14 @@ extern "C" {
 
 #endif
 
+/* Do we have accelerator support ? */
+
+#if defined(HAVE_CUDA)
+#define HAVE_ACCEL 1
+#elif defined(HAVE_ONEAPI)
+#define HAVE_ACCEL 1
+#endif
+
 /*============================================================================
  * C99 Qualifiers
  *============================================================================*/

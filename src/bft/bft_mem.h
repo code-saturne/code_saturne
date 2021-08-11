@@ -120,6 +120,27 @@ _ptr = bft_mem_free(_ptr, #_ptr, __FILE__, __LINE__)
 _ptr = (_type *) bft_mem_memalign(_align, _ni, sizeof(_type), \
                                   #_ptr, __FILE__, __LINE__)
 
+/*----------------------------------------------------------------------------
+ * Function pointer types
+ *----------------------------------------------------------------------------*/
+
+typedef size_t
+(bft_mem_get_size_t)(void  *ptr);
+
+typedef void *
+(bft_mem_realloc_t)(void        *ptr,
+                    size_t       ni,
+                    size_t       size,
+                    const char  *var_name,
+                    const char  *file_name,
+                    int          line_num);
+
+typedef void
+(bft_mem_free_t)(void        *ptr,
+                 const char  *var_name,
+                 const char  *file_name,
+                 int          line_num);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -283,6 +304,19 @@ bft_mem_memalign(size_t       alignment,
                  int          line_num);
 
 /*!
+ * \brief Return block size associated with a given pointer.
+ *
+ * bft_mem_init() must have beed called before this function can be used.
+ *
+ * \param [in] ptr  pointer to previous memory location
+ *
+ * \returns size of associated memory block.
+ */
+
+size_t
+bft_mem_get_block_size(void  *ptr);
+
+/*!
  * \brief Return current theoretical dynamic memory allocated.
  *
  * \return current memory handled through bft_mem_...() (in kB).
@@ -335,6 +369,28 @@ bft_mem_error_handler_get(void);
 
 void
 bft_mem_error_handler_set(bft_error_handler_t *handler);
+
+/*
+ * Associates alternative functions with the bft_mem_...() functions.
+ *
+ * When memory allocated with another mechanism is reallocated or
+ * freed using a bft_mem_... function, this allows trying the
+ * matching alternative function rather than throwing an error.
+ *
+ * Though using matching methods is recommended, this allows handling
+ * compatibility between methods which might be used in different parts
+ * of the code.
+ *
+ * parameter:
+ *   realloc_func <-- pointer to alternative reallocation function.
+ *   realloc_func <-- pointer to alternative reallocation function.
+ *   free_func    <-- pointer to alternative free function.
+ */
+
+void
+bft_mem_alternative_set(bft_mem_get_size_t  *get_size_func,
+                        bft_mem_realloc_t   *realloc_func,
+                        bft_mem_free_t      *free_func);
 
 /*----------------------------------------------------------------------------*/
 
