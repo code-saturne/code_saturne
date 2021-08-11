@@ -332,6 +332,24 @@ _update_v2v_lst(int               n_vf,
 }
 
 /*----------------------------------------------------------------------------
+ * Update cells -> faces connectivity
+ *
+ * parameters:
+ *   ma <-> mesh adjacecies structure to update
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cell_faces(cs_mesh_adjacencies_t  *ma,
+                   const cs_mesh_t        *m)
+{
+  if (ma->_c2f == NULL && ma->c2f != NULL)   /* not owner */
+    return;
+
+  if (ma->_c2f == NULL)
+    ma->_c2f = cs_mesh_adjacency_c2f(m, 0);
+}
+
+/*----------------------------------------------------------------------------
  * Update cells -> vertices connectivity
  *
  * parameters:
@@ -489,6 +507,9 @@ cs_mesh_adjacencies_initialize(void)
   ma->cell_b_faces_idx = NULL;
   ma->cell_b_faces = NULL;
 
+  ma->c2f = NULL;
+  ma->_c2f = NULL;
+
   ma->c2v = NULL;
   ma->_c2v = NULL;
 
@@ -511,6 +532,8 @@ cs_mesh_adjacencies_finalize(void)
 
   BFT_FREE(ma->cell_b_faces_idx);
   BFT_FREE(ma->cell_b_faces);
+
+  cs_adjacency_destroy(&(ma->_c2f));
 
   cs_adjacency_destroy(&(ma->_c2v));
 
@@ -540,6 +563,11 @@ cs_mesh_adjacencies_update_mesh(void)
 
   _update_cell_b_faces(ma);
 
+  /* (re)build or map cell -> face connectivities */
+
+  if (ma->c2f != NULL)
+    _update_cell_faces(ma, cs_glob_mesh);
+
   /* (re)build or map cell -> vertex connectivities */
 
   if (ma->c2v != NULL)
@@ -562,6 +590,31 @@ cs_mesh_adjacencies_update_cell_cells_e(void)
 
   ma->cell_cells_e_idx = m->cell_cells_idx;
   ma->cell_cells_e = m->cell_cells_lst;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return cell -> face connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ *
+ * Boundary faces appear first, interior faces second.
+ *
+ * This connectivity is built only when first requested, then updated later if
+ * needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_adjacency_t  *
+cs_mesh_adjacencies_cell_faces(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  if (ma->c2f == NULL)
+    _update_cell_faces(ma, m);
+
+  return ma->c2f;
 }
 
 /*----------------------------------------------------------------------------*/

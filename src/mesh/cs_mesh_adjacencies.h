@@ -100,6 +100,13 @@ typedef struct {
   cs_lnum_t        *cell_b_faces_idx;  /*!< cells to boundary faces index */
   cs_lnum_t        *cell_b_faces;      /*!< cells to boundary faces adjacency */
 
+  /* cells -> faces connectivity */
+
+  const cs_adjacency_t  *c2f;          /*!< cells to faces adjacency */
+
+  cs_adjacency_t        *_c2f;         /*!< cells to faces adjacency if owner,
+                                         NULL otherwise */
+
   /* cells -> vertices connectivity */
 
   const cs_adjacency_t  *c2v;          /*!< cells to vertices adjacency */
@@ -157,6 +164,21 @@ cs_mesh_adjacencies_update_mesh(void);
 
 void
 cs_mesh_adjacencies_update_cell_cells_e(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return cell -> face connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ *
+ * Boundary faces appear first, interior faces second.
+ *
+ * This connectivity is built only when first requested, then updated later if
+ * needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_adjacency_t  *
+cs_mesh_adjacencies_cell_faces(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
