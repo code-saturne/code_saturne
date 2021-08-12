@@ -68,68 +68,71 @@ eos_excl = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
 # Coolprop
 #-------------------------------------------------------------------------------
 
-from code_saturne import cs_config
-
 coolprop_fluids = []
 coolprop_warn = False
 
-if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
+def load_coolprop_fluids(config):
+    """
+    Try to load list of coolprop fluids.
+    """
+    global coolprop_fluids
+    global coolprop_warn
 
-   try:
-      import sys
-      sys.path.insert(0, cs_config.config().libs['coolprop'].flags['pythonpath'])
-      import CoolProp
-      sys.path.pop(0)
-      self.coolprop_fluids = []
-      for f in CoolProp.__fluids__:
-         coolprop_fluids.append(f)
-      coolprop_fluids.sort()
+    try:
+        import sys
+        sys.path.insert(0, config.libs['coolprop'].flags['pythonpath'])
+        import CoolProp
+        sys.path.pop(0)
+        self.coolprop_fluids = []
+        for f in CoolProp.__fluids__:
+            coolprop_fluids.append(f)
+        coolprop_fluids.sort()
 
-   except Exception:  # CoolProp might be available but not its Python bindings
+    except Exception:  # CoolProp might be available but not its Python bindings
 
-      if cs_config.config().libs['coolprop'].have != "gui_only":
-         """
-         import traceback
-         exc_info = sys.exc_info()
-         bt = traceback.format_exception(*exc_info)
-         for l in bt:
+        if config.libs['coolprop'].have != "gui_only":
+            """
+            import traceback
+            exc_info = sys.exc_info()
+            bt = traceback.format_exception(*exc_info)
+            for l in bt:
             print(l)
-         del exc_info
-         print("Warning: CoolProp Python bindings not available or usable")
-         print("         list of fluids based on CoolProp 5.1.1")
-         """
-         pass
-      else:
-         coolprop_warn = True
+            del exc_info
+            print("Warning: CoolProp Python bindings not available or usable")
+            print("         list of fluids based on CoolProp 5.1.1")
+            """
+            pass
+        else:
+            coolprop_warn = True
 
-      coolprop_fluids = ['1-Butene', 'Acetone', 'Air', 'Ammonia', 'Argon',
-                         'Benzene', 'CarbonDioxide', 'CarbonMonoxide',
-                         'CarbonylSulfide', 'CycloHexane', 'CycloPropane',
-                         'Cyclopentane', 'D4', 'D5', 'D6', 'Deuterium',
-                         'DimethylCarbonate', 'DimethylEther', 'Ethane',
-                         'Ethanol', 'EthylBenzene', 'Ethylene', 'Fluorine',
-                         'HFE143m', 'HeavyWater', 'Helium', 'Hydrogen',
-                         'HydrogenSulfide', 'IsoButane', 'IsoButene',
-                         'Isohexane', 'Isopentane', 'Krypton', 'MD2M', 'MD3M',
-                         'MD4M', 'MDM', 'MM', 'Methane', 'Methanol',
-                         'MethylLinoleate', 'MethylLinolenate', 'MethylOleate',
-                         'MethylPalmitate', 'MethylStearate', 'Neon',
-                         'Neopentane', 'Nitrogen', 'NitrousOxide', 'Novec649',
-                         'OrthoDeuterium', 'OrthoHydrogen', 'Oxygen',
-                         'ParaDeuterium', 'ParaHydrogen', 'Propylene',
-                         'Propyne', 'R11', 'R113', 'R114', 'R115', 'R116',
-                         'R12', 'R123', 'R1233zd(E)', 'R1234yf', 'R1234ze(E)',
-                         'R1234ze(Z)', 'R124', 'R125', 'R13', 'R134a', 'R13I1',
-                         'R14', 'R141b', 'R142b', 'R143a', 'R152A', 'R161',
-                         'R21', 'R218', 'R22', 'R227EA', 'R23', 'R236EA',
-                         'R236FA', 'R245fa', 'R32', 'R365MFC', 'R404A',
-                         'R407C', 'R41', 'R410A', 'R507A', 'RC318', 'SES36',
-                         'SulfurDioxide', 'SulfurHexafluoride', 'Toluene',
-                         'Water', 'Xenon', 'cis-2-Butene', 'm-Xylene',
-                         'n-Butane', 'n-Decane', 'n-Dodecane', 'n-Heptane',
-                         'n-Hexane', 'n-Nonane', 'n-Octane', 'n-Pentane',
-                         'n-Propane', 'n-Undecane', 'o-Xylene', 'p-Xylene',
-                         'trans-2-Butene']
+        coolprop_fluids = ['1-Butene', 'Acetone', 'Air', 'Ammonia', 'Argon',
+                           'Benzene', 'CarbonDioxide', 'CarbonMonoxide',
+                           'CarbonylSulfide', 'CycloHexane', 'CycloPropane',
+                           'Cyclopentane', 'D4', 'D5', 'D6', 'Deuterium',
+                           'DimethylCarbonate', 'DimethylEther', 'Ethane',
+                           'Ethanol', 'EthylBenzene', 'Ethylene', 'Fluorine',
+                           'HFE143m', 'HeavyWater', 'Helium', 'Hydrogen',
+                           'HydrogenSulfide', 'IsoButane', 'IsoButene',
+                           'Isohexane', 'Isopentane', 'Krypton', 'MD2M', 'MD3M',
+                           'MD4M', 'MDM', 'MM', 'Methane', 'Methanol',
+                           'MethylLinoleate', 'MethylLinolenate', 'MethylOleate',
+                           'MethylPalmitate', 'MethylStearate', 'Neon',
+                           'Neopentane', 'Nitrogen', 'NitrousOxide', 'Novec649',
+                           'OrthoDeuterium', 'OrthoHydrogen', 'Oxygen',
+                           'ParaDeuterium', 'ParaHydrogen', 'Propylene',
+                           'Propyne', 'R11', 'R113', 'R114', 'R115', 'R116',
+                           'R12', 'R123', 'R1233zd(E)', 'R1234yf', 'R1234ze(E)',
+                           'R1234ze(Z)', 'R124', 'R125', 'R13', 'R134a', 'R13I1',
+                           'R14', 'R141b', 'R142b', 'R143a', 'R152A', 'R161',
+                           'R21', 'R218', 'R22', 'R227EA', 'R23', 'R236EA',
+                           'R236FA', 'R245fa', 'R32', 'R365MFC', 'R404A',
+                           'R407C', 'R41', 'R410A', 'R507A', 'RC318', 'SES36',
+                           'SulfurDioxide', 'SulfurHexafluoride', 'Toluene',
+                           'Water', 'Xenon', 'cis-2-Butene', 'm-Xylene',
+                           'n-Butane', 'n-Decane', 'n-Dodecane', 'n-Heptane',
+                           'n-Hexane', 'n-Nonane', 'n-Octane', 'n-Pentane',
+                           'n-Propane', 'n-Undecane', 'o-Xylene', 'p-Xylene',
+                           'trans-2-Butene']
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -158,9 +161,6 @@ class FluidCharacteristicsModel(Variables, Model):
 
         self.tables = 0
 
-        from code_saturne import cs_config
-        cfg = cs_config.config()
-
         self.lib_properties = {}
         self.lib_properties['user_material'] = self.mask_builtin
 
@@ -177,17 +177,27 @@ class FluidCharacteristicsModel(Variables, Model):
                 else:
                     self.lib_properties[fli] += self.mask_EOS
 
-        if cfg.libs['freesteam'].have != "no":
-            self.tables += self.mask_freesteam
-            fli = 'Water'
-            if fli not in self.lib_properties.keys():
-                self.lib_properties[fli] = self.mask_freesteam
-            else:
-                self.lib_properties[fli] += self.mask_freesteam
+        try:
+            cfg = case.case['package'].config
 
-        if coolprop_fluids:
+            if cfg.libs['freesteam'].have != "no":
+                self.tables += self.mask_freesteam
+                fli = 'Water'
+                if fli not in self.lib_properties.keys():
+                    self.lib_properties[fli] = self.mask_freesteam
+                else:
+                    self.lib_properties[fli] += self.mask_freesteam
+
             if cfg.libs['coolprop'].have != "no":
-                self.tables += self.mask_CoolProp
+                if not coolprop_fluids:
+                    load_coolprop_fluids(cfg)
+                if coolprop_fluids:
+                    self.tables += self.mask_CoolProp
+
+        except Exception:  # if case/package not available (should not happen)
+            print("Warning: package configuration not available")
+            pass
+
         for fli in coolprop_fluids:
             if fli not in self.lib_properties.keys():
                 self.lib_properties[fli] = self.mask_CoolProp

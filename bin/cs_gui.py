@@ -71,12 +71,6 @@ if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 5, 0]:
                      "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
-# Application modules
-#-------------------------------------------------------------------------------
-
-from code_saturne import cs_config
-
-#-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
@@ -147,7 +141,7 @@ def main(argv, pkg):
     images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
 
     # Test if EOS modules could be imported
-    cfg = cs_config.config()
+    cfg = pkg.config
     if cfg.libs['eos'].have == "yes":
         eosprefix = cfg.libs['eos'].prefix
         try:
