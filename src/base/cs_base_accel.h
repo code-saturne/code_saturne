@@ -460,10 +460,12 @@ cs_get_allocation_hd_size(void  *host_ptr);
 static inline size_t
 cs_get_allocation_hd_size(void  *host_ptr)
 {
+  CS_UNUSED(host_ptr);
   return 0;
 }
 
 #endif
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
