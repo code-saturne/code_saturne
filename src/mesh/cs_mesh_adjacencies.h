@@ -87,13 +87,19 @@ typedef struct {
 
   /* cells -> cells connectivity (standard) */
 
-  cs_lnum_t  *cell_cells_idx;          /*!< indexes (shared) */
-  cs_lnum_t  *cell_cells;              /*!< adjacency (shared) */
+  cs_lnum_t  *cell_cells_idx;          /*!< cells to cells indexes (shared) */
+  cs_lnum_t  *cell_cells;              /*!< cells to cells adjacency (shared) */
 
   /* cells -> cells connectivity (extended) */
 
   const cs_lnum_t  *cell_cells_e_idx;  /*!< indexes (shared) */
   const cs_lnum_t  *cell_cells_e;      /*!< adjacency (shared) */
+
+  /* cells->interior faces connectivity
+     (same index as cells->cells connectivity) */
+
+  cs_lnum_t  *cell_i_faces;            /*!< cells to interior faces adjacency */
+  short int  *cell_i_faces_sgn;        /*!< cells to interior faces orientation */
 
   /* cells -> boundary faces connectivity */
 
@@ -164,6 +170,16 @@ cs_mesh_adjacencies_update_mesh(void);
 
 void
 cs_mesh_adjacencies_update_cell_cells_e(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ensure presence of cell -> interior face connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_i_faces(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

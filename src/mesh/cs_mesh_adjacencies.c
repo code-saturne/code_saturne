@@ -198,6 +198,77 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 }
 
 /*----------------------------------------------------------------------------
+ * Update cell -> interior faces connectivity
+ *
+ * parameters:
+ *   ma <-> mesh adjacecies structure to update
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
+{
+  assert(ma->cell_cells_idx != NULL);
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_2_t *restrict face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_faces = m->n_i_faces;
+
+  const cs_lnum_t *c2c = ma->cell_cells;
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+
+  /* Allocate and map */
+
+  const cs_lnum_t n_elts = c2c_idx[n_cells];
+  BFT_REALLOC(ma->cell_i_faces, n_elts, cs_lnum_t);
+  BFT_REALLOC(ma->cell_i_faces_sgn, n_elts, short int);
+
+  cs_lnum_t *c2i = ma->cell_i_faces;
+  short int *sgn = ma->cell_i_faces_sgn;
+
+  /* Loop in cells rather than faces as it may lead to
+     better first touch behavior */
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    cs_lnum_t s_id = c2c_idx[i];
+    cs_lnum_t e_id = c2c_idx[i+1];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      c2i[j] = 0;
+      sgn[j] = 0;
+    }
+  }
+
+  /* Now set values */
+
+  for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
+    cs_lnum_t i = face_cells[face_id][0];
+    cs_lnum_t j = face_cells[face_id][1];
+
+    cs_lnum_t s_id, e_id;
+
+    s_id = c2c_idx[i];
+    e_id = c2c_idx[i+1];
+    for (cs_lnum_t k = s_id; k < e_id; k++) {
+      if (c2c[k] == j) {
+        c2i[k] = face_id;
+        sgn[k] = 1;
+      }
+    }
+
+    s_id = c2c_idx[j];
+    e_id = c2c_idx[j+1];
+    for (cs_lnum_t k = s_id; k < e_id; k++) {
+      if (c2c[k] == i) {
+        c2i[k] = face_id;
+        sgn[k] = -1;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Update cells -> boundary faces connectivity
  *
  * parameters:
@@ -504,6 +575,9 @@ cs_mesh_adjacencies_initialize(void)
   ma->cell_cells_e_idx = NULL;
   ma->cell_cells_e = NULL;
 
+  ma->cell_i_faces = NULL;
+  ma->cell_i_faces_sgn = NULL;
+
   ma->cell_b_faces_idx = NULL;
   ma->cell_b_faces = NULL;
 
@@ -529,6 +603,9 @@ cs_mesh_adjacencies_finalize(void)
 
   BFT_FREE(ma->cell_cells_idx);
   BFT_FREE(ma->cell_cells);
+
+  BFT_FREE(ma->cell_i_faces);
+  BFT_FREE(ma->cell_i_faces_sgn);
 
   BFT_FREE(ma->cell_b_faces_idx);
   BFT_FREE(ma->cell_b_faces);
@@ -590,6 +667,22 @@ cs_mesh_adjacencies_update_cell_cells_e(void)
 
   ma->cell_cells_e_idx = m->cell_cells_idx;
   ma->cell_cells_e = m->cell_cells_lst;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ensure presence of cell -> interior face connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_i_faces(void)
+{
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  if (ma->cell_i_faces == NULL)
+    _update_cell_i_faces(ma);
 }
 
 /*----------------------------------------------------------------------------*/
