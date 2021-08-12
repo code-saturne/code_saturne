@@ -1015,7 +1015,7 @@ temperature = enthalpy / 1000;
             command = None
             try:
                 cfg = self.case.case['package'].config
-                if cfg.libs['eos'].have == "yes":
+                if cfg.libs['eos'].have:
                     eos_bin_dir = os.path.join(cfg.libs['eos'].prefix, "bin")
                     if os.path.isdir(eos_bin_dir):
                         command = os.path.join(eos_bin_dir, "eos_gui")

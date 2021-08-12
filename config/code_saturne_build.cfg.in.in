@@ -30,7 +30,6 @@
 [package]
 
 name: @PACKAGE_NAME@
-tarname: @PACKAGE_TARNAME@
 pkgversion: @PACKAGE_VERSION@
 string: @PACKAGE_STRING@
 bugreport: @PACKAGE_BUGREPORT@
@@ -95,6 +94,9 @@ special_user_link: @cs_special_user_link@
 [python]
 
 python: @PYTHON@
+
+pyuic5: @PYUIC5@
+pyrcc5: @PYRCC5@
 
 # Execution environment
 #----------------------
@@ -206,12 +208,6 @@ ldflags: @COOLPROP_LDFLAGS@
 libs: @COOLPROP_LIBS@
 pythonpath: @COOLPROPPYTHONPATH@
 
-[metis]
-have: @cs_have_metis@
-cppflags: @METIS_CPPFLAGS@
-ldflags: @METIS_LDFLAGS@
-libs: @METIS_LIBS@
-
 [mpi]
 have: @cs_have_mpi@
 variant: @mpi_type@
@@ -220,6 +216,18 @@ libdir: @mpi_libdir@
 cppflags: @MPI_CPPFLAGS@
 ldflags: @MPI_LDFLAGS@
 libs: @MPI_LIBS@
+
+[scotch]
+have: @cs_have_scotch@
+cppflags: @SCOTCH_CPPFLAGS@
+ldflags: @SCOTCH_LDFLAGS@
+libs: @SCOTCH_LIBS@
+
+[metis]
+have: @cs_have_metis@
+cppflags: @METIS_CPPFLAGS@
+ldflags: @METIS_LDFLAGS@
+libs: @METIS_LIBS@
 
 [cuda]
 have: @cs_have_cuda@
@@ -233,8 +241,14 @@ cppflags: @PETSC_CPPFLAGS@
 ldflags: @PETSC_LDFLAGS@
 libs: @PETSC_LIBS@
 
-[scotch]
-have: @cs_have_scotch@
-cppflags: @SCOTCH_CPPFLAGS@
-ldflags: @SCOTCH_LDFLAGS@
-libs: @SCOTCH_LIBS@
+[amgx]
+have: @cs_have_amgx@
+cppflags: @AMGX_CPPFLAGS@
+ldflags: @AMGX_LDFLAGS@
+libs: @AMGX_LIBS@
+
+[mumps]
+have: @cs_have_mumps@
+cppflags: @MUMPS_CPPFLAGS@
+ldflags: @MUMPS_LDFLAGS@
+libs: @MUMPS_LIBS@

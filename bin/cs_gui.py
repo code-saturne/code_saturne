@@ -142,7 +142,7 @@ def main(argv, pkg):
 
     # Test if EOS modules could be imported
     cfg = pkg.config
-    if cfg.libs['eos'].have == "yes":
+    if cfg.libs['eos'].have:
         eosprefix = cfg.libs['eos'].prefix
         try:
             from distutils import sysconfig

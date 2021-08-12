@@ -243,7 +243,7 @@ class cs_compile(object):
 
         # Build the command line, and split possible multiple arguments in lists.
         for lib in self.pkg.config.deplibs:
-            if (self.pkg.config.libs[lib].have == "yes"
+            if (self.pkg.config.libs[lib].have == True
                 and (not self.pkg.config.libs[lib].dynamic_load)):
                 cmd_line += separate_args(self.pkg.config.libs[lib].flags[flag])
 

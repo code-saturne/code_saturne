@@ -329,7 +329,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.has_medcoupling = False
         try:
             cfg = self.case.case['package'].config
-            self.has_medcoupling = cfg.libs['medcoupling'].have == 'yes'
+            self.has_medcoupling = cfg.libs['medcoupling'].have
         except Exception:  # if case/package not available (should not happen)
             print("Warning: package configuration not available")
             pass

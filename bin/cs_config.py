@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# @configure_input@
 
 #-------------------------------------------------------------------------------
 
@@ -34,33 +33,60 @@ from optparse import OptionParser
 
 class prerequisite:
 
-    def __init__(self, name, have = "no",
+    def __init__(self, name, key, config_dict, have = None,
                  variant = None, dynamic_load = False,
-                 prefix = None, execprefix = None,
+                 prefix = None,
                  bindir = None, includedir = None, libdir = None,
                  flags = None):
 
         # Library name
         self.name = name
 
+        if config_dict and key:
+            d = config_dict.get(key, {})
+        else:
+            d = {}
+
         # Have
-        self.have = have
+
+        false_t = ('False', 'false', 'no', '0')
+        true_t = ('True', 'true', 'yes', '1')
+
+        if have != None:
+            self.have = have
+        else:
+            self.have = d.get('have', have)
+            if self.have in false_t:
+                self.have = False
+            elif self.have in true_t:
+                self.have = True
 
         # Loaded dynamically on demand (linked separately)
-        self.dynamic_load = dynamic_load
+        self.dynamic_load = d.get('dynamic_load', False)
+        if self.dynamic_load in false_t:
+            self.dynamic_load = False
+        elif self.dynamic_load in true_t:
+            self.dynamic_load = True
 
         # Library variant
-        self.variant = variant
+        self.variant = d.get('variant', None)
 
         # Library installation directories
-        self.prefix = prefix
-        self.execprefix = execprefix
-        self.bindir = bindir
-        self.includedir = includedir
-        self.libdir = libdir
+        for k in ('prefix', 'bindir', 'libdir'):
+            setattr(self, k, d.get(k, ''))
 
         # Library build (dictionnary {cppflags, ldflags, libs})
-        self.flags = flags
+        if flags != None:
+            self.flags = flags
+        else:
+            self.flags = {}
+            if self.have != 'no':
+                for k in ('cppflags', 'ldflags', 'libs'):
+                    self.flags[k] = d.get(k, '')
+
+                pythonpath = d.get('pythonpath', None)
+                if pythonpath != None:
+                    self.flags['pythonpath'] = pythonpath
 
     def print_config(self):
 
@@ -72,9 +98,13 @@ class prerequisite:
 
 class config:
 
-    def __init__(self):
+    def __init__(self, config_dict):
+        """
+        constructor for configuration class, using a dictionnary
+        read from a configuration file.
+        """
 
-        # List of optionnal features
+        # List of optional features
 
         self.optfeatures = ['debug', 'relocatable', 'shared',
                             'gui', 'frontend',
@@ -101,20 +131,23 @@ class config:
 
         # Compilers, flags and special commands
 
-        self.compilers = {'cc': "@CC@",
-                          'cxx': "@CXX@",
-                          'fc': "@FC@",
-                          'nvcc': "@NVCC@",
-                          'ld': "@CS_LD@"}
+        d = config_dict.get('compilers', {})
 
-        self.flags = {'cflags': "@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@",
-                      'cxxflags': "@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@",
-                      'fcflags': "@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@",
-                      'nvccflags': "@NVCCFLAGS@ @NVCCFLAGS_DBG@ @NVCCFLAGS_OPT@"}
+        self.compilers = {}
+        for k in ('cc', 'cxx', 'fc', 'nvcc', 'ld'):
+            self.compilers[k] = d.get(k, None)
 
-        self.fcmodinclude = "@FCMODINCLUDE@"
-        self.rpath = "@LDRPATH@"
-        self.special_user_link = "@cs_special_user_link@"
+        self.flags = {}
+        for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags'):
+            self.flags[k] = d.get(k, '')
+
+        self.fcmodinclude = d.get('fcmodinclude', '')
+        self.rpath = d.get('rpath', '')
+        self.special_user_link = d.get('cs_special_user_link', '')
+
+        system_flags = {'cppflags': d.get('cppflags', ''),
+                        'ldflags': d.get('ldflags', ''),
+                        'libs': d.get('libs', '')}
 
         # Constants for system-dependant file extensions
         if sys.platform.startswith("win"):
@@ -147,29 +180,34 @@ class config:
 
         # Python-related information
 
-        self.python = "@PYTHON@"
-        self.pyuic4 = "@PYUIC4@"
-        self.pyrcc4 = "@PYRCC4@"
-        self.pyuic5 = "@PYUIC5@"
-        self.pyrcc5 = "@PYRCC5@"
+        d = config_dict.get('python', {})
+
+        self.python = d.get('python', None)
+        self.pyuic = d.get('pyuic5', None)
+        self.pyrcc = d.get('pyurcc5', None)
 
         # Execution environment
 
-        self.env_modules = "@cs_env_modules@"
-        self.env_modulecmd = "@MODULECMD@"
+        d = config_dict.get('environment', {})
+
+        self.env_modules = d.get('env_modules', '')
+        self.env_modulecmd = d.get('env_modulecmd', '')
 
         # Setup the optionnal features
 
-        self.features['debug'] = "@debug@"
-        self.features['relocatable'] = "@relocatable@"
-        self.features['shared'] = "@enable_shared@"
-        self.features['gui'] = "@cs_have_gui@"
-        self.features['frontend'] = "@cs_have_frontend@"
-        self.features['mpi'] = "@cs_have_mpi@"
-        self.features['openmp'] = "@cs_have_openmp@"
-        self.features['cuda'] = "@cs_have_cuda@"
-        self.features['long-gnum'] = "@cs_have_long_gnum@"
-        self.features['build_os'] = "@build_os@"
+        d = config_dict.get('features', {})
+
+        self.features = {}
+        self.features['debug'] = d.get('debug', 'no')
+        self.features['relocatable'] = d.get('relocatable', 'no')
+        self.features['shared'] = d.get('enable_shared', 'yes')
+        self.features['gui'] = d.get('cs_have_gui', 'yes')
+        self.features['frontend'] = d.get('cs_have_frontend', 'yes')
+        self.features['mpi'] = d.get('cs_have_mpi', 'yes')
+        self.features['openmp'] = d.get('cs_have_openmp', 'yes')
+        self.features['cuda'] = d.get('cs_have_cuda', 'no')
+        self.features['long-gnum'] = d.get('cs_have_long_gnum', 'yes')
+        self.features['build_os'] = d.get('build_os', '')
 
         # Now, one can setup the prerequisites information
 
@@ -179,8 +217,8 @@ class config:
         # Here, CPPFLAGS and LDFLAGS will be provided by a get_dir method
 
         self.libs['saturne'] = \
-            prerequisite("Code_Saturne",
-                         have = "yes",
+            prerequisite('Code_Saturne', None, None,
+                         have = True,
                          flags = {'cppflags': "",
                                   'ldflags': "",
                                   'libs': "-lsaturne"})
@@ -190,161 +228,44 @@ class config:
         # paths to the command line
 
         self.libs['ple'] = \
-            prerequisite("PLE",
-                         have = "yes",
-                         variant = "@ple_type@",
-                         flags = {'cppflags': "@PLE_CPPFLAGS@",
-                                  'ldflags': "@PLE_LDFLAGS@",
-                                  'libs': "@PLE_LIBS@"})
+            prerequisite('PLE', 'ple', config_dict,
+                         have=True, variant='internal')
 
         # Setup user and system libraries
 
         self.libs['system'] = \
-            prerequisite("System",
-                         have = "yes",
-                         flags = {'cppflags': "@CPPFLAGS@",
-                                  'ldflags': "@LDFLAGS@",
-                                  'libs': "@LIBS@ @FCLIBS@"})
+            prerequisite('System', None, None,
+                         have = True,
+                         flags = system_flags)
 
         # Setup the optionnal libraries
 
-        self.libs['blas'] = \
-            prerequisite("BLAS",
-                         have = "@cs_have_blas@",
-                         flags = {'cppflags': "@BLAS_CPPFLAGS@",
-                                  'ldflags': "@BLAS_LDFLAGS@",
-                                  'libs': "@BLAS_LIBS@"})
+        self.libs['blas'] = prerequisite('BLAS', 'blas', config_dict)
 
-        self.libs['ccm'] = \
-            prerequisite("CCM",
-                         have = "@cs_have_ccm@",
-                         flags = {'cppflags': "@CCM_CPPFLAGS@",
-                                  'ldflags': "@CCM_LDFLAGS@",
-                                  'libs': "@CCM_LIBS@"})
+        self.libs['ccm']  = prerequisite('CCM', 'ccm', config_dict)
+        self.libs['cgns'] = prerequisite('CGNS', 'cgns', config_dict)
+        self.libs['hdf5'] = prerequisite('HDF5', 'hdf5', config_dict)
+        self.libs['med']  = prerequisite('MED', 'med', config_dict)
 
-        self.libs['cgns'] = \
-            prerequisite("CGNS",
-                         have = "@cs_have_cgns@",
-                         flags = {'cppflags': "@CGNS_CPPFLAGS@",
-                                  'ldflags': "@CGNS_LDFLAGS@",
-                                  'libs': "@CGNS_LIBS@"})
+        self.libs['catalyst'] = prerequisite('CATALYST', 'catalyst', config_dict)
+        self.libs['melissa']  = prerequisite('MELISSA', 'melissa', config_dict)
+        self.libs['medcoupling'] = prerequisite('MEDCOUPLING',
+                                                'medcoupling', config_dict)
 
-        self.libs['hdf5'] = \
-            prerequisite("HDF5",
-                         have = "@cs_have_hdf5@",
-                         flags = {'cppflags': "@HDF5_CPPFLAGS@",
-                                  'ldflags': "@HDF5_LDFLAGS@",
-                                  'libs': "@HDF5_LIBS@"})
+        self.libs['eos']       = prerequisite('EOS', 'eos', config_dict)
+        self.libs['freesteam'] = prerequisite('FREESTEAM', 'freesteam', config_dict)
+        self.libs['coolprop']  = prerequisite('COOLPROP', 'coolprop', config_dict)
 
-        self.libs['med'] = \
-            prerequisite("MED",
-                         have = "@cs_have_med@",
-                         flags = {'cppflags': "@MED_CPPFLAGS@",
-                                  'ldflags': "@MED_LDFLAGS@",
-                                  'libs': "@MED_LIBS@"})
+        self.libs['mpi'] = prerequisite('MPI', 'mpi', config_dict)
 
-        self.libs['catalyst'] = \
-            prerequisite("CATALYST",
-                         have = "@cs_have_catalyst@",
-                         dynamic_load = @cs_py_have_plugin_catalyst@,
-                         flags = {'cppflags': "@CATALYST_CPPFLAGS@",
-                                  'ldflags': "@CATALYST_LDFLAGS@",
-                                  'libs': "@CATALYST_LIBS@"})
+        self.libs['scotch'] = prerequisite('SCOTCH', 'scotch', config_dict)
+        self.libs['metis']  = prerequisite('METIS', 'metis', config_dict)
 
-        self.libs['melissa'] = \
-            prerequisite("MELISSA",
-                         have = "@cs_have_melissa@",
-                         dynamic_load = @cs_py_have_plugin_melissa@,
-                         flags = {'cppflags': "@MELISSA_CPPFLAGS@",
-                                  'ldflags': "@MELISSA_LDFLAGS@",
-                                  'libs': "@MELISSA_LIBS@"})
+        self.libs['cuda'] =  prerequisite('CUDA', 'cuda', config_dict)
 
-        self.libs['medcoupling'] = \
-            prerequisite("MEDCOUPLING",
-                         have = "@cs_have_medcoupling@",
-                         dynamic_load = @cs_py_have_plugin_medcoupling@,
-                         flags = {'cppflags': "@MEDCOUPLING_CPPFLAGS@",
-                                  'ldflags': "@MEDCOUPLING_LDFLAGS@",
-                                  'libs': "@MEDCOUPLING_LIBS@"})
-
-        self.libs['eos'] = \
-            prerequisite("EOS",
-                         have = "@cs_have_eos@",
-                         prefix="@eos_prefix@",
-                         dynamic_load = @cs_py_have_plugins@,
-                         flags = {'cppflags': "@EOS_CPPFLAGS@",
-                                  'ldflags': "@EOS_LDFLAGS@",
-                                  'libs': "@EOS_LIBS@"})
-
-        self.libs['freesteam'] = \
-            prerequisite("FREESTEAM",
-                         have = "@cs_have_freesteam@",
-                         prefix="@freesteam_prefix@",
-                         flags = {'cppflags': "@FREESTEAM_CPPFLAGS@",
-                                  'ldflags': "@FREESTEAM_LDFLAGS@",
-                                  'libs': "@FREESTEAM_LIBS@"})
-
-        self.libs['coolprop'] = \
-            prerequisite("COOLPROP",
-                         have = "@cs_have_coolprop@",
-                         prefix="@coolprop_prefix@",
-                         dynamic_load = @cs_py_have_plugins@,
-                         flags = {'cppflags': "@COOLPROP_CPPFLAGS@",
-                                  'ldflags': "@COOLPROP_LDFLAGS@",
-                                  'libs': "@COOLPROP_LIBS@",
-                                  'pythonpath': "@COOLPROPPYTHONPATH@"})
-
-        self.libs['metis'] = \
-            prerequisite("METIS",
-                         have = "@cs_have_metis@",
-                         flags = {'cppflags': "@METIS_CPPFLAGS@",
-                                  'ldflags': "@METIS_LDFLAGS@",
-                                  'libs': "@METIS_LIBS@"})
-
-        self.libs['mpi'] = \
-            prerequisite("MPI",
-                         have = "@cs_have_mpi@",
-                         variant = "@mpi_type@",
-                         bindir = "@mpi_bindir@",
-                         libdir = "@mpi_libdir@",
-                         flags = {'cppflags': "@MPI_CPPFLAGS@",
-                                  'ldflags': "@MPI_LDFLAGS@",
-                                  'libs': "@MPI_LIBS@"})
-
-        self.libs['cuda'] = \
-            prerequisite("CUDA",
-                         have = "@cs_have_cuda@",
-                         flags = {'cppflags': "@CUDA_CPPFLAGS@",
-                                  'ldflags': "@CUDA_LDFLAGS@",
-                                  'libs': "@CUDA_LIBS@"})
-
-        self.libs['mumps'] = \
-            prerequisite("MUMPS",
-                         have = "@cs_have_mumps@",
-                         flags = {'cppflags': "@MUMPS_CPPFLAGS@",
-                                  'ldflags': "@MUMPS_LDFLAGS@",
-                                  'libs': "@MUMPS_LIBS@"})
-
-        self.libs['amgx'] = \
-            prerequisite("Amgx",
-                         have = "@cs_have_amgx@",
-                         flags = {'cppflags': "@AMGX_CPPFLAGS@",
-                                  'ldflags': "@AMGX_LDFLAGS@",
-                                  'libs': "@AMGX_LIBS@"})
-
-        self.libs['petsc'] = \
-            prerequisite("PETSc",
-                         have = "@cs_have_petsc@",
-                         flags = {'cppflags': "@PETSC_CPPFLAGS@",
-                                  'ldflags': "@PETSC_LDFLAGS@",
-                                  'libs': "@PETSC_LIBS@"})
-
-        self.libs['scotch'] = \
-            prerequisite("SCOTCH",
-                         have = "@cs_have_scotch@",
-                         flags = {'cppflags': "@SCOTCH_CPPFLAGS@",
-                                  'ldflags': "@SCOTCH_LDFLAGS@",
-                                  'libs': "@SCOTCH_LIBS@"})
+        self.libs['petsc'] = prerequisite('PETSc', 'petsc', config_dict)
+        self.libs['amgx']  = prerequisite('Amgx', 'amgx', config_dict)
+        self.libs['mumps'] = prerequisite('MUMPS', 'mumps', config_dict)
 
     def __get_search_paths_catalyst__(self):
         """
@@ -510,21 +431,13 @@ def process_cmd_line(argv):
                       action="store_true",
                       help="Python interpreter")
 
-    parser.add_option("--pyuic4", dest="print_pyuic4",
+    parser.add_option("--pyuic", dest="print_pyuic",
                       action="store_true",
-                      help="pyuic4 tool for PyQt4 support")
+                      help="pyuic tool for PyQt support")
 
-    parser.add_option("--pyrcc4", dest="print_pyrcc4",
+    parser.add_option("--pyrcc", dest="print_pyrcc",
                       action="store_true",
-                      help="pyrcc4 tool for PyQt4 support")
-
-    parser.add_option("--pyuic5", dest="print_pyuic5",
-                      action="store_true",
-                      help="pyuic5 tool for PyQt5 support")
-
-    parser.add_option("--pyrcc5", dest="print_pyrcc5",
-                      action="store_true",
-                      help="pyrcc5 tool for PyQt5 support")
+                      help="pyrcc tool for PyQt support")
 
     parser.add_option("--have", dest="have", metavar="<lib>",
                       help="supported feature or library")
@@ -559,10 +472,8 @@ def process_cmd_line(argv):
     parser.set_defaults(print_rpath=False)
 
     parser.set_defaults(print_python=False)
-    parser.set_defaults(print_pyrcc4=False)
-    parser.set_defaults(print_pyuic4=False)
-    parser.set_defaults(print_pyrcc5=False)
-    parser.set_defaults(print_pyuic5=False)
+    parser.set_defaults(print_pyrcc=False)
+    parser.set_defaults(print_pyuic=False)
 
     parser.set_defaults(have=None)
     parser.set_defaults(cppflags=None)
@@ -630,10 +541,8 @@ def main(argv, pkg):
     if opts.print_rpath == True: print(cfg.rpath)
 
     if opts.print_python  == True: print(cfg.python)
-    if opts.print_pyuic4  == True: print(cfg.pyuic4)
-    if opts.print_pyrcc4  == True: print(cfg.pyrcc4)
-    if opts.print_pyuic5  == True: print(cfg.pyuic5)
-    if opts.print_pyrcc5  == True: print(cfg.pyrcc5)
+    if opts.print_pyuic  == True: print(cfg.pyuic)
+    if opts.print_pyrcc  == True: print(cfg.pyrcc)
 
     if opts.have is not None:
         if opts.have in cfg.deplibs: print(cfg.libs[opts.have].have)

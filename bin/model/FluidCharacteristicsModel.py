@@ -180,7 +180,7 @@ class FluidCharacteristicsModel(Variables, Model):
         try:
             cfg = case.case['package'].config
 
-            if cfg.libs['freesteam'].have != "no":
+            if cfg.libs['freesteam'].have:
                 self.tables += self.mask_freesteam
                 fli = 'Water'
                 if fli not in self.lib_properties.keys():
@@ -188,7 +188,7 @@ class FluidCharacteristicsModel(Variables, Model):
                 else:
                     self.lib_properties[fli] += self.mask_freesteam
 
-            if cfg.libs['coolprop'].have != "no":
+            if cfg.libs['coolprop']:
                 if not coolprop_fluids:
                     load_coolprop_fluids(cfg)
                 if coolprop_fluids:

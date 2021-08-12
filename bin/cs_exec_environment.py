@@ -917,7 +917,7 @@ def get_ld_library_path_additions(pkg):
         ld_library_path_dirs = ld_library_path.split(':')
 
         for lib in pkg.config.deplibs:
-            if (pkg.config.libs[lib].have == "yes"
+            if (pkg.config.libs[lib].have == True
                 and (not pkg.config.libs[lib].dynamic_load)):
                 ldflags = separate_args(pkg.config.libs[lib].flags['ldflags'])
                 for f in ldflags:

@@ -35,7 +35,7 @@ from cs_compile import cs_compile
 
 #-------------------------------------------------------------------------------
 
-def process_cmd_line(argv, pkg):
+def process_cmd_line(argv):
     """
     Processes the passed command line arguments for a build environment.
 
@@ -227,9 +227,9 @@ class compile_install(cs_compile):
         # Add CPPFLAGS and LDFLAGS information for the current package
         if flag == 'cppflags':
             dirs = []
-            dirs.insert(0, self.pkg.dirs['pkgincludedir'][1])
+            dirs.insert(0, self.pkg.dirs['pkgincludedir'])
             if self.pkg.config.libs['ple'].variant == "internal":
-                dirs.insert(0, self.pkg.dirs['includedir'][1])
+                dirs.insert(0, self.pkg.dirs['includedir'])
             for d in dirs:
                 if self.destdir:
                     flags.append("-I" + dest_subdir(self.destdir, d))
@@ -239,7 +239,7 @@ class compile_install(cs_compile):
         elif flag == 'ldflags':
             # Do not use pkg.get_dir here as possible relocation paths must be
             # used after installation, not before.
-            libdir = pkg.dirs['libdir'][1]
+            libdir = pkg.dirs['libdir']
             # Strangely, on MinGW, Windows paths are not correctly handled here
             # So, assuming we always build on MinGW, here is a little trick!
             if sys.platform.startswith("win"):
@@ -280,14 +280,14 @@ class compile_install(cs_compile):
 
         # Build the command line, and split possible multiple arguments in lists.
         for lib in pkg.config.deplibs:
-            if (pkg.config.libs[lib].have == "yes" \
+            if (pkg.config.libs[lib].have == True \
                 and (not pkg.config.libs[lib].dynamic_load)):
                 cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
 
         if flag == 'ldflags':
             # Do not use pkg.get_dir here as possible relocation paths
             # must be used after installation, not before.
-            libdir = pkg.dirs['libdir'][1]
+            libdir = pkg.dirs['libdir']
             # Strangely, on MinGW, Windows paths are not correctly
             # handled here. So, assuming we always build on MinGW,
             # here is a little trick!
@@ -311,7 +311,7 @@ class compile_install(cs_compile):
 
         # Build the command line, and split possible multiple arguments in lists.
         for lib in pkg.config.deplibs:
-            if (pkg.config.libs[lib].have == "yes" \
+            if (pkg.config.libs[lib].have == True \
                 and (not pkg.config.libs[lib].dynamic_load)):
                 cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
 
@@ -328,14 +328,14 @@ def install_exec_name(pkg, exec_name, destdir=None):
     if necessary
     """
 
-    exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1], exec_name)
+    exec_name = os.path.join(pkg.dirs['pkglibexecdir'], exec_name)
     # Strangely, on MinGW, Windows paths are not correctly handled here...
     # So, assuming we always build on MinGW, here is a little trick!
     if sys.platform.startswith("win"):
         if pkg.get_cross_compile() != 'cygwin': # mingw64
             exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
         else:
-            exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1],
+            exec_name = os.path.join(pkg.dirs['pkglibexecdir'],
                                      os.path.basename(exec_name))
     if destdir:
         exec_name = dest_subdir(destdir, exec_name)
@@ -349,17 +349,30 @@ def install_exec_name(pkg, exec_name, destdir=None):
 
 if __name__ == '__main__':
 
+    # Check mode and options
+    options, src_files = process_cmd_line(sys.argv[1:])
+
+    top_builddir = os.getenv("CS_TOP_BUILDDIR")
+    config_file_base = os.path.join("lib", "code_saturne_build.cfg")
+
+    if top_builddir:
+        top_builddir = os.path.abspath(top_builddir)
+        config_file = os.path.join(top_builddir, config_file_base)
+    else:
+        top_builddir = os.path.abspath(os.getcwd())
+        t = os.path.split(top_builddir)
+        while (t[1]):
+            config_file = os.path.join(top_builddir, config_file_base)
+            if os.path.isfile(config_file):
+                break;
+            t = os.path.split(top_builddir)
+            top_builddir = os.path.abspath(t[0])
+
     # Retrieve package information (name, version, installation dirs, ...)
 
     from cs_package import package
 
-    # Note: some subtle Python issue requires reloading the package here
-    # (incomplete config loaded otherwise on 2021 Debian sid with PETSc)
-
-    pkg = package(reload_config=True)
-
-    # Check mode and options
-    options, src_files = process_cmd_line(sys.argv[1:], pkg)
+    pkg = package(config_file=config_file, install_mode=True)
 
     src_dir = None
     if src_files:

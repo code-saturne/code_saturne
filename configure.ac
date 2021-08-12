@@ -1110,7 +1110,7 @@ AC_SUBST(cs_py_have_plugins)
 AM_CONDITIONAL(HAVE_PLUGINS, test x$cs_have_plugins = xyes)
 
 #------------------------------------------------------------------------------
-# Pass compiler options to automake files and cs_config.py
+# Pass compiler options to automake files and code_saturne_build.cfg.in
 #------------------------------------------------------------------------------
 
 AC_SUBST(CPPFLAGS)
@@ -1158,7 +1158,6 @@ AC_CONFIG_FILES([Makefile
 		 docs/refcard/Makefile docs/theory/Makefile
 		 docs/user/Makefile
 		 tests/Makefile
-		 bin/cs_config.py
 		 config/code_saturne_build.cfg.in])
 
 #------------------------------------------------------------------------------

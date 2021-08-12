@@ -213,15 +213,15 @@ class FormatWriterDelegate(QItemDelegate):
         editor.installEventFilter(self)
 
         if self.cfg_libs != None:
-            if self.cfg_libs['med'].have == "no":
+            if self.cfg_libs['med'].have == False:
                 editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
-            if self.cfg_libs['cgns'].have == "no":
+            if self.cfg_libs['cgns'].have == False:
                 editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
-            if self.cfg_libs['catalyst'].have == "no":
+            if self.cfg_libs['catalyst'].have == False:
                 editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
-            if self.cfg_libs['melissa'].have == "no":
+            if self.cfg_libs['melissa'].have == False:
                 editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
-            if self.cfg_libs['ccm'].have == "no":
+            if self.cfg_libs['ccm'].have == False:
                 editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
 
         return editor
@@ -1327,7 +1327,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             cfg_libs = None
 
         no_catalyst = False
-        if cfg_libs['catalyst'].have == "no":
+        if cfg_libs['catalyst'].have == False:
             no_catalyst = True
 
         if self.case['run_type'] == 'standard':

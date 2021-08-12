@@ -32,6 +32,7 @@ import sys
 
 # Store the installation path of Code_Saturne Python modules.
 cspath = '@pkgpythondir@'
+cslibdir = '@libdir@'
 
 # Store the information whether the installation is relocatable or not.
 relocatable = '@relocatable@'
@@ -53,6 +54,7 @@ if relocatable == 'yes':
     sitedir = os.path.join(prefix,
                            'lib', 'python' + sys.version[:3], 'site-packages')
     cspath = os.path.join(sitedir, 'code_saturne')
+    cslibdir = os.path.join(prefix, 'lib')
 
 #-------------------------------------------------------------------------------
 # Main
@@ -79,8 +81,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # Retrieve package information (name, version, installation dirs, ...)
+
+    config_file = os.path.join(cslibdir, 'code_saturne_build.cfg')
+
     from code_saturne.cs_package import package
-    pkg = package()
+    pkg = package(config_file=config_file)
 
     # Create an instance of the main script
     cs = master_script(sys.argv[1:], pkg)

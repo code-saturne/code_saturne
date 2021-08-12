@@ -94,7 +94,6 @@ cs_version.h
 
 DISTCLEANFILES = \
 bin/code_saturne \
-bin/cs_package.py \
 lib/code_saturne_build.cfg \
 cs_config.h \
 cs_version.h \
@@ -116,33 +115,9 @@ endif
 
 edit_python = sed \
 	-e 's|@PYTHON[@]|$(PYTHON_SHEBANG)|g' \
+	-e 's|@libdir[@]|$(libdir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@relocatable[@]|$(relocatable)|g'
-
-edit_package = sed \
-	-e 's|@prefix[@]|$(prefix)|g' \
-	-e 's|@exec_prefix[@]|$(exec_prefix)|g' \
-	-e 's|@bindir[@]|$(bindir)|g' \
-	-e 's|@includedir[@]|$(includedir)|g' \
-	-e 's|@pkgincludedir[@]|$(pkgincludedir)|g' \
-	-e 's|@libdir[@]|$(libdir)|g' \
-	-e 's|@libexecdir[@]|$(libexecdir)|g' \
-	-e 's|@pkglibexecdir[@]|$(pkglibexecdir)|g' \
-	-e 's|@pythondir[@]|$(pythondir)|g' \
-	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
-	-e 's|@localedir[@]|$(localedir)|g' \
-	-e 's|@datarootdir[@]|$(datarootdir)|g' \
-	-e 's|@datadir[@]|$(datadir)|g' \
-	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
-	-e 's|@docdir[@]|$(docdir)|g' \
-	-e 's|@pdfdir[@]|$(pdfdir)|g' \
-	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
-	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
-	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
-	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
-	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
-	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g'
 
 edit_cfg = sed \
 	-e 's|@cfg_prefix[@]|$(prefix)|g' \
@@ -163,7 +138,6 @@ edit_cfg = sed \
 	-e 's|@cfg_pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@cfg_sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
-	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
@@ -202,15 +176,6 @@ bin/code_saturne.py: Makefile $(srcdir)/bin/code_saturne.py.in
 	mv $@.tmp $@
 endif
 
-bin/cs_package.py: Makefile $(srcdir)/bin/cs_package.py.in
-	rm -f $@ $@.tmp
-	$(MKDIR_P) bin
-	srcdir=''; \
-	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit_package) $${srcdir}$@.in >$@.tmp
-	mv $@.tmp $@
-	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
-
 bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 
 cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
@@ -226,11 +191,10 @@ lib/code_saturne_build.cfg: Makefile config/code_saturne_build.cfg.in
 
 BUILT_SOURCES = \
 cs_version.h \
-bin/cs_package.py \
 lib/code_saturne_build.cfg
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
+EXTRA_DIST += bin/code_saturne.py.in \
 	      bin/code_saturne.sh.in \
               data/thch/dp_radiat_MFS.tar.xz
 
@@ -245,12 +209,6 @@ endif
 
 # Install Python library
 
-nodist_pkgpython_PYTHON = \
-bin/cs_config.py \
-bin/cs_package.py
-
-# Install Python library
-
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
 bin/cs_studymanager.py \
@@ -261,24 +219,26 @@ bin/cs_case.py \
 bin/cs_case_domain.py \
 bin/cs_case_coupling.py \
 bin/cs_compile.py \
+bin/cs_config.py \
 bin/cs_control.py \
 bin/cs_create.py \
 bin/cs_debug_wrapper.py \
 bin/cs_debug_symbol.py \
 bin/cs_exec_environment.py \
-bin/cs_parametric_setup.py \
-bin/cs_parametric_study.py \
-bin/cs_studymanager_gui.py \
-bin/cs_trackcvg.py \
 bin/cs_gui.py \
 bin/cs_info.py \
+bin/cs_math_parser.py \
+bin/cs_meg_to_c.py \
+bin/cs_package.py \
+bin/cs_parametric_setup.py \
+bin/cs_parametric_study.py \
 bin/cs_run.py \
 bin/cs_runcase.py \
 bin/cs_run_conf.py \
 bin/cs_script.py \
+bin/cs_studymanager_gui.py \
 bin/cs_submit.py \
-bin/cs_math_parser.py \
-bin/cs_meg_to_c.py \
+bin/cs_trackcvg.py \
 bin/cs_update.py \
 bin/cs_xml_reader.py
 

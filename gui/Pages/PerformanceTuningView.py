@@ -99,9 +99,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         try:
             cfg = case.case['package'].config
-            if cfg.libs['scotch'].have == "no":
+            if cfg.libs['scotch'].have == False:
                 self.comboBox_PartType.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
-            if cfg.libs['metis'].have == "no":
+            if cfg.libs['metis'].have == False:
                 self.comboBox_PartType.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
         except Exception:  # if case/package not available (should not happen)
             print("Warning: package configuration not available")
