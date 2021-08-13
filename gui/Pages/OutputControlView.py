@@ -194,10 +194,11 @@ class FormatWriterDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None, xml_model=None, cfg_libs=None):
         super(FormatWriterDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = xml_model # TODO change this
+        self.cfg_libs = cfg_libs
 
 
     def createEditor(self, parent, option, index):
@@ -211,18 +212,18 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem("CCM-IO")
         editor.installEventFilter(self)
 
-        from code_saturne import cs_config
-        cfg = cs_config.config()
-        if cfg.libs['med'].have == "no":
-            editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
-        if cfg.libs['cgns'].have == "no":
-            editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
-        if cfg.libs['catalyst'].have == "no":
-            editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
-        if cfg.libs['melissa'].have == "no":
-            editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
-        if cfg.libs['ccm'].have == "no":
-            editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
+        if self.cfg_libs != None:
+            if self.cfg_libs['med'].have == "no":
+                editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+            if self.cfg_libs['cgns'].have == "no":
+                editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+            if self.cfg_libs['catalyst'].have == "no":
+                editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
+            if self.cfg_libs['melissa'].have == "no":
+                editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
+            if self.cfg_libs['ccm'].have == "no":
+                editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
+
         return editor
 
 
@@ -1318,17 +1319,22 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl = OutputControlModel(self.case)
         self.notebook = NotebookModel(self.case)
 
-        from code_saturne import cs_config
-        cfg = cs_config.config()
+        try:
+            cfg = case.case['package'].config
+            cfg_libs = cfg.libs
+        except Exception:  # if case/package not available (should not happen)
+            print("Warning: package configuration not available")
+            cfg_libs = None
+
         no_catalyst = False
-        if cfg.libs['catalyst'].have == "no":
+        if cfg_libs['catalyst'].have == "no":
             no_catalyst = True
 
         if self.case['run_type'] == 'standard':
             # lagrangian model
             self.lag_mdl = LagrangianModel(self.case)
 
-        # Tabs to remove (at the end, to avoid shfting indexes)
+        # Tabs to remove (at the end, to avoid shifting indexes)
         tabs_to_remove = []
 
         # Combo models
@@ -1423,7 +1429,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         delegate_label_writer = LabelWriterDelegate(self.tableViewWriter)
         self.tableViewWriter.setItemDelegateForColumn(0, delegate_label_writer)
         self.tableViewWriter.setItemDelegateForColumn(3, delegate_label_writer)
-        delegate_format = FormatWriterDelegate(self.tableViewWriter, self.mdl)
+        delegate_format = FormatWriterDelegate(self.tableViewWriter, self.mdl, cfg_libs)
         self.tableViewWriter.setItemDelegateForColumn(2, delegate_format)
 
         # mesh tab

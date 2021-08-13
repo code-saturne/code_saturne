@@ -326,9 +326,14 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.lineEditAccZInit.textChanged[str].connect(self.slotObjAccZinit)
 
         # Check for MEDCoupling presence
-        from code_saturne import cs_config
-        cfg = cs_config.config()
-        self.has_medcoupling = cfg.libs['medcoupling'].have == 'yes'
+        self.has_medcoupling = False
+        try:
+            cfg = self.case.case['package'].config
+            self.has_medcoupling = cfg.libs['medcoupling'].have == 'yes'
+        except Exception:  # if case/package not available (should not happen)
+            print("Warning: package configuration not available")
+            pass
+
         # deactivated for the moment
         self.has_medcoupling = False
 

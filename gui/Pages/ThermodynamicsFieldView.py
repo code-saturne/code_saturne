@@ -85,11 +85,9 @@ logging.basicConfig()
 log = logging.getLogger("ThermodynamicsFieldView")
 log.setLevel(GuiParam.DEBUG)
 
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the material
 #-------------------------------------------------------------------------------
-
 
 class MaterialsDelegate(QItemDelegate):
     """
@@ -443,7 +441,7 @@ temperature = enthalpy / 1000;
         self.zone_name = None
         self.zone_id   = None
 
-    def setup(self,case, zone_name):
+    def setup(self, case, zone_name):
         self.case = case
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
             if zone.getLabel() == zone_name:
@@ -1014,15 +1012,20 @@ temperature = enthalpy / 1000;
         call EOS GUI
         """
         if EOS == 1:
-            import subprocess
-            from code_saturne import cs_config
+            command = None
+            try:
+                cfg = self.case.case['package'].config
+                if cfg.libs['eos'].have == "yes":
+                    eos_bin_dir = os.path.join(cfg.libs['eos'].prefix, "bin")
+                    if os.path.isdir(eos_bin_dir):
+                        command = os.path.join(eos_bin_dir, "eos_gui")
+            except Exception:  # if case/package not available (should not happen)
+                print("Warning: package configuration not available")
+                pass
 
-            cfg = cs_config.config()
-            if cfg.libs['eos'].have == "yes":
-                eos_bin_dir = os.path.join(cfg.libs['eos'].prefix, "bin")
-                if os.path.isdir(eos_bin_dir):
-                    command = os.path.join(eos_bin_dir, "eos_gui")
-                    self.runProcess = subprocess.Popen(command, shell=True)
+            if command != None:
+                import subprocess
+                self.runProcess = subprocess.Popen(command, shell=True)
 
 
     @pyqtSlot()
