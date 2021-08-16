@@ -229,7 +229,7 @@ elif test "x$ple_gcc" = "xicc" ; then
 # Otherwise, are we using ICC NextGen ?
 #--------------------------------------
 
-elif test "x$ple_gcc" = "xicc" -o "x$ple_gcc" = "xicx" ; then
+elif test "x$ple_gcc" = "xicx" ; then
 
   ple_cc_version=`echo $ple_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
   echo "compiler '$CC' is Intel ICC NextGen"

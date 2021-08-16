@@ -322,7 +322,7 @@ elif test "x$cs_gcc" = "xicx" ; then
 elif test "x$cs_gcc" = "xoneapi" ; then
 
   cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CC' is Intel ICC NextGen"
+  echo "compiler '$CC' is Intel oneAPI DPC++"
 
   # Version strings for logging purposes and known compiler flag
   $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
@@ -750,7 +750,7 @@ elif test "x$cs_gxx" = "xicpx"; then
 elif test "x$cs_gxx" = "xoneapi"; then
 
   cs_cxx_version=`echo $cs_ac_cxx_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CXX' is Intel ICC NextGen"
+  echo "compiler '$CXX' is Intel oneAPI DPC++"
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
@@ -1095,7 +1095,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     echo "compiler '$FC' is Intel Fortran NextGen"
 
     # Version strings for logging purposes and known compiler flag
-    $FC $user_FCLAGS-V > $outfile 2>&1
+    $FC $user_FCLAGS -V > $outfile 2>&1
     cs_fc_compiler_known=yes
 
     cs_fc_vers_major=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f1 -d.`
