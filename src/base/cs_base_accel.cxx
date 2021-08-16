@@ -394,6 +394,9 @@ cs_free(void        *host_ptr,
 void *
 cs_get_device_ptr(void  *host_ptr)
 {
+  if (host_ptr == NULL)
+    return NULL;
+
   if (_hd_alloc_map.count(host_ptr) == 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("%s: No host pointer matching %p."), __func__, host_ptr);
