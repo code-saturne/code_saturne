@@ -2295,17 +2295,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Allocate the discretization points coordinates array and
-    !>        the temperature at each point of discretization.
-
-    subroutine init_1d_wall_thermal_local_models_arrays()  &
-      bind(C, name='cs_1d_wall_thermal_local_models_init')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine init_1d_wall_thermal_local_models_arrays
-
-    !---------------------------------------------------------------------------
-
     !> \brief Create the 1D mesh for each face and initialize the temperature.
 
     subroutine cs_1d_wall_thermal_mesh_create()  &

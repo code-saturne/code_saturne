@@ -157,16 +157,6 @@ cs_1d_wall_thermal_local_models_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate the discretization points coordinates array and
-          the temperature at each point of discretization.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_1d_wall_thermal_local_models_init(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Create the 1D mesh for each face and initialize the temperature.
  */
 /*----------------------------------------------------------------------------*/

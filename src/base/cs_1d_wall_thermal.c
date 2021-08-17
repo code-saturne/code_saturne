@@ -197,6 +197,53 @@ cs_f_1d_wall_thermal_get_temp(cs_real_t **tppt1d);
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate the discretization points coordinates array and
+          the temperature at each point of discretization.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_1d_wall_thermal_local_models_init(void)
+{
+  cs_lnum_t ii;
+
+  /* Computation of nmxt1d */
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
+                                     _1d_wall_thermal.nmxt1d);
+  }
+
+  /* if necessary, sum over all the processors */
+  cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
+
+  /* Initialization of the number of discretization points in each structure
+     Computation of the total number of discretization points */
+  cs_lnum_t nb_pts_tot = 0;
+
+  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++)
+    nb_pts_tot += _1d_wall_thermal.local_models[ii].nppt1d;
+
+  /* Allocate the "t" arrays: Temperature in each point of discretization
+          and the "z" arrays: Coordonnates of each point of discretization */
+
+  if (_1d_wall_thermal.nfpt1d > 0) {
+    BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
+    _1d_wall_thermal.local_models->t =   _1d_wall_thermal.local_models->z
+                                       + nb_pts_tot;
+  }
+
+  for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
+    _1d_wall_thermal.local_models[ii].z
+      =   _1d_wall_thermal.local_models[ii-1].z
+        + _1d_wall_thermal.local_models[ii-1].nppt1d;
+    _1d_wall_thermal.local_models[ii].t
+      =   _1d_wall_thermal.local_models[ii-1].t
+        + _1d_wall_thermal.local_models[ii-1].nppt1d;
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -315,53 +362,6 @@ cs_1d_wall_thermal_local_models_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate the discretization points coordinates array and
-          the temperature at each point of discretization.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_1d_wall_thermal_local_models_init(void)
-{
-  cs_lnum_t ii;
-
-  /* Computation of nmxt1d */
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++) {
-    _1d_wall_thermal.nmxt1d = CS_MAX(_1d_wall_thermal.local_models[ii].nppt1d,
-                                     _1d_wall_thermal.nmxt1d);
-  }
-
-  /* if necessary, sum over all the processors */
-  cs_parall_max(1, CS_INT_TYPE, &_1d_wall_thermal.nmxt1d);
-
-  /* Initialization of the number of discretization points in each structure
-     Computation of the total number of discretization points */
-  cs_lnum_t nb_pts_tot = 0;
-
-  for (ii = 0; ii < _1d_wall_thermal.nfpt1d ; ii++)
-    nb_pts_tot += _1d_wall_thermal.local_models[ii].nppt1d;
-
-  /* Allocate the "t" arrays: Temperature in each point of discretization
-          and the "z" arrays: Coordonnates of each point of discretization */
-
-  if (_1d_wall_thermal.nfpt1d > 0) {
-    BFT_MALLOC(_1d_wall_thermal.local_models->z, 2 * nb_pts_tot, cs_real_t);
-    _1d_wall_thermal.local_models->t =   _1d_wall_thermal.local_models->z
-                                       + nb_pts_tot;
-  }
-
-  for (ii = 1 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
-    _1d_wall_thermal.local_models[ii].z
-      =   _1d_wall_thermal.local_models[ii-1].z
-        + _1d_wall_thermal.local_models[ii-1].nppt1d;
-    _1d_wall_thermal.local_models[ii].t
-      =   _1d_wall_thermal.local_models[ii-1].t
-        + _1d_wall_thermal.local_models[ii-1].nppt1d;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Create the 1D mesh for each face and initialize the temperature.
  */
 /*----------------------------------------------------------------------------*/
@@ -376,7 +376,7 @@ cs_1d_wall_thermal_mesh_create(void)
   /* Allocate the global structure: cs_glob_par1d and the number of
      discretization points on each face */
   if (_1d_wall_thermal.nfpt1t > 0)
-   cs_1d_wall_thermal_local_models_init();
+   _1d_wall_thermal_local_models_init();
 
   for (ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
 
@@ -759,7 +759,7 @@ cs_1d_wall_thermal_read(void)
                   "of the test on IFPT1D)"));
 
     /* Allocate the cs_glob_par1d structure */
-    cs_1d_wall_thermal_local_models_init();
+    _1d_wall_thermal_local_models_init();
 
     BFT_FREE(tabvar);
   }
