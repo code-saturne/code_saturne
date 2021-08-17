@@ -1393,9 +1393,7 @@ _reset_weight_accumulator(cs_time_moment_wa_t  *mwa)
 {
   if (mwa->location_id == CS_MESH_LOCATION_NONE)
     mwa->val0 = 0.;
-  else {
-    assert(mwa->val != NULL);
-
+  else if (mwa->val != NULL) { /* NULL possible if not active yet */
     cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       mwa->val[i] = 0.;
@@ -1881,6 +1879,8 @@ cs_time_moment_is_active(int  moment_id)
 /*!
  * \brief Reset a time moment.
  *        Current iteration is set as starting time step for current moment.
+ *
+ * All other time moments sharing the same start time should also be reset.
  *
  * \param[in]   moment_id  id of associated moment
  */

@@ -300,6 +300,9 @@ cs_time_moment_is_active(int  moment_id);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reset a time moment.
+ *        Current iteration is set as starting time step for current moment.
+ *
+ * All other time moments sharing the same start time should also be reset.
  *
  * \param[in]   moment_id  id of associated moment
  */
