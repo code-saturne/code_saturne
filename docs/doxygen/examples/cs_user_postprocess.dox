@@ -43,7 +43,6 @@
   classical comma-separated (\em csv) or white-space-separated (\em dat) text
   files, in addition to the aforementioned output types.
 
-  - \subpage cs_user_postprocess_h_intro_p
   - \subpage cs_user_postprocess_h_writers_p
   - \subpage cs_user_postprocess_h_mesh_p
   - \subpage cs_user_postprocess_h_mesh_advanced_p
@@ -429,15 +428,6 @@
 
   \snippet cs_user_postprocess-profiles.c post_profile_advanced_1
 
-  As we observe here, the \ref cs_probe_set_create_from_local requires
-  a process-local definition, calling a user-defined function. This
-  requires that the line_defs array be defined as static, so as to be available
-  when this function is called. For this example, the function is defined
-  as follows (before the calling function, preferably in the file's
-  local function definitions section).
-
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_df_1
-
   \subsection cs_user_postprocess_h_profile_a2 Boundary profiles
 
   Probes and profiles may also be associated to the mesh boundary.
@@ -452,6 +442,12 @@
   and in the below example using an array of 2 selection criteria:
 
   \snippet cs_user_postprocess-profiles.c post_profile_advanced_2
+
+  In this example, we provide a local selection function (which may be defined
+  in the private function definitions section near the beginning of the file)
+  and whose code is shown below:
+
+  \snippet cs_user_postprocess-profiles.c post_profile_advanced_df_2
 
   \page cs_user_postprocess_h_var_p Definition of the variables to post-process
 

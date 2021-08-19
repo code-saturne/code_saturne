@@ -54,6 +54,7 @@
 #include "cs_mesh_from_builder.h"
 #include "cs_mesh_group.h"
 #include "cs_mesh_halo.h"
+#include "cs_mesh_intersect.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"

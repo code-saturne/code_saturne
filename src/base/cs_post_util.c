@@ -40,39 +40,22 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_selector.h"
-
-#include "cs_interface.h"
-
-#include "cs_base.h"
 #include "cs_balance_by_zone.h"
+#include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_geom.h"
-#include "cs_gradient.h"
-#include "cs_gradient.h"
-#include "cs_join.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_math.h"
-#include "cs_matrix_default.h"
 #include "cs_mesh.h"
-#include "cs_mesh_coherency.h"
+#include "cs_mesh_intersect.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_physical_constants.h"
-#include "cs_post.h"
 #include "cs_prototypes.h"
-#include "cs_renumber.h"
-#include "cs_rotation.h"
-#include "cs_thermal_model.h"
-#include "cs_time_step.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
+#include "cs_selector.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_model.h"
 #include "cs_velocity_pressure.h"
@@ -132,6 +115,8 @@ int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
  *
+ * \deprecated Use cs_mesh_intersect_segment_cell_select (rename) instead.
+ *
  * \param[in]   input     pointer to segment start and end:
  *                        [x0, y0, z0, x1, y1, z1]
  * \param[out]  n_cells   number of selected cells
@@ -144,140 +129,9 @@ cs_cell_segment_intersect_select(void        *input,
                                  cs_lnum_t   *n_cells,
                                  cs_lnum_t  **cell_ids)
 {
-  cs_real_t *sx = (cs_real_t *)input;
-
-  const cs_real_t sx0[3] = {sx[0], sx[1], sx[2]};
-  const cs_real_t sx1[3] = {sx[3], sx[4], sx[5]};
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_lnum_t _n_cells = m->n_cells;
-  cs_lnum_t *_cell_ids = NULL;
-
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
-
-  /* Mark for each cell */
-  /*--------------------*/
-
-  for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
-    _cell_ids[cell_id] = -1;
-  }
-
-  const cs_real_3_t *vtx_coord= (const cs_real_3_t *)m->vtx_coord;
-
-  /* Contribution from interior faces;
-     note the to mark cells, we could use a simple loop,
-     as thread races would not lead to a incorrect result, but
-     even if is slightly slower, we prefer to have a clean
-     behavior under thread debuggers. */
-
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           face_id++) {
-
-        int n_inout[2] = {0, 0};
-
-        cs_lnum_t vtx_start = m->i_face_vtx_idx[face_id];
-        cs_lnum_t vtx_end = m->i_face_vtx_idx[face_id+1];
-        cs_lnum_t n_vertices = vtx_end - vtx_start;
-        const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
-
-        const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
-
-        double t = cs_geom_segment_intersect_face(0,
-                                                  n_vertices,
-                                                  vertex_ids,
-                                                  vtx_coord,
-                                                  face_center,
-                                                  sx0,
-                                                  sx1,
-                                                  n_inout,
-                                                  NULL);
-
-        if (t >= 0 && t <= 1) {
-          cs_lnum_t  c_id0 = m->i_face_cells[face_id][0];
-          cs_lnum_t  c_id1 = m->i_face_cells[face_id][1];
-          if (c_id0 < _n_cells)
-            _cell_ids[c_id0] = 1;
-          if (c_id1 < _n_cells)
-            _cell_ids[c_id1] = 1;
-        }
-
-      }
-
-    }
-
-  }
-
-  /* Contribution from boundary faces*/
-
-  for (int g_id = 0; g_id < n_b_groups; g_id++) {
-
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-           face_id++) {
-
-        int n_inout[2] = {0, 0};
-
-        cs_lnum_t vtx_start = m->b_face_vtx_idx[face_id];
-        cs_lnum_t vtx_end = m->b_face_vtx_idx[face_id+1];
-        cs_lnum_t n_vertices = vtx_end - vtx_start;
-        const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
-
-        const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
-
-        double t = cs_geom_segment_intersect_face(0,
-                                                  n_vertices,
-                                                  vertex_ids,
-                                                  vtx_coord,
-                                                  face_center,
-                                                  sx0,
-                                                  sx1,
-                                                  n_inout,
-                                                  NULL);
-
-        if (t >= 0 && t <= 1) {
-          cs_lnum_t  c_id = m->b_face_cells[face_id];
-          _cell_ids[c_id] = 1;
-        }
-
-      }
-
-    }
-
-  }
-
-  /* Now check marked cells */
-
-  _n_cells = 0;
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    if (_cell_ids[cell_id] >= 0)
-      _cell_ids[_n_cells++] = cell_id;
-  }
-
-  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
-                                                  but not required) */
-
-  /* Set return values */
-
-  *n_cells = _n_cells;
-  *cell_ids = _cell_ids;
+  cs_mesh_intersect_segment_cell_select(input,
+                                        n_cells,
+                                        cell_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -300,6 +154,8 @@ cs_cell_segment_intersect_select(void        *input,
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
  *
+ * \deprecated Use cs_mesh_intersect_polyline_cell_select (rename) instead.
+ *
  * \param[in]   input     pointer to segments starts and ends:
  *                        [x0, y0, z0, x1, y1, z1]
  * \param[in]   n_points  number of vertices in the polyline
@@ -316,289 +172,11 @@ cs_cell_polyline_intersect_select(void        *input,
                                   cs_lnum_t  **cell_ids,
                                   cs_real_t  **seg_c_len)
 {
-  cs_real_t *sx = (cs_real_t *)input;
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_lnum_t _n_cells = m->n_cells;
-  cs_lnum_t *_cell_ids = NULL;
-  cs_lnum_t *_in = NULL;
-  cs_lnum_t *_out = NULL;
-  cs_real_t *_seg_c_len = NULL;
-
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
-  BFT_MALLOC(_seg_c_len, _n_cells, cs_real_t); /* Allocate selection list length */
-  BFT_MALLOC(_in, _n_cells, cs_lnum_t);
-  BFT_MALLOC(_out, _n_cells, cs_lnum_t);
-
-  /* Mark for each cell */
-  /*--------------------*/
-
-  for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
-    _cell_ids[cell_id] = -1;
-    _seg_c_len[cell_id] = 0.;
-  }
-
-  const cs_real_3_t *vtx_coord= (const cs_real_3_t *)m->vtx_coord;
-
-  /* Loop over the vertices of the polyline */
-  for (cs_lnum_t s_id = 0; s_id < n_points - 1; s_id++) {
-
-    const cs_real_t *sx0 = &(sx[3*s_id]);
-    const cs_real_t *sx1 = &(sx[3*(s_id+1)]);
-
-    cs_real_t length =  cs_math_3_distance(sx0, sx1);
-
-    /* Count the number of ingoing and outgoing intersection
-     * to check if the segment is inside the cell */
-    for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
-      _in[cell_id] = 0;
-      _out[cell_id] = 0;
-    }
-
-    /* Contribution from interior faces;
-       note the to mark cells, we could use a simple loop,
-       as thread races would not lead to a incorrect result, but
-       even if is slightly slower, we prefer to have a clean
-       behavior under thread debuggers. */
-
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-
-#   pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-            face_id++) {
-
-          cs_lnum_t vtx_start = m->i_face_vtx_idx[face_id];
-          cs_lnum_t vtx_end = m->i_face_vtx_idx[face_id+1];
-          cs_lnum_t n_vertices = vtx_end - vtx_start;
-          const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
-
-          const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
-
-          cs_lnum_t c_id0 = m->i_face_cells[face_id][0];
-          cs_lnum_t c_id1 = m->i_face_cells[face_id][1];
-
-          /* The line (OD) goes in (n_inout[0]++)
-           * or goes out (n_inout[1]++) the cell */
-          int n_inout[2] = {0, 0};
-
-          double t = cs_geom_segment_intersect_face(0,
-                                                    n_vertices,
-                                                    vertex_ids,
-                                                    vtx_coord,
-                                                    face_center,
-                                                    sx0,
-                                                    sx1,
-                                                    n_inout,
-                                                    NULL);
-
-          /* Segment is inside cell i if
-           *  n_inout[0] > 0 and t < 0 for a face
-           *  and
-           *  n_inout[1] > 0 and t > 0 for an other face
-           */
-          if (c_id0 < _n_cells) {
-            /* Intersection of (OD) with the face
-             * may be on [OD)
-             * It may leave c_id0 */
-            if (t >= 0.)
-              _out[c_id0] += n_inout[1];
-
-            /* Intersection of (OD) with the face
-             * may be on (OD] (because t < 0)
-             * It may enter c_id0 */
-            if (t < 0)
-              _in[c_id0] += n_inout[0];
-          }
-          /* Segment is inside cell j if
-           *  n_inout[0] > 0 and t < 0 for a face
-           *  and
-           *  n_inout[1] > 0 and t > 0 for an other face
-           */
-          if (c_id1 < _n_cells) {
-            /* Intersection of (OD) with the face
-             * may be on [OD) (because t > 0)
-             * It may leave c_id1 (if OD.n < 0) */
-            if (t >= 0.)
-              _out[c_id1] += n_inout[0];
-
-            /* Intersection of (OD) with the face
-             * may be on (OD]
-             * It may enter c_id1 (if 0D.n > 0) */
-            if (t < 0.)
-              _in[c_id1] += n_inout[1];
-          }
-
-          /* Segment crosses the face */
-          if (t >= 0 && t <= 1) {
-            /* length upwind the face*/
-            cs_real_t length_up =  t * length;
-            /* length downwind the face*/
-            cs_real_t length_down =  (1.-t) * length;
-            if (c_id0 < _n_cells) {
-
-              /* Mark cell by segment id (the cell may already be marked by another
-               * segment */
-              _cell_ids[c_id0] = s_id;
-
-              /* OD enters cell i from cell j */
-              if (n_inout[0] > 0)
-                _seg_c_len[c_id0] -= length_up;
-
-              /* OD leaves cell i to cell j */
-              if (n_inout[1] > 0)
-                _seg_c_len[c_id0] -= length_down;
-
-            }
-            if (c_id1 < _n_cells) {
-
-              /* Mark cell by segment id (the cell may already be marked by another
-               * segment */
-              _cell_ids[c_id1] = s_id;
-
-              /* OD enters cell i from cell j
-               * so leaves cell j */
-              if (n_inout[0] > 0)
-                _seg_c_len[c_id1] -= length_down;
-
-              /* OD leaves cell i to cell j
-               * so enters cell j */
-              if (n_inout[1] > 0)
-                _seg_c_len[c_id1] -= length_up;
-
-            }
-          }
-        }
-
-      }
-
-    }
-
-
-    /* Contribution from boundary faces*/
-
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-
-#   pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-            face_id++) {
-
-          cs_lnum_t vtx_start = m->b_face_vtx_idx[face_id];
-          cs_lnum_t vtx_end = m->b_face_vtx_idx[face_id+1];
-          cs_lnum_t n_vertices = vtx_end - vtx_start;
-          const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
-
-          const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
-          cs_lnum_t  c_id = m->b_face_cells[face_id];
-
-          int n_inout[2] = {0, 0};
-
-          double t = cs_geom_segment_intersect_face(0,
-                                                    n_vertices,
-                                                    vertex_ids,
-                                                    vtx_coord,
-                                                    face_center,
-                                                    sx0,
-                                                    sx1,
-                                                    n_inout,
-                                                    NULL);
-          /* Segment is inside cell i if
-           *  n_inout[0] > 0 and t < 0 for a face
-           *  and
-           *  n_inout[1] > 0 and t > 0 for an other face
-           */
-          if (c_id < _n_cells) {
-            /* Intersection of (OD) with the face
-             * may be on [OD)
-             * It may leave c_id */
-            if (t >= 0.)
-              _out[c_id] += n_inout[1];
-
-            /* Intersection of (OD) with the face
-             * may be on (OD]
-             * It may enter c_id */
-            if (t < 0)
-              _in[c_id] += n_inout[0];
-          }
-
-          /* Segment crosses the face */
-          if (t >= 0 && t <= 1) {
-
-            /* length upwind the face*/
-            cs_real_t length_up =  t * length;
-            /* length downwind the face*/
-            cs_real_t length_down =  (1.-t) * length;
-
-            /* Mark cell by segment id (the cell may already be marked by another
-             * segment */
-            _cell_ids[c_id] = s_id;
-
-            /* OD enters cell i */
-            if (n_inout[0] > 0)
-              _seg_c_len[c_id] -= length_up;
-
-            /* OD leaves cell i */
-            if (n_inout[1] > 0)
-              _seg_c_len[c_id] -= length_down;
-
-          }
-
-        }
-      }
-
-    }
-
-    /* Finalize the length computation to deal with cases where the segment
-     * is inside the cell */
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      /* There is one intersection on the left of [OD)
-       * and one on the right of [OD) which means that
-       * O is inside the cell */
-      if ((_in[cell_id] > 0 && _out[cell_id] > 0)
-          || (_cell_ids[cell_id] == s_id)) {
-        _cell_ids[cell_id] = s_id;
-        _seg_c_len[cell_id] += length;
-      }
-    }
-
-  } /* End loop over the segments */
-
-  BFT_FREE(_in);
-  BFT_FREE(_out);
-
-  /* Now check marked cells and renumber */
-  _n_cells = 0;
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    if (_cell_ids[cell_id] >= 0) {
-      _cell_ids[_n_cells] = cell_id;
-      _seg_c_len[_n_cells] = _seg_c_len[cell_id];
-      _n_cells++;
-    }
-  }
-
-  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
-                                                  but not required) */
-  BFT_REALLOC(_seg_c_len, _n_cells, cs_real_t);
-
-  /* Set return values */
-
-  *n_cells = _n_cells;
-  *cell_ids = _cell_ids;
-  *seg_c_len = _seg_c_len;
+  cs_mesh_intersect_polyline_cell_select(input,
+                                         n_points,
+                                         n_cells,
+                                         cell_ids,
+                                         seg_c_len);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -621,6 +199,10 @@ cs_cell_polyline_intersect_select(void        *input,
  * The caller is responsible for freeing the returned cell_ids array.
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
+ *
+ * \deprecated: higher-level cs_probe_set_create_from_segment function with
+ *              n_probes argument set at 0 or lower includes equivalent
+ *              function.
  *
  * \param[in]   input   pointer to segment start and end:
  *                      [x0, y0, z0, x1, y1, z1]

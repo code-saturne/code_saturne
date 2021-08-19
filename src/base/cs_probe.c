@@ -53,6 +53,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_intersect.h"
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_selector.h"
@@ -134,6 +135,8 @@ struct _cs_probe_set_t {
                                                     function */
   void                         *p_define_input;  /* Advanced local definition
                                                     input */
+  void                        *_p_define_input;  /* Advanced local definition
+                                                    input, if owner */
 
   cs_lnum_t    *loc_id;         /* ids of probes located on local domain */
 
@@ -304,6 +307,8 @@ _probe_set_free(cs_probe_set_t   *pset)
   BFT_FREE(pset->vtx_id);
   BFT_FREE(pset->located);
 
+  BFT_FREE(pset->_p_define_input);
+
   if (pset->labels != NULL) {
     for (int i = 0; i < pset->n_probes; i++)
       BFT_FREE(pset->labels[i]);
@@ -383,6 +388,7 @@ _probe_set_create(const char    *name,
 
   pset->p_define_func = NULL;
   pset->p_define_input = NULL;
+  pset->_p_define_input = NULL;
 
   pset->loc_id = NULL;
   pset->elt_id = NULL;
@@ -615,6 +621,77 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
   BFT_REALLOC(pset->vtx_id, n_loc_probes, cs_lnum_t);
 
   BFT_FREE(tag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a profile based on centers of cells cut by a line segment
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * \param[in]   input   pointer to segment start and end:
+ *                      [x0, y0, z0, x1, y1, z1]
+ * \param[out]  n_elts  number of selected coordinates
+ * \param[out]  coords  coordinates of selected elements.
+ * \param[out]  s       curvilinear coordinates of selected elements
+ *----------------------------------------------------------------------------*/
+
+static void
+_cell_profile_probes_define(void          *input,
+                            cs_lnum_t     *n_elts,
+                            cs_real_3_t  **coords,
+                            cs_real_t    **s)
+{
+  /* Determine segment endpoints from input  */
+
+  cs_real_t *sx = (cs_real_t *)input;
+
+  const cs_real_t dx1[3] = {sx[3]-sx[0], sx[4]-sx[1], sx[5]-sx[2]};
+  const cs_real_t s_norm2 = cs_math_3_square_norm(dx1);
+
+  const cs_real_3_t  *cell_cen
+    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t *cell_ids = NULL;
+  cs_real_t *seg_c_len = NULL;
+
+  /* Compared to cs_cell_segment_intersect_select, this function also
+     selects a cell if the segment is included in this cell */
+
+  cs_mesh_intersect_polyline_cell_select(sx,
+                                         2, &n_cells, &cell_ids, &seg_c_len);
+
+  cs_real_3_t *_coords;
+  cs_real_t *_s;
+  BFT_MALLOC(_coords, n_cells, cs_real_3_t);
+  BFT_MALLOC(_s, n_cells, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    cs_real_t dx[3], coo[3];
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      coo[j] = cell_cen[cell_ids[i]][j];
+      dx[j] = coo[j] - sx[j];
+      _coords[i][j] = coo[j];
+    }
+    _s[i] = cs_math_3_dot_product(dx, dx1) / s_norm2;
+  }
+
+  BFT_FREE(cell_ids);
+  BFT_FREE(seg_c_len);
+
+  /* Set return values */
+
+  *n_elts = n_cells;
+  *coords = _coords;
+  *s = _s;
 }
 
 /*============================================================================
@@ -967,8 +1044,17 @@ cs_probe_set_create_from_array(const char          *name,
 /*!
  * \brief Define a new set of probes from the segment spanned by two points.
  *
+ * If n_probes > 0, the given number of probes will be used for sampling, and
+ * will be evenly distributed along the segment.
+ *
+ * If n_probes <= 0, one probe will be defined for each cell intersected by
+ * the line segment, and its position based on the projection of those cell
+ * centers on the given segment.
+ *
+ * In both cases, using cs_probe_set_snap_mode can further modify this behavior.
+ *
  * \param[in]  name          name of the set of probes
- * \param[in]  n_probes      number of probes
+ * \param[in]  n_probes      number of probes, or <= 0 for mesh intersection
  * \param[in]  start_coords  coordinates of the starting point
  * \param[in]  end_coords    coordinates of the ending point
  *
@@ -982,44 +1068,65 @@ cs_probe_set_create_from_segment(const char        *name,
                                  const cs_real_t    start_coords[3],
                                  const cs_real_t    end_coords[3])
 {
-  cs_probe_set_t  *pset = _probe_set_create(name, n_probes);
+  cs_probe_set_t  *pset = NULL;
 
-  pset->n_probes = n_probes;
-  pset->flags |= CS_PROBE_ON_CURVE;
-  if (pset->flags & CS_PROBE_AUTO_VAR)
-    pset->flags -= CS_PROBE_AUTO_VAR;
+  if (n_probes > 0) {
 
-  BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
+    pset = _probe_set_create(name, n_probes);
 
-  /* 2 probes are already defined (the starting and ending points)
-     Define the additional probes */
-  cs_real_t  distance;
-  cs_real_3_t  unitv, delta_vect;
+    pset->n_probes = n_probes;
+    pset->flags |= CS_PROBE_ON_CURVE;
+    if (pset->flags & CS_PROBE_AUTO_VAR)
+      pset->flags -= CS_PROBE_AUTO_VAR;
 
-  cs_math_3_length_unitv(start_coords, end_coords, &distance, unitv);
+    BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
 
-  const double  delta = distance / (n_probes - 1);
-  for (int k = 0; k < 3; k++)
-    delta_vect[k] = delta*unitv[k];
+    /* 2 probes are already defined (the starting and ending points)
+       Define the additional probes */
+    cs_real_t  distance;
+    cs_real_3_t  unitv, delta_vect;
 
-  /* Set the starting probe */
-  pset->s_coords[0] = 0;
-  for (int k = 0; k < 3; k++)
-    pset->coords[0][k] = start_coords[k];
+    cs_math_3_length_unitv(start_coords, end_coords, &distance, unitv);
 
-  /* Set additional probes */
-  for (int i = 1; i < n_probes - 1; i++) {
-
-    pset->s_coords[i] = pset->s_coords[i-1] + delta;
+    const double  delta = distance / (n_probes - 1);
     for (int k = 0; k < 3; k++)
-      pset->coords[i][k] = pset->coords[i-1][k] + delta_vect[k];
+      delta_vect[k] = delta*unitv[k];
 
+    /* Set the starting probe */
+    pset->s_coords[0] = 0;
+    for (int k = 0; k < 3; k++)
+      pset->coords[0][k] = start_coords[k];
+
+    /* Set additional probes */
+    for (int i = 1; i < n_probes - 1; i++) {
+
+      pset->s_coords[i] = pset->s_coords[i-1] + delta;
+      for (int k = 0; k < 3; k++)
+        pset->coords[i][k] = pset->coords[i-1][k] + delta_vect[k];
+
+    }
+
+    /* Set the ending probe */
+    pset->s_coords[n_probes-1] = distance;
+    for (int k = 0; k < 3; k++)
+      pset->coords[n_probes-1][k] = end_coords[k];
   }
 
-  /* Set the ending probe */
-  pset->s_coords[n_probes-1] = distance;
-  for (int k = 0; k < 3; k++)
-    pset->coords[n_probes-1][k] = end_coords[k];
+  else {
+    cs_real_t *se_coords;
+    BFT_MALLOC(se_coords, 6, cs_real_t);
+
+    for (int i = 0; i < 3; i++) {
+      se_coords[i] = start_coords[i];
+      se_coords[i+3] = end_coords[i];
+    }
+
+    pset = cs_probe_set_create_from_local(name,
+                                          _cell_profile_probes_define,
+                                          (void *)se_coords);  /* input */
+
+    pset->_p_define_input = se_coords;
+  }
 
   return  pset;
 }

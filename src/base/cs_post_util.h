@@ -85,6 +85,8 @@ extern int cs_glob_post_util_flag[];
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
  *
+ * \deprecated Use cs_mesh_intersect_segment_cell_select (rename) instead.
+ *
  * \param[in]   input     pointer to segment start and end:
  *                        [x0, y0, z0, x1, y1, z1]
  * \param[out]  n_cells   number of selected cells
@@ -116,6 +118,8 @@ cs_cell_segment_intersect_select(void        *input,
  * The caller is responsible for freeing the returned cell_ids array.
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
+ *
+ * \deprecated Use cs_mesh_intersect_polyline_cell_select (rename) instead.
  *
  * \param[in]   input     pointer to segments starts and ends:
  *                        [x0, y0, z0, x1, y1, z1]
@@ -153,6 +157,10 @@ cs_cell_polyline_intersect_select(void        *input,
  * The caller is responsible for freeing the returned cell_ids array.
  * When passed to postprocessing mesh or probe set definition functions,
  * this is handled automatically.
+ *
+ * \deprecated: higher-level cs_probe_set_create_from_segment function with
+ *              n_probes argument set at 0 or lower includes equivalent
+ *              function.
  *
  * \param[in]   input   pointer to segment start and end:
  *                      [x0, y0, z0, x1, y1, z1]

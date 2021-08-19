@@ -116,7 +116,6 @@ cs_user_postprocess_probes(void)
   cs_probe_set_associate_writers(pset, 1, writer_ids);
 
   /*! [post_profile_def] */
-
 }
 
 /*----------------------------------------------------------------------------*/

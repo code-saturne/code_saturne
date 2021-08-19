@@ -298,6 +298,15 @@ cs_probe_set_create_from_array(const char          *name,
 /*!
  * \brief Define a new set of probes from the segment spanned by two points.
  *
+ * If n_probes > 0, the given number of probes will be used for sampling, and
+ * will be evenly distributed along the segment.
+ *
+ * If n_probes <= 0, one probe will be defined for each cell intersected by
+ * the line segment, and its position based on the projection of those cell
+ * centers on the given segment.
+ *
+ * In both cases, using cs_probe_set_snap_mode can further modify this behavior.
+ *
  * \param[in]  name          name of the set of probes
  * \param[in]  n_probes      number of probes
  * \param[in]  start_coords  coordinates of the starting point

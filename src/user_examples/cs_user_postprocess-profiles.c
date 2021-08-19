@@ -51,37 +51,56 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a profile based on centers of cells cut by a vertical segment
+ * \brief Define a profile based on centers of faces defined by a given
+ *        criterion
  *
- * Here, the input points to string describing a segment's x coordinate.
+ * Here, the input points to string describing a selection criterion.
  *
- * \param[in]   input   pointer to segment start and end:
- *                      [x0, y0, z0, x1, y1, z1]
+ * \param[in]   input   pointer to selection criterion
  * \param[out]  n_elts  number of selected coordinates
  * \param[out]  coords  coordinates of selected elements.
  * \param[out]  s       curvilinear coordinates of selected elements
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
-/*! [post_profile_advanced_df_1] */
+/*! [post_profile_advanced_df_2] */
 static void
-_cell_x_profile_probes_define(void          *input,
-                              cs_lnum_t     *n_elts,
-                              cs_real_3_t  **coords,
-                              cs_real_t    **s)
+_b_face_criterion_probes_define(void          *input,
+                                cs_lnum_t     *n_elts,
+                                cs_real_3_t  **coords,
+                                cs_real_t    **s)
 {
-  /* Determine x value from input string, to define
-     associated segment (with fixed y and z values) */
+  const char *criterion = (const char *)input;
 
-  const char *x_str = (const char *)input;
-  cs_real_t x = atof(x_str);
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_real_t seg[6] = {x, 0.1, -0.05, x, -5, -0.05};
+  cs_lnum_t   n_faces;
+  cs_lnum_t  *face_ids;
 
-  /* Call general cell selection function with adapted input */
+  BFT_MALLOC(face_ids, m->n_b_faces, cs_lnum_t);
+  cs_selector_get_b_face_list(criterion, &n_faces, face_ids);
 
-  cs_cell_segment_intersect_probes_define(seg, n_elts, coords, s);
+  cs_real_3_t *_coords;
+  cs_real_t *_s;
+  BFT_MALLOC(_coords, n_faces, cs_real_3_t);
+  BFT_MALLOC(_s, n_faces, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++)
+      _coords[i][j] = mq->b_face_cog[face_ids[i]*3 + j];
+    _s[i] = _coords[i][0];
+  }
+
+  BFT_FREE(face_ids);
+
+  /* Set return values */
+
+  *n_elts = n_faces;
+  *coords = _coords;
+  *s = _s;
 }
-/*! [post_profile_advanced_df_1] */
+/*! [post_profile_advanced_df_2] */
 
 /*============================================================================
  * User function definitions
@@ -133,7 +152,7 @@ cs_user_postprocess_probes(void)
      function is called */
 
 /*! [post_profile_advanced_1] */
-  static const char *line_defs[]
+  const char *line_defs[]
     = {"-5.87", "buicesat-6",
        "2.59", "buicesat03",
        "5.98", "buicesat06",
@@ -162,10 +181,16 @@ cs_user_postprocess_probes(void)
 
     /* Define profiles */
 
+    const cs_real_t x = atof(line_defs[i*2]);
+
+    const cs_real_t start_coords[3] = {x, 0.1, 0.05};
+    const cs_real_t end_coords[3]   = {x, -5, 0.05};
+
     cs_probe_set_t *pset
-      = cs_probe_set_create_from_local(line_defs[i*2+1],
-                                       _cell_x_profile_probes_define,
-                                       (void *)line_defs[i*2]);  /* input */
+      = cs_probe_set_create_from_segment(line_defs[i*2+1],
+                                         -1,  /* Automatic sampling */
+                                         start_coords,
+                                         end_coords);
 
     /* Associate writers */
 
@@ -186,7 +211,7 @@ cs_user_postprocess_probes(void)
 
     cs_probe_set_t *pset
       = cs_probe_set_create_from_local(wall_defs[i*2+1],
-                                       cs_b_face_criterion_probes_define,
+                                       _b_face_criterion_probes_define,
                                        (void *)wall_defs[i*2]);  /* input */
 
     cs_probe_set_option(pset, "boundary", "true");
@@ -307,10 +332,8 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       /* Reynolds stresses */
 
-      const cs_turb_model_t  *turb_mdl = cs_get_glob_turb_model();
-      assert(turb_mdl != NULL);
+      const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
       const cs_turb_rans_model_t *turb_rans_mdl = cs_glob_turb_rans_model;
-      assert(turb_rans_mdl != NULL);
 
       cs_real_6_t *rij = NULL;
       BFT_MALLOC(rij, n_cells, cs_real_6_t);
