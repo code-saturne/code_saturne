@@ -867,18 +867,69 @@ cs_boundary_zone_log_info(const cs_zone_t  *z)
   else if (z->allow_overlay)
     cs_log_printf(CS_LOG_SETUP, _("    allow overlay\n"));
 
-  const char *sel_str = cs_mesh_location_get_selection_string(z->location_id);
-  if (sel_str != NULL)
+  cs_mesh_location_def_t ml_def =
+    cs_mesh_location_get_definition_method(z->location_id);
+
+  if (ml_def == CS_MESH_LOCATION_DEF_SELECTION_STR) {
+    const char *sel_str = cs_mesh_location_get_selection_string(z->location_id);
+
     cs_log_printf(CS_LOG_SETUP,
                   _("    selection criteria:         \"%s\"\n"),
                   sel_str);
-  else {
+  }
+  else if (ml_def == CS_MESH_LOCATION_DEF_SELECTION_FUNC) {
     cs_mesh_location_select_t *select_fp
       = cs_mesh_location_get_selection_function(z->location_id);
-    if (select_fp != NULL)
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    selection function:         %p\n"),
+                  (void *)select_fp);
+  }
+  else if (ml_def == CS_MESH_LOCATION_DEF_UNION) {
+    int n_sub_ids = cs_mesh_location_get_n_sub_ids(z->location_id);
+    int *sub_ids  = cs_mesh_location_get_sub_ids(z->location_id);
+
+    bool is_complement = cs_mesh_location_is_complement(z->location_id);
+    if (!is_complement)
       cs_log_printf(CS_LOG_SETUP,
-                    _("    selection function:         %p\n"),
-                    (void *)select_fp);
+                    _("    Union of %d mesh locations:\n"),
+                    n_sub_ids);
+    else
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Complement of %d mesh locations:\n"),
+                    n_sub_ids);
+    for (int iid = 0; iid < n_sub_ids; iid++) {
+      cs_log_printf(CS_LOG_SETUP,
+                    _("      sub-location %d/%d\n"),
+                    iid+1,
+                    n_sub_ids);
+
+      int sub_ml_id = sub_ids[iid];
+
+      cs_log_printf(CS_LOG_SETUP,
+                    _("        location_id:            %d\n"),
+                    sub_ml_id);
+
+      cs_mesh_location_def_t sub_ml_def =
+        cs_mesh_location_get_definition_method(sub_ml_id);
+
+      if (sub_ml_def == CS_MESH_LOCATION_DEF_SELECTION_STR) {
+        const char *sub_sel_str =
+          cs_mesh_location_get_selection_string(sub_ml_id);
+
+        cs_log_printf(CS_LOG_SETUP,
+                      _("        selection criteria:     \"%s\"\n"),
+                      sub_sel_str);
+      }
+      else if (sub_ml_def == CS_MESH_LOCATION_DEF_SELECTION_FUNC) {
+        cs_mesh_location_select_t *sub_select_fp
+          = cs_mesh_location_get_selection_function(sub_ml_id);
+
+        cs_log_printf(CS_LOG_SETUP,
+                      _("        selection function:     %p\n"),
+                      (void *)sub_select_fp);
+      }
+    }
   }
 }
 

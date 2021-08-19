@@ -71,6 +71,17 @@ typedef enum {
 
 } cs_mesh_location_type_t;
 
+/* Mesh location construction method type */
+
+typedef enum {
+
+  CS_MESH_LOCATION_DEF_NONE,
+  CS_MESH_LOCATION_DEF_SELECTION_STR,
+  CS_MESH_LOCATION_DEF_SELECTION_FUNC,
+  CS_MESH_LOCATION_DEF_UNION
+
+} cs_mesh_location_def_t;
+
 /* Opaque mesh location object */
 
 typedef struct _cs_mesh_location_t cs_mesh_location_t;
@@ -349,6 +360,19 @@ cs_mesh_location_get_elt_ids(int id);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get a mesh location's definition method.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  enum value corresponding to the definition method
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_location_def_t
+cs_mesh_location_get_definition_method(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get a mesh location's selection criteria string
  *
  * \param[in]  id  id of mesh location
@@ -372,6 +396,46 @@ cs_mesh_location_get_selection_string(int  id);
 
 cs_mesh_location_select_t *
 cs_mesh_location_get_selection_function(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a mesh location's number of sub ids
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return integer value equal to the number of sub ids
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_get_n_sub_ids(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a mesh location's list of sub ids.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return pointer to the list of sub ids.
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_mesh_location_get_sub_ids(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a mesh location is built as a complement of other mesh
+ * locations.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return true if build method is a complement, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mesh_location_is_complement(int id);
 
 /*----------------------------------------------------------------------------*/
 /*!

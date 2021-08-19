@@ -908,6 +908,34 @@ cs_mesh_location_get_elt_ids(int id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get a mesh location's definition method.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  enum value corresponding to the definition method
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_location_def_t
+cs_mesh_location_get_definition_method(int id)
+{
+
+  cs_mesh_location_def_t ml_def = CS_MESH_LOCATION_DEF_NONE;
+
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+
+  if (ml->select_str != NULL)
+    ml_def = CS_MESH_LOCATION_DEF_SELECTION_STR;
+  else if (ml->select_fp != NULL)
+    ml_def = CS_MESH_LOCATION_DEF_SELECTION_FUNC;
+  else if (ml->sub_ids != NULL && ml->n_sub_ids > 0)
+    ml_def = CS_MESH_LOCATION_DEF_UNION;
+
+  return ml_def;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get a mesh location's selection criteria string
  *
  * \param[in]  id  id of mesh location
@@ -940,6 +968,64 @@ cs_mesh_location_get_selection_function(int  id)
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
   return ml->select_fp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a mesh location's number of sub ids
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return integer value equal to the number of sub ids
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_get_n_sub_ids(int id)
+{
+
+  const cs_mesh_location_t *ml = _const_mesh_location_by_id(id);
+
+  return ml->n_sub_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a mesh location's list of sub ids.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return pointer to the list of sub ids.
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_mesh_location_get_sub_ids(int id)
+{
+
+  const cs_mesh_location_t *ml = _const_mesh_location_by_id(id);
+
+  return ml->sub_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a mesh location is built as a complement of other mesh
+ * locations.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return true if build method is a complement, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mesh_location_is_complement(int id)
+{
+
+  const cs_mesh_location_t *ml = _const_mesh_location_by_id(id);
+
+  return ml->complement;
 }
 
 /*----------------------------------------------------------------------------*/
