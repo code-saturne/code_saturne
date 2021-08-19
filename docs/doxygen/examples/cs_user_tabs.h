@@ -72,7 +72,6 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
 \section example_calculation_control Calculation control and postprocessing
    - \subpage cs_user_postprocess
    - \subpage cs_user_extra_operations_examples "User extra operations"
-   - \subpage cs_user_extra_operations-nusselt_calculation
    - \subpage cs_user_lagr_extra_operations
 
 \section example_other Other Calculation control

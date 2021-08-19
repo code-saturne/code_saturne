@@ -59,11 +59,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_extra_operations.c
- *
- * \brief This function is called at the end of each time step, and has a very
- * general purpose (i.e. anything that does not have another dedicated
- * user function)
+ * \file cs_user_extra_operations-nusselt_calculation.c
  */
 /*----------------------------------------------------------------------------*/
 

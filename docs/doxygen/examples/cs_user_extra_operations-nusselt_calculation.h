@@ -28,9 +28,8 @@
 
   \page cs_user_extra_operations_examples_nusselt_calculation_p Calculation of a local Nusselt number
 
-  \brief This function is called at the end of each time step, and has a very general purpose (\c i.e. anything that does not have another dedicated user subroutine)
-
-  \section cs_f_user_extra_operations cs_f_user_extra_operations subroutine
+  This is an example of \ref cs_user_extra_operations function which computes a Nusselt number.
+  balances on specified zones.
 
   \subsection loc_var_f_user Local variables
 
@@ -65,8 +64,8 @@
 
   \snippet  cs_user_extra_operations-nusselt_calculation.c value_ortho_nusselt
 
-  Calculation of the bulk temperature, finalize the Nusselt number, print it and
-  free memory not already freed before.
+  Compute the bulk temperature, finalize the Nusselt number, print it and
+  free memory not already freed before:
 
   \snippet cs_user_extra_operations-nusselt_calculation.c  bulk_nusselt
 
