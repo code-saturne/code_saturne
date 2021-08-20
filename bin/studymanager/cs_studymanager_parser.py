@@ -478,29 +478,6 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def getNotebook(self, caseNode):
-        """
-        Read:
-            <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
-                    <notebook args=""/>
-                </case>
-            </study>
-        @type caseNode: C{DOM Element}
-        @param caseNode: node of the current case
-        """
-        args = []
-
-        for node in caseNode.getElementsByTagName("notebook"):
-            try:
-                args.append(str(node.attributes["args"].value))
-            except:
-                args.append("")
-
-        return args
-
-    #---------------------------------------------------------------------------
-
     def getScript(self, caseNode):
         """
         Read:
