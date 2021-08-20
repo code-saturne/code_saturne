@@ -472,12 +472,12 @@ _build_local_probe_set(cs_probe_set_t  *pset)
      as this is already handled through IO numbering in that case) */
 
   if (cs_glob_n_ranks <= 1) {
+    BFT_MALLOC(pset->coords, n_elts, cs_real_3_t);
+    BFT_MALLOC(pset->s_coords, n_elts, cs_real_t);
+
     cs_lnum_t *order = NULL;
     BFT_MALLOC(order, n_elts, cs_lnum_t);
     cs_order_real_allocated(NULL, s, order, n_elts);
-
-    BFT_MALLOC(pset->coords, n_elts, cs_real_3_t);
-    BFT_MALLOC(pset->s_coords, n_elts, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t j = order[i];
@@ -485,6 +485,8 @@ _build_local_probe_set(cs_probe_set_t  *pset)
         pset->coords[i][k] = coords[j][k];
       pset->s_coords[i] = s[j];
     }
+
+    BFT_FREE(order);
 
     BFT_FREE(coords);
     BFT_FREE(s);
