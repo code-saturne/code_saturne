@@ -186,7 +186,9 @@ cs_base_headers.h \
 cs_headers.h
 
 if HAVE_CUDA
-pkginclude_HEADERS += cs_base_cuda.h
+pkginclude_HEADERS += \
+cs_base_cuda.h \
+cs_halo_cuda.h
 endif
 
 # Library source files
@@ -235,7 +237,9 @@ libcscore_la_SOURCES += cs_base_accel.cxx
 endif
 
 if HAVE_CUDA
-libcscore_la_SOURCES += cs_base_cuda.cu
+libcscore_la_SOURCES += \
+cs_base_cuda.cu \
+cs_halo_cuda.cu
 endif
 
 ###

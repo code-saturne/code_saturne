@@ -58,11 +58,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define CS_CUDA_CHECK(x)                                                       \
-if (cudaError_t err = (x)) {                                                   \
-  bft_error(__FILE__, __LINE__, 0, _("CUDA error: %s"), cudaGetErrorString(err)); \
-}
-
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/

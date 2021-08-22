@@ -944,6 +944,74 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize halo state prior to packing halo data to send.
+ *
+ * A local state handler may be provided, or the default state handler will
+ * be used.
+ *
+ * This function is included in \ref cs_halo_sync_pack, but may be called
+ * separately for specific implementations, such as for accelerator devices.
+ *
+ * A local state and/or buffer may be provided, or the default (global) state
+ * and buffer will be used. If provided explicitely,
+ * the buffer must be of sufficient size.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       data_type   data type
+ * \param[in]       stride      number of (interlaced) values by entity
+ * \param[in]       val         pointer to variable value array
+ * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ *
+ * \return  pointer to halo send buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
+                             cs_halo_type_t    sync_mode,
+                             cs_datatype_t     data_type,
+                             int               stride,
+                             void             *val,
+                             void             *send_buf,
+                             cs_halo_state_t  *hs)
+{
+  void *_send_buffer = send_buf;
+
+  if (halo == NULL)
+    return _send_buffer;
+
+  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+  if (_send_buffer == NULL) {
+    size_t send_buffer_size = cs_halo_pack_size(halo, data_type, stride);
+
+    if (send_buffer_size > _hs->send_buffer_size) {
+      cs_alloc_mode_t alloc_mode = cs_check_device_ptr(halo->send_list);
+
+      _hs->send_buffer_size = send_buffer_size;
+      CS_FREE_HD(_hs->send_buffer);
+      CS_MALLOC_HD(_hs->send_buffer,
+                   _hs->send_buffer_size,
+                   char,
+                   alloc_mode);
+    }
+
+    _send_buffer = _hs->send_buffer;
+  }
+
+  _hs->send_buffer_cur = _send_buffer;
+
+  _hs->sync_mode = sync_mode;
+  _hs->data_type = data_type;
+  _hs->stride = stride;
+
+  return _send_buffer;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Pack halo data to send into dense buffer.
  *
  * A local state handler may be provided, or the default state handler will
@@ -975,31 +1043,13 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
   if (halo == NULL)
     return;
 
-  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
-
-  void *_send_buffer = send_buf;
-  if (_send_buffer == NULL) {
-    size_t send_buffer_size = cs_halo_pack_size(halo, data_type, stride);
-
-    if (send_buffer_size > _hs->send_buffer_size) {
-      cs_alloc_mode_t alloc_mode = cs_check_device_ptr(halo->send_list);
-
-      _hs->send_buffer_size = send_buffer_size;
-      CS_FREE_HD(_hs->send_buffer);
-      CS_MALLOC_HD(_hs->send_buffer,
-                   _hs->send_buffer_size,
-                   char,
-                   alloc_mode);
-    }
-
-    _send_buffer = _hs->send_buffer;
-  }
-
-  _hs->send_buffer_cur = _send_buffer;
-
-  _hs->sync_mode = sync_mode;
-  _hs->data_type = data_type;
-  _hs->stride = stride;
+  void *_send_buffer = cs_halo_sync_pack_init_state(halo,
+                                                    sync_mode,
+                                                    data_type,
+                                                    stride,
+                                                    val,
+                                                    send_buf,
+                                                    hs);
 
   cs_lnum_t end_shift = 0;
 
