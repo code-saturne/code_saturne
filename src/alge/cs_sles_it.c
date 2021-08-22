@@ -2667,9 +2667,8 @@ _gcr(cs_sles_it_t              *c,
 
     /* Inversion of Gamma */
 
-    for (cs_lnum_t jj = 0;
-         jj < (n_k_per_restart + 1) * n_k_per_restart / 2;
-         jj++)
+    cs_lnum_t n_g_inv = (n_k_per_restart + 1) * n_k_per_restart / 2;
+    for (cs_lnum_t jj = 0; jj < n_g_inv; jj++)
       gkj_inv[jj] = 0.0;
 
     for (cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
