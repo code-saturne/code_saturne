@@ -182,15 +182,15 @@ cs_halo_sync_pack_cuda_real(const cs_halo_t  *halo,
     cs_lnum_t length =   halo->send_index[2*rank_id + end_shift]
                        - halo->send_index[2*rank_id];
     if (length > 0) {
-        unsigned int blocksize = (length < 256)? length:256;
-        unsigned int gridsize = (unsigned int)ceil((double)length/blocksize);
-        if (stride == 1)
-          _gather_from_var<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-            (length, send_list+start, var, _send_buffer+start);
-        else
-          _gather_from_var_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-            (stride, length, send_list+start, var, _send_buffer+stride*start);
-      }
+      unsigned int blocksize = (length < 256)? length:256;
+      unsigned int gridsize = (unsigned int)ceil((double)length/blocksize);
+      if (stride == 1)
+        _gather_from_var<<<gridsize, blocksize, 0, nstream[rank_id]>>>
+          (length, send_list+start, var, _send_buffer+start);
+      else
+        _gather_from_var_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
+          (stride, length, send_list+start, var, _send_buffer+stride*start);
+    }
   }
 
   for (cs_lnum_t ii = 0; ii < halo->n_c_domains; ii++){

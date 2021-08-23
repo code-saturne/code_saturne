@@ -107,7 +107,7 @@ struct _cs_halo_state_t {
 static int _n_halos = 0;
 
 /* Allocation mode for arrays which might be used on accelerator device */
-static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE;
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
 /* Should we use barriers after posting receives ? */
 static int _halo_use_barrier = false;
