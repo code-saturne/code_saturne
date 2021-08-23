@@ -80,6 +80,7 @@ cs_user_porosity-from_cad.c
 
 examplefiles = \
 cs_user_1d_wall_thermal.c \
+cs_user_boundary_conditions.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
@@ -117,7 +118,6 @@ cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
 cs_user_paramedmem_coupling-base.c \
 cs_user_parameters-base.c \
-cs_user_parameters-boundary_conditions.c \
 cs_user_parameters-cdo-condif.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-coupling.c \

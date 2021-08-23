@@ -636,6 +636,12 @@ cs_user_source_terms_wrapper(int         f_id,
 }
 
 void
+cs_user_boundary_conditions_setup_wrapper(void)
+{
+  cs_user_boundary_conditions_setup(cs_glob_domain);
+}
+
+void
 cs_user_extra_operations_wrapper(void)
 {
   cs_user_extra_operations(cs_glob_domain);

@@ -263,6 +263,13 @@ cs_user_1d_wall_thermal(int iappel,
                         int isuit1);
 
 /*----------------------------------------------------------------------------
+ * Setup boundary conditions to be applied.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_boundary_conditions_setup(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------
  * This function is called at each time step for boundary conditions.
  *----------------------------------------------------------------------------*/
 

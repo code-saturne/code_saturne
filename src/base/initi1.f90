@@ -86,6 +86,12 @@ interface
     implicit none
   end subroutine cs_parameters_output_complete
 
+  subroutine user_boundary_conditions_setup_wrapper()  &
+      bind(C, name='cs_user_boundary_conditions_setup_wrapper')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine user_boundary_conditions_setup_wrapper
+
   subroutine user_finalize_setup_wrapper()  &
       bind(C, name='cs_user_finalize_setup_wrapper')
     use, intrinsic :: iso_c_binding
@@ -197,7 +203,8 @@ if (icdo.lt.2) then
    ! Called in the C part if CDO is activated, i.e. when
    ! additional geometric quantities and connectivities are built
    if (icdo.lt.0) then
-      call user_finalize_setup_wrapper
+     call user_boundary_conditions_setup_wrapper
+     call user_finalize_setup_wrapper
    endif
 endif
 

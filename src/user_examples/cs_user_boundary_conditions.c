@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-cdo-condif.c
+ * \file cs_user_boundary_conditions.c
  *
  * \brief User functions for input of calculation parameters.
  *
@@ -173,16 +173,19 @@ _scalar_profile(cs_real_t           time,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify the elements such as properties, advection fields,
- *         user-defined equations and modules which have been previously
- *         added.
+ * \brief Set boundary conditions to be applied.
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
+ * This function is called just before \ref cs_user_finalize_setup, and
+ * boundary conditions can be defined in either of those functions,
+ * depending on whichever is considered more readable or practical for a
+ * given use.
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 {
   CS_UNUSED(domain);
 

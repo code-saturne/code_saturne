@@ -54,6 +54,26 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set boundary conditions to be applied.
+ *
+ * This function is called just before \ref cs_user_finalize_setup, and
+ * boundary conditions can be defined in either of those functions,
+ * depending on whichever is considered more readable or practical for a
+ * given use.
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_boundary_conditions_setup
+void
+cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User definition of boundary conditions
  *
  * \param[in]     nvar          total number of variable BC's

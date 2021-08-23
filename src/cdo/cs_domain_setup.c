@@ -701,6 +701,7 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
    * --> Source term
    */
 
+  cs_user_boundary_conditions_setup(domain);
   cs_user_finalize_setup(domain);
 }
 
