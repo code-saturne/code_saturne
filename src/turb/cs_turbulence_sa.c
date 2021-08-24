@@ -521,7 +521,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
 
   /* If source terms are extrapolated */
   if (istprv >= 0) {
-    const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
+    const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
     const cs_real_t thetst = time_scheme->thetst;
     const cs_real_t thetv  = eqp_nusa->thetav;
 
@@ -596,7 +596,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   /* Finalization of the extrapolated explicit source terms */
 
   if (istprv >= 0) {
-    const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
+    const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
     const cs_real_t thetst  = time_scheme->thetst;
     const cs_real_t thetp1 = 1.0 + thetst;
 

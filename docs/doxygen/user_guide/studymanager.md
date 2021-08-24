@@ -1114,7 +1114,7 @@ value for each run, while the `label` should stay the same.
 To update a setup based on a script called with the deprecated `<prepro>`
 tag, simply copy the contents of that script in the "local functions"
 section of the optional `DATA/cs_user_scripts.py` user scripts,
-renaming `main` to another chose name, for example `prepro`.
+renaming `main` to another chosen name, for example `prepro`.
 
 Remove the section resembling:
 
@@ -1127,8 +1127,9 @@ if __name__ == '__main__':
 and add the following section in the `define_domain_parameters` function:
 
 ```{.py}
-    options = process_cmd_line(domain.kw_args)
-    prepro(options)
+    if domain.kw_args:
+        options = process_cmd_line(domain.kw_args)
+        prepro(options)
 ```
 
 Remember that when modifying mesh or restart file selections, the matching

@@ -153,7 +153,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   const cs_real_t *distb = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
+  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
   const cs_real_t thets  = time_scheme->thetst;
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
