@@ -1,3 +1,11 @@
+Release 7.0.2 (not released yet)
+--------------------------------
+
+Bug fixes:
+
+- Atmospheric module: fixes in Monin-Obukhov boundary conditions an smooth
+  wall functions.
+
 Release 7.0.1 (September 1 2021)
 --------------------------------
 
