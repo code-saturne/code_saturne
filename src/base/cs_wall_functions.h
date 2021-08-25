@@ -90,11 +90,6 @@ typedef struct {
 
   cs_wall_f_s_type_t iwalfs;  /* wall function type for scalars */
 
-  int                iwallt;  /* exchange coefficient correlation
-                                 - 0: not used by default
-                                 - 1: exchange coefficient computed with a
-                                      correlation */
-
   double             ypluli;  /* limit value of y+ for the viscous
                                       sublayer */
 

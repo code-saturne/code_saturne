@@ -1630,14 +1630,6 @@ cs_turb_model_log_setup(void)
          "                                 %s)\n"),
        iwalfs_value_str[wall_fns->iwalfs]);
 
-  const char *iwallt_value_str[]
-    = {N_("0 (no exchange coefficient correlation)"),
-       N_("1 (use exchange coefficient correlation)")};
-
-  cs_log_printf(CS_LOG_SETUP,
-                _("    iwallt:        %s\n"),
-                _(iwallt_value_str[wall_fns->iwallt]));
-
   cs_log_printf(CS_LOG_SETUP,
                 _("    ypluli:      %14.5e (Limit Y+)\n\n"),
                 wall_fns->ypluli);

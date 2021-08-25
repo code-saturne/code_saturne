@@ -1407,12 +1407,6 @@ cs_parameters_check(void)
                                  NULL);
   }
 
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("while reading input data"),
-                                "cs_glob_wall_functions->iwallt",
-                                cs_glob_wall_functions->iwallt,
-                                0, 2);
-
   /* Specific k-epsilon, v2f and k-omega */
   if (   turb_model->itytur == 2
       || turb_model->itytur == 5

@@ -135,10 +135,6 @@ BEGIN_C_DECLS
         - CS_WALL_F_S_MONIN_OBUKHOV: Monin Obukhov wall function for atmospheric flows for
              potential temperature. This has influence on the dynamic.
 
-  \var  cs_wall_functions_t::iwallt
-        exchange coefficient correlation
-        - 0: not use by default
-        - 1: exchange coefficient computed with a correlation
   \var  cs_wall_functions_t::ypluli
         limit value of \f$y^+\f$ for the viscous sublayer
 
@@ -162,7 +158,6 @@ static cs_wall_functions_t  _wall_functions =
 {
   .iwallf = -999,
   .iwalfs = -999,
-  .iwallt = 0,
   .ypluli = -1e13
 };
 
@@ -176,7 +171,6 @@ const cs_wall_functions_t  * cs_glob_wall_functions = &_wall_functions;
 void
 cs_f_wall_functions_get_pointers(int     **iwallf,
                                  int     **iwalfs,
-                                 int     **iwallt,
                                  double  **ypluli);
 
 /*============================================================================
@@ -192,19 +186,16 @@ cs_f_wall_functions_get_pointers(int     **iwallf,
  * parameters:
  *   iwallf  --> pointer to cs_glob_wall_functions->iwallf
  *   iwalfs  --> pointer to cs_glob_wall_functions->iwalfs
- *   iwallt  --> pointer to cs_glob_wall_functions->iwallt
  *   ypluli  --> pointer to cs_glob_wall_functions->ypluli
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_wall_functions_get_pointers(int     **iwallf,
                                  int     **iwalfs,
-                                 int     **iwallt,
                                  double  **ypluli)
 {
   *iwallf  = (int *)&(_wall_functions.iwallf);
   *iwalfs = (int *)&(_wall_functions.iwalfs);
-  *iwallt  = &(_wall_functions.iwallt);
   *ypluli  = &(_wall_functions.ypluli);
 }
 
