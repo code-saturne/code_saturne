@@ -1629,7 +1629,8 @@ cs_turb_model_log_setup(void)
     = {N_("Arparci and Larsen"),
       N_("Van Driest"),
       N_("Louis (atmo flows)"),
-      N_("Monin Obukhov (atmo flows)")};
+      N_("Monin Obukhov (atmo flows)"),
+      N_("smooth/rough")};
 
   if (wall_fns->iwalfs >= 0)
     cs_log_printf
