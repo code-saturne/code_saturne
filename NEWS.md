@@ -1,5 +1,5 @@
-Release 7.0.1 (unreleased)
---------------------------
+Release 7.0.1 (September 1 2021)
+--------------------------------
 
 User changes:
 
