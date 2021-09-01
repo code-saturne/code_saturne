@@ -18,6 +18,9 @@ User changes:
 
 Bug fixes:
 
+- Radiation module: Correct computation of wall temperature when using a
+  thermal flux boundary condition.
+
 - Atmospheric module: meteo preprocessor: major fix in meteo dissipation rate for
   very stable conditions.
 
