@@ -70,6 +70,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Fix detection of ParaMEDMEM with MEDCoupling 9.7.
+
 - Add support for TBB_INCLUDE_PATH environment variable in Catalyst
   detection to work around Cmake configuration error on some systems.
 

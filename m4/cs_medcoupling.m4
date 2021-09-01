@@ -179,25 +179,30 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
   if test "$cs_have_medcoupling" = "yes" -a "$cs_have_mpi" = "yes"; then
 
-    CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
+    cs_medcoupling_l0="-lparamedmem"
+    cs_medcoupling_l1="-lparamedmem -lmedicoco"
 
-    if test "$cs_have_medcoupling_loader" = "yes"; then
-      cs_paramedmem_libs="-lparamedmem -lparamedloader"
-    else
-      cs_paramedmem_libs="-lparamedmem"
-    fi
+    for cs_medcoupling_ladd in "$cs_medcoupling_l0" "$cs_medcoupling_l1"
+    do
+      if test "x$cs_have_paramedmem" = "xno" ; then
 
-    if test "x$cs_have_paramedmem" = "xno" ; then
+        CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
-      if test "$cs_have_medcoupling_loader" = "no"; then
-        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
-      else
-        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
-      fi
+        if test "$cs_have_medcoupling_loader" = "yes"; then
+          cs_paramedmem_libs="${cs_medcoupling_ladd} -lparamedloader"
+        else
+          cs_paramedmem_libs="${cs_medcoupling_ladd}"
+        fi
 
-      AC_LINK_IFELSE([AC_LANG_PROGRAM(
+        if test "$cs_have_medcoupling_loader" = "no"; then
+          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+        else
+          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
+        fi
+
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <InterpKernelDEC.hxx>
 #include <set>]],
 [[using namespace MEDCoupling;
@@ -213,14 +218,16 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                        [ ],
                       )
 
-      if test "x$cs_have_paramedmem" = "xyes"; then
-        MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
+        if test "x$cs_have_paramedmem" = "xyes"; then
+          MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
+        fi
+
+        LDFLAGS="$saved_LDFLAGS"
+        LIBS="$saved_LIBS"
+
       fi
 
-      LDFLAGS="$saved_LDFLAGS"
-      LIBS="$saved_LIBS"
-
-    fi
+    done
 
     if test "x$cs_have_paramedmem" != "xyes"; then
       AC_MSG_WARN([no ParaMEDMEM support])
