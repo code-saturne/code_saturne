@@ -429,7 +429,6 @@ cs_rad_transfer_bcs(int         nvar,
         f_bqinci->val[face_id] = 0.0;
       }
     }
-
   }
 
   /* Values for boundary faces */
@@ -1036,6 +1035,10 @@ cs_rad_transfer_bcs(int         nvar,
         rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
           = cs_math_infinite_r;
       }
+      else if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
+        /* Update wall temperature to be imposed */
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id] = twall[face_id] - xmtk;
+      }
 
     }
 
@@ -1156,7 +1159,7 @@ cs_rad_transfer_bcs(int         nvar,
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL) {
 
-      f_b_temp->val[face_id] = twall[face_id] - xmtk;
+      f_b_temp->val[face_id] = twall[face_id] - xmtk;//FIXME useless, update rcodcl rather
 
     }
 
