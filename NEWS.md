@@ -21,8 +21,8 @@ Bug fixes:
 - Radiation module: Correct computation of wall temperature when using a
   thermal flux boundary condition.
 
-- Atmospheric module: meteo preprocessor: major fix in meteo dissipation rate for
-  very stable conditions.
+- Atmospheric module: major fix in meteo dissipation rate for very stable
+  conditions using meteo preprocessor.
 
 - Fix incorrect path computation in modules such as neptune_cfd
   for relocatable builds (used by EDF salome_cfd installers).
