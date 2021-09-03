@@ -1074,7 +1074,7 @@ cs_atmo_compute_meteo_profiles(void)
     cpro_met_potemp[cell_id] = theta0 + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
 
     /* Richardson flux number profile */
-    // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo * phim
+    // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo / phim
     cs_real_t ri_f = (z+z0) * dlmo / cs_mo_phim(z+z0, dlmo);
 
     /* TKE profile */
