@@ -163,7 +163,7 @@ stratified with a potential temperature increasing with height.
 In standard \CS with the $k-\varepsilon$ turbulence model, the production or destruction rate of the turbulent kinetic energy due to buoyancy is given by:
 \begin{equation}
 \label{eq:atmo:buoyancy_prod}
-G=-g_{i} \frac{\mu_{t} }{\sigma_{t} }\frac{1}{\rho }\frac{\partial \rho
+G=-g \frac{\mu_{t} }{\sigma_{t} }\frac{1}{\rho }\frac{\partial \rho
 }{\partial z}
 \end{equation}
 where $\sigma_{t}$ is the turbulent Prandtl (Schmidt) number and $\mu_{t}$ is the turbulent viscosity.
@@ -173,7 +173,7 @@ height and formula \eqref{eq:atmo:buoyancy_prod} is no longer valid and for atmo
 be replaced by \cite{Stull:1988}:
 \begin{equation}
 \label{eq:atmo:eq4}
-G=-g_{i} \frac{\mu_{t}}{\sigma_{t} }\frac{1}{\theta }\frac{\partial \theta
+G=-g \frac{\mu_{t}}{\sigma_{t} }\frac{1}{\theta }\frac{\partial \theta
 }{\partial z}
 \end{equation}
 
@@ -1338,7 +1338,7 @@ sensible heat, latent heat and momentum by means of universal functions:
 \begin{equation}
 \label{eq:atmo:eq5}
 \frac{\partial \left| {\vect{u}} \right|}{\partial z} =
-\left( {\frac{{u}^{{\star }} }{\kappa z}} \right) \, \phi_{m} \left(
+\left( {\frac{{u}_{{\star }} }{\kappa z}} \right) \, \phi_{m} \left(
 {\dfrac{z}{L}} \right),
 \end{equation}
 
