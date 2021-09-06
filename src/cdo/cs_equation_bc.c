@@ -852,7 +852,8 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
             (cs_xdef_array_context_t *)def->context;
 
           assert(ac->stride == eqp->dim);
-          assert(cs_flag_test(ac->loc, cs_flag_primal_face));
+          assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
+                 cs_flag_test(ac->loc, cs_flag_boundary_face));
 
           if (eqp->n_bc_defs == 1) { /* Only one definition */
 
@@ -1127,7 +1128,8 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
 
-      if (cs_flag_test(ac->loc, cs_flag_primal_face))
+      if (cs_flag_test(ac->loc, cs_flag_primal_face) ||
+          cs_flag_test(ac->loc, cs_flag_boundary_face))
         cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval,
                                            ac->values + 3*bf_id,
                                            neu_values);
@@ -1226,7 +1228,8 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
-      assert(cs_flag_test(ac->loc, cs_flag_primal_face));
+      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
+             cs_flag_test(ac->loc, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);
@@ -1313,7 +1316,8 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(c->stride == 3);
-      assert(cs_flag_test(c->loc, cs_flag_primal_face));
+      assert(cs_flag_test(c->loc, cs_flag_primal_face) ||
+             cs_flag_test(c->loc, cs_flag_boundary_face));
 
       cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       assert(bf_id > -1);

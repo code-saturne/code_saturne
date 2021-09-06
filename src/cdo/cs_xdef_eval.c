@@ -864,7 +864,7 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
   assert(cx != NULL);
 
   /* Values of the function are defined at the boundary faces */
-  if (cs_flag_test(cx->loc, cs_flag_primal_face | CS_FLAG_BORDER))
+  if (cs_flag_test(cx->loc, cs_flag_boundary_face))
     cx->func(n_elts, elt_ids, dense_output, cx->input, eval);
   else
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid location.\n", __func__);

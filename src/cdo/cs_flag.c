@@ -54,6 +54,11 @@ const cs_flag_t  cs_flag_primal_vtx  = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_primal_edge = CS_FLAG_PRIMAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_primal_face = CS_FLAG_PRIMAL | CS_FLAG_FACE;
 const cs_flag_t  cs_flag_primal_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+
+const cs_flag_t  cs_flag_vertex = cs_flag_primal_vtx;
+const cs_flag_t  cs_flag_cell = cs_flag_primal_cell;
+const cs_flag_t  cs_flag_boundary_face = cs_flag_primal_face | CS_FLAG_BORDER;
+
 const cs_flag_t  cs_flag_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_dual_edge = CS_FLAG_DUAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
@@ -120,6 +125,8 @@ cs_flag_str_location(cs_flag_t  loc)
     return "edges";
   else if (cs_flag_test(loc, cs_flag_primal_face))
     return "faces";
+  else if (cs_flag_test(loc, cs_flag_boundary_face))
+    return "boundary faces";
   else if (cs_flag_test(loc, cs_flag_primal_cell))
     return "cells";
   else if (cs_flag_test(loc, cs_flag_dual_vtx))

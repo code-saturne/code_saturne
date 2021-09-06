@@ -2143,8 +2143,9 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
-  assert(cs_flag_test(loc, cs_flag_primal_face) ||
-         cs_flag_test(loc, cs_flag_primal_vtx)  ||
+  assert(cs_flag_test(loc, cs_flag_primal_face)   ||
+         cs_flag_test(loc, cs_flag_boundary_face) ||
+         cs_flag_test(loc, cs_flag_primal_vtx)    ||
          cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
   int  z_id = cs_get_bdy_zone_id(z_name);
@@ -2158,7 +2159,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                                     .is_owner = is_owner};
 
   cs_flag_t  state_flag = 0;
-  if (loc == cs_flag_primal_face)
+  if (loc == cs_flag_primal_face || loc == cs_flag_boundary_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
   int dim = eqp->dim;
