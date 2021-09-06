@@ -1555,6 +1555,9 @@ cs_property_def_by_func(cs_property_t         *pty,
                         cs_xdef_eval_t        *get_eval_at_cell,
                         cs_xdef_cw_eval_t     *get_eval_at_cell_cw)
 {
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
   int  def_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
   cs_flag_t  state_flag = 0;
@@ -1598,6 +1601,9 @@ cs_property_def_by_array(cs_property_t    *pty,
                          bool              is_owner,
                          cs_lnum_t        *index)
 {
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
   int  id = _add_new_def(pty);
 
   if (pty->n_definitions > 1)
@@ -1662,6 +1668,12 @@ void
 cs_property_def_by_field(cs_property_t    *pty,
                          cs_field_t       *field)
 {
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  if (field == NULL)
+    return;
+
   int  id = _add_new_def(pty);
   int dim = _get_pty_dim(pty->type);
 
