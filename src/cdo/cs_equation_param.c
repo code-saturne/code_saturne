@@ -2197,6 +2197,73 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       field     pointer to a cs_field_t structure
+ *
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_field_t                 *field)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
+
+  if (bc_type == CS_PARAM_BC_ROBIN) {
+    /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+    if (eqp->dim == 1)
+      dim = 3;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled yet.\n", __func__);
+  }
+
+  /* Sanity checks */
+  assert(field != NULL);
+
+  if (dim != field->dim)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid dimension for field %s\n", __func__, field->name);
+
+  cs_flag_t  state_flag = CS_FLAG_STATE_FACEWISE;
+  cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
+    (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
+                                          dim,
+                                          z_id,
+                                          state_flag,
+                                          meta_flag,
+                                          field);
+
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation param structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *

@@ -1799,6 +1799,27 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       field     pointer to a cs_field_t structure
+ *
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_field_t                 *field);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation param structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
