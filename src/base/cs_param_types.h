@@ -106,9 +106,9 @@ typedef void
  *         locations such as degrees of freedom (DoF): cells, faces, edges or
  *         or vertices.
  *
- * For the calling function, elt_ids is optional. If not NULL, the coords
- * array should be accessed with an indirection. The same indirection can
- * be applied to fill retval if dense_output is set to false.
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids

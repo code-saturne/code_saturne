@@ -1332,7 +1332,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid type of definition.\n"
-                " Stop computing the Neumann value.\n"));
+                " Stop computing the Robin value.\n"));
 
   } /* switch def_type */
 
