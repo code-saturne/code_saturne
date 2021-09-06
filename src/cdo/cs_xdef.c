@@ -257,8 +257,10 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
     }
     break;
 
-  default:
-    d->context = context;
+  default: /* More generic functions e.g. CS_XDEF_BY_FUNCTION */
+    d->context = context;  /* remark: context is used as an input structure.
+                              The lifecycle of this pointer is not managed by
+                              the current cs_xdef_t structure */
     break;
   }
 
@@ -403,8 +405,10 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     }
     break;
 
-  default: /* analytic functions or more generic functions */
-    d->context = context;
+  default: /* More generic functions e.g. CS_XDEF_BY_FUNCTION */
+    d->context = context;   /* remark: context is used as an input structure.
+                               The lifecycle of this pointer is not managed by
+                               the current cs_xdef_t structure */
     break;
 
   }
@@ -477,7 +481,9 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
     break;
 
   default:
-    d->context = context;
+    d->context = context;   /* remark: context is used as an input structure.
+                               The lifecycle of this pointer is not managed by
+                               the current cs_xdef_t structure */
     break;
   }
 
@@ -551,7 +557,7 @@ cs_xdef_free(cs_xdef_t     *d)
     break;
 
   default:
-    break; /* Nothing special to do */
+    break; /* Nothing special to do e.g. CS_XDEF_BY_FUNCTION */
   }
 
   BFT_FREE(d);
