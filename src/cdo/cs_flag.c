@@ -55,10 +55,6 @@ const cs_flag_t  cs_flag_primal_edge = CS_FLAG_PRIMAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_primal_face = CS_FLAG_PRIMAL | CS_FLAG_FACE;
 const cs_flag_t  cs_flag_primal_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
 
-const cs_flag_t  cs_flag_vertex = cs_flag_primal_vtx;
-const cs_flag_t  cs_flag_cell = cs_flag_primal_cell;
-const cs_flag_t  cs_flag_boundary_face = cs_flag_primal_face | CS_FLAG_BORDER;
-
 const cs_flag_t  cs_flag_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
 const cs_flag_t  cs_flag_dual_edge = CS_FLAG_DUAL | CS_FLAG_EDGE;
 const cs_flag_t  cs_flag_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
@@ -67,6 +63,14 @@ const cs_flag_t  cs_flag_dual_face_byc =
   CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_BY_CELL;
 const cs_flag_t  cs_flag_dual_closure_byf =
   CS_FLAG_DUAL | CS_FLAG_CELL | CS_FLAG_BORDER | CS_FLAG_BY_FACE;
+
+/* Additional flags with a more consistent naming when used with FV schemes for
+   which the notion of primal/dual is not used */
+const cs_flag_t  cs_flag_vertex = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
+const cs_flag_t  cs_flag_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+
+const cs_flag_t  cs_flag_boundary_face =
+  CS_FLAG_PRIMAL | CS_FLAG_FACE | CS_FLAG_BORDER;
 
 /* According to the extended flag defined below one can identify which set of
  * quantities or connectivities have to be built on-the-fly and stored in a
