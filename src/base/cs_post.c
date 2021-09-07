@@ -4592,7 +4592,7 @@ cs_post_mesh_detach_writer(int  mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Associate a writer to a postprocessing mesh.
+ * \brief Associate a field to a writer and postprocessing mesh combination.
  *
  * This function must be called during the postprocessing output definition
  * stage, before any output actually occurs.
