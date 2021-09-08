@@ -2594,7 +2594,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
       MPI_Irecv(dist_v_ptr, dist_v_count, datatype, dist_rank, PLE_MPI_TAG,
                 this_locator->comm, &request[i*2]);
-      MPI_Isend(loc_v_buf, loc_v_count, datatype, dist_rank, PLE_MPI_TAG,
+      MPI_Isend(loc_v_ptr, loc_v_count, datatype, dist_rank, PLE_MPI_TAG,
                 this_locator->comm, &request[i*2+1]);
 
       loc_v_ptr += loc_v_count*size;

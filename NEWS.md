@@ -3,14 +3,16 @@ Release 7.0.2 (not released yet)
 
 Bug fixes:
 
-- GUI: Fix setting of scalar diffusivity formulae over multiple zones
+- PLE locator: fix for reverse variable exchange in asynchronous mode.
+
+- GUI: Fix setting of scalar diffusivity formulae over multiple zones.
 
 - GUI: Fix list of available parameters for flow rates formulae
-    * face coordinates were available to users, which should not be the
-      case, and may lead to an error when trying to launch the case since
-      a volume or mass flow-rate is defined over the entire boundary
-      condition and not at each face.
-    * Related to gitlab issue 345
+  * Face coordinates were available to users, which should not be the
+    case, and may lead to an error when trying to launch the case since
+    a volume or mass flow-rate is defined over the entire boundary.
+    condition and not at each face.
+  * Related to gitlab issue 345.
 
 - GUI: Fix crash when trying to set a constant diameter for bubbles or droplets
   with the FGLIM model instead of the 'interfacial area' model.
@@ -18,7 +20,7 @@ Bug fixes:
 - Time moments: fix issue with interpolation on probes and profiles due
   to missing ghost cell synchronization.
 
-- Atmospheric module: fixes in Monin-Obukhov boundary conditions an smooth
+- Atmospheric module: fixes in Monin-Obukhov boundary conditions and smooth
   wall functions.
 
 - CDO: Fix convection operator for upwind schemes. This fixes an issue

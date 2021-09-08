@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix PLE locator variable exchange in asynchronous reverse mode.
+
 - Really fix PLE locator for local cases when points fall outside domain.
 
 - Avoid crash in ple_locator_shift_location() for empty locator.
