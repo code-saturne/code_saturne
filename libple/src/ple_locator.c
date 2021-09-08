@@ -2304,7 +2304,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                                  size_t             stride,
                                  _Bool              reverse)
 {
-  int i, dist_v_count, loc_v_count, size;
+  int dist_v_count, loc_v_count, size;
   int dist_rank;
   ple_lnum_t n_points_loc, n_points_loc_tot, n_points_dist;
   size_t dist_v_idx;
@@ -2350,7 +2350,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     dist_rank = this_locator->intersect_rank[i];
 
@@ -2376,7 +2376,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   PLE_FREE(dist_v_flag);
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     dist_rank = this_locator->intersect_rank[i];
 
@@ -2400,7 +2400,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
     loc_v_ptr = loc_v_buf;
 
-    for (i = 0; i < this_locator->n_intersects; i++) {
+    for (int i = 0; i < this_locator->n_intersects; i++) {
 
       dist_rank = this_locator->intersect_rank[i];
 
@@ -2447,7 +2447,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   loc_v_ptr = loc_v_buf;
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     const ple_lnum_t *_local_point_ids
       = this_locator->local_point_ids + this_locator->local_points_idx[i];
@@ -2491,26 +2491,22 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
+          for (ple_lnum_t k = 0; k < n_points_loc; k++) {
             char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
             const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
+            for (size_t l = 0; l < nbytes; l++)
               local_v_p[l] = loc_v_buf_p[l];
           }
         }
         else {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
+          for (ple_lnum_t k = 0; k < n_points_loc; k++) {
             char *local_v_p =   (char *)local_var
                               + (local_list[_local_point_ids[k]] - idb)*nbytes;
             const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
+            for (size_t l = 0; l < nbytes; l++)
               local_v_p[l] = loc_v_buf_p[l];
           }
         }
@@ -2521,28 +2517,24 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
+          for (ple_lnum_t k = 0; k < n_points_loc; k++) {
             const char *local_v_p
               = (const char *)local_var + _local_point_ids[k]*nbytes;
             char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
+            for (size_t l = 0; l < nbytes; l++)
               loc_v_buf_p[l] = local_v_p[l];
           }
         }
         else {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
+          for (ple_lnum_t k = 0; k < n_points_loc; k++) {
             const char *local_v_p
               = (const char *)local_var
                 + (local_list[_local_point_ids[k]] - idb)*nbytes;
             char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
+            for (size_t l = 0; l < nbytes; l++)
               loc_v_buf_p[l] = local_v_p[l];
           }
         }
@@ -2563,7 +2555,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
     loc_v_ptr = loc_v_buf;
 
-    for (i = 0; i < this_locator->n_intersects; i++) {
+    for (int i = 0; i < this_locator->n_intersects; i++) {
 
       dist_rank = this_locator->intersect_rank[i];
 
