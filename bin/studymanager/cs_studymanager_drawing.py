@@ -582,7 +582,7 @@ class Plotter(object):
 
         # Read the files of results of cases
         for case in study_object.cases:
-            if case.plot == "on" and case.is_run != "KO":
+            if case.plot == "on" and case.is_run != "KO" and not case.disabled:
                 for node in self.parser.getChildren(case.node, "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 

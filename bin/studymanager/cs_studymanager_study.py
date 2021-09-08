@@ -191,7 +191,7 @@ class Case(object):
         self.is_time     = None
         self.is_plot     = "not done"
         self.is_compare  = "not done"
-        self.disabled    = None
+        self.disabled    = False
         self.threshold   = "default"
         self.diff_value  = [] # list of differences (in case of comparison)
         self.m_size_eq   = True # mesh sizes equal (in case of comparison)
