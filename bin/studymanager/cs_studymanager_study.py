@@ -204,7 +204,7 @@ class Case(object):
         # Title of the case is based on study, label and run_id
         self.title = study + "/" + self.label
         if self.run_id:
-            self.title += "/" + self.run_id
+            self.title += "/RESU/" + self.run_id
 
         # Check for coupling
         # TODO: use run.cfg info, so as to allow another coupling parameters
@@ -278,10 +278,10 @@ class Case(object):
                   + os.path.join(self.__repo, self.label)
             retval, t = run_studymanager_command(cmd, self.__log)
         if retval == 0:
-            log_lines += ['      * create case: ' + self.title]
+            log_lines += ['      * create case: ' + self.label]
 
         else:
-            log_lines += ['      * create case: %s --> FAILED' % self.title]
+            log_lines += ['      * create case: %s --> FAILED' % self.label]
 
         return log_lines
 
@@ -419,18 +419,13 @@ class Case(object):
             ref = os.path.join(self.__repo, self.label, _dir)
             if os.path.isdir(ref):
                 dest = os.path.join(self.__dest, self.label, _dir)
-                for _ref_dir, _dirs, _files in os.walk(ref):
-                    _dest_dir = _ref_dir.replace(ref, dest, 1)
-                    for _file in _files:
-                        _ref_file = os.path.join(_ref_dir, _file)
-                        _dest_file = os.path.join(_dest_dir, _file)
-                        if os.path.isfile(_dest_file):
-                            os.remove(_dest_file)
-                        try:
-                            shutil.copy2(_ref_file, _dest_dir)
-                        except:
-                            print("      Error when overwriting file %s in folder %s."
-                                  %(_file, _dir))
+                if os.path.isdir(ref):
+                    shutil.rmtree(dest)
+
+                try:
+                    shutil.copytree(ref, dest)
+                except:
+                    print("      Error when overwriting folder %s" %dest)
 
     #---------------------------------------------------------------------------
 
@@ -1028,9 +1023,8 @@ class Studies(object):
             self.__without_tags = [tag.strip() for tag in without_tags]
 
         # store options
-        # TODO: modify with Yvan development
         self.__force_rm       = options.remove_existing
-        self.__force_ow       = options.force_overwrite
+        self.__disable_ow     = options.disable_overwrite
         self.__debug          = options.debug
         self.__n_procs        = options.n_procs
         self.__filter_level   = options.filter_level
@@ -1179,12 +1173,15 @@ class Studies(object):
         """
 
         self.reporting("  o Create all studies and cases")
+        study_list = []
 
         for case in self.graph.graph_dict:
 
             # first step : create study of the case if necessary
             study = case.study
-            self.create_study(study)
+            if study not in study_list:
+                self.create_study(study)
+                study_list.append(study)
 
             # second step : create case
             log_lines = self.create_case(case)
@@ -1200,8 +1197,11 @@ class Studies(object):
         dest_study = os.path.join(self.__dest, study)
         repo_study = os.path.join(self.__repo, study)
 
+        new_study = False
+        os.chdir(self.__dest)
         # Create study if necessary
         if not os.path.isdir(dest_study):
+            new_study = True
             # build instance of study class
             cr_study = cs_create.study(self.__pkg, study)    # quiet
 
@@ -1215,6 +1215,15 @@ class Studies(object):
 
             # create empty study
             cr_study.create()
+
+        # write content of MESH and POST is the study is new
+        # overwrite them if not disabled
+        if new_study or not self.__disable_ow:
+
+            if not new_study:
+                self.reporting("  Warning: MESH, POST, DATA and SRC folder are"
+                               " overwritten in %s use option --dow to disable"
+                               " overwrite" %study)
 
             # Link meshes and copy other files
             ref = os.path.join(repo_study, "MESH")
@@ -1231,6 +1240,11 @@ class Studies(object):
                                 "des"]:
                         meshes += fnmatch.filter(l, "*." + fmt + cpr)
                 des = os.path.join(dest_study, "MESH")
+
+                if os.path.isdir(des):
+                    shutil.rmtree(des)
+                os.mkdir(des)
+
                 for m in l:
                     if m in meshes:
                         if sys.platform.startswith('win'):
@@ -1263,33 +1277,30 @@ class Studies(object):
         if not os.path.isdir(case.label):
             log_lines = case.create()
         else:
-            if self.__force_rm == True:
-                if self.__debug:
-                    print("Warning: case %s exists in the destination "
-                         "and will be overwritten." % self.title)
+            if self.__force_rm:
                 # Build short path to RESU dir. such as 'CASE1/RESU'
                 _dest_resu_dir = os.path.join(case.label, 'RESU')
                 if os.path.isdir(_dest_resu_dir):
-                    shutil.rmtree(_dest_resu_dir)
-                    os.makedirs(_dest_resu_dir)
+                    if os.listdir(_dest_resu_dir):
+                        shutil.rmtree(_dest_resu_dir)
+                        os.makedirs(_dest_resu_dir)
+                        self.reporting("  All earlier results in case %s/RESU "
+                                       "are removed (option --rm activated)"
+                                       %case.label)
             else:
-                if self.__debug:
-                    print("Warning: case %s exists in the destination. "
-                          "It won't be overwritten." % case.title)
+               if case.run_id: 
+                   _dest_resu_dir = os.path.join(case.label, 'RESU', case.run_id)
+                   if os.path.isdir(_dest_resu_dir):
+                       self.reporting("  Warning: earlier run %s won't be "
+                                      "overwritten. Use --rm option to overwrite"
+                                      " it." %case.title)
 
-            # if overwrite option enabled, overwrite content of DATA, SRC
-            if self.__force_ow:
+            # overwrite content of DATA and SRC if not disabled
+            if not self.__disable_ow:
                 dirs_to_overwrite = ["DATA", "SRC"]
                 case.overwriteDirectories(dirs_to_overwrite)
                 # update path in gui/run script
                 data_subdir = os.path.join(case.label, "DATA")
-
-        # TODO: should be improved as POST and MESH folders are overwritten for each case
-        os.chdir("..")
-
-        if self.__force_ow:
-            dirs_to_overwrite = ["POST", "MESH"]
-            case.overwriteDirectories(dirs_to_overwrite)
 
         return log_lines
 
