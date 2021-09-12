@@ -61,14 +61,17 @@
 /*!
  * Computes physical properties in (P,h,Yi) for compressible flow.
  *
- * parameters:
- * CoolPropMaterial <--  type of material
- * thermo_plane     <--  type of thermal plane
- * property         <--  type of property to compute
- * n_vals           <--  size of properties arrays
- * var1             <--  array of pressure
- * var2             <--  array of thermal properties
- * val              -->  array of property
+ * \param[in]   coolprop_material  CoolProp material
+ * \param[in]   coolprop_backend   CoolProp backend ("HEOS" by default,
+ *                                 "SRK" for cubic, "TTSE&HEOS" or
+ *                                 "BICUBIC&HEOS" for tabulated)
+ * \param[in]   thermo_plane       type of thermal plane
+ * \param[in]   property           type of property to compute
+ * \param(in]   n_vals             size of variable and property arrays
+ * \param[in]   var1               first variable of thermodynamic plane
+ *                                 (pressure)
+ * \param[in]   var2               second variable of thermodynamic plane
+ * \param[out]  val                computed property values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -76,13 +79,16 @@
 extern "C"
 #endif
 void
-cs_phys_prop_coolprop(char                              *CoolPropMaterial,
+cs_phys_prop_coolprop(char                              *coolprop_material,
+                      const char                        *coolprop_backend,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
                       cs_phys_prop_type_t                property,
                       const cs_lnum_t                    n_vals,
                       const cs_real_t                    var1[],
                       const cs_real_t                    var2[],
                       cs_real_t                          val[]);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_COOLPROP_HXX__ */
 

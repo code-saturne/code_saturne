@@ -77,13 +77,17 @@
 /*!
  * \brief Computes physical properties in (P,h,Yi) for compressible flow.
  *
- * \param[in]  CoolPropMaterial type of material
- * \param[in]  thermo_plane     type of thermal plane
- * \param[in]  property         type of property to compute
- * \param[in]  n_vals           size of properties arrays
- * \param[in]  var1             array of pressure
- * \param[in]  var2             array of thermal properties
- * \param[out] val              array of property
+ * \param[in]   coolprop_material  CoolProp material
+ * \param[in]   coolprop_backend   CoolProp backend ("HEOS" by default,
+ *                                 "SRK" for cubic, "TTSE&HEOS" or
+ *                                 "BICUBIC&HEOS" for tabulated)
+ * \param[in]   thermo_plane       type of thermal plane
+ * \param[in]   property           type of property to compute
+ * \param(in]   n_vals             size of variable and property arrays
+ * \param[in]   var1               first variable of thermodynamic plane
+ *                                 (pressure)
+ * \param[in]   var2               second variable of thermodynamic plane
+ * \param[out]  val                computed property values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -91,7 +95,8 @@
 extern "C"
 #endif
 void
-cs_phys_prop_coolprop(char                              *CoolPropMaterial,
+cs_phys_prop_coolprop(char                              *coolprop_material,
+                      const char                        *coolprop_backend,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
                       cs_phys_prop_type_t                property,
                       const cs_lnum_t                    n_vals,
@@ -102,10 +107,12 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   std::vector<std::string> fluids;
   std::vector<std::string> outputs;
 
-  fluids.push_back(CoolPropMaterial);
+  fluids.push_back(coolprop_material);
   std::string Name1 = "";
   std::string Name2 = "P";
-  std::string Backend = "HEOS";  // "SRK" for cubic, "BICUBIC&HEOS" for tabulated
+
+  std::string Backend = "HEOS";
+  if (coolprop_backend != NULL) Backend = coolprop_backend;
 
   if (thermo_plane == CS_PHYS_PROP_PLANE_PH)
     Name1 = "H";
@@ -128,11 +135,10 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
       outputs.push_back("S");
       break;
     case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-      outputs.push_back("C");
+      outputs.push_back("CPMASS");
       break;
     case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: isochoric heat capacity not available yet"));
+      outputs.push_back("CVMASS");
       break;
     case CS_PHYS_PROP_SPECIFIC_VOLUME:
       bft_error(__FILE__, __LINE__, 0,
@@ -155,8 +161,7 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
       outputs.push_back("V");
       break;
     case CS_PHYS_PROP_SPEED_OF_SOUND:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: speed of sound not available yet"));
+      outputs.push_back("SPEED_OF_SOUND");
       break;
   }
 
@@ -169,13 +174,13 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   std::vector<double> val2;
   std::vector<double> fractions;
 
-  val1.clear();
-  val2.clear();
+  val1.reserve(n_vals);
+  val2.reserve(n_vals);
   fractions.clear();
 
   for (cs_lnum_t i = 0; i < n_vals; i++) {
-    val1.push_back(var2[i]);
-    val2.push_back(var1[i]);
+    val1[i] = var2[i];
+    val2[i] = var1[i];
   }
   fractions.push_back(1.0);
 

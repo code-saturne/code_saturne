@@ -136,7 +136,8 @@ typedef void
                      cs_real_t                          val[]);
 
 typedef void
-(cs_phys_prop_coolprop_t)(char                              *CoolPropMaterial,
+(cs_phys_prop_coolprop_t)(const char                        *coolprop_material,
+                          const char                        *coolprop_backend,
                           cs_phys_prop_thermo_plane_type_t   thermo_plane,
                           cs_phys_prop_type_t                property,
                           const cs_lnum_t                    n_vals,
@@ -328,7 +329,7 @@ cs_thermal_table_set(const char                        *material,
 
       /* Load symbols from shared library */
 
-      /* Function pointers need to be double-casted so as to first convert
+      /* Function pointers need to be double-cast so as to first convert
          a (void *) type to a memory address and then convert it back to the
          original type. Otherwise, the compiler may issue a warning.
          This is a valid ISO C construction. */
@@ -501,6 +502,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
 #if defined(HAVE_COOLPROP)
   else if (cs_glob_thermal_table->type == 3) {
     _cs_phys_prop_coolprop(cs_glob_thermal_table->material,
+                           "HEOS",
                            cs_glob_thermal_table->thermo_plane,
                            property,
                            _n_vals,
@@ -567,17 +569,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -615,17 +611,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -663,17 +653,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -710,18 +694,12 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         bft_error(__FILE__, __LINE__, 0,
                   _("bad choice: you choose to work in the %s plane."), "pu");
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -758,18 +736,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "pv");
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -807,17 +778,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        val[i] = freesteam_x(S0);
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
@@ -854,18 +819,11 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
       case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
         val[i] = freesteam_cv(S0);
         break;
-      case CS_PHYS_PROP_SPECIFIC_VOLUME:
-        val[i] = freesteam_v(S0);
-        break;
       case CS_PHYS_PROP_DENSITY:
         val[i] = freesteam_rho(S0);
         break;
       case CS_PHYS_PROP_INTERNAL_ENERGY:
         val[i] = freesteam_u(S0);
-        break;
-      case CS_PHYS_PROP_QUALITY:
-        bft_error(__FILE__, __LINE__, 0,
-                  _("bad choice: you choose to work in the %s plane."), "Tx");
         break;
       case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
         val[i] = freesteam_k(S0);
