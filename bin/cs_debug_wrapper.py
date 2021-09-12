@@ -50,7 +50,6 @@ debuggers = {"gdb": "GNU gdb debugger",
              "gdbgui": "gdbgui gdb web browser interface",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
-             "emacs23": "Emacs 23 or older with gdb debugger",
              "kdbg": "KDbg",
              "kdevelop": "Kdevelop",
              "gede": "Gede",
@@ -566,12 +565,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
             cmd.insert(1, gdb)
             cmd.insert(1, '--debugger')
 
-    elif debugger_ui == 'emacs' or debugger_ui == 'emacs23':
-        cmd_string = r'"(gdb \"' + gdb
-        if debugger_ui == 'emacs23': # emacs 23 or older
-            cmd_string += ' --annotate=3'
-        else:
-            cmd_string += ' -i=mi'   # emacs 24 and newer
+    elif debugger_ui == 'emacs':
+        cmd_string = r'"(gdb \"' + gdb + ' -i=mi'   # emacs 24 and newer
         for c in cmd:
             if cmd != gdb:
                 cmd_string += ' ' + enquote_arg(str(c))
@@ -581,7 +576,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     if not cmd[0]:
         cmd[0] = 'gdb'
 
-    if not debugger_ui in ("emacs", "emacs23"):
+    if not debugger_ui in ("emacs"):
         print(cmd)
         p = subprocess.Popen(cmd)
     else:
@@ -771,8 +766,6 @@ def run_debug(cmds):
         dbg_name = os.path.basename(debugger)
         if dbg_name in debuggers.keys() and dbg_name not in ('gdb', 'cuda-gdb'):
             debugger_ui = dbg_name
-        elif dbg_name.find("emacs23") > -1:
-            debugger_ui = 'emacs23'
         elif dbg_name.find("emacs") > -1:
             debugger_ui = 'emacs'
         commands = None
