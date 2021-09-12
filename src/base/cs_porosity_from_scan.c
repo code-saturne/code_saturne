@@ -370,6 +370,7 @@ _count_from_file(const cs_mesh_t *m,
       /* Free and destroy */
       fvm_writer_finalize(writer);
       pts_mesh = fvm_nodal_destroy(pts_mesh);
+      BFT_FREE(fvm_name);
     }
 
     /* Now build locator
