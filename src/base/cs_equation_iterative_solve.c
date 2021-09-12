@@ -567,11 +567,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id] = (pvar[cell_id]-p_mean);
 
-    /* Handle parallelism and periodicity
-       (periodicity of rotation is not ensured here) */
-    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
-      cs_mesh_sync_var_scal(w2);
-
     cs_matrix_vector_native_multiply(symmetric,
                                      db_size,
                                      eb_size,
@@ -1512,11 +1507,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   }
   BFT_FREE(pvar_i);
 
-  /* --> Handle parallelism and periodicity */
-
-  if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
-    cs_mesh_sync_var_vect((cs_real_t *)w2);
-
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
                                    eb_size,
@@ -2352,11 +2342,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   }
   BFT_FREE(pvar_i);
-
-  /* --> Handle parallelism and periodicity */
-
-  if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0)
-    cs_mesh_sync_var_vect((cs_real_t *)w2);
 
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
