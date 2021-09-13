@@ -471,10 +471,11 @@ enddo
 '@'                                                            ,/,&
 '@ At least one boundary face has a boundary condition type'   ,/,&
 '@    (icodcl) which is not recognized for mesh velocity'      ,/,&
-'@    along' ,a1,' (',a4,').'                                  ,/,&
+'@    along ',a1,' (',a4,').'                                  ,/,&
 '@'                                                            ,/,&
 '@ The only allowed values for icodcl are'                     ,/,&
 '@   1 : Dirichlet'                                            ,/,&
+'@   2 : Convective outlet'                                    ,/,&
 '@   3 : Neumann'                                              ,/,&
 '@   4 : Slip'                                                 ,/,&
 '@'                                                              )
