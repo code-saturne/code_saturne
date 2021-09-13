@@ -165,7 +165,7 @@ subroutine atmo_get_chem_conc_file_name(name)
   do i = 1, c_name_len
     name(i:i) = c_name(i)
   enddo
-  do i = 1, c_name_len + 1, name_max
+  do i = c_name_len + 1, name_max
     name(i:i) = ' '
   enddo
 
@@ -203,7 +203,7 @@ subroutine atmo_get_aero_conc_file_name(name)
   do i = 1, c_name_len
     name(i:i) = c_name(i)
   enddo
-  do i = 1, c_name_len + 1, name_max
+  do i = c_name_len + 1, name_max
     name(i:i) = ' '
   enddo
 
