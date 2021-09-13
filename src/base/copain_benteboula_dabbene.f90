@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2022 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,8 @@
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     izzftcd       faces zone with condensation source terms imposed
 !>                              (at previous and current time steps)
+!>                              as constant or variable in time
+!>                              with a 1D thermal model
 !> \param[out]    gam_s         value associated to each variable in the
 !>                              condensation source terms (Lambda_cond)
 !> \param[out]    hpcond        value associated to the fluid exchange coeff.
@@ -53,7 +55,7 @@
 !>                              condensation
 !_______________________________________________________________________________
 
-subroutine condensation_copain_model &
+subroutine condensation_copain_benteboula_dabbene_model&
  ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
    gam_s  , hpcond , regime)
 
@@ -95,31 +97,36 @@ double precision hpcond(nfbpcd)
 
 ! Local variables
 
-integer          ii, iz, iel, ifac, iesp
-integer          ivar, f_id, ifcvsl
+integer          ii, iz, iel, ifac, iesp, idims
+integer          ivar, f_id, ifcvsl, idir
 integer          ustar_id, conv_regime
 
-double precision flux, pressure
+double precision flux
+double precision gravity 
 double precision sink_term, gamma_cond
 double precision lambda, theta, tinf, psat
-double precision Sh_z, Nu_z, Gr_z, schdt, Prdtl, Re_z
-double precision xnu
-double precision x_inc,y_ncond
+double precision Sh_z, Nu_z, Gr_z, schdt, Prdtl
+double precision Sh_z_NC, Sh_z_FC, Re_z
+double precision Nu_z_NC, Nu_z_FC
+double precision xnu, u_ref, u_square, u_norm
+double precision x_inc,y_ncond, x_k
 double precision x_vapint,x_ncond_int,y_ncond_int
 double precision distbf
-double precision drho
-double precision mix_mol_mas_int
-double precision gravity
+double precision ratio_tkpr,drho
+double precision mix_mol_mas_int 
+double precision xmab,xvab,a1
 double precision dplus, yplus, sigmat, ypth
 double precision hcond,hcdt,hcdcop,hw_cop,hflui,hpflui,hw_enth
 double precision h1min, h1max, h2min, h2max
 double precision h3min, h3max, h4min, h4max
 double precision flmin, flmax
 double precision t_wall
+double precision dtheta
+double precision pressure, rho_wall, rho_ref
 double precision uk, rough_t
-double precision lcar, u_ref
+double precision lcar
 
-type(gas_mix_species_prop) s_h2o_g
+type(gas_mix_species_prop) s_h2o_g, s_k
 type(var_cal_opt) :: vcopt
 
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
@@ -127,8 +134,8 @@ double precision, allocatable, dimension(:) :: x_h2o_g, diff_m
 double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
-double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:), pointer :: bpro_ustar
+double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:,:), pointer :: cvar_vel 
 
 !===============================================================================
@@ -155,11 +162,6 @@ if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 call field_get_id("y_h2o_g", f_id)
 call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
 
-call field_get_id_try('ustar', ustar_id)
-if (ustar_id.ge.0) then
-  call field_get_val_s(ustar_id, bpro_ustar)
-endif
-
 ! Convection regime (1: natural, 2: forced, 3: mixed)
 conv_regime = regime + 1
 
@@ -167,32 +169,27 @@ conv_regime = regime + 1
 ! 2 - Pointers to phys. properties for mixing flow at cell center.
 !===============================================================================
 
-! Coefficient exchange of the enthalpy scalar
 ivar = isca(iscalt)
+call field_get_val_s(ivarfl(ivar), cvar_enth)    ! Enthalpy
+call field_get_val_s_by_name("y_h2o_g", y_h2o_g) ! Steam
+call field_get_val_s(icrom, cpro_rho)            ! Density
+call field_get_val_s(iviscl, cpro_viscl)         ! Dynamic viscosity
 
-call field_get_val_s(ivarfl(ivar), cvar_enth)
+call field_get_id_try('ustar', ustar_id)
+if (ustar_id.ge.0) then
+  call field_get_val_s(ustar_id, bpro_ustar)
+endif
 
-! Condensable gas H20 (vapor)
-call field_get_val_s_by_name("y_h2o_g", y_h2o_g)
-
-!-- Pointer to density value
-call field_get_val_s(icrom, cpro_rho)
-! --- Molecular dynamic viscosity value
-call field_get_val_s(iviscl, cpro_viscl)
-
-!-- Specific heat
 if (icp.ge.0) then
-  call field_get_val_s(icp, cpro_cp)
-!-- Stop if Cp is not variable
+  call field_get_val_s(icp, cpro_cp)             ! Specific heat
 else
   write(nfecra,1000) icp
   call csexit (1)
 endif
 
-!-- (Lambda/Cp) of the thermal scalar
 call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
-  call field_get_val_s(ifcvsl, cpro_venth)
+  call field_get_val_s(ifcvsl, cpro_venth)       ! Lambda / Cp
 else
   write(nfecra,1010) iscalt
   call csexit (1)
@@ -200,15 +197,16 @@ endif
 
 call field_get_val_v(ivarfl(iu), cvar_vel)       ! Velocity
 
-if (idilat == 3) then
+if (idilat.eq.3) then
   pressure = pther
 else
   pressure = p0
 endif
 gravity = sqrt(gx**2+gy**2+gz**2)
 
+
 !===============================================================================
-! 3 - Compute properties of the mix (molecular weight, mole fractions, diffusivity)
+! 3 - Compute mass fraction of H2O, etc.
 !===============================================================================
 
 ! mix_mol_mas = molecular weight of the mixture
@@ -241,6 +239,7 @@ do ii = 1, nfbpcd
   distbf = distb(ifac) ! wall distance
 
   Re_z = 0.0d0
+  ! Compute reference distance (vertical distance since start of condenser plate)
   if (conv_regime > 1) then
     call normalize_vector(3, zprojcond(1:3, iz))
     call compute_characteristic_length(cdgfbo(1:3, ifac), zxrefcond(1:3, iz), &
@@ -248,7 +247,7 @@ do ii = 1, nfbpcd
     call compute_tangential_velocity(cvar_vel(1:3, iel), surfbo(1:3, ifac), 1.0d0/surfbn(ifac), u_ref)
     Re_z = cpro_rho(iel) * u_ref * lcar / cpro_viscl(iel)
   endif
-  
+
   call get_wall_temperature(iz, ii, t_wall)
 
   !-- kinematic viscosity --------------------------
@@ -268,13 +267,11 @@ do ii = 1, nfbpcd
 
   ! Bulk temperature is taken at first cell center 
   call get_temperature(cvar_enth(iel), cpro_cp(iel), tinf)
-  call compute_drho(tinf, t_wall, drho)
-  call compute_grashof(gravity, drho, lcar, xnu, Gr_z)
+  call compute_prandtl(cpro_viscl(iel), cpro_venth(iel), Prdtl)
 
+  !-- Molar fraction of the interface vapor
   call compute_psat(t_wall, psat)
   x_vapint = psat / pressure
-
-  sink_term = 0.d0
 
   ! if (Xv > Xi,v) we have condensation  -----------
   if (x_h2o_g(iel).gt.x_vapint) then
@@ -283,21 +280,25 @@ do ii = 1, nfbpcd
     ! Condensation exchange coefficient based on turbulent wall law
     call hturbp(iwalfs,xnu,schdt,sigmat,rough_t,uk,yplus,dplus,hflui,ypth)
     hcdt =  diff_m(iel)/distbf*hflui
-
     h3max = max(h3max,hcdt)
     h3min = min(h3min,hcdt)
 
-    ! Condensation exchange coefficient based on COPAIN correlation
+    !-- Grasholf number ------------------------------
     x_inc = 1.d0-x_h2o_g(iel)
     x_ncond_int = 1.d0 - x_vapint
     mix_mol_mas_int = x_vapint*s_h2o_g%mol_mas + x_ncond_int*mol_mas_ncond(iel)
     y_ncond =  1.d0 - y_h2o_g(iel)
     y_ncond_int = x_ncond_int*mol_mas_ncond(iel)/mix_mol_mas_int
+    drho = dabs(1 - t_wall/tinf + &
+            (y_ncond_int-y_ncond)/(mol_mas_ncond(iel)/(mol_mas_ncond(iel)- s_h2o_g%mol_mas) - y_ncond_int))
+    call compute_grashof(gravity, drho, lcar, xnu, Gr_z)
 
-    ! Corrective factor to account for suction and film effects
-    theta = 1.d0 +0.625d0*(x_ncond_int-x_inc)/x_ncond_int
+    ! Computation of the corrective factor theta
+    ! using for Nusselt and Sherwood numbers
+    !-----------------------------------------------
+    theta = 0.8254d0 +0.616d0*(x_ncond_int-x_inc)/x_ncond_int
     call compute_exchange_adimensional(theta, Re_z, Gr_z, schdt, conv_regime, Sh_z)
-    call hcd_copain(diff_m(iel), Sh_z, lcar, hcdcop)
+    hcdcop = diff_m(iel)*Sh_z/(lcar)
 
     h4max = max(h4max,hcdcop)
     h4min = min(h4min,hcdcop)
@@ -311,36 +312,57 @@ do ii = 1, nfbpcd
       hcond = max(hcdt,hcdcop)
     endif
 
-    ! Final value of condensation exchange coefficient
+    !=================================================
+    !== Computation of sink source term gam_s(ii)
+    !==         per unit of area (kg/s/m2)
+    !==     ----------------------------------------
+    !==       (if Xv > Xi,v we have condensation )
+    !=================================================
+
     hcond = cpro_rho(iel) * hcond * (y_ncond_int - y_ncond) / y_ncond_int * &
             lcond / (tinf - t_wall) 
-
     sink_term = hcond * (tinf - t_wall) / lcond 
     gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
-  else ! no condensation
+  else
+
+    !================================================
+    !==   The sink source term (kg.s-1.m-2) is equal
+    !==   to zero :
+    !==           gam_s(ii) = 0.
+    !==   (if Xv < Xi,v we do not have condensation )
+    !================================================
 
     sink_term = 0.d0
+    !-- Grasholf number based on temperature if no condensation --- 
+    drho = abs((tinf-t_wall)/(tinf) )
     theta = 1.0d0
+    call compute_grashof(gravity, drho, lcar, xnu, Gr_z)
 
   endif
 
-  !-- Convective exchange coefficient from COPAIN correlation 
+  !===================================================
+  !== Computation of the thermal exchange
+  !== coefficient (kg.m-1.s-1) to the wall surface
+  !===================================================
+
   lambda = cpro_venth(iel)*cpro_cp(iel)
-  call compute_prandtl(cpro_viscl(iel), cpro_venth(iel), Prdtl)
   call compute_exchange_adimensional(theta, Re_z, Gr_z, Prdtl, conv_regime, Nu_z)
-  hw_cop = lambda * Nu_z / (cpro_cp(iel) * lcar)
+  hw_cop = Nu_z * lambda / (lcar * cpro_cp(iel))
 
   h2max = max(h2max,hw_cop)
   h2min = min(h2min,hw_cop)
 
-  ! Convective exchange coefficient from turbulent wall law
-  call hturbp(iwalfs,xnu,Prdtl,sigmat,rough_t,uk,yplus,dplus,hpflui,ypth)
+
+  !-- Computation of (hw_cop) the thermal exchange
+  !-- coefficient to the wall surface, function of
+  !-- the user parameter choice (icophg).
+  !-------------------------------------------------
+  call hturbp(iwalfs,xnu,Prdtl,sigmat,rough_t,uk,yplus,dplus,hflui,ypth)
   hw_enth = cpro_venth(iel)/distbf*hpflui
 
   h1max = max(h1max,hw_enth)
   h1min = min(h1min,hw_enth)
-
   if (izcophg(iz).eq.1) then
     hpcond(ii) = hw_enth
   else if (izcophg(iz).eq.2) then
@@ -349,7 +371,10 @@ do ii = 1, nfbpcd
     hpcond(ii) = max(hw_cop,hw_enth)
   endif
 
-  !Total thermal flux = condensation flux + convective flux
+  !===================================================
+  !== Computation of the thermal flux to the face   ==
+  !===================================================
+
   flux = hpcond(ii)*cpro_cp(iel)*(tinf-t_wall)  &
        + sink_term*lcond
 
@@ -421,6 +446,43 @@ endif
 ! Formats
 !--------
 
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
+'@    =========                                               ',/,&
+'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
+'@                                                            ',/,&
+'@      usipsu indique que la chaleur specifique est uniforme ',/,&
+'@        ICP = ',I10   ,' alors que                          ',/,&
+'@      copain model impose une chaleur specifique variable.  ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne sera pas execute.                          ',/,&
+'@                                                            ',/,&
+'@    Modifier usipsu ou copain model.                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1010 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
+'@    =========                                               ',/,&
+'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
+'@                                                            ',/,&
+'@    La diffusivite du scalaire ',i10,' est uniforme alors   ',/,&
+'@      que copain model impose une diffusivite variable.     ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne sera pas execute.                          ',/,&
+'@                                                            ',/,&
+'@    Modifier usipsu ou copain model.                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
  1000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -458,6 +520,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
+#endif
  1061 format(/,                                                   &
 ' ** Condensation source terms (Gamma) added:',E14.5           ,/,&
 '    ----------------------------------------',/)
@@ -467,19 +530,4 @@ endif
 !----
 
 return
-end subroutine condensation_copain_model
-
-subroutine hcd_copain(mass_diffusivity, sherwood, length, hcd)
-  implicit none
-  double precision, intent(in) :: mass_diffusivity, sherwood, length
-  double precision, intent(out) :: hcd
-  hcd = mass_diffusivity * sherwood / length
-end subroutine hcd_copain
-
-
-subroutine compute_drho(t_inf, t_wall, drho)
-  implicit none
-  double precision, intent(in) :: t_inf, t_wall
-  double precision, intent(out) :: drho
-  drho = abs((t_inf-t_wall)/(t_inf) )
-end subroutine compute_drho
+end subroutine condensation_copain_benteboula_dabbene_model

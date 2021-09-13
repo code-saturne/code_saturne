@@ -100,7 +100,6 @@ double precision dxv, rocp
 ! Resolution of the 1-D thermal problem coupled with condensation
 !===============================================================================
 
-
 do ii = 1, nfbpcd
 
   ifac = ifbpcd(ii)
@@ -158,6 +157,7 @@ do ii = 1, nfbpcd
     kk = 1
     dtmur(kk) = (xsm(kk)+xa(2,kk)*dtmur(kk+1))/da(kk)
     do kk = 2, znmur(iz)-1
+      ! Pas un vrai theta schema : dtmur(kk+1) correspond à l'itération précédente !
       dtmur(kk)= (xsm(kk)+xa(1,kk)*dtmur(kk-1)+xa(2,kk)*dtmur(kk+1)) / da(kk)
     enddo
     kk = znmur(iz)

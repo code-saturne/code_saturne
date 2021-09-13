@@ -194,13 +194,15 @@ contains
 
     ! Copy single-zone to multi-zone formulation for compatibility if needed.
 
-    if (znmur(1).eq.0) then
+    if ((nzones == 1) .AND. (izcophc(1) == 0) .AND. (izcophg(1) == 0) ) then
       nztag1d = itag1d
-      do iiii = 1, nfbpcd
+      do iiii = 1, nfbpcd ! Is this loop necessary ???!
         iz = izzftcd(iiii)
         izcophc(iz) = icophc
         izcophg(iz) = icophg
         iztag1d(iz) = itag1d
+        zxrefcond(:, iz) = xrefcond(:)
+        zprojcond(:, iz) = projcond(:)
         znmur (iz)  = nmur
         ztheta(iz)  = theta
         zdxmin(iz)  = dxmin
@@ -225,7 +227,7 @@ contains
     if (nztag1d.eq.1) then
 
       if (nzones.eq.1) then
-        znmurx = nmur
+        znmurx = max(nmur,znmur(1))
       else
         ! Calcul du max des nmurs (pour les fichiers suite)
         znmurx = 0

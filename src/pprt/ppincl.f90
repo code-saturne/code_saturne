@@ -284,6 +284,19 @@ module ppincl
   !>      if =  0 condensation source terms activated
   integer, save ::  icondb
 
+  !> Wall condensation correlation (only if icondb > -1) 
+  !>      if =  0 legacy copain model 
+  !>      if =  1 updated copain model (Benteboula and Dabbene 2020) 
+  !>      if =  2 Uchida model (TODO : add ref) 
+  !>      if =  3 Dehbi model (Dehbi 2015) 
+  integer, save ::  icondb_model
+
+  !> Wall condensation convection regime (only if icondb > -1) 
+  !>      if =  0 natural convection 
+  !>      if =  1 forced convection 
+  !>      if =  2 mixed convection 
+  integer, save ::  icondb_regime
+
   !> Specific condensation modelling
   !>      if = -1 module not activated
   !>      if =  0 condensation source terms with metal

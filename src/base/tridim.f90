@@ -1,5 +1,4 @@
 !-------------------------------------------------------------------------------
-
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
@@ -608,23 +607,18 @@ if (nftcdt.gt.0) then
   if (nzones.eq.1) then
     do ii = 1, nfbpcd
       iz = izzftcd(ii)
-      zrob  (iz) = rob
-      zcondb(iz) = condb
-      zcpb  (iz) = cpb
-      zhext (iz) = hext
-      ztext (iz) = text
-      ztpar (iz) = tpar
+      zrob  (iz) = max(zrob(iz),rob)
+      zcondb(iz) = max(zcondb(iz),condb)
+      zcpb  (iz) = max(zcpb(iz),cpb)
+      zhext (iz) = max(zhext(iz),hext)
+      ztext (iz) = max(ztext(iz),text)
+      ztpar (iz) = max(ztpar(iz),tpar)
     enddo
   endif
 
-  ! Empiric laws used by COPAIN condensation model to
-  ! the computation of the condensation source term and
-  ! exchange coefficient of the heat transfer imposed
-  ! as boundary condition.
-
-  call condensation_copain_model &
-( nvar   , nfbpcd , ifbpcd , izzftcd ,                           &
-  spcond , hpcond )
+  ! Use empiric correlations to compute heat and mass transfer due to wall condensation
+  call condensation_model(nvar, nfbpcd, ifbpcd, izzftcd, &
+                          spcond, hpcond)
 
 endif
 

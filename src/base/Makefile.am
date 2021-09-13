@@ -255,7 +255,12 @@ clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
 clsyvt.f90 \
+condensation_module.f90 \
 copain_model.f90 \
+copain_benteboula_dabbene.f90 \
+dehbi_model.f90 \
+uchida_model.f90 \
+condensation_model.f90 \
 condensation_source_terms.f90 \
 condli.f90 \
 cou1di.f90 \

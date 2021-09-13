@@ -214,6 +214,9 @@ module pointe
   !> zone where a condensation source terms is imposed.
   integer, allocatable, dimension(:) :: izftcd
 
+  !> reference point for wall condensation, used in forced and mixed convection regimes
+  double precision, allocatable, dimension(:,:) :: xref_cond
+
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
   !> - 1 for an variable at imposed value.

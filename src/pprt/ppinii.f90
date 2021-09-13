@@ -89,6 +89,10 @@ i_comb_drift = 0
 icondb = -1
 icondv = -1
 
+!> Wall condensation modelling
+icondb_model  = 0 ! Wall condensation correlation 
+icondb_regime = 0 ! Convection regime
+
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
 ifm    = 0

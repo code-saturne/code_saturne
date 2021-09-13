@@ -107,6 +107,17 @@ module cs_nz_condensation
   !> \ref cs_user_boundary_mass_source_terms.
   double precision, allocatable, dimension(:) :: ztpar
 
+  !> \anchor zxref
+  !> Coordinates of the reference point for forced and mixed convection regimes 
+  !> index 1 : coordinate, index 2: zone_id 
+  double precision, allocatable, dimension(:, :) :: zxrefcond
+  double precision, allocatable, dimension(:, :) :: zprojcond
+
+  ! Shortcut for zxref when only one condensation zone is declared
+  double precision,  dimension(3) :: xrefcond
+
+  double precision, dimension(3) :: projcond
+
   !> \}
   !> \}
 
@@ -142,6 +153,8 @@ contains
     allocate(izcophg(nzones))
     allocate(iztag1d(nzones))
     allocate(ztpar(nzones))
+    allocate(zxrefcond(3, nzones))
+    allocate(zprojcond(3, nzones))
 
     izcophc(:) = 0
     izcophg(:) = 0
@@ -160,6 +173,8 @@ contains
     deallocate(izcophg)
     deallocate(iztag1d)
     deallocate(ztpar  )
+    deallocate(zxrefcond)
+    deallocate(zprojcond)
 
   end subroutine finalize_nz_pcond
 
