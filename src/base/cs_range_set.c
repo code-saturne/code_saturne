@@ -597,10 +597,10 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
 
   else {
 
-    if (tr_ignore < 2 && halo != NULL) {
+    if (tr_ignore > 0 && halo != NULL) {
       if (halo->periodicity != NULL) {
         bool handled = true;
-        if (tr_ignore == 0)
+        if (tr_ignore == 2)
           handled = false;
         else { /* tr_ignore == 1 */
           int n_tr_max = fvm_periodicity_get_n_transforms(halo->periodicity);
