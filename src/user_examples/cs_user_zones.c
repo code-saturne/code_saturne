@@ -270,6 +270,18 @@ cs_user_zones(void)
     cs_boundary_zone_define("outlet", "OUTLET", 0);
   }
   /*! [user_zones_boundary_1] */
+
+  /* Example:
+     allow overlapping of an existing zone named "wall"
+   */
+
+  /*! [user_zones_boundary_2] */
+  {
+    int z_id = cs_boundary_zone_by_name("wall")->id;
+    cs_boundary_zone_set_overlay(z_id, true);
+  }
+  /*! [user_zones_boundary_2] */
+
 }
 
 /*----------------------------------------------------------------------------*/

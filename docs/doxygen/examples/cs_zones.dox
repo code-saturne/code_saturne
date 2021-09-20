@@ -39,7 +39,12 @@
 
   \snippet cs_user_zones.c user_zones_head_loss_1
 
-  \section cs_user_zones_volume_advanced Advanced volume zone example
+  Or you can define 3 spherical source term zones based on geometrical criteria
+  described by a rule.
+
+  \snippet cs_user_zones.c user_zones_volume_1
+
+  \section cs_user_zones_volume_advanced Advanced volume zone examples
 
   More complex selections can be done by defining an appropriate selection
   function. For example, to select cells adjacent to boundary faces belonging
@@ -58,6 +63,17 @@
           available in another source file, it must have non-static linkage
           an a function prototype must be provided (usually through an
           associated .h file).
+
+  \section cs_user_zones_boundary_advanced Advanced boundary zone examples
+
+  You can define simple boundary zones, allowing all faces not in the
+  "INLET" or "OUTLET" groups to be considered as walls
+
+  \snippet cs_user_zones.c user_zones_boundary_1
+
+  Or simply allow overlapping for an existing zone:
+
+  \snippet cs_user_zones.c user_zones_boundary_2
 
 */
 // _____________________________________________________________________________
