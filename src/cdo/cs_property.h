@@ -631,7 +631,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  * \param[in]       zname    name of the associated zone (if NULL or "" all
  *                           cells are considered)
  * \param[in]       context              pointer to a structure (may be NULL)
- * \param[in]       get_eval_at_cell     pointer to a function (may be NULL)
+ * \param[in]       get_eval_at_cell     pointer to a function
  * \param[in]       get_eval_at_cell_cw  pointer to a function
  *
  * \return a pointer to the resulting cs_xdef_t structure
