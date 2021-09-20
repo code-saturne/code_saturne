@@ -169,15 +169,15 @@ else
 
 !--> Compute the relative time to the starting time of the simulation
 
-! --> Compute the julian day for the starting day of the simulation
-!     (julian day at 12h)
+! --> Compute the Julian day for the starting day of the simulation
+!     (Julian day at 12h)
   sjday = squant + ((1461 * (syear + 4800 + (1 - 14) / 12)) / 4 +  &
              (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -            &
              (3 * ((syear + 4900 + (1 - 14) / 12) / 100)) / 4         &
               + 1 - 32075) - 1
 
-! --> Compute the julian day for the date of the current profile
-!     (julian day at 12h)
+! --> Compute the Julian day for the date of the current profile
+!     (Julian day at 12h)
   jday = quant + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +   &
              (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -           &
             (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4          &
@@ -361,7 +361,7 @@ else
 
       do ii = 1, nbchmz
 
-        !     Altitudes and concentrations of every nespgi scpecies
+        !     Altitudes and concentrations of every nespgi species
         read (impmec,*,err=999,end=999) zconctemp
 
         zproc(ii) = zconctemp(1)
