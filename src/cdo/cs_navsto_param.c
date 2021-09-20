@@ -682,6 +682,11 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->verbosity = 1;
   nsp->post_flag = post_flag;
 
+  /* Set no augmentation of the linear system. This could be modified according
+     to the type of coupling or the strategy used to solved to the linear
+     system. */
+  nsp->gd_scale_coef = 0.0;
+
   /* Initial conditions
    * ------------------
    *
@@ -692,7 +697,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   switch (algo_coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    nsp->gd_scale_coef = 1.0;    /* Default value if not set by the user */
+    nsp->gd_scale_coef = 1.0;
 
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
@@ -701,8 +706,11 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    nsp->sles_param->strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
-    nsp->gd_scale_coef = 0.0;    /* Default value if not set by the user */
+    if (model != CS_NAVSTO_MODEL_STOKES)
+      /* The default strategy is set in _navsto_param_sles_create() which is
+       * CS_NAVSTO_SLES_UZAWA_AL. Thus, one adds an slight augmentation of the
+       * linear system */
+      nsp->gd_scale_coef = 1.0;
 
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
@@ -711,8 +719,6 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    nsp->gd_scale_coef = 0.0;    /* Default value if not set by the user */
-
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
     nsp->pressure_ic_is_owner = false;
