@@ -247,7 +247,7 @@ _order_by_direction(void)
                             jj*cs_glob_rad_transfer_params->vect_s[dir_id][1],
                             kk*cs_glob_rad_transfer_params->vect_s[dir_id][2]};
 
-          /* Gloal direction id */
+          /* Global direction id */
           kdir++;
 
           char name[32];
