@@ -112,6 +112,7 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   const cs_xdef_t *adv_def = eqp->adv_field->definition;
   if (adv_def != NULL) { /* If linked to a NS equation, it might be null */
     if (adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
+
       /* Required by cs_advection_field_cw_face_flux */
       eqb->msh_flag |= CS_FLAG_COMP_FEQ;
       eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,

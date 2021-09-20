@@ -341,6 +341,7 @@ cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
  *
  * \param[in] eqname     name of the equation related to the current system
  * \param[in] size       number of elements in array
+ * \param[in] verbosity  level of display
  * \param[in] x          solution array
  * \param[in] b          right-hand side
  * \param[in] row_index  index on row entries (column id and extra-diag values)

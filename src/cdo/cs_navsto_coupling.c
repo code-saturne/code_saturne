@@ -292,8 +292,8 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
   cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
-  /* Solver settings: only the one related to the momentum equation.
-  *  The strategy is set in */
+  /* Solver settings: Only the linear algebra settings related to the momentum
+  *  equation.  The strategy is set in _navsto_param_sles_create() */
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   }

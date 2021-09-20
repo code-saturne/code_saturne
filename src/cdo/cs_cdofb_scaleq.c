@@ -364,9 +364,8 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
        the advection fluxes across primal faces */
     eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
-    /* Define the local advection matrix and store the advection fluxes across
-       primal faces (Boundary conditions are treated at this stage since there
-       are always weakly enforced) */
+    /* Define the local advection matrix. Boundary conditions are treated at
+       this stage since there are always weakly enforced. */
     eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
 
     /* Close hook: Modify if needed the computed advection matrix and update
