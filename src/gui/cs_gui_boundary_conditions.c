@@ -1422,7 +1422,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
             const int        *nozppm,
             int              *izfppp)
 {
-  cs_lnum_t faces = 0;
 
   assert(boundaries != NULL);
 
@@ -1431,8 +1430,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
     izfppp[ifac] = 0;
-
-  int overlap_error[4] = {0, -1, -1, -1};
 
   for (int izone = 0; izone < n_zones; izone++) {
 
@@ -1443,59 +1440,19 @@ _init_zones(const cs_lnum_t   n_b_faces,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, *nozppm);
 
+    cs_lnum_t n_faces = 0;
     const cs_lnum_t *face_ids
-      = _get_boundary_faces(boundaries->label[izone], &faces);
+      = _get_boundary_faces(boundaries->label[izone], &n_faces);
 
     /* check if faces are already marked with a zone number */
 
-    for (cs_lnum_t ifac= 0; ifac < faces; ifac++) {
-      cs_lnum_t ifbr = face_ids[ifac];
-      if (izfppp[ifbr] > 0) {
-        if (overlap_error[0] == 0) {
-          overlap_error[0] = 1;
-          overlap_error[1] = izfppp[ifbr];
-          overlap_error[2] = zone_nbr;
-          overlap_error[3] = izone;
-        }
-        izfppp[ifbr] = - izfppp[ifbr];
-      }
-      else {
-        izfppp[ifbr] = zone_nbr;
-      }
-    } /* for ifac */
+    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+      cs_lnum_t ifbr = face_ids[f_id];
+      izfppp[ifbr] = zone_nbr;
+    }
 
   } /*  for izone */
 
-  /* Check for zone overlap errors */
-
-  cs_parall_max(1, CS_INT_TYPE, overlap_error);
-
-  if (overlap_error[0] > 0) {
-
-    int old_ref, err_ref, err_izone;
-
-    err_ref = -1, err_izone = -1;
-
-    old_ref = overlap_error[1];
-    cs_parall_max(1, CS_INT_TYPE, &old_ref);
-    if (old_ref == overlap_error[1])
-      err_ref = overlap_error[2];
-    cs_parall_max(1, CS_INT_TYPE, &err_ref);
-    if (err_ref == overlap_error[2])
-      err_izone = overlap_error[3];
-    cs_parall_max(1, CS_INT_TYPE, &err_izone);
-
-    if (cs_glob_rank_id < 1)
-      bft_printf(_("\n"
-                   "Error: boundary face zone overlap\n"
-                   "======\n\n"
-                   "Zone %i (\"%s\") contains at least\n"
-                   "one face already marked with zone number %i.\n"),
-                 err_ref, boundaries->label[err_izone], old_ref);
-
-    cs_boundary_conditions_error(izfppp, _("zone number"));
-
-  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
