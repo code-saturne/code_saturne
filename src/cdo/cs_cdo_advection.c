@@ -1560,7 +1560,7 @@ cs_cdofb_advection_upwnoc(int                        dim,
       /* access the row containing the current face */
       double  *f_row = adv->val + f*adv->n_rows;
 
-      f_row[f] += beta_plus;
+      f_row[f] += beta_minus;
       f_row[c] -= beta_plus;
       c_row[f] -= beta_minus;
       c_row[c] += beta_minus;
@@ -1595,7 +1595,7 @@ cs_cdofb_advection_upwnoc(int                        dim,
       /* access the row containing the current face */
       double  *f_row = adv->val + f*adv->n_rows;
 
-      f_row[f] += beta_plus;
+      f_row[f] += beta_minus;
       f_row[c] -= beta_plus;
       c_row[f] -= beta_minus;
       c_row[c] += beta_minus;
@@ -1640,8 +1640,6 @@ cs_cdofb_advection_upwcsv(int                        dim,
   const short int  c = cm->n_fc;  /* current cell's location in the matrix */
   double  *c_row = adv->val + c*adv->n_rows;
 
-  cs_real_t  div_c = 0;
-
   if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && csys != NULL) {
 
     /* There is at least one boundary face associated to this cell */
@@ -1649,19 +1647,16 @@ cs_cdofb_advection_upwcsv(int                        dim,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-      div_c += beta_flx;
-
       const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
       const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
 
       /* access the row containing the current face */
       double  *f_row = adv->val + f*adv->n_rows;
 
-      f_row[f] += beta_plus;
+      f_row[f] += beta_minus;
       f_row[c] -= beta_plus;
       c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
+      c_row[c] += beta_plus;
 
       if (csys->bf_ids[f] > -1) { /* This is a boundary face */
         if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET) {
@@ -1679,8 +1674,6 @@ cs_cdofb_advection_upwcsv(int                        dim,
 
     } /* Loop on cell faces */
 
-    c_row[c] += div_c;
-
   }
   else {
 
@@ -1689,23 +1682,18 @@ cs_cdofb_advection_upwcsv(int                        dim,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
-
-      div_c += beta_flx;
-
       const cs_real_t  beta_minus = 0.5*(fabs(beta_flx) - beta_flx);
       const cs_real_t  beta_plus = 0.5*(fabs(beta_flx) + beta_flx);
 
       /* access the row containing the current face */
       double  *f_row = adv->val + f*adv->n_rows;
 
-      f_row[f] += beta_plus;
+      f_row[f] += beta_minus;
       f_row[c] -= beta_plus;
       c_row[f] -= beta_minus;
-      c_row[c] += beta_minus;
+      c_row[c] += beta_plus;
 
     } /* Loop on cell faces */
-
-    c_row[c] += div_c;
 
   }
 
