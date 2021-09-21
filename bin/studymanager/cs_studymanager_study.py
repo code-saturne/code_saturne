@@ -1174,19 +1174,23 @@ class Studies(object):
 
         self.reporting("  o Create all studies and cases")
         study_list = []
+        case_list = []
 
         for case in self.graph.graph_dict:
 
-            # first step : create study of the case if necessary
+            # first step: create study of the case if necessary
             study = case.study
             if study not in study_list:
                 self.create_study(study)
                 study_list.append(study)
 
-            # second step : create case
-            log_lines = self.create_case(case)
-            for line in log_lines:
-                self.reporting(line)
+            # second step: create case if necessary
+            case_name = case.study + "/" + case.label
+            if case_name not in case_list:
+                log_lines = self.create_case(case)
+                case_list.append(case_name)
+                for line in log_lines:
+                    self.reporting(line)
 
         self.reporting('')
 
@@ -1291,9 +1295,10 @@ class Studies(object):
                if case.run_id: 
                    _dest_resu_dir = os.path.join(case.label, 'RESU', case.run_id)
                    if os.path.isdir(_dest_resu_dir):
-                       self.reporting("  Warning: earlier run %s won't be "
-                                      "overwritten. Use --rm option to overwrite"
-                                      " it." %case.title)
+                       self.reporting("  Warning: earlier runs in %s won't be "
+                                      "overwritten. Use option --rm to overwrite"
+                                      " them." %(case.study + "/" + case.label +
+                                      "/RESU"))
 
             # overwrite content of DATA and SRC if not disabled
             if not self.__disable_ow:
@@ -1301,6 +1306,13 @@ class Studies(object):
                 case.overwriteDirectories(dirs_to_overwrite)
                 # update path in gui/run script
                 data_subdir = os.path.join(case.label, "DATA")
+
+            _script_dir = os.path.join(self.__repo, case.study, case.label,
+                                       'SCRIPTS')
+            if os.path.isdir(_script_dir):
+                self.reporting("  Warning: SCRIPTS folder exist in %s. "
+                               "Please update the case with code_saturne update."
+                               %(case.study + "/" + case.label))
 
         return log_lines
 
