@@ -5,6 +5,8 @@ Bug fixes:
 
 - Atmospheric module: fixes in Monin-Obukhov boundary conditions an smooth
   wall functions.
+- CDO: Fix convection operator for upwind schemes. This fixes an issue
+  for the segregation model in the solidification module at least.
 
 Release 7.0.1 (September 1 2021)
 --------------------------------
