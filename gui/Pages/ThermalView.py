@@ -335,7 +335,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         # For multiphase flows, only droplet laden gas flows are accepted
         if self.case.module_name() != 'code_saturne':
             mfm = MainFieldsModel(self.case)
-            if mfm.getPredefinedFlow() != 'droplet_flow':
+            if mfm.getPredefinedFlow() != 'droplet_flow' and mfm.getPredefinedFlow() != 'multiregime':
                 self.modelRadModel.setItem(str_model='off')
                 self.modelRadModel.disableItem(str_model='dom')
                 self.modelRadModel.disableItem(str_model='p-1')
