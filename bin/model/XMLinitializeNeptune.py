@@ -663,6 +663,8 @@ class XMLinitNeptune(BaseXmlInit):
         main_xml_model.setHeatMassTransferStatus(heat_mass_transfer_status)
 
         flow_node = self.case.xmlGetNode("predefined_flow")
+        flow_choice = "None"
+
         if flow_node != None:
             flow_choice = flow_node.xmlGetAttribute("choice")
             # Replace (Free surface flow + LIM + bubbles for LIM) by (Multiregime)
@@ -677,32 +679,46 @@ class XMLinitNeptune(BaseXmlInit):
                                              overwriteEnergy=False)
 
         # Continuous interfacial forces
+
         force_node = self.case.xmlGetNode('closure_modeling').xmlGetNode('interfacial_forces').xmlGetNode(
             'continuous_field_momentum_transfer')
         if force_node != None:
-            force_model = force_node.xmlGetAttribute("model")
-            surface_tension = force_node.xmlGetChildString("ITMSurfaceTension")
-            interface_sharpening = force_node.xmlGetChildString("InterfaceSharpening")
-            unsharpened_cells = force_node.xmlGetChildString("UnsharpenedCells")
+            try:
+                force_model = force_node.xmlGetAttribute("model")
+                surface_tension = force_node.xmlGetChildString("ITMSurfaceTension")
+                interface_sharpening = force_node.xmlGetChildString("InterfaceSharpening")
+                unsharpened_cells = force_node.xmlGetChildString("UnsharpenedCells")
 
-            # For previous cases, force a drag model
-            if force_model == "none":
-                force_model = forces_xml_model.defaultValuesContinuous()['continuousdragmodel']
+                # For previous cases, force a drag model
+                if force_model == "none":
+                    force_model = forces_xml_model.defaultValuesContinuous()['continuousdragmodel']
+                if flow_choice == "multiregime":
+                    force_model = "G_Large_Interface_Model"
 
-            forces_xml_model.setContinuousCouplingModel("1", "2", force_model)
-            model = "none"
-            if surface_tension == "on":
-                model = "Brackbill"
-            forces_xml_model.setSurfaceTensionModel("1", "2", model)
+                forces_xml_model.setContinuousCouplingModel("1", "2", force_model)
+                model = "none"
+                if surface_tension == "on":
+                    model = "Brackbill"
+                forces_xml_model.setSurfaceTensionModel("1", "2", model)
 
-            model = "none"
-            if interface_sharpening == "on":
-                if unsharpened_cells == "on":
-                    model = "Olsson_Partial_Interface_Sharpening"
-                else:
-                    model = "Olsson_Interface_Sharpening"
-            forces_xml_model.setInterfaceSharpeningModel("1", "2", model)
-            force_node.xmlRemoveNode()
+                model = "none"
+                if interface_sharpening == "on":
+                    if unsharpened_cells == "on":
+                        model = "Olsson_Partial_Interface_Sharpening"
+                    else:
+                        model = "Olsson_Interface_Sharpening"
+                forces_xml_model.setInterfaceSharpeningModel("1", "2", model)
+                force_node.xmlRemoveNode()
+            except ValueError:  # Remnants of continuous interfacial forces but no complete information, so do nothing
+                pass
+
+        # Activate heat and mass transfer if separate_phase_cond model is detected
+        cfc_node = self.case.xmlGetNode('closure_modeling').xmlGetNode('turbulence').xmlGetNode(
+            'continuous_field_coupling')
+        if cfc_node != None:
+            cfc_model = cfc_node.xmlGetAttribute("model")
+            if cfc_model == "separate_phase_cond":
+                main_xml_model.setHeatMassTransferStatus("on")
 
         # Set wall transfer model type
         mass_transfer_node = self.case.xmlGetNode("mass_transfer_model")

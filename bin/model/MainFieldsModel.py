@@ -203,42 +203,52 @@ class MainFieldsModel(Variables, Model):
 
 
     @Variables.undoGlobal
-    def addDefinedField(self, fieldId, label, typeChoice, phase, carrierField,
-                        hmodel, compressible, labNum):
+    def addDefinedField(self, fieldId, label, typeChoice, phase, carrierField="off",
+                        hmodel="off", compressible="off"):
         """
         add field for predefined flow
         """
 
-        self.isInList(phase,['solid','liquid','gas'])
-        self.isInList(typeChoice,['dispersed','continuous'])
+        self.isInList(phase, ['solid', 'liquid', 'gas'])
+        self.isInList(typeChoice, ['dispersed', 'continuous'])
 
-        # Check that the field does not allreay exist
+        # Check that the field does not already exist
         nf = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
         if nf == None:
-            self.__XMLNodefields.xmlInitChildNode('field', field_id = fieldId, label = label)
+            self.__XMLNodefields.xmlInitChildNode('field', field_id=fieldId, label=label)
         else:
+            # TODO : addField method should not modify existing fields. At least add a warning...
             nf['label'] = label
+
+        self.setDefinedField(fieldId, typeChoice, phase, carrierField, hmodel, compressible)
+
+    def setDefinedField(self, fieldId, typeChoice, phase, carrierField, energyModel, compressible):
+        """
+        Set properties of an already defined field
+        """
 
         self.setCriterion(fieldId, typeChoice)
         self.setFieldNature(fieldId, phase)
-        self.setEnergyModel(fieldId, hmodel)
+        self.setEnergyModel(fieldId, energyModel)
         self.setCompressibleStatus(fieldId, compressible)
         self.setCarrierField(fieldId, carrierField)
-        self.iniVariableProperties(fieldId, labNum)
-
+        self.iniVariableProperties(fieldId)
 
     @Variables.undoLocal
-    def iniVariableProperties(self, fieldNumber, labNum):
+    def iniVariableProperties(self, fieldNumber):
         """
         add XML variable and properties
         """
 
-        field_name = self.getFieldLabelsList()[int(fieldNumber)-1]
+        field_name = self.getFieldLabelsList()[int(fieldNumber) - 1]
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "vol_f_"+field_name, post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U_"+field_name, dim='3', post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber,
+                                                    "volume_fraction", "vol_f_" + field_name, post=True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity",
+                                                    "U_" + field_name, dim='3', post=True)
         if self.getEnergyResolution(fieldNumber) == "on":
-            Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
+            Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy",
+                                                        "enthalpy_" + field_name, post=True)
 
         # Physical properties are set by default to "constant" to avoid uninitialized states with the GUI
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
@@ -827,50 +837,44 @@ class MainFieldsModel(Variables, Model):
         if self.getHeatMassTransferStatus() == "off":
             energyModel = "off"
 
+        field_id_list = self.getFieldIdList()
+        label_list = self.getFieldLabelsList()
+
+        create_fields = False
+        if len(field_id_list) < 2:
+            field_id_list = ["1", "2"]
+            label_list = ["Field1", "Field2"]
+            create_fields = True
+
         if flow_choice != "None":
 
-            # Create the first field
-            fieldId = "1"
-            label = "Field1"
-            typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][0]
-            phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][0]
-            if typeChoice == "dispersed":
-                carrierField = "2"
-            else:
-                carrierField = "off"
-
-            if not overwriteEnergy:
-                energyModel = self.getEnergyModel(fieldId)
-
-            compressible = "off"
-            self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
-
-            # Create the second field
-            fieldId = "2"
-            label = "Field2"
-            typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][1]
-            phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][1]
-            if typeChoice == "dispersed":
-                carrierField = "1"
-            else:
-                carrierField = "off"
-
-            if not overwriteEnergy:
-                energyModel = self.getEnergyModel(fieldId)
-
-            compressible = "off"
-            self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
+            for id in range(2):  # Always two fields in predefined regimes
+                fieldId = field_id_list[id]
+                typeChoice = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][0][id]
+                phase = PredefinedFlowsModel.fieldsCoupleProperties[flow_choice][1][id]
+                if typeChoice == "dispersed":
+                    carrierField = field_id_list[1 - id]  # other field
+                else:
+                    carrierField = "off"
+                if not overwriteEnergy:
+                    energyModel = self.getEnergyModel(fieldId)
+                compressible = "off"
+                self.case.undoStop()
+                if not (create_fields):
+                    self.setDefinedField(field_id_list[id], typeChoice, phase, carrierField, energyModel,
+                                         compressible)
+                else:  # Otherwise create a new field
+                    self.addDefinedField(field_id_list[id], label_list[id], typeChoice, phase, carrierField,
+                                         energyModel,
+                                         compressible)
 
             # Remove remnant fields from previous flow choice
-            for fieldId in self.getFieldIdList():
-                if fieldId not in ["1", "2"]:
-                    self.deleteField(fieldId)
+            for fieldId in field_id_list[2:]:
+                self.deleteField(fieldId)
 
             # modification du choix pour le predicteur de vitesse
             self.case.undoStop()
-            if (flow_choice == "boiling_flow"):
+            if flow_choice == "boiling_flow":
                 GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(
                     GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_bubble'])
             else:
@@ -880,7 +884,7 @@ class MainFieldsModel(Variables, Model):
             if flow_choice != "boiling_flow" and flow_choice != "free_surface" and flow_choice != "multiregime":
                 self.XMLMassTrans.xmlRemoveChild('nucleate_boiling')
 
-            if (flow_choice == "particles_flow"):
+            if flow_choice == "particles_flow":
                 self._deleteFieldsProperties()
             else:
                 # Recreate fields in previous flow choice is "particles_flow"
@@ -888,32 +892,34 @@ class MainFieldsModel(Variables, Model):
                 self.setHeatMassTransferStatus(status)
 
         else :
-            GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
+            GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(
+                GlobalNumericalParametersModel(self.case).defaultValues()['velocity_predictor_algorithm_std'])
             self.XMLMassTrans.xmlRemoveChild('nucleate_boiling')
 
             # create two field flow continuous/continuous by default
             # Create the first field
-            fieldId      = "1"
-            label        = "Field1"
-            typeChoice   = "continuous"
-            phase        = "liquid"
-            carrierField = "off"
-            if not overwriteEnergy:
-                energyModel  = self.getEnergyModel(fieldId)
-            compressible = "off"
-            self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 1)
-            # Create the second field
-            fieldId      = "2"
-            label        = "Field2"
-            typeChoice = "continuous"
-            phase = "gas"
-            carrierField = "off"
-            if not overwriteEnergy:
-                energyModel  = self.getEnergyModel(fieldId)
-            compressible = "off"
-            self.case.undoStop()
-            self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible, 2)
+            if create_fields:
+                fieldId = "1"
+                label = "Field1"
+                typeChoice = "continuous"
+                phase = "liquid"
+                carrierField = "off"
+                if not overwriteEnergy:
+                    energyModel = self.getEnergyModel(fieldId)
+                compressible = "off"
+                self.case.undoStop()
+                self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible)
+                # Create the second field
+                fieldId = "2"
+                label = "Field2"
+                typeChoice = "continuous"
+                phase = "gas"
+                carrierField = "off"
+                if not overwriteEnergy:
+                    energyModel = self.getEnergyModel(fieldId)
+                compressible = "off"
+                self.case.undoStop()
+                self.addDefinedField(fieldId, label, typeChoice, phase, carrierField, energyModel, compressible)
 
         self.case.undoStart()
 
