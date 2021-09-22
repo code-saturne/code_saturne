@@ -202,8 +202,7 @@ class XMLElement:
     def __errorExit(self, msg):
         """
         """
-        print('XML ERROR')
-        raise ValueError(msg)
+        raise ValueError("XML ERROR:\n" + msg)
 
 
     if sys.version[0] == '2':
@@ -335,7 +334,6 @@ class XMLElement:
         if not self.el.hasAttribute(attr):
             if default == None:
                 node = self.__str__()
-                attr = attr.encode(sys.stdout.encoding,'replace')
                 msg = "ElementNode: \n\n" \
                       + node + "\n\nis missing attribute: \n\n" \
                       + attr + "\n\nThe application will finish."
