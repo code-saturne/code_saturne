@@ -2637,13 +2637,20 @@ _gcr(cs_sles_it_t              *c,
           ck_n[ii] += - gkj[(n_iter + 1) * n_iter / 2 + jj] * ck_j[ii];
       }
 
-      gkj[(n_iter+1) * n_iter / 2 + n_iter] = sqrt(_dot_product(c, ck_n, ck_n));
+      const int  iter_shift = (n_iter+1) * n_iter / 2 + n_iter;
+      gkj[iter_shift] = sqrt(_dot_product(c, ck_n, ck_n));
 
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        ck_n[ii] /= gkj[(n_iter+1) * n_iter / 2 + n_iter];
+      if (fabs(gkj[iter_shift]) > 0) {
 
-      alpha[n_iter] = _dot_product(c, ck_n, rk);
+#       pragma omp parallel for if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          ck_n[ii] /= gkj[iter_shift];
+
+        alpha[n_iter] = _dot_product(c, ck_n, rk);
+
+      }
+      else
+        alpha[n_iter] = 0.;
 
 #     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -2667,23 +2674,30 @@ _gcr(cs_sles_it_t              *c,
 
     /* Inversion of Gamma */
 
-    cs_lnum_t n_g_inv = (n_k_per_restart + 1) * n_k_per_restart / 2;
-    for (cs_lnum_t jj = 0; jj < n_g_inv; jj++)
-      gkj_inv[jj] = 0.0;
+    if (n_iter == 1 && !(fabs(alpha[0]) > 0))
+      gkj_inv[0] = 1.0;
 
-    for (cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
-      for(cs_lnum_t ii = 0; ii < kk; ii++) {
+    else {
+
+      cs_lnum_t n_g_inv = (n_k_per_restart + 1) * n_k_per_restart / 2;
+      for (cs_lnum_t jj = 0; jj < n_g_inv; jj++)
+        gkj_inv[jj] = 0.0;
+
+      for (cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
+        for(cs_lnum_t ii = 0; ii < kk; ii++) {
+          for (cs_lnum_t jj = 0; jj < kk; jj++)
+            gkj_inv[(kk + 1) * kk / 2 + ii]
+              +=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
+              * gkj[(kk + 1) * kk / 2  + jj];
+        }
+
         for (cs_lnum_t jj = 0; jj < kk; jj++)
-          gkj_inv[(kk + 1) * kk / 2 + ii]
-            +=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
-               * gkj[(kk + 1) * kk / 2  + jj];
+          gkj_inv[(kk + 1) * kk / 2 + jj] /= - gkj[(kk + 1) * kk / 2 + kk];
+
+        gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / gkj[(kk + 1) * kk / 2 + kk];
       }
 
-      for (cs_lnum_t jj = 0; jj < kk; jj++)
-        gkj_inv[(kk + 1) * kk / 2 + jj] /= - gkj[(kk + 1) * kk / 2 + kk];
-
-      gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / gkj[(kk + 1) * kk / 2 + kk];
-    }
+    } /* n_iter > 1 */
 
     /* Compute the solution */
 
