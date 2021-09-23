@@ -775,26 +775,15 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main numerical parameters which described a solidification
- *         process with a binary alloy (with components A and B)
+ * \brief  Set the strategy to update physical variables related to the
+ *         binary alloy model
  *
- * \param[in]  strategy     strategy to perform the numerical segregation
- * \param[in]  n_iter_max   max.number of iterations for the C/T equations
- * \param[in]  tolerance    tolerance under which non-linear iter. stop
- * \param[in]  gliq_relax   relaxation coefficient for the update of the
- *                          liquid fraction
- * \param[in]  eta_relax    relaxation coefficient for the update of the
- *                          eta coefficient (scaling in front of the advective
- *                          term)
+ * \param[in]  stgy     strategy to perform the numerical segregation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
-                                      int                           n_iter_max,
-                                      double                        tolerance,
-                                      double                        gliq_relax,
-                                      double                        eta_relax);
+cs_solidification_set_binary_alloy_strategy(cs_solidification_strategy_t  stgy);
 
 /*----------------------------------------------------------------------------*/
 /*!
