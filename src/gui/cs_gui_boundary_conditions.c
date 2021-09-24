@@ -2639,30 +2639,6 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
     for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
       cs_lnum_t ifbr = face_ids[ifac];
 
-      if (izfppp[ifbr] != zone_nbr)
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("@                                                            \n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@                                                            \n"
-             "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-             "@    *******                                                 \n"
-             "@                                                            \n"
-             "@    The zone %s does not have the same id number            \n"
-             "@    in the GUI and in the user subroutine.                  \n"
-             "@                                                            \n"
-             "@    GUI zone number:             %i                         \n"
-             "@    USER SUBROUTINE zone number: %i                         \n"
-             "@                                                            \n"
-             "@    The id number given in the GUI cannot be modified       \n"
-             "@    in the user subroutine (fortran array IZFPPP).          \n"
-             "@                                                            \n"
-             "@    The calculation will stop.                              \n"
-             "@                                                            \n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@                                                            \n"),
-           boundaries->label[izone], zone_nbr, izfppp[ifbr]);
-
       inature2 = itypfb[ifbr];
 
       int enature2 = inature2;
@@ -2681,30 +2657,6 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                                              || inature2 == CS_SOPCF)))
           enature2 = inature;
       }
-
-      if (enature2 != enature)
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("@                                                            \n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@                                                            \n"
-             "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-             "@    *******                                                 \n"
-             "@                                                            \n"
-             "@    The zone %s does not have the same nature               \n"
-             "@    in the GUI and in the user subroutine.                  \n"
-             "@                                                            \n"
-             "@    GUI zone nature:             %s                         \n"
-             "@    USER SUBROUTINE ITYPFB:      %i                         \n"
-             "@                                                            \n"
-             "@    The nature given in the GUI cannot be modified          \n"
-             "@    in the user subroutine (fortran array ITYPFB).          \n"
-             "@                                                            \n"
-             "@    The calculation will stop.                              \n"
-             "@                                                            \n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@                                                            \n"),
-           boundaries->label[izone], boundaries->nature[izone], inature2);
     }
   } /*  for izone */
 }
