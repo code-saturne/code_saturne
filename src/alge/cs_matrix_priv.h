@@ -86,6 +86,11 @@ typedef void
 typedef const cs_real_t *
 (cs_matrix_get_diagonal_t)(const cs_matrix_t  *matrix);
 
+typedef cs_matrix_assembler_values_t *
+(cs_matrix_assembler_values_create_t) (cs_matrix_t      *matrix,
+                                       const cs_lnum_t  *diag_block_size,
+                                       const cs_lnum_t  *extra_diag_block_size);
+
 /*----------------------------------------------------------------------------
  * Function pointer for matrix-veector product (y = A.x).
  *
@@ -339,18 +344,20 @@ struct _cs_matrix_t {
 
   /* Function pointers */
 
-  cs_matrix_set_coeffs_t            *set_coefficients;
-  cs_matrix_release_coeffs_t        *release_coefficients;
-  cs_matrix_copy_diagonal_t         *copy_diagonal;
-  cs_matrix_get_diagonal_t          *get_diagonal;
+  cs_matrix_set_coeffs_t               *set_coefficients;
+  cs_matrix_release_coeffs_t           *release_coefficients;
+  cs_matrix_copy_diagonal_t            *copy_diagonal;
+  cs_matrix_get_diagonal_t             *get_diagonal;
 
-  cs_matrix_destroy_struct_t        *destroy_structure;
-  cs_matrix_destroy_coeffs_t        *destroy_coefficients;
+  cs_matrix_destroy_struct_t           *destroy_structure;
+  cs_matrix_destroy_coeffs_t           *destroy_coefficients;
+
+  cs_matrix_assembler_values_create_t  *assembler_values_create;
 
   /* Function pointer arrays, with CS_MATRIX_N_FILL_TYPES variants:
      fill_type*2 + exclude_diagonal_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
+  cs_matrix_vector_product_t  *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
 };
 

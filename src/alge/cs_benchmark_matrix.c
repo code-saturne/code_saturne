@@ -681,12 +681,12 @@ _matrix_check(int                          n_variants,
 
         m = cs_matrix_create(ms);
 
-        if (v->external_type != NULL) {
 #if defined(HAVE_HYPRE)
-          if (strcmp(v->external_type, "HYPRE") == 0)
-            cs_matrix_set_type_hypre(m);
+        if (strcmp(v->external_type, "HYPRE") == 0)
+          cs_matrix_set_type_hypre(m);
 #endif
-        }
+
+        bool is_external_type = (strlen(v->external_type) == 0) ? false : true;
 
         cs_matrix_set_coefficients(m,
                                    sym_coeffs,
@@ -701,7 +701,7 @@ _matrix_check(int                          n_variants,
 
         if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0) {
 
-          if (strlen(v->external_type) == 0) {
+          if (is_external_type == false) {
             cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
             cs_matrix_variant_set_func(mv,
                                        numbering,
@@ -720,7 +720,7 @@ _matrix_check(int                          n_variants,
 
           /* Check multiplication */
 
-          vector_multiply(m, ed_flag, false, x, y);
+          vector_multiply(m, ed_flag, true, x, y);
           if (v_id == 0)
             memcpy(yr0, y, n_rows*_block_mult*sizeof(cs_real_t));
           else {
@@ -931,11 +931,13 @@ _matrix_time_test(double                       t_measure,
 
       /* Measure matrix.vector operations */
 
+      bool is_external_type = (strlen(v->external_type) == 0) ? false : true;
+
       for (ed_flag = 0; ed_flag < 2; ed_flag++) {
 
         cs_matrix_vector_product_t  *vector_multiply = NULL;
 
-        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0) {
+        if (is_external_type == false) {
 
           if (strlen(v->external_type) == 0) {
             cs_matrix_variant_t *mv = cs_matrix_variant_create(m);

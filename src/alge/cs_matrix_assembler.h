@@ -178,8 +178,8 @@ typedef void
  * \param[in, out]  matrix    untyped pointer to matrix description structure
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
- * \param[in]       g_row_id  associated global row ids
- * \param[in]       g_col_id  associated global column ids
+ * \param[in]       row_g_id  associated global row ids
+ * \param[in]       col_g_id  associated global column ids
  * \param[in]       val       pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
@@ -298,16 +298,16 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma);
  *
  * \param[in, out]  ma        pointer to matrix assembler structure
  * \param[in]       n         number of entries
- * \param[in]       g_col_id  global column ids associated with entries
- * \param[in]       g_row_id  global row ids associated with entries
+ * \param[in]       col_g_id  global column ids associated with entries
+ * \param[in]       row_g_id  global row ids associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
                               cs_lnum_t               n,
-                              const cs_gnum_t         g_row_id[],
-                              const cs_gnum_t         g_col_id[]);
+                              const cs_gnum_t         row_g_id[],
+                              const cs_gnum_t         col_g_id[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -667,8 +667,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  *
  * \param[in, out]  mav       pointer to matrix assembler values structure
  * \param[in]       n         number of entries
- * \param[in]       g_col_id  global column ids associated with entries
- * \param[in]       g_row_id  global row ids associated with entries
+ * \param[in]       col_g_id  global column ids associated with entries
+ * \param[in]       row_g_id  global row ids associated with entries
  * \param[in]       val       values associated with entries
  */
 /*----------------------------------------------------------------------------*/
@@ -676,8 +676,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 const cs_gnum_t                g_row_id[],
-                                 const cs_gnum_t                g_col_id[],
+                                 const cs_gnum_t                row_g_id[],
+                                 const cs_gnum_t                col_g_id[],
                                  const cs_real_t                val[]);
 
 /*----------------------------------------------------------------------------*/

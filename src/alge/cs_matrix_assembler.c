@@ -411,14 +411,14 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
     cs_lnum_t  k = 0;
 
     for (cs_lnum_t i = 0; i < n_rows; i++) {
-      cs_gnum_t *g_col_id = ma->d_g_c_id + ma->d_r_idx[i];
+      cs_gnum_t *col_g_id = ma->d_g_c_id + ma->d_r_idx[i];
       cs_lnum_t n_cols = ma->d_r_idx[i+1] - ma->d_r_idx[i];
       ma->d_r_idx[i] = k;
       if (n_cols > 0)
-        ma->d_g_c_id[k++] = g_col_id[0];
+        ma->d_g_c_id[k++] = col_g_id[0];
       for (cs_lnum_t j = 1; j < n_cols; j++) {
-        if (g_col_id[j] != g_col_id[j-1])
-          ma->d_g_c_id[k++] = g_col_id[j];
+        if (col_g_id[j] != col_g_id[j-1])
+          ma->d_g_c_id[k++] = col_g_id[j];
       }
     }
     ma->d_r_idx[n_rows] = k;
@@ -554,12 +554,12 @@ _complete_distant(cs_matrix_assembler_t  *ma,
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
     cs_lnum_t n_cols = ma->d_r_idx[i+1] - ma->d_r_idx[i];
-    cs_gnum_t *g_col_id_d = ma->d_g_c_id + ma->d_r_idx[i] + d_r_idx[i];
-    const cs_gnum_t *g_col_id_s = ma->d_g_c_id + ma->d_r_idx[i];
+    cs_gnum_t *col_g_id_d = ma->d_g_c_id + ma->d_r_idx[i] + d_r_idx[i];
+    const cs_gnum_t *col_g_id_s = ma->d_g_c_id + ma->d_r_idx[i];
     d_c_count[i] = n_cols;
     ma->d_r_idx[i+1] += d_r_idx[i+1];
     for (cs_lnum_t j = n_cols-1; j >= 0; j--)
-      g_col_id_d[j] = g_col_id_s[j];
+      col_g_id_d[j] = col_g_id_s[j];
   }
   if (n_rows > 0) {
     d_c_count[0] = ma->d_r_idx[1];
@@ -647,9 +647,9 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     cs_lnum_t n_d_cols = ma->d_r_idx[i+1] - ma->d_r_idx[i];
     cs_lnum_t *col_id_d = ma->_c_id + ma->_r_idx[i+1] - n_d_cols;
-    const cs_gnum_t *g_col_id_s = ma->d_g_c_id + ma->d_r_idx[i];
+    const cs_gnum_t *col_g_id_s = ma->d_g_c_id + ma->d_r_idx[i];
     for (cs_lnum_t j = 0; j < n_d_cols; j++) {
-      cs_gnum_t g_c_id = g_col_id_s[j];
+      cs_gnum_t g_c_id = col_g_id_s[j];
       cs_lnum_t k = _g_id_binary_find(n_e_g_ids, g_c_id, e_g_id);
       col_id_d[j] = n_rows + k;
     }
@@ -1154,7 +1154,7 @@ _rank_neighbors(cs_lnum_t          n_e_g_ids,
  *
  * \param[in, out]  ma           pointer to matrix assembler structure
  * \param[in]       e_g_ij_size  size of coefficient data to send
- * \param[in]       e_g_ij       coefficient data (g_row_id, g_col_id couples)
+ * \param[in]       e_g_ij       coefficient data (row_g_id, col_g_id couples)
  *                               to send
  */
 /*----------------------------------------------------------------------------*/
@@ -1478,11 +1478,11 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
           cs_lnum_t n_d_cols = ma->d_r_idx[l_r_id+1] - ma->d_r_idx[l_r_id];
           cs_lnum_t n_cols = ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
-          const cs_gnum_t *g_col_id = ma->d_g_c_id + ma->d_r_idx[l_r_id];
+          const cs_gnum_t *col_g_id = ma->d_g_c_id + ma->d_r_idx[l_r_id];
 
           cs_lnum_t d_c_idx = _g_id_binary_find(n_d_cols,
                                                 g_c_id,
-                                                g_col_id);
+                                                col_g_id);
 
           /* column ids start and end of local row, so add n_cols
              (local part only, matrices are not appened at this stage) */
@@ -2091,7 +2091,7 @@ _matrix_assembler_values_add_cnv_idx(cs_matrix_assembler_values_t  *mav,
  * \param[in]       n         number of values to add
  * \param[in]       stride    matrix block stride
  * \param[in]       row_id    matrix row ids
- * \param[in]       g_col_id  global column ids
+ * \param[in]       col_g_id  global column ids
  * \param[in]       val       values to add
  */
 /*----------------------------------------------------------------------------*/
@@ -2101,7 +2101,7 @@ _matrix_assembler_values_add_lg(cs_matrix_assembler_values_t  *mav,
                                 cs_lnum_t                      n,
                                 cs_lnum_t                      stride,
                                 const cs_lnum_t                row_id[],
-                                const cs_gnum_t                g_col_id[],
+                                const cs_gnum_t                col_g_id[],
                                 const cs_real_t                val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -2121,7 +2121,7 @@ _matrix_assembler_values_add_lg(cs_matrix_assembler_values_t  *mav,
       cs_lnum_t k = i+j;
 
       cs_lnum_t l_r_id = row_id[k];
-      cs_gnum_t g_c_id = g_col_id[k];
+      cs_gnum_t g_c_id = col_g_id[k];
 
       /* Local part */
 
@@ -2695,16 +2695,16 @@ cs_matrix_assembler_get_options(const cs_matrix_assembler_t  *ma)
  *
  * \param[in, out]  ma        pointer to matrix assembler structure
  * \param[in]       n         number of entries
- * \param[in]       g_col_id  global column ids associated with entries
- * \param[in]       g_row_id  global row ids associated with entries
+ * \param[in]       col_g_id  global column ids associated with entries
+ * \param[in]       row_g_id  global row ids associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
                               cs_lnum_t               n,
-                              const cs_gnum_t         g_row_id[],
-                              const cs_gnum_t         g_col_id[])
+                              const cs_gnum_t         row_g_id[],
+                              const cs_gnum_t         col_g_id[])
 {
   /* Reallocate if needed;
      note that we could use optimized structures to avoid
@@ -2729,19 +2729,19 @@ cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
 
   if (ma->separate_diag == false) {
     for (cs_lnum_t i = 0; i < n; i++) {
-      _g_rc_id[i*2]   = g_row_id[i];
-      _g_rc_id[i*2+1] = g_col_id[i];
+      _g_rc_id[i*2]   = row_g_id[i];
+      _g_rc_id[i*2+1] = col_g_id[i];
     }
     ma->size += n;
   }
   else {
     cs_lnum_t j = 0;
     for (cs_lnum_t i = 0; i < n; i++) {
-      if (   g_row_id[i] != g_col_id[i]
-          || g_row_id[i] <  ma->l_range[0]
-          || g_row_id[i] >= ma->l_range[1]) {
-        _g_rc_id[j*2]   = g_row_id[i];
-        _g_rc_id[j*2+1] = g_col_id[i];
+      if (   row_g_id[i] != col_g_id[i]
+          || row_g_id[i] <  ma->l_range[0]
+          || row_g_id[i] >= ma->l_range[1]) {
+        _g_rc_id[j*2]   = row_g_id[i];
+        _g_rc_id[j*2+1] = col_g_id[i];
         j += 1;
       }
     }
@@ -3288,8 +3288,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  *
  * \param[in, out]  mav       pointer to matrix assembler values structure
  * \param[in]       n         number of entries
- * \param[in]       g_col_id  global column ids associated with entries
- * \param[in]       g_row_id  global row ids associated with entries
+ * \param[in]       col_g_id  global column ids associated with entries
+ * \param[in]       row_g_id  global row ids associated with entries
  * \param[in]       val       values associated with entries
  */
 /*----------------------------------------------------------------------------*/
@@ -3297,8 +3297,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 const cs_gnum_t                g_row_id[],
-                                 const cs_gnum_t                g_col_id[],
+                                 const cs_gnum_t                row_g_id[],
+                                 const cs_gnum_t                col_g_id[],
                                  const cs_real_t                val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
@@ -3310,7 +3310,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
   /* Base stride on first type of value encountered */
 
-  if (g_row_id[0] == g_col_id[0])
+  if (row_g_id[0] == col_g_id[0])
     stride = mav->db_size[3];
   else
     stride = mav->eb_size[3];
@@ -3328,7 +3328,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
       cs_lnum_t k = i+j;
 
-      cs_gnum_t g_r_id = g_row_id[k];
+      cs_gnum_t g_r_id = row_g_id[k];
 
 #if defined(HAVE_MPI)
 
@@ -3348,7 +3348,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
         cs_lnum_t e_id =   r_start
                          +_g_id_binary_find(n_e_rows,
-                                            g_col_id[k],
+                                            col_g_id[k],
                                             ma->coeff_send_col_g_id + r_start);
 
         /* Now add values to send coefficients */
@@ -3364,14 +3364,14 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
       else {
 
         s_g_row_id[j] = g_r_id;
-        s_g_col_id[j] = g_col_id[k];
+        s_g_col_id[j] = col_g_id[k];
 
       }
 
 #else
 
       s_g_row_id[j] = g_r_id;
-      s_g_col_id[j] = g_col_id[k];
+      s_g_col_id[j] = col_g_id[k];
 
 #endif /* HAVE_MPI */
 
