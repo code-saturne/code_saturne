@@ -1292,7 +1292,7 @@ class Studies(object):
                                        "are removed (option --rm activated)"
                                        %case.label)
             else:
-               if case.run_id: 
+               if case.run_id:
                    _dest_resu_dir = os.path.join(case.label, 'RESU', case.run_id)
                    if os.path.isdir(_dest_resu_dir):
                        self.reporting("  Warning: earlier runs in %s won't be "

@@ -2048,7 +2048,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
           if (cell_tag[c2] == 0 && cell_tag[c1] == nn)
             cell_tag[c2] = nn+1;
         }
-        
+
         if (m->halo!=NULL)
           cs_halo_sync_num(m->halo, CS_HALO_STANDARD, cell_tag);
         nn ++;
