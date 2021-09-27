@@ -1175,7 +1175,21 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
                   "  %s"), path, strerror(errno));
     }
 
+    /* Check if the file is ASCII or Binary */
+    char temp[6] ;
+    fread(temp, 5, 1, fp);
+    temp[5] = '\0';
+    int test = strcmp(temp, "solid");
+
+    if (test == 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error opening file \"%s\":\n"
+                  "You are probably tyring to open an ASCII STL file\n"
+                  "Please convert your file to binary :-)"), path);
+
+
     /* Read and copy header */
+    rewind(fp);
     fread(buf, 84, 1, fp);
     memcpy(stl_mesh->header, buf, 80);
 
@@ -1932,14 +1946,16 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 /*!
  * \brief Refine the mesh following a given STL mesh
  *
- * \param[in]  stl_mesh  pointer to the associated STL mesh structure
- * \param[in]  n_ref     level of refinement
+ * \param[in]  stl_mesh        pointer to the associated STL mesh structure
+ * \param[in]  n_ref           level of refinement
+ * \param[in]  n_add_layer     additional layers between two refinement stage
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_stl_refine(cs_stl_mesh_t *stl_mesh,
-              int           n_ref )
+              int           n_ref,
+              int           n_add_layer)
 {
   cs_mesh_t *m = cs_glob_mesh;
 
@@ -1981,6 +1997,14 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
                          NULL,
                          NULL);
 
+    /* If no intersected cells, do not perform refinement */
+    cs_lnum_t n_intersected_cells = n_selected_cells;
+    cs_parall_sum(1, CS_LNUM_TYPE, &n_intersected_cells);
+    if (n_intersected_cells == 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "Error in function cs_stl_refine: no intersection\n"
+                "detected between the given STL file and the main mesh \n");
+
     /* Add incremented group */
     char group_name[100];
     sprintf(group_name,"STL_refined_region_%d",n_level);
@@ -2010,16 +2034,24 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
       const cs_lnum_2_t *restrict i_face_cells
         = (const cs_lnum_2_t *restrict)m->i_face_cells;
 
-      /* Here we add additionnal layers of refined cells
-       * around the original STL slected cells */
 
-      for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id ++) {
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
-        if (cell_tag[ii] == 1 && cell_tag[jj] == 0)
-          cell_tag[jj] = 2;
-        if (cell_tag[jj] == 1 && cell_tag[ii] == 0)
-          cell_tag[ii] = 2;
+      /* Here we add additionnal layers of refined cells
+       * around the original STL selected cells */
+      int nn = 1;
+
+      for (int k = 0; k < n_add_layer ; k++){
+        for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++){
+          cs_lnum_t c1 = m->i_face_cells[face_id][0];
+          cs_lnum_t c2 = m->i_face_cells[face_id][1];
+          if (cell_tag[c1] == 0 && cell_tag[c2] == nn)
+            cell_tag[c1] = nn+1;
+          if (cell_tag[c2] == 0 && cell_tag[c1] == nn)
+            cell_tag[c2] = nn+1;
+        }
+        
+        if (m->halo!=NULL)
+          cs_halo_sync_num(m->halo, CS_HALO_STANDARD, cell_tag);
+        nn ++;
       }
 
       n_selected_cells = 0;

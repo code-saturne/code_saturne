@@ -306,13 +306,15 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
  * Refine the mesh following a given STL mesh
  *
  * parameters:
- *   stl_mesh <-- pointer to the associated STL mesh structure
- *   n_ref    <-- level of refinement
+ *   stl_mesh       <-- pointer to the associated STL mesh structure
+ *   n_ref          <-- level of refinement
+ *   n_add_layer    <-- additional layers between two refinement stage
  *----------------------------------------------------------------------------*/
 
 void
 cs_stl_refine(cs_stl_mesh_t *stl_mesh,
-              int           n_ref);
+              int           n_ref,
+              int           n_add_layer);
 
 /*----------------------------------------------------------------------------
  * Compute porosity field according to a given STL mesh
