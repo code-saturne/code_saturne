@@ -395,7 +395,7 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
                - this_case->dir_name_length + 1;
   base_len = strlen(name);
   if (var->time_set > -1)
-    postfix_len = 6;
+    postfix_len = 8;
   else
     postfix_len = 0;
 
