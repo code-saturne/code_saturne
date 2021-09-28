@@ -607,9 +607,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="4.1.2",
-                    archive="CGNS-4.1.2.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v4.1.2.tar.gz")
+                    version="4.2.0",
+                    archive="CGNS-4.2.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.2.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -643,9 +643,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.1.0",
-                    archive="scotch_6.1.0.tar.gz",
-                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v6.1.0/%s")
+                    version="6.1.1",
+                    archive="scotch_6.1.1.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v6.1.1/%s")
 
     #---------------------------------------------------------------------------
 
