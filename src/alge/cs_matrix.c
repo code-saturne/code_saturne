@@ -2903,7 +2903,7 @@ static void
 _mat_vec_p_l_csr_mkl(const cs_matrix_t  *matrix,
                      bool                exclude_diag,
                      bool                sync,
-                     const cs_real_t    *restrict x,
+                     cs_real_t          *restrict x,
                      cs_real_t          *restrict y)
 {
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
@@ -3506,12 +3506,12 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
 #if defined (HAVE_MKL)
 
 static void
-_mat_vec_p_l_csr_sym_mkl(const cs_matrix_t  *matrix,
-                         bool                exclude_diag,
-                         cs_halo_state_t    *hs,
-                         cs_real_t          *restrict x,
-                         cs_real_t          *restrict y)
-{
+_mat_vec_p_l_csr_sym_mkl(const cs_matrix_t   *matrix,
+			 bool                 exclude_diag,
+			 bool                 sync,
+			 cs_real_t            x[restrict],
+			 cs_real_t            y[restrict])
+{  
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
 
