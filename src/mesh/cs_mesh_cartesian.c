@@ -687,6 +687,16 @@ cs_mesh_cartesian_define_dir_params(int                     idim,
   cs_mesh_cartesian_law_t _law = law;
   cs_real_t _p   = progression;
 
+  /* Sanity check that min != max */
+  if (cs_math_fabs(smin-smax) < 1.e-6) {
+    const char *dirnames[3] = {"X", "Y", "Z"};
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: min and max values for direction '%s' are equal in"
+                " cartesian mesh definition.\n"),
+              dirnames[idim]);
+  }
+
   /* Sanity check for progression value */
   if (law == CS_MESH_CARTESIAN_GEOMETRIC_LAW ||
       law == CS_MESH_CARTESIAN_PARABOLIC_LAW) {
