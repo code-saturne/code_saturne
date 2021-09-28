@@ -981,7 +981,11 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
     retval.name = var->file_name;
     if (var->time_set > -1) {  /* if variable is time-dependant */
       var_index = (this_case->time_set[var->time_set])->n_time_values;
-      sprintf(var->file_name + strlen(var->file_name) - 5, "%05d", var_index);
+      size_t l = strlen(var->file_name) - 1;
+      while (l > 0 && var->file_name[l] != '.')
+        l--;
+      l += 1;
+      sprintf(var->file_name + l, "%05d", var_index);
       if (var->last_time_step == time_step)
         retval.queried = true;
       else
