@@ -72,7 +72,6 @@ typedef struct {
   bool  compute_porosity_from_scan;
   char *file_name;
   char *output_name;
-  bool  scan_is_compressed;
   bool  postprocess_points;
   /*! Matrix of associated transformation
      (3x4 matrix, 3 first rows of a homogeneous

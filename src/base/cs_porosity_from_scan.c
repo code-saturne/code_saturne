@@ -33,11 +33,6 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <zlib.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -115,7 +110,6 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_name = NULL,
   .output_name = NULL,
-  .scan_is_compressed = false,
   .postprocess_points = true,
   .transformation_matrix = {{1., 0., 0., 0.},
                             {0., 1., 0., 0.},
@@ -133,11 +127,6 @@ cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt
 = &_porosity_from_scan_opt;
 
 static  ple_locator_t  *_locator = NULL;  /* PLE locator */
-static int _max_line_size = 100;
-static const int _eol_detected = 0;
-static const int _end_of_stream = 1;
-static const int _data_err = 2;
-static uLong _offset;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -152,309 +141,7 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize a zlib stream
- *
- * parameters: - strm, a z_stream object
- *             - f, the file mapped to memory
- *             - size, the size of the file
- *             - offset, the offset to apply
- * ---------------------------------------------------------------------------*/
-
-static void
-_init_zlib_strm(z_stream *strm, char *f, size_t size, const uLong offset) {
-
-  /* Init the object */
-  strm->zalloc = Z_NULL;
-  strm->zfree = Z_NULL;
-  strm->opaque = Z_NULL;
-  strm->avail_in = size;
-  strm->next_in = (Bytef *)f;
-
-  /* Apply offset */
-  strm->avail_in -= offset;
-  strm->next_in += offset;
-
-  /* Init the stream */
-  if (inflateInit2(strm, 32+15) != Z_OK)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Porosity from scan: zlib could not initialize the stream"));
-}
-
-/*----------------------------------------------------------------------------
- * Finalize a zlib stream
- *
- * parameter: - strm, a z_stream object
- * ---------------------------------------------------------------------------*/
-
-static void
-_finalize_zlib_strm(z_stream *strm) {
-
-  if (inflateEnd(strm) != Z_OK)
-    bft_error(__FILE__,__LINE__, 0,
-              _("Porosity from scan: zlib could not finalize the stream"));
-
-}
-
-/*----------------------------------------------------------------------------
- * Close the scan file
- *
- *  parameters : - file, the uncompressed file
- *               - f, the compressed file
- *               - size, the size of the compressed file
- *               - strm, a z_stream object
- *  ----------------------------------------------------------------------------*/
-
-static void
-_finalize_scan_file(FILE *file, char *f, size_t size, z_stream *strm) {
-
-  if (_porosity_from_scan_opt.scan_is_compressed) {
-
-    _finalize_zlib_strm(strm);
-
-    if (munmap(f, size) != 0)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: error in munmap"));
-
-  } else {
-
-    if (fclose(file) != 0)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: error when closing the file"));
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Open the scan file
- *
- * parameters: - file, the uncompressed file
- *             - f, the compressed file
- *             - size, the size of the compressed file
- *             - strm, the compressed stream
- *----------------------------------------------------------------------------*/
-
-static void
-_init_scan_file(FILE **file,
-                char **f,
-                size_t *size,
-                z_stream *strm) {
-
-  if (_porosity_from_scan_opt.scan_is_compressed) {
-
-    /* Open the compressed file */
-    const int fd = open(_porosity_from_scan_opt.file_name, O_RDONLY);
-    if (fd == -1)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Could not open .gz file."));
-
-    /* Get the size of the file */
-    struct stat s;
-    if (fstat(fd, &s) != 0)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Could not get the size of the file"));
-
-    /* Size must be a multiple of system page size */
-    const long pagesize = sysconf(_SC_PAGE_SIZE);
-    *size = s.st_size + pagesize - s.st_size%pagesize;
-
-    /* Map file to memory */
-    (*f) = (char *) mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, (off_t) 0);
-    if ((*f) == MAP_FAILED)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Error in mmap"));
-
-    /* Initialize zlib strm object with 0 offset */
-    _init_zlib_strm(strm, *f, *size, 0);
-
-  } else {
-
-    /* Open the text file */
-    *file = fopen(_porosity_from_scan_opt.file_name, "rt");
-    if (file == NULL)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Could not open file."));
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Read one line from the compressed stream
- *
- * parameters: - strm, the compressed stream
- *             - line, the line extracted
- *----------------------------------------------------------------------------*/
-
-static int
-_get_line_from_stream(z_stream *strm, char *line){
-
-  /* Read max. _max_line_size characters */
-  for (int i=0; i<_max_line_size; i++)
-  {
-    /* Only one byte at a time */
-    strm->avail_out = (uInt)1;              // Size of output
-    strm->next_out = (Bytef *) (line + i);  // Output location
-
-    /* Inflate, check errors, return if end of stream */
-    switch(inflate(strm, Z_NO_FLUSH))
-    {
-      case Z_OK:
-        break;
-      case Z_NEED_DICT:
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: inflate error Z_NEED_DICT\n"));
-        break;
-      case Z_DATA_ERROR:
-        return _data_err;
-      case Z_BUF_ERROR:
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: inflate error Z_BUF_ERROR\n"));
-        break;
-      case Z_STREAM_END:
-        return _end_of_stream;
-      default:
-        bft_error(__FILE__,__LINE__, 0,
-                  _("Porosity from scan: inflate error\n"));
-    }
-
-    /* Return if end-of-line */
-    if (line[i] == '\n' || line[i] == '\r')
-    {
-      /* Except if the line starts with EOL */
-      if (i == 0)
-      {
-        i--;
-        continue;
-      }
-      line[i] = '\0';
-      return _eol_detected;
-    }
-  }
-  bft_error(__FILE__,__LINE__, 0,
-            _("Porosity from scan: increase _max_line_size\n"));
-  return 0;
-
-}
-
-/*----------------------------------------------------------------------------
- * If the end of the scan file is not reached, return the number of points
- *
- * paramters: - file, the uncompressed file
- *            - strm, the compressed stream
- *---------------------------------------------------------------------------*/
-
-static long int
-_is_end_of_scan(FILE *file,
-                char *f,
-                size_t size,
-                z_stream *strm) {
-
-  long int n_points = 0;
-  char line[_max_line_size+1];
-
-  if (!_porosity_from_scan_opt.scan_is_compressed) {
-
-    if (fgets(line, sizeof(line), file) != NULL)
-      n_points = strtol(line, NULL, 10);
-
-  } else {
-
-    int ret = _get_line_from_stream(strm, line);
-    if (ret == _eol_detected) {
-
-      /* The next scan is in the same compressed stream */
-      n_points = strtol(line, NULL, 10);
-
-    } else if (ret == _end_of_stream) {
-
-      /* End of stream reached, try to use the next stream */
-      _offset += strm->total_in;
-
-      /* Use the next compressed stream */
-      _finalize_zlib_strm(strm);
-      _init_zlib_strm(strm, f, size, _offset);
-      ret = _get_line_from_stream(strm, line);
-      if (ret == _eol_detected)
-        n_points = strtol(line, NULL, 10);
-    }
-  }
-
-  return n_points;
-}
-
-/*----------------------------------------------------------------------------
- * Read the number of points from the scan file
- *
- * parameters: - file, the uncompressed file
- *             - strm, the compressed stream
- *----------------------------------------------------------------------------*/
-
-static long int
-_get_n_points(FILE *file,
-              z_stream *strm) {
-
-  long int n_points = 0;
-  if (!_porosity_from_scan_opt.scan_is_compressed) {
-    if (fscanf(file, "%ld\n", &n_points) != 1)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Could not read the number of lines\n"));
-  } else {
-    char line[_max_line_size+1];
-    if (_get_line_from_stream(strm, line) != _eol_detected)
-      bft_error(__FILE__,__LINE__, 0,
-                _("Porosity from scan: Could not read the number of lines\n"));
-    n_points = strtol(line, NULL, 10);
-  }
-  return n_points;
-}
-
-/*----------------------------------------------------------------------------
- * Read one point from the scan file
- *
- * parameters: - file, the uncompressed file
- *             - strm, the compressed stream
- *             - location, the spatial coordinates
- *             - num, the intensity
- *             - red, the red value
- *             - green, the green value
- *             - blue, the blue value
- *----------------------------------------------------------------------------*/
-
-static void
-_get_new_point(FILE *file,
-               z_stream *strm,
-               cs_real_t *location,
-               int *num,
-               int *red,
-               int *green,
-               int *blue) {
-
-  char line[_max_line_size+1];
-  if (!_porosity_from_scan_opt.scan_is_compressed) {
-    char *ret = fgets(line, sizeof(line), file);
-    assert (ret != NULL);
-  } else {
-    int ret = _get_line_from_stream(strm, line);
-    assert(ret == _eol_detected);
-  }
-  char *endptr;
-  location[0] = strtod(line, &endptr);
-  assert(line != endptr);
-  location[1] = strtod(line, &endptr);
-  assert(line != endptr);
-  location[2] = strtod(line, &endptr);
-  assert(line != endptr);
-  *num = strtod(line, &endptr);
-  assert(line != endptr);
-  *red = strtod(line, &endptr);
-  assert(line != endptr);
-  *green = strtod(line, &endptr);
-  assert(line != endptr);
-  *blue = strtod(line, &endptr);
-  assert(line != endptr);
-
-}
-
-/*----------------------------------------------------------------------------
- * Read a file with multiple scans and set porosity accordingly.
+ * Function
  *
  * parameters:
  *----------------------------------------------------------------------------*/
@@ -463,14 +150,14 @@ static void
 _count_from_file(const cs_mesh_t *m,
                  const cs_mesh_quantities_t *mq) {
 
+  char line[512];
+
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
   /* Open file */
   bft_printf(_("\n\n  Compute the porosity from a scan points file:\n"
                "    %s\n\n"),
              _porosity_from_scan_opt.file_name);
-  if (_porosity_from_scan_opt.scan_is_compressed)
-    bft_printf(_("  Compressed file detected\n\n"));
 
   bft_printf(_("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
                "  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
@@ -489,22 +176,20 @@ _count_from_file(const cs_mesh_t *m,
              _porosity_from_scan_opt.transformation_matrix[2][2],
              _porosity_from_scan_opt.transformation_matrix[2][3]);
 
-  /* Open the text file or the compressed file */
-  FILE *file = NULL;
-  char *f = NULL;
-  size_t size;
-  z_stream strm;
-  _offset = 0;
-  _init_scan_file(&file, &f, &size, &strm);
+  FILE *file = fopen(_porosity_from_scan_opt.file_name, "rt");
+  if (file == NULL)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not open file."));
 
-  /* Initialize */
   long int n_read_points = 0;
   long int n_points = 0;
   cs_real_t min_vec_tot[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
   cs_real_t max_vec_tot[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
-  /* Read the number of points in the next scan */
-  n_read_points = _get_n_points(file, &strm);
+  if (fscanf(file, "%ld\n", &n_read_points) != 1)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not read the number of lines."));
+
   bft_printf(_("  Porosity from scan: %ld points to be read.\n\n"),
              n_read_points);
 
@@ -521,7 +206,7 @@ _count_from_file(const cs_mesh_t *m,
 
   fvm_nodal_make_vertices_private(location_mesh);
 
-  /* Read one file with multiple scans
+  /* Read multiple scan file
    * ----------------------- */
 
   for (int n_scan = 0; n_read_points > 0; n_scan++) {
@@ -536,25 +221,52 @@ _count_from_file(const cs_mesh_t *m,
 
     /* Read points */
     for (int i = 0; i < n_points; i++ ) {
-
-      /* Read one line */
       int num, green, red, blue;
-      cs_real_t xyz[4];
-      _get_new_point(file, &strm, xyz, &num, &red, &green, &blue);
-
-      /* Apply translation / rotation */
+      cs_real_4_t xyz;
       for (int j = 0; j < 3; j++)
         point_coords[i][j] = 0.;
+
+      if (fscanf(file, "%lf", &(xyz[0])) != 1)
+        bft_error
+          (__FILE__,__LINE__, 0,
+           _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
+      if (fscanf(file, "%lf", &(xyz[1])) != 1)
+        bft_error
+          (__FILE__,__LINE__, 0,
+           _("Porosity from scan: Error while reading dataset."));
+      if (fscanf(file, "%lf", &(xyz[2])) != 1)
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
+
+      /* Translation and rotation */
       xyz[3] = 1.;
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 4; k++)
           point_coords[i][j]
             += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
 
-        /* Update bounding box*/
+        /* Compute bounding box*/
         min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
         max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
       }
+
+      /* Intensities */
+      if (fscanf(file, "%d", &num) != 1)
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
+
+      /* Red */
+      if (fscanf(file, "%d", &red) != 1)
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
+      /* Green */
+      if (fscanf(file, "%d", &green) != 1)
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
+      /* Blue */
+      if (fscanf(file, "%d\n", &blue) != 1)
+        bft_error(__FILE__,__LINE__, 0,
+                  _("Porosity from scan: Error while reading dataset."));
 
       /* When colors are written as int, Paraview intreprates them in [0, 255]
        * when they are written as float, Paraview interprates them in [0., 1.]
@@ -563,6 +275,12 @@ _count_from_file(const cs_mesh_t *m,
       colors[3*i + 1] = green/255.;
       colors[3*i + 2] = blue/255.;
     }
+
+    /* Check EOF was correctly reached */
+    if (fgets(line, sizeof(line), file) != NULL)
+      n_read_points = strtol(line, NULL, 10);
+    else
+      n_read_points = 0;
 
     /* Bounding box*/
     bft_printf(_("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
@@ -575,8 +293,7 @@ _count_from_file(const cs_mesh_t *m,
       max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
     }
 
-    /* Check EOF was correctly reached */
-    n_read_points = _is_end_of_scan(file, f, size, &strm);
+
     if (n_read_points > 0)
       bft_printf
         (_("  Porosity from scan: %ld additional points to be read.\n\n"),
@@ -707,7 +424,7 @@ _count_from_file(const cs_mesh_t *m,
 
     for (int i = 0; i < n_points_loc; i++) {
       if (elt_ids[i] >= 0) { /* Found */
-        /* Could be improved with a parallel reading */
+        /* Could be improved with a prallel reading */
         f_nb_scan->val[elt_ids[i]] += 1./cs_glob_n_ranks;
       }
     }
@@ -724,8 +441,9 @@ _count_from_file(const cs_mesh_t *m,
       min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
       max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
 
-  /* Scan file is not needed anymore */
-  _finalize_scan_file(file, f, size, &strm);
+  if (fclose(file) != 0)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Porosity from scan: Could not close the file."));
 
   /* Nodal mesh is not needed anymore */
   location_mesh = fvm_nodal_destroy(location_mesh);
@@ -831,11 +549,6 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
              char);
 
   sprintf(_porosity_from_scan_opt.file_name, "%s", file_name);
-
-  /* Check if the file ends with ".gz" */
-  if (strlen(file_name) < 3) return;
-  _porosity_from_scan_opt.scan_is_compressed =
-    strcmp(file_name+strlen(file_name)-3, ".gz") == 0;
 }
 
 /*----------------------------------------------------------------------------*/
