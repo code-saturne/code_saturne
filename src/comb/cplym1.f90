@@ -475,16 +475,13 @@ enddo
 !    ATTENTION : ON SE LIMITE POUR L'INSTANT A INDPDF = 3 SUPPORT (I4,M)
 !===============================================================================
 
-
 ! -->  I7 = I4 : F1I7 = F2I7 = F3I7 = 0
 !                F4I7 = 1
 
 ! -->  RELATIONS SUR LE SUPPORT DE LA PDF
 !        FJ = FJM + CJ*S avec CJ = (FJM-FJI7)/SI7 (J = 1 a 4)
 
-! Devectorisation de la boucle pour VPP 5000
-
-!CDIR NOVECTOR
+!cdir novector
 
 do iel = 1, ncel
 
@@ -915,8 +912,6 @@ do iel = 1, ncel
 
 enddo
 
-
-
 !===============================================================================
 ! 5.  IMPRESSION
 !===============================================================================
@@ -953,7 +948,7 @@ n30 = 0
 n31 = 0
 n32 = 0
 
-! --> Controle des differentes valeurs des fractions massiques
+! Controle des differentes valeurs des fractions massiques
 
 do iel = 1, ncel
   somm = fuel1(iel) + fuel2(iel) + fuel3(iel) + oxyd(iel)         &
@@ -976,7 +971,7 @@ do iel = 1, ncel
   if ( abs(somm-1.d0).lt.epsicp )    n3  = n3 +1
 enddo
 
-! --> Controle des parametres de la pdf
+! Controle des parametres de la pdf
 
 do iel = 1, ncel
   if ( indpdf(iel).ne.0 ) then
@@ -1050,7 +1045,6 @@ if (irangp.ge.0) then
   inttmp(31) = n31
   inttmp(32) = n32
   call parism(nbrint,inttmp)
-  !==========
 endif
 
 write(nfecra,1000) n1 , n27
@@ -1065,70 +1059,52 @@ write(nfecra,2200) n1 , n3 , n14, n15, n16, n17, n18, n19, n20
 !-------
 
  1000 format (/,                                                  &
-'MODELISATION DE LA COMBUSTION AVEC LE MODELE DE DIFFUSION ',     &
-'TURBULENTE (CPLYM1)',/,                                    &
-'CHIMIE RAPIDE A 3 CORPS - EXTENSION A 3 COMBUSTIBLES ',          &
-'(Application au CP)',/,                                    &
-'==========================================================',     &
-'==================',/,                                     &
-' Nb de points de calculs                                     = ',&
-   i9,/,                                                    &
-' Nb de points turbulents (passage par les PDF)               = ',&
+'Combustion modeling with turbulent diffusion model (cplym1)',/,  &
+'Fast 3-point chemistry - extension to 3 combustibles ',          &
+'(application to pulverized coal)',/,                             &
+'======================================================',         &
+'================================', /,                            &
+' Number of computation points                                = ', i9,/,  &
+' Number of turbulent turbulents (using the PDFs)             = ',&
    i9)
 
  1100 format(                                                           &
 ! ..v.7..1....v    ....2....v....3....v....4....v....5....v....6....v....7.I
-' Nb de points turbulents pour lesquels I7 app. [I4,L3] T12   = ',&
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 app. [I4,L5] T2    = ',&
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 app. [I4,L5] T13   = ',&
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 app. [L5,I3max] T11= ',&
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 = I4  T3           = ',&
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 domaine P     = ',     &
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I7 domaine I     = ',     &
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I8 domaine P     = ',     &
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I8 domaine I     = ',     &
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I8 domaine R     = ',     &
-   i9,/,                                                    &
-' - - - - - - - - - - - - pour lesquels I8 domaine HR    = ',     &
-   i9)
+' N. turbulent points for which:  I7 in [I4,L3] T12    : ', i9,/,  &
+' - - - - - - - - - - - - - - - - I7 in [I4,L5] T2     : ', i9,/,  &
+' - - - - - - - - - - - - - - - - I7 in [I4,L5] T13    : ', i9,/, &
+' - - - - - - - - - - - - - - - - I7 in [L5,I3max] T11 : ', i9,/, &
+' - - - - - - - - - - - - - - - - I7 = I4  T3          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I7 domain P          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I7 domain I          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I8 domain P          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I8 domain I          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I8 domain R          : ', i9,/, &
+' - - - - - - - - - - - - - - - - I8 domain HR         : ', i9)
 
- 2000 format(                                                           &
-'PDF CONJOINTE DEGENEREE EN PDF MONODIMENSIONNELLE',/,      &
-' Nb de points PDF rectangle sans Dirac            = ',I9,/,&
-' - - - - - - - - - - - - -  et Dirac en I7        = ',I9,/,&
-' - - - - - - - - - - - - -  et Dirac en I8        = ',I9,/,&
-' - - - - - - - - - - - - -  et Diracs en I8 et I7 = ',I9)
+ 2000 format(                                                 &
+'Degenerate joint PDF in monodimensional PDF',/,              &
+' N. rectangle PDF points without Dirac            : ', i9,/, &
+' - - - - - - - - - - - -  and Dirac in i7         : ', i9,/, &
+' - - - - - - - - - - - -  and Dirac in i8         : ', i9,/, &
+' - - - - - - - - - - - -  and Diracs in i8 and I7 : ', i9)
 
- 2100 format(                                                           &
-'CONTROLE DES PARAMETRES DE LA PDF',/,                      &
-' Nb de points turbulents (passage par les PDF)              = ', &
-   i9,/,                                                    &
-' Nb de points turbulents pour lesquels VARS est physique    = ', &
-   i9,/                                                           &
-' Nb de points Dirac_I7, Dirac_I8, HAUT < 0  = ',I9,I9,I9,/,&
-' Nb de points Abs.Deb < SI7 ou > SI8        = ', I9,/,     &
-' Nb de points Abs.Fin < SI7 ou > SI8        = ', I9,/,     &
-' Nb de points (Abs.Fin-Abs.Deb) < 0         = ', I9)
+ 2100 format(                                                 &
+'PDF parameters check',/,                                     &
+' N. turbulent points (using PDFs)                 : ', i9,/, &
+' N. turbulent points for which VARS is physical   : ', i9,/, &
+' N. points Dirac_I7, Dirac_I8, HIGH < 0           : ', i9, i9, i9,/,&
+' N. points Abs.Start < SI7 or > SI8               : ', i9,/, &
+' N. points Abs.End < SI7 or > SI8                 : ', i9,/, &
+' N. points (Abs.End-Abs.Start) < 0                : ', i9)
 
- 2200 format(                                                           &
-'CONTROLE DES VALEURS DES FRACTIONS MASSIQUES',/,           &
-' Nb de points de calculs                                    = ', &
-   i9,/,                                                    &
-' Nb de points de calculs qui respectent somme des Yi = 1    = ', &
-   i9,/,                                                    &
-' Nb de points YCHx1m,YCHx2m,YCO < 0 ou > 1 = ',I9,I9,I9,/, &
-' Nb de points YO2,YN2        < 0 ou > 1    = ',I9,I9,/,    &
-' Nb de points YCO2,YH2O      < 0 ou > 1    = ',I9,I9)
-
+ 2200 format(                                                 &
+'Mass fraction values check',/,                               &
+' N. computation points                            : ', i9,/, &
+' N. computation points respecting sum of Yi = 1   : ', i9,/, &
+' N. points YCHx1m, YCHx2m, YCO < 0 or > 1         : ', i9, i9, i9,/, &
+' N. points YO2,YN2             < 0 or > 1         : ', i9, i9,/, &
+' N. points YCO2,YH2O           < 0 or > 1         : ', i9,i9)
 
 return
 end subroutine
