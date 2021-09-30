@@ -662,8 +662,9 @@ class domain(base_domain):
         # Create the src folder if there are files to compile in source path
 
         src_files = []
-        if os.path.exists(self.src_dir):
-            src_files = cs_compile.files_to_compile(self.src_dir)
+        if self.src_dir != None:
+            if os.path.exists(self.src_dir):
+                src_files = cs_compile.files_to_compile(self.src_dir)
         if len(src_files) > 0:
             exec_src = os.path.join(self.exec_dir, 'src')
 
@@ -683,7 +684,9 @@ class domain(base_domain):
 
         # Copy data files
 
-        dir_files = os.listdir(self.data_dir)
+        dir_files = []
+        if self.data_dir != self.exec_dir:
+            dir_files = os.listdir(self.data_dir)
 
         if self.package.name in dir_files:
             dir_files.remove(self.package.name)
