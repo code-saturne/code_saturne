@@ -50,6 +50,8 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_log.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
@@ -2146,6 +2148,25 @@ cs_time_moment_update_all(void)
         mt->nt_cur = ts->nt_cur;
 
         BFT_FREE(x);
+
+        /* Sync ghost cells so downstream use is safe */
+
+        if (mt->location_id == CS_MESH_LOCATION_CELLS) {
+          const cs_halo_t *halo = cs_glob_mesh->halo;
+          if (halo != NULL) {
+            if (mt->dim == 1)
+              cs_halo_sync_var(halo, CS_HALO_EXTENDED, val);
+            else {
+              cs_halo_sync_var_strided(halo, CS_HALO_EXTENDED, val, mt->dim);
+              if (halo->n_transforms > 0) {
+                if (mt->dim == 3)
+                  cs_halo_perio_sync_var_vect(halo, CS_HALO_EXTENDED, val, 3);
+                else if (mt->dim == 6)
+                  cs_halo_perio_sync_var_sym_tens(halo, CS_HALO_EXTENDED, val);
+              }
+            }
+          }
+        }
 
       } /* End of test if moment is active */
 

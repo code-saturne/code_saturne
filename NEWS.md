@@ -3,8 +3,12 @@ Release 7.0.2 (not released yet)
 
 Bug fixes:
 
+- Time moments: fix issue with interpolation on probes and profiles due
+  to missing ghost cell synchronization.
+
 - Atmospheric module: fixes in Monin-Obukhov boundary conditions an smooth
   wall functions.
+
 - CDO: Fix convection operator for upwind schemes. This fixes an issue
   for the segregation model in the solidification module at least.
 
