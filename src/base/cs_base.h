@@ -50,14 +50,8 @@
 
 /* System type name */
 
-#if defined(__bg__)
-#define _CS_ARCH_Blue_Gene
-
-#elif defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(__linux__) || defined(__linux) || defined(linux)
 #define _CS_ARCH_Linux
-
-#elif defined(__sun__) || defined(__sun) || defined(sun)
-#define _CS_ARCH_SunOS
 
 #endif
 

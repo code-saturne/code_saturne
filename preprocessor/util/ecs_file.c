@@ -27,14 +27,14 @@
 #include "cs_config.h"
 
 /*
-  Force LARGEFILE_SOURCE if largefiles enabled under 32-bit Linux or Blue Gene
+  Force LARGEFILE_SOURCE if largefiles enabled under 32-bit Linux
   (otherwise, we may encounter bugs with glibc 2.3 due to fseeko end ftello
   not being correctly defined). Compiling with -D_GNU_SOURCE instead
   of -D_POSIX_C_SOURCE=200112L seems to be another way to solve the problem.
 */
 
 #if (SIZEOF_LONG < 8) && (_FILE_OFFSET_BITS == 64)
-# if defined(__linux__) || defined(__blrts__) || defined(__bgp__)
+# if defined(__linux__)
 #  if !defined(_POSIX_SOURCE)
 #    define _GNU_SOURCE 1
 #  endif

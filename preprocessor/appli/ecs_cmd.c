@@ -67,9 +67,6 @@
 #endif
 
 #if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-#  if defined(__uxpv__) && defined(HAVE_SYS_TYPES_H)
-#  include <sys/types.h> /* Workaround: missing include on VPP500 */
-#  endif
 #include <sys/sysinfo.h>
 #endif
 

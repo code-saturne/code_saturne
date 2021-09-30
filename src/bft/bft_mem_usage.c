@@ -28,17 +28,6 @@
 
 /*-----------------------------------------------------------------------------*/
 
-/* On Solaris, procfs may not be compiled in a largefile environment,
- * so we redefine macros before including any system header file. */
-
-#if (defined(__solaris__) || defined(__sunos__)) \
-   && defined(HAVE_UNISTD_H) \
-   && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
-#define _STRUCTURED_PROC 1
-#undef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 32
-#endif
-
 /*
  * Standard C library headers
  */
@@ -61,24 +50,6 @@
 #include <sys/syscall.h>
 #include <sys/procfs.h>
 #include <unistd.h>
-
-#elif (defined(__solaris__) || defined(__sunos__)) && defined(HAVE_UNISTD_H) \
-    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
-#include <sys/types.h>
-#include <sys/procfs.h>
-#include <unistd.h>
-
-#elif (defined(IRIX64) || defined(__uxpv__))
-#if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
-                           && defined(HAVE_SYS_STAT_H)
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
-#elif (defined(__aix__) || defined(__AIX__)) && defined(HAVE_GETRUSAGE)
-#include <sys/times.h>
-#include <sys/resource.h>
 
 #elif defined(HAVE_GETRUSAGE)
 #include <sys/time.h>
@@ -573,111 +544,6 @@ bft_mem_usage_pr_size(void)
     } /* End of condition on "VmSize:" and "VmPeak:" availability */
 
   }
-
-  if (sys_mem_usage > _bft_mem_usage_global_max_pr)
-    _bft_mem_usage_global_max_pr = sys_mem_usage;
-
-  return sys_mem_usage;
-}
-
-#elif defined (__osf__) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
-
-size_t
-bft_mem_usage_pr_size(void)
-{
-  size_t sys_mem_usage = 0;
-
-  /* On Compaq Tru64 Unix */
-  {
-    char        buf[81];  /* should be large enough for "/proc/%lu/status" */
-    int         procfile;
-    prpsinfo_t  p;
-
-    const  pid_t  pid = getpid();
-
-    sprintf (buf, "/proc/%05lu", (unsigned long) pid);
-
-    procfile = open(buf, O_RDONLY);
-
-    if (procfile != -1) {
-
-      if (ioctl(procfile, PIOCPSINFO, &p) != -1)
-        sys_mem_usage  = (p.pr_size * getpagesize()) / 1024;
-
-      close(procfile);
-
-    }
-
-  }
-
-  if (sys_mem_usage > _bft_mem_usage_global_max_pr)
-    _bft_mem_usage_global_max_pr = sys_mem_usage;
-
-  return sys_mem_usage;
-}
-
-#elif (defined(__solaris__) || defined(__sunos__)) && defined(HAVE_UNISTD_H) \
-    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
-
-size_t
-bft_mem_usage_pr_size(void)
-{
-  size_t sys_mem_usage = 0;
-
-  {
-    /* We have binary pseudo-files /proc/pid/status and /proc/pid/psinfo */
-
-    char   buf[81];     /* should be large enough for "/proc/%lu/status" */
-    const  unsigned long  pid = getpid ();
-
-    FILE     *fp;
-    int       val;
-    char     *s ;
-    size_t    ret;
-    psinfo_t  pid_info;
-
-    sprintf (buf, "/proc/%lu/psinfo", pid);
-
-    fp = fopen (buf, "r");
-    if (fp != NULL) {
-      ret = fread(&pid_info, sizeof(pid_info), 1, fp);
-      if (ret == 1)
-        sys_mem_usage = pid_info.pr_size;
-      fclose (fp);
-    }
-
-  }
-
-  if (sys_mem_usage > _bft_mem_usage_global_max_pr)
-    _bft_mem_usage_global_max_pr = sys_mem_usage;
-
-  return sys_mem_usage;
-}
-
-#elif (defined(IRIX64) || defined(__uxpv__))
-
-size_t
-bft_mem_usage_pr_size(void)
-{
-  size_t sys_mem_usage = 0;
-
-#if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
- && defined(HAVE_SYS_STAT_H)
-  /* On SGI IRIX64 and Fujitsu VPP 5000, what follows should work */
-
-  {
-    char   buf[81];     /* should be large enough for "/proc/%lu/status" */
-    const  pid_t  pid = getpid ();
-
-    struct stat file_stat;
-
-    sprintf (buf, "/proc/%05lu", (unsigned long) pid);
-
-    if (stat (buf, &file_stat) != -1)
-      sys_mem_usage = file_stat.st_size / 1024;
-
-  }
-#endif /* HAVE_UNISTD_H and SYS_TYPES_H and SYS_STAT_H */
 
   if (sys_mem_usage > _bft_mem_usage_global_max_pr)
     _bft_mem_usage_global_max_pr = sys_mem_usage;

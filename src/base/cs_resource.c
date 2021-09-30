@@ -26,9 +26,6 @@
 
 #include "cs_defs.h"
 
-#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
-#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/

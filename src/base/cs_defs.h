@@ -528,16 +528,12 @@ typedef enum {
 
 /*
  * Macro used to handle automatic "Fortran string length" arguments
- * (not used by Code_Saturne calls, but set by many compilers).
- * Some compilers, like the Fujitsu VPP 5000 compiler in its time, may not
+ * (not used by code_saturne calls, but set by many compilers).
+ * Some compilers may not
  * support the variable length lists in mixed C/Fortran calls.
  */
 
-#if defined (__uxpv__)  /* Fujitsu VPP 5000 case */
-#define CS_ARGF_SUPP_CHAINE
-#else
 #define CS_ARGF_SUPP_CHAINE , ...
-#endif
 
 /*=============================================================================
  * Global variables
