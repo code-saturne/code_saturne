@@ -280,6 +280,27 @@ _field_output(void           *context,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Close the file associated with a given writer.
+ *
+ * This assumes w->f != NULL on entry.
+ *
+ * parameters:
+ *   w <-- pointer to associated writer
+ *----------------------------------------------------------------------------*/
+
+static void
+_file_close(fvm_to_plot_writer_t  *w)
+{
+  assert(w->f != NULL);
+
+  if (fclose(w->f) != 0)
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error closing file: \"%s\""), w->file_name);
+
+  w->f = NULL;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -420,6 +441,9 @@ fvm_to_plot_finalize_writer(void  *writer)
 
   fvm_to_plot_flush(writer);
 
+  if (w->f != NULL)
+    _file_close(w);
+
   BFT_FREE(w->file_name);
 
   BFT_FREE(w);
@@ -443,11 +467,15 @@ fvm_to_plot_set_mesh_time(void    *writer,
 {
   fvm_to_plot_writer_t  *w = (fvm_to_plot_writer_t *)writer;
 
+  if (w->nt != time_step) {
+    if (w->n_cols > 0)
+      fvm_to_plot_flush(writer);
+    if (w->f != NULL)
+      _file_close(w);
+  }
   w->nt = time_step;
   w->t = time_value;
 
-  if (w->n_cols > 0)
-    fvm_to_plot_flush(writer);
 }
 
 /*----------------------------------------------------------------------------
@@ -665,11 +693,7 @@ fvm_to_plot_flush(void  *writer)
     w->n_cols = 0;
     w->n_cols_max = 0;
 
-    if (fclose(w->f) != 0)
-      bft_error(__FILE__, __LINE__, errno,
-                _("Error closing file: \"%s\""), w->file_name);
-
-    w->f = NULL;
+    _file_close(w);
 
   }
 
