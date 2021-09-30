@@ -131,7 +131,7 @@ cs_user_porosity(cs_domain_t   *domain)
 
   /*!< [set_poro_cells_1] */
 
-  /* Set interior face values */
+  /* Set interior face values (for cs_glob_porous_model == 3 only) */
 
   /*!< [set_poro_i_faces_1] */
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
@@ -150,7 +150,7 @@ cs_user_porosity(cs_domain_t   *domain)
   }
   /*!< [set_poro_i_faces_1] */
 
-  /* Set boundary face values */
+  /* Set boundary face values  (for cs_glob_porous_model == 3 only) */
 
   /*!< [set_poro_b_faces_1] */
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {

@@ -69,7 +69,8 @@
 
   \snippet cs_user_porosity.c set_poro_cells_1
 
-  Matching face equivalent surfaces should also be assigned in a
+  When using the integral porosity model (cs_glob_porous_model == 3),
+  the matching face equivalent surfaces can also be assigned in a
   corresponding manner, for interior faces:
 
   \snippet cs_user_porosity.c set_poro_i_faces_1
@@ -77,6 +78,9 @@
   and for boundary faces:
 
   \snippet cs_user_porosity.c set_poro_b_faces_1
+
+  When not defined in this way, face porosities will match the lowest
+  adjacent cell porosity.
 
   \page base_poro_cad_example Setting porosity values from a CAD file
 
