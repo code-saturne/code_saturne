@@ -626,6 +626,13 @@ def run_vgdb_debug(path,
             idx = output.find("target remote")
             if idx > -1:
                 cmd = output[idx:].rstrip()
+                # Work around bug on some Debian 10 systems
+                c = cmd.split()
+                if not os.path.isfile(c[3]):
+                    if c[3][:9] == '/usr/lib/':
+                        c[3] = '/usr/bin/vgdb'
+                        if os.path.isfile(c[3]):
+                            cmd = ' '.join(c)
                 try:
                     vgdb_pid = int(cmd[cmd.index("--pid")+6:])
                 except Exception:
