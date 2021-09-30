@@ -1434,7 +1434,7 @@ static void
 _ensure_init_moment(cs_time_moment_t  *mt)
 {
   if (mt->f_id < 0 && mt->val == NULL) {
-    cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+    cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[2];
     cs_lnum_t n_d_elts = n_elts*(cs_lnum_t)(mt->dim);
     BFT_MALLOC(mt->val, n_d_elts, cs_real_t);
     for (cs_lnum_t i = 0; i < n_d_elts; i++)
