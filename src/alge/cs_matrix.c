@@ -1137,7 +1137,7 @@ _b_mat_vec_p_l_native(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication if overlap used */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -1217,7 +1217,7 @@ _bb_mat_vec_p_l_native(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication if overlap used */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -1295,7 +1295,7 @@ _3_3_mat_vec_p_l_native(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -1377,7 +1377,7 @@ _6_6_mat_vec_p_l_native(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication if overlap used */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -1585,7 +1585,7 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication if overlap used */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -1755,7 +1755,7 @@ _b_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
   /* Finalize ghost cell comunication if overlap used */
 
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
@@ -3511,7 +3511,7 @@ _mat_vec_p_l_csr_sym_mkl(const cs_matrix_t   *matrix,
 			 bool                 sync,
 			 cs_real_t            x[restrict],
 			 cs_real_t            y[restrict])
-{  
+{
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
 
@@ -4476,7 +4476,7 @@ _b_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
@@ -4557,7 +4557,7 @@ _3_3_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
@@ -4634,7 +4634,7 @@ _6_6_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
@@ -4740,7 +4740,7 @@ _bb_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
@@ -4835,7 +4835,7 @@ _bb_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
   cs_halo_state_t *hs
     = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
   if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
+    _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
