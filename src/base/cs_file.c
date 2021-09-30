@@ -77,6 +77,10 @@
 #include <limits.h>
 #endif
 
+#if defined(HAVE_ZLIB)
+#include <zlib.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -192,6 +196,10 @@ struct _cs_file_t {
 
   FILE              *sh;           /* Serial file handle */
 
+#if defined(HAVE_ZLIB)
+  gzFile             gzh;          /* Zlib (serial) file handle */
+#endif
+
 #if defined(HAVE_MPI)
   int                rank_step;    /* Rank step between ranks and io ranks */
   cs_gnum_t         *block_size;   /* Block sizes on IO ranks in case
@@ -245,6 +253,38 @@ struct _cs_file_serializer_t {
 
 #endif /* defined(HAVE_MPI) */
 
+/* Offset type for zlib */
+
+#if defined(HAVE_ZLIB)
+
+/* Zlib API may be broken when using large file support, as z_off_t
+   is based on current off_t, and not on a value fixed at compilation time.
+   We redefine prototypes for gzseek() and gztell() ;
+   This is ugly, but not as wrong as zlib's logic, and should work with an
+   unmodified Zlib (as of Zlib 1.2.11). */
+
+#if defined (SIZEOF_Z_OFF_T)
+#  if (SIZEOF_Z_OFF_T == SIZEOF_LONG)
+typedef long _cs_z_off_t;
+#  elif defined (HAVE_LONG_LONG)
+#    if (SIZEOF_Z_OFF_T == SIZEOF_LONG_LONG)
+typedef long long _cs_z_off_t;
+#    else
+#      error "z_off_t returned by zlibCompileFlags() neither long nor long long"
+#    endif
+#  endif
+#else
+typedef z_off_t _cs_z_off_t;
+#endif
+
+typedef _cs_z_off_t (cs_gzseek_t) (gzFile file,
+                                  _cs_z_off_t offset,
+                                   int whence);
+
+typedef _cs_z_off_t (cs_gztell_t) (gzFile file);
+
+#endif /* HAVE_ZLIB */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -270,7 +310,14 @@ static MPI_Info _mpi_io_hints_w = MPI_INFO_NULL;
 
 #endif
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+#if defined(HAVE_ZLIB)
+
+/* Zlib API broken offset size workaround, continued... */
+
+static cs_gzseek_t  *_cs_gzseek = (cs_gzseek_t *)gzseek;
+static cs_gztell_t  *_cs_gztell = (cs_gztell_t *)gztell;
+
+#endif /* HAVE_ZLIB */
 
 /*============================================================================
  * Global variables
@@ -534,6 +581,39 @@ _file_open(cs_file_t  *f)
   if (f->sh != NULL)
     return 0;
 
+  /* Compressed with gzip ? (currently for reading only) */
+
+#if defined(HAVE_ZLIB)
+
+  if (f->gzh != NULL)
+    return 0;
+
+  if (f->mode == CS_FILE_MODE_READ) {
+
+    bool gzipped = false;
+
+    size_t l = strlen(f->name);
+    if (l > 3 && (strncmp((f->name + l-3), ".gz", 3) == 0))
+      gzipped = true;
+
+    if (gzipped) {
+      f->gzh = gzopen(f->name, "r");
+
+      if (f->gzh == NULL) {
+        const char *err_str
+          = (errno == 0) ? zError(Z_MEM_ERROR) : strerror(errno);
+        retval = (errno == 0) ? Z_MEM_ERROR : errno;
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error opening file \"%s\":\n\n"
+                    "  %s"), f->name, err_str);
+      }
+      return retval;
+    }
+
+  }
+
+#endif
+
   /* The file handler exists and the corresponding file is closed */
 
   switch (f->mode) {
@@ -582,6 +662,23 @@ _file_close(cs_file_t  *f)
   if (f->sh != NULL)
     retval = fclose(f->sh);
 
+  /* Compressed with gzip ? (currently for reading only) */
+
+#if defined(HAVE_ZLIB)
+
+  else if (f->gzh != NULL) {
+    retval = gzclose(f->gzh);
+    if (retval != 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error closing file \"%s\":\n\n"
+                  "  %s"), f->name, gzerror(f->gzh, &retval));
+      return retval;
+    }
+    f->gzh = NULL;
+  }
+
+#endif
+
   if (retval != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("Error closing file \"%s\":\n\n"
@@ -614,26 +711,63 @@ _file_read(cs_file_t  *f,
 {
   size_t retval = 0;
 
-  assert(f->sh != NULL);
+  if (f->sh != NULL) {
 
-  if (ni != 0)
-    retval = fread(buf, size, ni, f->sh);
+    if (ni != 0)
+      retval = fread(buf, size, ni, f->sh);
 
-  /* In case of error, determine error type */
+    /* In case of error, determine error type */
 
-  if (retval != ni) {
-    int err_num = ferror(f->sh);
-    if (err_num != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error reading file \"%s\":\n\n  %s"),
-                f->name, strerror(err_num));
-    else if (feof(f->sh) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Premature end of file \"%s\""), f->name);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error reading file \"%s\""), f->name);
+    if (retval != ni) {
+      int err_num = ferror(f->sh);
+      if (err_num != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error reading file \"%s\":\n\n  %s"),
+                  f->name, strerror(err_num));
+      else if (feof(f->sh) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Premature end of file \"%s\""), f->name);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error reading file \"%s\""), f->name);
+    }
+
+    return retval;
   }
+
+#if defined(HAVE_ZLIB)
+
+  else if (f->gzh != NULL) {
+
+    if (ni != 0)
+      retval = fread(buf, size, ni, f->sh);
+
+    size_t rec_size = size * ni;
+
+    retval = ((size_t)gzread(f->gzh, buf, rec_size)) / size;
+
+    if (retval != ni) {
+      int err_num = 0;
+      const char *err_str = gzerror(f->gzh, &err_num);
+      if (err_num != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error reading file \"%s\":\n\n  %s"),
+                  f->name, err_str);
+      else if (gzeof(f->gzh) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Premature end of file \"%s\""), f->name);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error reading file \"%s\""), f->name);
+    }
+
+    return retval;
+
+  }
+
+#endif /* defined(HAVE_ZLIB) */
+
+  assert(0);
 
   return retval;
 }
@@ -713,6 +847,8 @@ _file_seek(cs_file_t       *f,
   int _whence = _stdio_seek[whence];
   int retval = 0;
 
+  const char err_fmt[] = "Error setting position in file \"%s\":\n\n  %s";
+
   /* Convert cs_file_seek to stdio values */
 
   assert(f != NULL);
@@ -728,8 +864,7 @@ _file_seek(cs_file_t       *f,
     retval = fseeko(f->sh, (off_t)offset, _whence);
 
     if (retval != 0)
-      bft_error(__FILE__, __LINE__, errno,
-                _("Error setting position in file \"%s\":\n\n  %s"),
+      bft_error(__FILE__, __LINE__, errno, _(err_fmt),
                 f->name, strerror(errno));
 # else
 
@@ -740,15 +875,13 @@ _file_seek(cs_file_t       *f,
     if (_offset == offset) {
       retval = fseek(f->sh, (long)offset, _whence);
       if (retval != 0)
-        bft_error(__FILE__, __LINE__, errno,
-                  _("Error setting position in file \"%s\":\n\n  %s"),
+        bft_error(__FILE__, __LINE__, errno, _(err_fmt),
                   f->name, strerror(errno));
     }
     else {
       retval = -1;
       bft_error
-        (__FILE__, __LINE__, 0,
-         _("Error setting position in file \"%s\":\n\n  %s"),
+        (__FILE__, __LINE__, 0, _(err_fmt),
          f->name,
          _("sizeof(off_t) > sizeof(long) but fseeko() not available"));
     }
@@ -761,12 +894,30 @@ _file_seek(cs_file_t       *f,
 
     retval = fseek(f->sh, (long)offset, _whence);
     if (retval != 0)
-      bft_error(__FILE__, __LINE__, errno,
-                _("Error setting position in file \"%s\":\n\n  %s"),
+      bft_error(__FILE__, __LINE__, errno, _(err_fmt),
                 f->name, strerror(errno));
 
 #endif /* SIZEOF_LONG */
   }
+
+#if defined(HAVE_ZLIB)
+
+  else if (f->gzh != NULL) {
+
+    retval = _cs_gzseek(f->gzh, (_cs_z_off_t)offset, _whence);
+
+    if (retval != 0) {
+      int err_num = 0;
+      const char *err_str = gzerror(f->gzh, &err_num);
+      if (err_num == 0)
+        err_str = "";
+
+      bft_error(__FILE__, __LINE__, 0, _(err_fmt),
+                f->name, err_str);
+    }
+  }
+
+#endif
 
   return retval;
 }
@@ -821,7 +972,145 @@ _file_tell(cs_file_t  *f)
               _("Error obtaining position in file \"%s\":\n\n  %s"),
               f->name, strerror(errno));
 
+#if defined(HAVE_ZLIB)
+
+  else if (f->gzh != NULL) {
+    offset = (cs_file_off_t)_cs_gztell(f->gzh);
+
+    if (offset < 0) {
+      int err_num = 0;
+      const char *err_str = gzerror(f->gzh, &err_num);
+      if (err_num == 0)
+        err_str = "";
+
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error obtaining position in file \"%s\":\n\n  %s"),
+                f->name, err_str);
+    }
+  }
+
+#endif
+
   return offset;
+}
+
+/*----------------------------------------------------------------------------
+ * Formatted input from a text file if possible (as fgets()).
+ *
+ * This function is the base for ecs_file_gets() and ecs_file_gets_try();
+ * depending on the allow_eof parameter, failure to read a line due to
+ * an end-of-file condition is considered an error or not.
+ *
+ * parameters:
+ *   s:         --> buffer to which string is to be read.
+ *   size:      <-- maximum number of characters to be read plus one.
+ *   f:         <-- ecs_file_t descriptor.
+ *   line:      <-> file line number if available, or NULL.
+ *   allow_eof: <-- 1 if EOF is allowed, 0 if considered an error.
+ *
+ * returns:
+ *   s on success, NULL on error or when end of file occurs and
+ *   no characters have been read.
+ *----------------------------------------------------------------------------*/
+
+static char *
+_cs_file_gets(char             *s,
+              const int         size,
+              const cs_file_t  *f,
+              int              *line,
+              const int         allow_eof)
+{
+  char *retval = NULL;
+
+  assert(f != NULL);
+
+  if (f->sh != NULL)
+    retval = fgets(s, size, f->sh);
+
+#if defined(HAVE_ZLIB)
+
+  else if (f->gzh != NULL)
+    retval = gzgets(f->gzh, s, size);
+
+#endif /* defined(HAVE_ZLIB) */
+
+  else {
+    if (cs_glob_n_ranks > 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: reading from file \"%s\",\n"
+                  "       which is not open on rank %d."),
+              f->name, cs_glob_rank_id);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error: reading from file \"%s\",\n"
+                  "       which is not open."),
+                f->name);
+  }
+
+  if (retval != NULL) {
+
+    /* Convert Windows type line ending to Unix type line ending if needed */
+    int i = strlen(s) - 2;
+    if (i > 0) {
+      if (s[i] == '\r' && s[i+1] == '\n') {
+        s[i] = '\n';
+        s[i+1] = '\0';
+      }
+    }
+
+    if (line != NULL)
+      *line += 1;
+
+    return retval;
+  }
+
+  /* We should reach this point only in case of a failed read */
+
+  assert(retval == NULL);
+
+  int is_eof = 0;
+  if (allow_eof) {
+    if (feof(f->sh) != 0)
+      is_eof = 1;
+
+#if defined(HAVE_ZLIB)
+    else if (gzeof(f->gzh) != 0)
+      is_eof = 1;
+#endif
+  }
+
+  if (allow_eof == 0 || is_eof == 0) {
+
+    const char *err_str = cs_empty_string;
+
+    if (f->sh != NULL) {
+      int err_num = ferror(f->sh);
+      if (err_num != 0)
+        err_str = strerror(err_num);
+    }
+
+#if defined(HAVE_ZLIB)
+
+    else if (f->gzh != NULL) {
+      int err_num = 0;
+      err_str = gzerror(f->gzh, &err_num);
+      if (err_num == 0)
+        err_str = cs_empty_string;
+    }
+
+#endif /* defined(HAVE_ZLIB) */
+
+    if (line != NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading line %d of file \"%s\":\n\n  %s"),
+                *line, f->name, err_str);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading text file \"%s\":\n\n  %s"),
+                f->name, err_str);
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -2145,6 +2434,10 @@ cs_file_open(const char        *name,
 
   f->sh = NULL;
 
+#if defined(HAVE_ZLIB)
+  f->gzh = NULL;
+#endif
+
 #if defined(HAVE_MPI)
   f->comm = MPI_COMM_NULL;
   f->io_comm = MPI_COMM_NULL;
@@ -3197,6 +3490,57 @@ cs_file_tell(cs_file_t  *f)
   */
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Formatted input from a text file (as fgets()).
+ *
+ * \param [out]      s     buffer to which string is to be read.
+ * \param [in]       size  maximum number of characters to be read plus one.
+ * \param [in]       f     ecs_file_t descriptor.
+ * \param [in, out]  line  file line number if available, or NULL.
+ *
+ * \return s on success, NULL on error or when end of file occurs and
+ *         no characters have been read.
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+cs_file_gets(char             *s,
+             const int         size,
+             const cs_file_t  *f,
+             int              *line)
+{
+  return _cs_file_gets(s, size, f, line, 0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Formatted input from a text file if possible (as fgets()).
+ *
+ * This function is similar to cs_file_gets(), but failure to read
+ * a line due to an end-of-file condition is not considered an error with
+ * this variant, which may be used to read text files or sections thereof
+ * of unknown length.
+ *
+ * \param [out]      s     buffer to which string is to be read.
+ * \param [in]       size  maximum number of characters to be read plus one.
+ * \param [in]       f     cs_file_t descriptor.
+ * \param [in, out]  line  file line number if available, or NULL.
+ *
+ * \return s on success, NULL on error or when end of file occurs and
+ *         no characters have been read.
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+cs_file_gets_try(char             *s,
+                 const int         size,
+                 const cs_file_t  *f,
+                 int              *line)
+{
+  return _cs_file_gets(s, size, f, line, 1);
 }
 
 /*----------------------------------------------------------------------------*/

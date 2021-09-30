@@ -458,6 +458,51 @@ cs_file_seek(cs_file_t       *f,
 cs_file_off_t
 cs_file_tell(cs_file_t  *f);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Formatted input from a text file (as fgets()).
+ *
+ * \param [out]      s     buffer to which string is to be read.
+ * \param [in]       size  maximum number of characters to be read plus one.
+ * \param [in]       f     ecs_file_t descriptor.
+ * \param [in, out]  line  file line number if available, or NULL.
+ *
+ * \return s on success, NULL on error or when end of file occurs and
+ *         no characters have been read.
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+cs_file_gets(char             *s,
+             const int         size,
+             const cs_file_t  *f,
+             int              *line);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Formatted input from a text file if possible (as fgets()).
+ *
+ * This function is similar to cs_file_gets(), but failure to read
+ * a line due to an end-of-file condition is not considered an error with
+ * this variant, which may be used to read text files or sections thereof
+ * of unknown length.
+ *
+ * \param [out]      s     buffer to which string is to be read.
+ * \param [in]       size  maximum number of characters to be read plus one.
+ * \param [in]       f     cs_file_t descriptor.
+ * \param [in, out]  line  file line number if available, or NULL.
+ *
+ * \return s on success, NULL on error or when end of file occurs and
+ *         no characters have been read.
+ */
+/*----------------------------------------------------------------------------*/
+
+char *
+cs_file_gets_try(char              *s,
+                 const int          size,
+                 const cs_file_t   *f,
+                 int               *line);
+
 /*----------------------------------------------------------------------------
  * Dump the metadata of a file structure in human readable form
  *
