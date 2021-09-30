@@ -56,7 +56,6 @@
 #include "fvm_nodal_extract.h"
 #include "fvm_point_location.h"
 
-
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -66,7 +65,6 @@
 #include "cs_field_pointer.h"
 #include "cs_geom.h"
 #include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_io.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -78,11 +76,7 @@
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
 #include "cs_post.h"
-#include "cs_preprocessor_data.h"
-#include "cs_restart.h"
-#include "cs_selector.h"
 #include "cs_timer.h"
-#include "cs_timer_stats.h"
 
 #include "cs_volume_zone.h"
 
@@ -141,14 +135,18 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Function
+ * Prepare computation of porosity from scan points file.
+ *
+ * FIXME: please really explain what this function does.
  *
  * parameters:
+ *   m  <-- pointer to mesh
+ *   mq <-- pointer to mesh quantities
  *----------------------------------------------------------------------------*/
 
 static void
-_count_from_file(const cs_mesh_t *m,
-                 const cs_mesh_quantities_t *mq) {
+_count_from_file(const cs_mesh_t             *m,
+                 const cs_mesh_quantities_t  *mq) {
 
   char line[512];
 
@@ -206,8 +204,8 @@ _count_from_file(const cs_mesh_t *m,
 
   fvm_nodal_make_vertices_private(location_mesh);
 
-  /* Read multiple scan file
-   * ----------------------- */
+  /* Read multiple scan files
+   * ------------------------ */
 
   for (int n_scan = 0; n_read_points > 0; n_scan++) {
     n_points = n_read_points;
@@ -268,8 +266,8 @@ _count_from_file(const cs_mesh_t *m,
         bft_error(__FILE__,__LINE__, 0,
                   _("Porosity from scan: Error while reading dataset."));
 
-      /* When colors are written as int, Paraview intreprates them in [0, 255]
-       * when they are written as float, Paraview interprates them in [0., 1.]
+      /* When colors are written as int, Paraview interprets them in [0, 255]
+       * when they are written as float, Paraview interprets them in [0., 1.]
        * */
       colors[3*i + 0] = red/255.;
       colors[3*i + 1] = green/255.;
@@ -284,8 +282,8 @@ _count_from_file(const cs_mesh_t *m,
 
     /* Bounding box*/
     bft_printf(_("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
-        min_vec[0], min_vec[1], min_vec[2],
-        max_vec[0], max_vec[1], max_vec[2]);
+               min_vec[0], min_vec[1], min_vec[2],
+               max_vec[0], max_vec[1], max_vec[2]);
 
     /* Update global bounding box */
     for (int j = 0; j < 3; j++) {
@@ -293,11 +291,9 @@ _count_from_file(const cs_mesh_t *m,
       max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
     }
 
-
     if (n_read_points > 0)
-      bft_printf
-        (_("  Porosity from scan: %ld additional points to be read.\n\n"),
-         n_read_points);
+      bft_printf(_("  Porosity from scan: %ld additional points to be read.\n\n"),
+                 n_read_points);
 
     /* FVM meshes for writers */
     if (_porosity_from_scan_opt.postprocess_points) {
@@ -307,7 +303,8 @@ _count_from_file(const cs_mesh_t *m,
                    strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
                    char);
         strcpy(fvm_name, _porosity_from_scan_opt.file_name);
-      } else {
+      }
+      else {
         BFT_MALLOC(fvm_name,
                    strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
                    char);
@@ -331,7 +328,6 @@ _count_from_file(const cs_mesh_t *m,
         BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
         for (cs_lnum_t i = 0; i < n_points; i++)
           vtx_gnum[i] = i + 1;
-
 
       }
       fvm_nodal_init_io_num(pts_mesh, vtx_gnum, 0);
@@ -365,7 +361,6 @@ _count_from_file(const cs_mesh_t *m,
                               -1,
                               0.0,
                               (const void * *)var_ptr);
-
 
       /* Free and destroy */
       fvm_writer_finalize(writer);
@@ -438,8 +433,8 @@ _count_from_file(const cs_mesh_t *m,
 
   /* Bounding box*/
   bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
-      min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
-      max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
+             min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
+             max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
 
   if (fclose(file) != 0)
     bft_error(__FILE__,__LINE__, 0,
@@ -458,23 +453,23 @@ _count_from_file(const cs_mesh_t *m,
     }
   }
 
-  cs_real_3_t *restrict i_face_normal =
-     (cs_real_3_t *restrict)mq->i_face_normal;
-  cs_real_3_t *restrict b_face_normal =
-     (cs_real_3_t *restrict)mq->b_face_normal;
-  cs_real_t *restrict i_face_surf =
-     (cs_real_t *restrict)mq->i_face_surf;
-  cs_real_t *restrict b_face_surf =
-     (cs_real_t *restrict)mq->b_face_surf;
+  cs_real_3_t *restrict i_face_normal
+    =  (cs_real_3_t *restrict)mq->i_face_normal;
+  cs_real_3_t *restrict b_face_normal
+    =  (cs_real_3_t *restrict)mq->b_face_normal;
+  cs_real_t *restrict i_face_surf
+    = (cs_real_t *restrict)mq->i_face_surf;
+  cs_real_t *restrict b_face_surf
+    = (cs_real_t *restrict)mq->b_face_surf;
 
-  cs_real_3_t *restrict i_f_face_normal =
-     (cs_real_3_t *restrict)mq->i_f_face_normal;
-  cs_real_3_t *restrict b_f_face_normal =
-     (cs_real_3_t *restrict)mq->b_f_face_normal;
-  cs_real_t *restrict i_f_face_surf =
-     (cs_real_t *restrict)mq->i_f_face_surf;
-  cs_real_t *restrict b_f_face_surf =
-     (cs_real_t *restrict)mq->b_f_face_surf;
+  cs_real_3_t *restrict i_f_face_normal
+    = (cs_real_3_t *restrict)mq->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal
+    = (cs_real_3_t *restrict)mq->b_f_face_normal;
+  cs_real_t *restrict i_f_face_surf
+    = (cs_real_t *restrict)mq->i_f_face_surf;
+  cs_real_t *restrict b_f_face_surf
+    = (cs_real_t *restrict)mq->b_f_face_surf;
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
     cs_lnum_t cell_id1 = m->i_face_cells[face_id][0];
@@ -484,7 +479,8 @@ _count_from_file(const cs_mesh_t *m,
       i_f_face_normal[face_id][1] = 0.;
       i_f_face_normal[face_id][2] = 0.;
       i_f_face_surf[face_id] = 0.;
-    } else {
+    }
+    else {
       i_f_face_normal[face_id][0] = i_face_normal[face_id][0];
       i_f_face_normal[face_id][1] = i_face_normal[face_id][1];
       i_f_face_normal[face_id][2] = i_face_normal[face_id][2];
@@ -499,11 +495,12 @@ _count_from_file(const cs_mesh_t *m,
       b_f_face_normal[face_id][1] = 0.;
       b_f_face_normal[face_id][2] = 0.;
       b_f_face_surf[face_id] = 0.;
-    } else {
+    }
+    else {
       b_f_face_normal[face_id][0] = b_face_normal[face_id][0];
       b_f_face_normal[face_id][1] = b_face_normal[face_id][1];
       b_f_face_normal[face_id][2] = b_face_normal[face_id][2];
-      b_f_face_surf[face_id]      = b_face_surf[face_id]     ;
+      b_f_face_surf[face_id]      = b_face_surf[face_id];
     }
   }
 }
@@ -515,8 +512,8 @@ _count_from_file(const cs_mesh_t *m,
 void
 cs_f_porosity_from_scan_get_pointer(bool **compute_porosity_from_scan)
 {
-  *compute_porosity_from_scan =
-    &(_porosity_from_scan_opt.compute_porosity_from_scan);
+  *compute_porosity_from_scan
+    = &(_porosity_from_scan_opt.compute_porosity_from_scan);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -527,8 +524,8 @@ cs_f_porosity_from_scan_get_pointer(bool **compute_porosity_from_scan)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function set the file name of points for the computation of the
- * porosity from scan.
+ * \brief Set the file name of points for the computation of the
+ *        porosity from scan.
  *
  * \param[in] file_name  name of the file.
  */
@@ -553,7 +550,7 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function sets the output name for the FVM writer of scan points.
+ * \brief Set the output name for the FVM writer of scan points.
  *
  * \param[in] output_name  name of the output (a suffix will be added)
  */
@@ -578,7 +575,7 @@ cs_porosity_from_scan_set_output_name(const char  *output_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function add a scanner source point
+ * \brief Add a scanner source point.
  *
  * \param[in] source     source vector
  * \param[in] transform  flag to apply the transformation matrix to the source
@@ -593,37 +590,34 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
   const int s_id = _porosity_from_scan_opt.nb_sources;
   _porosity_from_scan_opt.nb_sources++;
 
-  BFT_REALLOC(
-      _porosity_from_scan_opt.source_c_ids,
-      _porosity_from_scan_opt.nb_sources,
-      cs_lnum_t);
+  BFT_REALLOC(_porosity_from_scan_opt.source_c_ids,
+              _porosity_from_scan_opt.nb_sources,
+              cs_lnum_t);
 
-  BFT_REALLOC(
-      _porosity_from_scan_opt.sources,
-      _porosity_from_scan_opt.nb_sources,
-      cs_real_3_t);
+  BFT_REALLOC(_porosity_from_scan_opt.sources,
+              _porosity_from_scan_opt.nb_sources,
+              cs_real_3_t);
 
   if (transform) {
     /* Apply translation and rotation */
     for (int i = 0; i < 3; i++) {
       _porosity_from_scan_opt.sources[s_id][i] = 0;
       for (int j = 0; j < 3; j++)
-        _porosity_from_scan_opt.sources[s_id][i] +=
-          _porosity_from_scan_opt.transformation_matrix[i][j] * source[j];
-      _porosity_from_scan_opt.sources[s_id][i] +=
-        _porosity_from_scan_opt.transformation_matrix[i][3];
+        _porosity_from_scan_opt.sources[s_id][i]
+          += _porosity_from_scan_opt.transformation_matrix[i][j] * source[j];
+      _porosity_from_scan_opt.sources[s_id][i]
+        += _porosity_from_scan_opt.transformation_matrix[i][3];
     }
   }
   else {
     for (int i = 0; i < 3; i++)
       _porosity_from_scan_opt.sources[s_id][i] = source[i];
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function computes the porosity which is equal to one from
+ * \brief Computes the porosity which is equal to one from
  *        a source, radiating sphericaly, and is 0 when touching points
  *        of the scan.
  *

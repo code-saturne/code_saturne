@@ -100,8 +100,8 @@ extern cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function set the file name of points for the computation of the
- * porosity from scan.
+ * \brief Set the file name of points for the computation of the
+ *        porosity from scan.
  *
  * \param[in] file_name  name of the file.
  */
@@ -112,7 +112,7 @@ cs_porosity_from_scan_set_file_name(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function sets the output name for the FVM writer of scan points.
+ * \brief Set the output name for the FVM writer of scan points.
  *
  * \param[in] output_name  name of the output (a suffix will be added)
  */
@@ -123,7 +123,7 @@ cs_porosity_from_scan_set_output_name(const char  *output_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function add a scanner source point
+ * \brief Add a scanner source point.
  *
  * \param[in] source     source vector
  * \param[in] transform  flag to apply the transformation matrix to the source
@@ -136,7 +136,7 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function computes the porosity which is equal to one from
+ * \brief Compute the porosity which is equal to one from
  *        a source, radiating sphericaly, and is 0 when touching points
  *        of the scan.
  *
