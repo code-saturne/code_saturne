@@ -79,25 +79,6 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute and add the source term to the local RHS.
- *         This is a special treatment since of face DoFs are involved
- *         contrary to the standard case where only the cell DoFs is involved.
- *
- * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb     pointer to a builder structure for the NavSto system
- * \param[in, out] csys    pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_cdofb_monolithic_source_t)(const cs_navsto_param_t           *nsp,
-                               const cs_cell_mesh_t              *cm,
-                               const cs_cdofb_navsto_builder_t   *nsb,
-                               cs_cell_sys_t                     *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Initialize a matrix and its related structures needed during the
  *         assembly step.
  *
@@ -268,12 +249,6 @@ struct _cdofb_monolithic_t {
   cs_cdo_bc_face_t               *pressure_bc;
   int                             pressure_rescaling;
 
-  /*!
-   * \var add_gravity_source_term
-   * \ref Compute and add the source term related to the gravity vector
-   */
-  cs_cdofb_monolithic_source_t   *add_gravity_source_term;
-
   /*! \var apply_fixed_wall
    *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
    *  wall boundary (no slip boundary)
@@ -306,6 +281,14 @@ struct _cdofb_monolithic_t {
   cs_cdofb_monolithic_init_matrix_t   *init_system;
   cs_cdofb_monolithic_build_t         *steady_build;
   cs_cdofb_monolithic_build_t         *build;
+
+  /*!
+   * \var add_gravity_term
+   * \ref Compute and add the source term related to the gravity vector
+   *      This can be the Boussinesq term or the hydrostatic term (rho*g)
+   */
+
+  cs_cdofb_navsto_source_t           *add_gravity_term;
 
   /*!
    * @}

@@ -164,10 +164,6 @@ typedef struct {
   /* ------------------ */
 
   cs_real_t       ref_temperature;
-  cs_real_t       thermal_dilatation_coef;
-
-  /* Structure used for the definition of the boussinesq source term */
-  cs_source_term_boussinesq_t    *boussinesq;
 
   /* N.B.: Other reference values for properties are stored within each
    * property structure */
@@ -189,6 +185,18 @@ typedef struct {
 
 cs_real_t
 cs_thermal_system_get_reference_temperature(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the value of the reference temperature associated to the
+ *        thermal system.
+ *
+ * \param[in]  ref     value of the reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_set_reference_temperature(cs_real_t    ref);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -249,34 +257,6 @@ cs_thermal_system_activate(cs_flag_t         model,
 
 void
 cs_thermal_system_destroy(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the reference temperature and the thermal dilatation coefficient
- *
- * \param[in]  temp0     reference temperature
- * \param[in]  beta0     reference value of the thermal dilatation coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_system_set_reference_parameters(cs_real_t    temp0,
-                                           cs_real_t    beta0);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a structure to compute the Boussinesq source term
- *
- * \param[in]  gravity    gravity vector
- * \param[in]  rho0       reference value for the mass density
- *
- * \return a pointer to a new allocated \ref cs_source_term_boussinesq_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_source_term_boussinesq_t *
-cs_thermal_system_add_boussinesq_term(const cs_real_t   *gravity,
-                                      cs_real_t          rho0);
 
 /*----------------------------------------------------------------------------*/
 /*!

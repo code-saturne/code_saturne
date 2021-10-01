@@ -1679,42 +1679,114 @@ cs_cdofb_fixed_wall(short int                       fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the source term for computing the Boussinesq approximation
- *         This relies on the prototype associated to the generic function
- *         pointer \ref cs_dof_function_t
+ * \brief  Set the function pointer computing the source term in the momentum
+ *         equation related to the gravity effect (hydrostatic pressure or the
+ *         Boussinesq approximation)
  *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
+ * \param[in]  nsp          set of parameters for the Navier-Stokes system
+ * \param[out] p_func       way to compute the gravity effect
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
-                                       const cs_lnum_t     *elt_ids,
-                                       bool                 dense_output,
-                                       void                *input,
-                                       cs_real_t           *retval)
+cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
+                                 cs_cdofb_navsto_source_t    **p_func)
 {
-  /* Sanity checks */
-  assert(input != NULL && retval != NULL);
+  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ)
+    *p_func = cs_cdofb_navsto_boussinesq_term;
+  else if (nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
+    *p_func = cs_cdofb_navsto_gravity_term;
+  else
+    *p_func = NULL;
+}
 
-  /* input is a pointer to a structure */
-  const cs_source_term_boussinesq_t  *bq = (cs_source_term_boussinesq_t *)input;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the gravity effects.
+ *         Compute and add the source term to the local RHS.
+ *         This is a special treatment since of face DoFs are involved
+ *         contrary to the standard case where only the cell DoFs is involved.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
+void
+cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
+                             const cs_cell_mesh_t              *cm,
+                             const cs_cdofb_navsto_builder_t   *nsb,
+                             cs_cell_sys_t                     *csys)
+{
+  assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
 
-    cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i];
-    cs_lnum_t  r_id = dense_output ? i : id;
-    cs_real_t  *_r = retval + 3*r_id;
+  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+  const cs_real_t  cell_contrib[3] =
+    { nsb->rho_c * gravity_vector[0] * cm->xc[0],
+      nsb->rho_c * gravity_vector[1] * cm->xc[1],
+      nsb->rho_c * gravity_vector[2] * cm->xc[2] };
 
-    const cs_real_t  bq_coef = -bq->rho0*bq->beta * (bq->var[id] - bq->var0);
+  for (int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t  *_div_f = nsb->div_op + 3*f;
     for (int k = 0; k < 3; k++)
-      _r[k] = bq_coef * bq->g[k];
+      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the buoyancy force with the Boussinesq approx.
+ *         Compute and add the source term to the local RHS.
+ *         This is the standard case where only the cell DoFs are involved.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_term(const cs_navsto_param_t           *nsp,
+                                const cs_cell_mesh_t              *cm,
+                                const cs_cdofb_navsto_builder_t   *nsb,
+                                cs_cell_sys_t                     *csys)
+{
+  CS_UNUSED(nsb);
+  assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
+
+  /* Boussinesq term: rho0 * g[] * ( 1 -beta * (var[c] - var0) ) */
+
+  const cs_real_t  rho0 = nsp->mass_density->ref_value;
+  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+
+  const cs_real_t  cell_contrib[3] = { rho0 * gravity_vector[0] * cm->xc[0],
+                                       rho0 * gravity_vector[1] * cm->xc[1],
+                                       rho0 * gravity_vector[2] * cm->xc[2] };
+
+  /* Face contribution (balance with the pressure gradient) : rho_ref * g[] */
+  for (int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    for (int k = 0; k < 3; k++)
+      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
+  }
+
+  /* Cell contribution (volumic source term) */
+  cs_real_t  cell_variation = 0;
+  for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
+
+    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
+    cell_variation += -bp->beta*(bp->var[cm->c_id] - bp->var0);
 
   }
+  cell_variation *= cm->vol_c;
+
+  for (int k = 0; k < 3; k++)
+    csys->rhs[3*cm->n_fc+k] += cell_variation * gravity_vector[k];
+
 }
 
 /*----------------------------------------------------------------------------*/

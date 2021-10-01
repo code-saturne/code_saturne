@@ -80,6 +80,27 @@ typedef struct {
 
 } cs_cdofb_navsto_builder_t;
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute and add a source term to the local RHS.
+ *         This is a special treatment to enable source involving face DoFs and
+ *         potentially the local discrete divergence/gradient operators.
+ *         In the standard case, only the cell DoFs are involved.
+ *         Examples are gravity term or Bousinesq term(s)
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdofb_navsto_source_t)(const cs_navsto_param_t           *nsp,
+                           const cs_cell_mesh_t              *cm,
+                           const cs_cdofb_navsto_builder_t   *nsb,
+                           cs_cell_sys_t                     *csys);
+
 /*============================================================================
  * Static inline public function prototypes
  *============================================================================*/
@@ -494,24 +515,57 @@ cs_cdofb_fixed_wall(short int                       fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the source term for computing the Boussinesq approximation
- *         This relies on the prototype associated to the generic function
- *         pointer \ref cs_dof_function_t
+ * \brief  Set the function pointer computing the source term in the momentum
+ *         equation related to the gravity effect (hydrostatic pressure or the
+ *         Boussinesq approximation)
  *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
+ * \param[in]  nsp          set of parameters for the Navier-Stokes system
+ * \param[out] p_func       way to compute the gravity effect
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
-                                       const cs_lnum_t     *elt_ids,
-                                       bool                 dense_output,
-                                       void                *input,
-                                       cs_real_t           *retval);
+cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
+                                 cs_cdofb_navsto_source_t    **p_func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the gravity effects.
+ *         Compute and add the source term to the local RHS.
+ *         This is a special treatment since of face DoFs are involved
+ *         contrary to the standard case where only the cell DoFs is involved.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
+                             const cs_cell_mesh_t              *cm,
+                             const cs_cdofb_navsto_builder_t   *nsb,
+                             cs_cell_sys_t                     *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the buoyancy force with the Boussinesq approx.
+ *         Compute and add the source term to the local RHS.
+ *         This is the standard case where only the cell DoFs are involved.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_term(const cs_navsto_param_t           *nsp,
+                                const cs_cell_mesh_t              *cm,
+                                const cs_cdofb_navsto_builder_t   *nsb,
+                                cs_cell_sys_t                     *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

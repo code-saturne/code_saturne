@@ -718,42 +718,6 @@ _init_system_by_blocks(cs_cdofb_monolithic_t        *sc)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Take into account the gravity effects.
- *         Compute and add the source term to the local RHS.
- *         This is a special treatment since of face DoFs are involved
- *         contrary to the standard case where only the cell DoFs is involved.
- *
- * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb     pointer to a builder structure for the NavSto system
- * \param[in, out] csys    pointer to a cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_add_gravity_source_term(const cs_navsto_param_t           *nsp,
-                         const cs_cell_mesh_t              *cm,
-                         const cs_cdofb_navsto_builder_t   *nsb,
-                         cs_cell_sys_t                     *csys)
-{
-  assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
-
-  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-  const cs_real_t  cell_contrib[3] =
-    { nsb->rho_c * gravity_vector[0] * cm->xc[0],
-      nsb->rho_c * gravity_vector[1] * cm->xc[1],
-      nsb->rho_c * gravity_vector[2] * cm->xc[2] };
-
-  for (int f = 0; f < cm->n_fc; f++) {
-    const cs_real_t  *_div_f = nsb->div_op + 3*f;
-    for (int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
  *         Shares similarities with cs_equation_assemble_block_matrix()
@@ -1229,11 +1193,11 @@ _steady_build(const cs_navsto_param_t      *nsp,
                                    mass_hodge,
                                    cb, mom_eqb, csys);
 
-      /* Gravity effects (not Boussinesq up to now) rely on another strategy
-         than classical source term. The treatment is more compatible with the
-         pressure gradient by doing so. */
-      if (sc->add_gravity_source_term != NULL)
-        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+      /* Gravity effects and/or Boussinesq approximation rely on another
+         strategy than classical source term. The treatment is more compatible
+         with the pressure gradient by doing so. */
+      if (sc->add_gravity_term != NULL)
+        sc->add_gravity_term(nsp, cm, &nsb, csys);
 
       /* 3b- OTHER RHS CONTRIBUTIONS
        * ===========================
@@ -1434,11 +1398,11 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                                    mass_hodge,
                                    cb, mom_eqb, csys);
 
-      /* Gravity effects (not Boussinesq up to now) rely on another strategy
-         than classical source term. The treatment is more compatible with the
-         pressure gradient by doing so. This is a steady source term */
-      if (sc->add_gravity_source_term != NULL)
-        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+      /* Gravity effects and/or Boussinesq approximation rely on another
+         strategy than classical source term. The treatment is more compatible
+         with the pressure gradient by doing so. */
+      if (sc->add_gravity_term != NULL)
+        sc->add_gravity_term(nsp, cm, &nsb, csys);
 
       /* 3b- OTHER RHS CONTRIBUTIONS *
        * =========================== *
@@ -1695,11 +1659,11 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       } /* End of term source */
 
-      /* Gravity effects (not Boussinesq up to now) rely on another strategy
-         than classical source term. The treatment is more compatible with the
-         pressure gradient by doing so. This is a steady source term */
-      if (sc->add_gravity_source_term != NULL)
-        sc->add_gravity_source_term(nsp, cm, &nsb, csys);
+      /* Gravity effects and/or Boussinesq approximation rely on another
+         strategy than classical source term. The treatment is more compatible
+         with the pressure gradient by doing so. */
+      if (sc->add_gravity_term != NULL)
+        sc->add_gravity_term(nsp, cm, &nsb, csys);
 
       /* 3b- OTHER RHS CONTRIBUTIONS *
        * =========================== *
@@ -2039,11 +2003,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   }
 
-  /* Source term induced by the gravity (not the Boussinesq approximation but
-     only rho.g) */
-  sc->add_gravity_source_term = NULL;
-  if (nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
-    sc->add_gravity_source_term = _add_gravity_source_term;
+  /* Source terms induced by the gravity effect */
+  cs_cdofb_navsto_set_gravity_func(nsp, &(sc->add_gravity_term));
 
   /* Set the build function */
   sc->steady_build = _steady_build;

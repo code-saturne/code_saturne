@@ -2425,104 +2425,6 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the source term for the momentum equation arising from the
- *         Boussinesq approximation. This relies on the prototype associated
- *         to the generic function pointer \ref cs_dof_function_t
- *         Take into account only the variation of temperature.
- *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_temp_boussinesq_source_term(cs_lnum_t            n_elts,
-                             const cs_lnum_t     *elt_ids,
-                             bool                 dense_output,
-                             void                *input,
-                             cs_real_t           *retval)
-{
-  /* Sanity checks */
-  assert(retval != NULL && input != NULL);
-
-  /* input is a pointer to a structure */
-  const cs_source_term_boussinesq_t  *bq = (cs_source_term_boussinesq_t *)input;
-
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-    cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = dense_output ? i : id; /* position in retval */
-    cs_real_t  *_r = retval + 3*r_id;
-
-    /* Thermal effect */
-    cs_real_t  bq_coef = -bq->beta*(bq->var[id]-bq->var0);
-
-    for (int k = 0; k < 3; k++)
-      _r[k] = bq->rho0 * bq_coef * bq->g[k];
-
-  } /* Loop on elements */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the source term for the momentum equation arising from the
- *         Boussinesq approximation. This relies on the prototype associated
- *         to the generic function pointer \ref cs_dof_function_t
- *         Take into account the variation of temperature and concentration.
- *
- * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       list of elements ids
- * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval        result of the function. Must be allocated.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
-                                  const cs_lnum_t     *elt_ids,
-                                  bool                 dense_output,
-                                  void                *input,
-                                  cs_real_t           *retval)
-{
-  cs_solidification_t  *solid = cs_solidification_structure;
-
-  /* Sanity checks */
-  assert(retval != NULL && input != NULL && solid != NULL);
-  assert(solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
-
-  cs_solidification_binary_alloy_t  *alloy
-    = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-  /* input is a pointer to a structure */
-  const cs_source_term_boussinesq_t  *bq = (cs_source_term_boussinesq_t *)input;
-  const cs_real_t  beta_c = alloy->dilatation_coef;
-  const cs_real_t  *c_l = alloy->c_l_cells;
-
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-    cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i]; /* cell_id */
-    cs_lnum_t  r_id = dense_output ? i : id;            /* position in retval */
-    cs_real_t  *_r = retval + 3*r_id;
-
-    /* Thermal effect */
-    const cs_real_t  coef_t = -bq->beta*(bq->var[id] - bq->var0);
-
-    /* Concentration effect */
-    const cs_real_t  coef_c = -beta_c*(c_l[id] - alloy->ref_concentration);
-
-    const cs_real_t  coef = bq->rho0*(coef_t + coef_c);
-    for (int k = 0; k < 3; k++)
-      _r[k] = coef * bq->g[k];
-
-  } /* Loop on elements */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Add a source term to the solute equation derived from an explicit
  *          use of the advective and diffusive operator
  *          Generic function prototype for a hook during the cellwise building
@@ -2714,14 +2616,15 @@ cs_solidification_activate(cs_solidification_model_t       model,
     post_flag |= CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE;
   solid->post_flag = post_flag;
 
+  /* The Navier-Stokes is not solved when the frozen field is set */
+  if (cs_flag_test(solid->options,
+                   CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD) == false)
+    ns_model_flag |=
+      CS_NAVSTO_MODEL_BOUSSINESQ | CS_NAVSTO_MODEL_WITH_SOLIDIFICATION;
+
   /* Activate the Navier-Stokes module */
   /* --------------------------------- */
 
-  if ((options & CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD) == 0)
-    /* The Navier-Stokes is not solved when the frozen field is set */
-    ns_model_flag |= CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ;
-
-  /* Activate the Navier-Stokes module */
   cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
                                                       ns_model,
                                                       ns_model_flag,
@@ -2829,7 +2732,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
       BFT_MALLOC(b_model, 1, cs_solidification_binary_alloy_t);
 
       /* Set a default value to the model parameters */
-      b_model->dilatation_coef = 1.;
       b_model->ref_concentration = 1.;
       b_model->latent_heat = 1.;
       b_model->s_das = 0.33541;
@@ -3045,15 +2947,19 @@ cs_solidification_check_voller_model(void)
  * \brief  Set the main physical parameters which describe the Voller and
  *         Prakash modelling
  *
+ * \param[in]  beta           thermal dilatation coefficient
+ * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
  * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperatur (in K)
+ * \param[in]  t_liquidus     liquidus temperature (in K)
  * \param[in]  latent_heat    latent heat
  * \param[in]  s_das          secondary dendrite space arms
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model(cs_real_t    t_solidus,
+cs_solidification_set_voller_model(cs_real_t    beta,
+                                   cs_real_t    t_ref,
+                                   cs_real_t    t_solidus,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
                                    cs_real_t    s_das)
@@ -3065,6 +2971,14 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
   v_model->t_liquidus = t_liquidus;
   v_model->latent_heat = latent_heat;
   v_model->s_das = s_das;
+
+  /* Add the Boussinesq term */
+  cs_navsto_param_t *nsp = cs_navsto_system_get_param();
+
+  cs_navsto_param_add_boussinesq_term(nsp, beta, t_ref);
+
+  /* Set the reference temperature in the thermal module */
+  cs_thermal_system_set_reference_temperature(t_ref);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3146,8 +3060,10 @@ cs_solidification_check_binary_alloy_model(void)
  *
  * \param[in]  name          name of the binary alloy
  * \param[in]  varname       name of the unknown related to the tracer eq.
- * \param[in]  conc0         reference mixture concentration
- * \param[in]  beta          solutal dilatation coefficient
+ * \param[in]  beta_t        thermal dilatation coefficient
+ * \param[in]  temp0         reference temperature (Boussinesq term)
+ * \param[in]  beta_c        solutal dilatation coefficient
+ * \param[in]  conc0         reference mixture concentration (Boussinesq term)
  * \param[in]  kp            value of the distribution coefficient
  * \param[in]  mliq          liquidus slope for the solute concentration
  * \param[in]  t_eutec       temperature at the eutectic point
@@ -3161,8 +3077,10 @@ cs_solidification_check_binary_alloy_model(void)
 void
 cs_solidification_set_binary_alloy_model(const char     *name,
                                          const char     *varname,
+                                         cs_real_t       beta_t,
+                                         cs_real_t       temp0,
+                                         cs_real_t       beta_c,
                                          cs_real_t       conc0,
-                                         cs_real_t       beta,
                                          cs_real_t       kp,
                                          cs_real_t       mliq,
                                          cs_real_t       t_eutec,
@@ -3188,7 +3106,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
     *alloy = cs_solidification_get_binary_alloy_struct();
 
   /* Set the main physical parameters/constants */
-  alloy->dilatation_coef = beta;
   alloy->ref_concentration = conc0;
   alloy->latent_heat = latent_heat;
   alloy->s_das = s_das;
@@ -3253,6 +3170,19 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   BFT_FREE(pty_name);
 
   cs_equation_add_diffusion(eqp, alloy->diff_pty);
+
+  /* Add Boussinesq terms */
+  cs_navsto_param_t *nsp = cs_navsto_system_get_param();
+
+  /* Thermal effect */
+  cs_navsto_param_add_boussinesq_term(nsp, beta_t, temp0);
+
+  /* Solutal effect */
+  cs_navsto_param_add_boussinesq_term(nsp, beta_c, conc0);
+
+  /* Set the reference temperature in the thermal module */
+  cs_thermal_system_set_reference_temperature(temp0);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3664,33 +3594,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
   } /* Loop on cells */
 
-  /* Add the Boussinesq source term in the momentum equation */
-  cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-  assert(mom_eq != NULL);
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-  cs_physical_constants_t  *phy_constants = cs_get_glob_physical_constants();
-
-  /* Define the metadata to build a Boussinesq source term related to the
-   * temperature. This structure is allocated here but the lifecycle is
-   * managed by the cs_thermal_system_t structure */
-  cs_source_term_boussinesq_t  *thm_bq =
-    cs_thermal_system_add_boussinesq_term(phy_constants->gravity,
-                                          solid->mass_density->ref_value);
-
-  cs_dof_func_t  *func = NULL;
-  if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
-    func = _temp_boussinesq_source_term;
-  else if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
-    func = _temp_conc_boussinesq_source_term;
-
-  if (func != NULL) { /* Coupling with the Navier-Stokes equation is
-                         activated */
-
-    cs_equation_add_source_term_by_dof_func(mom_eqp,
-                                            NULL, /* = all cells */
-                                            cs_flag_primal_cell,
-                                            func,
-                                            thm_bq);
+  if (cs_flag_test(solid->options,
+                   CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD) == false) {
 
     /* Define the forcing term acting as a reaction term in the momentum
        equation. This term is related to the liquid fraction */
@@ -3702,6 +3607,14 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              solid->forcing_mom_array,
                              false, /* definition is owner ? */
                              NULL); /* no index */
+
+    /* Add the temperature array for the Boussinesq term (thermal effect) */
+    cs_navsto_param_t *nsp = cs_navsto_system_get_param();
+
+    assert(nsp->n_boussinesq_terms > 0);
+    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param;
+
+    cs_navsto_param_set_boussinesq_array(bp, solid->temperature->val);
 
   }
 
@@ -3740,10 +3653,23 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     /* Get a shortcut to the c_bulk field */
     alloy->c_bulk = cs_equation_get_field(alloy->solute_equation);
 
-    /* Allocate an array to store the liquid concentration and arrays storing
-       the intermediate states during the sub-iterations to solve the
-       non-linearity */
+    /* Allocate an array to store the liquid concentration */
     BFT_MALLOC(alloy->c_l_cells, n_cells, cs_real_t);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      alloy->c_l_cells[i] = alloy->ref_concentration;
+
+    /* Add the c_l_cells array for the Boussinesq term (solutal effect) */
+    cs_navsto_param_t *nsp = cs_navsto_system_get_param();
+
+    assert(nsp->n_boussinesq_terms == 2);
+    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + 1;
+
+    cs_navsto_param_set_boussinesq_array(bp, alloy->c_l_cells);
+
+    /* Allocate arrays storing the intermediate states during the
+       sub-iterations to solve the non-linearity */
     BFT_MALLOC(alloy->tk_bulk, n_cells, cs_real_t);
     BFT_MALLOC(alloy->ck_bulk, n_cells, cs_real_t);
 
@@ -3878,16 +3804,14 @@ cs_solidification_log_setup(void)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Alloy: %s\n",
                     module, cs_equation_get_name(alloy->solute_equation));
       cs_log_printf(CS_LOG_SETUP,
-                    "  * %s | Dilatation coef. concentration: %5.3e\n"
                     "  * %s | Distribution coef.: %5.3e\n"
                     "  * %s | Liquidus slope: %5.3e\n"
                     "  * %s | Phase change temp.: %5.3e\n"
                     "  * %s | Eutectic conc.: %5.3e\n"
-                    "  * %s | Reference concentration: %5.3e\n"
                     "  * %s | Latent heat: %5.3e\n",
-                    module, alloy->dilatation_coef, module, alloy->kp,
+                    module, alloy->kp,
                     module, alloy->ml, module, alloy->t_melt,
-                    module, alloy->c_eut, module, alloy->ref_concentration,
+                    module, alloy->c_eut,
                     module, alloy->latent_heat);
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | Forcing coef: %5.3e; s_das: %5.3e\n",

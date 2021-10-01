@@ -118,14 +118,11 @@ typedef enum {
  * is assumed to have a small norm and the mass density variates in a small
  * range. In this case, an additional momentum source term is added.
  *
- * \var CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ
- * This option is similar to \ref CS_NAVSTO_MODEL_BOUSSINESQ. The difference is
- * that the variation of mass density relies not only on the temperature but
- * also the alloy concentration(s). The gradient of temperature/alloy
- * concentrations is assumed to have a small norm and the mass density variates
- * in a small range. In this case, additional equations related to the
- * temperature/alloy concetrations are considered. A momentum source term is
- * added wich is managed by the solidification module.
+ * \var CS_NAVSTO_MODEL_WITH_SOLIDIFICATION
+ * The Navier-Stokes is modified to take into account solidification process.
+ * A boussinesq term is added as well as a head loss term derived from a Darcy
+ * approximation. Please see the \ref cs_solidification_model_t structure and
+ * related structures for more details
  *
  */
 
@@ -136,7 +133,7 @@ typedef enum {
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<2, /* =   4 */
   CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER          = 1<<3, /* =   8 */
   CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<4, /* =  16 */
-  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<5, /* =  32 */
+  CS_NAVSTO_MODEL_WITH_SOLIDIFICATION             = 1<<5  /* =  32 */
 
 } cs_navsto_param_model_bit_t;
 
@@ -611,6 +608,25 @@ typedef enum {
 
 } cs_navsto_param_coupling_t;
 
+/*! \struct cs_navsto_param_boussinesq_t
+ *  \brief Structure storing the parameters related to the Boussinesq source
+ *         term in the momentum equation
+ */
+
+typedef struct {
+
+  cs_real_t    beta;      /* Dilatation coefficient */
+  cs_real_t    var0;      /* Reference value of the variable */
+
+  /* Array of values of the variable (for instance the temperature). This is a
+   * shared pointer. The lifecycle of this array is not managed by this
+   * structure.
+   */
+
+  const cs_real_t   *var;
+
+} cs_navsto_param_boussinesq_t;
+
 /*! \struct cs_navsto_param_t
  *  \brief Structure storing the parameters related to the resolution of the
  *         Navier-Stokes system
@@ -728,6 +744,23 @@ typedef struct {
   cs_param_advection_scheme_t    adv_scheme;
   cs_param_advection_strategy_t  adv_strategy;
   cs_param_advection_extrapol_t  adv_extrapol;
+
+  /* Boussinesq approximation:
+   *
+   * Take into account buoyancy terms (variation of mass density w.r.t. the
+   * variation of a field (for instance the temperature but can be also a
+   * concentration as in segregation model in the solidification module)
+   *
+   * \var n_boussinesq_terms
+   * Number of contributions to the buoyancy source term in the Boussinesq
+   * approximation
+   *
+   * \var boussinesq_param
+   * Structure storing elements used to compute the Boussinesq approximation
+   */
+
+  int                                 n_boussinesq_terms;
+  cs_navsto_param_boussinesq_t       *boussinesq_param;
 
   /*! \var qtype
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
@@ -1182,6 +1215,34 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
 void
 cs_navsto_param_log(const cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new Boussinesq term (source term for the momemtum equation)
+ *
+ * \param[in, out]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the newly added structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_param_boussinesq_t *
+cs_navsto_param_add_boussinesq_term(cs_navsto_param_t    *nsp,
+                                    cs_real_t             dilatation_coef,
+                                    cs_real_t             reference_value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the array of values to consider in the Boussinesq term
+ *
+ * \param[in, out]  bp    pointer to a cs_navsto_param_boussinesq_t structure
+ * \param[in]       var   shared pointer to the array of values to consider
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t   *bp,
+                                     const cs_real_t                *var);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -253,11 +253,10 @@ cs_navsto_system_update_model(bool   with_thermal)
                          for the advection */
 
     if ((nsp->model_flag & (CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER |
-                            CS_NAVSTO_MODEL_BOUSSINESQ |
-                            CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)) == 0) {
+                            CS_NAVSTO_MODEL_BOUSSINESQ)) == 0) {
 
       /* Thermal system is linked to the Navier-Stokes one but nothing has been
-       * set. Add the expected flag. */
+       * set. Add the "minimal" flag. */
       nsp->model_flag |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
 
     }
@@ -828,8 +827,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Setup checkings */
-  if ((nsp->model_flag & (CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ |
-                          CS_NAVSTO_MODEL_BOUSSINESQ |
+  if ((nsp->model_flag & (CS_NAVSTO_MODEL_BOUSSINESQ |
                           CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER)) > 0) {
 
     if (cs_thermal_system_is_activated() == false)
@@ -1065,31 +1063,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   }
 
-  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
-
-    cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-    cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-
-    const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-    const cs_real_t  rho0 = nsp->mass_density->ref_value;
-
-    /* This structure is allocated here but the lifecycle is managed by the
-       cs_thermal_system_t structure */
-    cs_source_term_boussinesq_t  *bq =
-      cs_thermal_system_add_boussinesq_term(gravity_vector, rho0);
-
-    /* Up to now, only CDO Face-based schemes are considered */
-    assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-
-    cs_dof_func_t  *func = cs_cdofb_navsto_boussinesq_source_term;
-    cs_equation_add_source_term_by_dof_func(mom_eqp,
-                                            NULL, /* = all cells */
-                                            cs_flag_primal_cell,
-                                            func,
-                                            bq);
-
-  } /* Add the Boussinesq source term */
-
   /* Add default post-processing related to the Navier-Stokes system */
   cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, ns);
 
@@ -1320,7 +1293,9 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
       cs_thermal_system_compute_steady_state(mesh, connect, quant, time_step);
 
   }
-  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ) &&
+           cs_flag_test(nsp->model_flag,
+                        CS_NAVSTO_MODEL_WITH_SOLIDIFICATION) == false) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 
@@ -1394,6 +1369,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
                   iter, delta_th_tolerance);
 
     BFT_FREE(th_var_iter_prev);
+
   }
   else {
 
@@ -1468,7 +1444,9 @@ cs_navsto_system_compute(const cs_mesh_t             *mesh,
       cs_thermal_system_compute(true, mesh, connect, quant, time_step);
 
   }
-  else if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
+  else if (cs_flag_test(nsp->model_flag, CS_NAVSTO_MODEL_BOUSSINESQ) &&
+           cs_flag_test(nsp->model_flag,
+                        CS_NAVSTO_MODEL_WITH_SOLIDIFICATION) == false) {
 
     /* Remark: The "solidification" case is handled in a dedicated module */
 

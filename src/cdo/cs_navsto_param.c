@@ -667,6 +667,11 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     nsp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   nsp->theta = 1.0;
 
+  /* Boussinesq term(s) */
+
+  nsp->n_boussinesq_terms = 0;
+  nsp->boussinesq_param = NULL;
+
   /* Default level of quadrature */
   nsp->qtype = CS_QUADRATURE_BARY;
 
@@ -784,6 +789,11 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
   /* Turbulence modelling */
 
   BFT_FREE(param->turbulence);
+
+  /* Boussinesq term(s) */
+
+  if (param->n_boussinesq_terms > 0)
+    BFT_FREE(param->boussinesq_param);
 
   /* Velocity initial conditions */
 
@@ -1383,13 +1393,28 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "%s Model: Coriolis effect activated\n",
                   navsto);
 
-  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ)
+  if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
+
     cs_log_printf(CS_LOG_SETUP, "%s Model:"
-                  "Boussinesq approximation activated\n", navsto);
-  if (nsp->model_flag & CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)
-    cs_log_printf(CS_LOG_SETUP, "%s Model:"
-                  " Boussinesq approximation for solidification activated\n",
-                  navsto);
+                  " Boussinesq approximation activated (%d term(s))\n",
+                  navsto, nsp->n_boussinesq_terms);
+
+    for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
+
+      cs_navsto_param_boussinesq_t  bp = nsp->boussinesq_param[i];
+
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Dilatation coef. = %5.3e; Reference value = %5.3e\n",
+                    navsto, bp.beta, bp.var0);
+
+    }
+
+    if (nsp->n_boussinesq_terms == 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Boussinesq model is activated but no parameter is given\n"
+                " to define the Boussinesq term.\n", __func__);
+
+  } /* Boussinesq term(s) added */
 
   /* Describe the space-time discretization */
   cs_log_printf(CS_LOG_SETUP, "%s Coupling: %s\n",
@@ -1487,6 +1512,60 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     sprintf(prefix, "%s Pressure.Init.Cond | Definition %2d",  navsto, i);
     cs_xdef_log(prefix, nsp->pressure_ic_defs[i]);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new Boussinesq term (source term for the momemtum equation)
+ *
+ * \param[in, out]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the newly added structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_param_boussinesq_t *
+cs_navsto_param_add_boussinesq_term(cs_navsto_param_t    *nsp,
+                                    cs_real_t             dilatation_coef,
+                                    cs_real_t             reference_value)
+{
+  if (nsp == NULL)
+    return NULL;
+
+  int  b_id = nsp->n_boussinesq_terms;
+
+  nsp->n_boussinesq_terms += 1;
+  BFT_REALLOC(nsp->boussinesq_param, nsp->n_boussinesq_terms + 1,
+              cs_navsto_param_boussinesq_t);
+
+  cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + b_id;
+
+  bp->var0 = reference_value;
+  bp->beta = dilatation_coef;
+
+  /* bp->var (shared pointer) is set with another function */
+
+  return bp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the array of values to consider in the Boussinesq term
+ *
+ * \param[in, out]  bp    pointer to a cs_navsto_param_boussinesq_t structure
+ * \param[in]       var   shared pointer to the array of values to consider
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t   *bp,
+                                     const cs_real_t                *var)
+{
+  if (bp == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Boussinesq structure is empty\n", __func__);
+
+  bp->var = var;
 }
 
 /*----------------------------------------------------------------------------*/

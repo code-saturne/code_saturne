@@ -261,12 +261,6 @@ _init_thermal_system(void)
   thm->enthalpy = NULL;
   thm->total_energy = NULL;
 
-  /* Reference coefficients */
-  thm->ref_temperature = 0.;
-  thm->thermal_dilatation_coef = 0.;
-
-  thm->boussinesq = NULL;
-
   return thm;
 }
 
@@ -295,6 +289,27 @@ cs_thermal_system_get_reference_temperature(void)
               " Please check your settings.", __func__);
 
   return cs_thermal_system->ref_temperature;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the value of the reference temperature associated to the
+ *        thermal system.
+ *
+ * \param[in]  ref     value of the reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_set_reference_temperature(cs_real_t    ref)
+{
+  if (cs_thermal_system == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A reference temperature is requested but no thermal"
+              " system is activated.\n"
+              " Please check your settings.", __func__);
+
+  cs_thermal_system->ref_temperature = ref;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -512,8 +527,6 @@ cs_thermal_system_destroy(void)
   if (thm->kappa_array != NULL)
     BFT_FREE(thm->kappa_array);
 
-  BFT_FREE(thm->boussinesq);
-
   /* Equations, fields and properties related to the thermal system are
    * destroyed elsewhere in a specific stage. The lifecycle of these structures
    * are not managed by cs_thermal_system_t
@@ -521,70 +534,6 @@ cs_thermal_system_destroy(void)
 
   BFT_FREE(thm);
   cs_thermal_system = NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the reference temperature and the thermal dilatation coefficient
- *
- * \param[in]  temp0     reference temperature
- * \param[in]  beta0     reference value of the thermal dilatation coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_system_set_reference_parameters(cs_real_t    temp0,
-                                           cs_real_t    beta0)
-{
-  cs_thermal_system_t  *thm = NULL;
-  if (cs_thermal_system == NULL)
-    thm = _init_thermal_system();
-  else
-    thm = cs_thermal_system;    /* Previously allocated when activating
-                                   the thermal module for instance */
-
-  thm->ref_temperature = temp0;
-  thm->thermal_dilatation_coef = beta0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a structure to compute the Boussinesq source term
- *
- * \param[in]  gravity    gravity vector
- * \param[in]  rho0       reference value for the mass density
- *
- * \return a pointer to a new allocated \ref cs_source_term_boussinesq_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_source_term_boussinesq_t *
-cs_thermal_system_add_boussinesq_term(const cs_real_t   *gravity,
-                                      cs_real_t          rho0)
-{
-  cs_thermal_system_t  *thm = cs_thermal_system;
-
-  /* Sanity checks */
-  assert(gravity != NULL);
-  if (thm == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
-  if (thm->temperature == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: No temperature field allocated.",
-              __func__);
-
-  cs_source_term_boussinesq_t  *bq_st = NULL;
-  BFT_MALLOC(bq_st, 1, cs_source_term_boussinesq_t);
-
-  bq_st->g[0] = gravity[0];
-  bq_st->g[1] = gravity[1];
-  bq_st->g[2] = gravity[2];
-  bq_st->rho0 = rho0;
-  bq_st->beta = thm->thermal_dilatation_coef;
-  bq_st->var0 = thm->ref_temperature;
-  bq_st->var = thm->temperature->val;
-
-  thm->boussinesq = bq_st;
-
-  return bq_st;
 }
 
 /*----------------------------------------------------------------------------*/

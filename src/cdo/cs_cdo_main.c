@@ -866,8 +866,10 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /*  Build high-level structures and create algebraic systems
-      Set the initial values of the fields and properties */
+      Set the initial values of the fields and properties. */
   cs_domain_initialize_systems(domain);
+
+  /* Remark: cs_user_initialization is called at the end of the function */
 
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field

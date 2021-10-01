@@ -346,12 +346,9 @@ typedef struct {
   /* Alloy features */
   /* -------------- */
 
-  /* Parameters for the Boussinesq approximation in the momentum equation
-   * related to solute concentration:
-   * solutal dilatation/expansion coefficient and the reference mixture
-   * concentration for the binary alloy
+  /* Reference mixture concentration (used in the Boussinesq approximation and
+   * for normalization
    */
-  cs_real_t    dilatation_coef;
   cs_real_t    ref_concentration;
 
   /* Physical parameter for computing the source term in the energy equation
@@ -702,15 +699,19 @@ cs_solidification_check_voller_model(void);
  * \brief  Set the main physical parameters which describe the Voller and
  *         Prakash modelling
  *
+ * \param[in]  beta           thermal dilatation coefficient
+ * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
  * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperatur (in K)
+ * \param[in]  t_liquidus     liquidus temperature (in K)
  * \param[in]  latent_heat    latent heat
  * \param[in]  s_das          secondary dendrite space arms
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model(cs_real_t    t_solidus,
+cs_solidification_set_voller_model(cs_real_t    beta,
+                                   cs_real_t    t_ref,
+                                   cs_real_t    t_solidus,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
                                    cs_real_t    s_das);
@@ -740,7 +741,7 @@ cs_solidification_check_binary_alloy_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which described a solidification
+ * \brief  Set the main physical parameters which describe a solidification
  *         process with a binary alloy (with components A and B)
  *         Add a transport equation for the solute concentration to simulate
  *         the conv/diffusion of the alloy ratio between the two components of
@@ -748,8 +749,10 @@ cs_solidification_check_binary_alloy_model(void);
  *
  * \param[in]  name          name of the binary alloy
  * \param[in]  varname       name of the unknown related to the tracer eq.
- * \param[in]  conc0         reference mixture concentration
- * \param[in]  beta          solutal dilatation coefficient
+ * \param[in]  beta_t        thermal dilatation coefficient
+ * \param[in]  temp0         reference temperature (Boussinesq term)
+ * \param[in]  beta_c        solutal dilatation coefficient
+ * \param[in]  conc0         reference mixture concentration (Boussinesq term)
  * \param[in]  kp            value of the distribution coefficient
  * \param[in]  mliq          liquidus slope for the solute concentration
  * \param[in]  t_eutec       temperature at the eutectic point
@@ -763,8 +766,10 @@ cs_solidification_check_binary_alloy_model(void);
 void
 cs_solidification_set_binary_alloy_model(const char     *name,
                                          const char     *varname,
+                                         cs_real_t       beta_t,
+                                         cs_real_t       temp0,
+                                         cs_real_t       beta_c,
                                          cs_real_t       conc0,
-                                         cs_real_t       beta,
                                          cs_real_t       kp,
                                          cs_real_t       mliq,
                                          cs_real_t       t_eutec,
