@@ -262,10 +262,6 @@ typedef void
 
 typedef struct {
 
-  /* Enthalpy is computed for the update of the liquid fraction */
-
-  cs_field_t                    *enthalpy;
-
   /* Physical parameters to specify the law of variation of the liquid fraction
    * with respect to the temperature
    *
@@ -275,11 +271,6 @@ typedef struct {
    */
 
   cs_real_t                      t_change;
-
-  /* Physical parameter for computing the source term in the energy equation
-   * Latent heat between the liquid and solid phase
-   */
-  cs_real_t                      latent_heat;
 
   /* Function pointers */
   /* ----------------- */
@@ -326,11 +317,6 @@ typedef struct {
   cs_real_t                      t_solidus;
   cs_real_t                      t_liquidus;
 
-  /* Physical parameter for computing the source term in the energy equation
-   * Latent heat between the liquid and solid phase
-   */
-  cs_real_t                      latent_heat;
-
   /* Function pointer related to the way of updating the model */
   cs_solidification_func_t      *update;
 
@@ -350,11 +336,6 @@ typedef struct {
    * for normalization
    */
   cs_real_t    ref_concentration;
-
-  /* Physical parameter for computing the source term in the energy equation
-   * Latent heat between the liquid and solid phase
-   */
-  cs_real_t    latent_heat;
 
   /* Phase diagram features for an alloy with the component A and B */
   /* -------------------------------------------------------------- */
@@ -493,18 +474,26 @@ typedef struct  {
                                  * of the solidification module */
   int              verbosity;   /* Level of verbosity */
 
+  /* Physical properties common to all models */
+  /* ---------------------------------------- */
+
   /* Mass density of the liquid/solid media */
   cs_property_t   *mass_density;
-  cs_real_t        rho0;
 
   /* Reference value for the heat capacity in the solidification/melting area
    * (assumed to be uniform) */
-  cs_real_t        cp0;
+  cs_property_t   *cp;
 
   /* Viscosity (pointer to the total viscosity which should be equal to the
   *  laminar viscosity since no turbulence modelling is usually taken into
   *  account */
   cs_property_t   *viscosity;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t        latent_heat;
+
 
   /* Liquid fraction of the mixture */
   /* ------------------------------ */
@@ -530,6 +519,12 @@ typedef struct  {
 
   /* Fields associated to this module */
   cs_field_t      *temperature;
+
+  /* Enthalpy (by default this a derived field which can be used to update of
+     the liquid fraction) */
+
+  cs_field_t      *enthalpy;
+
 
   /* A reaction term and source term are introduced in the thermal model */
   cs_property_t   *thermal_reaction_coef;
