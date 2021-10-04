@@ -222,6 +222,14 @@ typedef struct {
   cs_cdo_apply_boundary_t        *apply_symmetry;
 
   /*!
+   * \var add_gravity_term
+   * \ref Compute and add the source term related to the gravity vector
+   *      This can be the Boussinesq term or the hydrostatic term (rho*g)
+   */
+
+  cs_cdofb_navsto_source_t      *add_gravity_term;
+
+  /*!
    * @}
    * @name Convergence monitoring
    * Structure used to drive the convergence of high-level iterative algorithms
@@ -771,6 +779,12 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        * rhs */
       cs_sdm_add_scalvect(3*n_fc, -prs_c_pre[c_id], nsb.div_op, csys->rhs);
 
+      /* Gravity effects and/or Boussinesq approximation rely on another
+         strategy than classical source term. The treatment is more compatible
+         with the pressure gradient by doing so. */
+      if (sc->add_gravity_term != NULL)
+        sc->add_gravity_term(nsp, cm, &nsb, csys);
+
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
@@ -985,6 +999,9 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
               __func__);
 
   }
+
+  /* Take into account the gravity effect if needed */
+  cs_cdofb_navsto_set_gravity_func(nsp, &(sc->add_gravity_term));
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
