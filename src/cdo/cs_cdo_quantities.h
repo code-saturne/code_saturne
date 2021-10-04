@@ -128,6 +128,10 @@ typedef struct {
 
 typedef struct { /* Specific mesh quantities */
 
+  /* Keep the information about the removal of boundary faces in case of 2D
+     computations */
+  bool             remove_boundary_faces;
+
   /* Global mesh quantities */
   double           vol_tot;
 

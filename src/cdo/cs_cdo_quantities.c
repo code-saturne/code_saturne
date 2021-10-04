@@ -146,6 +146,8 @@ _create_cdo_quantities(void)
   /* Build cs_cdo_quantities_t structure */
   BFT_MALLOC(cdoq, 1, cs_cdo_quantities_t);
 
+  cdoq->remove_boundary_faces = false;
+
   cdoq->vol_tot = 0.;
 
   /* Cell-based quantities */
@@ -1012,6 +1014,10 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   /* Compute the volume of the whole domain */
   cdoq->vol_tot = mq->tot_vol;
+
+  /* Is there a removal of boundary faces to speed-up 2D computations */
+  if (m->n_g_b_faces_all > m->n_g_b_faces)
+    cdoq->remove_boundary_faces = true;
 
   /* 1) Initialize shared quantities */
   /*    ============================ */

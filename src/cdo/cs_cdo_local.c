@@ -1235,8 +1235,15 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     }   /* Build f2e_sgn ? */
 
+#if defined(DEBUG) && !defined(NDEBUG)
     /* Sanity check */
-    assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);
+    if (quant->remove_boundary_faces ==  false)
+      if (cm->f2e_idx[cm->n_fc] != 2*cm->n_ec)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Inconsistency detected in f2e_idx for c_id = %d\n"
+                  " cm->f2e_idx[cm->n_fc] = %d and 2*cm->n_ec = %d\n",
+                  __func__, cm->c_id, cm->f2e_idx[cm->n_fc], 2*cm->n_ec);
+#endif
 
     if (build_flag & CS_FLAG_COMP_FEQ) {
 
