@@ -3441,15 +3441,18 @@ cs_solidification_init_setup(void)
 
   /* Add the enthalpy field if not already created */
   solid->enthalpy = cs_field_by_name_try("enthalpy");
-  if (solid->enthalpy == NULL)
-  cs_field_set_key_int(solid->enthalpy, log_key, 1);
-  cs_field_set_key_int(solid->enthalpy, post_key, 1);
+  if (solid->enthalpy == NULL &&
+      (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY))
     solid->enthalpy = cs_field_create("enthalpy",
                                       field_mask,
                                       c_loc_id,
                                       1,
                                       true); /* has_previous */
 
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY) {
+    cs_field_set_key_int(solid->enthalpy, log_key, 1);
+    cs_field_set_key_int(solid->enthalpy, post_key, 1);
+  }
 
   /* Add a reaction term to the momentum equation */
   cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
@@ -4034,6 +4037,17 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
         memcpy(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
       }
 
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+        _compute_enthalpy(quant,
+                          time_step->t_cur,        /* t_eval */
+                          solid->temperature->val, /* temperature */
+                          solid->g_l_field->val,   /* liquid fraction */
+                          alloy->t_eut,            /* temp_ref */
+                          solid->latent_heat,      /* latent heat coeff. */
+                          solid->mass_density,     /* rho */
+                          solid->cp,               /* cp */
+                          solid->enthalpy->val);   /* computed enthalpy */
+
     } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
     break;
 
@@ -4043,6 +4057,17 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
         = (cs_solidification_voller_t *)solid->model_context;
 
       v_model->update(mesh, connect, quant, time_step);
+
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+        _compute_enthalpy(quant,
+                          time_step->t_cur,        /* t_eval */
+                          solid->temperature->val, /* temperature */
+                          solid->g_l_field->val,   /* liquid fraction */
+                          v_model->t_solidus,      /* temp_ref */
+                          solid->latent_heat,      /* latent heat coeff. */
+                          solid->mass_density,     /* rho */
+                          solid->cp,               /* cp */
+                          solid->enthalpy->val);   /* computed enthalpy */
 
     }
     break;
@@ -4134,6 +4159,17 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
       /* Compute a new couple (Temp, g_l, conc) */
 
       alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
+
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+        _compute_enthalpy(quant,
+                          time_step->t_cur,        /* t_eval */
+                          solid->temperature->val, /* temperature */
+                          solid->g_l_field->val,   /* liquid fraction */
+                          alloy->t_eut,            /* temp_ref */
+                          solid->latent_heat,      /* latent heat coeff. */
+                          solid->mass_density,     /* rho */
+                          solid->cp,               /* cp */
+                          solid->enthalpy->val);   /* computed enthalpy */
     }
     break;
 
@@ -4153,6 +4189,18 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
       cs_field_current_to_previous(solid->g_l_field);
 
       v_model->update(mesh, connect, quant, time_step);
+
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+        _compute_enthalpy(quant,
+                          time_step->t_cur,        /* t_eval */
+                          solid->temperature->val, /* temperature */
+                          solid->g_l_field->val,   /* liquid fraction */
+                          v_model->t_solidus,      /* temp_ref */
+                          solid->latent_heat,      /* latent heat coeff. */
+                          solid->mass_density,     /* rho */
+                          solid->cp,               /* cp */
+                          solid->enthalpy->val);   /* computed enthalpy */
+
     }
     break;
 

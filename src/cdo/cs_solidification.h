@@ -49,8 +49,14 @@ BEGIN_C_DECLS
  *        module
  * @{
  *
- * \def CS_SOLIDIFICATION_POST_CBULK_ADIM
+ * \def CS_SOLIDIFICATION_POST_CELL_STATE
+ * \brief State related to each cell between (solid, mushy, liquid or eutectic)
  *
+ * \def CS_SOLIDIFICATION_POST_ENTHALPY
+ * \brief Enthalpy in each cell. By default, only the temperature is
+ *        post-processed
+ *
+ * \def CS_SOLIDIFICATION_POST_CBULK_ADIM
  * \brief Compute and post-process (C_bulk - C_0)/C_0
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated
@@ -60,9 +66,6 @@ BEGIN_C_DECLS
  * \brief Post-process Cliq the liquid solute distribution (wt %)
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated.
- *
- * \def CS_SOLIDIFICATION_POST_CELL_STATE
- * \brief State related to each cell between (solid, mushy, liquid or eutectic)
  *
  * \def CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE
  * \brief Activate the (volumic) post-processing of the liquidus temperature
@@ -85,13 +88,14 @@ BEGIN_C_DECLS
  * understanding of the solidification process)
 */
 
-#define CS_SOLIDIFICATION_POST_CBULK_ADIM             (1 << 0) /* =   1 */
-#define CS_SOLIDIFICATION_POST_CLIQ                   (1 << 1) /* =   2 */
-#define CS_SOLIDIFICATION_POST_CELL_STATE             (1 << 2) /* =   4 */
-#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE   (1 << 3) /* =   8 */
-#define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX      (1 << 4) /* =  16 */
-#define CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE    (1 << 5) /* =  32 */
-#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS           (1 << 6) /* =  64 */
+#define CS_SOLIDIFICATION_POST_CELL_STATE             (1 << 0) /* =   1 */
+#define CS_SOLIDIFICATION_POST_ENTHALPY               (1 << 1) /* =   2 */
+#define CS_SOLIDIFICATION_POST_CBULK_ADIM             (1 << 2) /* =   4 */
+#define CS_SOLIDIFICATION_POST_CLIQ                   (1 << 3) /* =   8 */
+#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE   (1 << 4) /* =  16 */
+#define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX      (1 << 5) /* =  32 */
+#define CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE    (1 << 6) /* =  64 */
+#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS           (1 << 7) /* = 128 */
 
 /*!
  * @name Flags specifying options specific to the solidification module
