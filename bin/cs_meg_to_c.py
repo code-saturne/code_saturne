@@ -220,6 +220,9 @@ def parse_gui_expression(expression,
 
     tab = '  '
     ntabs = indent_main
+    if not need_for_loop:
+        ntabs -= 1
+
     if func_type == 'ibm':
         ntabs = 2
 
@@ -1646,11 +1649,13 @@ class meg_to_c_interpreter:
                         # Velocity
                         c = boundary.getVelocityChoice(fId)
                         if '_formula' in c:
+                            sym = []
                             if c == 'norm_formula':
                                 req = ['u_norm']
+                                sym.extend(('x', 'y', 'z'))
                             elif c == 'flow1_formula':
                                 req = ['q_m']
-                            sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                            sym.extend(('t', 'dt', 'iter', 'surface'))
 
                             for (name, val) in NotebookModel(self.case).getNotebookList():
                                 sym.append((name, 'value (notebook) = ' + str(val)))
